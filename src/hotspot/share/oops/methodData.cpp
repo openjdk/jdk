@@ -63,7 +63,9 @@ void DataLayout::initialize(u1 tag, u2 bci, int cell_count) {
   temp._header._bits = (intptr_t)0;
   temp._header._struct._tag = tag;
   temp._header._struct._bci = bci;
-  _header = temp._header;  // Write the cell atomtically
+  // Write the header using a single intptr_t write.  This ensures that if the layout is
+  // reinitialized readers will never see the transient state where the header is 0.
+  _header = temp._header;
 
   for (int i = 0; i < cell_count; i++) {
     set_cell_at(i, (intptr_t)0);
@@ -1227,8 +1229,8 @@ MethodData::MethodData(const methodHandle& method)
   initialize();
 }
 
-// Reinitialize the storage of an existing MDO at a safepoint.  Doing it this will ensure it's not
-// being accessed while the contents are being rewritten.
+// Reinitialize the storage of an existing MDO at a safepoint.  Doing it this way will ensure it's
+// not being accessed while the contents are being rewritten.
 class VM_ReinitializeMDO: public VM_Operation {
  private:
   MethodData* _mdo;
