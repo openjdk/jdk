@@ -4032,6 +4032,8 @@ void StubGenerator::generate_compiler_stubs() {
 
   generate_chacha_stubs();
 
+  generate_sha3_stubs();
+
 #ifdef COMPILER2
   if ((UseAVX == 2) && EnableX86ECoreOpts) {
     generate_string_indexof(StubRoutines::_string_indexof_array);
