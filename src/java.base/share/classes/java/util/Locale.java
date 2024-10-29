@@ -387,8 +387,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *     NumberFormat.getCurrencyInstance(Locale.JAPAN).format(number); // returns "\u00A51,000""
  *     // Localized date format
  *     var date = LocalDate.of(2024, 1, 1);
- *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.JAPAN).format(date); // returns "2024\u5e741\u67081\u65e5"
  *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.US).format(date); // returns "January 1, 2024"
+ *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.JAPAN).format(date); // returns "2024\u5e741\u67081\u65e5"
  * }
  *
  * <h2><a id="LocaleMatching">Locale Matching</a></h2>
