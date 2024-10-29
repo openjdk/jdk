@@ -133,7 +133,7 @@ static FILETIME process_kernel_time;
 #elif defined(_M_AMD64)
   #define __CPU__ amd64
 #else
-  #define __CPU__ unknown
+  #error "Unknown CPU"
 #endif
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
