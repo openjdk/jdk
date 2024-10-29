@@ -28,7 +28,7 @@ package jdk.internal.vm.annotation;
 import java.lang.annotation.*;
 
 /**
- * A method may be annotated with JvmtiHideEvents to hint the JVMTI events
+ * A method may be annotated with JvmtiHideEvents to hint that JVMTI events
  * should not be generated in context of the annotated method.
  *
  * @implNote
