@@ -1004,8 +1004,8 @@ class VMUsageMetadataDCmd : public DCmdWithParser {
   public:
 
   VMUsageMetadataDCmd(outputStream* output, bool heap);
-  
-  static int         num_arguments() { return 3; }; 
+
+  static int         num_arguments() { return 4; }; // there must be a better way...?
 
   static const char* name() { return "VM.usage_metadata"; }
   static const char* description() { return "Print VM usage metadata."; }
@@ -1023,8 +1023,8 @@ class VMUsageMetadataDCmd : public DCmdWithParser {
     public:
       virtual void prefix(outputStream* output) const {};
 
-      virtual bool field(outputStream* output, const char *fieldName , bool prefixSep, TRAPS) const {
-         return _writeField(this, output, fieldName, prefixSep, CHECK_false);
+      virtual bool field(outputStream* output, const char *fieldName, bool omitIfNull, bool prefixSep, TRAPS) const {
+         return _writeField(this, output, fieldName, omitIfNull, prefixSep, CHECK_false);
       }; // returns true if field is written...
 
       virtual void postfix(outputStream* output) const {};
@@ -1070,7 +1070,7 @@ class VMUsageMetadataDCmd : public DCmdWithParser {
   static constexpr const char *const _JVM_PID         = "jvm.pid";
   static constexpr const char *const _JVM_STARTTIME   = "jvm.starttime";
   static constexpr const char *const _JVM_UPTIME      = "jvm.uptime.ms";
-  
+
   static constexpr const char *const _SUN_JAVA_LAUNCHER   = "sun.java.launcher";
   static constexpr const char *const _SUN_JAVA_CMD        = "sun.java.command";
 
@@ -1083,9 +1083,9 @@ class VMUsageMetadataDCmd : public DCmdWithParser {
   static constexpr const char *const _OS_HOSTNAME         = "os.hostname";
   static constexpr const char *const _OS_NAME             = "os.name";
   static constexpr const char *const _OS_VERSION          = "os.version";
-  
+
   static constexpr const char *const _APPLICATION_JSON  = "json";
-  static constexpr const char *const _TEXT_PLAIN        = "plain"; 
+  static constexpr const char *const _TEXT_PLAIN        = "plain";
 
   static const char *const _DEFAULT_FMT[];
 
@@ -1094,31 +1094,31 @@ class VMUsageMetadataDCmd : public DCmdWithParser {
   /*
    * FieldWriters are responsible for fetching the required value and emitting that in a KV tuple.
    *
-   * additionally they are responsible for prefixing (if necessary) with a 'field separator' 
+   * additionally they are responsible for prefixing (if necessary) with a 'field separator'
    */
 
-  typedef bool (*FieldWriter)(const Formatter* formatter, outputStream*, const char *const, bool, TRAPS);
+  typedef bool (*FieldWriter)(const Formatter* formatter, outputStream*, const char *const, bool, bool, TRAPS);
 
-  static bool _writeTime(const Formatter* formatter, outputStream* output, const char *fieldName, bool needsSeparator, TRAPS);
-  static bool _writeJVMStartTime(const Formatter* formatter, outputStream* output, const char *fieldName,bool needsSeparator, TRAPS);
-  static bool _writeJVMUptime(const Formatter* formatter, outputStream* output, const char *const fieldName, bool needsSeparator, TRAPS);
-  static bool _writeJVMPid(const Formatter* formatter, outputStream* output, const char *const fieldName, bool needsSeparator, TRAPS);
-  
-  static bool _writeSystemProperty(const Formatter* formatter, outputStream* output, const char *const propertyName, bool needsSeparator, TRAPS);
+  static bool _writeTime(const Formatter* formatter, outputStream* output, const char *fieldName, bool omitIfNull,  bool needsSeparator, TRAPS);
+  static bool _writeJVMStartTime(const Formatter* formatter, outputStream* output, const char *fieldName, bool omitIfNull, bool needsSeparator, TRAPS);
+  static bool _writeJVMUptime(const Formatter* formatter, outputStream* output, const char *const fieldName, bool omitIfNull, bool needsSeparator, TRAPS);
+  static bool _writeJVMPid(const Formatter* formatter, outputStream* output, const char *const fieldName, bool omitIfNull, bool needsSeparator, TRAPS);
+
+  static bool _writeSystemProperty(const Formatter* formatter, outputStream* output, const char *const propertyName, bool omitIfNull, bool needsSeparator, TRAPS);
 
 #ifdef LINUX
-  static bool _writeJVMContainerInfo(const Formatter* formatter, outputStream* output, const char *const propertyName, bool needsSeparator, TRAPS);
+  static bool _writeJVMContainerInfo(const Formatter* formatter, outputStream* output, const char *const propertyName, bool omitIfNull, bool needsSeparator, TRAPS);
 #endif
 
-  static bool _writeHostname(const Formatter* formatter, outputStream* output, const char *const propertyName, bool needsSeparator, TRAPS);
+  static bool _writeHostname(const Formatter* formatter, outputStream* output, const char *const propertyName, bool omitIfNull, bool needsSeparator, TRAPS);
 
-  static bool _writeJVMFlags(const Formatter* formatter, outputStream* output, const char *const propertyName, bool needsSeparator, TRAPS);
+  static bool _writeJVMFlags(const Formatter* formatter, outputStream* output, const char *const propertyName, bool omitIfNull, bool needsSeparator, TRAPS);
 
-  static bool _writeJVMArgs(const Formatter* formatter, outputStream* output, const char *const propertyName, bool needsSeparator, TRAPS);
+  static bool _writeJVMArgs(const Formatter* formatter, outputStream* output, const char *const propertyName, bool omitIfNull, bool needsSeparator, TRAPS);
 
-  static bool _writeField(const Formatter* formatter, outputStream* output, const char *const fieldName, bool needsSeparator, TRAPS);
+  static bool _writeField(const Formatter* formatter, outputStream* output, const char *const fieldName, bool omitIfNull, bool needsSeparator, TRAPS);
 
-  static bool _writeFieldWithArrayValues(const Formatter* formatter, outputStream* output, const char *const fieldName, char** values, int nvalues, bool needsSepartor);
+  static bool _writeFieldWithArrayValues(const Formatter* formatter, outputStream* output, const char *const fieldName, char** values, int nvalues, bool omitIfNull, bool needsSepartor);
 
   static int _comparator(const void *x, const void *y) {
     return strcmp(((MapEntry*)x)->key, ((MapEntry*)y)->key);
@@ -1129,10 +1129,11 @@ class VMUsageMetadataDCmd : public DCmdWithParser {
   static MapEntry _FORMATTER_MAP[];
 
   static MapEntry _FIELD_WRITER_MAP[];
-  
+
+  DCmdArgument<bool>   _omitIfNull;
   DCmdArgument<char *> _fields;
   DCmdArgument<char *> _format;
-  DCmdArgument<char *> _filepath;
+  DCmdArgument<char *> _filename;
 };
 
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP
