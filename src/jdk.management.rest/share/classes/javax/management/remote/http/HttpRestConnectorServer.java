@@ -67,56 +67,10 @@ import javax.management.remote.MBeanServerForwarder;
  * use this class directly.</p>
  *
  */
-public class HttpConnectorServer extends JMXConnectorServer {
+public class HttpRestConnectorServer extends JMXConnectorServer {
 
     /**
-     * <p>Name of the attribute that specifies the {@link
-     * RMIClientSocketFactory} for the RMI objects created in
-     * conjunction with this connector. The value associated with this
-     * attribute must be of type <code>RMIClientSocketFactory</code> and can
-     * only be specified in the <code>Map</code> argument supplied when
-     * creating a connector server.</p>
-     */
-    public static final String RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE =
-        "jmx.remote.rmi.client.socket.factory";
-
-    /**
-     * <p>Name of the attribute that specifies the {@link
-     * RMIServerSocketFactory} for the RMI objects created in
-     * conjunction with this connector. The value associated with this
-     * attribute must be of type <code>RMIServerSocketFactory</code> and can
-     * only be specified in the <code>Map</code> argument supplied when
-     * creating a connector server.</p>
-     */
-    public static final String RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE =
-        "jmx.remote.rmi.server.socket.factory";
-
-    /**
-     * Name of the attribute that specifies an
-     * {@link ObjectInputFilter} pattern string to filter classes acceptable
-     * for {@link RMIServer#newClient(java.lang.Object) RMIServer.newClient()}
-     * remote method call.
-     * <p>
-     * The filter pattern must be in same format as used in
-     * {@link java.io.ObjectInputFilter.Config#createFilter}
-     * <p>
-     * This list of classes allowed by filter should correspond to the
-     * transitive closure of the credentials class (or classes) used by the
-     * installed {@linkplain JMXAuthenticator} associated with the
-     * {@linkplain RMIServer} implementation.
-     * If the attribute is not set then any class is deemed acceptable.
-     * @see ObjectInputFilter
-     *
-     * @since 10
-     */
-    public static final String CREDENTIALS_FILTER_PATTERN =
-        "jmx.remote.rmi.server.credentials.filter.pattern";
-
-    /**
-     * <p>Makes an <code>RMIConnectorServer</code>.
-     * This is equivalent to calling {@link #RMIConnectorServer(
-     * JMXServiceURL,Map,RMIServerImpl,MBeanServer)
-     * RMIConnectorServer(directoryURL,environment,null,null)}</p>
+     * <p>Makes an <code>HttpRestConnectorServer</code>.
      *
      * @param url the URL defining how to create the connector server.
      * Cannot be null.
@@ -136,13 +90,13 @@ public class HttpConnectorServer extends JMXConnectorServer {
      * for some reason or if it is inevitable that its {@link #start()
      * start} method will fail.
      */
-    public HttpConnectorServer(JMXServiceURL url, Map<String,?> environment)
+    public HttpRestConnectorServer(JMXServiceURL url, Map<String,?> environment)
             throws IOException {
         this(url, environment, (MBeanServer) null);
     }
 
     /**
-     * <p>Makes an <code>RMIConnectorServer</code> for the given MBean
+     * <p>Makes an <code>HttpRestConnectorServer</code> for the given MBean
      * server.</p>
      *
      * @param url the URL defining how to create the connector server.
@@ -152,12 +106,6 @@ public class HttpConnectorServer extends JMXConnectorServer {
      * storing of the RMI object.  Can be null, which is equivalent to
      * an empty Map.
      *
-     * @param rmiServerImpl An implementation of the RMIServer interface,
-     *  consistent with the protocol type specified in <var>url</var>.
-     *  If this parameter is non null, the protocol type specified by
-     *  <var>url</var> is not constrained, and is assumed to be valid.
-     *  Otherwise, only "rmi" will be recognized.
-     *
      * @param mbeanServer the MBean server to which the new connector
      * server is attached, or null if it will be attached by being
      * registered as an MBean in the MBean server.
@@ -165,9 +113,8 @@ public class HttpConnectorServer extends JMXConnectorServer {
      * @exception IllegalArgumentException if <code>url</code> is null.
      *
      * @exception MalformedURLException if <code>url</code> does not
-     * conform to the syntax for an RMI connector, or if its protocol
-     * is not recognized by this implementation. Only "rmi" is recognized
-     * when <var>rmiServerImpl</var> is null.
+     * conform to the syntax for an HTTP connector, or if its protocol
+     * is not recognized by this implementation.
      *
      * @exception IOException if the connector server cannot be created
      * for some reason or if it is inevitable that its {@link #start()
@@ -175,17 +122,18 @@ public class HttpConnectorServer extends JMXConnectorServer {
      *
      * @see #start
      */
-    public HttpConnectorServer(JMXServiceURL url, Map<String,?> environment,
+    public HttpRestConnectorServer(JMXServiceURL url, Map<String,?> environment,
                               MBeanServer mbeanServer)
             throws IOException {
         super(mbeanServer);
 
-        if (url == null) throw new
-            IllegalArgumentException("Null JMXServiceURL");
+        if (url == null) {
+            throw new IllegalArgumentException("Null JMXServiceURL");
+        }
 
-        if (environment == null)
+        if (environment == null) {
             this.attributes = Collections.emptyMap();
-        else {
+        } else {
             EnvHelp.checkAttributes(environment);
             this.attributes = Collections.unmodifiableMap(environment);
         }
@@ -217,8 +165,6 @@ public class HttpConnectorServer extends JMXConnectorServer {
      * stub cannot be created.
      **/
     public JMXConnector toJMXConnector(Map<String,?> env) throws IOException {
-        // The serialized for of rmiServerImpl is automatically
-        // a RMI server stub.
         if (!isActive()) throw new
             IllegalStateException("Connector is not active");
 
@@ -244,19 +190,6 @@ public class HttpConnectorServer extends JMXConnectorServer {
      * when the connector server has been stopped will generate an
      * <code>IOException</code>.</p>
      *
-     * <li>If an <code>RMIServerImpl</code> was supplied to the
-     * constructor, it is used.
-     *
-     * <li>Otherwise, if the <code>JMXServiceURL</code>
-     * was null, or its protocol part was <code>rmi</code>, an object
-     * of type {@link RMIJRMPServerImpl} is created.
-     *
-     * <li>Otherwise, the implementation can create an
-     * implementation-specific {@link RMIServerImpl} or it can throw
-     * {@link MalformedURLException}.
-     *
-     * </ul>
-     *
      * @exception IllegalStateException if the connector server has
      * not been attached to an MBean server.
      * @exception IOException if the connector server cannot be
@@ -270,12 +203,13 @@ public class HttpConnectorServer extends JMXConnectorServer {
             return;
         } else if (state == STOPPED) {
             if (tracing) logger.trace("start", "already stopped");
-            throw new IOException("The server has been stopped.");
+            throw new IOException("The server has already been stopped.");
         }
 
-        if (getMBeanServer() == null)
+        if (getMBeanServer() == null) {
             throw new IllegalStateException("This connector server is not " +
                                             "attached to an MBean server");
+        }
 
         // Check the internal access file property to see
         // if an MBeanServerForwarder is to be provided
@@ -312,15 +246,14 @@ public class HttpConnectorServer extends JMXConnectorServer {
             // so we need the http server to start etc...
             // Therefore connection ID has to be set by JMXRestAdapter.
             // We will query it and send up to JMXConnectorServer by calling connectionOpened.
-            JMXRestAdapter rest = PlatformRestAdapter.newRestAdapter(this, getMBeanServer(), serverName /* context */,  null /*env */);
+            JMXRestAdapter rest = PlatformRestAdapter.newRestAdapter(this, getMBeanServer(), serverName /* context */,  attributes /*env */);
 
             System.err.println("XXXX HTTPConnectorServer start  current address = " + address + " rest = " + rest);
 
-            synchronized(openedServers) { // is this needed?
+            synchronized(openedServers) {
                 openedServers.add(rest);
             }
-            String a = rest.getUrl();
-            address = new JMXServiceURL("service:jmx:" + a);
+            address = new JMXServiceURL("service:jmx:" + rest.getUrl());
             connectionOpened(rest.getConnectionId(), "Connection opened", null);
 
         } catch (Exception e) {

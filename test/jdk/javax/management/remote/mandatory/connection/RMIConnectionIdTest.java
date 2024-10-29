@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@
  *
  * @run clean RMIConnectionIdTest
  * @run build RMIConnectionIdTest
- * @run main RMIConnectionIdTest
+ * @run main RMIConnectionIdTest rmi
+ * @run main RMIConnectionIdTest http
  */
 
 import java.net.*;
@@ -37,11 +38,18 @@ import javax.management.*;
 import javax.management.remote.*;
 
 public class RMIConnectionIdTest {
+
     public static void main(String[] args) throws Exception {
+
+        if (args.length != 1) {
+            throw new RuntimeException("Specify protocol in main arg to test: rmi or http");
+        }
+        String protocol = args[0];
+
         System.out.println("Testing that RMI connection id includes " +
                            "IP address of a client network interface");
         MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-        JMXServiceURL url = new JMXServiceURL("rmi", null, 0);
+        JMXServiceURL url = new JMXServiceURL(protocol, null, 0);
         JMXConnectorServer cs =
             JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
         cs.start();
@@ -49,11 +57,11 @@ public class RMIConnectionIdTest {
         JMXConnector cc = JMXConnectorFactory.connect(addr);
         String connectionId = cc.getConnectionId();
         System.out.println("Got connection id: " + connectionId);
-        if (!connectionId.startsWith("rmi://")) {
-            System.out.println("TEST FAILED: does not begin with \"rmi://\"");
+        if (!connectionId.startsWith(protocol + "://")) {
+            System.out.println("TEST FAILED: does not begin with \"" + protocol + "://\"");
             System.exit(1);
         }
-        String rest = connectionId.substring("rmi://".length());
+        String rest = connectionId.substring((protocol + "://").length());
         int spaceIndex = rest.indexOf(' ');
         if (spaceIndex < 0) {
             System.out.println("TEST FAILED: no space");

@@ -43,22 +43,23 @@ import javax.management.MBeanServerDelegateMBean;
 import javax.management.remote.JMXAuthenticator;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorServer;
+import javax.security.auth.Subject;
+
 import jdk.internal.management.remote.rest.JMXRestAdapter;
 import jdk.internal.management.remote.rest.PlatformRestAdapter;
 
-import javax.security.auth.Subject;
+import java.security.Principal;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -71,7 +72,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class MBeanServerResource implements RestResource, JMXRestAdapter {
 
     // Initialization parameters
-    private final String connectionId;
+    private String connectionId;
     private final HttpServer httpServer;
     private final String contextStr;
     private final Map<String, ?> env;
@@ -81,6 +82,7 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
     private HttpContext httpContext;
     private JMXAuthenticator authenticator = null;
     private final MBeanServerDelegateMBean mBeanServerDelegateMBean;
+    private Subject subject;
 
     // Save MBeanServer Proxy for a user
     private final MBeanCollectionResource defaultMBeansResource;
@@ -91,6 +93,7 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
     private boolean started = false;
 
     private static AtomicInteger id = new AtomicInteger(0);
+    private Integer thisId;
 
     public MBeanServerResource(JMXConnectorServer connServer, HttpServer hServer, MBeanServer mbeanServer,
                                String context, Map<String, ?> env) {
@@ -98,7 +101,7 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
         this.httpServer = hServer;
         this.env = env;
         this.mbeanServer = mbeanServer;
-        this.connectionId = makeConnectionId(hServer, context);
+        this.connectionId = makeConnectionId();
 
         mBeanServerDelegateMBean = JMX.newMBeanProxy(mbeanServer,
                 MBeanServerDelegate.DELEGATE_NAME, MBeanServerDelegateMBean.class);
@@ -109,19 +112,18 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
             contextStr = context;
         }
 
-        // setup authentication
+        // Setup authentication:
+        // Get authenticator even if "authentication" not set, as it may be set by a test.
         authenticator = (JMXAuthenticator) env.get("jmx.remote.authenticator");
         System.err.println("ZZZZZZZZZZZZZ MBeanServerResource authenticator = " + authenticator);
-
+        // ... which overrides this:
         if (env.get("jmx.remote.x.authentication") != null) {
-            authenticator = (JMXAuthenticator) env.get("jmx.remote.authenticator");
             if (authenticator == null) {
                 if (env.get("jmx.remote.x.password.file") != null
                         || env.get("jmx.remote.x.login.config") != null) {
                     authenticator = new JMXPluggableAuthenticator(env);
                 } else {
-                    throw new IllegalArgumentException
-                            ("Config error : Authentication is enabled with no authenticator");
+                    throw new IllegalArgumentException("Config error: Authentication is enabled with no authenticator");
                 }
             }
         }
@@ -131,22 +133,53 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
         } else {
             defaultMBeansResource = null;
         }
+
+        // Can we set Subject here on instantiation, without an http request with creds?
+        // May fool mandatory/connection/ConnectionTest, but may not be really useful.
+        if (authenticator != null) {
+            String authCredentials = null; // HttpUtil.getCredentials(exchange);
+            this.subject = authenticator.authenticate(authCredentials);
+            System.err.println("ZZZZZZZZZZZ MBeanServerResource: handle creds =  " + authCredentials + " subject = " + subject);
+            this.connectionId = makeConnectionId();
+        }
+
     }
 
-    private String makeConnectionId(HttpServer hServer, String context) {
+    private String makeConnectionId() {
         // Format is specified in java.management/javax/management/remote package summary.                                                             
         // RMIConnectionIdTest expects protocol://ip port username arbitrary
+        new Exception("ZZZZZZZZZZZZZZZ").printStackTrace(System.err);
         StringBuilder s = new StringBuilder(); 
         s.append("http").append(":");
-        String a = hServer.getAddress().toString();
-        a = a.substring(0, a.indexOf(":"));
-        s.append(a);
-        s.append(" ;").append(id.incrementAndGet());  
+        String a = httpServer.getAddress().toString();
+        a = a.substring(0, a.indexOf(":"));  // omit port
+        s.append("/").append(a).append(" "); // one more /
+
+        if (authenticator != null) {
+            // Copied from RMIServerImpl.makeConnectionId().
+            if (subject != null) {
+                 Set<Principal> principals = subject.getPrincipals();
+                 String sep = "";
+                 for (Principal p : principals) {
+                     String name = p.getName().replace(' ', '_').replace(';', ':');
+                     s.append(sep).append(name);
+                     sep = ";";
+                }
+            }
+        }
+
+        s.append(" ");
+        if (thisId == null) {
+            thisId = id.incrementAndGet();
+        }
+        s.append(thisId);
+        System.err.println("ZZZZ makeConnectionId: " + s.toString());
         return s.toString();
 
     }
 
     public String getConnectionId() throws IOException {
+        new Exception("ZZZZZZZZZZZZZZZ").printStackTrace(System.err);
         return connectionId;
     }
 
@@ -187,12 +220,18 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         MBeanCollectionResource mBeansResource = defaultMBeansResource;
-        if (env.get("jmx.remote.x.authentication") != null) {
+        if (authenticator != null) {
             String authCredentials = HttpUtil.getCredentials(exchange);
+            this.subject = authenticator.authenticate(authCredentials);
+            System.err.println("ZZZZZZZZZZZ MBeanServerResource: handle creds =  " + authCredentials + " subject = " + subject);
+            this.connectionId = makeConnectionId();
+ 
             // MBeanServer proxy should be populated in the authenticator
-            mBeansResource = proxyMBeanServers.get(authCredentials);
-            if (mBeansResource == null) {
-                throw new IllegalArgumentException("Invalid HTTP request Headers");
+            if (env.get("jmx.remote.x.authentication") != null) {
+                mBeansResource = proxyMBeanServers.get(authCredentials);
+                if (mBeansResource == null) {
+                    throw new IllegalArgumentException("Invalid HTTP request Headers");
+                }
             }
         }
 
@@ -305,21 +344,17 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
 
         private final MBeanServer mbeanServer;
         @SuppressWarnings("removal")
-        private final AccessControlContext acc;
+        private final Subject subject;
 
         AuthInvocationHandler(MBeanServer server, Subject subject) {
             this.mbeanServer = server;
-            if (subject == null) {
-                this.acc = null;
-            } else {
-                acc = JMXSubjectDomainCombiner.getContext(subject);
-            }
+            this.subject = subject;
         }
 
         @Override
         @SuppressWarnings("removal")
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            if (acc == null) {
+            if (subject == null) {
                 return method.invoke(mbeanServer, args);
             } else {
                 PrivilegedAction<Object> op = () -> {
@@ -329,7 +364,7 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
                     }
                     return null;
                 };
-                return AccessController.doPrivileged(op, acc);
+                return Subject.doAs(subject, op); // AccessController.doPrivileged(op, acc);
             }
         }
     }

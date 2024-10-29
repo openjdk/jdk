@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import javax.management.remote.JMXServiceURL;
 import javax.management.remote.rmi.RMIConnector;
 import javax.management.remote.JMXProviderException;
 
+import javax.management.remote.http.HttpRestConnector;
+
 public class JMXConnectorProviderImpl implements JMXConnectorProvider {
     private static boolean called = false;
     public static boolean called() {
@@ -47,6 +49,8 @@ public class JMXConnectorProviderImpl implements JMXConnectorProvider {
 
         if(protocol.equals("rmi"))
             return new RMIConnector(url, map);
+        if(protocol.equals("http"))
+            return new HttpRestConnector(url, map);
         if(protocol.equals("throw-provider-exception"))
             throw new JMXProviderException("I have been asked to throw");
 

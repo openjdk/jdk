@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test ProviderTest.java
  * @summary Tests jar services provider are called
+ * @modules jdk.management.rest/javax.management.remote.http
  *
  * @run clean ProviderTest provider.JMXConnectorProviderImpl provider.JMXConnectorServerProviderImpl
  * @run build ProviderTest provider.JMXConnectorProviderImpl provider.JMXConnectorServerProviderImpl
@@ -49,6 +50,7 @@ import javax.management.MBeanServer;
  */
 import provider.JMXConnectorProviderImpl;
 import provider.JMXConnectorServerProviderImpl;
+
 public class ProviderTest {
 
     public static void main(String[] args) throws Exception {
@@ -64,67 +66,55 @@ public class ProviderTest {
         boolean ok = clientCalled && serverCalled;
         if (!ok) {
             if (!clientCalled)
-                System.out.println("Client provider not called");
+                System.out.println("RMI: Client provider not called");
             if (!serverCalled)
-                System.out.println("Server provider not called");
+                System.out.println("RMI: Server provider not called");
             throw new RuntimeException("Test failed - see log for details");
         }
 
-        // The Service Provider doesn't handle IIOP. Default providers MUST
-        // be called, which may or may not support IIOP.
-        url = new JMXServiceURL("service:jmx:iiop://");
-        try {
-            dotest(url, mbs);
-        } catch (MalformedURLException e) {
-            try {
-                Class.forName("javax.management.remote.rmi._RMIConnectionImpl_Tie");
-                e.printStackTrace(System.out);
-                throw new RuntimeException("MalformedURLException throw but IIOP appears to be supported");
-            } catch (ClassNotFoundException expected) { }
-            System.out.println("MalformedURLException thrown, IIOP transport not supported");
+        url = new JMXServiceURL("service:jmx:http://");
+        dotest(url, mbs);
+
+        clientCalled = provider.JMXConnectorProviderImpl.called();
+        serverCalled = provider.JMXConnectorServerProviderImpl.called();
+        ok = clientCalled && serverCalled;
+        if (!ok) {
+            if (!clientCalled)
+                System.out.println("HTTP: Client provider not called");
+            if (!serverCalled)
+                System.out.println("HTTP: Server provider not called");
+            throw new RuntimeException("Test failed - see log for details");
         }
 
         // Unsupported protocol.
         JMXConnectorServer server = null;
         JMXConnector client = null;
-        url =
-            new JMXServiceURL("service:jmx:unknown-protocol://");
+        url = new JMXServiceURL("service:jmx:unknown-protocol://");
         try {
-            server =
-                JMXConnectorServerFactory.newJMXConnectorServer(url,
-                                                                null,
-                                                                mbs);
+            server = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
             throw new RuntimeException("Exception not thrown.");
         } catch (MalformedURLException e) {
             System.out.println("Expected MalformedURLException thrown.");
         }
 
         try {
-            client =
-                JMXConnectorFactory.newJMXConnector(url,
-                                                    null);
+            client = JMXConnectorFactory.newJMXConnector(url, null);
             throw new RuntimeException("Exception not thrown.");
         } catch (MalformedURLException e) {
             System.out.println("Expected MalformedURLException thrown.");
         }
 
         //JMXConnectorProviderException
-        url =
-            new JMXServiceURL("service:jmx:throw-provider-exception://");
-                try {
-            server =
-                JMXConnectorServerFactory.newJMXConnectorServer(url,
-                                                                null,
-                                                                mbs);
+        url = new JMXServiceURL("service:jmx:throw-provider-exception://");
+        try {
+            server = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
             throw new RuntimeException("Exception not thrown.");
         } catch(JMXProviderException e) {
             System.out.println("Expected JMXProviderException thrown.");
         }
 
         try {
-            client =
-                JMXConnectorFactory.newJMXConnector(url,
-                                                    null);
+            client = JMXConnectorFactory.newJMXConnector(url, null);
             throw new RuntimeException("Exception not thrown.");
         }catch(JMXProviderException e) {
             System.out.println("Expected JMXProviderException thrown.");
@@ -142,14 +132,16 @@ public class ProviderTest {
         server.start();
         JMXServiceURL outputAddr = server.getAddress();
         System.out.println("Server started ["+ outputAddr+ "]");
+        if (!url.getProtocol().equals(outputAddr.getProtocol())) {
+            throw new RuntimeException("Protocol mismatch.");
+        }
 
         client = JMXConnectorFactory.newJMXConnector(outputAddr, null);
 
         client.connect();
         System.out.println("Client connected");
 
-        MBeanServerConnection connection
-            = client.getMBeanServerConnection();
+        MBeanServerConnection connection= client.getMBeanServerConnection();
 
         System.out.println(connection.getDefaultDomain());
     }

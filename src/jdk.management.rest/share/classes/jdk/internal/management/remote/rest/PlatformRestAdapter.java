@@ -180,11 +180,8 @@ public final class PlatformRestAdapter {
     private static void startDefaultRestAdapter(JMXConnectorServer connServer, MBeanServer mbeanServer, Properties properties) {
         env = new HashMap<>();
         // Do we use authentication?
-        final String useAuthenticationStr
-                = properties.getProperty(PropertyNames.USE_AUTHENTICATION,
-                DefaultValues.USE_AUTHENTICATION);
-        final boolean useAuthentication
-                = Boolean.valueOf(useAuthenticationStr);
+        final String useAuthenticationStr = properties.getProperty(PropertyNames.USE_AUTHENTICATION, DefaultValues.USE_AUTHENTICATION);
+        final boolean useAuthentication = Boolean.valueOf(useAuthenticationStr);
 
         String loginConfigName;
         String passwordFileName;
@@ -192,16 +189,13 @@ public final class PlatformRestAdapter {
         if (useAuthentication) {
             env.put("jmx.remote.x.authentication", Boolean.TRUE);
             // Get non-default login configuration
-            loginConfigName
-                    = properties.getProperty(PropertyNames.LOGIN_CONFIG_NAME);
+            loginConfigName = properties.getProperty(PropertyNames.LOGIN_CONFIG_NAME);
             env.put("jmx.remote.x.login.config", loginConfigName);
 
             if (loginConfigName == null) {
                 // Get password file
-                passwordFileName
-                        = properties.getProperty(PropertyNames.PASSWORD_FILE_NAME);
-                env.put("jmx.remote.x.password.file", passwordFileName);
-            }
+                passwordFileName = properties.getProperty(PropertyNames.PASSWORD_FILE_NAME);
+                env.put("jmx.remote.x.password.file", passwordFileName); }
         }
         String serverName = null;
         //MBeanServerResource adapter = new MBeanServerResource(httpServer, ManagementFactory.getPlatformMBeanServer(), serverName, env);
@@ -235,7 +229,7 @@ public final class PlatformRestAdapter {
                                                              String context, Map<String, ?> env) {
         if (httpServer == null) {
             // throw new IllegalStateException("Platform Adapter not initialized");
-            // A possible call via JMXConnectorServerFactory.newJMXConnectorServer() then to HttpConnectorServer.start()
+            // A possible call via JMXConnectorServerFactory.newJMXConnectorServer() then to HttpRestConnectorServer.start()
             // means we need to start http server if needed now.
             try {
                 init(connServer, mbeanServer, new Properties());

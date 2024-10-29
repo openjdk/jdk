@@ -34,7 +34,7 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerProvider;
 import javax.management.remote.JMXServiceURL;
 
-import javax.management.remote.http.HttpConnectorServer;
+import javax.management.remote.http.HttpRestConnectorServer;
 
 public class ServerProvider implements JMXConnectorServerProvider {
 
@@ -46,7 +46,7 @@ public class ServerProvider implements JMXConnectorServerProvider {
             throw new MalformedURLException("Protocol not http: " +
                                             serviceURL.getProtocol());
         }
-        return new HttpConnectorServer(serviceURL, environment, mbeanServer);
+        return new HttpRestConnectorServer(serviceURL, environment, mbeanServer);
     }
 
 }

@@ -91,12 +91,9 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
         if (connected) {
             return;
         }
-        System.err.println("XXXXXX XXXXX HttpRestConnector.connect " + baseURL);
-        new Exception().printStackTrace(System.err);
         // In RMI, the Connector would call RMIServerImpl.newClient over RMI,
         // whch calls connServer.connectionOpened (which adds to list of connections in JmxConnectorServer)
         // and returns an RMIConnection.
-
         connection = new HttpRestConnection(url, baseURL, env); 
         connection.setup();
         connection.setConnector(this);
@@ -115,7 +112,6 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
         // closes a Connector that failed to connect, and expects no IOException.
         connected = false;
         connection.close(); // Close HttpRestConnection
-        new Exception().printStackTrace(System.out);
     }
 
     public void addConnectionNotificationListener(NotificationListener listener,
