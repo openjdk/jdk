@@ -116,7 +116,8 @@ public class CheckLargePages {
                 // 1GB large pages configured and available
                 "CodeCache:\\s+min=1[gG] max=1[gG] base=[^ ]+ size=1[gG] page_size=1[gG]|" +
                 // 1GB large pages configured but none available
-                "Failed to reserve and commit memory with given page size\\. req_addr: [^ ]+ size: 1[gG], page size: 1[gG], \\(errno = 12\\)");
+                "Failed to reserve and commit memory with given page size\\. " +
+                "req_addr: [^ ]+ size: 1[gG], page size: 1[gG], \\(errno = 12\\)");
     }
 
     public static void main(String[] args) throws Exception {
