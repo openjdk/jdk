@@ -866,14 +866,8 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatusEx(&ms);
-#ifdef _LP64
   *limit = (size_t)ms.ullAvailVirtual;
   return true;
-#else
-  // Limit to 1400m because of the 2gb address space wall
-  *limit = MIN2((size_t)1400*M, (size_t)ms.ullAvailVirtual);
-  return true;
-#endif
 }
 
 int os::active_processor_count() {
@@ -2619,7 +2613,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
 
-#if !defined(PRODUCT) && defined(_LP64)
+#if !defined(PRODUCT)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
     // Verify that OS save/restore APX registers.
