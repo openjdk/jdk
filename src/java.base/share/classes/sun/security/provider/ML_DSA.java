@@ -548,7 +548,8 @@ public class ML_DSA {
 
         //Compute t and tr
         mlDsaVectorNtt(s1); //s1 now in NTT domain
-        int[][] As1 = matrixVectorPointwiseMultiply(keygenA, s1);
+        int[][] As1 = new int[mlDsa_k][ML_DSA_N];
+        matrixVectorPointwiseMultiply(As1, keygenA, s1);
         mlDsaVectorInverseNtt(s1); //take s1 out of NTT domain
 
         mlDsaVectorInverseNtt(As1);
@@ -595,17 +596,20 @@ public class ML_DSA {
         int[][] z = null;
         boolean[][] h = null;
         byte[] commitmentHash = new byte[lambda/4];
+        int[][] y = new int[mlDsa_l][ML_DSA_N];
+        int[][] w = new int[mlDsa_k][ML_DSA_N];
+        int[][] w0 = new int[mlDsa_k][ML_DSA_N];
+        int[][] w1 = new int[mlDsa_k][ML_DSA_N];
+        int[] c =  new int[ML_DSA_N];
 
         int kappa = 0;
         while (true) {
-            int[][] y = expandMask(rhoDoublePrime, kappa);
+            expandMask(y, rhoDoublePrime, kappa);
 
             //Compute w and w1
             mlDsaVectorNtt(y); //y is now in NTT domain
-            int[][] w = matrixVectorPointwiseMultiply(aHat, y);
+            matrixVectorPointwiseMultiply(w, aHat, y);
             mlDsaVectorInverseNtt(w); //w is now in normal domain
-            int[][] w0 = new int[mlDsa_k][ML_DSA_N];
-            int[][] w1 = new int[mlDsa_k][ML_DSA_N];
             decompose(w, w0, w1);
             mlDsaVectorInverseNtt(y);
 
@@ -616,7 +620,7 @@ public class ML_DSA {
             hash.reset();
 
             //Get z and r0
-            int[] c = sampleInBall(commitmentHash);
+            sampleInBall(c, commitmentHash);
             mlDsaNtt(c); //c is now in NTT domain
             int[][] cs1 = nttConstMultiply(c, sk.s1());
             int[][] cs2 = nttConstMultiply(c, sk.s2());
@@ -668,7 +672,8 @@ public class ML_DSA {
         hash.reset();
 
         //Get verifiers challenge
-        int[] cHat = sampleInBall(sig.commitmentHash());
+        int[] cHat = new int[ML_DSA_N];
+        sampleInBall(cHat, sig.commitmentHash());
         mlDsaNtt(cHat);
 
         //Compute response norm and put it in NTT domain
@@ -676,7 +681,8 @@ public class ML_DSA {
         mlDsaVectorNtt(sig.response());
 
         //Reconstruct signer's commitment
-        int[][] aHatZ = matrixVectorPointwiseMultiply(aHat, sig.response());
+        int[][] aHatZ = new int[mlDsa_k][ML_DSA_N];
+        matrixVectorPointwiseMultiply(aHatZ, aHat, sig.response());
         int[][] t1Hat = vectorConstMul(1 << ML_DSA_D, pk.t1());
         mlDsaVectorNtt(t1Hat);
         int[][] wApprox = vectorSub(aHatZ, nttConstMultiply(cHat, t1Hat));
@@ -753,8 +759,19 @@ public class ML_DSA {
         return t1;
     }
 
-    public int[][] bitUnpack(byte[] v, int offset, int dim, int maxValue, int bitsPerCoeff) {
-        int[][] res = new int[dim][ML_DSA_N];
+    public int[][] bitUnpack(int[][] result, byte[] v, int offset, int dim, int maxValue, int bitsPerCoeff) {
+        switch (bitsPerCoeff) {
+            case 3 -> { bitUnpackGeneral(result, v, offset, dim, maxValue, 3); }
+            case 4 -> { bitUnpackGeneral(result, v, offset, dim, maxValue, 4); }
+            case 13 -> { bitUnpackGeneral(result, v, offset, dim,  maxValue, 13); }
+            case 18 -> { bitUnpack18(result, v, offset, dim, maxValue); }
+            case 20 -> { bitUnpack20(result, v, offset, dim, maxValue); }
+            default -> throw new RuntimeException("Wrong bitspercoeffb value in bitUnpack (" + bitsPerCoeff + ").");
+        }
+        return result;
+    }
+    public void bitUnpackGeneral(int[][] result,
+            byte[] v, int offset, int dim, int maxValue, int bitsPerCoeff) {
 
         int mask = (1 << bitsPerCoeff) - 1;
         int top = 0;
@@ -766,7 +783,7 @@ public class ML_DSA {
                     acc += ((v[offset++] & 0xff) << top);
                     top += 8;
                 }
-                res[i][j] = maxValue - ((acc >> shift) & mask);
+                result[i][j] = maxValue - ((acc >> shift) & mask);
                 shift += bitsPerCoeff;
                 while (shift >= 8) {
                     top -= 8;
@@ -775,7 +792,43 @@ public class ML_DSA {
                 }
             }
         }
-        return res;
+    }
+    public void bitUnpack18(int [][] result, byte[] v, int offset, int dim, int maxValue) {
+
+        int vIndex = offset;
+        for (int i = 0; i < dim; i++) {
+            for (int j = 0; j < ML_DSA_N; j += 4) {
+                result[i][j] = maxValue - ((v[vIndex] & 0xff) +
+                        ((v[vIndex + 1] & 0xff) << 8) +
+                        ((v[vIndex + 2] & 0x3) << 16));
+                result[i][j + 1] = maxValue - (((v[vIndex + 2] >> 2) & 0x3f) +
+                        ((v[vIndex + 3] & 0xff) << 6) +
+                        ((v[vIndex + 4] & 0xf) << 14));
+                result[i][j + 2] = maxValue - (((v[vIndex + 4] >> 4) & 0xf) +
+                        ((v[vIndex + 5] & 0xff) << 4) +
+                        ((v[vIndex + 6] & 0x3f) << 12));
+                result[i][j + 3] = maxValue - (((v[vIndex + 6] >> 6) & 0x3) +
+                        ((v[vIndex + 7] & 0xff) << 2) +
+                        ((v[vIndex + 8] & 0xff) << 10));
+                vIndex += 9;
+            }
+        }
+    }
+
+    public void bitUnpack20(int[][] result, byte[] v, int offset, int dim, int maxValue) {
+        int vIndex = offset;
+
+        for (int i = 0; i < dim; i++) {
+            for (int j = 0; j < ML_DSA_N; j += 2) {
+                result[i][j] = maxValue - ((v[vIndex] & 0xff) +
+                        ((v[vIndex + 1] & 0xff) << 8) +
+                        ((v[vIndex + 2] & 0xf) << 16));
+                result[i][j + 1] = maxValue - (((v[vIndex + 2] >> 4) & 0xf) +
+                        ((v[vIndex + 3] & 0xff) << 4) +
+                        ((v[vIndex + 4] & 0xff) << 12));
+                vIndex += 5;
+            }
+        }
     }
 
     private void hintBitPack(boolean[][] h, byte[] buffer, int offset) {
@@ -876,16 +929,19 @@ public class ML_DSA {
         //Parse s1
         int start = A_SEED_LEN + K_LEN + TR_LEN;
         int end = start + (32 * mlDsa_l * s1s2CoeffSize);
-        int[][] s1 = bitUnpack(sk, start, mlDsa_l, eta, s1s2CoeffSize);
+        int[][] s1 = new int[mlDsa_l][ML_DSA_N];
+        bitUnpack(s1, sk, start, mlDsa_l, eta, s1s2CoeffSize);
 
         //Parse s2
         start = end;
         end += 32 * s1s2CoeffSize * mlDsa_k;
-        int[][] s2 = bitUnpack(sk, start, mlDsa_k, eta, s1s2CoeffSize);
+        int[][] s2 = new int[mlDsa_k][ML_DSA_N];
+        bitUnpack(s2, sk, start, mlDsa_k, eta, s1s2CoeffSize);
 
         //Parse t0
         start = end;
-        int[][] t0 = bitUnpack(sk, start, mlDsa_k, 1 << 12, T0_COEFF_SIZE);
+        int[][] t0 = new int[mlDsa_k][ML_DSA_N];
+        bitUnpack(t0, sk, start, mlDsa_k, 1 << 12, T0_COEFF_SIZE);
 
         return new ML_DSA_PrivateKey(rho, k, tr, s1, s2, t0);
     }
@@ -910,7 +966,8 @@ public class ML_DSA {
         //Decode z
         int start = lambda / 4;
         int end = start + (32 * mlDsa_l * (1 + gamma1Bits));
-        int[][] z = bitUnpack(sig, start, mlDsa_l, gamma1, gamma1Bits + 1);
+        int[][] z = new int[mlDsa_l][ML_DSA_N];
+        bitUnpack(z, sig, start, mlDsa_l, gamma1, gamma1Bits + 1);
 
         //Decode h
         start = end;
@@ -966,7 +1023,7 @@ public class ML_DSA {
         }
     }
 
-    private int[] sampleInBall(byte[] rho) {
+    private void sampleInBall(int[] c, byte[] rho) {
         var xof = new SHAKE256(0);
         Shake256Slicer slicer = new Shake256Slicer(xof, 8);
         xof.update(rho);
@@ -977,7 +1034,8 @@ public class ML_DSA {
             parity |= sample << 8 * i;
         }
 
-        int[] c = new int[ML_DSA_N];
+        Arrays.fill(c, 0);
+
         int k = 8;
         for (int i = 256 - tau; i < 256; i++) {
             //Get random index < i
@@ -991,7 +1049,6 @@ public class ML_DSA {
             c[j] = (int) (1 - 2 * (parity & 1));
             parity >>= 1;
         }
-        return c;
     }
 
     int[][][] generateA(byte[] seed) {
@@ -1037,8 +1094,7 @@ public class ML_DSA {
         byte[] seed = new byte[S1S2_SEED_LEN + 2];
         System.arraycopy(rhoPrime, 0, seed, 0, S1S2_SEED_LEN);
 
-        int bitsPerCall = 4;
-        Shake256Slicer slicer = new Shake256Slicer(xof, bitsPerCall);
+        Shake256Slicer slicer = new Shake256Slicer(xof, 4);
         for (int i = 0; i < mlDsa_l; i++) {
             seed[S1S2_SEED_LEN] = (byte) i;
             seed[S1S2_SEED_LEN + 1] = 0;
@@ -1087,10 +1143,9 @@ public class ML_DSA {
         }
     }
 
-    private int[][] expandMask(byte[] rho, int mu) {
+    private void expandMask(int[][] result, byte[] rho, int mu) {
         var xof = new SHAKE256(0);
 
-        int[][] res = new int[mlDsa_l][ML_DSA_N];
         int c = 1 + gamma1Bits;
         byte[] v = new byte[mlDsa_l * 32 * c];
         for (int r = 0; r < mlDsa_l; r++) {
@@ -1099,12 +1154,10 @@ public class ML_DSA {
 
             xof.update(rho);
             xof.update(n);
-            for (int i = 0; i < 32*c; i++) {
-                v[r*32*c + i] = xof.squeeze(1)[0];
-            }
+            xof.squeeze(v, r * 32 * c, 32 * c);
             xof.reset();
         }
-        return bitUnpack(v, 0, mlDsa_l, gamma1, c);
+        bitUnpack(result, v, 0, mlDsa_l, gamma1, c);
     }
 
     /*
@@ -1125,46 +1178,26 @@ public class ML_DSA {
     }
 
     private void decompose(int[][] input, int[][] lowPart, int[][] highPart) {
+        int multiplier = (gamma2 == 95232 ? 22 : 8);
         for (int i = 0; i < mlDsa_k; i++) {
-            for (int m = 0; m < ML_DSA_N; m++) {
-                int rplus = (input[i][m] + ML_DSA_Q) % ML_DSA_Q;
-                int r0 = rplus % (2*gamma2);
-                r0 -= r0 > gamma2 ? 2*gamma2 : 0;
-                int r1;
-                if (rplus - r0 == ML_DSA_Q - 1) {
-                    r1 = 0;
-                    r0 = r0 - 1;
-                } else {
-                    r1 = (rplus - r0) / (2*gamma2);
-                }
-                lowPart[i][m] = r0;
-                highPart[i][m] = r1;
-            }
+            ML_DSA.mlDsaDecomposePoly(input[i], lowPart[i], highPart[i], gamma2 * 2, multiplier);
         }
     }
 
-    private int highBits(int input) {
-        int rplus = (input + ML_DSA_Q) % ML_DSA_Q;
-        int r0 = rplus % (2*gamma2);
-        r0 -= r0 > gamma2 ? 2*gamma2 : 0;
-        int r1;
-        if (rplus - r0 == ML_DSA_Q - 1) {
-            r1 = 0;
-            r0 = r0 - 1;
-        } else {
-            r1 = (rplus - r0) / (2*gamma2);
-        }
-        return r1;
+    private int[][] highBits(int[][] input) {
+        int[][] lowPart = new int[mlDsa_k][ML_DSA_N];
+        int[][] highPart = new int[mlDsa_k][ML_DSA_N];
+        decompose(input, lowPart, highPart);
+        return highPart;
     }
 
     private boolean[][] makeHint(int[][] z, int[][] r) {
-        int[][] v1 = vectorAdd(r, z);
+        int[][] r1 = highBits(r);
+        int[][] v1 = highBits(vectorAdd(r,z));
         boolean[][] res = new boolean[mlDsa_k][ML_DSA_N];
         for (int i = 0; i < mlDsa_k; i++) {
             for (int j = 0; j < ML_DSA_N; j++) {
-                int r1High = highBits(r[i][j]);
-                int v1High = highBits(v1[i][j]);
-                res[i][j] = r1High != v1High;
+                res[i][j] = (r1[i][j] != v1[i][j]);
             }
         }
         return res;
@@ -1326,8 +1359,7 @@ public class ML_DSA {
         return 1;
     }
 
-    private int[][] matrixVectorPointwiseMultiply(int[][][] matrix, int[][] vector) {
-        int[][] result = new int[mlDsa_k][ML_DSA_N];
+    private void matrixVectorPointwiseMultiply(int[][] res, int[][][] matrix, int[][] vector) {
         int resulti[] = new int[ML_DSA_N];
         for (int i = 0; i < mlDsa_k; i++) {
             for (int m = 0; m < ML_DSA_N; m++) {
@@ -1340,10 +1372,9 @@ public class ML_DSA {
                 }
             }
             for (int m = 0; m < ML_DSA_N; m++) {
-                result[i][m] = montMul(resulti[m], MONT_R_MOD_Q);
+                res[i][m] = montMul(resulti[m], MONT_R_MOD_Q);
             }
         }
-        return result;
     }
 
     private int[][] nttConstMultiply(int[] a, int[][] b) {
@@ -1358,10 +1389,10 @@ public class ML_DSA {
         int[][] res = new int[vec.length][vec[0].length];
         for (int i = 0; i < vec.length; i++) {
             for (int j = 0; j < vec[0].length; j++) {
-                res[i][j] = (c * vec[i][j]) % ML_DSA_Q;
+                res[i][j] = montMul(c, toMont(vec[i][j]));
             }
         }
-        return res;
+        return res; // -q < res[i][j] < q
     }
 
     // Adds two vectors of polynomials
@@ -1396,15 +1427,14 @@ public class ML_DSA {
 
     int[][] vectorSub(int[][] vec1, int[][] vec2) {
         int dim = vec1.length;
-        int[][] result = new int[dim][ML_DSA_N];
         for (int i = 0; i < dim; i++) {
             for (int j = 0; j < ML_DSA_N; j++) {
                 int tmp = vec1[i][j] - vec2[i][j];
                 tmp += tmp < 0 ? ML_DSA_Q : 0;
-                result[i][j] = tmp;
+                vec1[i][j] = tmp;
             }
         }
-        return result;
+        return vec1;
     }
 
     //Precondition: 2^-31 <= r1 <= 2^31 - 5 * 2^20, and bound < q - 5234431
