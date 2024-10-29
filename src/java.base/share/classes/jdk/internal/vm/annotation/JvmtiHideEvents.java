@@ -28,8 +28,8 @@ package jdk.internal.vm.annotation;
 import java.lang.annotation.*;
 
 /**
- * A method may be annotated with JvmtiHideEvents to hint it is not
- * desirable to sent JVMTI events in context of the annotated method.
+ * A method may be annotated with JvmtiHideEvents to hint the JVMTI events
+ * should not be generated in context of the annotated method.
  *
  * @implNote
  * This annotation is only used for some VirtualThread and Continuation methods.
