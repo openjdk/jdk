@@ -388,9 +388,26 @@ public class Executors {
     }
 
     /**
-     * Returns a thread factory used to create new threads.
+     * Returns a thread factory used to create new threads that
+     * have current context class loader as the context class loader.
+     *
      * This factory creates threads with the same settings as {@link
-     * Executors#defaultThreadFactory}.
+     * Executors#defaultThreadFactory}, additionally setting the
+     * contextClassLoader of new threads to
+     * be the same as the thread invoking this
+     * {@code privilegedThreadFactory} method.
+     *
+     * <p>Note that while tasks running within such threads will have the
+     * same class loader as the current thread, they need not have the same
+     * {@link ThreadLocal} or {@link InheritableThreadLocal} values. If
+     * necessary, particular values of thread locals can be set or reset
+     * before any task runs in {@link ThreadPoolExecutor} subclasses using
+     * {@link ThreadPoolExecutor#beforeExecute(Thread, Runnable)}.
+     * Also, if it is necessary to initialize worker threads to have
+     * the same InheritableThreadLocal settings as some other
+     * designated thread, you can create a custom ThreadFactory in
+     * which that thread waits for and services requests to create
+     * others that will inherit its values.
      *
      * @return a thread factory
      *
@@ -492,7 +509,8 @@ public class Executors {
 
     /**
      * Returns a {@link Callable} object that will, when called,
-     * execute the given {@code callable} and return its result.
+     * execute the given {@code callable} with the current context
+     * class loader as the context class loader.
      *
      * @param callable the underlying task
      * @param <T> the type of the callable's result

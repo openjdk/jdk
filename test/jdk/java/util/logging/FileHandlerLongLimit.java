@@ -32,8 +32,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -52,7 +50,7 @@ public class FileHandlerLongLimit {
 
      // We will test handling of limit and overflow of MeteredStream.written
     public static void run(Properties propertyFile) throws Exception {
-        Configure.setUp(propertyFile);
+        setUp(propertyFile);
         test(propertyFile.getProperty("test.name"), propertyFile,
                 Long.parseLong(propertyFile.getProperty(FileHandler.class.getName()+".limit")));
     }
@@ -130,46 +128,34 @@ public class FileHandlerLongLimit {
             }
         } finally {
             if (userDirWritable) {
-                Configure.doPrivileged(() -> {
-                    // cleanup - delete files that have been created
-                    try {
-                        Files.list(Paths.get(userDir))
-                            .filter((f) -> f.toString().contains(PREFIX))
-                            .forEach((f) -> {
-                                try {
-                                    System.out.println("deleting " + f);
-                                    Files.delete(f);
-                                } catch(Throwable t) {
-                                    System.err.println("Failed to delete " + f + ": " + t);
-                                }
-                            });
-                    } catch(Throwable t) {
-                        System.err.println("Cleanup failed to list files: " + t);
-                        t.printStackTrace();
-                    }
-                });
+                // cleanup - delete files that have been created
+                try {
+                    Files.list(Paths.get(userDir))
+                        .filter((f) -> f.toString().contains(PREFIX))
+                        .forEach((f) -> {
+                            try {
+                                System.out.println("deleting " + f);
+                                Files.delete(f);
+                            } catch(Throwable t) {
+                                System.err.println("Failed to delete " + f + ": " + t);
+                            }
+                        });
+                } catch(Throwable t) {
+                    System.err.println("Cleanup failed to list files: " + t);
+                    t.printStackTrace();
+                }
             }
         }
     }
 
-    static class Configure {
-        static void setUp(Properties propertyFile) {
-            doPrivileged(() -> {
-                try {
-                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                    propertyFile.store(bytes, propertyFile.getProperty("test.name"));
-                    ByteArrayInputStream bais = new ByteArrayInputStream(bytes.toByteArray());
-                    LogManager.getLogManager().readConfiguration(bais);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            });
-        }
-        static void doPrivileged(Runnable run) {
-            run.run();
-        }
-        static <T> T callPrivileged(Callable<T> call) throws Exception {
-            return call.call();
+    static void setUp(Properties propertyFile) {
+        try {
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            propertyFile.store(bytes, propertyFile.getProperty("test.name"));
+            ByteArrayInputStream bais = new ByteArrayInputStream(bytes.toByteArray());
+            LogManager.getLogManager().readConfiguration(bais);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
@@ -227,44 +213,32 @@ public class FileHandlerLongLimit {
     }
 
     private static long getLimit(FileHandler handler) throws Exception {
-        return Configure.callPrivileged((Callable<Long>)() -> {
-            return limitField.getLong(handler);
-        });
+        return limitField.getLong(handler);
     }
     private static OutputStream getMeteredOutput(FileHandler handler) throws Exception {
-        return Configure.callPrivileged((Callable<OutputStream>)() -> {
-            final OutputStream metered = OutputStream.class.cast(meterField.get(handler));
-            return metered;
-        });
+        final OutputStream metered = OutputStream.class.cast(meterField.get(handler));
+        return metered;
     }
     private static TestOutputStream setTestOutputStream(OutputStream metered) throws Exception {
-        return Configure.callPrivileged((Callable<TestOutputStream>)() -> {
-            outField.set(metered, new TestOutputStream(OutputStream.class.cast(outField.get(metered))));
-            return TestOutputStream.class.cast(outField.get(metered));
-        });
+        outField.set(metered, new TestOutputStream(OutputStream.class.cast(outField.get(metered))));
+        return TestOutputStream.class.cast(outField.get(metered));
     }
     private static long getWritten(OutputStream metered) throws Exception {
-        return Configure.callPrivileged((Callable<Long>)() -> {
-            return writtenField.getLong(metered);
-        });
+        return writtenField.getLong(metered);
     }
 
     private static long setWritten(OutputStream metered, long newValue) throws Exception {
-        return Configure.callPrivileged((Callable<Long>)() -> {
-            writtenField.setLong(metered, newValue);
-            return writtenField.getLong(metered);
-        });
+        writtenField.setLong(metered, newValue);
+        return writtenField.getLong(metered);
     }
 
     public static FileHandler testFileHandlerLimit(FileHandlerSupplier supplier,
             long limit) throws Exception {
-        Configure.doPrivileged(() -> {
-            try {
-                Files.deleteIfExists(Paths.get(PREFIX));
-            } catch (IOException x) {
-                throw new RuntimeException(x);
-            }
-        });
+        try {
+            Files.deleteIfExists(Paths.get(PREFIX));
+        } catch (IOException x) {
+            throw new RuntimeException(x);
+        }
         final FileHandler fh = supplier.test();
         try {
             // verify we have the expected limit

@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.FileHandler;
 import java.util.logging.LogManager;
 
@@ -46,7 +45,7 @@ public class FileHandlerPatternExceptions {
 
     // We will test null/empty pattern
     public static void run(Properties propertyFile) throws Exception {
-        Configure.setUp(propertyFile);
+        setUp(propertyFile);
         test(propertyFile.getProperty("test.name"));
     }
 
@@ -79,43 +78,34 @@ public class FileHandlerPatternExceptions {
             }
         } finally {
             if (userDirWritable) {
-                Configure.doPrivileged(() -> {
-                    // cleanup - delete files that have been created
-                    try {
-                        Files.list(Paths.get(userDir))
-                            .filter((f) -> f.toString().contains(PREFIX))
-                            .forEach((f) -> {
-                                try {
-                                    System.out.println("deleting " + f);
-                                    Files.delete(f);
-                                } catch(Throwable t) {
-                                    System.err.println("Failed to delete " + f + ": " + t);
-                                }
-                            });
-                    } catch(Throwable t) {
-                        System.err.println("Cleanup failed to list files: " + t);
-                        t.printStackTrace();
-                    }
-                });
+                // cleanup - delete files that have been created
+                try {
+                    Files.list(Paths.get(userDir))
+                        .filter((f) -> f.toString().contains(PREFIX))
+                        .forEach((f) -> {
+                            try {
+                                System.out.println("deleting " + f);
+                                Files.delete(f);
+                            } catch(Throwable t) {
+                                System.err.println("Failed to delete " + f + ": " + t);
+                            }
+                        });
+                } catch(Throwable t) {
+                    System.err.println("Cleanup failed to list files: " + t);
+                    t.printStackTrace();
+                }
             }
         }
     }
 
-    static class Configure {
-        static void setUp(Properties propertyFile) {
-            doPrivileged(() -> {
-                try {
-                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                    propertyFile.store(bytes, propertyFile.getProperty("test.name"));
-                    ByteArrayInputStream bais = new ByteArrayInputStream(bytes.toByteArray());
-                    LogManager.getLogManager().readConfiguration(bais);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            });
-        }
-        static void doPrivileged(Runnable run) {
-            run.run();
+    static void setUp(Properties propertyFile) {
+        try {
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            propertyFile.store(bytes, propertyFile.getProperty("test.name"));
+            ByteArrayInputStream bais = new ByteArrayInputStream(bytes.toByteArray());
+            LogManager.getLogManager().readConfiguration(bais);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
     }
 

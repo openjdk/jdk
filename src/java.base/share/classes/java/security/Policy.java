@@ -51,25 +51,7 @@ import sun.security.jca.GetInstance;
 @Deprecated(since="17", forRemoval=true)
 public abstract class Policy {
 
-    private static Policy NO_PERMISSIONS_POLICY =
-        new Policy() {
-            @Override
-            public Policy.Parameters getParameters() {
-                return null;
-            }
-            @Override
-            public PermissionCollection getPermissions(CodeSource codesource) {
-                return Policy.UNSUPPORTED_EMPTY_COLLECTION;
-            }
-            @Override
-            public PermissionCollection getPermissions(ProtectionDomain domain) {
-                return Policy.UNSUPPORTED_EMPTY_COLLECTION;
-            }
-            @Override
-            public boolean implies(ProtectionDomain domain, Permission permission) {
-                return false;
-            }
-        };
+    private static Policy NO_PERMISSIONS_POLICY = new Policy() {};
 
     /**
      * Constructor for subclasses to call.
