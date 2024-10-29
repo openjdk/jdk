@@ -82,6 +82,14 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     return false;
   }
 
+  if (_old_generation->is_preparing_for_mark()) {
+    // We have unprocessed old collection candidates, but the heuristic has given up on evacuating them.
+    // This is most likely because they were _all_ pinned at the time of the last mixed evacuation (and
+    // this in turn is most likely because there are just one or two candidate regions remaining).
+    log_debug(gc)("Remaining " UINT32_FORMAT " old regions are being coalesced and filled", unprocessed_old_collection_candidates());
+    return false;
+  }
+
   _first_pinned_candidate = NOT_FOUND;
 
   uint included_old_regions = 0;

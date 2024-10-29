@@ -499,6 +499,7 @@ const char* ShenandoahOldGeneration::state_name(State state) {
 void ShenandoahOldGeneration::transition_to(State new_state) {
   if (_state != new_state) {
     log_info(gc)("Old generation transition from %s to %s", state_name(_state), state_name(new_state));
+    EventMark event("Old was %s, now is %s", state_name(_state), state_name(new_state));
     validate_transition(new_state);
     _state = new_state;
   }
@@ -775,6 +776,7 @@ void ShenandoahOldGeneration::abandon_mixed_evacuations() {
       transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
       break;
     default:
+      log_warning(gc)("Abandon mixed evacuations in unexpected state: %s", state_name(state()));
       ShouldNotReachHere();
       break;
   }
