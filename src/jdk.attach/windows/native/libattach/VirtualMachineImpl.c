@@ -231,16 +231,14 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_openProcess
     }
 
     /*
-     * On Windows 64-bit we need to handle 32-bit tools trying to attach to 64-bit
-     * processes (and visa versa). X-architecture attaching is currently not supported
-     * by this implementation.
+     * On Windows we need to handle 32-bit tools trying to attach to 64-bit
+     * processes, which is currently not supported by this implementation.
      */
     if (_IsWow64Process != NULL) {
-        BOOL isCurrent32bit, isTarget32bit;
-        (*_IsWow64Process)(GetCurrentProcess(), &isCurrent32bit);
+        BOOL isTarget32bit;
         (*_IsWow64Process)(hProcess, &isTarget32bit);
 
-        if (isCurrent32bit != isTarget32bit) {
+        if (isTarget32bit) {
             CloseHandle(hProcess);
             JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException",
                 "Unable to attach to 32-bit process running under WOW64");
