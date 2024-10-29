@@ -24,14 +24,19 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.WinExePackage;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.OverridableResource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
-import static jdk.jpackage.internal.Functional.ThrowingRunnable.toRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
+import jdk.jpackage.internal.resources.ResourceLocator;
 
 @SuppressWarnings("restricted")
 public class WinExeBundler extends AbstractBundler {
@@ -110,7 +115,7 @@ public class WinExeBundler extends AbstractBundler {
 
         // Copy template msi wrapper next to msi file
         final Path exePath = msi.getParent().resolve(pkg.packageFileNameWithSuffix());
-        try (InputStream is = OverridableResource.readDefault("msiwrapper.exe")) {
+        try (InputStream is = ResourceLocator.class.getResourceAsStream("msiwrapper.exe")) {
             Files.copy(is, exePath);
         }
 

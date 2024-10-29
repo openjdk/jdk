@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.PathUtils;
 
 /**
  * WiX pipeline. Compiles and links WiX sources.
@@ -180,7 +181,7 @@ public class WixPipeline {
     }
 
     private Path compileWix3(WixSource wixSource) throws IOException {
-        Path wixObj = wixObjDir.toAbsolutePath().resolve(IOUtils.replaceSuffix(
+        Path wixObj = wixObjDir.toAbsolutePath().resolve(PathUtils.replaceSuffix(
                 IOUtils.getFileName(wixSource.source), ".wixobj"));
 
         List<String> cmdline = new ArrayList<>(List.of(

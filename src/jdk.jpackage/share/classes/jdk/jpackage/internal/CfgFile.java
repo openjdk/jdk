@@ -24,6 +24,12 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.model.LauncherJarStartupInfo;
+import jdk.jpackage.internal.model.LauncherModularStartupInfo;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

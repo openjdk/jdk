@@ -28,6 +28,7 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
+import jdk.jpackage.internal.util.FileUtils;
 
 
 /**
@@ -55,7 +56,7 @@ abstract class AbstractBundler implements Bundler {
     @Override
     public void cleanup(Map<String, ? super Object> params) {
         try {
-            IOUtils.deleteRecursive(
+            FileUtils.deleteRecursive(
                     StandardBundlerParam.TEMP_ROOT.fetchFrom(params));
         } catch (IOException e) {
             Log.verbose(e.getMessage());

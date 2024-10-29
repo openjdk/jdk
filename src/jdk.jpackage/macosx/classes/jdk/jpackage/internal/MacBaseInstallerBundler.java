@@ -25,6 +25,9 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -38,6 +41,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+import jdk.jpackage.internal.util.FileUtils;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
@@ -181,7 +185,7 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                 StandardBundlerParam.getPredefinedAppImage(params);
         if (predefinedImage != null) {
             appDir = appImageRoot.resolve(APP_NAME.fetchFrom(params) + ".app");
-            IOUtils.copyRecursive(predefinedImage, appDir,
+            FileUtils.copyRecursive(predefinedImage, appDir,
                     LinkOption.NOFOLLOW_LINKS);
 
             // Create PackageFile if predefined app image is not signed

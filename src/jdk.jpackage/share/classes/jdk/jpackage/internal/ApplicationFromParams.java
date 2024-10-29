@@ -24,14 +24,19 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.RuntimeBuilder;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.Functional.ThrowingFunction;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
@@ -46,10 +51,18 @@ import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
 import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
 
-final class ApplicationFromParams {
+record ApplicationFromParams(
+        Function<Map<String, ? super Object>, Launcher> launcherSupplier) {
 
-    static Application create(Map<String, ? super Object> params,
-            Function<Map<String, ? super Object>, Launcher> launcherSupplier) throws ConfigException, IOException {
+    ApplicationFromParams {
+        Objects.requireNonNull(launcherSupplier);
+    }
+
+    ApplicationFromParams() {
+        this(new LauncherFromParams()::create);
+    }
+
+    Application create(Map<String, ? super Object> params) throws ConfigException, IOException {
         var name = APP_NAME.fetchFrom(params);
         var description = DESCRIPTION.fetchFrom(params);
         var version = VERSION.fetchFrom(params);
@@ -61,8 +74,10 @@ final class ApplicationFromParams {
         var predefinedAppImage = getPredefinedAppImage(params);
         if (name == null && predefinedAppImage == null) {
             // Can happen when no name is given, and using a foreign app-image
-            throw new ConfigException(I18N.getString("error.no.name"), I18N.getString(
-                    "error.no.name.advice"));
+            throw ConfigException.build()
+                    .message("error.no.name")
+                    .advice("error.no.name.advice")
+                    .create();
         }
 
         RuntimeBuilder runtimeBuilder;
@@ -96,8 +111,10 @@ final class ApplicationFromParams {
                 return launcherSupplier.apply(mergeParams(params, launcherParams));
             }).toList();
 
-            var startupInfos = Stream.concat(Stream.of(mainLauncher), additionalLaunchers.stream()).map(
-                    Launcher::startupInfo).toList();
+            var startupInfos = Stream.concat(
+                    Stream.of(mainLauncher),
+                    additionalLaunchers.stream()
+            ).map(Launcher::startupInfo).toList();
 
             runtimeBuilder = RuntimeBuilderFromParams.create(params, startupInfos);
         }
@@ -128,7 +145,6 @@ final class ApplicationFromParams {
         return BundlerParamInfo.createBundlerParam("target.application", valueFunc);
     }
 
-    static final BundlerParamInfo<Application> APPLICATION = createBundlerParam(params -> {
-        return ApplicationFromParams.create(params, LauncherFromParams::create);
-    });
+    static final BundlerParamInfo<Application> APPLICATION = createBundlerParam(
+            new ApplicationFromParams()::create);
 }

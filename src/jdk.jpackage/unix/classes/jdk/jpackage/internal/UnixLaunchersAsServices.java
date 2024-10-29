@@ -24,6 +24,9 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.OverridableResource;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;

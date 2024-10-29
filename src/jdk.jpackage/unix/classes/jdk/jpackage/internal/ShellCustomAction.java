@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.OverridableResource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import jdk.jpackage.internal.resources.ResourceLocator;
 
 /**
  * Interface to add custom actions composed of shell commands to installers.
@@ -105,7 +107,7 @@ abstract class ShellCustomAction {
     }
 
     protected static String stringifyTextFile(String resourceName) throws IOException {
-        try ( InputStream is = OverridableResource.readDefault(resourceName);
+        try ( InputStream is = ResourceLocator.class.getResourceAsStream(resourceName);
                 InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
                 BufferedReader reader = new BufferedReader(isr)) {
             return reader.lines().collect(Collectors.joining("\n"));

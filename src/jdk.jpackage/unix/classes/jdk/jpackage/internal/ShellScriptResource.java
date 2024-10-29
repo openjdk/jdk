@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.OverridableResource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

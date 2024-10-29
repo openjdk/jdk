@@ -24,11 +24,13 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
 import java.nio.file.Path;
 import java.util.Map;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import jdk.jpackage.internal.BuildEnv.Impl;
 import static jdk.jpackage.internal.BuildEnv.withAppImageDir;
+import jdk.jpackage.internal.resources.ResourceLocator;
 
 final class BuildEnvFromParams {
 
@@ -36,7 +38,7 @@ final class BuildEnvFromParams {
         var root = StandardBundlerParam.TEMP_ROOT.fetchFrom(params);
         var resourceDir = StandardBundlerParam.RESOURCE_DIR.fetchFrom(params);
 
-        var defaultEnv = new Impl(root, resourceDir);
+        var defaultEnv = new Impl(root, resourceDir, ResourceLocator.class);
 
         Path appImageDir;
         if (StandardBundlerParam.isRuntimeInstaller(params)) {

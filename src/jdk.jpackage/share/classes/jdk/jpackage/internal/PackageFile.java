@@ -25,6 +25,7 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

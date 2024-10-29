@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.OverridableResource;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import jdk.jpackage.internal.resources.ResourceLocator;
 
 /**
  * Shell scripts of a package.
@@ -83,7 +85,8 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
         }
 
         OverridableResource createResource() {
-            var resource = new OverridableResource(defaultName).setCategory(category);
+            var resource = new OverridableResource(defaultName,
+                    ResourceLocator.class).setCategory(category);
             return getDefaultPublicName().map(resource::setPublicName).orElse(
                     resource);
         }

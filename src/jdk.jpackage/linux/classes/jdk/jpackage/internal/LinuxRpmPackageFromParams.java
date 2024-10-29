@@ -24,11 +24,13 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LinuxRpmPackage;
 import java.util.Map;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
-import jdk.jpackage.internal.LinuxRpmPackage.Impl;
+import jdk.jpackage.internal.model.LinuxRpmPackage.Impl;
 import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
-import static jdk.jpackage.model.StandardPackageType.LINUX_RPM;
+import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
 
 final class LinuxRpmPackageFromParams {
 

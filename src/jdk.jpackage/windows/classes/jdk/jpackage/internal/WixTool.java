@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.DottedVersion;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -41,6 +43,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.util.PathUtils;
 
 /**
  * WiX tool.
@@ -51,7 +54,7 @@ public enum WixTool {
     Wix4("wix", DottedVersion.lazy("4.0.4"));
 
     WixTool(String commandName, DottedVersion minimalVersion) {
-        this.toolFileName = IOUtils.addSuffix(Path.of(commandName), ".exe");
+        this.toolFileName = PathUtils.addSuffix(Path.of(commandName), ".exe");
         this.minimalVersion = minimalVersion;
     }
 

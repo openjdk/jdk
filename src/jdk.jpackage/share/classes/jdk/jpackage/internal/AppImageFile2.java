@@ -24,6 +24,11 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,6 +48,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -108,7 +114,7 @@ final class AppImageFile2 {
      * @throws IOException
      */
     void save(Path appImageDir) throws IOException {
-        IOUtils.createXml(getPathInAppImage(appImageDir), xml -> {
+        XmlUtils.createXml(getPathInAppImage(appImageDir), xml -> {
             xml.writeStartElement("jpackage-state");
             xml.writeAttribute("version", creatorVersion);
             xml.writeAttribute("platform", creatorPlatform);
@@ -171,7 +177,7 @@ final class AppImageFile2 {
      */
     static AppImageFile2 load(Path appImageDir) throws ConfigException, IOException {
         try {
-            Document doc = IOUtils.initDocumentBuilder().parse(
+            Document doc = XmlUtils.initDocumentBuilder().parse(
                     Files.newInputStream(getPathInAppImage(appImageDir)));
 
             XPath xPath = XPathFactory.newInstance().newXPath();

@@ -24,10 +24,13 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.ConfigException;
 import java.util.Map;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
-import jdk.jpackage.internal.LinuxPackage.Impl;
-import jdk.jpackage.model.StandardPackageType;
+import jdk.jpackage.internal.model.LinuxPackage.Impl;
+import jdk.jpackage.internal.model.StandardPackageType;
 
 final class LinuxPackageFromParams {
 
@@ -48,7 +51,8 @@ final class LinuxPackageFromParams {
             });
         }
 
-        return new Impl(pkg, menuGroupName, category, additionalDependencies, release);
+        return new Impl(pkg, menuGroupName, category, additionalDependencies,
+                release, LinuxPackageArch.getValue(pkg.asStandardPackageType()));
     }
 
     private static final BundlerParamInfo<String> LINUX_CATEGORY = createStringBundlerParam(

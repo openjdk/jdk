@@ -22,19 +22,16 @@
  */
 
 import java.nio.file.Path;
-import java.nio.file.Files;
-import jdk.jpackage.internal.ApplicationLayout;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
-import jdk.jpackage.test.Annotations.Parameters;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-
 import jdk.internal.util.OSVersion;
+import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.ApplicationLayout;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.TKit;
+
 
 /**
  * Tests generation of packages with input folder containing empty folders.

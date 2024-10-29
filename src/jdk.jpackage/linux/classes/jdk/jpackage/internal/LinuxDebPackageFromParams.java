@@ -24,10 +24,12 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LinuxDebPackage;
 import java.util.Map;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
-import static jdk.jpackage.model.StandardPackageType.LINUX_DEB;
+import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 
 final class LinuxDebPackageFromParams {
 

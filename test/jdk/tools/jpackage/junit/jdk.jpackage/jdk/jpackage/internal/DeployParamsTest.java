@@ -22,6 +22,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.PackagerException;
 import java.nio.file.Path;
 import java.io.IOException;
 import org.hamcrest.BaseMatcher;

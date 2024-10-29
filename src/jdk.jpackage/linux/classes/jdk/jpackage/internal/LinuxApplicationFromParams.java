@@ -24,31 +24,30 @@
  */
 package jdk.jpackage.internal;
 
-import java.io.IOException;
+import jdk.jpackage.internal.model.LinuxApplication;
+import jdk.jpackage.internal.model.LinuxLauncher;
 import java.util.Map;
 import java.util.stream.Stream;
 import static jdk.jpackage.internal.ApplicationFromParams.createBundlerParam;
-import jdk.jpackage.internal.LinuxApplication.Impl;
+import jdk.jpackage.internal.model.LinuxApplication.Impl;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 
 final class LinuxApplicationFromParams {
 
-    private static LinuxApplication create(Map<String, ? super Object> params) throws ConfigException, IOException {
-        var app = ApplicationFromParams.create(params, launcherParams -> {
-            var launcher = LauncherFromParams.create(launcherParams);
-
-            var shortcut = Stream.of(SHORTCUT_HINT, LINUX_SHORTCUT_HINT).filter(param -> {
-                return launcherParams.containsKey(param.getID());
-            }).map(param -> {
-                return param.fetchFrom(launcherParams);
-            }).findFirst();
-            return new LinuxLauncher.Impl(launcher, shortcut);
-        });
-        return new Impl(app);
+    private static LinuxLauncher createLauncher(Map<String, ? super Object> params) {
+        var launcher = new LauncherFromParams().create(params);
+        var shortcut = Stream.of(SHORTCUT_HINT, LINUX_SHORTCUT_HINT).filter(param -> {
+            return params.containsKey(param.getID());
+        }).map(param -> {
+            return param.fetchFrom(params);
+        }).findFirst();
+        return new LinuxLauncher.Impl(launcher, shortcut);
     }
 
-    static final BundlerParamInfo<LinuxApplication> APPLICATION = createBundlerParam(
-            LinuxApplicationFromParams::create);
+    static final BundlerParamInfo<LinuxApplication> APPLICATION = createBundlerParam(params -> {
+        var app = new ApplicationFromParams(LinuxApplicationFromParams::createLauncher).create(params);
+        return new Impl(app);
+    });
 
     private static final BundlerParamInfo<Boolean> LINUX_SHORTCUT_HINT = new BundlerParamInfo<>(
             Arguments.CLIOptions.LINUX_SHORTCUT_HINT.getId(),

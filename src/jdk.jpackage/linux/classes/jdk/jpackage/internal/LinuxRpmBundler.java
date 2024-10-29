@@ -25,6 +25,12 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LinuxRpmPackage;
+import jdk.jpackage.internal.model.DottedVersion;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;

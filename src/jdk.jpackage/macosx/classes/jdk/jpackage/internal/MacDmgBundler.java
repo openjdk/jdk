@@ -25,6 +25,9 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.util.PathGroup;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +43,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import static jdk.jpackage.internal.MacAppImageBuilder.ICON_ICNS;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
-import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.createResource;
 
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
@@ -48,6 +51,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
+import jdk.jpackage.internal.util.FileUtils;
 
 public class MacDmgBundler extends MacBaseInstallerBundler {
 
@@ -294,7 +298,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                     MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params));
             Path dest = root.resolve("Contents/Home");
 
-            IOUtils.copyRecursive(source, dest);
+            FileUtils.copyRecursive(source, dest);
 
             srcFolder = newRoot;
         }
@@ -319,7 +323,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         List <String> dmgContent = DMG_CONTENT.fetchFrom(params);
         for (String content : dmgContent) {
             Path path = Path.of(content);
-            IOUtils.copyRecursive(path, srcFolder.resolve(path.getFileName()));
+            FileUtils.copyRecursive(path, srcFolder.resolve(path.getFileName()));
         }
         // create temp image
         ProcessBuilder pb = new ProcessBuilder(
@@ -381,9 +385,9 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 Path destPath = mountedRoot
                         .resolve(srcFolder.getFileName());
                 Files.createDirectory(destPath);
-                IOUtils.copyRecursive(srcFolder, destPath);
+                FileUtils.copyRecursive(srcFolder, destPath);
             } else {
-                IOUtils.copyRecursive(srcFolder, mountedRoot);
+                FileUtils.copyRecursive(srcFolder, mountedRoot);
             }
         }
 

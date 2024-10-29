@@ -26,6 +26,8 @@
 package jdk.jpackage.internal;
 
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.OverridableResource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,8 +42,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.Functional.ThrowingFunction;
-import static jdk.jpackage.internal.RuntimeBuilder.getDefaultModulePath;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
+import jdk.jpackage.internal.resources.ResourceLocator;
+import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
 
 /**
  * Standard bundler parameters.
@@ -556,6 +559,12 @@ final class StandardBundlerParam {
                             applicationImage.toString()));
         }
         return applicationImage;
+    }
+    
+    static OverridableResource createResource(String defaultName,
+            Map<String, ? super Object> params) {
+        return new OverridableResource(defaultName, ResourceLocator.class).setResourceDir(
+                RESOURCE_DIR.fetchFrom(params));
     }
 
     private static String getDefaultAppVersion(Map<String, ? super Object> params) {

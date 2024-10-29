@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.WinMsiPackage;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -31,8 +33,8 @@ import java.util.UUID;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
-import jdk.jpackage.internal.WinMsiPackage.Impl;
-import static jdk.jpackage.model.StandardPackageType.WIN_MSI;
+import jdk.jpackage.internal.model.WinMsiPackage.Impl;
+import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 
 final class WinMsiPackageFromParams {
 

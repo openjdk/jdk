@@ -24,6 +24,10 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.ConfigException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
@@ -52,8 +56,6 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         // Order is important!
         LinuxPackage pkg = pkgParam.fetchFrom(params);
         var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
-
-        FileAssociation.verify(FileAssociation.fetchFrom(params));
 
         for (var validator: getToolValidators()) {
             ConfigException ex = validator.validate();

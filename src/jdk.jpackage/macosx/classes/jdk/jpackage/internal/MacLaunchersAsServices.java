@@ -24,12 +24,15 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.Launcher;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import jdk.jpackage.internal.util.PathUtils;
 
 /**
  * Helper to install launchers as services using "launchd".
@@ -72,7 +75,7 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
 
             // It is recommended to set value of "label" property in launchd
             // .plist file equal to the name of this .plist file without the suffix.
-            String label = IOUtils.replaceSuffix(plistFilename.getFileName(), "").toString();
+            String label = PathUtils.replaceSuffix(plistFilename.getFileName(), "").toString();
 
             getResource()
                     .setPublicName(plistFilename)

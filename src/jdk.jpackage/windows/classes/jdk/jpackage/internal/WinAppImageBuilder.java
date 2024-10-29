@@ -24,6 +24,10 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.WinLauncher;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.WinApplication;
 import java.io.IOException;
 import java.nio.file.Path;
 

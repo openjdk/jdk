@@ -24,7 +24,7 @@
 import java.nio.file.Path;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.test.ApplicationLayout;
 
 /**
  * Tests generation of app image with input folder containing empty folders.

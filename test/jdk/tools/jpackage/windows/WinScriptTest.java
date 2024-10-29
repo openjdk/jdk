@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.ArrayList;
-import jdk.jpackage.internal.IOUtils;
+import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -148,7 +147,7 @@ public class WinScriptTest {
         }
 
         void createScript(JPackageCommand cmd) throws IOException {
-           IOUtils.createXml(Path.of(cmd.getArgumentValue("--resource-dir"),
+           XmlUtils.createXml(Path.of(cmd.getArgumentValue("--resource-dir"),
                     String.format("%s-%s.wsf", cmd.name(), scriptSuffixName)), xml -> {
                 xml.writeStartElement("job");
                 xml.writeAttribute("id", "main");

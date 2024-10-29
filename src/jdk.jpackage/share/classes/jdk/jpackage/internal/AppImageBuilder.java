@@ -25,12 +25,19 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.OverridableResource;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import jdk.jpackage.internal.util.FileUtils;
 
 
 final class AppImageBuilder {
@@ -82,7 +89,7 @@ final class AppImageBuilder {
             }
         }
 
-        IOUtils.copyRecursive(srcDir, dstDir.toAbsolutePath() /*, excludes */);
+        FileUtils.copyRecursive(srcDir, dstDir.toAbsolutePath() /*, excludes */);
     }
 
     void execute(BuildEnv env) throws IOException, PackagerException {

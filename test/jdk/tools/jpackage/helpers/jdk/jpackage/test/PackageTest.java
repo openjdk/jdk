@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import java.awt.Desktop;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +46,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
 import static jdk.jpackage.test.Functional.ThrowingBiConsumer.toBiConsumer;
 import jdk.jpackage.test.Functional.ThrowingConsumer;

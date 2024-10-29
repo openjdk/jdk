@@ -35,7 +35,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.IOUtils;
+import jdk.jpackage.internal.util.PathUtils;
 import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.MAC_PKG;
@@ -335,7 +335,7 @@ public final class LauncherAsServiceVerifier {
         TKit.assertEquals(installedLauncherPath.toString(), args.get(0),
                 "Check path to launcher in 'ProgramArguments' property in the property file");
 
-        var expectedLabel = IOUtils.replaceSuffix(servicePlistFile.getFileName(), "").toString();
+        var expectedLabel = PathUtils.replaceSuffix(servicePlistFile.getFileName(), "").toString();
         TKit.assertEquals(expectedLabel, servicePlist.queryValue("Label"),
                 "Check value of 'Label' property in the property file");
     }

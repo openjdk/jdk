@@ -25,6 +25,11 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LinuxDebPackage;
+import jdk.jpackage.internal.model.OverridableResource;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -47,8 +52,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
-import static jdk.jpackage.model.StandardPackageType.LINUX_DEB;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 
 public class LinuxDebBundler extends LinuxPackageBundler {
 

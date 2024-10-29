@@ -25,6 +25,7 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,7 +59,7 @@ import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
 import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
-import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.COPYRIGHT;
@@ -75,6 +76,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
+import static jdk.jpackage.internal.StandardBundlerParam.createResource;
 
 public class MacAppImageBuilder extends AbstractAppImageBuilder {
 

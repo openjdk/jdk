@@ -26,8 +26,8 @@ package jdk.jpackage.internal;
 
 import java.util.function.Function;
 
-final class Getter {
-    static <T, C> T getValueOrDefault(C mainSrc, C defaultSrc, Function<C, T> getter) {
+public final class Getter {
+    public static <T, C> T getValueOrDefault(C mainSrc, C defaultSrc, Function<C, T> getter) {
         try {
             return getter.apply(mainSrc);
         } catch (UnsupportedOperationException ex) {

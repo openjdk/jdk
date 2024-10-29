@@ -25,6 +25,7 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
 import java.text.MessageFormat;
 
 final class PackageProperty {

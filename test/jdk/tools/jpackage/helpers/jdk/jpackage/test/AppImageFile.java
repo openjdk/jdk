@@ -29,8 +29,7 @@ import java.util.Optional;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.ApplicationLayout;
-import jdk.jpackage.internal.IOUtils;
+import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -49,7 +48,7 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
     }
 
     public void save(Path appImageDir) throws IOException {
-        IOUtils.createXml(getPathInAppImage(appImageDir), xml -> {
+        XmlUtils.createXml(getPathInAppImage(appImageDir), xml -> {
             xml.writeStartElement("jpackage-state");
             xml.writeAttribute("version", getVersion());
             xml.writeAttribute("platform", getPlatform());
@@ -78,7 +77,7 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
 
     public static AppImageFile load(Path appImageDir) {
         try {
-            Document doc = IOUtils.initDocumentBuilder().parse(
+            Document doc = XmlUtils.initDocumentBuilder().parse(
                     Files.newInputStream(getPathInAppImage(appImageDir)));
 
             XPath xPath = XPathFactory.newInstance().newXPath();

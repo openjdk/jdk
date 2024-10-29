@@ -24,6 +24,9 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.model.LauncherJarStartupInfo;
+import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import java.util.Map;
 import static jdk.jpackage.internal.StandardBundlerParam.ARGUMENTS;
 import static jdk.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;

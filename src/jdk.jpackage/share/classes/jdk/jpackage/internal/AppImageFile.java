@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,6 +60,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
+import jdk.jpackage.internal.util.XmlUtils;
 
 final class AppImageFile {
 
@@ -247,7 +249,7 @@ final class AppImageFile {
             addLauncherInfoSave = appImage.getAddLaunchers();
         }
 
-        IOUtils.createXml(getPathInAppImage(appImageDir), xml -> {
+        XmlUtils.createXml(getPathInAppImage(appImageDir), xml -> {
             xml.writeStartElement("jpackage-state");
             xml.writeAttribute("version", getVersion());
             xml.writeAttribute("platform", getPlatform());

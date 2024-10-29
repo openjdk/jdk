@@ -24,15 +24,18 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.Application;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
-import jdk.jpackage.internal.Functional.ThrowingFunction;
-import static jdk.jpackage.internal.Functional.ThrowingSupplier.toSupplier;
-import jdk.jpackage.internal.Package.Impl;
-import jdk.jpackage.model.PackageType;
-import jdk.jpackage.model.StandardPackageType;
-import static jdk.jpackage.internal.Package.mapInstallDir;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import jdk.jpackage.internal.model.Package.Impl;
+import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.StandardPackageType;
+import static jdk.jpackage.internal.model.Package.mapInstallDir;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;

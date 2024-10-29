@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ApplicationLayout;
 import java.nio.file.Path;
 
 /**

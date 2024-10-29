@@ -45,8 +45,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.ApplicationLayout;
-import jdk.jpackage.internal.PackageFile;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;

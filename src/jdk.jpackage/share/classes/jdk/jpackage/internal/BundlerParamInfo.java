@@ -27,7 +27,8 @@ package jdk.jpackage.internal;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 /**
  * BundlerParamInfo<T>
@@ -53,7 +54,7 @@ record BundlerParamInfo<T>(String id, Class<T> valueType,
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     static <T2> BundlerParamInfo<T2> createBundlerParam(String id,
-            Functional.ThrowingFunction<Map<String, ? super Object>, T2> valueFunc) {
+            ThrowingFunction<Map<String, ? super Object>, T2> valueFunc) {
         return new BundlerParamInfo(id, Object.class, toFunction(valueFunc), null);
     }
 

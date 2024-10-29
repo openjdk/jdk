@@ -24,6 +24,11 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.WinExePackage;
+import jdk.jpackage.internal.model.WinLauncher;
+import jdk.jpackage.internal.model.WinApplication;
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.model.OverridableResource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

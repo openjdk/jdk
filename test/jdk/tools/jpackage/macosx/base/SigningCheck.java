@@ -22,10 +22,6 @@
  */
 
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.io.IOException;
 
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Executor;

@@ -24,6 +24,11 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.LinuxLauncher;
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.OverridableResource;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +48,10 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
+import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.XmlUtils;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 /**
  * Helper to create files for desktop integration.
@@ -60,9 +68,8 @@ final class DesktopIntegration extends ShellCustomAction {
 
     private DesktopIntegration(BuildEnv env, LinuxPackage pkg, LinuxLauncher launcher) throws IOException {
 
-        associations = launcher.fileAssociations().stream()
-                .filter(fa -> !fa.mimeTypes.isEmpty())
-                .map(LinuxFileAssociation::new).toList();
+        associations = launcher.fileAssociations().stream().map(
+                LinuxFileAssociation::new).toList();
 
         this.env = env;
         this.pkg = pkg;
@@ -155,8 +162,6 @@ final class DesktopIntegration extends ShellCustomAction {
 
     @Override
     protected Map<String, String> createImpl() throws IOException {
-        associations.forEach(assoc -> assoc.data.verify());
-
         if (iconFile != null) {
             // Create application icon file.
             iconResource.saveToFile(iconFile.srcPath());
@@ -340,37 +345,33 @@ final class DesktopIntegration extends ShellCustomAction {
     }
 
     private void appendFileAssociation(XMLStreamWriter xml,
-            FileAssociation assoc) throws XMLStreamException {
+            LinuxFileAssociation fa) throws XMLStreamException {
 
-        for (var mimeType : assoc.mimeTypes) {
             xml.writeStartElement("mime-type");
-            xml.writeAttribute("type", mimeType);
+            xml.writeAttribute("type", fa.mimeType());
 
-            final String description = assoc.description;
+            final String description = fa.description();
             if (description != null && !description.isEmpty()) {
                 xml.writeStartElement("comment");
                 xml.writeCharacters(description);
                 xml.writeEndElement();
             }
 
-            for (String ext : assoc.extensions) {
-                xml.writeStartElement("glob");
-                xml.writeAttribute("pattern", "*." + ext);
-                xml.writeEndElement();
-            }
+            xml.writeStartElement("glob");
+            xml.writeAttribute("pattern", "*." + fa.extension());
+            xml.writeEndElement();
 
             xml.writeEndElement();
-        }
     }
 
     private void createFileAssociationsMimeInfoFile() throws IOException {
-        IOUtils.createXml(mimeInfoFile.srcPath(), xml -> {
+        XmlUtils.createXml(mimeInfoFile.srcPath(), xml -> {
             xml.writeStartElement("mime-info");
             xml.writeDefaultNamespace(
                     "http://www.freedesktop.org/standards/shared-mime-info");
 
-            for (var assoc : associations) {
-                appendFileAssociation(xml, assoc.data);
+            for (var fa : associations) {
+                appendFileAssociation(xml, fa);
             }
 
             xml.writeEndElement();
@@ -380,30 +381,27 @@ final class DesktopIntegration extends ShellCustomAction {
     private void addFileAssociationIconFiles(ShellCommands shellCommands)
             throws IOException {
         Set<String> processedMimeTypes = new HashSet<>();
-        for (var assoc : associations) {
-            if (assoc.iconSize <= 0) {
+        for (var fa : associations) {
+            if (fa.icon() == null) {
                 // No icon.
                 continue;
             }
 
-            for (var mimeType : assoc.data.mimeTypes) {
-                if (processedMimeTypes.contains(mimeType)) {
-                    continue;
-                }
-
-                processedMimeTypes.add(mimeType);
-
-                // Create icon name for mime type from mime type.
-                var faIconFile = createDesktopFile(mimeType.replace(
-                        File.separatorChar, '-') + IOUtils.getSuffix(
-                                assoc.data.iconPath));
-
-                IOUtils.copyFile(assoc.data.iconPath,
-                        faIconFile.srcPath());
-
-                shellCommands.addIcon(mimeType, faIconFile.installPath(),
-                        assoc.iconSize);
+            var mimeType = fa.mimeType();
+            if (processedMimeTypes.contains(mimeType)) {
+                continue;
             }
+
+            processedMimeTypes.add(mimeType);
+
+            // Create icon name for mime type from mime type.
+            var faIconFile = createDesktopFile(mimeType.replace(File.separatorChar,
+                    '-') + PathUtils.getSuffix(fa.icon()));
+
+            IOUtils.copyFile(fa.icon(), faIconFile.srcPath());
+
+            shellCommands.addIcon(mimeType, faIconFile.installPath(),
+                    fa.iconSize);
         }
     }
 
@@ -418,10 +416,7 @@ final class DesktopIntegration extends ShellCustomAction {
     }
 
     private List<String> getMimeTypeNamesFromFileAssociations() {
-        return associations.stream()
-                .map(fa -> fa.data.mimeTypes)
-                .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList());
+        return associations.stream().map(FileAssociation::mimeType).toList();
     }
 
     private static int getSquareSizeOfImage(File f) {
@@ -460,18 +455,27 @@ final class DesktopIntegration extends ShellCustomAction {
         return commonIconSize;
     }
 
-    private static class LinuxFileAssociation {
+    private static class LinuxFileAssociation extends FileAssociation.Proxy<FileAssociation> {
         LinuxFileAssociation(FileAssociation fa) {
-            this.data = fa;
-            if (fa.iconPath != null && Files.isReadable(fa.iconPath)) {
-                iconSize = getSquareSizeOfImage(fa.iconPath.toFile());
+            super(fa);
+            var icon = fa.icon();
+            if (icon != null && Files.isReadable(icon)) {
+                iconSize = getSquareSizeOfImage(icon.toFile());
             } else {
                 iconSize = -1;
             }
         }
 
-        final FileAssociation data;
-        final int iconSize;
+        @Override
+        public Path icon() {
+            if (iconSize < 0) {
+                return null;
+            } else {
+                return super.icon();
+            }
+        }
+
+        private final int iconSize;
     }
 
     private final BuildEnv env;

@@ -24,9 +24,11 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.OverridableResource;
 import java.nio.file.Path;
+import java.util.Optional;
 
-interface BuildEnv {
+public interface BuildEnv {
 
     Path buildRoot();
 
@@ -46,21 +48,26 @@ interface BuildEnv {
         return buildRoot().resolve("config");
     }
 
-    default OverridableResource createResource(String defaultName) {
-        return new OverridableResource(defaultName).setResourceDir(resourceDir());
-    }
+    OverridableResource createResource(String defaultName);
 
-    record Impl(Path buildRoot, Path resourceDir) implements BuildEnv {
-
-    }
-
-    static BuildEnv withAppImageDir(BuildEnv env, Path appImageDir) {
+    public static BuildEnv withAppImageDir(BuildEnv env, Path appImageDir) {
         return new Proxy(env) {
             @Override
             public Path appImageDir() {
                 return appImageDir;
             }
         };
+    }
+
+    public static record Impl(Path buildRoot, Path resourceDir, Class<?> resourceLocator) implements BuildEnv {
+        @Override
+        public OverridableResource createResource(String defaultName) {
+            if (defaultName != null) {
+                return new OverridableResource(defaultName, resourceLocator);
+            } else {
+                return new OverridableResource();
+            }
+        }
     }
 
     static class Proxy implements BuildEnv {
@@ -77,6 +84,11 @@ interface BuildEnv {
         @Override
         public Path resourceDir() {
             return target.resourceDir();
+        }
+
+        @Override
+        public OverridableResource createResource(String defaultName) {
+            return target.createResource(defaultName);
         }
 
         private final BuildEnv target;

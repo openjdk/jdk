@@ -25,6 +25,10 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -35,6 +39,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import jdk.jpackage.internal.resources.ResourceLocator;
+import jdk.jpackage.internal.util.FileUtils;
 
 /*
  * AbstractAppImageBuilder
@@ -83,7 +88,7 @@ public abstract class AbstractAppImageBuilder {
             throws IOException {
         Path inputPath = SOURCE_DIR.fetchFrom(params);
         if (inputPath != null) {
-            IOUtils.copyRecursive(SOURCE_DIR.fetchFrom(params),
+            FileUtils.copyRecursive(SOURCE_DIR.fetchFrom(params),
                     appLayout.appDirectory());
         }
 
@@ -91,7 +96,7 @@ public abstract class AbstractAppImageBuilder {
 
         List<Path> items = APP_CONTENT.fetchFrom(params);
         for (Path item : items) {
-            IOUtils.copyRecursive(item,
+            FileUtils.copyRecursive(item,
                 appLayout.contentDirectory().resolve(item.getFileName()));
         }
     }

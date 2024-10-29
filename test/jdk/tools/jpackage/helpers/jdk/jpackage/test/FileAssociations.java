@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.IOUtils;
+import jdk.jpackage.internal.util.PathUtils;
 
 
 final public class FileAssociations {
@@ -79,7 +79,7 @@ final public class FileAssociations {
         if (icon == null) {
             return null;
         }
-        return Path.of(getMime().replace('/', '-') + IOUtils.getSuffix(icon));
+        return Path.of(getMime().replace('/', '-') + PathUtils.getSuffix(icon));
     }
 
     Path getPropertiesFile() {

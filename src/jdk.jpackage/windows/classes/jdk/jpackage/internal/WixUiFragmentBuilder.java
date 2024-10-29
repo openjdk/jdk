@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.model.OverridableResource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -38,9 +40,10 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import jdk.jpackage.internal.IOUtils.XmlConsumer;
 import jdk.jpackage.internal.WixAppImageFragmentBuilder.ShortcutsFolder;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.resources.ResourceLocator;
+import jdk.jpackage.internal.util.XmlUtils.XmlConsumer;
 
 /**
  * Creates UI WiX fragment.
@@ -120,7 +123,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
 
         if (withCustomActionsDll) {
             String fname = "wixhelper.dll"; // CA dll
-            try (InputStream is = OverridableResource.readDefault(fname)) {
+            try (InputStream is = ResourceLocator.class.getResourceAsStream(fname)) {
                 Files.copy(is, getConfigRoot().resolve(fname));
             }
         }

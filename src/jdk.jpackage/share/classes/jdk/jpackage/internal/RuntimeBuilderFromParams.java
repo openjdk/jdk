@@ -24,6 +24,9 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.model.RuntimeBuilder;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;

@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.internal.util.OperatingSystem;
 
 import java.io.File;

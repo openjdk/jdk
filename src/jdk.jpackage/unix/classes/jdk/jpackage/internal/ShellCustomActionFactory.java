@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.Package;
 import java.io.IOException;
 
 interface ShellCustomActionFactory {

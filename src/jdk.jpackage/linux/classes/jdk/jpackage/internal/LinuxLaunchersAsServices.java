@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.Launcher;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;

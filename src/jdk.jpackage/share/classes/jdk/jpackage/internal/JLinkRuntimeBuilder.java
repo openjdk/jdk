@@ -24,6 +24,12 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.model.LauncherModularStartupInfo;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.RuntimeBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;

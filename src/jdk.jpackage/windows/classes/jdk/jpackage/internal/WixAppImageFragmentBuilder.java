@@ -25,10 +25,15 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.WinLauncher;
+import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.util.PathGroup;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Files;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,6 +50,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -54,10 +60,13 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import static jdk.jpackage.internal.Functional.toCollection;
-import jdk.jpackage.internal.IOUtils.XmlConsumer;
-import jdk.jpackage.internal.WinLauncher.WinShortcut;
+import static jdk.jpackage.internal.util.CollectionUtils.toCollection;
+import jdk.jpackage.internal.model.WinLauncher.WinShortcut;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.XmlUtils;
+import jdk.jpackage.internal.util.XmlUtils.XmlConsumer;
 import org.w3c.dom.NodeList;
 
 /**
@@ -171,45 +180,20 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         );
     }
 
-    private void normalizeFileAssociation(FileAssociation fa) {
-        fa.launcherPath = addExeSuffixToPath(
-                installedAppImage.launchersDirectory().resolve(fa.launcherPath));
-
-        if (fa.iconPath != null && !Files.exists(fa.iconPath)) {
-            fa.iconPath = null;
-        }
-
-        if (fa.iconPath != null) {
-            fa.iconPath = fa.iconPath.toAbsolutePath();
-        }
-
-        // Filter out empty extensions.
-        fa.extensions = fa.extensions.stream().filter(Predicate.not(
-                String::isEmpty)).toList();
-    }
-
-    private static Path addExeSuffixToPath(Path path) {
-        return IOUtils.addSuffix(path, ".exe");
-    }
-
     private Path getInstalledFaIcoPath(FileAssociation fa) {
-        String fname = String.format("fa_%s.ico", String.join("_", fa.extensions));
+        String fname = String.format("fa_%s.ico", fa.extension());
         return installedAppImage.destktopIntegrationDirectory().resolve(fname);
     }
 
     private void initFileAssociations() {
-        var allFileAssociations = launchers.stream().map(Launcher::fileAssociations).flatMap(
-                List::stream).toList();
-        associations = allFileAssociations.stream()
-                .peek(this::normalizeFileAssociation)
-                // Filter out file associations without extensions.
-                .filter(fa -> !fa.extensions.isEmpty())
-                .toList();
+        associations = launchers.stream().collect(toMap(
+                Launcher::executableNameWithSuffix,
+                WinLauncher::fileAssociations));
 
-        associations.stream().filter(fa -> fa.iconPath != null).forEach(fa -> {
+        associations.values().stream().flatMap(List::stream).filter(fa -> fa.icon() != null).forEach(fa -> {
             // Need to add fa icon in the image.
             Object key = new Object();
-            appImage.pathGroup().setPath(key, fa.iconPath);
+            appImage.pathGroup().setPath(key, fa.icon());
             installedAppImage.pathGroup().setPath(key, getInstalledFaIcoPath(fa));
         });
     }
@@ -454,8 +438,11 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             throws XMLStreamException, IOException {
 
         List<String> componentIds = new ArrayList<>();
-        for (var fa : associations) {
-            componentIds.addAll(addFaComponents(xml, fa));
+        for (var entry : associations.entrySet()) {
+            var launcherExe = entry.getKey();
+            for (var fa : entry.getValue()) {
+                componentIds.add(addFaComponent(xml, launcherExe, fa));
+            }
         }
         addComponentGroup(xml, "FileAssociations", componentIds);
     }
@@ -507,7 +494,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             throw throwInvalidPathException(launcherPath);
         }
 
-        String launcherBasename = IOUtils.replaceSuffix(
+        String launcherBasename = PathUtils.replaceSuffix(
                 IOUtils.getFileName(launcherPath), "").toString();
 
         Path shortcutPath = folder.getPath(this).resolve(launcherBasename);
@@ -520,50 +507,44 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         });
     }
 
-    private List<String> addFaComponents(XMLStreamWriter xml,
-            FileAssociation fa) throws XMLStreamException, IOException {
-        List<String> components = new ArrayList<>();
-        for (var extension: fa.extensions) {
-            Path path = INSTALLDIR.resolve(String.format("%s_%s", extension,
-                    fa.launcherPath.getFileName()));
-            components.add(addComponent(xml, path, Component.ProgId, unused -> {
-                xml.writeAttribute("Description", fa.description);
+    private String addFaComponent(XMLStreamWriter xml,
+            String launcherExe, FileAssociation fa) throws
+            XMLStreamException, IOException {
 
-                if (fa.iconPath != null) {
-                    xml.writeAttribute("Icon", Id.File.of(getInstalledFaIcoPath(fa)));
-                    xml.writeAttribute("IconIndex", "0");
-                }
+        Path path = INSTALLDIR.resolve(String.format("%s_%s", fa.extension(), launcherExe));
+        return addComponent(xml, path, Component.ProgId, unused -> {
+            xml.writeAttribute("Description", fa.description());
 
-                xml.writeStartElement("Extension");
-                xml.writeAttribute("Id", extension);
-                xml.writeAttribute("Advertise", "no");
+            if (fa.icon() != null) {
+                xml.writeAttribute("Icon", Id.File.of(getInstalledFaIcoPath(fa)));
+                xml.writeAttribute("IconIndex", "0");
+            }
 
-                var mimeIt = fa.mimeTypes.iterator();
-                if (mimeIt.hasNext()) {
-                    String mime = mimeIt.next();
-                    xml.writeAttribute("ContentType", mime);
+            xml.writeStartElement("Extension");
+            xml.writeAttribute("Id", fa.extension());
+            xml.writeAttribute("Advertise", "no");
 
-                    if (!defaultedMimes.contains(mime)) {
-                        xml.writeStartElement("MIME");
-                        xml.writeAttribute("ContentType", mime);
-                        xml.writeAttribute("Default", "yes");
-                        xml.writeEndElement();
-                        defaultedMimes.add(mime);
-                    }
-                }
+            var mime = fa.mimeType();
+            xml.writeAttribute("ContentType", mime);
 
-                xml.writeStartElement("Verb");
-                xml.writeAttribute("Id", "open");
-                xml.writeAttribute("Command", "!(loc.ContextMenuCommandLabel)");
-                xml.writeAttribute("Argument", "\"%1\" %*");
-                xml.writeAttribute("TargetFile", Id.File.of(fa.launcherPath));
-                xml.writeEndElement(); // <Verb>
+            if (!defaultedMimes.contains(mime)) {
+                xml.writeStartElement("MIME");
+                xml.writeAttribute("ContentType", mime);
+                xml.writeAttribute("Default", "yes");
+                xml.writeEndElement();
+                defaultedMimes.add(mime);
+            }
 
-                xml.writeEndElement(); // <Extension>
-            }));
-        }
+            xml.writeStartElement("Verb");
+            xml.writeAttribute("Id", "open");
+            xml.writeAttribute("Command", "!(loc.ContextMenuCommandLabel)");
+            xml.writeAttribute("Argument", "\"%1\" %*");
+            xml.writeAttribute("TargetFile", Id.File.of(
+                    installedAppImage.launchersDirectory().resolve(launcherExe)));
+            xml.writeEndElement(); // <Verb>
 
-        return components;
+            xml.writeEndElement(); // <Extension>
+        });
     }
 
     private List<String> addRootBranch(XMLStreamWriter xml, Path path)
@@ -759,7 +740,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
 
         try {
-            var buffer = new DOMResult(IOUtils.initDocumentBuilder().newDocument());
+            var buffer = new DOMResult(XmlUtils.initDocumentBuilder().newDocument());
             var bufferWriter = XMLOutputFactory.newInstance().createXMLStreamWriter(
                     buffer);
 
@@ -909,9 +890,9 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     }
 
     enum ShortcutsFolder {
-        ProgramMenu(PROGRAM_MENU_PATH, WinShortcut.WinShortcutDesktop,
+        ProgramMenu(PROGRAM_MENU_PATH, WinShortcut.WIN_SHORTCUT_DESKTOP,
                 "JP_INSTALL_STARTMENU_SHORTCUT", "JpStartMenuShortcutPrompt"),
-        Desktop(DESKTOP_PATH, WinShortcut.WinShortcutStartMenu,
+        Desktop(DESKTOP_PATH, WinShortcut.WIN_SHORTCUT_START_MENU,
                 "JP_INSTALL_DESKTOP_SHORTCUT", "JpDesktopShortcutPrompt");
 
         private ShortcutsFolder(Path root, WinShortcut shortcutId,
@@ -961,7 +942,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private String programMenuFolderName;
 
-    private List<FileAssociation> associations;
+    private Map<String, List<FileAssociation>> associations;
 
     private Set<ShortcutsFolder> shortcutFolders;
 

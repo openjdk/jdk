@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.DottedVersion;
 import java.math.BigInteger;
 
 
@@ -38,7 +39,7 @@ final class CFBundleVersion {
      * @throws IllegalArgumentException
      */
     static DottedVersion of(String value) {
-        DottedVersion ver = new DottedVersion(value);
+        DottedVersion ver = DottedVersion.greedy(value);
 
         BigInteger[] components = ver.getComponents();
         if (components.length > 3) {

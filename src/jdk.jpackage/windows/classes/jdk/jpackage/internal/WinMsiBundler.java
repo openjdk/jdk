@@ -25,6 +25,11 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.model.OverridableResource;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
@@ -188,8 +193,6 @@ public class WinMsiBundler  extends AbstractBundler {
 
             wixFragments.stream().map(WixFragmentBuilder::getLoggableWixFeatures).flatMap(
                     List::stream).distinct().toList().forEach(Log::verbose);
-
-            FileAssociation.verify(FileAssociation.fetchFrom(params));
 
             return true;
         } catch (RuntimeException re) {

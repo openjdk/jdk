@@ -24,43 +24,44 @@
  */
 package jdk.jpackage.internal;
 
-import java.io.IOException;
+import jdk.jpackage.internal.model.WinLauncher;
+import jdk.jpackage.internal.model.WinApplication;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import static jdk.jpackage.internal.ApplicationFromParams.createBundlerParam;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
-import static jdk.jpackage.internal.WinLauncher.WinShortcut.WinShortcutDesktop;
-import static jdk.jpackage.internal.WinLauncher.WinShortcut.WinShortcutStartMenu;
+import jdk.jpackage.internal.model.WinApplication.Impl;
+import static jdk.jpackage.internal.model.WinLauncher.WinShortcut.WIN_SHORTCUT_DESKTOP;
+import static jdk.jpackage.internal.model.WinLauncher.WinShortcut.WIN_SHORTCUT_START_MENU;
 
 final class WinApplicationFromParams {
 
-    private static WinApplication create(Map<String, ? super Object> params) throws ConfigException, IOException {
-        var app = ApplicationFromParams.create(params, launcherParams -> {
-            var launcher = LauncherFromParams.create(launcherParams);
-            boolean isConsole = CONSOLE_HINT.fetchFrom(launcherParams);
+    private static WinLauncher createLauncher(Map<String, ? super Object> params) {
+        var launcher = new LauncherFromParams().create(params);
 
-            var shortcuts = Map.of(WinShortcutDesktop, List.of(SHORTCUT_HINT,
-                    WIN_SHORTCUT_HINT), WinShortcutStartMenu,
-                    List.of(MENU_HINT, WIN_MENU_HINT)).entrySet().stream().filter(
-                    e -> {
-                        var shortcutParams = e.getValue();
-                        if (launcherParams.containsKey(shortcutParams.get(0).getID())) {
-                            // This is an explicit shortcut configuration for an addition launcher
-                            return shortcutParams.get(0).fetchFrom(launcherParams);
-                        } else {
-                            return shortcutParams.get(1).fetchFrom(launcherParams);
-                        }
-                    }).map(Map.Entry::getKey).collect(Collectors.toSet());
+        boolean isConsole = CONSOLE_HINT.fetchFrom(params);
 
-            return new WinLauncher.Impl(launcher, isConsole, shortcuts);
-        });
-        return new WinApplication.Impl(app);
+        var shortcuts = Map.of(WIN_SHORTCUT_DESKTOP, List.of(SHORTCUT_HINT,
+                WIN_SHORTCUT_HINT), WIN_SHORTCUT_START_MENU, List.of(MENU_HINT,
+                        WIN_MENU_HINT)).entrySet().stream().filter(e -> {
+                    var shortcutParams = e.getValue();
+                    if (params.containsKey(shortcutParams.get(0).getID())) {
+                        // This is an explicit shortcut configuration for an addition launcher
+                        return shortcutParams.get(0).fetchFrom(params);
+                    } else {
+                        return shortcutParams.get(1).fetchFrom(params);
+                    }
+                }).map(Map.Entry::getKey).collect(Collectors.toSet());
+
+        return new WinLauncher.Impl(launcher, isConsole, shortcuts);
     }
 
-    static final BundlerParamInfo<WinApplication> APPLICATION = createBundlerParam(
-            WinApplicationFromParams::create);
+    static final BundlerParamInfo<WinApplication> APPLICATION = createBundlerParam(params -> {
+        var app = new ApplicationFromParams(WinApplicationFromParams::createLauncher).create(params);
+        return new Impl(app);
+    });
 
     private static final BundlerParamInfo<Boolean> WIN_MENU_HINT = new BundlerParamInfo<>(
             Arguments.CLIOptions.WIN_MENU_HINT.getId(),
@@ -77,7 +78,7 @@ final class WinApplicationFromParams {
             // valueOf(null) is false,
             // and we actually do want null in some cases
             (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? false : Boolean.valueOf(s));
-    
+
     public static final BundlerParamInfo<Boolean> CONSOLE_HINT = new BundlerParamInfo<>(
             Arguments.CLIOptions.WIN_CONSOLE_HINT.getId(),
             Boolean.class,

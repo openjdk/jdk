@@ -24,6 +24,9 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.OverridableResource;
+
 class LauncherAsService {
 
     LauncherAsService(Launcher launcher, OverridableResource resource) {
