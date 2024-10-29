@@ -46,7 +46,7 @@
 //   pointers, the base address is null, and is hence implicitly a zero constant.
 //
 //
-//   Example1: byte array access:
+//   Example 1: byte array access:
 //
 //     array[i]
 //
@@ -60,8 +60,8 @@
 //
 //     array[5 + i + 3 * j]
 //
-//     pointer =           array_base + ARRAY_INT_BASE_OFFSET + 4 * 5 + 4       * j          + 4       * 3 * j
-//             = 1       * array_base + ARRAY_INT_BASE_OFFSET + 20    + 4       * j          + 12      * j
+//     pointer =           array_base + ARRAY_INT_BASE_OFFSET + 4 * 5 + 4       * i          + 4       * 3 * j
+//             = 1       * array_base + ARRAY_INT_BASE_OFFSET + 20    + 4       * i          + 12      * j
 //               --------------------   -----------------------------   --------------------   --------------------
 //             = scale_0 * variable_0 + con                           + scale_1 * variable_1 + scale_2 * variable_2
 //
@@ -72,6 +72,7 @@
 //
 //     pointer =           array_base + ARRAY_INT_BASE_OFFSET + 4       * i
 //             = 1       * array_base + ARRAY_INT_BASE_OFFSET + 4       * i
+//               --------------------   ---------------------   --------------------
 //             = scale_0 * variable_0 + con                   + scale_1 * variable_1
 //
 //
@@ -82,6 +83,7 @@
 //
 //     pointer =           address          + 4       * i
 //             = 1       * address    + 0   + 4       * i
+//               --------------------   ---   --------------------
 //             = scale_0 * variable_0 + con + scale_1 * variable_1
 //
 //
@@ -116,8 +118,8 @@
 //
 //     array[5 + i + j * k]
 //
-//     pointer =           array_base + ARRAY_INT_BASE_OFFSET + 4 * 5 + 4       * j          + 4       * j * k
-//             = 1       * array_base + ARRAY_INT_BASE_OFFSET + 20    + 4       * j          + 4       * j * k
+//     pointer =           array_base + ARRAY_INT_BASE_OFFSET + 4 * 5 + 4       * i          + 4       * j * k
+//             = 1       * array_base + ARRAY_INT_BASE_OFFSET + 20    + 4       * i          + 4       * j * k
 //               --------------------   -----------------------------   --------------------   --------------------
 //             = scale_0 * variable_0 + con                           + scale_1 * variable_1 + scale_2 * variable_2
 //
