@@ -95,8 +95,7 @@ public final class Long extends Number
      *
      * @since   1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Long>     TYPE = (Class<Long>) Class.getPrimitiveClass("long");
+    public static final Class<Long> TYPE = Class.getPrimitiveClass("long");
 
     /**
      * Returns a string representation of the first argument in the
@@ -1245,8 +1244,8 @@ public final class Long extends Number
      *          {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Long) {
-            return value == ((Long)obj).longValue();
+        if (obj instanceof Long ell) {
+            return value == ell.longValue();
         }
         return false;
     }

@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 2, time = 1)
 @Measurement(iterations = 3, time = 1)
-@Fork(value = 1, jvmArgsAppend = {
+@Fork(value = 1, jvmArgs = {
         "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.util=ALL-UNNAMED"})
 @State(Scope.Thread)

@@ -166,7 +166,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   address fn = nullptr;
   address entry_point = nullptr;
-  Register continuation = ra;
   switch (kind) {
     case Interpreter::java_lang_math_abs:
       entry_point = __ pc();
@@ -185,83 +184,82 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dsin() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dsin());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_cos :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dcos() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dcos());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_tan :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dtan() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dtan());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dlog() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log10 :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dlog10() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog10());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_exp :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dexp() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dexp());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_pow :
       entry_point = __ pc();
       __ mv(x9, ra);
-      continuation = x9;
       __ fld(f10, Address(esp, 2 * Interpreter::stackElementSize));
       __ fld(f11, Address(esp));
       __ mv(sp, x19_sender_sp);
@@ -271,6 +269,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dpow());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_fmaD :
       if (UseFMA) {
@@ -296,7 +295,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       ;
   }
   if (entry_point != nullptr) {
-    __ jr(continuation);
+    __ ret();
   }
 
   return entry_point;
@@ -422,7 +421,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(
                c_rarg1, c_rarg2);
   }
   // throw exception
-  __ j(address(Interpreter::throw_exception_entry()));
+  __ j(RuntimeAddress(Interpreter::throw_exception_entry()));
   return entry;
 }
 
