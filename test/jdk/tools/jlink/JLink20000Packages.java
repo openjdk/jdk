@@ -32,9 +32,9 @@ import tests.JImageGenerator;
 
 /*
  * @test
- * @summary Make sure that ~20000 packages in a uber jar can be linked using jlink. Depends on the
- *          packages, this is almost hit the 64K limitation as each plain export could take
- *          ~17 bytecodes.
+ * @summary Make sure that ~20000 packages in a uber jar can be linked using jlink. Now that
+ *          pagination is in place, the limitation is on the constant pool size, not number
+ *          of packages.
  * @bug 8321413
  * @library ../lib
  * @enablePreview

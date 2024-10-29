@@ -66,7 +66,7 @@ public class Snippets {
         void load(CodeBuilder cob);
 
         /**
-         * The type of the reference be loaded onto the operatnd stack.
+         * The type of the reference be loaded onto the operand stack.
          */
         ClassDesc classDesc();
 

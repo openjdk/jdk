@@ -1211,18 +1211,11 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             }
 
             /*
-             * SetReference count references to the set, and use an element loader, which is
-             * a CodeBuilder that generate bytecode snippet to load an element onto the operand
-             * stack, to generate bytecode to support loading the set onto operand stack.
-             *
-             * When a set size is over SET_SIZE_THRESHOLD, a provider function is generated
-             * to build the set rather than inline to avoid method size overflow.
-             *
-             * When a set is referenced more than once, the set value is to be built once
-             * and cached in an array to be load later.
-             *
-             * generateConstant method should be called to setup the provider methods and cache array.
-             * load method can then be called to load the set onto the operand stack.
+             * SetReference count references to the set, and use LoadableSet under the hood to
+             * support paginiation as needed.
+             * For sets referenced more than once, a cache is used to store the pre-built result
+             * and load from there. Otherwise, the set is built in place and load onto the operand
+             * stack.
              */
             class SetReference {
                 // sorted elements of the set to ensure same generated code
@@ -1256,10 +1249,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 // When referenced more than once, the value is pre-built with static initialzer
                 // and is load from the cache array with
                 //   dedupSetValues[index]
-                // Otherwise, built the set in place with either
-                //   Set.of(elements)
-                // or invoke the generated provider method
-                //   methodName()
+                // Otherwise, LoadableSet will load the set onto the operand stack.
                 void load(CodeBuilder cob) {
                     if (refCount > 1) {
                         assert index >= 0;
