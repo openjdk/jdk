@@ -210,14 +210,14 @@ public:
 
     task_vm_info vm_info;
     mach_msg_type_number_t num_out = TASK_VM_INFO_COUNT;
-    kern_return_t err_vm = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)(&vm_info), &num_out);
-    if (err_vm == KERN_SUCCESS) {
+    kern_return_t err = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)(&vm_info), &num_out);
+    if (err == KERN_SUCCESS) {
       st->print_cr("             vsize: %llu (%llu%s)", vm_info.virtual_size, PROPERFMTARGS(vm_info.virtual_size));
       st->print_cr("               rss: %llu (%llu%s)", vm_info.resident_size, PROPERFMTARGS(vm_info.resident_size));
       st->print_cr("          peak rss: %llu (%llu%s)", vm_info.resident_size_peak, PROPERFMTARGS(vm_info.resident_size_peak));
       st->print_cr("         page size: %d (%ld%s)", vm_info.page_size, PROPERFMTARGS((size_t)vm_info.page_size));
     } else {
-      st->print_cr("error getting vm_info %d", err_vm);
+      st->print_cr("error getting vm_info %d", err);
     }
     st->print_cr("           private: %zu (" PROPERFMT ")", _private, PROPERFMTARGS(_private));
     st->print_cr("            shared: %zu (" PROPERFMT ")", _shared, PROPERFMTARGS(_shared));
