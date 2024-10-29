@@ -3590,18 +3590,6 @@ void Assembler::evmovdquw(XMMRegister dst, XMMRegister src, int vector_len) {
   evmovdquw(dst, k0, src, /*merge*/ false, vector_len);
 }
 
-void Assembler::evmovdquw(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
-  assert(vector_len <= AVX_256bit ? VM_Version::supports_avx512vlbw() : VM_Version::supports_avx512bw(), "");
-  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
-  attributes.set_embedded_opmask_register_specifier(mask);
-  attributes.set_is_evex_instruction();
-  if (merge) {
-    attributes.reset_is_clear_context();
-  }
-  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
-  emit_int16(0x6F, (0xC0 | encode));
-}
-
 void Assembler::evmovdquw(XMMRegister dst, Address src, int vector_len) {
   // Unmasked instruction
   evmovdquw(dst, k0, src, /*merge*/ false, vector_len);
