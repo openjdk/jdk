@@ -155,11 +155,6 @@ typedef AwtObject* PDATA;
 /*  /NEW JNI */
 
 /*
- * IS_WIN64 returns TRUE on 64-bit Itanium
- */
-#define IS_WIN64 TRUE
-
-/*
  * IS_WIN2000 returns TRUE on 2000, XP and Vista
  * IS_WINXP returns TRUE on XP and Vista
  * IS_WINVISTA returns TRUE on Vista
