@@ -1125,6 +1125,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // result handler is in x10
   // set result handler
   __ mv(result_handler, x10);
+  // Save it in the frame in case of preemption; we cannot rely on callee saved registers.
   __ sd(x10, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
 
   // pass mirror handle if static call
@@ -1269,6 +1270,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ jr(t0);
     __ bind(native_return);
     __ restore_after_resume(true /* is_native */);
+    // reload result_handler
+    __ ld(result_handler, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
     __ bind(not_preempted);
   } else {
     // any pc will do so just use this one for LM_LEGACY to keep code together.
@@ -1293,7 +1296,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_oop;
     __ la(t, ExternalAddress(AbstractInterpreter::result_handler(T_OBJECT)));
-    __ ld(result_handler, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
     __ bne(t, result_handler, no_oop);
     // Unbox oop result, e.g. JNIHandles::resolve result.
     __ pop(ltos);

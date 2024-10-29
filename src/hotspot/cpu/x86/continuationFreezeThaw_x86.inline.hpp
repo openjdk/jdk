@@ -142,6 +142,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
 
   // Make sure that locals is already relativized.
   DEBUG_ONLY(Method* m = f.interpreter_frame_method();)
+  // Frames for native methods have 2 extra words (temp oop/result handler) before fixed part of frame.
   DEBUG_ONLY(int max_locals = !m->is_native() ? m->max_locals() : m->size_of_parameters() + 2;)
   assert((*hf.addr_at(frame::interpreter_frame_locals_offset) == frame::sender_sp_offset + max_locals - 1), "");
 
@@ -224,6 +225,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     // ContinuationHelper::InterpretedFrame::frame_bottom
     intptr_t locals_offset = *hf.addr_at(frame::interpreter_frame_locals_offset);
     DEBUG_ONLY(Method* m = hf.interpreter_frame_method();)
+    // Frames for native methods have 2 extra words (temp oop/result handler) before fixed part of frame.
     DEBUG_ONLY(const int max_locals = !m->is_native() ? m->max_locals() : m->size_of_parameters() + 2;)
     assert((int)locals_offset == frame::sender_sp_offset + max_locals - 1, "");
     // copy relativized locals from the heap frame

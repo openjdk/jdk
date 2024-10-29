@@ -1348,6 +1348,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // result handler is in r0
   // set result handler
   __ mov(result_handler, r0);
+  // Save it in the frame in case of preemption; we cannot rely on callee saved registers.
   __ str(r0, Address(rfp, frame::interpreter_frame_result_handler_offset * wordSize));
 
   // pass mirror handle if static call
@@ -1482,6 +1483,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ br(rscratch1);
     __ bind(native_return);
     __ restore_after_resume(true /* is_native */);
+    // reload result_handler
+    __ ldr(result_handler, Address(rfp, frame::interpreter_frame_result_handler_offset*wordSize));
     __ bind(not_preempted);
   } else {
     // any pc will do so just use this one for LM_LEGACY to keep code together.
@@ -1506,7 +1509,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_oop;
     __ adr(t, ExternalAddress(AbstractInterpreter::result_handler(T_OBJECT)));
-    __ ldr(result_handler, Address(rfp, frame::interpreter_frame_result_handler_offset*wordSize));
     __ cmp(t, result_handler);
     __ br(Assembler::NE, no_oop);
     // Unbox oop result, e.g. JNIHandles::resolve result.

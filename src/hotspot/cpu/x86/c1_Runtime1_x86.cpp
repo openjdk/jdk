@@ -638,9 +638,10 @@ void Runtime1::initialize_pd() {
   // nothing to do
 }
 
+// return: offset in 64-bit words.
 uint Runtime1::runtime_blob_current_thread_offset(frame f) {
 #ifdef _LP64
-  return r15_off / 2;
+  return r15_off / 2;  // rsp offsets are in halfwords
 #else
   Unimplemented();
   return 0;

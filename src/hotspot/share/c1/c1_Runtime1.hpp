@@ -135,6 +135,7 @@ public:
   static void initialize(BufferBlob* blob);
   static void initialize_pd();
 
+  // return offset in words
   static uint runtime_blob_current_thread_offset(frame f);
 
   // stubs
