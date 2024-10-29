@@ -231,7 +231,7 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_openProcess
     }
 
     /*
-     * On Windows we need to handle 32-bit tools trying to attach to 64-bit
+     * On Windows we need to handle 64-bit tools trying to attach to 32-bit
      * processes, which is currently not supported by this implementation.
      */
     if (_IsWow64Process != NULL) {
