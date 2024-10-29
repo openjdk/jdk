@@ -174,7 +174,7 @@ final class FieldBuilder {
     }
 
     private static RecordedFrame topFrame(RecordedEvent event) {
-        return findJavaFrame(event,  x -> true);
+        return findJavaFrame(event, x -> true);
     }
 
     private static RecordedFrame topApplicationFrame(RecordedEvent event) {
