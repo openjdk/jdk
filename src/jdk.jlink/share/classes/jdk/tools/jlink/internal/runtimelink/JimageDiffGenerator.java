@@ -48,9 +48,16 @@ public class JimageDiffGenerator {
     }
 
     /**
+     * Produce a difference between packaged modules' resources (base) and the
+     * result of all plug-ins being applied on those resources (image).
      *
      * @param base
-     * @param image what is optImage?
+     *            The ImageResource view of unmodified resources coming from
+     *            packaged modules.
+     * @param image
+     *            The ImageResource view of the jlink plug-in pipeline having
+     *            been applied to the resources in base.
+     * @return The list of resource differences across all modules.
      */
     public List<ResourceDiff> generateDiff(ImageResource base, ImageResource image) throws Exception {
         List<String> baseResources;
