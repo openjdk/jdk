@@ -762,7 +762,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the returned segment can only be accessed by the arena's owner thread, regardless
      * of the confinement restrictions associated with this segment. In other words, this
      * method returns a segment that behaves as if it had been allocated using the
-     * provided arena.
+     * provided arena except, the returned segment's deallocation is still managed by the
+     * original arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
      * provided scope becomes invalid. This cleanup action receives a fresh memory
@@ -813,7 +814,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the returned segment can only be accessed by the arena's owner thread, regardless
      * of the confinement restrictions associated with this segment. In other words,
      * this method returns a segment that behaves as if it had been allocated using the
-     * provided arena.
+     * provided arena except, the returned segment's deallocation is still managed by the
+     * original arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
      * provided scope becomes invalid. This cleanup action receives a fresh memory
