@@ -544,6 +544,21 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", ERR=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_ERR]);
   st->cr();
   st->print("  TRAPNO=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_TRAPNO]);
+  // Add XMM registers + MXCSR. Note that C2 uses XMM to spill GPR values including pointers.
+  st->cr();
+  st->cr();
+  // Sanity check: fpregs should point into the context.
+  if ((address)uc->uc_mcontext.fpregs < (address)uc ||
+      pointer_delta(uc->uc_mcontext.fpregs, uc, 1) >= sizeof(ucontext_t)) {
+    st->print_cr("bad uc->uc_mcontext.fpregs: " INTPTR_FORMAT " (uc: " INTPTR_FORMAT ")",
+                 p2i(uc->uc_mcontext.fpregs), p2i(uc));
+  } else {
+    for (int i = 0; i < 16; ++i) {
+      const int64_t* xmm_val_addr = (int64_t*)&(uc->uc_mcontext.fpregs->_xmm[i]);
+      st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT, i, xmm_val_addr[1], xmm_val_addr[0]);
+    }
+    st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->uc_mcontext.fpregs->mxcsr);
+  }
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EAX]);
   st->print(", EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EBX]);
