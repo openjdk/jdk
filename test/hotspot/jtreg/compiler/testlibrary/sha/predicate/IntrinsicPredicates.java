@@ -104,8 +104,10 @@ public class IntrinsicPredicates {
                               new CPUSpecificPredicate("x86_64",    new String[] { "avx2", "bmi2" }, null))))))))));
 
     public static final BooleanSupplier SHA3_INSTRUCTION_AVAILABLE
-            // sha3 is only implemented on aarch64 for now
-            = new CPUSpecificPredicate("aarch64.*", new String[] {"sha3"          }, null);
+            // sha3 is only implemented on aarch64 and avx512 for now
+            = new OrPredicate(new CPUSpecificPredicate("aarch64.*", new String[] {"sha3"               }, null),
+              new OrPredicate(new CPUSpecificPredicate("amd64.*",   new String[] {"avx512f", "avx512bw"}, null),
+                              new CPUSpecificPredicate("x86_64",    new String[] {"avx512f", "avx512bw"}, null)));
 
     public static final BooleanSupplier ANY_SHA_INSTRUCTION_AVAILABLE
             = new OrPredicate(IntrinsicPredicates.SHA1_INSTRUCTION_AVAILABLE,

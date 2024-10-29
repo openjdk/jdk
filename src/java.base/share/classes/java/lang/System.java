@@ -147,8 +147,7 @@ public final class System {
      * corresponds to display output or another output destination
      * specified by the host environment or user. The encoding used
      * in the conversion from characters to bytes is equivalent to
-     * {@link Console#charset()} if the {@code Console} exists,
-     * <a href="#stdout.encoding">stdout.encoding</a> otherwise.
+     * {@link ##stdout.encoding stdout.encoding}.
      * <p>
      * For simple stand-alone Java applications, a typical way to write
      * a line of output data is:
@@ -168,8 +167,7 @@ public final class System {
      * @see     java.io.PrintStream#println(long)
      * @see     java.io.PrintStream#println(java.lang.Object)
      * @see     java.io.PrintStream#println(java.lang.String)
-     * @see     Console#charset()
-     * @see     <a href="#stdout.encoding">stdout.encoding</a>
+     * @see     ##stdout.encoding stdout.encoding
      */
     public static final PrintStream out = null;
 
@@ -185,11 +183,9 @@ public final class System {
      * variable {@code out}, has been redirected to a file or other
      * destination that is typically not continuously monitored.
      * The encoding used in the conversion from characters to bytes is
-     * equivalent to {@link Console#charset()} if the {@code Console}
-     * exists, <a href="#stderr.encoding">stderr.encoding</a> otherwise.
+     * equivalent to {@link ##stderr.encoding stderr.encoding}.
      *
-     * @see     Console#charset()
-     * @see     <a href="#stderr.encoding">stderr.encoding</a>
+     * @see     ##stderr.encoding stderr.encoding
      */
     public static final PrintStream err = null;
 
@@ -788,7 +784,8 @@ public final class System {
      *     <td>Character encoding name derived from the host environment and/or
      *     the user's settings. Setting this system property has no effect.</td></tr>
      * <tr><th scope="row">{@systemProperty stdout.encoding}</th>
-     *     <td>Character encoding name for {@link System#out System.out}.
+     *     <td>Character encoding name for {@link System#out System.out} and
+     *     {@link System#console() System.console()}.
      *     The Java runtime can be started with the system property set to {@code UTF-8},
      *     starting it with the property set to another value leads to undefined behavior.
      * <tr><th scope="row">{@systemProperty stderr.encoding}</th>

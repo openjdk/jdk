@@ -91,6 +91,7 @@
   nonstatic_field(CardTableBarrierSet,         _defer_initial_card_mark,                      bool)                                  \
   nonstatic_field(CardTableBarrierSet,         _card_table,                                   CardTable*)                            \
                                                                                                                                      \
+     static_field(CollectedHeap,               _lab_alignment_reserve,                        size_t)                                \
   nonstatic_field(CollectedHeap,               _reserved,                                     MemRegion)                             \
   nonstatic_field(CollectedHeap,               _is_stw_gc_active,                             bool)                                  \
   nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
