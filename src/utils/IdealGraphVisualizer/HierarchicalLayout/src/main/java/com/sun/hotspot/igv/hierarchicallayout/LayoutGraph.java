@@ -429,70 +429,93 @@ public class LayoutGraph {
         }
     }
 
-    private void tryAlignDummy(int x, LayoutNode dummy) {
-        if (x == dummy.getX()) return;
-        LayoutLayer nextLayer = getLayer(dummy.getLayer());
-        if (dummy.getX() < x) {
-            // try move nextDummyNode.x to the right
-            int rightPos = dummy.getPos() + 1;
-            if (rightPos < nextLayer.size()) {
-                // we have a right neighbor
-                LayoutNode rightNode = nextLayer.get(rightPos);
-                int rightShift = x - dummy.getX();
-                if (dummy.getRight() + rightShift <= rightNode.getOuterLeft() - NODE_OFFSET) {
-                    // it is possible to shift nextDummyNode right
-                    dummy.setX(x);
-                }
-            } else {
-                // nextDummyNode is the right-most node, so we can always move nextDummyNode to the right
-                dummy.setX(x);
-            }
+    /**
+     * Repositions the given LayoutNode to the specified x-coordinate within its layer,
+     * ensuring no overlap with adjacent nodes and maintaining a minimum NODE_OFFSET distance.
+     *
+     * @param layoutNode  The LayoutNode to be repositioned.
+     * @param newX        The desired new x-coordinate for the layoutNode.
+     */
+    private void repositionLayoutNodeX(LayoutNode layoutNode, int newX) {
+        int currentX = layoutNode.getX();
+
+        // Early exit if the desired position is the same as the current position
+        if (newX == currentX) {
+            return;
+        }
+
+        LayoutLayer layer = getLayer(layoutNode.getLayer());
+        if (newX > currentX) {
+            layer.attemptMoveRight(layoutNode, newX);
         } else {
-            // try move nextDummyNode.x to the left
-            int leftPos = dummy.getPos() - 1;
-            if (leftPos >= 0) {
-                // we have a left neighbor
-                LayoutNode leftNode = nextLayer.get(leftPos);
-                int leftShift = dummy.getX() - x;
-                if (leftNode.getOuterRight() + NODE_OFFSET <= dummy.getLeft() - leftShift) {
-                    // it is possible to shift nextDummyNode left
-                    dummy.setX(x);
-                }
-            } else {
-                // nextDummyNode is the left-most node, so we can always move nextDummyNode to the left
-                dummy.setX(x);
-            }
+            layer.attemptMoveLeft(layoutNode, newX);
         }
     }
 
-    private void straightenDown(LayoutNode node) {
-        if (node.getSuccs().size() == 1) {
-            LayoutEdge succEdge = node.getSuccs().get(0);
-            LayoutNode succDummy = succEdge.getTo();
-            if (!succDummy.isDummy()) return;
-            if (node.isDummy()) {
-                tryAlignDummy(node.getX(), succDummy);
-            } else {
-                tryAlignDummy(succEdge.getStartX(), succDummy);
-            }
+    /**
+     * Aligns the x-coordinate of a single dummy successor node for the given LayoutNode.
+     * If the node has exactly one successor and that successor is a dummy node,
+     * this method sets the dummy node's x-coordinate to either the node's x-coordinate
+     * (if the node is a dummy) or to the starting x-coordinate of the connecting edge.
+     *
+     * @param node The LayoutNode whose single dummy successor needs to be aligned.
+     */
+    private void alignSingleSuccessorDummyNodeX(LayoutNode node) {
+        // Retrieve the list of successor edges
+        List<LayoutEdge> successors = node.getSuccs();
+
+        // Proceed only if there is exactly one successor
+        if (successors.size() != 1) {
+            return;
         }
+
+        LayoutEdge successorEdge = successors.get(0);
+        LayoutNode successorNode = successorEdge.getTo();
+
+        // Proceed only if the successor node is a dummy node
+        if (!successorNode.isDummy()) {
+            return;
+        }
+
+        // Determine the target x-coordinate based on whether the current node is a dummy
+        int targetX = node.isDummy() ? node.getX() : successorEdge.getStartX();
+
+        // Align the successor dummy node to the target x-coordinate
+        repositionLayoutNodeX(successorNode, targetX);
     }
 
-    private void straightenLayer(LayoutLayer layer) {
+    /**
+     * Aligns the x-coordinates of dummy successor nodes within the specified layer.
+     * Performs alignment in both forward and backward directions to ensure consistency.
+     *
+     * @param layer The LayoutLayer whose nodes' dummy successors need alignment.
+     */
+    private void alignLayerDummySuccessors(LayoutLayer layer) {
+        // Forward pass: Align dummy successors from the first node to the last.
         for (LayoutNode node : layer) {
-            straightenDown(node);
+            alignSingleSuccessorDummyNodeX(node);
         }
+
+        // Backward pass: Align dummy successors from the last node to the first.
         for (int i = layer.size() - 1; i >= 0; i--) {
-            straightenDown(layer.get(i));
+            LayoutNode node = layer.get(i);
+            alignSingleSuccessorDummyNodeX(node);
         }
     }
 
+    /**
+     * Aligns the x-coordinates of dummy successor nodes across all layers.
+     * Performs alignment in both forward and backward directions for comprehensive coverage.
+     */
     public void straightenEdges() {
+        // Forward pass: Align dummy successors from the first layer to the last.
         for (int i = 0; i < getLayerCount(); i++) {
-            straightenLayer(getLayer(i));
+            alignLayerDummySuccessors(getLayer(i));
         }
+
+        // Backward pass: Align dummy successors from the last layer to the first.
         for (int i = getLayerCount() - 1; i >= 0; i--) {
-            straightenLayer(getLayer(i));
+            alignLayerDummySuccessors(getLayer(i));
         }
     }
 

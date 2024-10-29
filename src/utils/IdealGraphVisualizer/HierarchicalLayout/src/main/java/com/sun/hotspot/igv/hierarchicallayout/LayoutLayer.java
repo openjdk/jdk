@@ -195,4 +195,44 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
             pos++;
         }
     }
+
+    public void attemptMoveRight(LayoutNode layoutNode, int newX) {
+        int currentX = layoutNode.getX();
+        int shiftAmount = newX - currentX;
+        int rightPos = layoutNode.getPos() + 1;
+
+        if (rightPos < size()) {
+            // There is a right neighbor
+            LayoutNode rightNeighbor = get(rightPos);
+            int proposedRightEdge = layoutNode.getRight() + shiftAmount;
+            int requiredLeftEdge = rightNeighbor.getOuterLeft() - NODE_OFFSET;
+
+            if (proposedRightEdge <= requiredLeftEdge) {
+                layoutNode.setX(newX);
+            }
+        } else {
+            // No right neighbor; safe to move freely to the right
+            layoutNode.setX(newX);
+        }
+    }
+
+    public void attemptMoveLeft(LayoutNode layoutNode, int newX) {
+        int currentX = layoutNode.getX();
+        int shiftAmount = currentX - newX;
+        int leftPos = layoutNode.getPos() - 1;
+
+        if (leftPos >= 0) {
+            // There is a left neighbor
+            LayoutNode leftNeighbor = get(leftPos);
+            int proposedLeftEdge = layoutNode.getLeft() - shiftAmount;
+            int requiredRightEdge = leftNeighbor.getOuterRight() + NODE_OFFSET;
+
+            if (requiredRightEdge <= proposedLeftEdge) {
+                layoutNode.setX(newX);
+            }
+        } else {
+            // No left neighbor; safe to move freely to the left
+            layoutNode.setX(newX);
+        }
+    }
 }
