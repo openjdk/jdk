@@ -798,9 +798,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signHash
             ::CryptGetProvParam((HCRYPTPROV)hCryptProv, PP_CONTAINER, //deprecated
                 (BYTE *)pbData, &cbData, 0);
 
-            DWORD keysetType;
+            DWORD keysetType = 0;
+            DWORD keysetTypeLen = sizeof(keysetType);
             ::CryptGetProvParam((HCRYPTPROV)hCryptProv, PP_KEYSET_TYPE, //deprecated
-                (BYTE*)&keysetType, &cbData, 0);
+                (BYTE*)&keysetType, &keysetTypeLen, 0);
 
             // Acquire an alternative CSP handle
             if (::CryptAcquireContext(&hCryptProvAlt, LPCSTR(pbData), NULL, //deprecated
