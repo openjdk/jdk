@@ -125,7 +125,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
                 }
                 archivedCache = c;
             } else if (archivedCache.length != size) {
-                throw new IllegalStateException("CDS archive is broken: ByteCache mismatch");
+                throw new InternalError("CDS archive is broken: ByteCache mismatch");
             }
             cache = archivedCache;
         }
