@@ -2777,8 +2777,8 @@ uint StoreNode::hash() const {
 //
 class MergePrimitiveStores : public StackObj {
 private:
-  PhaseGVN* _phase;
-  StoreNode* _store;
+  PhaseGVN* const _phase;
+  StoreNode* const _store;
 
   NOT_PRODUCT( const CHeapBitMap &_trace_tags; )
 
@@ -2878,19 +2878,19 @@ StoreNode* MergePrimitiveStores::run() {
     return nullptr;
   }
 
-  NOT_PRODUCT( if(is_trace_basic()) { tty->print("[TraceMergeStores] MergePrimitiveStores::run: "); _store->dump(); })
+  NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeStores] MergePrimitiveStores::run: "); _store->dump(); })
 
   // The _store must be the "last" store in a chain. If we find a use we could merge with
   // then that use or a store further down is the "last" store.
   Status status_use = find_adjacent_use_store(_store);
-  NOT_PRODUCT( if(is_trace_basic()) { tty->print("[TraceMergeStores] expect no use: "); status_use.print_on(tty); })
+  NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeStores] expect no use: "); status_use.print_on(tty); })
   if (status_use.found_store() != nullptr) {
     return nullptr;
   }
 
   // Check if we can merge with at least one def, so that we have at least 2 stores to merge.
   Status status_def = find_adjacent_def_store(_store);
-  NOT_PRODUCT( if(is_trace_basic()) { tty->print("[TraceMergeStores] expect def: "); status_def.print_on(tty); })
+  NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeStores] expect def: "); status_def.print_on(tty); })
   if (status_def.found_store() == nullptr) {
     return nullptr;
   }
@@ -2904,7 +2904,7 @@ StoreNode* MergePrimitiveStores::run() {
 
   StoreNode* merged_store = make_merged_store(merge_list, merged_input_value);
 
-  NOT_PRODUCT( if(is_trace_success()) { trace(merge_list, merged_input_value, merged_store); } )
+  NOT_PRODUCT( if (is_trace_success()) { trace(merge_list, merged_input_value, merged_store); } )
 
   return merged_store;
 }
@@ -3140,7 +3140,7 @@ void MergePrimitiveStores::collect_merge_list(Node_List& merge_list) const {
   merge_list.push(current);
   while (current != nullptr && merge_list.size() < merge_list_max_size) {
     Status status = find_adjacent_def_store(current);
-    NOT_PRODUCT( if(is_trace_basic()) { tty->print("[TraceMergeStores] find def: "); status.print_on(tty); })
+    NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeStores] find def: "); status.print_on(tty); })
 
     current = status.found_store();
     if (current != nullptr) {
@@ -3148,20 +3148,20 @@ void MergePrimitiveStores::collect_merge_list(Node_List& merge_list) const {
 
       // We can have at most one RangeCheck.
       if (status.found_range_check()) {
-        NOT_PRODUCT( if(is_trace_basic()) { tty->print_cr("[TraceMergeStores] found RangeCheck, stop traversal."); })
+        NOT_PRODUCT( if (is_trace_basic()) { tty->print_cr("[TraceMergeStores] found RangeCheck, stop traversal."); })
         break;
       }
     }
   }
 
-  NOT_PRODUCT( if(is_trace_basic()) { tty->print_cr("[TraceMergeStores] found:"); merge_list.dump(); })
+  NOT_PRODUCT( if (is_trace_basic()) { tty->print_cr("[TraceMergeStores] found:"); merge_list.dump(); })
 
   // Truncate the merge_list to a power of 2.
   const uint pow2size = round_down_power_of_2(merge_list.size());
   assert(pow2size >= 2, "must be merging at least 2 stores");
   while (merge_list.size() > pow2size) { merge_list.pop(); }
 
-  NOT_PRODUCT( if(is_trace_basic()) { tty->print_cr("[TraceMergeStores] truncated:"); merge_list.dump(); })
+  NOT_PRODUCT( if (is_trace_basic()) { tty->print_cr("[TraceMergeStores] truncated:"); merge_list.dump(); })
 }
 
 // Merge the input values of the smaller stores to a single larger input value.
