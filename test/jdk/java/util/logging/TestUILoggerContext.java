@@ -37,23 +37,23 @@ import jdk.internal.access.SharedSecrets;
  *
  * @modules java.base/jdk.internal.access
  *          java.logging
- * @run main/othervm TestAppletLoggerContext LoadingApplet
- * @run main/othervm TestAppletLoggerContext LoadingMain
- * @run main/othervm TestAppletLoggerContext One
- * @run main/othervm TestAppletLoggerContext Two
- * @run main/othervm TestAppletLoggerContext Three
- * @run main/othervm TestAppletLoggerContext Four
- * @run main/othervm TestAppletLoggerContext Five
- * @run main/othervm TestAppletLoggerContext Six
- * @run main/othervm TestAppletLoggerContext Seven
- * @run main/othervm TestAppletLoggerContext
+ * @run main/othervm TestUILoggerContext LoadingUIContext
+ * @run main/othervm TestUILoggerContext LoadingMain
+ * @run main/othervm TestUILoggerContext One
+ * @run main/othervm TestUILoggerContext Two
+ * @run main/othervm TestUILoggerContext Three
+ * @run main/othervm TestUILoggerContext Four
+ * @run main/othervm TestUILoggerContext Five
+ * @run main/othervm TestUILoggerContext Six
+ * @run main/othervm TestUILoggerContext Seven
+ * @run main/othervm TestUILoggerContext
  */
 
 // NOTE: We run in other VM in order to cause LogManager class to be loaded anew.
-public class TestAppletLoggerContext {
+public class TestUILoggerContext {
 
     // The bridge class initializes the logging system.
-    // It stubs the applet context in order to simulate context changes.
+    // It stubs the UI context in order to simulate context changes.
     //
     public static class Bridge {
 
@@ -82,13 +82,13 @@ public class TestAppletLoggerContext {
         }
 
         public static void changeContext() {
-            System.out.println("... Switching to a new applet context ...");
+            System.out.println("... Switching to a new UI context ...");
             javaAwtAccess.active = true;
             javaAwtAccess.exc = new JavaAWTAccessStub.TestExc();
         }
 
         public static void desactivate() {
-            System.out.println("... Running with no applet context ...");
+            System.out.println("... Running with no UI context ...");
             javaAwtAccess.exc = null;
             javaAwtAccess.active = false;
         }
@@ -113,12 +113,12 @@ public class TestAppletLoggerContext {
     }
 
     public static enum TestCase {
-        LoadingApplet, LoadingMain, One, Two, Three, Four, Five, Six, Seven;
+        LoadingUIContext, LoadingMain, One, Two, Three, Four, Five, Six, Seven;
         public void test() {
             switch(this) {
                 // When run - each of these two tests must be
                 // run before any other tests and before each other.
-                case LoadingApplet: testLoadingApplet(); break;
+                case LoadingUIContext: testLoadingUIContext(); break;
                 case LoadingMain:   testLoadingMain(); break;
                 case One:   testOne(); break;
                 case Two:   testTwo(); break;
@@ -131,9 +131,9 @@ public class TestAppletLoggerContext {
         }
         public String describe() {
             switch(this) {
-                case LoadingApplet:
+                case LoadingUIContext:
                     return "Test that when the LogManager class is"
-                        + " loaded in  an applet thread first,"
+                        + " loaded with UI context first,"
                         + "\n all LoggerContexts are correctly initialized";
                 case LoadingMain:
                     return "Test that when the LogManager class is"
@@ -185,7 +185,7 @@ public class TestAppletLoggerContext {
             tests = EnumSet.complementOf(EnumSet.of(TestCase.LoadingMain));
         }
         final EnumSet<TestCase> loadingTests =
-            EnumSet.of(TestCase.LoadingApplet, TestCase.LoadingMain);
+            EnumSet.of(TestCase.LoadingUIContext, TestCase.LoadingMain);
         int testrun = 0;
         for (TestCase test : tests) {
             if (loadingTests.contains(test)) {
@@ -209,7 +209,7 @@ public class TestAppletLoggerContext {
         }
     }
 
-    public static void testLoadingApplet() {
+    public static void testLoadingUIContext() {
         Bridge.changeContext();
 
         Logger bar = new Bridge.CustomLogger("com.foo.Bar");
@@ -378,10 +378,10 @@ public class TestAppletLoggerContext {
                 Bridge.changeContext();
 
                 // this is not a supported configuration:
-                // We are in an applet context with several log managers.
+                // We are in an UI context with several log managers.
                 // We however need to check our assumptions...
 
-                // Applet context => root logger and global logger should also be null.
+                // UI context => root logger and global logger should also be null.
 
                 Logger expected = global;
                 Logger logger3 = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
@@ -446,10 +446,10 @@ public class TestAppletLoggerContext {
                 Bridge.changeContext();
 
                 // this is not a supported configuration:
-                // We are in an applet context with several log managers.
+                // We are in an UI context with several log managers.
                 // We however need to check our assumptions...
 
-                // Applet context => root logger and global logger should also be null.
+                // UI context => root logger and global logger should also be null.
 
                 Logger logger5 = manager.getLogger("");
                 Logger logger5b = manager.getLogger("");
