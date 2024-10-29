@@ -367,8 +367,7 @@ private:
     _aliasing(aliasing),
     _distance(distance)
   {
-    const jint max_distance = 1 << 30;
-    assert(_distance < max_distance && _distance > -max_distance, "safe distance");
+    assert(_distance != min_jint, "given by condition S3 of MemPointer Lemma");
   }
 
 public:

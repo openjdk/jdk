@@ -184,6 +184,18 @@ public class TestMergeStoresUnsafeArrayPointer {
             }
         }
 
+        // No result verification here. We only want to make sure we do not hit asserts.
+        System.out.println("test8 and test9");
+        for (int i = 0; i < 100_000; i++) {
+            test8a(big, ANCHOR);
+            test8b(big, ANCHOR);
+            test8c(big, ANCHOR);
+            test8d(big, ANCHOR);
+            test9a(big, ANCHOR);
+            test9b(big, ANCHOR);
+            test9c(big, ANCHOR);
+        }
+
         if (errors > 0) {
             throw new RuntimeException("ERRORS: " + errors);
         }
@@ -256,5 +268,57 @@ public class TestMergeStoresUnsafeArrayPointer {
         long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
         UNSAFE.putInt(a, base +  (long)(53 * large_by_53) + 0, 0x42424242); // overflow
         UNSAFE.putInt(a, base + 53L * (long)(large_by_53) + 4, 0x66666666); // no overflow
+    }
+
+    // Test: check if large distance leads to assert
+    static void test8a(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base + (1L << 11) + 0,          (byte)42);
+        UNSAFE.putByte(a, base + (1L << 11) + (1L << 30), (byte)11);
+    }
+
+    // Test: check if large distance leads to assert
+    static void test8b(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base + (1L << 11) + (1L << 30), (byte)11);
+        UNSAFE.putByte(a, base + (1L << 11) + 0,          (byte)42);
+    }
+
+    // Test: check if large distance leads to assert
+    static void test8c(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base - (1L << 11) - 0,          (byte)42);
+        UNSAFE.putByte(a, base - (1L << 11) - (1L << 30), (byte)11);
+    }
+
+    // Test: check if large distance leads to assert
+    static void test8d(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base - (1L << 11) - (1L << 30), (byte)11);
+        UNSAFE.putByte(a, base - (1L << 11) - 0,          (byte)42);
+    }
+
+    // Test: check if large distance leads to assert
+    //       case: bad distance: NaN
+    static void test9a(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base - 100,               (byte)42);
+        UNSAFE.putByte(a, base - 100  + (1L << 31), (byte)11);
+    }
+
+    // Test: check if large distance leads to assert
+    //       case: just before NaN, it is still a valid distance for MemPointer aliasing.
+    static void test9b(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base - 100,                   (byte)42);
+        UNSAFE.putByte(a, base - 100  + (1L << 31) - 1, (byte)11);
+    }
+
+    // Test: check if large distance leads to assert
+    //       case: constant too large
+    static void test9c(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base,               (byte)42);
+        UNSAFE.putByte(a, base  + (1L << 31), (byte)11);
     }
 }
