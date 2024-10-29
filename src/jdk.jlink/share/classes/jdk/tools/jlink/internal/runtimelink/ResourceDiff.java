@@ -33,7 +33,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Class representing a difference of a jimage resource. For all intents
@@ -130,6 +129,7 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
         }
         public ResourceDiff build() {
             if (kind == null || name == null) {
+                // should this be RuntimeImageLinkException?   output needs cleanup?
                 throw new IllegalStateException("kind and name must be set");
             }
             switch (kind) {
@@ -141,6 +141,7 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
             case REMOVED:
                 {
                     if (resourceBytes == null) {
+                        // should this be RuntimeImageLinkException?  output needs cleanup?
                         throw new IllegalStateException("Original bytes needed for MODIFIED, REMOVED!");
                     }
                     break;
@@ -211,8 +212,6 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
                     dataOut.write(buf);
                 }
             }
-        } catch (IOException e) {
-            throw e;
         }
     }
 
@@ -233,16 +232,16 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
                 throw new IllegalArgumentException("Not a ResourceDiff data stream!");
             }
             int numItems = din.readInt();
-            diffs = new ArrayList<>(numItems);
+            diffs = new ArrayList<>(numItems);  // why not initialized above?  optimized size?
             for (int i = 0; i < numItems; i++) {
                 Kind k = Kind.fromShort(din.readShort());
                 int numBytes = din.readInt();
-                byte[] buf = readNumBytesFromStream(din, numBytes);
+                byte[] buf = readBytesFromStream(din, numBytes);
                 String name = new String(buf, StandardCharsets.UTF_8);
                 numBytes = din.readInt();
                 byte[] resBytes = null;
                 if (numBytes != 0) {
-                    resBytes = readNumBytesFromStream(din, numBytes);
+                    resBytes = readBytesFromStream(din, numBytes);
                 }
                 Builder builder = new Builder();
                 builder.setKind(k)
@@ -256,7 +255,7 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
         return diffs;
     }
 
-    private static byte[] readNumBytesFromStream(DataInputStream din, int numBytes) throws IOException {
+    private static byte[] readBytesFromStream(DataInputStream din, int numBytes) throws IOException {
         byte[] b = new byte[numBytes];
         for (int i = 0; i < numBytes; i++) {
             int data = din.read();
@@ -269,7 +268,7 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
     }
 
     public static void printDiffs(List<ResourceDiff> diffs) {
-        for (ResourceDiff diff: diffs.stream().sorted().collect(Collectors.toList())) {
+        for (ResourceDiff diff: diffs.stream().sorted().toList()) {
             switch (diff.getKind()) {
             case ADDED:
                 System.out.println("Only added in opt: " + diff.getName());

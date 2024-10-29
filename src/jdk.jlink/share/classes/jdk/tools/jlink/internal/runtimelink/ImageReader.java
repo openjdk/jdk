@@ -26,9 +26,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
 import jdk.internal.jimage.BasicImageReader;
+import jdk.tools.jlink.internal.ImageResourcesTree;
 
 public class ImageReader extends BasicImageReader implements JimageDiffGenerator.ImageResource {
 
@@ -36,16 +37,12 @@ public class ImageReader extends BasicImageReader implements JimageDiffGenerator
         super(path);
     }
 
-    public static boolean isNotTreeInfoResource(String path) {
-        return !(path.startsWith("/packages") || path.startsWith("/modules"));
-    }
-
     @Override
     public List<String> getEntries() {
-        return Arrays.asList(getEntryNames()).stream()
-                .filter(ImageReader::isNotTreeInfoResource)
+        return Arrays.stream(getEntryNames())
+                .filter(Predicate.not(ImageResourcesTree::isTreeInfoResource))
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

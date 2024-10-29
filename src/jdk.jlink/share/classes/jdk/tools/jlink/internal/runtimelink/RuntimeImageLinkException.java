@@ -26,22 +26,14 @@
 package jdk.tools.jlink.internal.runtimelink;
 
 /**
- * Exception thrown for links without packaged modules. I.e. run-image link.
+ * Exception thrown for linking without packaged modules. I.e. runtime image linking.
  *
  */
-public class RuntimeImageLinkException extends IllegalStateException {
+public class RuntimeImageLinkException extends RuntimeException {
 
     private static final long serialVersionUID = -1848914673073119403L;
 
-    private final IllegalArgumentException iae;
-
-    public RuntimeImageLinkException(IllegalArgumentException cause) {
-        super(cause);
-        this.iae = cause;
+    public RuntimeImageLinkException(String msg) {
+        super(msg);
     }
-
-    public IllegalArgumentException getReason() {
-        return iae;
-    }
-
 }

@@ -73,7 +73,7 @@ import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
-import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
+import jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException;
 import jdk.tools.jlink.plugin.PluginException;
 
 /**
@@ -89,8 +89,6 @@ public class JlinkTask {
 
     private static final TaskHelper taskHelper
             = new TaskHelper(JLINK_BUNDLE);
-    public static final String JLINK_MOD_NAME = "jdk.jlink";
-
     private static final Option<?>[] recognizedOptions = {
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.help = true;
@@ -190,7 +188,7 @@ public class JlinkTask {
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.ignoreModifiedRuntime = true;
         }, true, "--ignore-modified-runtime"),
-        // option for generating linkable JDK runtimes (at JDK build time)
+        // option for generating linkable JDK runtime (at JDK build time)
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.generateLinkableRuntime = true;
         }, true, "--generate-linkable-runtime")
@@ -240,10 +238,6 @@ public class JlinkTask {
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
-    // meta-data files per module for linkable JDK runtimes
-    public static final String RESPATH_PATTERN = "jdk/tools/jlink/internal/runtimelink/fs_%s_files";
-    // The diff files per module for linkable JDK runtimes
-    public static final String DIFF_PATTERN = "jdk/tools/jlink/internal/runtimelink/diff_%s";
 
     int run(String[] args) {
         if (log == null) {
@@ -274,8 +268,7 @@ public class JlinkTask {
                 // In order to be able to show the run-time image based link
                 // capability in --help, we need to look for the delta files
                 // in jdk.jlink
-                boolean runtimeCapability = hasRuntimeImageLinkCap();
-                optionsHelper.showHelp(PROGNAME, runtimeCapability);
+                optionsHelper.showHelp(PROGNAME, LinkableRuntimeImage.isLinkableRuntime());
                 return EXIT_OK;
             }
             if (optionsHelper.shouldListPlugins()) {
@@ -318,7 +311,7 @@ public class JlinkTask {
             }
             cleanupOutput(outputPath);
             return EXIT_ERROR;
-        } catch (IllegalArgumentException | ResolutionException e) {
+        } catch (IllegalArgumentException | ResolutionException | RuntimeImageLinkException e) {
             log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
             if (DEBUG) {
                 e.printStackTrace(log);
@@ -410,43 +403,7 @@ public class JlinkTask {
             }
             finder = newModuleFinder(options.modulePath, options.limitMods, roots);
         }
-        // Setup and init actions for JDK linkable runtimes
-        LinkableRuntimesResult result = linkableJDKRuntimesInit(finder, roots);
 
-        return new JlinkConfiguration(options.output,
-                                      roots,
-                                      result.finder,
-                                      result.isLinkFromRuntime,
-                                      options.ignoreModifiedRuntime,
-                                      options.generateLinkableRuntime);
-    }
-
-    private static record LinkableRuntimesResult(boolean isLinkFromRuntime,
-                                                 ModuleFinder finder) {}
-
-    /**
-     * Perform sanity checks and setup actions for JDK linkable runtime links
-     *
-     * @param finder The module finder from packaged modules
-     * @param roots The roots (if any) of the modules.
-     * @return A module finder possibly adding the system modules for JDK
-     *         linkable runtimes if and only if java.base wasn't in the provided
-     *         module finder already. Otherwise returns the provided finder.
-     *         In both cases finders get the set of limited modules applied if
-     *         so requested with --limit-modules.
-     *
-     * @throws BadArgs if the jlink input options contain an invalid
-     *                 combination.
-     */
-    private LinkableRuntimesResult linkableJDKRuntimesInit(ModuleFinder finder,
-                                                           Set<String> roots)
-        throws BadArgs {
-        // Linkable JDK runtimes and an empty module path in conjunction
-        // with --keep-packaged-modules doesn't make sense as we are not linking
-        // from packaged modules to begin with.
-        if (options.modulePath.isEmpty() && options.packagedModulesPath != null) {
-            throw taskHelper.newBadArgs("err.runtime.link.packaged.mods");
-        }
         boolean isLinkFromRuntime = options.modulePath.isEmpty();
         // In case of custom modules outside the JDK we may
         // have a non-empty module path, which must not include
@@ -457,9 +414,21 @@ public class JlinkTask {
         if (finder.find("java.base").isEmpty()) {
             isLinkFromRuntime = true;
             ModuleFinder runtimeImageFinder = ModuleFinder.ofSystem();
-            finder = combinedFinders(finder, runtimeImageFinder, options.limitMods, roots);
+            finder = combinedFinders(runtimeImageFinder, finder, options.limitMods, roots);
         }
-        return new LinkableRuntimesResult(isLinkFromRuntime, finder);
+
+        // --keep-packaged-modules doesn't make sense as we are not linking
+        // from packaged modules to begin with.
+        if (isLinkFromRuntime && options.packagedModulesPath != null) {
+            throw taskHelper.newBadArgs("err.runtime.link.packaged.mods");
+        }
+
+        return new JlinkConfiguration(options.output,
+                                      roots,
+                                      finder,
+                                      isLinkFromRuntime,
+                                      options.ignoreModifiedRuntime,
+                                      options.generateLinkableRuntime);
     }
 
     /**
@@ -476,18 +445,19 @@ public class JlinkTask {
      * @return A combined finder, or the input finder, potentially applying
      *         module limits.
      */
-    private ModuleFinder combinedFinders(ModuleFinder finder,
-            ModuleFinder runtimeImageFinder, Set<String> limitMods,
-            Set<String> roots) {
+    private ModuleFinder combinedFinders(ModuleFinder runtimeImageFinder,
+                                         ModuleFinder finder,
+                                         Set<String> limitMods,
+                                         Set<String> roots) {
         ModuleFinder combined = new ModuleFinder() {
 
             @Override
             public Optional<ModuleReference> find(String name) {
-                Optional<ModuleReference> basic = runtimeImageFinder.find(name);
-                if (basic.isEmpty()) {
+                Optional<ModuleReference> mref = runtimeImageFinder.find(name);
+                if (mref.isEmpty()) {
                     return finder.find(name);
                 }
-                return basic;
+                return mref;
             }
 
             @Override
@@ -542,10 +512,10 @@ public class JlinkTask {
     }
 
     /*
-     * Returns a module finder of the given module path that limits
-     * the observable modules to those in the transitive closure of
-     * the modules specified in {@code limitMods} plus other modules
-     * specified in the {@code roots} set.
+     * Returns a module finder of the given module path or the system modules
+     * if the module path is empty that limits the observable modules to those
+     * in the transitive closure of the modules specified in {@code limitMods}
+     * plus other modules specified in the {@code roots} set.
      *
      * @throws IllegalArgumentException if java.base module is present
      * but its descriptor has no version
@@ -641,9 +611,22 @@ public class JlinkTask {
                     taskHelper.getMessage("err.automatic.module", mref.descriptor().name(), loc));
             });
 
-        // Perform some sanity checks for linkable JDK runtimes
+        // Perform some sanity checks for linkable runtime image
         if (config.linkFromRuntimeImage()) {
-            sanityChecksLinkableJDKRuntime(log, cf, verbose);
+            if (!LinkableRuntimeImage.isLinkableRuntime()) {
+                String msg = taskHelper.getMessage("err.runtime.link.not.linkable.runtime");
+                throw new IllegalArgumentException(msg);
+            }
+            // Disallow to create a custom image to include jdk.jlink if linking from runtime image
+            if (cf.findModule(JlinkTask.class.getModule().getName()).isPresent()) {
+                String msg = taskHelper.getMessage("err.runtime.link.jdk.jlink.prohibited");
+                throw new IllegalArgumentException(msg);
+            }
+
+            // Print info message indicating jlink is performed on a linkable runtime image
+            if (verbose && log != null) {
+                log.println(taskHelper.getMessage("runtime.link.info"));
+            }
         }
 
         if (verbose && log != null) {
@@ -654,6 +637,7 @@ public class JlinkTask {
                                         rm.name(),
                                         rm.reference().location().get(),
                                         "jrt".equals(rm.reference().location().get().getScheme())
+                                            // if location is from jrt, should linkFromRuntimeImage() always be true?
                                             && config.linkFromRuntimeImage() ?
                                                 " " + taskHelper.getMessage("runtime.link.jprt.path.extra")
                                                 : ""));
@@ -723,62 +707,6 @@ public class JlinkTask {
                                config.isGenerateRuntimeImage());
     }
 
-    /**
-     * Linkable JDK runtimes support. Perform some sanity checks if we run
-     * jlink from the current run-time JDK image.
-     *
-     * @param log The log to write messages to.
-     * @param cf The current configuration
-     *
-     * @throws IOException
-     */
-    private static void sanityChecksLinkableJDKRuntime(PrintWriter log,
-                                                       Configuration cf,
-                                                       boolean verbose) throws IOException {
-        // Catch the case where we don't have a linkable JDK runtime. If so,
-        // we don't have the per module resource diffs in the modules image
-        try (InputStream inStream = getDiffInputStream()) {
-            if (inStream == null) {
-                // Only linkable JDK runtimes have those resources. Abort otherwise.
-                String msg = taskHelper.getMessage("err.runtime.link.not.linkable.runtime");
-                throw new IllegalArgumentException(msg);
-            }
-        }
-        // Disallow jlink runs for linkable JDK runtimes with jdk.jlink included
-        if (cf.findModule(JLINK_MOD_NAME).isPresent()) {
-            String msg = taskHelper.getMessage("err.runtime.link.jdk.jlink.prohibited");
-            throw new IllegalArgumentException(msg);
-        }
-
-        // Print info message indicating jlink is performed on a linkable JDK
-        // runtime
-        if (log != null && verbose) {
-            log.println(taskHelper.getMessage("runtime.link.info"));
-        }
-    }
-
-    private static boolean hasRuntimeImageLinkCap() {
-        try (InputStream in = getDiffInputStream()) {
-            return in != null;
-        } catch (IOException e) {
-            // fall-through
-        }
-        return false;
-    }
-
-    private static InputStream getDiffInputStream() {
-        try {
-            String resourceName = String.format(DIFF_PATTERN, "java.base");
-            return JlinkTask.class.getModule().getResourceAsStream(resourceName);
-        } catch (IOException e) {
-            if (DEBUG) {
-                System.err.println("Failed to get diff pattern resource");
-                e.printStackTrace();
-            }
-            return null;
-        }
-    }
-
     private static Archive newArchive(String module,
                                       Path path,
                                       Runtime.Version version,
@@ -810,7 +738,7 @@ public class JlinkTask {
                 }
             }
             return modularJarArchive;
-        } else if (!"jrt".equals(path.toUri().getScheme()) && Files.isDirectory(path)) {
+        } else if (Files.isDirectory(path) && !"jrt".equals(path.toUri().getScheme())) {
             // The jrt URI path scheme conditional is there since we'd otherwise
             // enter this branch for linkable JDK runtimes where the path is
             // a jrt path and for the specific JDK module is a directory.
@@ -822,28 +750,7 @@ public class JlinkTask {
                         taskHelper.getMessage("err.not.a.module.directory", path));
             }
         } else if (config.linkFromRuntimeImage()) {
-            // This is after all other archive types, since user-provided
-            // modules might be in any of the above forms and we'd like to
-            // support them.
-            //
-            // For linkable JDK runtimes the modules image includes resource
-            // diffs on a per-module bases as part of the jdk.jlink module.
-            // See ImageFileCreator.generateJImage() where those are added at
-            // JDK build time for linkable JDK runtimes.
-            //
-            // Here we retrieve the per module difference file, which is
-            // potentially empty, from the modules image and pass that on to
-            // JRTArchive for further processing. When streaming resources from
-            // the archive, the diff is being applied.
-            String diffResourceName = String.format(DIFF_PATTERN, module);
-            List<ResourceDiff> perModuleDiff = null;
-            try (InputStream in = JlinkTask.class.getModule().getResourceAsStream(diffResourceName)){
-                perModuleDiff = ResourceDiff.read(in);
-            } catch (IOException e) {
-                throw new AssertionError("Failure to retrieve resource diff for " +
-                                         "module " + module, e);
-            }
-            return new JRTArchive(module, path, !config.ignoreModifiedRuntime(), perModuleDiff);
+            return LinkableRuntimeImage.newArchive(module, path, config.ignoreModifiedRuntime());
         } else {
             throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));

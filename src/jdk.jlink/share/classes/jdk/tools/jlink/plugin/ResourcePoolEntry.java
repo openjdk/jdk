@@ -69,20 +69,6 @@ public interface ResourcePoolEntry {
         NATIVE_CMD,
         NATIVE_LIB,
         TOP;
-
-        public static Type fromOrdinal(int value) {
-            Type retval = null;
-            for (Type v: Type.values()) {
-                if (v.ordinal() == value) {
-                    retval = v;
-                    break;
-                }
-            }
-            if (retval == null) {
-                throw new IllegalArgumentException("Illegal ordinal: " + value);
-            }
-            return retval;
-        }
     }
 
     /**

@@ -25,7 +25,7 @@
 
 package jdk.tools.jlink.internal;
 
-import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
+import static jdk.tools.jlink.internal.LinkableRuntimeImage.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,11 +42,11 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,7 +59,7 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 
 /**
- * An archive implementation based on the JDK's modules image (lib/modules,
+ * An archive implementation based on the JDK's runtime image (lib/modules,
  * or jimage) as well as associated files from the filesystem of the JDK
  * installation.
  */
@@ -101,7 +101,8 @@ public class JRTArchive implements Archive {
                                             " not part of the JDK install"));
         this.errorOnModifiedFile = errorOnModifiedFile;
         this.otherRes = readModuleResourceFile(module);
-        this.resDiff = prepareDiffMap(Objects.requireNonNull(perModDiff));
+        this.resDiff = Objects.requireNonNull(perModDiff).stream()
+                            .collect(Collectors.toMap(ResourceDiff::getName, Function.identity()));
     }
 
     @Override
@@ -122,7 +123,7 @@ public class JRTArchive implements Archive {
             throw new UncheckedIOException(e);
         } catch (RuntimeImageLinkException e) {
             // populate modified files exception
-            throw e.getReason();
+            throw e;
         }
         return files.stream().map(JRTFile::toEntry);
     }
@@ -156,33 +157,33 @@ public class JRTArchive implements Archive {
     private void collectFiles() throws IOException {
         if (files.isEmpty()) {
             addNonClassResources();
-            // Add classes/resources from image module,
+            // Add classes/resources from the runtime image,
             // patched with the runtime image link diff
             files.addAll(ref.open().list()
                                    .filter(i -> {
-                                       String lookupKey = String.format("/%s/%s", module, i);
-                                       ResourceDiff rd = resDiff.get(lookupKey);
-                                       // Filter all resources with a resource diff
-                                       // that are of kind MODIFIED.
-                                       // Note that REMOVED won't happen since in
-                                       // that case the module listing won't have
-                                       // the resource anyway.
-                                       // Note as well that filter removes files
-                                       // of kind ADDED. Those files are not in
-                                       // the packaged modules, so ought not to
-                                       // get returned from the pipeline.
-                                       return (rd == null ||
-                                               rd.getKind() == ResourceDiff.Kind.MODIFIED);
+                                           String lookupKey = String.format("/%s/%s", module, i);
+                                           ResourceDiff rd = resDiff.get(lookupKey);
+                                           // Filter all resources with a resource diff
+                                           // that are of kind MODIFIED.
+                                           // Note that REMOVED won't happen since in
+                                           // that case the module listing won't have
+                                           // the resource anyway.
+                                           // Note as well that filter removes files
+                                           // of kind ADDED. Those files are not in
+                                           // the packaged modules, so ought not to
+                                           // get returned from the pipeline.
+                                           return (rd == null ||
+                                                   rd.getKind() == ResourceDiff.Kind.MODIFIED);
                                    })
                                    .map(s -> {
-                                               String lookupKey = String.format("/%s/%s", module, s);
-                                               return new JRTArchiveFile(JRTArchive.this, s,
-                                                       EntryType.CLASS_OR_RESOURCE,
-                                                       null /* hashOrTarget */,
-                                                       false /* symlink */,
-                                                       resDiff.get(lookupKey));
+                                           String lookupKey = String.format("/%s/%s", module, s);
+                                           return new JRTArchiveFile(JRTArchive.this, s,
+                                                           EntryType.CLASS_OR_RESOURCE,
+                                                           null /* hashOrTarget */,
+                                                           false /* symlink */,
+                                                           resDiff.get(lookupKey));
                                    })
-                                   .collect(Collectors.toList()));
+                                   .toList());
             // Finally add all files only present in the resource diff
             // That is, removed items in the runtime image.
             files.addAll(resDiff.values().stream()
@@ -192,9 +193,7 @@ public class JRTArchive implements Archive {
                                                  if (secondSlash == -1) {
                                                      throw new AssertionError();
                                                  }
-                                                 String pathWithoutModule = s.getName()
-                                                            .substring(secondSlash + 1,
-                                                                       s.getName().length());
+                                                 String pathWithoutModule = s.getName().substring(secondSlash + 1);
                                                  return new JRTArchiveFile(JRTArchive.this,
                                                          pathWithoutModule,
                                                          EntryType.CLASS_OR_RESOURCE,
@@ -202,7 +201,7 @@ public class JRTArchive implements Archive {
                                                          false /* symlink */,
                                                          s);
                                          })
-                                         .collect(Collectors.toList()));
+                                         .toList());
         }
     }
 
@@ -225,9 +224,9 @@ public class JRTArchive implements Archive {
                             String msg = String.format(MISMATCH_FORMAT,
                                                        path.toString());
                             if (errorOnModifiedFile) {
-                                IllegalArgumentException ise = new IllegalArgumentException(msg);
-                                throw new RuntimeImageLinkException(ise);
+                                throw new RuntimeImageLinkException(msg);
                             } else {
+                                // System.err vs taskHelper.warning?
                                 System.err.printf("WARNING: %s", msg);
                             }
                         }
@@ -240,7 +239,7 @@ public class JRTArchive implements Archive {
                                                   /* diff only for resources */
                                                   null);
                  })
-                 .collect(Collectors.toList()));
+                 .toList());
         }
     }
 
@@ -278,8 +277,7 @@ public class JRTArchive implements Archive {
             case NATIVE_LIB -> EntryType.NATIVE_LIB;
             case TOP -> throw new IllegalArgumentException(
                            "TOP files should be handled by ReleaseInfoPlugin!");
-            default -> throw new IllegalArgumentException(
-                           "Unknown type: " + input);
+            default -> throw new IllegalArgumentException("Unknown type: " + input);
         };
     }
 
@@ -299,6 +297,9 @@ public class JRTArchive implements Archive {
         //     for symlinked resources.
         // (4) The relative file path of the resource
         private static final String TYPE_FILE_FORMAT = "%d|%d|%s|%s";
+
+        private static final Map<Integer, Type> typeMap = Arrays.stream(Type.values())
+                .collect(Collectors.toMap(Type::ordinal, Function.identity()));
 
         public String encodeToString() {
             return String.format(TYPE_FILE_FORMAT,
@@ -323,7 +324,10 @@ public class JRTArchive implements Archive {
             int symlinkNum = -1;
             try {
                 Integer typeInt = Integer.valueOf(tokens[0]);
-                type = Type.fromOrdinal(typeInt);
+                type = typeMap.get(typeInt);
+                if (type == null) {
+                    throw new AssertionError("Illegal type ordinal: " + typeInt);
+                }
                 symlinkNum = Integer.valueOf(tokens[1]);
             } catch (NumberFormatException e) {
                 throw new AssertionError(e); // must not happen
@@ -450,10 +454,9 @@ public class JRTArchive implements Archive {
                                 // packaged modules, use the diff. Diffs of kind
                                 // ADDED have been filtered out in collectFiles();
                                 assert diff.getKind() != ResourceDiff.Kind.ADDED;
-                                assert diff.getName().equals(
-                                                          String.format("/%s/%s",
-                                                                        archive.moduleName(),
-                                                                        resPath));
+                                assert diff.getName().equals(String.format("/%s/%s",
+                                                                           archive.moduleName(),
+                                                                           resPath));
                                 return diff.getResourceBytes().length;
                             }
                             // Read from the module image. This works, because
@@ -471,8 +474,7 @@ public class JRTArchive implements Archive {
                                 String msgFormat = "File %s not found in the modules image.\n" +
                                                    "--patch-module is not supported for run-time image linking.";
                                 String msg = String.format(msgFormat, file.getFile());
-                                IllegalArgumentException noModulePatch = new IllegalArgumentException(msg);
-                                throw new RuntimeImageLinkException(noModulePatch);
+                                throw new RuntimeImageLinkException(msg);
                             }
                         }
                     } catch (IOException e) {
@@ -493,8 +495,8 @@ public class JRTArchive implements Archive {
                         if (diff != null) {
                             assert diff.getKind() != ResourceDiff.Kind.ADDED;
                             assert diff.getName().equals(String.format("/%s/%s",
-                                                                    archive.moduleName(),
-                                                                    resPath));
+                                                                       archive.moduleName(),
+                                                                       resPath));
                             return new ByteArrayInputStream(diff.getResourceBytes());
                         }
                         String module = archive.moduleName();
@@ -513,8 +515,7 @@ public class JRTArchive implements Archive {
         try {
             try (InputStream inStream = JRTArchive.class.getModule()
                                                   .getResourceAsStream(resName)) {
-                String input = new String(inStream.readAllBytes(),
-                                          StandardCharsets.UTF_8);
+                String input = new String(inStream.readAllBytes(), StandardCharsets.UTF_8);
                 if (input.isEmpty()) {
                     // Not all modules have non-class resources
                     return Collections.emptyList();
@@ -523,14 +524,9 @@ public class JRTArchive implements Archive {
                 }
             }
         } catch (IOException e) {
+            // InternalError vs AssertionError??
             throw new InternalError("Failed to process run-time image resources " +
                                     " for " + modName);
         }
-    }
-
-    private static Map<String, ResourceDiff> prepareDiffMap(List<ResourceDiff> diffs) {
-        Map<String, ResourceDiff> resDiffsAsMap = new HashMap<>();
-        diffs.forEach(r -> resDiffsAsMap.put(r.getName(), r));
-        return resDiffsAsMap;
     }
 }

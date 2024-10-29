@@ -24,8 +24,7 @@
  */
 package jdk.tools.jlink.internal;
 
-import static jdk.tools.jlink.internal.JlinkTask.DIFF_PATTERN;
-import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
+import static jdk.tools.jlink.internal.LinkableRuntimeImage.*;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -83,13 +82,11 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
  * }</pre>
  */
 public final class ImageFileCreator {
-    private static final String JLINK_MOD_NAME = "jdk.jlink";
-    // This resource is being used in JLinkTask which passes its contents to
-    // JRTArchive for further processing.
-    private static final String RESPATH = "/" + JLINK_MOD_NAME + "/" + RESPATH_PATTERN;
-    private static final String DIFF_PATH = "/" + JLINK_MOD_NAME + "/" + DIFF_PATTERN;
     private static final byte[] EMPTY_RESOURCE_BYTES = new byte[] {};
 
+    private static final String JLINK_MOD_NAME = "jdk.jlink";
+    private static final String RESPATH = "/" + JLINK_MOD_NAME + "/" + RESPATH_PATTERN;
+    private static final String DIFF_PATH = "/" + JLINK_MOD_NAME + "/" + DIFF_PATTERN;
     private final Map<String, List<Entry>> entriesForModule = new HashMap<>();
     private final ImagePluginStack plugins;
     private final boolean generateRuntimeImage;
@@ -103,36 +100,43 @@ public final class ImageFileCreator {
      * plug-in stack and the native byte order. Note: this is will not create
      * a linkable JDK runtime.
      *
+     * Unused? Should this method be removed?
+     *
      * @param archives The set of input archives
      * @param plugins The plug-in stack to apply to the input
      * @return The executable image
      * @throws IOException
      */
+    /*
     public static ExecutableImage create(Set<Archive> archives,
             ImagePluginStack plugins)
             throws IOException {
         return ImageFileCreator.create(archives, ByteOrder.nativeOrder(),
                 plugins, false);
-    }
+    }*/
 
-    /**
+    /*
      * Create an executable image based on a set of archives and an empty
      * plug-in stack and a given byte order. Note: this is will not create
      * a linkable JDK runtime.
+     *
+     * Unused?
      *
      * @param archives The set of input archives
      * @param byteOrder The required byte order of the output image.
      * @return The executable image for the given byte order.
      * @throws IOException
      */
+    /*
     public static ExecutableImage create(Set<Archive> archives,
             ByteOrder byteOrder)
             throws IOException {
         return ImageFileCreator.create(archives, byteOrder,
                 new ImagePluginStack(), false);
     }
+     */
 
-    /**
+    /*
      * Create an executable image based on a set of input archives and a given
      * plugin stack for a given byte order. It optionally generates a linkable
      * JDK runtime if {@code generateRuntimeImage} is set to {@code true}.
@@ -140,7 +144,7 @@ public final class ImageFileCreator {
      * @param archives The set of input archives
      * @param byteOrder The desired byte order of the result
      * @param plugins The plugin stack to apply to the input
-     * @param generateRuntimeImage Whether or not a linkable JDK runtime should
+     * @param generateRuntimeImage if a linkable JDK runtime should
      *        get created.
      * @return The executable image.
      * @throws IOException
@@ -238,11 +242,11 @@ public final class ImageFileCreator {
 
     private static void throwRuntimeLinkFailure(RuntimeImageLinkException e) throws IOException {
         if (JlinkTask.DEBUG) {
-            e.getReason().printStackTrace();
+            e.printStackTrace();
         }
         // Propagate as IOException with appropriate message for
         // jlink runs from the run-time image
-        throw new IOException(e.getReason().getMessage());
+        throw new IOException(e.getMessage());
     }
 
     /**
@@ -269,15 +273,14 @@ public final class ImageFileCreator {
         try {
             resultResources = pluginSupport.visitResources(allContent);
             if (generateRuntimeImage) {
-                // Keep track of non-modules image resources for
-                // linkable JDK runtimes
+                // Keep track of non-modules resources for linkable JDK runtime
                 resultResources = addNonClassResourcesTrackFiles(resultResources,
                                                                  writer);
                 // Generate the diff between the input resources from packaged
                 // modules in 'allContent' to the plugin- or otherwise
                 // generated-content in 'resultResources'
-                resultResources = addRessourceDiffFiles(allContent.resourcePool(),
-                                                        resultResources,
+                resultResources = addResourceDiffFiles(allContent.resourcePool(),
+                                                       resultResources,
                                                         writer);
             }
         } catch (PluginException pe) {
@@ -291,7 +294,7 @@ public final class ImageFileCreator {
             if (JlinkTask.DEBUG) {
                 re.printStackTrace();
             }
-            throw re.getReason();
+            throw re;
         } catch (Exception ex) {
             if (JlinkTask.DEBUG) {
                 ex.printStackTrace();
@@ -368,8 +371,8 @@ public final class ImageFileCreator {
      *         the {@code resultContent}
      */
     @SuppressWarnings("try")
-    private static ResourcePool addRessourceDiffFiles(ResourcePool jmodContent,
-            ResourcePool resultContent, BasicImageWriter writer) {
+    private static ResourcePool addResourceDiffFiles(ResourcePool jmodContent,
+                                                     ResourcePool resultContent, BasicImageWriter writer) {
         JimageDiffGenerator generator = new JimageDiffGenerator();
         List<ResourceDiff> diff;
         try (ImageResource jmods = new ResourcePoolReader(jmodContent);
@@ -521,8 +524,7 @@ public final class ImageFileCreator {
      * @return A mapping with the module names as keys and the list of files
      *         not part of the modules image (jimage) as values.
      */
-    private static Map<String, List<String>> recordAndFilterEntries(
-            ResourcePool resultResources) {
+    private static Map<String, List<String>> recordAndFilterEntries(ResourcePool resultResources) {
         final Map<String, List<String>> nonClassResEntries = new HashMap<>();
         final Platform platform = getTargetPlatform(resultResources);
         resultResources.entries().forEach(entry -> {

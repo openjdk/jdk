@@ -28,6 +28,7 @@ import java.util.Objects;
 
 import jdk.tools.jlink.internal.runtimelink.JimageDiffGenerator.ImageResource;
 import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 @SuppressWarnings("try")
 public class ResourcePoolReader implements ImageResource {
@@ -45,7 +46,7 @@ public class ResourcePoolReader implements ImageResource {
 
     @Override
     public List<String> getEntries() {
-        return pool.entries().map(a -> a.path()).toList();
+        return pool.entries().map(ResourcePoolEntry::path).toList();
     }
 
     @Override
