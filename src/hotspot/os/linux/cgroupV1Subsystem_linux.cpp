@@ -49,28 +49,19 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   _cgroup_path = os::strdup(cgroup_path);
   stringStream ss;
   if (_root != nullptr && cgroup_path != nullptr) {
-    if (strcmp(_root, "/") == 0) {
-      ss.print_raw(_mount_point);
+    ss.print_raw(_mount_point);
+    if (strcmp(_root, "/") == 0 || !is_read_only()) {
+      // host processes / containers w/private cgroup namespace
       if (strcmp(cgroup_path,"/") != 0) {
+        // hosts only
         ss.print_raw(cgroup_path);
       }
-      _path = os::strdup(ss.base());
-    } else {
-      if (strcmp(_root, cgroup_path) == 0) {
-        ss.print_raw(_mount_point);
-        _path = os::strdup(ss.base());
-      } else {
-        char *p = strstr((char*)cgroup_path, _root);
-        if (p != nullptr && p == _root) {
-          if (strlen(cgroup_path) > strlen(_root)) {
-            ss.print_raw(_mount_point);
-            const char* cg_path_sub = cgroup_path + strlen(_root);
-            ss.print_raw(cg_path_sub);
-            _path = os::strdup(ss.base());
-          }
-        }
-      }
+    } else if (strcmp(_root, cgroup_path) != 0) {
+      // containers only, warn if doesn't match
+      log_warning(os, container)("Cgroup v1 controller (%s) mounting root [%s] doesn't match cgroup [%s]",
+        _mount_point, _root, cgroup_path);
     }
+    _path = os::strdup(ss.base());
   }
 }
 
@@ -218,11 +209,9 @@ bool CgroupV1Subsystem::is_containerized() {
   // containerized iff all required controllers are mounted
   // read-only. See OSContainer::is_containerized() for
   // the full logic.
+  // (all v1 controllers are initialized with a single combined read-only flag)
   //
-  return _memory->controller()->is_read_only() &&
-         _cpu->controller()->is_read_only() &&
-         _cpuacct->is_read_only() &&
-         _cpuset->is_read_only();
+  return _memory->controller()->is_read_only();
 }
 
 /* memory_usage_in_bytes

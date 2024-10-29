@@ -72,6 +72,24 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         CgroupV1Subsystem subsystem = new CgroupV1Subsystem();
 
         boolean anyActiveControllers = false;
+        boolean allControllersReadOnly = true;
+
+        for (CgroupInfo info: infos.values()) {
+            String mo = info.getMountOptions();
+            boolean readOnly = false;
+            if (mo != null) {
+                for (String o : mo.split(",")) {
+                    if (o.equals("ro")) {
+                        readOnly = true;
+                        break;
+                    }
+                }
+            }
+            if (!readOnly) {
+                allControllersReadOnly = false;
+                break;
+            }
+        }
         /*
          * Find the cgroup mount points for subsystem controllers
          * by looking up relevant data in the infos map
@@ -80,7 +98,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             switch (info.getName()) {
             case "memory": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
-                    CgroupV1MemorySubSystemController controller = new CgroupV1MemorySubSystemController(info.getMountRoot(), info.getMountPoint());
+                    CgroupV1MemorySubSystemController controller = new CgroupV1MemorySubSystemController(info.getMountRoot(), info.getMountPoint(), allControllersReadOnly);
                     controller.setPath(info.getCgroupPath());
                     boolean isHierarchial = getHierarchical(controller);
                     controller.setHierarchical(isHierarchial);
@@ -93,7 +111,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             }
             case "cpuset": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
-                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
+                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint(), allControllersReadOnly);
                     controller.setPath(info.getCgroupPath());
                     subsystem.setCpuSetController(controller);
                     anyActiveControllers = true;
@@ -102,7 +120,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             }
             case "cpuacct": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
-                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
+                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint(), allControllersReadOnly);
                     controller.setPath(info.getCgroupPath());
                     subsystem.setCpuAcctController(controller);
                     anyActiveControllers = true;
@@ -111,7 +129,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             }
             case "cpu": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
-                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
+                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint(), allControllersReadOnly);
                     controller.setPath(info.getCgroupPath());
                     subsystem.setCpuController(controller);
                     anyActiveControllers = true;
@@ -120,7 +138,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             }
             case "blkio": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
-                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
+                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint(), allControllersReadOnly);
                     controller.setPath(info.getCgroupPath());
                     subsystem.setBlkIOController(controller);
                     anyActiveControllers = true;
@@ -129,7 +147,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             }
             case "pids": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
-                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
+                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint(), allControllersReadOnly);
                     controller.setPath(info.getCgroupPath());
                     subsystem.setPidsController(controller);
                     anyActiveControllers = true;

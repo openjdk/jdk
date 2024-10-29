@@ -30,8 +30,8 @@ public class CgroupV1MemorySubSystemController extends CgroupV1SubsystemControll
     private boolean hierarchical;
     private boolean swapenabled;
 
-    public CgroupV1MemorySubSystemController(String root, String mountPoint) {
-        super(root, mountPoint);
+    public CgroupV1MemorySubSystemController(String root, String mountPoint, boolean isContainerized) {
+        super(root, mountPoint, isContainerized);
     }
 
     boolean isHierarchical() {

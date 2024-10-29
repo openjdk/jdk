@@ -25,6 +25,8 @@
 
 package jdk.internal.platform.cgroupv1;
 
+import java.lang.System.Logger.Level;
+
 import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupSubsystemController;
 
@@ -36,35 +38,30 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
     String root;
     String mountPoint;
     String path;
+    boolean isContainerized = false;
 
-    public CgroupV1SubsystemController(String root, String mountPoint) {
+    public CgroupV1SubsystemController(String root, String mountPoint, boolean isContainerized) {
         this.root = root;
         this.mountPoint = mountPoint;
+        this.isContainerized = isContainerized;
     }
 
     public void setPath(String cgroupPath) {
         if (root != null && cgroupPath != null) {
-            if (root.equals("/")) {
+            String path = mountPoint;
+            if (root.equals("/") || !isContainerized) {
+                // host processes / containers w/private cgroup namespace
                 if (!cgroupPath.equals("/")) {
-                    path = mountPoint + cgroupPath;
+                    // hosts only
+                    path += cgroupPath;
                 }
-                else {
-                    path = mountPoint;
-                }
+            } else if (!root.equals(cgroupPath)) {
+                // containers only, warn if doesn't match
+                System.getLogger("jdk.internal.platform").log(Level.WARNING, String.format(
+                        "Cgroup v1 controller (%s) mounting root [%s] doesn't match cgroup [%s].",
+                        mountPoint, root, cgroupPath));
             }
-            else {
-                if (root.equals(cgroupPath)) {
-                    path = mountPoint;
-                }
-                else {
-                    if (cgroupPath.startsWith(root)) {
-                        if (cgroupPath.length() > root.length()) {
-                            String cgroupSubstr = cgroupPath.substring(root.length());
-                            path = mountPoint + cgroupSubstr;
-                        }
-                    }
-                }
-            }
+            this.path = path;
         }
     }
 

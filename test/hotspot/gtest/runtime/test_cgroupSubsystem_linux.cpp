@@ -42,6 +42,7 @@ typedef struct {
   const char* root_path;
   const char* cgroup_path;
   const char* expected_path;
+  bool read_only;
 } TestCase;
 
 // Utilities
@@ -426,21 +427,55 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
     "/sys/fs/cgroup/memory",                                             // mount_path
     "/",                                                                 // root_path
     "/user.slice/user-1000.slice/user@1000.service",                     // cgroup_path
-    "/sys/fs/cgroup/memory/user.slice/user-1000.slice/user@1000.service" // expected_path
+    "/sys/fs/cgroup/memory/user.slice/user-1000.slice/user@1000.service",// expected_path
+    false                                                                // read-only mount
   };
   TestCase container_engine = {
     "/sys/fs/cgroup/mem",                            // mount_path
     "/user.slice/user-1000.slice/user@1000.service", // root_path
     "/user.slice/user-1000.slice/user@1000.service", // cgroup_path
-    "/sys/fs/cgroup/mem"                             // expected_path
+    "/sys/fs/cgroup/mem",                            // expected_path
+    true                                             // read-only mount
   };
-  int length = 2;
+  TestCase host_non_standard = {
+    "/sys/fs/cgroup/mem",                                              // mount_path
+    "/user.slice/user-1000.slice",                                     // root_path
+    "/user.slice/user-1000.slice/user@1000.service",                   // cgroup_path
+    "/sys/fs/cgroup/mem/user.slice/user-1000.slice/user@1000.service", // expected_path
+    false                                                              // read-only mount
+  };
+  TestCase container_moving_cgroup = {
+    "/sys/fs/cgroup/cpu,cpuacct",                                            // mount_path
+    "/system.slice/garden.service/garden/good/2f57368b-0eda-4e52-64d8-af5c", // root_path
+    "/system.slice/garden.service/garden/bad/2f57368b-0eda-4e52-64d8-af5c",  // cgroup_path
+    "/sys/fs/cgroup/cpu,cpuacct",                                            // expected_path
+    true                                                                     // read-only mount
+  };
+  TestCase container_prefix = {
+    "/sys/fs/cgroup/memory", // mount_path
+    "/a",                    // root_path
+    "/a/b",                  // cgroup_path
+    "/sys/fs/cgroup/memory", // expected_path
+    true                     // read-only mount
+  };
+  TestCase host_prefix = {
+    "/sys/fs/cgroup/memory",     // mount_path
+    "/a",                        // root_path
+    "/a/b",                      // cgroup_path
+    "/sys/fs/cgroup/memory/a/b", // expected_path
+    false                        // read-only mount
+  };
+  int length = 6;
   TestCase* testCases[] = { &host,
-                            &container_engine };
+                            &container_engine,
+                            &host_non_standard,
+                            &container_moving_cgroup,
+                            &container_prefix,
+                            &host_prefix };
   for (int i = 0; i < length; i++) {
     CgroupV1Controller* ctrl = new CgroupV1Controller( (char*)testCases[i]->root_path,
                                                        (char*)testCases[i]->mount_path,
-                                                       true /* read-only mount */);
+                                                       testCases[i]->read_only /* read-only mount */);
     ctrl->set_subsystem_path((char*)testCases[i]->cgroup_path);
     ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
@@ -451,13 +486,15 @@ TEST(cgroupTest, set_cgroupv2_subsystem_path) {
     "/sys/fs/cgroup",       // mount_path
     nullptr,                // root_path, ignored
     "/",                    // cgroup_path
-    "/sys/fs/cgroup"        // expected_path
+    "/sys/fs/cgroup",       // expected_path
+    true                    // read-only mount
   };
   TestCase sub_path = {
     "/sys/fs/cgroup",       // mount_path
     nullptr,                // root_path, ignored
     "/foobar",              // cgroup_path
-    "/sys/fs/cgroup/foobar" // expected_path
+    "/sys/fs/cgroup/foobar",// expected_path
+    true                    // read-only mount
   };
   int length = 2;
   TestCase* testCases[] = { &at_mount_root,
@@ -465,7 +502,7 @@ TEST(cgroupTest, set_cgroupv2_subsystem_path) {
   for (int i = 0; i < length; i++) {
     CgroupV2Controller* ctrl = new CgroupV2Controller( (char*)testCases[i]->mount_path,
                                                        (char*)testCases[i]->cgroup_path,
-                                                       true /* read-only mount */);
+                                                       testCases[i]->read_only /* read-only mount */);
     ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
 }
