@@ -10297,17 +10297,6 @@ Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond)
   ShouldNotReachHere(); return Assembler::overflow;
 }
 
-SkipIfEqual::SkipIfEqual(
-    MacroAssembler* masm, const bool* flag_addr, bool value, Register rscratch) {
-  _masm = masm;
-  _masm->cmp8(ExternalAddress((address)flag_addr), value, rscratch);
-  _masm->jcc(Assembler::equal, _label);
-}
-
-SkipIfEqual::~SkipIfEqual() {
-  _masm->bind(_label);
-}
-
 // 32-bit Windows has its own fast-path implementation
 // of get_thread
 #if !defined(WIN32) || defined(_LP64)
