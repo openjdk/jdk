@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2320,6 +2320,31 @@ public abstract sealed class $Type$Buffer
     // and double will be inserted here
 
 #end[byte]
+
+  @Override
+  int scaleFactor() {
+#if[byte]
+      return 0;
+#end[byte]
+#if[short]
+      return 1;
+#end[short]
+#if[char]
+      return 1;
+#end[char]
+#if[int]
+      return 2;
+#end[int]
+#if[float]
+      return 2;
+#end[float]
+#if[long]
+      return 3;
+#end[long]
+#if[double]
+      return 3;
+#end[double]
+  }
 
 #if[streamableType]
 

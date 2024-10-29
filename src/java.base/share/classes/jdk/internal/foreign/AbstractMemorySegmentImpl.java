@@ -521,12 +521,8 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @ForceInline
     public static AbstractMemorySegmentImpl ofBuffer(Buffer b) {
-        return switch (b) {
-            case ByteBuffer _                 -> ofBuffer(b, offset(b, 0), length(b, 0));
-            case ShortBuffer _, CharBuffer _  -> ofBuffer(b, offset(b, 1), length(b, 1));
-            case IntBuffer _, FloatBuffer _   -> ofBuffer(b, offset(b, 2), length(b, 2));
-            case LongBuffer _, DoubleBuffer _ -> ofBuffer(b, offset(b, 3), length(b, 3));
-        };
+        final int scaleFactor = NIO_ACCESS.scaleFactor(b);
+        return ofBuffer(b, offset(b, scaleFactor), length(b, scaleFactor));
     }
 
     @ForceInline

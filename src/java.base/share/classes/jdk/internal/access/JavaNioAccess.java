@@ -127,4 +127,6 @@ public interface JavaNioAccess {
      * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
      */
     int pageSize();
+
+    int scaleFactor(Buffer buffer);
 }

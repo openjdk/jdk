@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -780,6 +780,17 @@ public abstract sealed class Buffer
         return Preconditions.checkIndex(i, limit - nb + 1, IOOBE_FORMATTER);
     }
 
+    /**
+     * {@return the scale factor for this Buffer}
+     * <p>
+     * The scale factor is:
+     *   ByteBuffer:               0
+     *   ShortBuffer, CharBuffer:  1
+     *   IntBuffer, FloatBuffer:   2
+     *   LongBuffer, DoubleBuffer: 3
+     */
+    abstract int scaleFactor();
+
     final int markValue() {                             // package-private
         return mark;
     }
@@ -905,6 +916,11 @@ public abstract sealed class Buffer
                 @Override
                 public int pageSize() {
                     return Bits.pageSize();
+                }
+
+                @Override
+                public int scaleFactor(Buffer buffer) {
+                    return buffer.scaleFactor();
                 }
             });
     }
