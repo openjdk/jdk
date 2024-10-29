@@ -149,7 +149,9 @@ public class DeduplicationTest {
             try (InputStream input = output.openInputStream()) {
                 cm = ClassFile.of().parse(input.readAllBytes());
             }
-            if (cm.thisClass().asInternalName().equals("com/sun/tools/javac/comp/Deduplication$R")) {
+            if (cm.thisClass().asInternalName().equals("com/sun/tools/javac/comp/Deduplication$R") ||
+                cm.thisClass().asInternalName().equals("com/sun/tools/javac/comp/Deduplication$1C") ||
+                cm.thisClass().asInternalName().equals("com/sun/tools/javac/comp/Deduplication$2C")) {
                 continue;
             }
             BootstrapMethodsAttribute bsm = cm.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
@@ -305,18 +307,20 @@ public class DeduplicationTest {
                         dedupedLambdas.put(lhs, first);
                     }
                     for (JCLambda rhs : curr) {
-                        if (!new TreeDiffer(types, paramSymbols(lhs), paramSymbols(rhs))
-                                .scan(lhs.body, rhs.body)) {
-                            throw new AssertionError(
-                                    String.format(
-                                            "expected lambdas to be equal\n%s\n%s", lhs, rhs));
-                        }
-                        if (TreeHasher.hash(types, lhs, paramSymbols(lhs))
-                                != TreeHasher.hash(types, rhs, paramSymbols(rhs))) {
-                            throw new AssertionError(
-                                    String.format(
-                                            "expected lambdas to hash to the same value\n%s\n%s",
-                                            lhs, rhs));
+                        if (rhs != lhs) {
+                            if (!new TreeDiffer(types, paramSymbols(lhs), paramSymbols(rhs))
+                                    .scan(lhs.body, rhs.body)) {
+                                throw new AssertionError(
+                                        String.format(
+                                                "expected lambdas to be equal\n%s\n%s", lhs, rhs));
+                            }
+                            if (TreeHasher.hash(types, lhs, paramSymbols(lhs))
+                                    != TreeHasher.hash(types, rhs, paramSymbols(rhs))) {
+                                throw new AssertionError(
+                                        String.format(
+                                                "expected lambdas to hash to the same value\n%s\n%s",
+                                                lhs, rhs));
+                            }
                         }
                     }
                 }

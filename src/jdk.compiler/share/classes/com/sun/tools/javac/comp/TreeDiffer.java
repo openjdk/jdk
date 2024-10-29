@@ -343,14 +343,7 @@ public class TreeDiffer extends TreeScanner {
 
     @Override
     public void visitClassDef(JCClassDecl tree) {
-        JCClassDecl that = (JCClassDecl) parameter;
-        result =
-                scan(tree.mods, that.mods)
-                        && tree.name == that.name
-                        && scan(tree.typarams, that.typarams)
-                        && scan(tree.extending, that.extending)
-                        && scan(tree.implementing, that.implementing)
-                        && scan(tree.defs, that.defs);
+        result = false;
     }
 
     @Override

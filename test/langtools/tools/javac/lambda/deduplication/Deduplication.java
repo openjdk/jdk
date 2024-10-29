@@ -187,6 +187,9 @@ public class Deduplication {
                     int y2 = -1;
                     return y2;
                });
+
+        group((Function<Object, Integer>) x -> {class C {} new C(); return 42; });
+        group((Function<Object, Integer>) x -> {class C {} new C(); return 42; });
     }
 
     void f() {}

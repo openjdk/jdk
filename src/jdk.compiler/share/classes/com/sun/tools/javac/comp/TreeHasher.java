@@ -30,6 +30,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.PoolConstant;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCLiteral;
@@ -89,6 +90,12 @@ public class TreeHasher extends TreeScanner {
     public void visitLiteral(JCLiteral tree) {
         hash(tree.value);
         super.visitLiteral(tree);
+    }
+
+    @Override
+    public void visitClassDef(JCClassDecl tree) {
+        hash(tree.sym);
+        super.visitClassDef(tree);
     }
 
     @Override
