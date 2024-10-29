@@ -267,7 +267,7 @@
 //
 //    Case 1: only decompositions of type (SAFE1) were used:
 //      We make an induction proof over the decompositions from p1 to mp1, starting with
-//      the trivial decompoisition:
+//      the trivial decomposition:
 //        mp1_0 = 0 + 1 * p1 = p1
 //      and then for the i'th decomposition, we know that
 //        mp1_i = mp1_{i+1}
@@ -303,6 +303,8 @@
 //
 //      And hence, there must be an x, such that:
 //        p1 - p2 = mp1 - mp2 + x * array_element_size_in_bytes * 2^32
+//      where
+//        x = x1 - x2
 //
 //      If "x = 0", then it follows:
 //        p1 - p2 = mp1 - mp2
@@ -314,6 +316,7 @@
 //                     >= array_element_size_in_bytes * 2^32          - abs(mp1 - mp2)
 //                                                               -- apply S2 and S3 --
 //                     >  array_element_size_in_bytes * 2^32          - 2^31
+//                        -- apply array_element_size_in_bytes > 0 --
 //                     >= array_element_size_in_bytes * 2^31
 //                     >= max_possible_array_size_in_bytes
 //                     >= array_size_in_bytes
