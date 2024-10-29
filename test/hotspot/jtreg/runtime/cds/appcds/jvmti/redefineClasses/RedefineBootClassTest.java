@@ -25,36 +25,44 @@
 /*
  * @test
  * @bug 8342303
- * @summary Test loading of shared old class when another class has been redefined.
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes /test/hotspot/jtreg/runtime/cds/appcds/jvmti
- * @requires vm.cds.write.archived.java.heap
+ * @summary Redefine a shared super class loaded by the boot loader. The vtable of its archived child class must be updated
+ * @library /test/lib
+ *          /test/hotspot/jtreg/runtime/cds/appcds
+ *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ *          /test/hotspot/jtreg/runtime/cds/appcds/jvmti
  * @requires vm.jvmti
- * @build jdk.test.whitebox.WhiteBox
- *        OldClassAndRedefineClassApp
+ * @build RedefineBootClassTest
+ *        RedefineBootClassApp
+ *        BootSuper BootChild
  *        InstrumentationClassFileTransformer
  *        InstrumentationRegisterClassFileTransformer
- * @compile ../../test-classes/OldSuper.jasm
- *          ../../test-classes/ChildOldSuper.java
- *          ../../test-classes/Hello.java
- * @run driver OldClassAndRedefineClass
+ * @run driver RedefineBootClassTest
  */
 
+import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.VirtualMachineDescriptor;
+import java.io.File;
+import java.util.List;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
-public class OldClassAndRedefineClass {
-    public static String appClasses[] = {
-        "OldClassAndRedefineClassApp",
-        "OldSuper",
-        "ChildOldSuper",
-        "Hello",
+public class RedefineBootClassTest {
+    public static String bootClasses[] = {
+        "BootSuper",
+        "BootChild",
     };
-    public static String sharedClasses[] = TestCommon.concat(appClasses);
+    public static String appClasses[] = {
+        "RedefineBootClassApp",
+    };
+    public static String sharedClasses[] = TestCommon.concat(bootClasses, appClasses);
 
     public static String agentClasses[] = {
         "InstrumentationClassFileTransformer",
         "InstrumentationRegisterClassFileTransformer",
+        "Util",
     };
 
     public static void main(String[] args) throws Throwable {
@@ -62,29 +70,27 @@ public class OldClassAndRedefineClass {
     }
 
     public static void runTest() throws Throwable {
+        String bootJar =
+            ClassFileInstaller.writeJar("RedefineClassBoot.jar", bootClasses);
         String appJar =
-            ClassFileInstaller.writeJar("OldClassAndRedefineClassApp.jar", appClasses);
+            ClassFileInstaller.writeJar("RedefineClassApp.jar", appClasses);
         String agentJar =
             ClassFileInstaller.writeJar("InstrumentationAgent.jar",
                                         ClassFileInstaller.Manifest.fromSourceFile("../InstrumentationAgent.mf"),
                                         agentClasses);
 
+        String bootCP = "-Xbootclasspath/a:" + bootJar;
         String agentCmdArg = "-javaagent:" + agentJar;
 
-        OutputAnalyzer out = TestCommon.testDump(appJar, sharedClasses, "-Xlog:cds,cds+class=debug");
-        out.shouldMatch("klasses.*OldSuper.[*][*].unlinked")
-           .shouldMatch("klasses.*ChildOldSuper.[*][*].unlinked");
+        TestCommon.testDump(appJar, sharedClasses, bootCP, "-Xlog:cds,cds+class=debug");
 
-        out = TestCommon.exec(
-                appJar,
+        OutputAnalyzer out = TestCommon.execAuto("-cp", appJar,
+                bootCP,
                 "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+AllowArchivingWithJavaAgent",
-                "-XX:+WhiteBoxAPI",
-                "-Xlog:cds,class+load",
+                "-Xlog:cds=info,class+load",
                 agentCmdArg,
-               "OldClassAndRedefineClassApp");
-        out.shouldContain("[class,load] OldSuper source: shared objects file")
-           .shouldContain("[class,load] ChildOldSuper source: shared objects file")
-           .shouldContain("[class,load] Hello source: __VM_RedefineClasses__");
+               "RedefineBootClassApp", bootJar);
+        out.reportDiagnosticSummary();
+        TestCommon.checkExec(out);
     }
 }
