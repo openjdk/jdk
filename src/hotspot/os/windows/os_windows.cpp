@@ -4406,9 +4406,6 @@ void os::init(void) {
     fatal("DuplicateHandle failed\n");
   }
   main_thread_id = (int) GetCurrentThreadId();
-
-  // initialize fast thread access - only used for 32-bit
-  win32::initialize_thread_ptr_offset();
 }
 
 // To install functions for atexit processing
@@ -5915,19 +5912,6 @@ int os::get_signal_number(const char* name) {
     }
   }
   return -1;
-}
-
-// Fast current thread access
-
-int os::win32::_thread_ptr_offset = 0;
-
-static void call_wrapper_dummy() {}
-
-// We need to call the os_exception_wrapper once so that it sets
-// up the offset from FS of the thread pointer.
-void os::win32::initialize_thread_ptr_offset() {
-  os::os_exception_wrapper((java_call_t)call_wrapper_dummy,
-                           nullptr, methodHandle(), nullptr, nullptr);
 }
 
 bool os::supports_map_sync() {

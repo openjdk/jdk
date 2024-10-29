@@ -146,17 +146,7 @@ class os::win32 {
   // return information about that area.
   static bool find_mapping(address p, mapping_info_t* mapping_info);
 
-  // Fast access to current thread
-protected:
-  static int _thread_ptr_offset;
-private:
-  static void initialize_thread_ptr_offset();
 public:
-  static inline void set_thread_ptr_offset(int offset) {
-    _thread_ptr_offset = offset;
-  }
-  static inline int get_thread_ptr_offset() { return _thread_ptr_offset; }
-
   // signal support
   static void* install_signal_handler(int sig, signal_handler_t handler);
   static void* user_handler();
