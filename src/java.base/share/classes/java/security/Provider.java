@@ -1279,7 +1279,12 @@ public abstract class Provider extends Properties {
      */
     public Service getService(String type, String algorithm) {
         checkInitialized();
-        ServiceKey key = new ServiceKey(type, algorithm, false);
+        // avoid allocating a new ServiceKey object if possible
+        ServiceKey key = previousKey;
+        if (!key.matches(type, algorithm)) {
+            key = new ServiceKey(type, algorithm, false);
+            previousKey = key;
+        }
 
         Service s = serviceMap.get(key);
         if (s == null) {
@@ -1299,6 +1304,15 @@ public abstract class Provider extends Properties {
 
         return s;
     }
+
+    // ServiceKey from previous getService() call
+    // by re-using it if possible we avoid allocating a new object
+    // and the toUpperCase() call.
+    // re-use will occur e.g. as the framework traverses the provider
+    // list and queries each provider with the same values until it finds
+    // a matching service
+    private transient ServiceKey previousKey =
+                                            new ServiceKey("", "", false);
 
     /**
      * Get an unmodifiable Set of all services supported by
