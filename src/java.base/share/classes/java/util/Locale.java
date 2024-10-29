@@ -2050,7 +2050,6 @@ public final class Locale implements Cloneable, Serializable {
      * getDisplayLanguage() will return "anglais".
      * If the name returned cannot be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale,
-     * (say, we don't have a Japanese name for Croatian),
      * this function falls back on the English name, and uses the ISO code as a last-resort
      * value.  If the locale doesn't specify a language, this function returns the empty string.
      *
@@ -2068,7 +2067,6 @@ public final class Locale implements Cloneable, Serializable {
      * is en_US, getDisplayLanguage() will return "French"; if the locale is en_US and
      * inLocale is fr_FR, getDisplayLanguage() will return "anglais".
      * If the name returned cannot be localized according to inLocale,
-     * (say, we don't have a Japanese name for Croatian),
      * this function falls back on the English name, and finally
      * on the ISO code as a last-resort value.  If the locale doesn't specify a language,
      * this function returns the empty string.
@@ -2123,7 +2121,6 @@ public final class Locale implements Cloneable, Serializable {
      * getDisplayCountry() will return "Etats-Unis".
      * If the name returned cannot be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale,
-     * (say, we don't have a Japanese name for Croatia),
      * this function falls back on the English name, and uses the ISO code as a last-resort
      * value.  If the locale doesn't specify a country, this function returns the empty string.
      *
@@ -2141,7 +2138,6 @@ public final class Locale implements Cloneable, Serializable {
      * is en_US, getDisplayCountry() will return "France"; if the locale is en_US and
      * inLocale is fr_FR, getDisplayCountry() will return "Etats-Unis".
      * If the name returned cannot be localized according to inLocale.
-     * (say, we don't have a Japanese name for Croatia),
      * this function falls back on the English name, and finally
      * on the ISO code as a last-resort value.  If the locale doesn't specify a country,
      * this function returns the empty string.
