@@ -665,11 +665,6 @@ vmTestbase_vm_defmeth = \
 vmTestbase_nsk_jdi = \
   vmTestbase/nsk/jdi
 
-# Stress tests for classes loading/unloading
-# NSK tests for functionality of the HS system dictionary
-vmTestbase_nsk_sysdict = \
-  vmTestbase/nsk/sysdict/vm/stress
-
 vmTestbase_vm_metaspace = \
   vmTestbase/metaspace
 

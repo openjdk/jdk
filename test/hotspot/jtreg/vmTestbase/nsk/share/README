@@ -71,7 +71,6 @@ Short description of subdirectories:
     jdi         - support for JDI tests and accesing JDI API
     jdb         - support for JDB tests and accessing JDB tool
     monitoring  - support for monitoring tests and accessing Java Monitoring&Management API
-    sysdict     - support for System Dictionary tests
     gc          - support for GC tests
     regression  - support for regression tests for known bugs
     split_verifier - support for Split Verifier tests
@@ -99,7 +98,6 @@ Classes:
         nsk.share.jdwp
         nsk.share.jdi
         nsk.share.jdb
-        nsk.share.sysdict
 
 Native functions and macroses:
 
