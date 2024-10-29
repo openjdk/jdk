@@ -619,7 +619,7 @@ public abstract class AbstractLinkableRuntimeTest {
 
         @Override
         public void handleAnalyzer(OutputAnalyzer out) {
-            out.shouldContain("Linking based on the current run-time image.");
+            out.shouldContain("Linking based on the current run-time image");
         }
 
     }
