@@ -78,6 +78,7 @@ public enum SourceVersion {
      *      implicitly declared classes and instance main in third
      *      preview, flexible constructor bodies in second preview)
      *  24: tbd
+     *  25: tbd
      */
 
     /**
@@ -441,6 +442,18 @@ public enum SourceVersion {
      * <cite>The Java Language Specification, Java SE 24 Edition</cite></a>
      */
     RELEASE_24,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 25.
+     *
+     * @since 25
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se25/html/index.html">
+     * <cite>The Java Language Specification, Java SE 25 Edition</cite></a>
+     */
+    RELEASE_25,
     ; // Reduce code churn when appending new constants
 
     // Note that when adding constants for newer releases, the
@@ -450,7 +463,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_24;
+        return RELEASE_25;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -465,7 +478,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(24, intVersion)):
+            valueOf("RELEASE_" + Math.min(25, intVersion)):
             RELEASE_10;
     }
 
