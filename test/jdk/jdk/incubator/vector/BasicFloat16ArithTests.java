@@ -53,6 +53,7 @@ public class BasicFloat16ArithTests {
         checkUlp();
         checkValueOfDouble();
         checkValueOfLong();
+        checkValueOfString();
         FusedMultiplyAddTests.main();
     }
 
@@ -507,6 +508,80 @@ public class BasicFloat16ArithTests {
         checkFloat16(valueOf(65_519), MAX_VALUE.floatValue(), "MAX_VALUE");
         checkFloat16(valueOf(65_520), Float.POSITIVE_INFINITY, "+infinity");
         checkFloat16(valueOf(65_521), Float.POSITIVE_INFINITY, "+infinity");
+    }
+
+    private static void checkValueOfString() {
+        String2Float16Case[] testCases = {
+            new String2Float16Case( "+0.0", 0.0f),
+            new String2Float16Case("-0.0", -0.0f),
+
+            new String2Float16Case( "1.0",  1.0f),
+            new String2Float16Case("-1.0", -1.0f),
+
+            // Check for FloatTypeSuffix handling
+            new String2Float16Case( "1.5f", 1.5f),
+            new String2Float16Case( "1.5F", 1.5f),
+            new String2Float16Case( "1.5D", 1.5f),
+            new String2Float16Case( "1.5d", 1.5f),
+
+            new String2Float16Case("65504.0", 65504.0f),  // Float16.MAX_VALUE
+
+
+            new String2Float16Case("65520.0", InfinityF), // Float16.MAX_VALUE + 0.5*ulp
+
+            new String2Float16Case("65520.01", InfinityF), // Float16.MAX_VALUE + > 0.5*ulp
+            new String2Float16Case("65520.001", InfinityF), // Float16.MAX_VALUE + > 0.5*ulp
+            new String2Float16Case("65520.0001", InfinityF), // Float16.MAX_VALUE + > 0.5*ulp
+            new String2Float16Case("65520.00000000001", InfinityF), // Float16.MAX_VALUE + > 0.5*ulp
+
+            new String2Float16Case("65519.99999999999", 65504.0f), // Float16.MAX_VALUE +  < 0.5*ulp
+            new String2Float16Case("0x1.ffdffffffffffp15", 65504.0f),
+            new String2Float16Case("0x1.ffdfffffffffp15", 65504.0f),
+
+
+            new String2Float16Case("65519.999999999999", 65504.0f),
+            new String2Float16Case("65519.9999999999999", 65504.0f),
+            new String2Float16Case("65519.99999999999999", 65504.0f),
+            new String2Float16Case("65519.999999999999999", 65504.0f),
+
+            // Float16.MAX_VALUE +  < 0.5*ulp
+            new String2Float16Case("65519.9999999999999999999999999999999999999", 65504.0f),
+
+            // Near MAX_VALUE - 0.5 ulp
+            new String2Float16Case("65488.0", 65472.0f),
+            new String2Float16Case("65487.9999", 65472.0f),
+            new String2Float16Case("65487.99999999", 65472.0f),
+            new String2Float16Case("65487.9999999999999999", 65472.0f),
+
+            new String2Float16Case("65488.000001", MAX_VAL_FP16),
+
+            new String2Float16Case("65536.0", InfinityF), // Float16.MAX_VALUE + ulp
+
+            // Hex values
+            new String2Float16Case("0x1p2",   0x1.0p2f),
+            new String2Float16Case("0x1.0p1", 0x1.0p1f),
+
+            new String2Float16Case("-0x1p2",  -0x1.0p2f),
+            new String2Float16Case("0x3.45p12", 0x3.45p12f),
+
+            new String2Float16Case("0x3.4500000001p12", 0x3.45p12f),
+
+            // Near half-way double + float cases in hex
+            new String2Float16Case("0x1.ffdfffffffffffffffffffffffffffffffffffp15", 65504.0f),
+
+        };
+
+        for(String2Float16Case testCase : testCases) {
+            String input = testCase.input();
+            float expected = testCase.expected();
+            Float16 result = Float16.valueOf(input);
+            checkFloat16(result, expected, "Float16.valueOf(String) " + input);
+        }
+
+        return;
+    }
+
+    private static record String2Float16Case(String input, float expected) {
     }
 
     class FusedMultiplyAddTests {

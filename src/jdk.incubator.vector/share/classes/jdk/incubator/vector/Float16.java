@@ -410,12 +410,15 @@ public final class Float16
      * Returns a {@code Float16} holding the floating-point value
      * represented by the argument string.
      *
-     * @implSpec
-     * The current implementation acts as if the string were
-     * {@linkplain Double#parseDouble(String) parsed} as a {@code
-     * double} and then {@linkplain #valueOf(double) converted} to
-     * {@code Float16}. This behavior is expected to change to
-     * accommodate the precision of {@code Float16}.
+     * The grammar of strings accepted by this method is the same as
+     * that accepted by {@link Double#valueOf(String)}. The rounding
+     * policy is also analogous to the one used by that method, a
+     * valid input is regarded as an exact numerical value that is
+     * rounded once to the nearest representable {@code Float16} value.
+     *
+     * @apiNote
+     * This method corresponds to the convertFromDecimalCharacter and
+     * convertFromHexCharacter operations defined in IEEE 754.
      *
      * @param  s the string to be parsed.
      * @return the {@code Float16} value represented by the string
@@ -426,8 +429,133 @@ public final class Float16
      * @see    java.lang.Float#valueOf(String)
      */
     public static Float16 valueOf(String s) throws NumberFormatException {
-        // TOOD: adjust precision of parsing if needed
-        return valueOf(Double.parseDouble(s));
+        s = s.trim(); // Legacy behavior from analagous methods on
+                      // Float and Double.
+
+        // Trial conversion from String -> double. Do quick range
+        // check for a pass-through, then check for possibility of
+        // double-rounding and another conversion using
+        // BigInteger/BigDecimal, if needed.
+        double trialResult = Double.parseDouble(s);
+        // After this point, the trimmed string is known to be
+        // syntactically well-formed; should be able to operate on
+        // characters rather than codepoints.
+
+        if (trialResult == 0.0 // handles signed zeros
+            || Math.abs(trialResult) > (65504.0 + 32.0) || // Float.MAX_VALUE + ulp(MAX_VALUE)
+            noDoubleRoundingToFloat16(trialResult)) {
+            return valueOf(trialResult);
+        } else {
+            // If double rounding is not ruled out, re-parse, create a
+            // BigDecimal to hold the exact numerical value, round and
+            // return.
+
+            // Remove any trailing FloatTypeSuffix (f|F|d|D), not
+            // recognized by BigDecimal (or BigInteger)
+            int sLength = s.length();
+            if (Character.isAlphabetic(s.charAt(sLength-1))) {
+                s = s.substring(0, sLength - 1);
+            }
+
+            char startingChar = s.charAt(0);
+            boolean isSigned = (startingChar == '-') || (startingChar == '+');
+            // Hex literal will start "-0x..." or "+0x..." or "0x...""
+            boolean hexInput = isX(s.charAt(isSigned ? 2 : 1));
+
+            if (!hexInput) { // Decimal input
+                // Grammar of BigDecimal string input is compatible
+                // with the decimal grammar for this method after
+                // trimming and removal of any FloatTypeSuffix.
+                return valueOf(new BigDecimal(s));
+            } else {
+                // For hex inputs, convert the significand and
+                // exponent portions separately.
+                //
+                // Rough form of the hex input:
+                // Sign_opt 0x IntHexDigits_opt . FracHexDigits_opt [p|P] SignedInteger
+                //
+                // Partition input into between "0x" and "p" and from
+                // "p" to end of string.
+                //
+                // For the region between x and p, see if there is a
+                // period present. If so, the net exponent will need
+                // to be adjusted by the number of digits to the right
+                // of the (hexa)decimal point.
+                //
+                // Use BigInteger(String, 16) to construct the
+                // significand -- accepts leading sign.
+                StringBuilder hexSignificand = new StringBuilder();
+                if (isSigned) {
+                    hexSignificand.append(startingChar);
+                }
+
+                int fractionDigits = 0;
+                int digitStart = isSigned ? 3 : 2 ;
+
+                int periodIndex = s.indexOf((int)'.');
+
+                int pIndex = findPIndex(s);
+
+                // Gather the significand digits
+                if (periodIndex != -1) {
+                    // Reconstruct integer and fraction digit sequence
+                    // without the period.
+                    hexSignificand.append(s.substring(digitStart,      periodIndex));
+                    hexSignificand.append(s.substring(periodIndex + 1, pIndex));
+                    fractionDigits = pIndex - periodIndex -1;
+                } else {
+                    // All integer digits, no fraction digits
+                    hexSignificand.append(s.substring(digitStart, pIndex));
+                }
+
+                // The exponent of a hexadecimal floating-point
+                // literal is written in _decimal_.
+                int rawExponent = Integer.parseInt(s.substring(pIndex+1));
+
+                // The exact numerical value of the string is:
+                //
+                // normalizedSignificand * 2^(adjustedExponent)
+                //
+                // Given the set of methods on BigDecimal, in
+                // particular pow being limited to non-negative
+                // exponents, this is computed either by multiplying
+                // by BigDecimal.TWO raised to the adjustedExponent or
+                // dividing by BigDecimal.TWO raised to the negated
+                // adjustedExponent.
+
+                BigDecimal normalizedSignficand =
+                    new BigDecimal(new BigInteger(hexSignificand.toString(), 16));
+
+                // Each hex fraction digit is four bits
+                int adjustedExponent = rawExponent - 4*fractionDigits;
+
+                BigDecimal convertedStringValue = (adjustedExponent >= 0) ?
+                    normalizedSignficand.multiply(BigDecimal.TWO.pow( adjustedExponent)) :
+                    normalizedSignficand.divide(  BigDecimal.TWO.pow(-adjustedExponent));
+                return valueOf(convertedStringValue);
+            }
+        }
+    }
+
+    private static boolean noDoubleRoundingToFloat16(double d) {
+        // Note that if the String -> double conversion returned
+        // whether or not the conversion was exact, many cases could
+        // be skipped since the double-rounding would be known not to
+        // have occurred.
+        long dAsLong = Double.doubleToRawLongBits(d);
+        long mask = 0x01FF_FFFF_FFFFL; // 41 low-order bits
+        long maskedValue = dAsLong & mask;
+        // Can't have all-zeros or all-ones in low-order bits
+        return maskedValue != 0L && maskedValue != mask;
+    }
+
+    private static boolean isX(int character) {
+        return character == (int)'x' || character == (int)'X';
+    }
+
+    private static int findPIndex(String s) {
+        int pIndex = s.indexOf((int)'p');
+        return (pIndex != -1) ?  pIndex : s.indexOf((int)'P');
     }
 
     /**
