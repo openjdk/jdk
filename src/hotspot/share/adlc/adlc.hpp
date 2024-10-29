@@ -39,25 +39,6 @@
 #include <stdarg.h>
 #include <sys/types.h>
 
-/* Make sure that we have the intptr_t and uintptr_t definitions */
-#ifdef _WIN32
-
-using namespace std;
-
-#define strdup _strdup
-
-#ifndef _INTPTR_T_DEFINED
-typedef __int64 intptr_t;
-#define _INTPTR_T_DEFINED
-#endif
-
-#ifndef _UINTPTR_T_DEFINED
-typedef unsigned __int64 uintptr_t;
-#define _UINTPTR_T_DEFINED
-#endif
-
-#endif // _WIN32
-
 #if defined(LINUX) || defined(_ALLBSD_SOURCE)
   #include <inttypes.h>
 #endif // LINUX || _ALLBSD_SOURCE
