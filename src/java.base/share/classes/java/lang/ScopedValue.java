@@ -157,14 +157,19 @@ import sun.security.action.GetPropertyAction;
  * {@snippet lang=java :
  *     private static final ScopedValue<String> NAME = ScopedValue.newInstance();
 
- *     ScopedValue.runWhere(NAME, "duke", () -> {
- *         try (var scope = new StructuredTaskScope<String>()) {
+ *     ScopedValue.where(NAME, "duke").run(() -> {
+ *         // @link substring="open" target="StructuredTaskScope#open()" :
+ *         try (var scope = StructuredTaskScope.open()) {
  *
- *             scope.fork(() -> childTask1());
- *             scope.fork(() -> childTask2());
- *             scope.fork(() -> childTask3());
+ *              // @link substring="fork" target="StructuredTaskScope#fork(java.util.concurrent.Callable)" :
+ *              scope.fork(() -> childTask1());
+ *              scope.fork(() -> childTask2());
+ *              scope.fork(() -> childTask3());
  *
- *             ...
+ *              // @link substring="join" target="StructuredTaskScope#join()" :
+ *              scope.join();
+ *
+ *              ..
  *          }
  *     });
  * }
