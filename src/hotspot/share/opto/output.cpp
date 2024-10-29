@@ -1172,17 +1172,17 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
         for (int j = 0; j< merge->possible_objects()->length(); j++) {
           ObjectValue* ov = merge->possible_objects()->at(j)->as_ObjectValue();
-          // Already flagged as 'root' by something else. We shouldn't change it
-          // to non-root in a younger JVMS because it may need to be alive in
-          // the younger JVMS.
           if (ov->is_root()) {
-            continue;
+            // Already flagged as 'root' by something else. We shouldn't change it
+            // to non-root in a younger JVMS because it may need to be alive in
+            // a younger JVMS.
+          } else {
+            bool is_root = locarray->contains(ov) ||
+                          exparray->contains(ov) ||
+                          contains_as_owner(monarray, ov) ||
+                          contains_as_scalarized_obj(jvms, sfn, objs, ov);
+            ov->set_root(is_root);
           }
-          bool is_root = locarray->contains(ov) ||
-                         exparray->contains(ov) ||
-                         contains_as_owner(monarray, ov) ||
-                         contains_as_scalarized_obj(jvms, sfn, objs, ov);
-          ov->set_root(is_root);
         }
       }
     }

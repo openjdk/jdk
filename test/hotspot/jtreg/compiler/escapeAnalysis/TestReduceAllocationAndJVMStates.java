@@ -50,7 +50,6 @@ public class TestReduceAllocationAndJVMStates {
 
         // This will trigger a deoptimization which
         // will make the issue manifest to the user
-        //test1(true);
         test(true);
     }
 
