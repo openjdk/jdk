@@ -2541,8 +2541,8 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
   maybe_set_fastpath(f.sp());
 
   Method* m = hf.interpreter_frame_method();
-  // For native frames we need to count parameters, possible alignment, plus the 2 extra words (temp oop/result handler).
-  const int locals = !m->is_native() ? m->max_locals() : m->size_of_parameters() + frame::align_wiggle + 2;
+  assert(!m->is_native() || !is_bottom_frame, "should be top frame of thaw_top case; missing caller frame");
+  const int locals = m->max_locals();
 
   if (!is_bottom_frame) {
     // can only fix caller once this frame is thawed (due to callee saved regs)
