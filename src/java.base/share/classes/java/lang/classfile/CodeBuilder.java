@@ -25,6 +25,8 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
@@ -36,59 +38,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.FieldRefEntry;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
-import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodRefEntry;
-import java.lang.classfile.constantpool.MethodHandleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.BlockCodeBuilderImpl;
-import jdk.internal.classfile.impl.BytecodeHelpers;
-import jdk.internal.classfile.impl.CatchBuilderImpl;
-import jdk.internal.classfile.impl.ChainedCodeBuilder;
-import jdk.internal.classfile.impl.LabelImpl;
-import jdk.internal.classfile.impl.NonterminalCodeBuilder;
-import jdk.internal.classfile.impl.TerminalCodeBuilder;
-import java.lang.classfile.instruction.ArrayLoadInstruction;
-import java.lang.classfile.instruction.ArrayStoreInstruction;
-import java.lang.classfile.instruction.BranchInstruction;
-import java.lang.classfile.instruction.CharacterRange;
-import java.lang.classfile.instruction.ConstantInstruction;
-import java.lang.classfile.instruction.ConvertInstruction;
-import java.lang.classfile.instruction.ExceptionCatch;
-import java.lang.classfile.instruction.FieldInstruction;
-import java.lang.classfile.instruction.IncrementInstruction;
-import java.lang.classfile.instruction.InvokeDynamicInstruction;
-import java.lang.classfile.instruction.InvokeInstruction;
-import java.lang.classfile.instruction.LineNumber;
-import java.lang.classfile.instruction.LoadInstruction;
-import java.lang.classfile.instruction.LocalVariable;
-import java.lang.classfile.instruction.LocalVariableType;
-import java.lang.classfile.instruction.LookupSwitchInstruction;
-import java.lang.classfile.instruction.MonitorInstruction;
-import java.lang.classfile.instruction.NewMultiArrayInstruction;
-import java.lang.classfile.instruction.NewObjectInstruction;
-import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
-import java.lang.classfile.instruction.NewReferenceArrayInstruction;
-import java.lang.classfile.instruction.NopInstruction;
-import java.lang.classfile.instruction.OperatorInstruction;
-import java.lang.classfile.instruction.ReturnInstruction;
-import java.lang.classfile.instruction.StackInstruction;
-import java.lang.classfile.instruction.StoreInstruction;
-import java.lang.classfile.instruction.SwitchCase;
-import java.lang.classfile.instruction.TableSwitchInstruction;
-import java.lang.classfile.instruction.ThrowInstruction;
-import java.lang.classfile.instruction.TypeCheckInstruction;
+import jdk.internal.classfile.impl.*;
+import jdk.internal.javac.PreviewFeature;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.handleDescToHandleInfo;
-
-import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A builder for code attributes (method bodies).  Builders are not created

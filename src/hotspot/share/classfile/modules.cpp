@@ -309,11 +309,6 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
   }
 
   oop loader = java_lang_Module::loader(module());
-  // Make sure loader is not the jdk.internal.reflect.DelegatingClassLoader.
-  if (loader != java_lang_ClassLoader::non_reflection_class_loader(loader)) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Class loader is an invalid delegating class loader");
-  }
   Handle h_loader = Handle(THREAD, loader);
   // define_module can be called during start-up, before the class loader's ClassLoaderData
   // has been created.  SystemDictionary::register_loader ensures creation, if needed.

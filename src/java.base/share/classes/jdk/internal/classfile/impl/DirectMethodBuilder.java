@@ -25,18 +25,12 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CodeTransform;
-import java.lang.classfile.CustomAttribute;
-import java.lang.classfile.MethodBuilder;
-import java.lang.classfile.MethodElement;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.constantpool.Utf8Entry;
+import static java.util.Objects.requireNonNull;
 
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>
@@ -55,8 +49,8 @@ public final class DirectMethodBuilder
                                MethodModel original) {
         super(constantPool, context);
         setOriginal(original);
-        this.name = nameInfo;
-        this.desc = typeInfo;
+        this.name = requireNonNull(nameInfo);
+        this.desc = requireNonNull(typeInfo);
         this.flags = flags;
     }
 
@@ -114,7 +108,7 @@ public final class DirectMethodBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
         return this;
     }

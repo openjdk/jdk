@@ -50,7 +50,7 @@ char* JVMCI::_shared_library_path = nullptr;
 volatile bool JVMCI::_in_shutdown = false;
 StringEventLog* JVMCI::_events = nullptr;
 StringEventLog* JVMCI::_verbose_events = nullptr;
-volatile intx JVMCI::_fatal_log_init_thread = -1;
+volatile intx JVMCI::_first_error_tid = -1;
 volatile int JVMCI::_fatal_log_fd = -1;
 const char* JVMCI::_fatal_log_filename = nullptr;
 
@@ -354,7 +354,7 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
   intx current_thread_id = os::current_thread_id();
   intx invalid_id = -1;
   int log_fd;
-  if (_fatal_log_init_thread == invalid_id && Atomic::cmpxchg(&_fatal_log_init_thread, invalid_id, current_thread_id) == invalid_id) {
+  if (_first_error_tid == invalid_id && Atomic::cmpxchg(&_first_error_tid, invalid_id, current_thread_id) == invalid_id) {
     if (ErrorFileToStdout) {
       log_fd = 1;
     } else if (ErrorFileToStderr) {
@@ -375,14 +375,13 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
       }
     }
     _fatal_log_fd = log_fd;
-  } else {
-    // Another thread won the race to initialize the stream. Give it time
-    // to complete initialization. VM locks cannot be used as the current
-    // thread might not be attached to the VM (e.g. a native thread started
-    // within libjvmci).
-    while (_fatal_log_fd == -1) {
-      os::naked_short_sleep(50);
-    }
+  } else if (_first_error_tid != current_thread_id) {
+    // This is not the first thread reporting a libjvmci error
+    tty->print_cr("[thread " INTX_FORMAT " also had an error in the JVMCI native library]",
+                    current_thread_id);
+
+    // Fatal error reporting is single threaded so just block this thread.
+    os::infinite_sleep();
   }
   fdStream log(_fatal_log_fd);
   log.write(buf, count);
