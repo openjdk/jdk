@@ -75,9 +75,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   Address target(SafepointSynchronize::safepoint_counter_addr());
   __ relocate(target.rspec(), [&] {
-    int32_t offset;
-    __ la(rcounter_addr, target.target(), offset);
-    __ addi(rcounter_addr, rcounter_addr, offset);
+    __ la(rcounter_addr, target.target());
   });
 
   Label slow;

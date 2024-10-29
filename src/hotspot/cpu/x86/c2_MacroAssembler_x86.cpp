@@ -477,9 +477,9 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty.
-  movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+  // Check if the entry lists are empty (EntryList first - by convention).
+  movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
   jccb(Assembler::zero, LSuccess);    // If so we are done.
 
   // Check if there is a successor.
@@ -806,9 +806,9 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty.
-    movptr(reg_rax, cxq_address);
-    orptr(reg_rax, EntryList_address);
+    // Check if the entry lists are empty (EntryList first - by convention).
+    movptr(reg_rax, EntryList_address);
+    orptr(reg_rax, cxq_address);
     jccb(Assembler::zero, unlocked);    // If so we are done.
 
     // Check if there is a successor.
@@ -935,6 +935,72 @@ void C2_MacroAssembler::pminmax(int opcode, BasicType elem_bt, XMMRegister dst, 
       movdqu(xmm0, src);
       pcmpgtq(xmm0, dst);
       blendvpd(dst, src);  // xmm0 as mask
+    }
+  }
+}
+
+void C2_MacroAssembler::vpuminmax(int opcode, BasicType elem_bt, XMMRegister dst,
+                                  XMMRegister src1, Address src2, int vlen_enc) {
+  assert(opcode == Op_UMinV || opcode == Op_UMaxV, "sanity");
+  if (opcode == Op_UMinV) {
+    switch(elem_bt) {
+      case T_BYTE:  vpminub(dst, src1, src2, vlen_enc); break;
+      case T_SHORT: vpminuw(dst, src1, src2, vlen_enc); break;
+      case T_INT:   vpminud(dst, src1, src2, vlen_enc); break;
+      case T_LONG:  evpminuq(dst, k0, src1, src2, false, vlen_enc); break;
+      default: fatal("Unsupported type %s", type2name(elem_bt)); break;
+    }
+  } else {
+    assert(opcode == Op_UMaxV, "required");
+    switch(elem_bt) {
+      case T_BYTE:  vpmaxub(dst, src1, src2, vlen_enc); break;
+      case T_SHORT: vpmaxuw(dst, src1, src2, vlen_enc); break;
+      case T_INT:   vpmaxud(dst, src1, src2, vlen_enc); break;
+      case T_LONG:  evpmaxuq(dst, k0, src1, src2, false, vlen_enc); break;
+      default: fatal("Unsupported type %s", type2name(elem_bt)); break;
+    }
+  }
+}
+
+void C2_MacroAssembler::vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
+  // T1 = -1
+  vpcmpeqq(xtmp1, xtmp1, xtmp1, vlen_enc);
+  // T1 = -1 << 63
+  vpsllq(xtmp1, xtmp1, 63, vlen_enc);
+  // Convert SRC2 to signed value i.e. T2 = T1 + SRC2
+  vpaddq(xtmp2, xtmp1, src2, vlen_enc);
+  // Convert SRC1 to signed value i.e. T1 = T1 + SRC1
+  vpaddq(xtmp1, xtmp1, src1, vlen_enc);
+  // Mask = T2 > T1
+  vpcmpgtq(xtmp1, xtmp2, xtmp1, vlen_enc);
+  if (opcode == Op_UMaxV) {
+    // Res = Mask ? Src2 : Src1
+    vpblendvb(dst, src1, src2, xtmp1, vlen_enc);
+  } else {
+    // Res = Mask ? Src1 : Src2
+    vpblendvb(dst, src2, src1, xtmp1, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vpuminmax(int opcode, BasicType elem_bt, XMMRegister dst,
+                                  XMMRegister src1, XMMRegister src2, int vlen_enc) {
+  assert(opcode == Op_UMinV || opcode == Op_UMaxV, "sanity");
+  if (opcode == Op_UMinV) {
+    switch(elem_bt) {
+      case T_BYTE:  vpminub(dst, src1, src2, vlen_enc); break;
+      case T_SHORT: vpminuw(dst, src1, src2, vlen_enc); break;
+      case T_INT:   vpminud(dst, src1, src2, vlen_enc); break;
+      case T_LONG:  evpminuq(dst, k0, src1, src2, false, vlen_enc); break;
+      default: fatal("Unsupported type %s", type2name(elem_bt)); break;
+    }
+  } else {
+    assert(opcode == Op_UMaxV, "required");
+    switch(elem_bt) {
+      case T_BYTE:  vpmaxub(dst, src1, src2, vlen_enc); break;
+      case T_SHORT: vpmaxuw(dst, src1, src2, vlen_enc); break;
+      case T_INT:   vpmaxud(dst, src1, src2, vlen_enc); break;
+      case T_LONG:  evpmaxuq(dst, k0, src1, src2, false, vlen_enc); break;
+      default: fatal("Unsupported type %s", type2name(elem_bt)); break;
     }
   }
 }
@@ -2362,6 +2428,10 @@ void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, X
   MacroAssembler::evmovdqu(type, kmask, dst, src, merge, vector_len);
 }
 
+void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, XMMRegister src, bool merge, int vector_len) {
+  MacroAssembler::evmovdqu(type, kmask, dst, src, merge, vector_len);
+}
+
 void C2_MacroAssembler::vmovmask(BasicType elem_bt, XMMRegister dst, Address src, XMMRegister mask,
                                  int vec_enc) {
   switch(elem_bt) {
@@ -2660,7 +2730,6 @@ void C2_MacroAssembler::vectortest(BasicType bt, XMMRegister src1, XMMRegister s
 }
 
 void C2_MacroAssembler::vpadd(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
-  assert(UseAVX >= 2, "required");
 #ifdef ASSERT
   bool is_bw = ((elem_bt == T_BYTE) || (elem_bt == T_SHORT));
   bool is_bw_supported = VM_Version::supports_avx512bw();
@@ -4634,7 +4703,126 @@ void C2_MacroAssembler::evmasked_op(int ideal_opc, BasicType eType, KRegister ma
     case Op_RotateLeftV:
       evrold(eType, dst, mask, src1, imm8, merge, vlen_enc); break;
     default:
-      fatal("Unsupported masked operation"); break;
+      fatal("Unsupported operation  %s", NodeClassNames[ideal_opc]);
+      break;
+  }
+}
+
+void C2_MacroAssembler::evmasked_saturating_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1,
+                                               XMMRegister src2, bool is_unsigned, bool merge, int vlen_enc) {
+  if (is_unsigned) {
+    evmasked_saturating_unsigned_op(ideal_opc, elem_bt, mask, dst, src1, src2, merge, vlen_enc);
+  } else {
+    evmasked_saturating_signed_op(ideal_opc, elem_bt, mask, dst, src1, src2, merge, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::evmasked_saturating_signed_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst,
+                                                      XMMRegister src1, XMMRegister src2, bool merge, int vlen_enc) {
+  switch (elem_bt) {
+    case T_BYTE:
+      if (ideal_opc == Op_SaturatingAddV) {
+        evpaddsb(dst, mask, src1, src2, merge, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        evpsubsb(dst, mask, src1, src2, merge, vlen_enc);
+      }
+      break;
+    case T_SHORT:
+      if (ideal_opc == Op_SaturatingAddV) {
+        evpaddsw(dst, mask, src1, src2, merge, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        evpsubsw(dst, mask, src1, src2, merge, vlen_enc);
+      }
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
+  }
+}
+
+void C2_MacroAssembler::evmasked_saturating_unsigned_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst,
+                                                        XMMRegister src1, XMMRegister src2, bool merge, int vlen_enc) {
+  switch (elem_bt) {
+    case T_BYTE:
+      if (ideal_opc == Op_SaturatingAddV) {
+        evpaddusb(dst, mask, src1, src2, merge, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        evpsubusb(dst, mask, src1, src2, merge, vlen_enc);
+      }
+      break;
+    case T_SHORT:
+      if (ideal_opc == Op_SaturatingAddV) {
+        evpaddusw(dst, mask, src1, src2, merge, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        evpsubusw(dst, mask, src1, src2, merge, vlen_enc);
+      }
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
+  }
+}
+
+void C2_MacroAssembler::evmasked_saturating_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1,
+                                               Address src2, bool is_unsigned, bool merge, int vlen_enc) {
+  if (is_unsigned) {
+    evmasked_saturating_unsigned_op(ideal_opc, elem_bt, mask, dst, src1, src2, merge, vlen_enc);
+  } else {
+    evmasked_saturating_signed_op(ideal_opc, elem_bt, mask, dst, src1, src2, merge, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::evmasked_saturating_signed_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst,
+                                                      XMMRegister src1, Address src2, bool merge, int vlen_enc) {
+  switch (elem_bt) {
+    case T_BYTE:
+      if (ideal_opc == Op_SaturatingAddV) {
+        evpaddsb(dst, mask, src1, src2, merge, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        evpsubsb(dst, mask, src1, src2, merge, vlen_enc);
+      }
+      break;
+    case T_SHORT:
+      if (ideal_opc == Op_SaturatingAddV) {
+        evpaddsw(dst, mask, src1, src2, merge, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        evpsubsw(dst, mask, src1, src2, merge, vlen_enc);
+      }
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
+  }
+}
+
+void C2_MacroAssembler::evmasked_saturating_unsigned_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst,
+                                                        XMMRegister src1, Address src2, bool merge, int vlen_enc) {
+  switch (elem_bt) {
+    case T_BYTE:
+      if (ideal_opc == Op_SaturatingAddV) {
+        evpaddusb(dst, mask, src1, src2, merge, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        evpsubusb(dst, mask, src1, src2, merge, vlen_enc);
+      }
+      break;
+    case T_SHORT:
+      if (ideal_opc == Op_SaturatingAddV) {
+        evpaddusw(dst, mask, src1, src2, merge, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        evpsubusw(dst, mask, src1, src2, merge, vlen_enc);
+      }
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
   }
 }
 
@@ -4724,6 +4912,10 @@ void C2_MacroAssembler::evmasked_op(int ideal_opc, BasicType eType, KRegister ma
       evpmaxs(eType, dst, mask, src1, src2, merge, vlen_enc); break;
     case Op_MinV:
       evpmins(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_UMinV:
+      evpminu(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_UMaxV:
+      evpmaxu(eType, dst, mask, src1, src2, merge, vlen_enc); break;
     case Op_XorV:
       evxor(eType, dst, mask, src1, src2, merge, vlen_enc); break;
     case Op_OrV:
@@ -4731,7 +4923,8 @@ void C2_MacroAssembler::evmasked_op(int ideal_opc, BasicType eType, KRegister ma
     case Op_AndV:
       evand(eType, dst, mask, src1, src2, merge, vlen_enc); break;
     default:
-      fatal("Unsupported masked operation"); break;
+      fatal("Unsupported operation  %s", NodeClassNames[ideal_opc]);
+      break;
   }
 }
 
@@ -4784,6 +4977,10 @@ void C2_MacroAssembler::evmasked_op(int ideal_opc, BasicType eType, KRegister ma
       evpmaxs(eType, dst, mask, src1, src2, merge, vlen_enc); break;
     case Op_MinV:
       evpmins(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_UMaxV:
+      evpmaxu(eType, dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_UMinV:
+      evpminu(eType, dst, mask, src1, src2, merge, vlen_enc); break;
     case Op_XorV:
       evxor(eType, dst, mask, src1, src2, merge, vlen_enc); break;
     case Op_OrV:
@@ -4791,7 +4988,8 @@ void C2_MacroAssembler::evmasked_op(int ideal_opc, BasicType eType, KRegister ma
     case Op_AndV:
       evand(eType, dst, mask, src1, src2, merge, vlen_enc); break;
     default:
-      fatal("Unsupported masked operation"); break;
+      fatal("Unsupported operation  %s", NodeClassNames[ideal_opc]);
+      break;
   }
 }
 
@@ -6479,6 +6677,369 @@ void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst
   }
 }
 
+void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
+  switch(elem_bt) {
+    case T_BYTE:
+      if (ideal_opc == Op_SaturatingAddV) {
+        vpaddsb(dst, src1, src2, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        vpsubsb(dst, src1, src2, vlen_enc);
+      }
+      break;
+    case T_SHORT:
+      if (ideal_opc == Op_SaturatingAddV) {
+        vpaddsw(dst, src1, src2, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        vpsubsw(dst, src1, src2, vlen_enc);
+      }
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
+  }
+}
+
+void C2_MacroAssembler::vector_saturating_unsigned_op(int ideal_opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
+  switch(elem_bt) {
+    case T_BYTE:
+      if (ideal_opc == Op_SaturatingAddV) {
+        vpaddusb(dst, src1, src2, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        vpsubusb(dst, src1, src2, vlen_enc);
+      }
+      break;
+    case T_SHORT:
+      if (ideal_opc == Op_SaturatingAddV) {
+        vpaddusw(dst, src1, src2, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        vpsubusw(dst, src1, src2, vlen_enc);
+      }
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
+  }
+}
+
+void C2_MacroAssembler::vector_sub_dq_saturating_unsigned_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1,
+                                                              XMMRegister src2, KRegister ktmp, int vlen_enc) {
+  // For unsigned subtraction, overflow happens when magnitude of second input is greater than first input.
+  // overflow_mask = Inp1 <u Inp2
+  evpcmpu(elem_bt, ktmp,  src2, src1, Assembler::lt, vlen_enc);
+  // Res = overflow_mask ? Zero : INP1 - INP2 (non-commutative and non-associative)
+  evmasked_op(elem_bt == T_INT ? Op_SubVI : Op_SubVL, elem_bt, ktmp, dst, src1, src2, false, vlen_enc, false);
+}
+
+void C2_MacroAssembler::vector_sub_dq_saturating_unsigned_avx(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                                              XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
+  // Emulate unsigned comparison using signed comparison
+  // Mask = Inp1 <u Inp2 => Inp1 + MIN_VALUE < Inp2 + MIN_VALUE
+  vpgenmin_value(elem_bt, xtmp1, xtmp1, vlen_enc, true);
+  vpadd(elem_bt, xtmp2, src1, xtmp1, vlen_enc);
+  vpadd(elem_bt, xtmp1, src2, xtmp1, vlen_enc);
+
+  vpcmpgt(elem_bt, xtmp2, xtmp1, xtmp2, vlen_enc);
+
+  // Res = INP1 - INP2 (non-commutative and non-associative)
+  vpsub(elem_bt, dst, src1, src2, vlen_enc);
+  // Res = Mask ? Zero : Res
+  vpxor(xtmp1, xtmp1, xtmp1, vlen_enc);
+  vpblendvb(dst, dst, xtmp1, xtmp2, vlen_enc);
+}
+
+void C2_MacroAssembler::vector_add_dq_saturating_unsigned_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                                               XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp, int vlen_enc) {
+  // Unsigned values ranges comprise of only +ve numbers, thus there exist only an upper bound saturation.
+  // overflow_mask = (SRC1 + SRC2) <u (SRC1 | SRC2)
+  // Res = Signed Add INP1, INP2
+  vpadd(elem_bt, dst, src1, src2, vlen_enc);
+  // T1 = SRC1 | SRC2
+  vpor(xtmp1, src1, src2, vlen_enc);
+  // Max_Unsigned = -1
+  vpternlogd(xtmp2, 0xff, xtmp2, xtmp2, vlen_enc);
+  // Unsigned compare:  Mask = Res <u T1
+  evpcmpu(elem_bt, ktmp, dst, xtmp1, Assembler::lt, vlen_enc);
+  // res  = Mask ? Max_Unsigned : Res
+  evpblend(elem_bt, dst, ktmp,  dst, xtmp2, true, vlen_enc);
+}
+
+//
+// Section 2-13 Hacker's Delight list following overflow detection check for saturating
+// unsigned addition operation.
+//    overflow_mask = ((a & b) | ((a | b) & ~( a + b))) >>> 31 == 1
+//
+// We empirically determined its semantic equivalence to following reduced expression
+//    overflow_mask =  (a + b) <u (a | b)
+//
+// and also verified it though Alive2 solver.
+// (https://alive2.llvm.org/ce/z/XDQ7dY)
+//
+
+void C2_MacroAssembler::vector_add_dq_saturating_unsigned_avx(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                                              XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, int vlen_enc) {
+  // Res = Signed Add INP1, INP2
+  vpadd(elem_bt, dst, src1, src2, vlen_enc);
+  // Compute T1 = INP1 | INP2
+  vpor(xtmp3, src1, src2, vlen_enc);
+  // T1 = Minimum signed value.
+  vpgenmin_value(elem_bt, xtmp2, xtmp1, vlen_enc, true);
+  // Convert T1 to signed value, T1 = T1 + MIN_VALUE
+  vpadd(elem_bt, xtmp3, xtmp3, xtmp2, vlen_enc);
+  // Convert Res to signed value, Res<s> = Res + MIN_VALUE
+  vpadd(elem_bt, xtmp2, xtmp2, dst, vlen_enc);
+  // Compute overflow detection mask = Res<1> <s T1
+  if (elem_bt == T_INT) {
+    vpcmpgtd(xtmp3, xtmp3, xtmp2, vlen_enc);
+  } else {
+    assert(elem_bt == T_LONG, "");
+    vpcmpgtq(xtmp3, xtmp3, xtmp2, vlen_enc);
+  }
+  vpblendvb(dst, dst, xtmp1, xtmp3, vlen_enc);
+}
+
+void C2_MacroAssembler::evpmovq2m_emu(KRegister ktmp, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                      int vlen_enc, bool xtmp2_hold_M1) {
+  if (VM_Version::supports_avx512dq()) {
+    evpmovq2m(ktmp, src, vlen_enc);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    if (!xtmp2_hold_M1) {
+      vpternlogq(xtmp2, 0xff, xtmp2, xtmp2, vlen_enc);
+    }
+    evpsraq(xtmp1, src, 63, vlen_enc);
+    evpcmpeqq(ktmp, k0, xtmp1, xtmp2, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::evpmovd2m_emu(KRegister ktmp, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                      int vlen_enc, bool xtmp2_hold_M1) {
+  if (VM_Version::supports_avx512dq()) {
+    evpmovd2m(ktmp, src, vlen_enc);
+  } else {
+    assert(VM_Version::supports_evex(), "");
+    if (!xtmp2_hold_M1) {
+      vpternlogd(xtmp2, 0xff, xtmp2, xtmp2, vlen_enc);
+    }
+    vpsrad(xtmp1, src, 31, vlen_enc);
+    Assembler::evpcmpeqd(ktmp, k0, xtmp1, xtmp2, vlen_enc);
+  }
+}
+
+
+void C2_MacroAssembler::vpsign_extend_dq(BasicType elem_bt, XMMRegister dst, XMMRegister src, int vlen_enc) {
+  if (elem_bt == T_LONG) {
+    if (VM_Version::supports_evex()) {
+      evpsraq(dst, src, 63, vlen_enc);
+    } else {
+      vpsrad(dst, src, 31, vlen_enc);
+      vpshufd(dst, dst, 0xF5, vlen_enc);
+    }
+  } else {
+    assert(elem_bt == T_INT, "");
+    vpsrad(dst, src, 31, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vpgenmax_value(BasicType elem_bt, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones) {
+  if (compute_allones) {
+    if (vlen_enc == Assembler::AVX_512bit) {
+      vpternlogd(allones, 0xff, allones, allones, vlen_enc);
+    } else {
+      vpcmpeqq(allones, allones, allones, vlen_enc);
+    }
+  }
+  if (elem_bt == T_LONG) {
+    vpsrlq(dst, allones, 1, vlen_enc);
+  } else {
+    assert(elem_bt == T_INT, "");
+    vpsrld(dst, allones, 1, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vpgenmin_value(BasicType elem_bt, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones) {
+  if (compute_allones) {
+    if (vlen_enc == Assembler::AVX_512bit) {
+      vpternlogd(allones, 0xff, allones, allones, vlen_enc);
+    } else {
+      vpcmpeqq(allones, allones, allones, vlen_enc);
+    }
+  }
+  if (elem_bt == T_LONG) {
+    vpsllq(dst, allones, 63, vlen_enc);
+  } else {
+    assert(elem_bt == T_INT, "");
+    vpslld(dst, allones, 31, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::evpcmpu(BasicType elem_bt, KRegister kmask,  XMMRegister src1, XMMRegister src2,
+                                Assembler::ComparisonPredicate cond, int vlen_enc) {
+  switch(elem_bt) {
+    case T_LONG:  evpcmpuq(kmask, src1, src2, cond, vlen_enc); break;
+    case T_INT:   evpcmpud(kmask, src1, src2, cond, vlen_enc); break;
+    case T_SHORT: evpcmpuw(kmask, src1, src2, cond, vlen_enc); break;
+    case T_BYTE:  evpcmpub(kmask, src1, src2, cond, vlen_enc); break;
+    default: fatal("Unsupported type %s", type2name(elem_bt)); break;
+  }
+}
+
+void C2_MacroAssembler::vpcmpgt(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
+  switch(elem_bt) {
+    case  T_LONG:  vpcmpgtq(dst, src1, src2, vlen_enc); break;
+    case  T_INT:   vpcmpgtd(dst, src1, src2, vlen_enc); break;
+    case  T_SHORT: vpcmpgtw(dst, src1, src2, vlen_enc); break;
+    case  T_BYTE:  vpcmpgtb(dst, src1, src2, vlen_enc); break;
+    default: fatal("Unsupported type %s", type2name(elem_bt)); break;
+  }
+}
+
+void C2_MacroAssembler::evpmov_vec_to_mask(BasicType elem_bt, KRegister ktmp, XMMRegister src, XMMRegister xtmp1,
+                                           XMMRegister xtmp2, int vlen_enc, bool xtmp2_hold_M1) {
+  if (elem_bt == T_LONG) {
+    evpmovq2m_emu(ktmp, src, xtmp1, xtmp2, vlen_enc, xtmp2_hold_M1);
+  } else {
+    assert(elem_bt == T_INT, "");
+    evpmovd2m_emu(ktmp, src, xtmp1, xtmp2, vlen_enc, xtmp2_hold_M1);
+  }
+}
+
+void C2_MacroAssembler::vector_addsub_dq_saturating_evex(int ideal_opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1,
+                                                         XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2,
+                                                         KRegister ktmp1, KRegister ktmp2, int vlen_enc) {
+  assert(elem_bt == T_INT || elem_bt == T_LONG, "");
+  // Addition/Subtraction happens over two's compliment representation of numbers and is agnostic to signed'ness.
+  // Overflow detection based on Hacker's delight section 2-13.
+  if (ideal_opc == Op_SaturatingAddV) {
+    // res = src1 + src2
+    vpadd(elem_bt, dst, src1, src2, vlen_enc);
+    // Overflow occurs if result polarity does not comply with equivalent polarity inputs.
+    // overflow = (((res ^ src1) & (res ^ src2)) >>> 31(I)/63(L)) == 1
+    vpxor(xtmp1, dst, src1, vlen_enc);
+    vpxor(xtmp2, dst, src2, vlen_enc);
+    vpand(xtmp2, xtmp1, xtmp2, vlen_enc);
+  } else {
+    assert(ideal_opc == Op_SaturatingSubV, "");
+    // res = src1 - src2
+    vpsub(elem_bt, dst, src1, src2, vlen_enc);
+    // Overflow occurs when both inputs have opposite polarity and
+    // result polarity does not comply with first input polarity.
+    // overflow = ((src1 ^ src2) & (res ^ src1) >>> 31(I)/63(L)) == 1;
+    vpxor(xtmp1, src1, src2, vlen_enc);
+    vpxor(xtmp2, dst, src1, vlen_enc);
+    vpand(xtmp2, xtmp1, xtmp2, vlen_enc);
+  }
+
+  // Compute overflow detection mask.
+  evpmov_vec_to_mask(elem_bt, ktmp1, xtmp2, xtmp2, xtmp1, vlen_enc);
+  // Note: xtmp1 hold -1 in all its lanes after above call.
+
+  // Compute mask based on first input polarity.
+  evpmov_vec_to_mask(elem_bt, ktmp2, src1, xtmp2, xtmp1, vlen_enc, true);
+
+  vpgenmax_value(elem_bt, xtmp2, xtmp1, vlen_enc, true);
+  vpgenmin_value(elem_bt, xtmp1, xtmp1, vlen_enc);
+
+  // Compose a vector of saturating (MAX/MIN) values, where lanes corresponding to
+  // set bits in first input polarity mask holds a min value.
+  evpblend(elem_bt, xtmp2, ktmp2, xtmp2, xtmp1, true, vlen_enc);
+  // Blend destination lanes with saturated values using overflow detection mask.
+  evpblend(elem_bt, dst, ktmp1, dst, xtmp2, true, vlen_enc);
+}
+
+
+void C2_MacroAssembler::vector_addsub_dq_saturating_avx(int ideal_opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1,
+                                                        XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2,
+                                                        XMMRegister xtmp3, XMMRegister xtmp4, int vlen_enc) {
+  assert(elem_bt == T_INT || elem_bt == T_LONG, "");
+  // Addition/Subtraction happens over two's compliment representation of numbers and is agnostic to signed'ness.
+  // Overflow detection based on Hacker's delight section 2-13.
+  if (ideal_opc == Op_SaturatingAddV) {
+    // res = src1 + src2
+    vpadd(elem_bt, dst, src1, src2, vlen_enc);
+    // Overflow occurs if result polarity does not comply with equivalent polarity inputs.
+    // overflow = (((res ^ src1) & (res ^ src2)) >>> 31(I)/63(L)) == 1
+    vpxor(xtmp1, dst, src1, vlen_enc);
+    vpxor(xtmp2, dst, src2, vlen_enc);
+    vpand(xtmp2, xtmp1, xtmp2, vlen_enc);
+  } else {
+    assert(ideal_opc == Op_SaturatingSubV, "");
+    // res = src1 - src2
+    vpsub(elem_bt, dst, src1, src2, vlen_enc);
+    // Overflow occurs when both inputs have opposite polarity and
+    // result polarity does not comply with first input polarity.
+    // overflow = ((src1 ^ src2) & (res ^ src1) >>> 31(I)/63(L)) == 1;
+    vpxor(xtmp1, src1, src2, vlen_enc);
+    vpxor(xtmp2, dst, src1, vlen_enc);
+    vpand(xtmp2, xtmp1, xtmp2, vlen_enc);
+  }
+
+  // Sign-extend to compute overflow detection mask.
+  vpsign_extend_dq(elem_bt, xtmp3, xtmp2, vlen_enc);
+
+  vpcmpeqd(xtmp1, xtmp1, xtmp1, vlen_enc);
+  vpgenmax_value(elem_bt, xtmp2, xtmp1, vlen_enc);
+  vpgenmin_value(elem_bt, xtmp1, xtmp1, vlen_enc);
+
+  // Compose saturating min/max vector using first input polarity mask.
+  vpsign_extend_dq(elem_bt, xtmp4, src1, vlen_enc);
+  vpblendvb(xtmp1, xtmp2, xtmp1, xtmp4, vlen_enc);
+
+  // Blend result with saturating vector using overflow detection mask.
+  vpblendvb(dst, dst, xtmp1, xtmp3, vlen_enc);
+}
+
+void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc) {
+  switch(elem_bt) {
+    case T_BYTE:
+      if (ideal_opc == Op_SaturatingAddV) {
+        vpaddsb(dst, src1, src2, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        vpsubsb(dst, src1, src2, vlen_enc);
+      }
+      break;
+    case T_SHORT:
+      if (ideal_opc == Op_SaturatingAddV) {
+        vpaddsw(dst, src1, src2, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        vpsubsw(dst, src1, src2, vlen_enc);
+      }
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
+  }
+}
+
+void C2_MacroAssembler::vector_saturating_unsigned_op(int ideal_opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc) {
+  switch(elem_bt) {
+    case T_BYTE:
+      if (ideal_opc == Op_SaturatingAddV) {
+        vpaddusb(dst, src1, src2, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        vpsubusb(dst, src1, src2, vlen_enc);
+      }
+      break;
+    case T_SHORT:
+      if (ideal_opc == Op_SaturatingAddV) {
+        vpaddusw(dst, src1, src2, vlen_enc);
+      } else {
+        assert(ideal_opc == Op_SaturatingSubV, "");
+        vpsubusw(dst, src1, src2, vlen_enc);
+      }
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
+  }
+}
+
 void C2_MacroAssembler::select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1,
                                                      XMMRegister src2, int vlen_enc) {
   switch(elem_bt) {
@@ -6503,5 +7064,21 @@ void C2_MacroAssembler::select_from_two_vectors_evex(BasicType elem_bt, XMMRegis
     default:
       fatal("Unsupported type %s", type2name(elem_bt));
       break;
+  }
+}
+
+void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, bool is_unsigned, int vlen_enc) {
+  if (is_unsigned) {
+    vector_saturating_unsigned_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
+  } else {
+    vector_saturating_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, Address src2, bool is_unsigned, int vlen_enc) {
+  if (is_unsigned) {
+    vector_saturating_unsigned_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
+  } else {
+    vector_saturating_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
   }
 }

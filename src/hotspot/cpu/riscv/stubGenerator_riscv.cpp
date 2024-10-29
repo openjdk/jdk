@@ -508,7 +508,7 @@ class StubGenerator: public StubCodeGenerator {
     // complete return to VM
     assert(StubRoutines::_call_stub_return_address != nullptr,
            "_call_stub_return_address must have been generated before");
-    __ j(StubRoutines::_call_stub_return_address);
+    __ j(RuntimeAddress(StubRoutines::_call_stub_return_address));
 
     return start;
   }
@@ -3782,8 +3782,7 @@ class StubGenerator: public StubCodeGenerator {
     Label thaw_success;
     // t1 contains the size of the frames to thaw, 0 if overflow or no more frames
     __ bnez(t1, thaw_success);
-    __ la(t1, RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
-    __ jr(t1);
+    __ j(RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
     __ bind(thaw_success);
 
     // make room for the thawed frames
