@@ -56,7 +56,7 @@
 //             = scale_0 * variable_0 + con                    + scale_1 * variable_1
 //
 //
-//   Example2: int array access
+//   Example 2: int array access
 //
 //     array[5 + i + 3 * j]
 //
@@ -66,7 +66,7 @@
 //             = scale_0 * variable_0 + con                           + scale_1 * variable_1 + scale_2 * variable_2
 //
 //
-//   Example3: Unsafe with int array
+//   Example 3: Unsafe with int array
 //
 //     UNSAFE.getInt(array, ARRAY_INT_BASE_OFFSET + 4 * i);
 //
@@ -76,7 +76,7 @@
 //             = scale_0 * variable_0 + con                   + scale_1 * variable_1
 //
 //
-//   Example4: Unsafe with native memory address
+//   Example 4: Unsafe with native memory address
 //
 //     long address;
 //     UNSAFE.getInt(null, address + 4 * i);
@@ -87,7 +87,7 @@
 //             = scale_0 * variable_0 + con + scale_1 * variable_1
 //
 //
-//   Example5: MemorySegment with byte array as backing type
+//   Example 5: MemorySegment with byte array as backing type
 //
 //     byte[] array = new byte[1000];
 //     MemorySegment ms = MemorySegment.ofArray(array);
@@ -101,20 +101,20 @@
 //             = scale_0 * variable_0    + con                                   + scale_1 * variable_1
 //
 //
-//   Example6: MemorySegment with native memory
+//   Example 6: MemorySegment with native memory
 //
 //     MemorySegment ms = Arena.ofAuto().allocate(1000, 1);
 //     assert ms.heapBase().isEmpty(): "null base";
 //     assert ms.address() != 0: "non-zero native memory address";
-//     byte val2 = ms.get(ValueLayout.JAVA_BYTE, i);
+//     short val = ms.get(ValueLayout.JAVA_SHORT, 2L * i);
 //
-//     pointer = ms.heapBase() +           ms.address() +           i
-//             = 0             + 1       * ms.address() + 1       * i
+//     pointer = ms.heapBase() +           ms.address() + 2         i
+//             = 0             + 1       * ms.address() + 2       * i
 //               ------------    ----------------------   --------------------
 //             = con             scale_0 * variable_0   + scale_1 * variable_1
 //
 //
-//   Example7: Non-linear access to int array
+//   Example 7: Non-linear access to int array
 //
 //     array[5 + i + j * k]
 //
@@ -126,7 +126,7 @@
 //     Note: we simply stop parsing once a term is not linear. We keep "j * k" as its own variable.
 //
 //
-//   Example8: Unsafe with native memory address, non-linear access
+//   Example 8: Unsafe with native memory address, non-linear access
 //
 //     UNSAFE.getInt(null, i * j);
 //
