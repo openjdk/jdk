@@ -266,8 +266,10 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
     HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
   elif test "x$BINUTILS_INSTALL_DIR" != x; then
     disasm_header="\"$BINUTILS_INSTALL_DIR/include/dis-asm.h\""
-    if (test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a || test -e $BINUTILS_INSTALL_DIR/lib64/libbfd.a) && \
-        (test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a || test -e $BINUTILS_INSTALL_DIR/lib64/libopcodes.a) && \
+    if (test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a || \
+        test -e $BINUTILS_INSTALL_DIR/lib64/libbfd.a) && \
+        (test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a || \
+        test -e $BINUTILS_INSTALL_DIR/lib64/libopcodes.a) && \
         (test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a || \
         test -e $BINUTILS_INSTALL_DIR/lib64/libiberty.a || \
         test -e $BINUTILS_INSTALL_DIR/lib32/libiberty.a); then
