@@ -29,7 +29,6 @@ import com.sun.hotspot.igv.layout.Vertex;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.sun.hotspot.igv.hierarchicallayout.LayoutEdge.LAYOUT_EDGE_LAYER_COMPARATOR;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutManager.NODE_OFFSET;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_POS_COMPARATOR;
 
@@ -424,17 +423,12 @@ public class LayoutGraph {
         }
     }
 
-    public void optimizeBackEdgeCrossing() {
+    public void optimizeBackEdgeCrossings() {
         for (LayoutNode node : getLayoutNodes()) {
-            if (node.getReversedLinkStartPoints().isEmpty() && node.getReversedLinkEndPoints().isEmpty()) continue;
-            int orig_score = node.getBackedgeCrossingScore();
-            node.computeReversedLinkPoints(!node.isReverseLeft());
-            int reverse_score = node.getBackedgeCrossingScore();
-            if (orig_score > reverse_score) {
-                node.computeReversedLinkPoints(!node.isReverseLeft());
-            }
+            node.optimizeBackEdgeCrossing();
         }
     }
+
     private void tryAlignDummy(int x, LayoutNode dummy) {
         if (x == dummy.getX()) return;
         LayoutLayer nextLayer = getLayer(dummy.getLayer());
