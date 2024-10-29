@@ -49,7 +49,6 @@ import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.ch.DirectBuffer;
-import sun.nio.cs.UTF_8;
 
 /**
  * This abstract class provides an immutable implementation for the {@code MemorySegment} interface. This class contains information
@@ -915,7 +914,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public String getString(long offset) {
-        return getString(offset, UTF_8.INSTANCE);
+        return getString(offset, sun.nio.cs.UTF_8.INSTANCE);
     }
 
     @Override
@@ -927,7 +926,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public void setString(long offset, String str) {
         Objects.requireNonNull(str);
-        setString(offset, str, UTF_8.INSTANCE);
+        setString(offset, str, sun.nio.cs.UTF_8.INSTANCE);
     }
 
     @Override
