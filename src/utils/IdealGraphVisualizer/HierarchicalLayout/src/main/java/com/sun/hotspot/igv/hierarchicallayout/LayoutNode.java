@@ -443,4 +443,14 @@ public class LayoutNode {
         boolean hasReversedDown = computeReversedStartPoints();
         boolean hasReversedUP = computeReversedEndPoints(hasReversedDown != reverseLeft);
     }
+
+    public void optimizeBackEdgeCrossing() {
+        if (getReversedLinkStartPoints().isEmpty() && getReversedLinkEndPoints().isEmpty()) return;
+        int orig_score = getBackedgeCrossingScore();
+        computeReversedLinkPoints(!isReverseLeft());
+        int reverse_score = getBackedgeCrossingScore();
+        if (orig_score > reverse_score) {
+            computeReversedLinkPoints(!isReverseLeft());
+        }
+    }
 }

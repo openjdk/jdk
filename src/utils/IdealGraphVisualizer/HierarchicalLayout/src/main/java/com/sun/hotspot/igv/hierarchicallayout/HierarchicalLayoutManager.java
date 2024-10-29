@@ -86,7 +86,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
     }
 
     private void writeBack() {
-        graph.optimizeBackEdgeCrossing();
+        graph.optimizeBackEdgeCrossings();
         graph.straightenEdges();
         WriteResult.apply(graph);
     }
@@ -649,7 +649,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 sweepDown(graph);
                 sweepUp(graph);
             }
-            graph.optimizeBackEdgeCrossing();
+            graph.optimizeBackEdgeCrossings();
             graph.straightenEdges();
         }
 
