@@ -24,7 +24,8 @@
  */
 package jdk.tools.jlink.internal;
 
-import static jdk.tools.jlink.internal.LinkableRuntimeImage.*;
+import static jdk.tools.jlink.internal.LinkableRuntimeImage.DIFF_PATTERN;
+import static jdk.tools.jlink.internal.LinkableRuntimeImage.RESPATH_PATTERN;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -95,47 +96,6 @@ public final class ImageFileCreator {
         this.generateRuntimeImage = generateRuntimeImage;
     }
 
-    /**
-     * Create an executable image based on a set of archives and a given
-     * plug-in stack and the native byte order. Note: this is will not create
-     * a linkable JDK runtime.
-     *
-     * Unused? Should this method be removed?
-     *
-     * @param archives The set of input archives
-     * @param plugins The plug-in stack to apply to the input
-     * @return The executable image
-     * @throws IOException
-     */
-    /*
-    public static ExecutableImage create(Set<Archive> archives,
-            ImagePluginStack plugins)
-            throws IOException {
-        return ImageFileCreator.create(archives, ByteOrder.nativeOrder(),
-                plugins, false);
-    }*/
-
-    /*
-     * Create an executable image based on a set of archives and an empty
-     * plug-in stack and a given byte order. Note: this is will not create
-     * a linkable JDK runtime.
-     *
-     * Unused?
-     *
-     * @param archives The set of input archives
-     * @param byteOrder The required byte order of the output image.
-     * @return The executable image for the given byte order.
-     * @throws IOException
-     */
-    /*
-    public static ExecutableImage create(Set<Archive> archives,
-            ByteOrder byteOrder)
-            throws IOException {
-        return ImageFileCreator.create(archives, byteOrder,
-                new ImagePluginStack(), false);
-    }
-     */
-
     /*
      * Create an executable image based on a set of input archives and a given
      * plugin stack for a given byte order. It optionally generates a linkable
@@ -161,7 +121,7 @@ public final class ImageFileCreator {
             // write to modular image
             image.writeImage(archives, byteOrder);
         } finally {
-            //Close all archives
+            // Close all archives
             for (Archive a : archives) {
                 a.close();
             }
