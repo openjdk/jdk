@@ -51,13 +51,11 @@ import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.ch.DirectBuffer;
-
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import sun.nio.cs.UTF_8;
 
 /**
  * This abstract class provides an immutable implementation for the {@code MemorySegment} interface. This class contains information
@@ -521,48 +519,75 @@ public abstract sealed class AbstractMemorySegmentImpl
                 unsafeGetBase());
     }
 
-    public static AbstractMemorySegmentImpl ofBuffer(Buffer bb) {
-        Objects.requireNonNull(bb);
-        Object base = NIO_ACCESS.getBufferBase(bb);
-        if (!bb.isDirect() && base == null) {
-            throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
-        }
-        long bbAddress = NIO_ACCESS.getBufferAddress(bb);
-        UnmapperProxy unmapper = NIO_ACCESS.unmapper(bb);
-
-        int pos = bb.position();
-        int limit = bb.limit();
-        int size = limit - pos;
-
-        AbstractMemorySegmentImpl bufferSegment = (AbstractMemorySegmentImpl) NIO_ACCESS.bufferSegment(bb);
-        boolean readOnly = bb.isReadOnly();
-        int scaleFactor = getScaleFactor(bb);
-        final MemorySessionImpl bufferScope;
-        if (bufferSegment != null) {
-            bufferScope = bufferSegment.scope;
-        } else {
-            bufferScope = MemorySessionImpl.createHeap(bufferRef(bb));
-        }
-        long off = bbAddress + ((long)pos << scaleFactor);
-        long len = (long)size << scaleFactor;
-        if (base != null) {
-            return switch (base) {
-                case byte[]   _ -> new HeapMemorySegmentImpl.OfByte(off, base, len, readOnly, bufferScope);
-                case short[]  _ -> new HeapMemorySegmentImpl.OfShort(off, base, len, readOnly, bufferScope);
-                case char[]   _ -> new HeapMemorySegmentImpl.OfChar(off, base, len, readOnly, bufferScope);
-                case int[]    _ -> new HeapMemorySegmentImpl.OfInt(off, base, len, readOnly, bufferScope);
-                case float[]  _ -> new HeapMemorySegmentImpl.OfFloat(off, base, len, readOnly, bufferScope);
-                case long[]   _ -> new HeapMemorySegmentImpl.OfLong(off, base, len, readOnly, bufferScope);
-                case double[] _ -> new HeapMemorySegmentImpl.OfDouble(off, base, len, readOnly, bufferScope);
-                default         -> throw new AssertionError("Cannot get here");
-            };
-        } else if (unmapper == null) {
-            return new NativeMemorySegmentImpl(off, len, readOnly, bufferScope);
-        } else {
-            return new MappedMemorySegmentImpl(off, unmapper, len, readOnly, bufferScope);
-        }
+    @ForceInline
+    public static AbstractMemorySegmentImpl ofBuffer(Buffer b) {
+        return switch (b) {
+            case ByteBuffer _                 -> ofBuffer(b, offset(b, 0), length(b, 0));
+            case ShortBuffer _, CharBuffer _  -> ofBuffer(b, offset(b, 1), length(b, 1));
+            case IntBuffer _, FloatBuffer _   -> ofBuffer(b, offset(b, 2), length(b, 2));
+            case LongBuffer _, DoubleBuffer _ -> ofBuffer(b, offset(b, 3), length(b, 3));
+        };
     }
 
+    @ForceInline
+    private static AbstractMemorySegmentImpl ofBuffer(Buffer b, long offset, long length) {
+        final Object base = NIO_ACCESS.getBufferBase(b);
+        return (base == null)
+                ? arrayFreeSegment(b, offset, length)
+                : arrayBackedSegment(base, offset, length, b.isReadOnly(), bufferScope(b));
+
+    }
+
+    @ForceInline
+    private static long offset(Buffer b, int scaleFactor) {
+        final long bbAddress = NIO_ACCESS.getBufferAddress(b);
+        return bbAddress + (((long) b.position()) << scaleFactor);
+    }
+
+    @ForceInline
+    private static long length(Buffer b, int scaleFactor) {
+        return ((long) b.limit() - b.position()) << scaleFactor;
+    }
+
+    @ForceInline
+    private static AbstractMemorySegmentImpl arrayBackedSegment(Object base,
+                                                                long offset,
+                                                                long length,
+                                                                boolean readOnly,
+                                                                MemorySessionImpl bufferScope) {
+        return switch (base) {
+            case byte[]   _ -> new HeapMemorySegmentImpl.OfByte(offset, base, length, readOnly, bufferScope);
+            case short[]  _ -> new HeapMemorySegmentImpl.OfShort(offset, base, length, readOnly, bufferScope);
+            case char[]   _ -> new HeapMemorySegmentImpl.OfChar(offset, base, length, readOnly, bufferScope);
+            case int[]    _ -> new HeapMemorySegmentImpl.OfInt(offset, base, length, readOnly, bufferScope);
+            case float[]  _ -> new HeapMemorySegmentImpl.OfFloat(offset, base, length, readOnly, bufferScope);
+            case long[]   _ -> new HeapMemorySegmentImpl.OfLong(offset, base, length, readOnly, bufferScope);
+            case double[] _ -> new HeapMemorySegmentImpl.OfDouble(offset, base, length, readOnly, bufferScope);
+            default         -> throw new AssertionError("Cannot get here");
+        };
+    }
+
+    @ForceInline
+    private static AbstractMemorySegmentImpl arrayFreeSegment(Buffer b, long offset, long length) {
+        if (!b.isDirect()) {
+            throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
+        }
+        final UnmapperProxy unmapper = NIO_ACCESS.unmapper(b);
+        return unmapper == null
+                ? new NativeMemorySegmentImpl(offset, length, b.isReadOnly(), bufferScope(b))
+                : new MappedMemorySegmentImpl(offset, unmapper, length, b.isReadOnly(), bufferScope(b));
+    }
+
+    @ForceInline
+    private static MemorySessionImpl bufferScope(Buffer b) {
+        final AbstractMemorySegmentImpl bufferSegment =
+                (AbstractMemorySegmentImpl) NIO_ACCESS.bufferSegment(b);
+        return bufferSegment == null
+                ? MemorySessionImpl.createHeap(bufferRef(b))
+                : bufferSegment.scope;
+    }
+
+    @ForceInline
     private static Object bufferRef(Buffer buffer) {
         if (buffer instanceof DirectBuffer directBuffer) {
             // direct buffer, return either the buffer attachment (for slices and views), or the buffer itself
@@ -658,15 +683,6 @@ public abstract sealed class AbstractMemorySegmentImpl
                     srcArray, srcInfo.base() + (srcIndex * srcInfo.scale()),
                     destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcInfo.scale(), srcInfo.scale());
         }
-    }
-
-    private static int getScaleFactor(Buffer buffer) {
-        return switch (buffer) {
-            case ByteBuffer   _                 -> 0;
-            case CharBuffer   _, ShortBuffer  _ -> 1;
-            case IntBuffer    _, FloatBuffer  _ -> 2;
-            case LongBuffer   _, DoubleBuffer _ -> 3;
-        };
     }
 
     // accessors
@@ -909,7 +925,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public String getString(long offset) {
-        return getString(offset, sun.nio.cs.UTF_8.INSTANCE);
+        return getString(offset, UTF_8.INSTANCE);
     }
 
     @Override
@@ -921,7 +937,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public void setString(long offset, String str) {
         Objects.requireNonNull(str);
-        setString(offset, str, sun.nio.cs.UTF_8.INSTANCE);
+        setString(offset, str, UTF_8.INSTANCE);
     }
 
     @Override
