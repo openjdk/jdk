@@ -75,9 +75,10 @@ public:
       _file_name.print_raw(path);
     } else {
       char buf[PATH_MAX];
-      buf[0] = 0;
+      buf[0] = '\0';
       proc_regionfilename(getpid(), (uint64_t) _address, buf, sizeof(buf));
       if (buf[0] != 0) {
+        buf[sizeof(buf) - 1] = '\0';
         _file_name.print_raw("-> ");
         _file_name.print_raw(buf);
       }
@@ -98,7 +99,6 @@ public:
     const bool valid_share_mode = rinfo.pri_share_mode >= SM_COW && rinfo.pri_share_mode <= SM_LARGE_PAGE;
     if (valid_share_mode) {
       int share_mode = rinfo.pri_share_mode;
-      //share_mode = share_mode == SM_LARGE_PAGE || share_mode == SM_PRIVATE_ALIASED ? SM_PRIVATE;
       out.print_raw(share_strings[share_mode - 1]);
     } else {
       out.print_cr("invalid pri_share_mode (%d)", rinfo.pri_share_mode);
@@ -186,14 +186,18 @@ class ProcSmapsSummary {
   size_t _shared;       // combined shared size
   size_t _swapped_out;  // combined amount of swapped-out memory
 public:
-  ProcSmapsSummary() : _num_mappings(0),// _vsize(0), _rss(0),
-  _private(0),  _committed(0), _shared(0), _swapped_out(0) {}
+  ProcSmapsSummary() : _num_mappings(0), _private(0), 
+                       _committed(0), _shared(0), _swapped_out(0) {}
 
   void add_mapping(const proc_regioninfo& region_info, const MappingInfo& mapping_info) {
     _num_mappings++;
 
-    bool is_private = region_info.pri_share_mode == SM_PRIVATE || region_info.pri_share_mode == SM_PRIVATE_ALIASED;
-    bool is_shared = region_info.pri_share_mode == SM_SHARED || region_info.pri_share_mode == SM_SHARED_ALIASED || region_info.pri_share_mode == SM_TRUESHARED || region_info.pri_share_mode == SM_COW;
+    bool is_private = region_info.pri_share_mode == SM_PRIVATE
+                   || region_info.pri_share_mode == SM_PRIVATE_ALIASED;
+    bool is_shared = region_info.pri_share_mode == SM_SHARED
+                   || region_info.pri_share_mode == SM_SHARED_ALIASED
+                   || region_info.pri_share_mode == SM_TRUESHARED
+                   || region_info.pri_share_mode == SM_COW;
     _private += is_private ? region_info.pri_size : 0;
     _shared += is_shared ? region_info.pri_size : 0;
     _swapped_out += region_info.pri_pages_swapped_out;
@@ -202,20 +206,18 @@ public:
   void print_on(const MappingPrintSession& session) const {
     outputStream* st = session.out();
 
+    st->print_cr("Number of mappings: %u", _num_mappings);
+
     task_vm_info vm_info;
     mach_msg_type_number_t num_out = TASK_VM_INFO_COUNT;
     kern_return_t err_vm = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)(&vm_info), &num_out);
-    if (err_vm != KERN_SUCCESS) {
-      st->print_cr("error getting vm_info %d", err_vm);
-    }
-
-    st->print_cr("Number of mappings: %u", _num_mappings);
-
     if (err_vm == KERN_SUCCESS) {
       st->print_cr("             vsize: %llu (%llu%s)", vm_info.virtual_size, PROPERFMTARGS(vm_info.virtual_size));
       st->print_cr("               rss: %llu (%llu%s)", vm_info.resident_size, PROPERFMTARGS(vm_info.resident_size));
       st->print_cr("          peak rss: %llu (%llu%s)", vm_info.resident_size_peak, PROPERFMTARGS(vm_info.resident_size_peak));
       st->print_cr("         page size: %d (%ld%s)", vm_info.page_size, PROPERFMTARGS((size_t)vm_info.page_size));
+    } else {
+      st->print_cr("error getting vm_info %d", err_vm);
     }
     st->print_cr("           private: %zu (" PROPERFMT ")", _private, PROPERFMTARGS(_private));
     st->print_cr("            shared: %zu (" PROPERFMT ")", _shared, PROPERFMTARGS(_shared));
@@ -332,5 +334,4 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
   summary.print_on(session);
   st->cr();
 }
-
 #endif // __APPLE__

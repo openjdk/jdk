@@ -166,8 +166,6 @@ public class SystemMapTestBase {
             macOSbase + macow + space + someNumber + space + "/.*/bin/java",
             // libjvm
             macOSbase + macow + space + someNumber + space + "/.*/lib/server/libjvm.dylib",
-            // heap segment, should be part of all user space apps on all architectures OpenJDK supports.
-        // macOSbase + macprivate + space + "\\[heap\\]",
             // we should see the hs-perf data file, and it should appear as shared as well as committed
             macOSbase + macprivate + space + someNumber + space + ".*/.*/hsperfdata_.*"
         };
@@ -176,8 +174,6 @@ public class SystemMapTestBase {
             macOSbase + macprivate + space + someNumber + space + "JAVAHEAP.*",
             // metaspace
             macOSbase + macprivate + space + someNumber + space + "META.*",
-            // parts of metaspace should be uncommitted
-            //regexBase + "-" + space + "META.*",
             // code cache
             macOSbase + macprivate + space + someNumber + space + "CODE.*",
             // Main thread stack
