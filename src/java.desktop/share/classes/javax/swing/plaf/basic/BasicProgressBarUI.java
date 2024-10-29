@@ -1265,9 +1265,9 @@ public class BasicProgressBarUI extends ProgressBarUI {
                 if (lastCall > 0) { //adjust nextDelay
                 //XXX maybe should cache this after a while
                     //actual = time - lastCall
-                    //difference = actual - interval
+                    //difference = actual - repaintInterval
                     //nextDelay = previousDelay - difference
-                    //          = previousDelay - (time - lastCall - interval)
+                    //          = previousDelay - (time - lastCall - repaintInterval)
                    int nextDelay = (int)(previousDelay
                                           - time + lastCall
                                           + getRepaintInterval());
