@@ -1343,16 +1343,8 @@ bool VMUsageMetadataDCmd::_writeJVMContainerInfo(const Formatter* formatter, out
 
   output->print("%s.%s%s\"%s\"%s", fieldName, "type", formatter->kvSeparator(), OSContainer::container_type(), formatter->fldSeparator());
 
-  char name[HOST_NAME_MAX + 1];
-
-  name[HOST_NAME_MAX] = '\0'; // in case gethostname overflows and does not null terminate ...
-
-  if (os::get_host_name(name, HOST_NAME_MAX)) {
-    output->print("%s.%s%s\"%s\"%s", fieldName, "name", formatter->kvSeparator(), name, formatter->fldSeparator());
-  }
-
   output->print("%s.%s%s%ld%s", fieldName, "memory.limit", formatter->kvSeparator(), (long)OSContainer::memory_limit_in_bytes(), formatter->fldSeparator());
-  output->print("%s.%s%s%d%s", fieldName, "active.cpus", formatter->kvSeparator(), OSContainer::active_processor_count(), formatter->fldSeparator());
+  output->print("%s.%s%s%d", fieldName, "active.cpus", formatter->kvSeparator(), OSContainer::active_processor_count());
 
   return true;
 }
