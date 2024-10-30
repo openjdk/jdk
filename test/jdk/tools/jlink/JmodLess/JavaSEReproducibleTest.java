@@ -28,7 +28,8 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Test reproducibility of runtime image based jlink of java.se
+ * @summary Test reproducibility of linking an java.se image using the run-time
+ *          image.
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview

@@ -52,7 +52,7 @@ public class KeepPackagedModulesFailTest extends AbstractLinkableRuntimeTest {
 
     @Override
     void runTest(Helper helper) throws Exception {
-        // create a base image for runtime linking
+        // create a base image for linking from the run-time image
         Path baseImage = createRuntimeLinkImage(new BaseJlinkSpecBuilder()
                                                     .helper(helper)
                                                     .name("jlink-fail")
@@ -68,8 +68,8 @@ public class KeepPackagedModulesFailTest extends AbstractLinkableRuntimeTest {
                 return t.getExitValue() != 0; // expect failure
             }
         };
-        // Attempt a jlink using system modules and --keep-packaged-modules,
-        // which should fail.
+        // Attempt a jlink using the run-time image and also using option
+        // --keep-packaged-modules, which should fail.
         jlinkUsingImage(new JlinkSpecBuilder()
                                 .helper(helper)
                                 .imagePath(baseImage)

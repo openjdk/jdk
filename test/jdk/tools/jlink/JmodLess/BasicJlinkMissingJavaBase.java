@@ -30,8 +30,8 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Test basic runtime-image-based jlinking with java.base.jmod missing
- *          but java.xml.jmod present. It should use a run-time image based link.
+ * @summary Test basic linking from the run-time image with java.base.jmod missing
+ *          but java.xml.jmod present. It should link from the run-time image without errors.
  * @requires (jlink.packagedModules & jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview

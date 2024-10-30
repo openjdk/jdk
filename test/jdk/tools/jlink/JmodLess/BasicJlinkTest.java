@@ -29,7 +29,7 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Test basic runtime-image-based jlinking
+ * @summary Test basic linking from the run-time image
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview

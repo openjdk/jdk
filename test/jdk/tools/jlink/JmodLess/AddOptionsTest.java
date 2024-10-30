@@ -30,7 +30,7 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Test --add-options jlink plugin in runtime image link mode
+ * @summary Test --add-options jlink plugin when linking from the run-time image
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview

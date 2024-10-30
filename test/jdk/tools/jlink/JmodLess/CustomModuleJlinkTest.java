@@ -53,7 +53,7 @@ public class CustomModuleJlinkTest extends AbstractLinkableRuntimeTest {
         String customModule = "leaf1";
         helper.generateDefaultJModule(customModule);
 
-        // create a base image for runtime linking
+        // create a base image for linking from the run-time image
         Path jlinkImage = createRuntimeLinkImage(new BaseJlinkSpecBuilder()
                                                     .helper(helper)
                                                     .name("cmod-jlink")
@@ -61,7 +61,7 @@ public class CustomModuleJlinkTest extends AbstractLinkableRuntimeTest {
                                                     .validatingModule("java.base")
                                                     .build());
 
-        // Next jlink using the current runtime image for java.base, but take
+        // Next jlink using the run-time image for java.base, but take
         // the custom module from the module path.
         Path finalImage = jlinkUsingImage(new JlinkSpecBuilder()
                                                 .imagePath(jlinkImage)

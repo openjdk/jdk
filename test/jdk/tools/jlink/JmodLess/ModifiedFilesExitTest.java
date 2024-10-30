@@ -29,8 +29,8 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Verify jlink fails by default when jlinking in runtime-image-based mode
- *          and files have been changed
+ * @summary Verify jlink fails by default when linking from the run-time image
+ *          and files have been modified
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview

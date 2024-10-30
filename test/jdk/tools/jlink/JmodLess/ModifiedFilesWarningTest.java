@@ -28,8 +28,8 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Verify warnings are being produced when jlinking in runtime-based image
- *          mode and files have been modified
+ * @summary Verify warnings are being produced when linking from the run-time
+ *          image and files have been modified
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
