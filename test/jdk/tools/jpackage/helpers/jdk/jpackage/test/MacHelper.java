@@ -405,9 +405,9 @@ public final class MacHelper {
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "Contents/Home/lib/server/libjvm.dylib"));
 
-    private final static Method getServicePListFileName = initGetServicePListFileName();
+    private static final Method getServicePListFileName = initGetServicePListFileName();
 
-    private final static Set<Path> APP_BUNDLE_CONTENTS = Stream.of(
+    private static final Set<Path> APP_BUNDLE_CONTENTS = Stream.of(
             "Info.plist",
             "MacOS",
             "app",
@@ -417,7 +417,7 @@ public final class MacHelper {
             "_CodeSignature"
     ).map(Path::of).collect(toSet());
 
-    private final static Set<Path> RUNTIME_BUNDLE_CONTENTS = Stream.of(
+    private static final Set<Path> RUNTIME_BUNDLE_CONTENTS = Stream.of(
             "Home"
     ).map(Path::of).collect(toSet());
 }
