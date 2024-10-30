@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4904236
+ * @key printer
  * @summary StreamPrintService ignores the PrintReqAttrSet when printing through 2D Printing
  * @run main StreamPrintingOrientation
  */
