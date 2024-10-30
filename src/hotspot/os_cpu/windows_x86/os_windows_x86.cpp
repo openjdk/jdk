@@ -529,17 +529,11 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
 }
 
 extern "C" int SpinPause () {
-#ifdef AMD64
-   return 0 ;
-#else
    // pause == rep:nop
    // On systems that don't support pause a rep:nop
    // is executed as a nop.  The rep: prefix is ignored.
-   _asm {
-      pause ;
-   };
+   YieldProcessor();
    return 1 ;
-#endif // AMD64
 }
 
 juint os::cpu_microcode_revision() {
