@@ -37,6 +37,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Objects;
 
@@ -1089,7 +1090,7 @@ public class CSS implements Serializable {
      * Therefore, the value associated with each HTML.Attribute.
      * key ends up being an array of CSS.Attribute.* objects.
      */
-    private static final Hashtable<HTML.Attribute, CSS.Attribute[]> htmlAttrToCssAttrMap = new Hashtable<HTML.Attribute, CSS.Attribute[]>(20);
+    private static final HashMap<HTML.Attribute, Attribute[]> htmlAttrToCssAttrMap = HashMap.newHashMap(20);
 
     /**
      * The hashtable and static initialization that follows sets
