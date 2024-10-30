@@ -34,7 +34,6 @@ import jdk.jpackage.test.Annotations.Test;
  * @test
  * @summary jpackage with --mac-app-store and --jlink-options
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @build jdk.jpackage.test.*
  * @build MacAppStoreJLinkOptionsTest
  * @requires (os.family == "mac")

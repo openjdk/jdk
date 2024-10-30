@@ -44,7 +44,6 @@ import jdk.jpackage.test.JPackageCommand;
  * @test
  * @summary Multiple launchers in two phases
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile MultiLauncherTwoPhaseTest.java

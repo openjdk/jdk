@@ -38,7 +38,6 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage for package with input containing empty folders
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build EmptyFolderTest

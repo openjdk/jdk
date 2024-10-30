@@ -42,7 +42,6 @@ import jdk.jpackage.test.JPackageCommand;
  * @test
  * @summary Multiple names in two phases
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*

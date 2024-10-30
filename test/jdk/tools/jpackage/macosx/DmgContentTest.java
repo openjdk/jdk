@@ -25,15 +25,12 @@ import java.nio.file.Path;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.TKit;
 
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 
 import java.util.Collection;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,8 +38,6 @@ import java.util.List;
  * @test
  * @summary jpackage with --type dmg --mac-dmg-content
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
- * @library base
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build DmgContentTest

@@ -44,7 +44,6 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @test
  * @summary jpackage with --mac-app-store and --runtime-image
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @build jdk.jpackage.test.*
  * @build MacAppStoreRuntimeTest
  * @requires (os.family == "mac")

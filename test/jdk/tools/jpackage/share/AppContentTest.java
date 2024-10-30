@@ -46,7 +46,6 @@ import jdk.jpackage.test.JPackageCommand;
  * @test
  * @summary jpackage with --app-content option
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build AppContentTest
