@@ -953,8 +953,8 @@ private:
                                                        CountedLoopNode* remaining_loop_head,
                                                        uint first_node_index_in_cloned_loop_body,
                                                        const Node_List& old_new);
-  void initialize_assertion_predicates_for_main_loop(CountedLoopNode* main_loop_head,
-                                                     CountedLoopNode* pre_loop_head,
+  void initialize_assertion_predicates_for_main_loop(CountedLoopNode* pre_loop_head,
+                                                     CountedLoopNode* main_loop_head,
                                                      uint first_node_index_in_cloned_loop_body,
                                                      const Node_List& old_new);
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,

@@ -1534,7 +1534,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   assert(post_head->in(1)->is_IfProj(), "must be zero-trip guard If node projection of the post loop");
   DEBUG_ONLY(ensure_zero_trip_guard_proj(outer_main_head->in(LoopNode::EntryControl), true);)
   if (UseLoopPredicate) {
-    initialize_assertion_predicates_for_main_loop(main_head, pre_head, first_node_index_in_pre_loop_body, old_new);
+    initialize_assertion_predicates_for_main_loop(pre_head, main_head, first_node_index_in_pre_loop_body, old_new);
   }
 
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
@@ -1835,8 +1835,8 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(CountedLoop
 
 // Source Loop: Cloned   - pre_loop_head
 // Target Loop: Original - main_loop_head
-void PhaseIdealLoop::initialize_assertion_predicates_for_main_loop(CountedLoopNode* main_loop_head,
-                                                                   CountedLoopNode* pre_loop_head,
+void PhaseIdealLoop::initialize_assertion_predicates_for_main_loop(CountedLoopNode* pre_loop_head,
+                                                                   CountedLoopNode* main_loop_head,
                                                                    const uint first_node_index_in_cloned_loop_body,
                                                                    const Node_List& old_new) {
   const NodeInOriginalLoopBody node_in_original_loop_body(first_node_index_in_cloned_loop_body, old_new);
