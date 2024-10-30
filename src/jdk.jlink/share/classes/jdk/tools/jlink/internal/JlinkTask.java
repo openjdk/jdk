@@ -738,8 +738,8 @@ public class JlinkTask {
         } else if (Files.isDirectory(path) && !"jrt".equals(path.toUri().getScheme())) {
             // The jrt URI path scheme conditional is there since we'd otherwise
             // enter this branch for linking from the run-time image where the
-            // path is a jrt path. Not that the specific module would be a
-            // directory
+            // path is a jrt path. Note that the specific module would be a
+            // directory. I.e. Files.isDirectory() would be true.
             Path modInfoPath = path.resolve("module-info.class");
             if (Files.isRegularFile(modInfoPath)) {
                 return new DirArchive(path, findModuleName(modInfoPath));
