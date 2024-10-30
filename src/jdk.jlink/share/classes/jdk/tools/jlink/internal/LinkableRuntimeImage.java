@@ -38,9 +38,9 @@ import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
  */
 public class LinkableRuntimeImage {
 
-    // meta-data files per module for linkable JDK runtimes
+    // meta-data files per module for supporting linking from the run-time image
     public static final String RESPATH_PATTERN = "jdk/tools/jlink/internal/runtimelink/fs_%s_files";
-    // The diff files per module for linkable JDK runtimes
+    // The diff files per module for supporting linking from the run-time image
     public static final String DIFF_PATTERN = "jdk/tools/jlink/internal/runtimelink/diff_%s";
 
     public static boolean isLinkableRuntime() {

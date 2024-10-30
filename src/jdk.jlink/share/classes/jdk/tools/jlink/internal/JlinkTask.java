@@ -409,9 +409,9 @@ public class JlinkTask {
         // In case of custom modules outside the JDK we may
         // have a non-empty module path, which must not include
         // java.base. If it did, we link using packaged modules from that
-        // module path. If the module path does not include java.base, we must
-        // have a linkable JDK runtime. In that case we take the JDK modules
-        // from the run-time image.
+        // module path. If the module path does not include java.base, we have
+        // the case where we link from the run-time image. In that case, we take
+        // the JDK modules from the run-time image (ModuleFinder.ofSystem()).
         if (finder.find("java.base").isEmpty()) {
             isLinkFromRuntime = true;
             ModuleFinder runtimeImageFinder = ModuleFinder.ofSystem();
