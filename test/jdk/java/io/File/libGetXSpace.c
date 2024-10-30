@@ -108,7 +108,7 @@ Java_GetXSpace_getSpace0
     } else if (isCDROM(path)) {
         // use df
         char cmd[256];
-        snprintf(cmd, sizeof(cmd), "df -k -P %ls", path);
+        snprintf(cmd, sizeof(cmd), "df -k -P %ls 2>&1", path);
 
         FILE *fp = _popen(cmd, "r");
         if (fp == NULL) {
@@ -122,7 +122,8 @@ Java_GetXSpace_getSpace0
         int i = 0;
         int found = 0;
         while (fgets(buffer, sizeof(buffer), fp) != NULL) {
-            // skip header
+            // skip header and error message containing "No such file or directory"
+            // meaning that the CD-ROM drive does not have a disk mounted
             if (i++ == 0) continue;
 
             char filesystem[256];
