@@ -37,8 +37,7 @@ import jdk.internal.access.SharedSecrets;
  * when it is constructed; such permissions are granted to the domain
  * regardless of the policy in force. However, to support dynamic security
  * policies, a {@code ProtectionDomain} can also be constructed such that it
- * is dynamically mapped to a set of permissions by the current policy whenever
- * a permission is checked.
+ * is dynamically mapped to a set of permissions by the current policy.
  *
  * @apiNote Installing a system-wide {@link Policy} object is
  * no longer supported. The {@linkplain Policy#getPolicy current policy}
@@ -255,7 +254,7 @@ public class ProtectionDomain {
      * <p>
      * Otherwise, the permission will be checked against the combination
      * of the {@code PermissionCollection} supplied at construction and
-     * the current policy binding.
+     * the current policy.
      *
      * @apiNote Installing a system-wide {@link Policy} object is
      * no longer supported. The {@linkplain Policy#getPolicy current policy}
