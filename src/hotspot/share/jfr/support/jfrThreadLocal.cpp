@@ -103,6 +103,7 @@ void JfrThreadLocal::initialize_primordial_thread(JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   assert(Thread::is_starting_thread(jt), "invariant");
   assert(jt->threadObj() == nullptr, "invariant");
+  assert(jt->jfr_thread_local()->_jvm_thread_id == 0, "invariant");
   jt->jfr_thread_local()->_jvm_thread_id = 1;
 }
 
@@ -435,9 +436,8 @@ static inline traceid load_java_thread_id(const Thread* t) {
 }
 
 #ifdef ASSERT
-static bool assignment_precondition(const Thread* t, JfrThreadLocal* tl) {
+static bool can_assign(const Thread* t) {
   assert(t != nullptr, "invariant");
-  assert(tl != nullptr, "invariant");
   if (!t->is_Java_thread()) {
     return true;
   }
@@ -451,7 +451,7 @@ traceid JfrThreadLocal::assign_thread_id(const Thread* t, JfrThreadLocal* tl) {
   assert(tl != nullptr, "invariant");
   traceid tid = tl->_jvm_thread_id;
   if (tid == 0) {
-    assert(assignment_precondition(t, tl), "invariant");
+    assert(can_assign(t), "invariant");
     if (t->is_Java_thread()) {
       tid = load_java_thread_id(t);
       tl->_jvm_thread_id = tid;
