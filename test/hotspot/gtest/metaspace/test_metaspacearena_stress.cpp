@@ -227,7 +227,7 @@ class MetaspaceArenaTest {
   void create_random_test_bed_at(int slotindex) {
     SizeRange allocation_range(1, 100); // randomize too?
     const ArenaGrowthPolicy* growth_policy = ArenaGrowthPolicy::policy_for_space_type(
-        (fifty_fifty() ? Metaspace::StandardMetaspaceType : Metaspace::ReflectionMetaspaceType),
+        (fifty_fifty() ? Metaspace::StandardMetaspaceType : Metaspace::ClassMirrorHolderMetaspaceType),
          fifty_fifty());
     create_new_test_bed_at(slotindex, growth_policy, allocation_range);
    }
