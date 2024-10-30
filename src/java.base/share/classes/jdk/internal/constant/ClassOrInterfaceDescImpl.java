@@ -43,7 +43,7 @@ import static jdk.internal.constant.ConstantUtils.*;
  */
 public final class ClassOrInterfaceDescImpl implements ClassDesc {
     private final String descriptor;
-    private @Stable String internalName;
+    private @Stable String cachedInternalName;
 
     /**
      * Creates a {@linkplain ClassOrInterfaceDescImpl} from a pre-validated descriptor string
@@ -60,10 +60,19 @@ public final class ClassOrInterfaceDescImpl implements ClassDesc {
         this.descriptor = descriptor;
     }
 
+    public String internalNameCache() {
+        return this.cachedInternalName;
+    }
+
+    public void propagateInternalName(String str) {
+        assert dropFirstAndLastChar(descriptor).equals(str);
+        this.cachedInternalName = str;
+    }
+
     public String internalName() {
-        var internalName = this.internalName;
+        var internalName = this.cachedInternalName;
         if (internalName == null) {
-            this.internalName = internalName = dropFirstAndLastChar(descriptor);
+            this.cachedInternalName = internalName = dropFirstAndLastChar(descriptor);
         }
         return internalName;
     }

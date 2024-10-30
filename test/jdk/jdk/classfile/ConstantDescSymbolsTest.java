@@ -26,16 +26,18 @@
  * @bug 8304031 8338406 8338546 8342206
  * @summary Testing handling of various constant descriptors in ClassFile API.
  * @modules java.base/jdk.internal.constant
- *          java.base/jdk.internal.classfile.impl
+ *          java.base/jdk.internal.classfile.impl:+open
  * @run junit ConstantDescSymbolsTest
  */
 
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.function.Supplier;
@@ -44,6 +46,7 @@ import java.util.stream.Stream;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -210,7 +213,112 @@ final class ConstantDescSymbolsTest {
         }
     }
 
+    @Test
+    void testClassEntryEqualsSymbolCacheState() {
+        var internalName = "test/MyClass";
+        var altInternalName = "test/YourClass";
+        var descriptorString = "L" + internalName + ";";
+        var altDescriptorString = "L" + altInternalName + ";";
+
+        var bytes = ClassFile.of().build(ClassDesc.ofInternalName(internalName), _ -> {});
+
+        // 1. Both unexpanded
+        // 1.1 matches
+        {
+            var cd = ClassDesc.ofDescriptor(descriptorString);
+            var ce = ClassFile.of().parse(bytes).thisClass();
+
+            assertNull(accessCachedInternalName(cd));
+            assertNull(accessCachedClassDesc(ce));
+            assertNull(accessCachedString(ce.name()));
+
+            assertTrue(ce.equalsSymbol(cd));
+
+            assertNull(accessCachedInternalName(cd));
+            assertSame(cd, accessCachedClassDesc(ce));
+            assertNull(accessCachedString(ce.name()));
+        }
+        // 1.2 no match
+        {
+            var cd = ClassDesc.ofDescriptor(altDescriptorString);
+            var ce = ClassFile.of().parse(bytes).thisClass();
+
+            assertNull(accessCachedInternalName(cd));
+            assertNull(accessCachedClassDesc(ce));
+            assertNull(accessCachedString(ce.name()));
+
+            assertFalse(ce.equalsSymbol(cd));
+
+            assertNull(accessCachedInternalName(cd));
+            assertNull(accessCachedClassDesc(ce));
+            assertNull(accessCachedString(ce.name()));
+        }
+
+        // 2. ClassDesc expanded
+        // 2.1 matches
+        {
+            var cd = ClassDesc.ofInternalName(internalName);
+            var ce = ClassFile.of().parse(bytes).thisClass();
+
+            assertSame(internalName, accessCachedInternalName(cd));
+            assertNull(accessCachedClassDesc(ce));
+            assertNull(accessCachedString(ce.name()));
+
+            assertTrue(ce.equalsSymbol(cd));
+
+            assertSame(internalName, accessCachedInternalName(cd));
+            assertSame(cd, accessCachedClassDesc(ce));
+            assertSame(internalName, accessCachedString(ce.name()));
+        }
+        // 2.2 no match
+        {
+            var cd = ClassDesc.ofInternalName(altInternalName);
+            var ce = ClassFile.of().parse(bytes).thisClass();
+
+            assertSame(altInternalName, accessCachedInternalName(cd));
+            assertNull(accessCachedClassDesc(ce));
+            assertNull(accessCachedString(ce.name()));
+
+            assertFalse(ce.equalsSymbol(cd));
+
+            assertSame(altInternalName, accessCachedInternalName(cd));
+            assertNull(accessCachedClassDesc(ce));
+            assertNull(accessCachedString(ce.name()));
+        }
+
+        // We only push internal name in few scenarios, not tested yet
+    }
+
+    // Support infrastructure
     static ClassDesc accessCachedClassDesc(ClassEntry ce) {
         return ((AbstractPoolEntry.ClassEntryImpl) ce).sym;
+    }
+
+    static String accessCachedInternalName(ClassDesc cd) {
+        return ((ClassOrInterfaceDescImpl) cd).internalNameCache();
+    }
+
+    static String accessCachedString(Utf8Entry utf8) {
+        var utf8Impl = (AbstractPoolEntry.Utf8EntryImpl) utf8;
+        try {
+            return (String) STRING_VALUE_GETTER.invokeExact(utf8Impl);
+        } catch (Throwable e) {
+            if (e instanceof Error er)
+                throw er;
+            throw (RuntimeException) e;
+        }
+    }
+
+    static final MethodHandle STRING_VALUE_GETTER;
+
+    static {
+        MethodHandle getter;
+        try {
+            var lookup = MethodHandles.privateLookupIn(AbstractPoolEntry.Utf8EntryImpl.class, MethodHandles.lookup());
+            getter = lookup.findGetter(AbstractPoolEntry.Utf8EntryImpl.class, "stringValue", String.class);
+        } catch (IllegalAccessException | NoSuchFieldException ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+        STRING_VALUE_GETTER = getter;
     }
 }

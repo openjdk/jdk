@@ -32,6 +32,7 @@ import java.util.Arrays;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.Stable;
 
@@ -387,18 +388,13 @@ public abstract sealed class AbstractPoolEntry {
          * of {@code s} obtained as {@code s.substring(start, end - start)}.
          * This check avoids a substring allocation.
          */
-        public boolean equalsRegion(String s, int start, int end) {
+        public boolean equalsArrayRegion(String s, int start, int end) {
             // start and end values trusted
             if (state == State.RAW)
                 inflate();
             int len = charLen;
             if (len != end - start)
                 return false;
-
-            var sv = stringValue;
-            if (sv != null) {
-                return sv.regionMatches(0, s, start, len);
-            }
 
             var chars = this.chars;
             if (chars != null) {
@@ -615,10 +611,30 @@ public abstract sealed class AbstractPoolEntry {
 
                 equals = ref1.equalsArrayClassDescriptor(symbol); // ref1 caches compatible symbol
             } else {
-                if (!symbol.isClassOrInterface())
+                if (!(symbol instanceof ClassOrInterfaceDescImpl classOrInterface))
                     return false;
-                var desc = symbol.descriptorString();
-                equals = ref1.equalsRegion(desc, 1, desc.length() - 1);
+
+                // Check internal name first if possible
+                var internalNameCache = classOrInterface.internalNameCache();
+
+                if (internalNameCache != null) {
+                    // propagates compatible string representation
+                    equals = ref1.equalsString(internalNameCache);
+                } else {
+                    var utf8StringCache = ref1.stringValue;
+                    var desc = symbol.descriptorString();
+                    if (utf8StringCache != null) {
+                        equals = utf8StringCache.length() + 2 == desc.length() &&
+                                desc.regionMatches(1, utf8StringCache, 0, utf8StringCache.length());
+                        if (equals) {
+                            // propagate compatible string representation
+                            classOrInterface.propagateInternalName(utf8StringCache);
+                        }
+                    } else {
+                        // both objects not initialized
+                        equals = ref1.equalsArrayRegion(desc, 1, desc.length() - 1);
+                    }
+                }
             }
 
             if (equals)

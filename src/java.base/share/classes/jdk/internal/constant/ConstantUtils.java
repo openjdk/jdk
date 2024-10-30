@@ -81,7 +81,9 @@ public final class ConstantUtils {
      * @param internalName a binary name
      */
     public static ClassDesc internalNameToDesc(String internalName) {
-        return ClassOrInterfaceDescImpl.ofValidated(concat("L", internalName, ";"));
+        var ret = ClassOrInterfaceDescImpl.ofValidated(concat("L", internalName, ";"));
+        ret.propagateInternalName(internalName);
+        return ret;
     }
 
     /**

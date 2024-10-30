@@ -34,14 +34,10 @@
 import java.lang.classfile.Opcode;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
 
 import jdk.internal.classfile.impl.RawBytecodeHelper;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.classfile.impl.UtilAccess;
-import jdk.internal.constant.ConstantUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
