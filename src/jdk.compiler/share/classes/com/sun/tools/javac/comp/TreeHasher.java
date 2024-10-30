@@ -95,7 +95,6 @@ public class TreeHasher extends TreeScanner {
     @Override
     public void visitClassDef(JCClassDecl tree) {
         hash(tree.sym);
-        super.visitClassDef(tree);
     }
 
     @Override

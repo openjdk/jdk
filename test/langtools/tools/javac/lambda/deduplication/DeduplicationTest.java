@@ -275,31 +275,26 @@ public class DeduplicationTest {
             // Scan the compilation for calls to a varargs method named 'group', whose arguments
             // are a group of lambdas that are equivalent to each other, but distinct from all
             // lambdas in the compilation unit outside of that group.
-            List<List<JCLambda>> lambdaGroups = new ArrayList<>();
+            List<List<JCLambda>> lambdaEqualsGroups = new ArrayList<>();
+            List<List<JCLambda>> lambdaNotEqualsGroups = new ArrayList<>();
+
             new TreeScanner() {
                 @Override
                 public void visitApply(JCMethodInvocation tree) {
-                    if (tree.getMethodSelect().getTag() == Tag.IDENT
-                            && ((JCIdent) tree.getMethodSelect())
-                                    .getName()
-                                    .contentEquals("group")) {
-                        List<JCLambda> xs = new ArrayList<>();
-                        for (JCExpression arg : tree.getArguments()) {
-                            if (arg instanceof JCTypeCast) {
-                                arg = ((JCTypeCast) arg).getExpression();
-                            }
-                            xs.add((JCLambda) arg);
-                        }
-                        lambdaGroups.add(xs);
+                    if (isMethodWithName(tree, "groupEquals")) {
+                        addToGroup(tree, lambdaEqualsGroups);
+                    } else if (isMethodWithName(tree, "groupNotEquals")) {
+                        addToGroup(tree, lambdaNotEqualsGroups);
                     }
                     super.visitApply(tree);
                 }
             }.scan((JCCompilationUnit) e.getCompilationUnit());
-            for (int i = 0; i < lambdaGroups.size(); i++) {
-                List<JCLambda> curr = lambdaGroups.get(i);
-                JCLambda first = null;
+
+            for (int i = 0; i < lambdaEqualsGroups.size(); i++) {
+                List<JCLambda> curr = lambdaEqualsGroups.get(i);
                 // Assert that all pairwise combinations of lambdas in the group are equal, and
                 // hash to the same value.
+                JCLambda first = null;
                 for (JCLambda lhs : curr) {
                     if (first == null) {
                         first = lhs;
@@ -328,31 +323,61 @@ public class DeduplicationTest {
                 // or hash to the same value as lambda outside the group.
                 // (Note that the hash collisions won't result in correctness problems but could
                 // regress performs, and do not currently occurr for any of the test inputs.)
-                for (int j = 0; j < lambdaGroups.size(); j++) {
-                    if (i == j) {
-                        continue;
-                    }
-                    for (JCLambda lhs : curr) {
-                        for (JCLambda rhs : lambdaGroups.get(j)) {
-                            if (new TreeDiffer(types, paramSymbols(lhs), paramSymbols(rhs))
-                                    .scan(lhs.body, rhs.body)) {
-                                throw new AssertionError(
-                                        String.format(
-                                                "expected lambdas to not be equal\n%s\n%s",
-                                                lhs, rhs));
-                            }
-                            if (TreeHasher.hash(types, lhs, paramSymbols(lhs))
-                                    == TreeHasher.hash(types, rhs, paramSymbols(rhs))) {
-                                throw new AssertionError(
-                                        String.format(
-                                                "expected lambdas to hash to different values\n%s\n%s",
-                                                lhs, rhs));
-                            }
+                assertNotEqualsWithinGroup(lambdaEqualsGroups, i, curr, types);
+            }
+            lambdaEqualsGroups.clear();
+
+            // Assert that no lambdas in a not-equals group are equal to any lambdas inside that group,
+            // or hash to the same value as lambda inside the group.
+            for (int i = 0; i < lambdaNotEqualsGroups.size(); i++) {
+                List<JCLambda> curr = lambdaNotEqualsGroups.get(i);
+
+                assertNotEqualsWithinGroup(lambdaNotEqualsGroups, i, curr, types);
+            }
+            lambdaNotEqualsGroups.clear();
+        }
+
+        private void assertNotEqualsWithinGroup(List<List<JCLambda>> lambdaNotEqualsGroups, int i, List<JCLambda> curr, Types types) {
+            for (int j = 0; j < lambdaNotEqualsGroups.size(); j++) {
+                if (i == j) {
+                    continue;
+                }
+                for (JCLambda lhs : curr) {
+                    for (JCLambda rhs : lambdaNotEqualsGroups.get(j)) {
+                        if (new TreeDiffer(types, paramSymbols(lhs), paramSymbols(rhs))
+                                .scan(lhs.body, rhs.body)) {
+                            throw new AssertionError(
+                                    String.format(
+                                            "expected lambdas to not be equal\n%s\n%s",
+                                            lhs, rhs));
+                        }
+                        if (TreeHasher.hash(types, lhs, paramSymbols(lhs))
+                                == TreeHasher.hash(types, rhs, paramSymbols(rhs))) {
+                            throw new AssertionError(
+                                    String.format(
+                                            "expected lambdas to hash to different values\n%s\n%s",
+                                            lhs, rhs));
                         }
                     }
                 }
             }
-            lambdaGroups.clear();
+        }
+
+        private boolean isMethodWithName(JCMethodInvocation tree, String markerMethodName) {
+            return tree.getMethodSelect().getTag() == Tag.IDENT && ((JCIdent) tree.getMethodSelect())
+                    .getName()
+                    .contentEquals(markerMethodName);
+        }
+
+        private void addToGroup(JCMethodInvocation tree, List<List<JCLambda>> groupToAdd) {
+            List<JCLambda> xs = new ArrayList<>();
+            for (JCExpression arg : tree.getArguments()) {
+                if (arg instanceof JCTypeCast) {
+                    arg = ((JCTypeCast) arg).getExpression();
+                }
+                xs.add((JCLambda) arg);
+            }
+            groupToAdd.add(xs);
         }
     }
 }
