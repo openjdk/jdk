@@ -116,7 +116,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dd>- <em>Case convention:</em> {@code language} is case insensitive, but
  *   {@code Locale} always canonicalizes to lower case.</dd>
  *
- *   <dd>- <em>Syntax:</em> Well-formed language values have the form {@code [a-zA-Z]{2,8}}.
+ *   <dd>- <em>Syntax:</em> Well-formed {@code language} values have the form {@code [a-zA-Z]{2,8}}.
  *   BCP 47 deviation: this is not the full BCP 47 language production, since it excludes
  *   <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.2">extlang</a>
  *   (as modern three-letter language codes are preferred).</dd>
@@ -132,7 +132,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   letter is upper case and the rest of the letters are lower
  *   case).</dd>
  *
- *   <dd>- <em>Syntax:</em> Well-formed script values have the form {@code
+ *   <dd>- <em>Syntax:</em> Well-formed {@code script} values have the form {@code
  *   [a-zA-Z]{4}}</dd>
  *
  *   <dd>- <em>Example:</em> "Latn" (Latin), "Cyrl" (Cyrillic)</dd>
@@ -144,7 +144,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dd>- <em>Case convention:</em> {@code country (region)} is case insensitive, but
  *   {@code Locale} always canonicalizes to upper case.</dd>
  *
- *   <dd>- <em>Syntax:</em> Well-formed country (region) values have the form {@code
+ *   <dd>- <em>Syntax:</em> Well-formed {@code country (region)} values have the form {@code
  *   [a-zA-Z]{2} | [0-9]{3}}</dd>
  *
  *   <dd>- <em>Example:</em> "US" (United States), "FR" (France), "029"
@@ -170,7 +170,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dd>- <em>Case convention:</em> {@code variant} is case sensitive. BCP 47
  *   deviation: BCP 47 treats the variant field as case insensitive.</dd>
  *
- *   <dd>- <em>Syntax:</em> Well-formed variant values have the form {@code
+ *   <dd>- <em>Syntax:</em> Well-formed {@code variant} values have the form {@code
  *   SUBTAG (('_'|'-') SUBTAG)*} where {@code SUBTAG =
  *   [0-9][0-9a-zA-Z]{3} | [0-9a-zA-Z]{5,8}}. BCP 47 deviation: BCP 47 only
  *   uses hyphen ('-') as a delimiter, {@code Locale} is more lenient.</dd>
