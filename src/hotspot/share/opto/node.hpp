@@ -153,6 +153,7 @@ class PCTableNode;
 class PhaseCCP;
 class PhaseGVN;
 class PhaseIterGVN;
+class PhaseLowering;
 class PhaseRegAlloc;
 class PhaseTransform;
 class PhaseValues;
@@ -1099,6 +1100,11 @@ public:
   // treatise in node.cpp above the default implementation AND TEST WITH
   // -XX:VerifyIterativeGVN=1
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+
+  // Return an Idealized node only during PhaseLowering.
+  virtual Node* LoweredIdeal(PhaseLowering* phase) {
+    return nullptr;
+  }
 
   // Some nodes have specific Ideal subgraph transformations only if they are
   // unique users of specific nodes. Such nodes should be put on IGVN worklist

@@ -99,7 +99,6 @@ public enum CompilePhase {
     AFTER_MACRO_EXPANSION_STEP("After Macro Expansion Step"),
     AFTER_MACRO_EXPANSION("After Macro Expansion"),
     BARRIER_EXPANSION("Barrier expand"),
-    BEFORE_LOWERING("Before Lowering"),
     AFTER_LOWERING("After Lowering"),
     OPTIMIZE_FINISHED("Optimize finished"),
     PRINT_IDEAL("PrintIdeal"),

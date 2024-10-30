@@ -27,7 +27,7 @@
 #include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 
-Node* PhaseLowering::lower_node(Node* n) {
+Node* PhaseLowering::lower_node_platform(Node* n) {
   return nullptr;
 }
 #endif // COMPILER2
