@@ -699,7 +699,6 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     if (is_generational) {
       // Seed the collection set with resource area-allocated
       // preselected regions, which are removed when we exit this scope.
-      ResourceMark rm;
       ShenandoahCollectionSetPreselector preselector(collection_set, heap->num_regions());
 
       // Find the amount that will be promoted, regions that will be promoted in
