@@ -1424,6 +1424,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   //      |                     |
   // SP-> | out_preserved_slots |
   //
+  //
+  // ****************************************************************************
+  // WARNING - on Windows Java Natives use pascal calling convention and pop the
+  // arguments off of the stack after the jni call. Before the call we can use
+  // instructions that are SP relative. After the jni call we switch to FP
+  // relative instructions instead of re-adjusting the stack on windows.
+  // ****************************************************************************
+
 
   // Now compute actual number of stack words we need rounding to make
   // stack properly aligned.
