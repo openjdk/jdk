@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,13 @@ package jdk.internal.vm.annotation;
 import java.lang.annotation.*;
 
 /**
- * A method may be annotated with JvmtiMountTransition to hint
- * it is desirable to omit it from JVMTI stack traces.
- * Normally, a method is annotated with @JvmtiMountTransition if it starts
- * or ends Virtual Thread Mount State (VTMS) transition, so the thread
- * identity is undefined or different at method entry and exit.
+ * A method may be annotated with JvmtiHideEvents to hint that JVMTI events
+ * should not be generated in context of the annotated method.
  *
  * @implNote
- * This annotation is only used for VirtualThread methods.
+ * This annotation is only used for some VirtualThread and Continuation methods.
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface JvmtiMountTransition {
+public @interface JvmtiHideEvents {
 }
