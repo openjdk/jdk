@@ -60,10 +60,10 @@ public class PrintDlgPageable implements Printable {
         String INSTRUCTIONS = " A pagedialog will be shown.";
 
         if (arg == 0) {
-            INSTRUCTIONS += "\n Confirm that page range is disabled."; 
+            INSTRUCTIONS += "\n Confirm that page range is disabled.";
 
         } else if (arg == 2) {
-            INSTRUCTIONS += "\n Confirm ToPage is populated with pagerange 2"; 
+            INSTRUCTIONS += "\n Confirm ToPage is populated with pagerange 2";
         }
         INSTRUCTIONS += "\nCancel the print dialog. Press PASS if it so seen else press FAIL.";
 
