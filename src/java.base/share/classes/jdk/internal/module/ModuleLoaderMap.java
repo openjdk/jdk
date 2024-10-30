@@ -89,7 +89,7 @@ public final class ModuleLoaderMap {
                 return APP_CLASSLOADER;
             } else if (PLATFORM_LOADER_NAME.equals(loader)) {
                 return PLATFORM_CLASSLOADER;
-            } else { // BOOT_LOADER_INDEX
+            } else {
                 return null;
             }
         }
