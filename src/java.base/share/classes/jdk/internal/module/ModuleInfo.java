@@ -416,9 +416,9 @@ public final class ModuleInfo {
                 // requires static java.base is illegal unless:
                 // - the major version is 53 (JDK 9), or:
                 if (major >= 54
-                    && ((mods.contains(Requires.Modifier.TRANSITIVE) &&
-                         !isPreview &&
-                         !"java.se".equals(mn))
+                    && ((mods.contains(Requires.Modifier.TRANSITIVE)
+                         && !isPreview
+                         && !"java.se".equals(mn))
                         || mods.contains(Requires.Modifier.STATIC))) {
                     String flagName;
                     if (mods.contains(Requires.Modifier.STATIC)) {
