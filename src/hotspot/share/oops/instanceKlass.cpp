@@ -456,7 +456,8 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   InstanceKlass* ik;
   // Only Klasses that aren't interface or abstract classes are found in oop headers so they
   // are the only ones that require compression and allocation in the limited class metaspace
-  // region.  But ... there are C2 dependencies that all klasses are allocated to the class metaspace.
+  // region.  But ... there are C2 dependencies that all klasses are allocated to the class metaspace, so
+  // always use the class metaspace until JDK-NNNNNNN is resolved.
   const bool use_class_space = true;
 
   // Allocation
