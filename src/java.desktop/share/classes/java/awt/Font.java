@@ -1610,7 +1610,7 @@ public class Font implements java.io.Serializable
      * obtained.  The {@code String} value of this property is then
      * interpreted as a {@code Font} object according to the
      * specification of {@code Font.decode(String)}
-     * If the specified property is not found then null is returned instead.
+     * If the specified property is not found, null is returned instead.
      *
      * @param nm the property name
      * @return a {@code Font} object that the property name
@@ -1778,7 +1778,7 @@ public class Font implements java.io.Serializable
      * <p>
      * The property value should be one of the forms accepted by
      * {@code Font.decode(String)}
-     * If the specified property is not found then the {@code font}
+     * If the specified property is not found, the {@code font}
      * argument is returned instead.
      * @param nm the case-insensitive property name
      * @param font a default {@code Font} to return if property

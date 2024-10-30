@@ -29,9 +29,9 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.StartDocument;
-import static org.testng.Assert.assertEquals;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
 /*
  * @test

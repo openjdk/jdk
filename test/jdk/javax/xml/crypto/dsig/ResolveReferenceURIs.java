@@ -28,7 +28,7 @@
  * @modules jdk.httpserver
  *          java.base/jdk.internal.misc
  * @requires os.family != "windows"
- * @summary check permissions for XML signature
+ * @summary check reference resolving for XML signature
  */
 
 import com.sun.net.httpserver.HttpServer;
@@ -37,9 +37,7 @@ import jdk.test.lib.process.Proc;
 import jdk.test.lib.security.XMLUtils;
 
 import java.io.File;
-import java.io.FilePermission;
 import java.net.InetSocketAddress;
-import java.net.SocketPermission;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -50,7 +48,7 @@ import java.security.KeyPairGenerator;
 // Note: This test does not run fine on Windows because the format by
 // Path.toUri.toString (file:///c:/path/to/file) is not supported by
 // ResolverLocalFilesystem.translateUriToFilename.
-public class FileSocketPermissions    {
+public class ResolveReferenceURIs    {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             Path plain = Files.writeString(
@@ -66,13 +64,12 @@ public class FileSocketPermissions    {
                 String httpDoc = "http://localhost:" + server.getAddress().getPort() + "/b.xml";
                 System.out.println(httpDoc);
 
-                // Permission to file and socket granted.
-                Proc p = Proc.create("FileSocketPermissions")
+                Proc p = Proc.create("ResolveReferenceURIs")
                         .debug("S2")
                         .args("sign", plain.toUri().toString(), httpDoc)
                         .start();
 
-                Proc p2 = Proc.create("FileSocketPermissions")
+                Proc p2 = Proc.create("ResolveReferenceURIs")
                         .debug("V")
                         .args("validate")
                         .start();

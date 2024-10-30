@@ -388,8 +388,8 @@ public class Executors {
     }
 
     /**
-     * Returns a thread factory used to create new threads that
-     * have current context class loader as the context class loader.
+     * Returns a thread factory used to create new threads that have
+     * the current context class loader as the context class loader.
      *
      * This factory creates threads with the same settings as {@link
      * Executors#defaultThreadFactory}, additionally setting the

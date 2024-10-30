@@ -23,6 +23,7 @@
 
 package sax;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,7 +46,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
 
 /*
  * @test
