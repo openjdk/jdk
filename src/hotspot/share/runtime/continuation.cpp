@@ -112,7 +112,9 @@ class JvmtiUnmountBeginMark : public StackObj {
     } else {
       if (jvmti_present) {
         _target->rebind_to_jvmti_thread_state_of(_target->threadObj());
-        if (JvmtiExport::should_post_vthread_mount()) {
+        if (JvmtiExport::should_post_vthread_unmount()) {
+          // We are inside the VTMS transition already so we will post the event
+          // once we finish it in JvmtiVTMSTransitionDisabler::VTMS_unmount_end().
           _target->set_pending_jvmti_unmount_event(true);
         }
       }
