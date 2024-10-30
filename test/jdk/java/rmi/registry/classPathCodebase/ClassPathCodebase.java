@@ -34,7 +34,7 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary Dummy RegistryVM RMIRegistryRunner
+ * @build TestLibrary Dummy RegistryVM RMIRegistryRunner TestLoaderHandler
  * @run main/othervm
  *     -Djava.rmi.server.useCodebaseOnly=false ClassPathCodebase
  */
@@ -63,8 +63,7 @@ public class ClassPathCodebase {
 
         System.err.println("\nRegression test for bug 4242317\n");
 
-        TestLibrary.suggestSecurityManager("java.lang.SecurityManager");
-
+        System.setProperty("java.rmi.server.RMIClassLoaderSpi", "TestLoaderHandler");
         RegistryVM rmiregistry = null;
 
         try {

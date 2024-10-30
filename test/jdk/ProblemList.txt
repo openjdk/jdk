@@ -837,6 +837,3 @@ tools/launcher/MainClassCantBeLoadedTest.java 8338411 generic-all
 tools/launcher/modules/basic/LauncherErrors.java 8338411 generic-all
 
 # :tier3
-java/rmi/registry/classPathCodebase/ClassPathCodebase.java 8338411 generic-all
-java/rmi/registry/readTest/CodebaseTest.java 8338411 generic-all
-java/rmi/server/RMIClassLoader/useCodebaseOnly/UseCodebaseOnly.java 8338411 generic-all
