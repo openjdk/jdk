@@ -93,8 +93,8 @@ public final class Method extends Executable {
     private Method root;
     private transient volatile MethodRepository genericInfo;
     private @Stable MethodAccessor methodAccessor;
-    private int hash; // not shared right now, eligible if expensive
     // End shared states
+    private int hash; // not shared right now, eligible if expensive
 
     // Generics infrastructure
     private String getGenericSignature() {return signature;}
