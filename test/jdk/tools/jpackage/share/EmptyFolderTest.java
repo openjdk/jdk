@@ -49,7 +49,6 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage for app image with input containing empty folders
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @build jdk.jpackage.test.*
  * @build EmptyFolderTest
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
