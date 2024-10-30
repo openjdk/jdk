@@ -38,6 +38,7 @@ import jdk.jpackage.test.Annotations;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.AppLayoutAssert;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
@@ -87,26 +88,35 @@ public final class InOutPathTest {
     }
 
     private static List<Object[]> additionalContentInput(String packageTypes, String argName) {
-        return List.of(new Object[][]{
-            {packageTypes, wrap(cmd -> {
-                additionalContent(cmd, argName, cmd.inputDir().resolve("foo"));
-            }, argName + " in --input")},
+        List<Object[]> data = new ArrayList<>();
+
+        data.addAll(List.of(new Object[][]{
             {packageTypes, wrap(cmd -> {
                 additionalContent(cmd, argName, cmd.inputDir());
             }, argName + " same as --input")},
-            {packageTypes, wrap(cmd -> {
-                additionalContent(cmd, argName, cmd.outputDir().resolve("bar"));
-            }, argName + " in --dest")},
-            {packageTypes, wrap(cmd -> {
-                additionalContent(cmd, argName, cmd.outputDir());
-            }, argName + " same as --dest")},
-            {packageTypes, wrap(cmd -> {
-                tempDirInInputDir(cmd);
-                var tempDir = cmd.getArgumentValue("--temp");
-                Files.createDirectories(Path.of(tempDir));
-                cmd.addArguments(argName, tempDir);
-            }, argName + " as --temp; --temp in --input")},
-        });
+        }));
+
+        if (!TKit.isOSX()) {
+            data.addAll(List.of(new Object[][]{
+                {packageTypes, wrap(cmd -> {
+                    additionalContent(cmd, argName, cmd.inputDir().resolve("foo"));
+                }, argName + " in --input")},
+                {packageTypes, wrap(cmd -> {
+                    additionalContent(cmd, argName, cmd.outputDir().resolve("bar"));
+                }, argName + " in --dest")},
+                {packageTypes, wrap(cmd -> {
+                    additionalContent(cmd, argName, cmd.outputDir());
+                }, argName + " same as --dest")},
+                {packageTypes, wrap(cmd -> {
+                    tempDirInInputDir(cmd);
+                    var tempDir = cmd.getArgumentValue("--temp");
+                    Files.createDirectories(Path.of(tempDir));
+                    cmd.addArguments(argName, tempDir);
+                }, argName + " as --temp; --temp in --input")},
+            }));
+        }
+
+        return data;
     }
 
     public InOutPathTest(String packageTypes, Envelope configure) {
@@ -140,25 +150,24 @@ public final class InOutPathTest {
             // are subdirectories of the input directory.
             cmd.setInputToEmptyDirectory();
             configure.accept(cmd);
-            if (cmd.hasArgument("--temp")) {
-                // If temp directory specified always create Java runtime to
-                // make use of it
+            if (cmd.hasArgument("--temp") && cmd.isImagePackageType()) {
+                // Request to build app image wit user supplied temp directory,
+                // ignore external runtime if any to make use of the temp directory
+                // for runtime generation.
                 cmd.ignoreDefaultRuntime(true);
             } else {
                 cmd.setFakeRuntime();
             }
 
             if (!isAppImageValid(cmd)) {
-                cmd.setAppLayoutAsserts(
-                        JPackageCommand.AppLayoutAssert.PackageFile,
-                        JPackageCommand.AppLayoutAssert.MainLauncher,
-                        JPackageCommand.AppLayoutAssert.MainLauncherCfgFile,
-                        JPackageCommand.AppLayoutAssert.RuntimeDirectory);
+                // Standard asserts for .jpackage.xml fail in messed up app image. Disable them.
+                // Other standard asserts for app image contents should pass.
+                cmd.excludeAppLayoutAsserts(AppLayoutAssert.APP_IMAGE_FILE);
             }
         };
 
         if (packageTypes.contains(PackageType.IMAGE)) {
-            JPackageCommand cmd = JPackageCommand.helloAppImage(JAR_NAME + ":");
+            JPackageCommand cmd = JPackageCommand.helloAppImage(JAR_PATH.toString() + ":");
             configureWrapper.accept(cmd);
             cmd.executeAndAssertHelloAppImageCreated();
             if (isAppImageValid(cmd)) {
@@ -167,7 +176,7 @@ public final class InOutPathTest {
         } else {
             new PackageTest()
                     .forTypes(packageTypes)
-                    .configureHelloApp(JAR_NAME + ":")
+                    .configureHelloApp(JAR_PATH.toString() + ":")
                     .addInitializer(configureWrapper)
                     .addInstallVerifier(InOutPathTest::verifyAppImage)
                     .run(CREATE_AND_UNPACK);
@@ -217,13 +226,13 @@ public final class InOutPathTest {
                 rootDir).appDirectory();
 
         final var knownFiles = Set.of(
-                JAR_NAME,
+                JAR_PATH.getName(0).toString(),
                 PackageFile.getPathInAppImage(Path.of("")).getFileName().toString(),
                 AppImageFile.getPathInAppImage(Path.of("")).getFileName().toString(),
                 cmd.name() + ".cfg"
         );
 
-        TKit.assertFileExists(appDir.resolve(JAR_NAME));
+        TKit.assertFileExists(appDir.resolve(JAR_PATH));
 
         try (Stream<Path> actualFilesStream = Files.list(appDir)) {
             var unexpectedFiles = actualFilesStream.map(path -> {
@@ -234,7 +243,7 @@ public final class InOutPathTest {
         }
     }
 
-    private final static record Envelope(ThrowingConsumer<JPackageCommand> value, String label) {
+    private static final record Envelope(ThrowingConsumer<JPackageCommand> value, String label) {
         @Override
         public String toString() {
             // Will produce the same test description for the same label every
@@ -247,7 +256,11 @@ public final class InOutPathTest {
     private final Set<PackageType> packageTypes;
     private final ThrowingConsumer<JPackageCommand> configure;
 
-    private final static String JAR_NAME = "duke.jar";
+    // Placing jar file in the "Resources" subdir of the input directory would allow
+    // to use the input directory with `--app-content` on OSX.
+    // For other platforms it doesn't matter. Keep it the same across
+    // all platforms for simplicity.
+    private static final Path JAR_PATH = Path.of("Resources/duke.jar");
 
-    private final static String ALL_NATIVE_PACKAGE_TYPES = "NATIVE";
+    private static final String ALL_NATIVE_PACKAGE_TYPES = "NATIVE";
 }
