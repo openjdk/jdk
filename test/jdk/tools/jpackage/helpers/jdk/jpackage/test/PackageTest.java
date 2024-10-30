@@ -377,7 +377,7 @@ public final class PackageTest extends RunnablePackageTest {
         private final List<Consumer<Action>> handlers;
     }
 
-    final static class PackageHandlers {
+    static final class PackageHandlers {
         Consumer<JPackageCommand> installHandler;
         Consumer<JPackageCommand> uninstallHandler;
         BiFunction<JPackageCommand, Path, Path> unpackHandler;
@@ -788,7 +788,7 @@ public final class PackageTest extends RunnablePackageTest {
     private Map<PackageType, PackageHandlers> packageHandlers;
     private boolean ignoreBundleOutputDir;
 
-    private final static File BUNDLE_OUTPUT_DIR;
+    private static final File BUNDLE_OUTPUT_DIR;
 
     static {
         final String propertyName = "output";
