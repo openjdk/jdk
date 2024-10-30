@@ -43,7 +43,7 @@ import static jdk.jpackage.test.PackageType.WINDOWS;
 
 public final class LauncherAsServiceVerifier {
 
-    public final static class Builder {
+    public static final class Builder {
 
         public Builder setExpectedValue(String v) {
             expectedValue = v;
@@ -368,6 +368,6 @@ public final class LauncherAsServiceVerifier {
     private final Path appOutputFileName;
     private final Consumer<AdditionalLauncher> additionalLauncherCallback;
 
-    final static Set<PackageType> SUPPORTED_PACKAGES = Stream.of(LINUX, WINDOWS,
+    static final Set<PackageType> SUPPORTED_PACKAGES = Stream.of(LINUX, WINDOWS,
             Set.of(MAC_PKG)).flatMap(x -> x.stream()).collect(Collectors.toSet());
 }
