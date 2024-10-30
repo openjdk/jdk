@@ -95,8 +95,7 @@ public final class Integer extends Number
      *
      * @since   1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Integer>  TYPE = (Class<Integer>) Class.getPrimitiveClass("int");
+    public static final Class<Integer> TYPE = Class.getPrimitiveClass("int");
 
     /**
      * All possible chars for representing a number as a String
@@ -1147,8 +1146,8 @@ public final class Integer extends Number
      *          {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Integer) {
-            return value == ((Integer)obj).intValue();
+        if (obj instanceof Integer i) {
+            return value == i.intValue();
         }
         return false;
     }

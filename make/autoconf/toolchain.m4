@@ -307,7 +307,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
 [
   # Restore old path, except for the microsoft toolchain, which requires the
   # toolchain path to remain in place. Otherwise the compiler will not work in
-  # some siutations in later configure checks.
+  # some situations in later configure checks.
   if test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
     PATH="$OLD_PATH"
   fi
@@ -316,10 +316,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
   CFLAGS="$ORG_CFLAGS"
   CXXFLAGS="$ORG_CXXFLAGS"
-
-  # filter out some unwanted additions autoconf may add to CXX; we saw this on macOS with autoconf 2.72
-  UTIL_GET_NON_MATCHING_VALUES(cxx_filtered, $CXX, -std=c++11 -std=gnu++11)
-  CXX="$cxx_filtered"
 ])
 
 # Check if a compiler is of the toolchain type we expect, and save the version
