@@ -969,10 +969,9 @@ public final class Long extends Number
                     c[i] = new Long(value++);
                 }
                 archivedCache = c;
-            } else if (archivedCache.length != size) {
-                throw new InternalError("CDS archive is broken: LongCache mismatch");
             }
             cache = archivedCache;
+            assert cache.length == size;
         }
     }
 

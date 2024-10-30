@@ -251,10 +251,9 @@ public final class Short extends Number implements Comparable<Short>, Constable 
                     c[i] = new Short(value++);
                 }
                 archivedCache = c;
-            } else if (archivedCache.length != size) {
-                throw new InternalError("CDS archive is broken: ShortCache mismatch");
             }
             cache = archivedCache;
+            assert cache.length == size;
         }
     }
 

@@ -8990,10 +8990,9 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
                     c[i] = new Character((char) i);
                 }
                 archivedCache = c;
-            } else if (archivedCache.length != size) {
-                throw new InternalError("CDS archive is broken: CharacterCache mismatch");
             }
             cache = archivedCache;
+            assert cache.length == size;
         }
     }
 
