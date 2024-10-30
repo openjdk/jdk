@@ -593,7 +593,11 @@ test/jdk/sun/security/pkcs11/README.</p>
 alternative security providers</h3>
 <p>Some security tests use a hardcoded provider for
 <code>KeyFactory</code>, <code>Cipher</code>,
-<code>KeyPairGenerator</code>, <code>KeyGenerator</code>, or
+<code>KeyPairGenerator</code>, <code>KeyGenerator</code>,
+<code>AlgorithmParameterGenerator</code>, <code>KeyAgreement</code>,
+<code>Mac</code>, <code>MessageDigest</code>, <code>SecureRandom</code>,
+<code>Signature</code>, <code>AlgorithmParameters</code>,
+<code>Configuration</code>, <code>Policy</code>, or
 <code>SecretKeyFactory</code> objects. Specify the
 <code>-Dtest.provider.name=NAME</code> property to use a different
 provider for the service(s).</p>
