@@ -105,6 +105,7 @@ gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
 
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
 runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
+runtime/Monitor/SyncOnValueBasedClassTest.java 8340995 linux-s390x
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
