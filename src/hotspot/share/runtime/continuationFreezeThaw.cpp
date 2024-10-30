@@ -2042,7 +2042,7 @@ int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &arg
   if (check_stub && f.is_stub()) {
     // If we don't thaw the top compiled frame too, after restoring the saved
     // registers back in Java, we would hit the return barrier to thaw one more
-    // frame effectively overwritting the restored registers during that call.
+    // frame effectively overwriting the restored registers during that call.
     f.next(SmallRegisterMap::instance(), true /* stop */);
     assert(!f.is_done(), "");
 
@@ -2059,7 +2059,7 @@ int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &arg
     }
   }
 
-  f.next(SmallRegisterMap::instance, true /* stop */);
+  f.next(SmallRegisterMap::instance(), true /* stop */);
   empty = f.is_done();
   assert(!empty || argsize == chunk->argsize(), "");
 
@@ -2647,7 +2647,7 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
     assert(!_stream.is_done(), "");
     _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, &map);
   } else {
-    _stream.next(SmallRegisterMap::instance);
+    _stream.next(SmallRegisterMap::instance());
     assert(!_stream.is_done(), "");
   }
 
