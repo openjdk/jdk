@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6578538 8027624
+ * @library /test/lib
  * @summary com.sun.crypto.provider.SunJCE instance leak using KRB5 and
  *     LoginContext
  * @author Brad Wetmore
@@ -45,6 +46,7 @@ import javax.crypto.spec.*;
 
 import java.util.*;
 import java.util.concurrent.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestProviderLeak {
     private static final int MB = 1024 * 1024;
@@ -109,7 +111,7 @@ public class TestProviderLeak {
             SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1",
                     System.getProperty("test.provider.name", "SunJCE"));
         final PBEKeySpec pbeKS = new PBEKeySpec(
-            "passPhrase".toCharArray(), new byte [] { 0 }, 5, 512);
+            "passPhrase".toCharArray(), new byte [SecurityUtils.getTestSaltSize()], 1000, 512);
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Callable<SecretKey> task = new Callable<SecretKey>() {

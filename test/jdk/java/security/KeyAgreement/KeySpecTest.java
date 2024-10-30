@@ -24,6 +24,7 @@
  /*
  * @test
  * @bug 8184359
+ * @library /test/lib
  * @summary Standard tests on KeySpec, KeyFactory, KeyPairs and Keys.
  *  Arguments order <KeyExchangeAlgorithm> <Provider> <KeyGenAlgorithm> <Curve*>
  * @run main KeySpecTest DiffieHellman SunJCE DiffieHellman
@@ -55,6 +56,7 @@ import java.util.Arrays;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import jdk.test.lib.security.SecurityUtils;
 
 public class KeySpecTest {
 
@@ -78,7 +80,7 @@ public class KeySpecTest {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgo, provider);
         switch (kpgInit) {
             case "DiffieHellman":
-                kpg.initialize(512);
+                kpg.initialize(SecurityUtils.getTestKeySize(kpgInit));
                 break;
             case "EC":
                 kpg.initialize(256);

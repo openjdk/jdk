@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4923484 8146293
+ * @library /test/lib
  * @summary encryption/decryption test for using OAEPParameterSpec.
  * @author Valerie Peng
  */
@@ -35,6 +36,7 @@ import java.security.spec.MGF1ParameterSpec;
 import javax.crypto.*;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.OAEPParameterSpec;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestOAEPWithParams {
 
@@ -59,8 +61,9 @@ public class TestOAEPWithParams {
         System.out.println("Testing provider " + cp.getName() + "...");
         Provider kfp = Security.getProvider(
                 System.getProperty("test.provider.name", "SunRsaSign"));
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", kfp);
-        kpg.initialize(768);
+        String kpgAlgorithm = "RSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, kfp);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
         privateKey = kp.getPrivate();
         publicKey = kp.getPublic();
