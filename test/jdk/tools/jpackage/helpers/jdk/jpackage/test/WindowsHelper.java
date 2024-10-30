@@ -526,15 +526,15 @@ public class WindowsHelper {
             "bin\\server\\jvm.dll"));
 
     // jtreg resets %ProgramFiles% environment variable by some reason.
-    private final static Path PROGRAM_FILES = Path.of(Optional.ofNullable(
+    private static final Path PROGRAM_FILES = Path.of(Optional.ofNullable(
             System.getenv("ProgramFiles")).orElse("C:\\Program Files"));
 
-    private final static Path USER_LOCAL = Path.of(System.getProperty(
+    private static final Path USER_LOCAL = Path.of(System.getProperty(
             "user.home"),
             "AppData", "Local");
 
-    private final static String SYSTEM_SHELL_FOLDERS_REGKEY = "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
-    private final static String USER_SHELL_FOLDERS_REGKEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
+    private static final String SYSTEM_SHELL_FOLDERS_REGKEY = "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
+    private static final String USER_SHELL_FOLDERS_REGKEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
 
     private static final Map<String, String> REGISTRY_VALUES = new HashMap<>();
 }
