@@ -27,10 +27,13 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import jdk.internal.util.OSVersion;
+import static java.util.stream.Collectors.joining;
+import java.util.stream.Stream;
+import static jdk.jpackage.internal.util.FileUtils.copyRecursive;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.ApplicationLayout;
+import jdk.jpackage.test.Functional.ThrowingFunction;
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.TKit;
 
@@ -148,7 +151,7 @@ public class AppContentTest {
             var srcPath = TKit.TEST_SRC_ROOT.resolve(appContentPath);
             var dstPath = appContentArg.resolve(srcPath.getFileName());
             Files.createDirectories(dstPath.getParent());
-            IOUtils.copyRecursive(srcPath, dstPath);
+            copyRecursive(srcPath, dstPath);
             return appContentArg;
         }
 
