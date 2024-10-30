@@ -113,7 +113,8 @@ bool AOTClassLinker::is_candidate(InstanceKlass* ik) {
   return (_candidates->get(ik) != nullptr);
 }
 
-void AOTClassLinker::add_candidate(InstanceKlass* ik) {
+void AOTClassLinker::add_new_candidate(InstanceKlass* ik) {
+  assert(!is_candidate(ik), "caller need to check");
   _candidates->put_when_absent(ik, true);
   _sorted_candidates->append(ik);
 
@@ -172,7 +173,10 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     }
   }
 
-  add_candidate(ik);
+  // There are no loops in the class hierarchy, and this function is always called single-threaded, so
+  // we know ik has not been added yet.
+  assert(CDSConfig::current_thread_is_vm_or_dumper(), "that's why we don't need locks");
+  add_new_candidate(ik);
 
   return true;
 }

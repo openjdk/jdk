@@ -35,6 +35,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/formatBuffer.hpp"
 
@@ -51,6 +52,8 @@ char* CDSConfig::_default_archive_path = nullptr;
 char* CDSConfig::_static_archive_path = nullptr;
 char* CDSConfig::_dynamic_archive_path = nullptr;
 
+JavaThread* CDSConfig::_dumper_thread = nullptr;
+
 int CDSConfig::get_status() {
   assert(Universe::is_fully_initialized(), "status is finalized only after Universe is initialized");
   return (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
@@ -58,7 +61,6 @@ int CDSConfig::get_status() {
          (is_logging_lambda_form_invokers() ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
          (is_using_archive()                ? IS_USING_ARCHIVE : 0);
 }
-
 
 void CDSConfig::initialize() {
   if (is_dumping_static_archive()) {
@@ -501,6 +503,22 @@ void CDSConfig::stop_using_optimized_module_handling() {
   _is_using_optimized_module_handling = false;
   _is_dumping_full_module_graph = false; // This requires is_using_optimized_module_handling()
   _is_using_full_module_graph = false; // This requires is_using_optimized_module_handling()
+}
+
+
+CDSConfig::DumperThreadMark::DumperThreadMark(JavaThread* current) {
+  assert(_dumper_thread == nullptr, "sanity");
+  _dumper_thread = current;
+}
+
+CDSConfig::DumperThreadMark::~DumperThreadMark() {
+  assert(_dumper_thread != nullptr, "sanity");
+  _dumper_thread = nullptr;
+}
+
+bool CDSConfig::current_thread_is_vm_or_dumper() {
+  Thread* t = Thread::current();
+  return t != nullptr && (t->is_VM_thread() || t == _dumper_thread);
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

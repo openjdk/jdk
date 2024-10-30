@@ -498,6 +498,7 @@ void DynamicArchive::check_for_dynamic_dump() {
 void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name) {
   ExceptionMark em(current);
   ResourceMark rm(current);
+  CDSConfig::DumperThreadMark dumper_thread_mark(current);
 
   if (!CDSConfig::is_dumping_dynamic_archive() || archive_name == nullptr) {
     return;
@@ -527,6 +528,7 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
 
 // This is called by "jcmd VM.cds dynamic_dump"
 void DynamicArchive::dump_for_jcmd(const char* archive_name, TRAPS) {
+  CDSConfig::DumperThreadMark dumper_thread_mark(THREAD);
   assert(CDSConfig::is_using_archive() && RecordDynamicDumpInfo, "already checked in arguments.cpp");
   assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp");
   assert(CDSConfig::is_dumping_dynamic_archive(), "already checked by check_for_dynamic_dump() during VM startup");

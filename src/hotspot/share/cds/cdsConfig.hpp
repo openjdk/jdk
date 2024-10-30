@@ -29,6 +29,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
+class JavaThread;
+
 class CDSConfig : public AllStatic {
 #if INCLUDE_CDS
   static bool _is_dumping_static_archive;
@@ -44,6 +46,8 @@ class CDSConfig : public AllStatic {
   static char* _dynamic_archive_path;
 
   static bool  _old_cds_flags_used;
+
+  static JavaThread* _dumper_thread;
 #endif
 
   static void extract_shared_archive_paths(const char* archive_path,
@@ -125,6 +129,21 @@ public:
   static bool is_using_full_module_graph()                   NOT_CDS_JAVA_HEAP_RETURN_(false);
   static void stop_dumping_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
   static void stop_using_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
+
+
+  // Some CDS functions assume that they are called only within a single-threaded context. I.e.,
+  // they are called from:
+  //    - The VM thread (e.g., inside VM_PopulateDumpSharedSpace)
+  //    - The thread that performs prepatory steps before switching to the VM thread
+  // Since these two threads never execute concurrently, we can avoid using locks in these CDS
+  // function. For safety, these functions should assert with CDSConfig::current_thread_is_vm_or_dumper().
+  class DumperThreadMark {
+  public:
+    DumperThreadMark(JavaThread* current);
+    ~DumperThreadMark();
+  };
+
+  static bool current_thread_is_vm_or_dumper() NOT_CDS(false);
 };
 
 #endif // SHARE_CDS_CDSCONFIG_HPP

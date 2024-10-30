@@ -721,6 +721,7 @@ void MetaspaceShared::prepare_for_dumping() {
 // Preload classes from a list, populate the shared spaces and dump to a
 // file.
 void MetaspaceShared::preload_and_dump(TRAPS) {
+  CDSConfig::DumperThreadMark dumper_thread_mark(THREAD);
   ResourceMark rm(THREAD);
   StaticArchiveBuilder builder;
   preload_and_dump_impl(builder, THREAD);
