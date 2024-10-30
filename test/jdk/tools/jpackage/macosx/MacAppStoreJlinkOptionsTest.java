@@ -33,11 +33,10 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage with --mac-app-store and --jlink-options
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @build jdk.jpackage.test.*
  * @build MacAppStoreJLinkOptionsTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MacAppStoreJLinkOptionsTest

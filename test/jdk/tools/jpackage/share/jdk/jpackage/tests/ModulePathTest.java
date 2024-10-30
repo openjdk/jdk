@@ -44,9 +44,8 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage with --module-path testing
- * @library ../../../../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ModulePathTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.ModulePathTest

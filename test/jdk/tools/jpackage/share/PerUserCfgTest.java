@@ -43,12 +43,11 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary pre-user configuration of app launchers
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
  * @compile PerUserCfgTest.java
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=PerUserCfgTest
  */

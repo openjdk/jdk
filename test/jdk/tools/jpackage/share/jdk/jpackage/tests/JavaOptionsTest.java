@@ -35,9 +35,8 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary jpackage create image with --java-options test
- * @library ../../../../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile JavaOptionsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.JavaOptionsTest

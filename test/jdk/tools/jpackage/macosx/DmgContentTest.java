@@ -40,13 +40,12 @@ import java.util.List;
 /*
  * @test
  * @summary jpackage with --type dmg --mac-dmg-content
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @library base
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build DmgContentTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=DmgContentTest

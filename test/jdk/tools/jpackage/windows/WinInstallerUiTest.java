@@ -39,12 +39,11 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary jpackage with --win-dir-chooser, --win-shortcut-prompt and --license parameters
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build WinInstallerUiTest
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=720 -Xmx512m  jdk.jpackage.test.Main
  *  --jpt-run=WinInstallerUiTest
  */

@@ -36,12 +36,11 @@ import jdk.jpackage.test.PackageType;
 /*
  * @test
  * @summary jpackage with --win-dir-chooser
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build WinDirChooserTest
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinDirChooserTest
  */

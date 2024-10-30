@@ -44,13 +44,12 @@ import jdk.jpackage.test.PackageType;
 /*
  * @test
  * @summary jpackage with --about-url
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build AppAboutUrlTest
  * @requires (os.family == "linux")
  * @requires (jpackage.test.SQETest == null)
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppAboutUrlTest
  */
@@ -58,13 +57,12 @@ import jdk.jpackage.test.PackageType;
 /*
  * @test
  * @summary jpackage with --about-url
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build AppAboutUrlTest
  * @requires (os.family == "linux")
  * @requires (jpackage.test.SQETest != null)
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppAboutUrlTest.test
  */

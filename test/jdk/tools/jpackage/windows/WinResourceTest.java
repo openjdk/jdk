@@ -40,10 +40,9 @@ import java.util.List;
 /*
  * @test
  * @summary jpackage with --resource-dir
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinResourceTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinResourceTest

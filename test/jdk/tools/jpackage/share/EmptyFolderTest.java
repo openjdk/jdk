@@ -37,12 +37,11 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary jpackage for package with input containing empty folders
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build EmptyFolderTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=EmptyFolderTest.testPackage
  */
@@ -50,11 +49,10 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary jpackage for app image with input containing empty folders
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @build jdk.jpackage.test.*
  * @build EmptyFolderTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=EmptyFolderTest.testAppImage
  */

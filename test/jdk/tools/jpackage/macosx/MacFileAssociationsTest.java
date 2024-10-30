@@ -40,10 +40,9 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage with --file-associations and mac specific file association args
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @build MacFileAssociationsTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MacFileAssociationsTest

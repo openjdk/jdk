@@ -40,12 +40,11 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage command run installing app in /usr directory tree
- * @library ../../../../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @requires (os.family == "linux")
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile UsrTreeTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=UsrTreeTest

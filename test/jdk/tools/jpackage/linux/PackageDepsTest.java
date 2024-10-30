@@ -46,11 +46,10 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage with --linux-package-deps
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile PackageDepsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=PackageDepsTest

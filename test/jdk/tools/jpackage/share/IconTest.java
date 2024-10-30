@@ -49,12 +49,10 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage create image and package with custom icons for the main and additional launcher
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile IconTest.java
  * @run main/othervm/timeout=540 -Xmx512m
- *  --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
  *  jdk.jpackage.test.Main
  *  --jpt-run=IconTest
  */

@@ -50,7 +50,7 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --type pkg,dmg --app-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @library base
  * @key jpackagePlatformPackage
@@ -59,7 +59,6 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningPackageFromTwoStepAppImageTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageFromTwoStepAppImageTest

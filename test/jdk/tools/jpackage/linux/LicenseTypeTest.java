@@ -38,12 +38,11 @@ import jdk.jpackage.test.PackageType;
 /*
  * @test
  * @summary jpackage with --linux-rpm-license-type
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build LicenseTypeTest
  * @requires (os.family == "linux")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LicenseTypeTest
  */

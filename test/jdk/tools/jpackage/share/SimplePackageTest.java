@@ -40,10 +40,9 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary Simple jpackage command run
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile SimplePackageTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SimplePackageTest

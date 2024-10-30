@@ -39,11 +39,10 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage with --win-menu and --win-menu-group
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinMenuGroupTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinMenuGroupTest

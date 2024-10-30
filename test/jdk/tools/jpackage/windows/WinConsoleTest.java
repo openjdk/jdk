@@ -34,10 +34,9 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --win-console
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinConsoleTest.java
  *
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main

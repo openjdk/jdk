@@ -54,12 +54,11 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary Test --vendor jpackage command option
- * @library ../../../../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires (os.family == "windows")
  * @requires jpackage.test.SQETest != null
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile VendorTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.VendorTest
@@ -68,12 +67,11 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary Test --vendor jpackage command option
- * @library ../../../../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires (os.family != "mac")
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile VendorTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.VendorTest

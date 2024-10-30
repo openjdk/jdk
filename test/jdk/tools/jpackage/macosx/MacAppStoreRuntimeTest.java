@@ -43,11 +43,10 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --mac-app-store and --runtime-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @build jdk.jpackage.test.*
  * @build MacAppStoreRuntimeTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MacAppStoreRuntimeTest

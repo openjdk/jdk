@@ -39,11 +39,10 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Test case for JDK-8248254
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @build Win8282351Test
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m  jdk.jpackage.test.Main
  *  --jpt-run=Win8282351Test
  */

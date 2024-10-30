@@ -37,12 +37,11 @@ import jdk.jpackage.test.PackageType;
 /*
  * @test
  * @summary jpackage with --win-shortcut-prompt, --win-menu and --win-shortcut parameters
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build WinShortcutPromptTest
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=720 -Xmx512m  jdk.jpackage.test.Main
  *  --jpt-run=WinShortcutPromptTest
  */

@@ -30,9 +30,8 @@ import jdk.jpackage.test.JPackageCommand;
  * @summary jpackage with values of --dest parameter breaking jpackage launcher
  * @requires (os.family == "linux")
  * @bug 8268974
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile LinuxWeirdOutputDirTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LinuxWeirdOutputDirTest

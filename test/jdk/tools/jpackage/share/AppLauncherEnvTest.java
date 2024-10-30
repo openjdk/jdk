@@ -39,12 +39,11 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Tests values of environment variables altered by jpackage launcher
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @build AppLauncherEnvTest
  * @build jdk.jpackage.test.*
  * @build AppLauncherEnvTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppLauncherEnvTest
  */

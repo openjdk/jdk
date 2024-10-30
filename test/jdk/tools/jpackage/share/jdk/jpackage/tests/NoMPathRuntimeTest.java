@@ -43,9 +43,8 @@ import jdk.jpackage.test.HelloApp;
 /*
  * @test
  * @summary test '--runtime-image' option of jpackage
- * @library ../../../../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile NoMPathRuntimeTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.NoMPathRuntimeTest

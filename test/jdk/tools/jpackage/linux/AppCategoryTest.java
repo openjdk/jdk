@@ -43,12 +43,11 @@ import jdk.jpackage.test.PackageType;
 /*
  * @test
  * @summary jpackage with --linux-app-category
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build AppCategoryTest
  * @requires (os.family == "linux")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppCategoryTest
  */

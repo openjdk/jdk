@@ -49,9 +49,8 @@ import org.w3c.dom.Document;
 /*
  * @test
  * @summary jpackage for app's module linked in external runtime
- * @library ../../../../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ModulePathTest3.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.ModulePathTest3

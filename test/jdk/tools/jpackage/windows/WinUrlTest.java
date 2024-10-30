@@ -40,12 +40,11 @@ import jdk.jpackage.test.PackageType;
  * @test
  * @summary jpackage with --about-url, --win-update-url and --win-help-url
  *          parameters
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build WinUrlTest
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=720 -Xmx512m  jdk.jpackage.test.Main
  *  --jpt-run=WinUrlTest
  */

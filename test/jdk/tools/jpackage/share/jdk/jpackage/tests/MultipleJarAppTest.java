@@ -33,9 +33,8 @@ import jdk.jpackage.test.JPackageCommand;
 /*
  * @test
  * @summary jpackage application packed in multiple jars
- * @library ../../../../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile MultipleJarAppTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.MultipleJarAppTest

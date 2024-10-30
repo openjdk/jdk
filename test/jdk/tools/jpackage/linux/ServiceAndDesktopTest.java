@@ -39,12 +39,11 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary jpackage with desktop integration and services on Linux
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ServiceAndDesktopTest.java
  * @run main/othervm/timeout=720 jdk.jpackage.test.Main
  *  --jpt-run=ServiceAndDesktopTest

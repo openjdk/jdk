@@ -41,12 +41,11 @@ import jdk.jpackage.test.JPackageCommand;
 /*
  * @test
  * @summary Multiple names in two phases
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile MultiNameTwoPhaseTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MultiNameTwoPhaseTest

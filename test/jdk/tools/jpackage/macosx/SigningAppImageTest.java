@@ -45,7 +45,7 @@ import jdk.jpackage.test.AdditionalLauncher;
 /*
  * @test
  * @summary jpackage with --type app-image --mac-sign
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @library base
  * @build SigningBase
@@ -53,7 +53,6 @@ import jdk.jpackage.test.AdditionalLauncher;
  * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningAppImageTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningAppImageTest

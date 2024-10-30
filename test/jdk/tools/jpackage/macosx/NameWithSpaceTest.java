@@ -38,9 +38,8 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage test with name containing spaces
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile NameWithSpaceTest.java
  * @requires (os.family == "mac")
  * @key jpackagePlatformPackage

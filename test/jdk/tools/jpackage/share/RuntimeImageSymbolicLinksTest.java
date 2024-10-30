@@ -47,11 +47,10 @@ import jdk.jpackage.test.Executor;
 /*
  * @test
  * @summary jpackage with --runtime-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires (os.family != "windows")
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimeImageSymbolicLinksTest.java
  * @run main/othervm/timeout=1400 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimeImageSymbolicLinksTest
