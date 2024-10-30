@@ -266,9 +266,6 @@ public class JlinkTask {
                                 .showUsage(true);
             }
             if (options.help) {
-                // In order to be able to show the run-time image based link
-                // capability in --help, we need to look for the delta files
-                // in jdk.jlink
                 optionsHelper.showHelp(PROGNAME, LinkableRuntimeImage.isLinkableRuntime());
                 return EXIT_OK;
             }

@@ -43,6 +43,14 @@ public class LinkableRuntimeImage {
     // The diff files per module for supporting linking from the run-time image
     public static final String DIFF_PATTERN = "jdk/tools/jlink/internal/runtimelink/diff_%s";
 
+    /**
+     * In order to be able to show whether or not a runtime is capable of
+     * linking from it in {@code jlink --help} we need to look for the delta
+     * files in the {@code jdk.jlink} module. If present we have the capability.
+     *
+     * @return {@code true} iff this jlink is capable of linking from the
+     *         run-time image.
+     */
     public static boolean isLinkableRuntime() {
         try (InputStream in = getDiffInputStream()) {
             return in != null;
@@ -59,7 +67,7 @@ public class LinkableRuntimeImage {
     private static InputStream getDiffInputStream(String module) {
         try {
             String resourceName = String.format(DIFF_PATTERN, module);
-            return JlinkTask.class.getModule().getResourceAsStream(resourceName);
+            return LinkableRuntimeImage.class.getModule().getResourceAsStream(resourceName);
         } catch (IOException e) {
             if (JlinkTask.DEBUG) {
                 System.err.println("Failed to get diff pattern resource");
