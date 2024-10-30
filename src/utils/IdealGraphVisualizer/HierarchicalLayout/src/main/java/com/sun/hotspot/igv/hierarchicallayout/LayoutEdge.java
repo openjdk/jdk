@@ -61,19 +61,6 @@ public class LayoutEdge {
         this.link = link;
     }
 
-    public LayoutNode insertDummyBetweenSourceAndEdge() {
-        LayoutNode dummyNode = new LayoutNode();
-        dummyNode.getSuccs().add(this);
-        LayoutEdge result = new LayoutEdge(this.getFrom(), dummyNode, this.getRelativeFromX(), 0, null);
-        if (this.isReversed()) result.reverse();
-        dummyNode.getPreds().add(result);
-        this.setRelativeFromX(0);
-        this.getFrom().getSuccs().remove(this);
-        this.getFrom().getSuccs().add(result);
-        this.setFrom(dummyNode);
-        return dummyNode;
-    }
-
     public void reverse() {
         isReversed = !isReversed;
     }

@@ -85,8 +85,9 @@ public class LayoutGraph {
 
 
     // check that NO neighbors of node are in a given layer
+    // otherwise insert a new layer
+    // return the layerNr where the node can now be safely inserted
     public int insertNewLayerIfNeeded(LayoutNode node, int layerNr) {
-        // TODO: needs improvement
         for (Link inputLink : getInputLinks(node.getVertex())) {
             if (inputLink.getFrom().getVertex() == inputLink.getTo().getVertex()) continue;
             LayoutNode fromNode = getLayoutNode(inputLink.getFrom().getVertex());
@@ -107,23 +108,39 @@ public class LayoutGraph {
 
     }
 
+    // inserts a new layer at layerNr
+    // inserts dummy nodes acoring to layerNr - 1
+    // moves the layer from previous layerNr to layerNr + 1
     private void moveExpandLayerDown(int layerNr) {
-        LayoutLayer oldLayer = getLayer(layerNr);
-        LayoutLayer newLayerAbove =  createNewLayer(layerNr);
+        // TODO: needs improvement, handle reversed edges
+        LayoutLayer newLayer =  createNewLayer(layerNr);
 
-        Set<Integer> dummyNodeCache = new HashSet<>();
-        for (LayoutNode node : oldLayer) {
-            for (LayoutEdge predEdge : node.getPreds()) {
-                int x = predEdge.getStartX();
-                if (!dummyNodeCache.contains(x)) {
-                    LayoutNode dummyNode = predEdge.insertDummyBetweenSourceAndEdge();
-                    dummyNode.setX(x);
-                    addNodeToLayer(dummyNode, layerNr);
-                    dummyNodeCache.add(x);
+        if (layerNr == 0) return;
+        LayoutLayer layerAbove = getLayer(layerNr - 1);
+
+        for (LayoutNode fromNode : layerAbove) {
+            int fromX = fromNode.getX();
+            Map<Integer, List<LayoutEdge>> successorsByX = fromNode.groupSuccessorsByX();
+            fromNode.getSuccs().clear();
+
+            for (Map.Entry<Integer, List<LayoutEdge>> entry : successorsByX.entrySet()) {
+                Integer relativeFromX = entry.getKey();
+                List<LayoutEdge> edges = entry.getValue();
+                LayoutNode dummyNode = new LayoutNode();
+                dummyNode.setX(fromX + relativeFromX);
+                dummyNode.setLayer(layerNr);
+                dummyNode.getSuccs().addAll(edges);
+                LayoutEdge dummyEdge = new LayoutEdge(fromNode, dummyNode, relativeFromX, 0, null);
+                fromNode.getSuccs().add(dummyEdge);
+                dummyNode.getPreds().add(dummyEdge);
+                for (LayoutEdge edge : edges) {
+                    edge.setFrom(dummyNode);
                 }
+                addNodeToLayer(dummyNode, layerNr);
             }
         }
-        newLayerAbove.sortNodesByXAndSetPositions();
+
+        newLayer.sortNodesByXAndSetPositions();
     }
 
     public List<LayoutLayer> getLayers() {

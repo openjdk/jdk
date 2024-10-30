@@ -286,6 +286,14 @@ public class LayoutNode {
         return succs;
     }
 
+    public Map<Integer, List<LayoutEdge>> groupSuccessorsByX() {
+        Map<Integer, List<LayoutEdge>> result = new HashMap<>();
+        for (LayoutEdge succEdge : succs) {
+            result.computeIfAbsent(succEdge.getRelativeFromX(), k -> new ArrayList<>()).add(succEdge);
+        }
+        return result;
+    }
+
     public HashMap<Integer, Integer> getOutOffsets() {
         return outOffsets;
     }
