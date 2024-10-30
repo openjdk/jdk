@@ -425,6 +425,7 @@ class SerializeClosure;
   template(cs_name,                                   "cs")                                       \
   template(get_name,                                  "get")                                      \
   template(refersTo0_name,                            "refersTo0")                                \
+  template(reachabilityFence_name,                    "reachabilityFence")                        \
   template(clear0_name,                               "clear0")                                   \
   template(put_name,                                  "put")                                      \
   template(type_name,                                 "type")                                     \

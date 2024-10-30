@@ -471,6 +471,7 @@ class methodHandle;
   do_intrinsic(_PhantomReference_refersTo0, java_lang_ref_PhantomReference, refersTo0_name, object_boolean_signature, F_RN) \
   do_intrinsic(_Reference_clear0,           java_lang_ref_Reference, clear0_name,    void_method_signature, F_RN)       \
   do_intrinsic(_PhantomReference_clear0,    java_lang_ref_PhantomReference, clear0_name, void_method_signature, F_RN)   \
+  do_intrinsic(_Reference_reachabilityFence, java_lang_ref_Reference, reachabilityFence_name,    object_void_signature, F_S)  \
                                                                                                                         \
   /* support for com.sun.crypto.provider.AESCrypt and some of its callers */                                            \
   do_class(com_sun_crypto_provider_aescrypt,      "com/sun/crypto/provider/AESCrypt")                                   \

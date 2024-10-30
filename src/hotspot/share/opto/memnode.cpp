@@ -4106,6 +4106,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   case Op_MemBarCPUOrder:    return new MemBarCPUOrderNode(C, atp, pn);
   case Op_OnSpinWait:        return new OnSpinWaitNode(C, atp, pn);
   case Op_Initialize:        return new InitializeNode(C, atp, pn);
+  case Op_ReachabilityFence: return new ReachabilityFenceNode(C, atp, pn);
   default: ShouldNotReachHere(); return nullptr;
   }
 }
@@ -4279,6 +4280,31 @@ MemBarNode* MemBarNode::trailing_membar() const {
   return mb;
 }
 
+Node* ReachabilityFenceNode::post_dominating_fence(PhaseGVN* phase) {
+  Node* n = in(TypeFunc::Parms); // TODO: skip casts
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* use = n->fast_out(i); // TODO: skip through casts
+    if (use != this && use->Opcode() == Op_ReachabilityFence) {
+      if (phase->is_dominator(this, use)) {
+        return use; // found a postdominating fence
+      }
+    }
+  }
+  return nullptr;
+}
+
+Node* ReachabilityFenceNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* n = MemBarNode::Ideal(phase, can_reshape);
+  if (n != nullptr) {
+    return n;
+  }
+  Node* d = post_dominating_fence(phase);
+  if (d != nullptr) {
+    return TupleNode::make(TypeTuple::MEMBAR, in(0), in(1), in(2), in(3), in(4));
+  }
+  return nullptr;
+}
+
 MemBarNode* MemBarNode::leading_membar() const {
   ResourceMark rm;
   VectorSet seen;
@@ -4345,6 +4371,27 @@ MemBarNode* MemBarNode::leading_membar() const {
   assert(mb->_pair_idx == _pair_idx, "bad leading membar");
   return mb;
 }
+
+#ifndef PRODUCT
+void ReachabilityFenceNode::format(PhaseRegAlloc* ra, outputStream* st) const {
+  st->print("reachability fence ");
+  bool first = true;
+  for (uint i = 0; i < req(); i++) {
+    Node* n = in(i);
+    if (n != nullptr && OptoReg::is_valid(ra->get_reg_first(n))) {
+      if (first) {
+        first = false;
+      } else {
+        st->print(", ");
+      }
+      char buf[128];
+      ra->dump_register(n, buf, 128);
+      st->print("%s", buf);
+    }
+  }
+  st->cr();
+}
+#endif
 
 
 //===========================InitializeNode====================================

@@ -1276,6 +1276,27 @@ public:
   virtual int Opcode() const;
 };
 
+//------------------------ReachabilityFenceNode--------------------------
+class ReachabilityFenceNode : public MemBarNode {
+  Node* post_dominating_fence(PhaseGVN* phase);
+
+public:
+  ReachabilityFenceNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int   Opcode() const;
+  virtual uint ideal_reg() const { return 0; } // not matched in the AD file
+  const RegMask &in_RegMask(uint idx) const {
+    // Fake the incoming arguments mask for blackholes: accept all registers
+    // and all stack slots. This would avoid any redundant register moves
+    // for blackhole inputs.
+    return RegMask::All;
+  }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+#ifndef PRODUCT
+  virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
+#endif
+};
+
 // Isolation of object setup after an AllocateNode and before next safepoint.
 // (See comment in memnode.cpp near InitializeNode::InitializeNode for semantics.)
 class InitializeNode: public MemBarNode {

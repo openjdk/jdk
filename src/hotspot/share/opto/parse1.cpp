@@ -2188,6 +2188,15 @@ void Parse::return_current(Node* value) {
     call_register_finalizer();
   }
 
+  if (!method()->is_static()) {
+    Node* receiver = local(0);
+    Node* rfence = MemBarNode::make(C, Op_ReachabilityFence, Compile::AliasIdxTop, argument(0));
+    rfence->init_req(TypeFunc::Control, control());
+    rfence->init_req(TypeFunc::Memory,  immutable_memory());
+    rfence = _gvn.transform(rfence);
+    set_control(_gvn.transform(new ProjNode(rfence, TypeFunc::Control)));
+  }
+
   // Do not set_parse_bci, so that return goo is credited to the return insn.
   set_bci(InvocationEntryBci);
   if (method()->is_synchronized() && GenerateSynchronizationCode) {
