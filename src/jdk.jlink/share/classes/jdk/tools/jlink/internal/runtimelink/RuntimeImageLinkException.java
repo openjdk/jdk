@@ -26,8 +26,7 @@
 package jdk.tools.jlink.internal.runtimelink;
 
 /**
- * Exception thrown for linking without packaged modules. I.e. runtime image linking.
- *
+ * Exception thrown when linking from the run-time image
  */
 public class RuntimeImageLinkException extends RuntimeException {
 
