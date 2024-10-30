@@ -67,7 +67,6 @@ public class PrintDlgPageable implements Printable {
         }
         INSTRUCTIONS += "\nCancel the print dialog. Press PASS if it so seen else press FAIL.";
 
-        PrintDlgPageable pd = new PrintDlgPageable();
         PrinterJob pj = PrinterJob.getPrinterJob();
         PageableHandler handler = new PageableHandler();
         pj.setPageable(handler);
