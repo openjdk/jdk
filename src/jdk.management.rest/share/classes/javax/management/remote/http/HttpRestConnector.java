@@ -49,6 +49,11 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
     protected Map<String,?> env;
     protected HttpRestConnection connection;
 
+    private long clientNotifSeqNo = 0;
+
+
+    private NotificationBroadcasterSupport connectionBroadcaster;
+
     private static AtomicInteger id = new AtomicInteger(0);
 
     public HttpRestConnector(JMXServiceURL url, Map<String,?> env) {
@@ -57,6 +62,8 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
         if (env == null) {
             this.env = new HashMap<String,Object>();
         }
+        connectionBroadcaster = new NotificationBroadcasterSupport();
+
         System.err.println("XXXXX HttpRestConnector url=" + url);
         fixURL();
     }
@@ -95,7 +102,6 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
         // whch calls connServer.connectionOpened (which adds to list of connections in JmxConnectorServer)
         // and returns an RMIConnection.
         connection = new HttpRestConnection(url, baseURL, env); 
-        connection.setup();
         connection.setConnector(this);
         connected = true;
     }
@@ -108,27 +114,43 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
     }
 
     public void close() throws IOException {
-        // test/jdk/javax/management/remote/mandatory/connection/CloseFailedClientTest.java
-        // closes a Connector that failed to connect, and expects no IOException.
-        connected = false;
-        connection.close(); // Close HttpRestConnection
+        // Close the client connection to its server.
+
+        // Test CloseFailedClientTest.java closes a Connector that failed to connect, and expects no IOException.
+        // ConnectionTest.java expects a Notification to be caused by close.
+
+        if (connected) {
+/*           Notification closedNotif =
+                    new JMXConnectionNotification(JMXConnectionNotification.CLOSED,
+                    this,
+                    getConnectionId(),
+                    clientNotifSeqNo++,
+                    "Client has been closed",
+                    null);
+            System.err.println("XXX HttpRestConnector wants to send: " + closedNotif);
+            sendNotification(closedNotif);
+ */
+            connected = false;
+            connection.close(); // Close HttpRestConnection
+        }
+    }
+
+    private void sendNotification(Notification n) {
+        connectionBroadcaster.sendNotification(n);
     }
 
     public void addConnectionNotificationListener(NotificationListener listener,
                                           NotificationFilter filter,
                                           Object handback) {
 
-        if (listener == null) {
-            throw new NullPointerException("listener");
-        }
+        // Use connection:
+        connection.addConnectionNotificationListener(listener, filter, handback);
     }
 
     public void removeConnectionNotificationListener(NotificationListener listener)
             throws ListenerNotFoundException {
 
-        if (listener == null) {
-            throw new NullPointerException("listener");
-        }
+        removeConnectionNotificationListener(listener, null, null);
     }
 
     public void removeConnectionNotificationListener(NotificationListener l,

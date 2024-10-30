@@ -241,6 +241,27 @@ public class MBeanResource implements RestResource {
                 } else {
                     return HttpResponse.BAD_REQUEST;
                 }                
+            } else if (path.matches(pathPrefix + "/closeConnection$")) {
+
+                // POST to closeConnection
+                reqBody = HttpUtil.readRequestBody(exchange);
+                JSONElement jsonElement = null;
+
+                if (!reqBody.isEmpty()) {
+                    JSONParser parser = new JSONParser(reqBody);
+                    jsonElement = parser.parse();
+
+                    if (!(jsonElement instanceof JSONObject)) {
+                        return new HttpResponse(HttpResponse.BAD_REQUEST,
+                                "Invalid parameters : [" + reqBody + "] for closeConnection");
+                    }
+                }
+                String pathFull = PlatformRestAdapter.getDomain() +
+                                exchange.getRequestURI().getPath().replaceAll("/$", "").replaceAll("/addNotificationListener", "");
+                pathFull = URLDecoder.decode(pathFull, StandardCharsets.UTF_8.displayName());
+                System.err.println("XXXXX MBeanResource closeConnection");
+                return new HttpResponse(HttpURLConnection.HTTP_OK, "close");
+
             } else if (path.matches(pathPrefix + "/[^/]+/?$")) {
                 // POST to MBeanOperation
                 // e.g. /jmx/servers/platform/mbeans/java.lang:type=Threading/getThreadInfo

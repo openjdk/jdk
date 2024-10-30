@@ -139,7 +139,7 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
         if (authenticator != null) {
             String authCredentials = null; // HttpUtil.getCredentials(exchange);
             this.subject = authenticator.authenticate(authCredentials);
-            System.err.println("ZZZZZZZZZZZ MBeanServerResource: handle creds =  " + authCredentials + " subject = " + subject);
+//            System.err.println("ZZZZZZZZZZZ MBeanServerResource: handle creds =  " + authCredentials + " subject = " + subject);
             this.connectionId = makeConnectionId();
         }
 
@@ -148,7 +148,7 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
     private String makeConnectionId() {
         // Format is specified in java.management/javax/management/remote package summary.                                                             
         // RMIConnectionIdTest expects protocol://ip port username arbitrary
-        new Exception("ZZZZZZZZZZZZZZZ").printStackTrace(System.err);
+//        new Exception("ZZZZZZZZZZZZZZZ").printStackTrace(System.err);
         StringBuilder s = new StringBuilder(); 
         s.append("http").append(":");
         String a = httpServer.getAddress().toString();
@@ -179,7 +179,7 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
     }
 
     public String getConnectionId() throws IOException {
-        new Exception("ZZZZZZZZZZZZZZZ").printStackTrace(System.err);
+        //new Exception("ZZZZZZZZZZZZZZZ").printStackTrace(System.err);
         return connectionId;
     }
 
@@ -223,7 +223,7 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
         if (authenticator != null) {
             String authCredentials = HttpUtil.getCredentials(exchange);
             this.subject = authenticator.authenticate(authCredentials);
-            System.err.println("ZZZZZZZZZZZ MBeanServerResource: handle creds =  " + authCredentials + " subject = " + subject);
+//            System.err.println("ZZZZZZZZZZZ MBeanServerResource: handle creds =  " + authCredentials + " subject = " + subject);
             this.connectionId = makeConnectionId();
  
             // MBeanServer proxy should be populated in the authenticator
