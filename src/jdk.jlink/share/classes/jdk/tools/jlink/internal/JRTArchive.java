@@ -157,8 +157,8 @@ public class JRTArchive implements Archive {
     private void collectFiles() throws IOException {
         if (files.isEmpty()) {
             addNonClassResources();
-            // Add classes/resources from the runtime image,
-            // patched with the runtime image link diff
+            // Add classes/resources from the run-time image,
+            // patched with the run-time image diff
             files.addAll(ref.open().list()
                                    .filter(i -> {
                                            String lookupKey = String.format("/%s/%s", module, i);
@@ -185,7 +185,7 @@ public class JRTArchive implements Archive {
                                    })
                                    .toList());
             // Finally add all files only present in the resource diff
-            // That is, removed items in the runtime image.
+            // That is, removed items in the run-time image.
             files.addAll(resDiff.values().stream()
                                          .filter(rd -> rd.getKind() == ResourceDiff.Kind.REMOVED)
                                          .map(s -> {
@@ -472,7 +472,7 @@ public class JRTArchive implements Archive {
                                 // we have a patched module. Mention that module patching
                                 // is not supported.
                                 String msgFormat = "File %s not found in the modules image.\n" +
-                                                   "--patch-module is not supported for run-time image linking.";
+                                                   "--patch-module is not supported when linking from the run-time image";
                                 String msg = String.format(msgFormat, file.getFile());
                                 throw new RuntimeImageLinkException(msg);
                             }
@@ -524,9 +524,8 @@ public class JRTArchive implements Archive {
                 }
             }
         } catch (IOException e) {
-            // InternalError vs AssertionError??
-            throw new InternalError("Failed to process run-time image resources " +
-                                    " for " + modName);
+            throw new AssertionError("Failed to process resources from the run-time image" +
+                                    " for module " + modName);
         }
     }
 }
