@@ -389,9 +389,8 @@ public abstract class Policy {
     }
 
     /**
-     * Evaluates the global policy for the permissions granted to
-     * the ProtectionDomain and tests whether the permission is
-     * granted.
+     * Evaluates the permissions granted to the ProtectionDomain and tests
+     * whether the permission is granted.
      *
      * <p> The default implementation of this method ignores the
      * ProtectionDomain and Permission parameters and always returns false.

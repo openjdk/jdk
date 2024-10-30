@@ -31,7 +31,7 @@ import jdk.internal.access.SharedSecrets;
 /**
  * The {@code ProtectionDomain} class encapsulates the characteristics of a
  * domain, which encloses a set of classes whose instances are granted a set
- * of permissions when being executed on behalf of a given set of Principals.
+ * of permissions.
  * <p>
  * A static set of permissions can be bound to a {@code ProtectionDomain}
  * when it is constructed; such permissions are granted to the domain
@@ -40,9 +40,9 @@ import jdk.internal.access.SharedSecrets;
  * is dynamically mapped to a set of permissions by the current policy whenever
  * a permission is checked.
  *
- * @implNote Note that installing a system-wide {@link Policy} object is
- * no longer supported and the {@link Policy#getPolicy} method always
- * returns a {@code Policy} object that grants no permissions.
+ * @apiNote Installing a system-wide {@link Policy} object is
+ * no longer supported. The {@linkplain Policy#getPolicy current policy}
+ * is always a {@code Policy} object that grants no permissions.
  *
  * @author Li Gong
  * @author Roland Schemers
@@ -116,6 +116,10 @@ public class ProtectionDomain {
      * They contain only the ones passed to this constructor and
      * the current policy will not be consulted.
      *
+     * @apiNote Installing a system-wide {@link Policy} object is
+     * no longer supported. The {@linkplain Policy#getPolicy current policy}
+     * is always a {@code Policy} object that grants no permissions.
+     *
      * @param codesource the codesource associated with this domain
      * @param permissions the permissions granted to this domain
      */
@@ -145,12 +149,11 @@ public class ProtectionDomain {
      * invoking the {@link #staticPermissionsOnly()} method returns
      * {@code false}.
      * They include both the static permissions passed to this constructor,
-     * and any permissions granted to this domain by the current policy at the
-     * time a permission is checked.
+     * and any permissions granted to this domain by the current policy.
      *
-     * @implNote Note that installing a system-wide {@link Policy} object is
-     * no longer supported and the {@link Policy#getPolicy} method always
-     * returns a {@code Policy} object that grants no permissions.
+     * @apiNote Installing a system-wide {@link Policy} object is
+     * no longer supported. The {@linkplain Policy#getPolicy current policy}
+     * is always a {@code Policy} object that grants no permissions.
      *
      * @param codesource the {@code CodeSource} associated with this domain
      * @param permissions the permissions granted to this domain
@@ -224,8 +227,11 @@ public class ProtectionDomain {
 
     /**
      * Returns {@code true} if this domain contains only static permissions
-     * and does not check the current {@code Policy} at the time of
-     * permission checking.
+     * and does not check the current {@code Policy}.
+     *
+     * @apiNote Installing a system-wide {@link Policy} object is
+     * no longer supported. The {@linkplain Policy#getPolicy current policy}
+     * is always a {@code Policy} object that grants no permissions.
      *
      * @return {@code true} if this domain contains only static permissions.
      *
@@ -251,9 +257,9 @@ public class ProtectionDomain {
      * of the {@code PermissionCollection} supplied at construction and
      * the current policy binding.
      *
-     * @implNote Note that installing a system-wide {@link Policy} object is
-     * no longer supported and the {@link Policy#getPolicy} method always
-     * returns a {@code Policy} object that grants no permissions.
+     * @apiNote Installing a system-wide {@link Policy} object is
+     * no longer supported. The {@linkplain Policy#getPolicy current policy}
+     * is always a {@code Policy} object that grants no permissions.
      *
      * @param perm the {code Permission} object to check.
      *
