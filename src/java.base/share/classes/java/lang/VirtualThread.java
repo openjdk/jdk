@@ -56,6 +56,7 @@ import jdk.internal.vm.ThreadContainers;
 import jdk.internal.vm.annotation.ChangesCurrentThread;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.JvmtiHideEvents;
 import jdk.internal.vm.annotation.JvmtiMountTransition;
 import jdk.internal.vm.annotation.ReservedStackAccess;
 import sun.nio.ch.Interruptible;
@@ -142,6 +143,14 @@ final class VirtualThread extends BaseVirtualThread {
     // termination object when joining, created lazily if needed
     private volatile CountDownLatch termination;
 
+
+    /**
+     * Returns the default scheduler.
+     */
+    static Executor defaultScheduler() {
+        return DEFAULT_SCHEDULER;
+    }
+
     /**
      * Returns the continuation scope used for virtual threads.
      */
@@ -205,8 +214,14 @@ final class VirtualThread extends BaseVirtualThread {
         private static Runnable wrap(VirtualThread vthread, Runnable task) {
             return new Runnable() {
                 @Hidden
+                @JvmtiHideEvents
                 public void run() {
-                    vthread.run(task);
+                    vthread.notifyJvmtiStart(); // notify JVMTI
+                    try {
+                        vthread.run(task);
+                    } finally {
+                        vthread.notifyJvmtiEnd(); // notify JVMTI
+                    }
                 }
             };
         }
@@ -381,9 +396,6 @@ final class VirtualThread extends BaseVirtualThread {
     private void run(Runnable task) {
         assert Thread.currentThread() == this && state == RUNNING;
 
-        // notify JVMTI, may post VirtualThreadStart event
-        notifyJvmtiStart();
-
         // emit JFR event if enabled
         if (VirtualThreadStartEvent.isTurnedOn()) {
             var event = new VirtualThreadStartEvent();
@@ -397,20 +409,14 @@ final class VirtualThread extends BaseVirtualThread {
         } catch (Throwable exc) {
             dispatchUncaughtException(exc);
         } finally {
-            try {
-                // pop any remaining scopes from the stack, this may block
-                StackableScope.popAll();
+            // pop any remaining scopes from the stack, this may block
+            StackableScope.popAll();
 
-                // emit JFR event if enabled
-                if (VirtualThreadEndEvent.isTurnedOn()) {
-                    var event = new VirtualThreadEndEvent();
-                    event.javaThreadId = threadId();
-                    event.commit();
-                }
-
-            } finally {
-                // notify JVMTI, may post VirtualThreadEnd event
-                notifyJvmtiEnd();
+            // emit JFR event if enabled
+            if (VirtualThreadEndEvent.isTurnedOn()) {
+                var event = new VirtualThreadEndEvent();
+                event.javaThreadId = threadId();
+                event.commit();
             }
         }
     }

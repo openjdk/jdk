@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,9 +490,16 @@ final class Float128Vector extends FloatVector {
                                    VectorMask<Float> m) {
         return (Float128Vector)
             super.selectFromTemplate((Float128Vector) v,
-                                     (Float128Mask) m);  // specialize
+                                     Float128Mask.class, (Float128Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Float128Vector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (Float128Vector)
+            super.selectFromTemplate((Float128Vector) v1, (Float128Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -514,7 +521,7 @@ final class Float128Vector extends FloatVector {
                      this, i,
                      (vec, ix) -> {
                      float[] vecarr = vec.vec();
-                     return (long)Float.floatToIntBits(vecarr[ix]);
+                     return (long)Float.floatToRawIntBits(vecarr[ix]);
                      });
     }
 
@@ -533,7 +540,7 @@ final class Float128Vector extends FloatVector {
     public Float128Vector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)Float.floatToIntBits(e),
+                                this, i, (long)Float.floatToRawIntBits(e),
                                 (v, ix, bits) -> {
                                     float[] res = v.vec().clone();
                                     res[ix] = Float.intBitsToFloat((int)bits);
@@ -823,6 +830,13 @@ final class Float128Vector extends FloatVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Float128Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Float128Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Float128Shuffle)(((AbstractShuffle<Float>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,7 +67,7 @@ TEST_VM(metaspace, misc_max_alloc_size)   {
       ASSERT_NOT_NULL(p);
     }
     // And also, successfully deallocate it.
-    cld->metaspace_non_null()->deallocate(p, sz, in_class_space);
+    cld->metaspace_non_null()->deallocate(p, sz);
   }
 }
 

@@ -30,29 +30,21 @@
 #include "nio_util.h"
 #include "sun_nio_ch_FileKey.h"
 
-static jfieldID key_st_dev;    /* id for FileKey.st_dev */
-static jfieldID key_st_ino;    /* id for FileKey.st_ino */
-
-
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileKey_initIDs(JNIEnv *env, jclass clazz)
-{
-    CHECK_NULL(key_st_dev = (*env)->GetFieldID(env, clazz, "st_dev", "J"));
-    CHECK_NULL(key_st_ino = (*env)->GetFieldID(env, clazz, "st_ino", "J"));
-}
-
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileKey_init(JNIEnv *env, jobject this, jobject fdo)
+Java_sun_nio_ch_FileKey_init(JNIEnv* env, jclass clazz, jobject fdo,
+    jlongArray finfo)
 {
     struct stat fbuf;
     int res;
+    jlong deviceAndInode[2];
 
-    RESTARTABLE(fstat(fdval(env, fdo), &fbuf), res);
+    int fd = fdval(env, fdo);
+    RESTARTABLE(fstat(fd, &fbuf), res);
     if (res < 0) {
         JNU_ThrowIOExceptionWithLastError(env, "fstat failed");
     } else {
-        (*env)->SetLongField(env, this, key_st_dev, (jlong)fbuf.st_dev);
-        (*env)->SetLongField(env, this, key_st_ino, (jlong)fbuf.st_ino);
+        deviceAndInode[0] = (jlong)fbuf.st_dev;
+        deviceAndInode[1] = (jlong)fbuf.st_ino;
+        (*env)->SetLongArrayRegion(env, finfo, 0, 2, deviceAndInode);
     }
 }

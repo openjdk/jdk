@@ -207,7 +207,9 @@ class ExceptionsEventLog : public ExtendedStringEventLog {
   ExceptionsEventLog(const char* name, const char* short_name, int count = LogEventsBufferEntries)
    : ExtendedStringEventLog(name, short_name, count) {}
 
-  void log(Thread* thread, Handle h_exception, const char* message, const char* file, int line);
+  // Message length limit of zero means no limit.
+  void log(Thread* thread, Handle h_exception, const char* message,
+           const char* file, int line, int message_length_limit = 0);
 };
 
 
@@ -275,7 +277,7 @@ class Events : AllStatic {
 
   // Log exception related message
   static void log_exception(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
-  static void log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line);
+  static void log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line, int message_length_limit = 0);
 
   static void log_redefinition(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
@@ -345,9 +347,11 @@ inline void Events::log_exception(Thread* thread, const char* format, ...) {
   }
 }
 
-inline void Events::log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line) {
+inline void Events::log_exception(Thread* thread, Handle h_exception,
+                                  const char* message, const char* file,
+                                  int line, int message_length_limit) {
   if (LogEvents && _exceptions != nullptr) {
-    _exceptions->log(thread, h_exception, message, file, line);
+    _exceptions->log(thread, h_exception, message, file, line, message_length_limit);
   }
 }
 

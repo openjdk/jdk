@@ -468,8 +468,8 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   __ mv(esp, sp); // Interp expects args on caller's expression stack
 
-  __ ld(t0, Address(xmethod, in_bytes(Method::interpreter_entry_offset())));
-  __ jr(t0);
+  __ ld(t1, Address(xmethod, in_bytes(Method::interpreter_entry_offset())));
+  __ jr(t1);
 }
 
 void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
@@ -610,8 +610,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   Label skip_fixup;
 
   const Register receiver = j_rarg0;
-  const Register data = t1;
-  const Register tmp = t2;  // A call-clobbered register not used for arg passing
+  const Register data = t0;
 
   // -------------------------------------------------------------------------
   // Generate a C2I adapter.  On entry we know xmethod holds the Method* during calls
@@ -666,7 +665,20 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 int SharedRuntime::vector_calling_convention(VMRegPair *regs,
                                              uint num_bits,
                                              uint total_args_passed) {
-  Unimplemented();
+  assert(total_args_passed <= Argument::n_vector_register_parameters_c, "unsupported");
+  assert(num_bits >= 64 && num_bits <= 2048 && is_power_of_2(num_bits), "unsupported");
+
+  // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
+  static const VectorRegister VEC_ArgReg[Argument::n_vector_register_parameters_c] = {
+    v8, v9, v10, v11, v12, v13, v14, v15,
+    v16, v17, v18, v19, v20, v21, v22, v23
+  };
+
+  const int next_reg_val = 3;
+  for (uint i = 0; i < total_args_passed; i++) {
+    VMReg vmreg = VEC_ArgReg[i]->as_VMReg();
+    regs[i].set_pair(vmreg->next(next_reg_val), vmreg);
+  }
   return 0;
 }
 
@@ -1127,8 +1139,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
   Label ok;
   __ beqz(t0, ok);
   __ leave();
-  __ la(t0, RuntimeAddress(StubRoutines::forward_exception_entry()));
-  __ jr(t0);
+  __ j(RuntimeAddress(StubRoutines::forward_exception_entry()));
   __ bind(ok);
 
   __ leave();
@@ -1439,8 +1450,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // restoring them except fp. fp is the only callee save register
   // as far as the interpreter and the compiler(s) are concerned.
 
-
-  const Register ic_reg = t1;
   const Register receiver = j_rarg0;
 
   __ verify_oop(receiver);
@@ -1724,6 +1733,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   __ sw(t0, Address(t1));
 
+  // Clobbers t1
   __ rt_call(native_func);
 
   __ bind(native_return);
@@ -2057,7 +2067,8 @@ void SharedRuntime::generate_deopt_blob() {
     pad += 512; // Increase the buffer size when compiling for JVMCI
   }
 #endif
-  CodeBuffer buffer("deopt_blob", 2048 + pad, 1024);
+  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  CodeBuffer buffer(name, 2048 + pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words = -1;
   OopMap* map = nullptr;
@@ -2109,7 +2120,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   int reexecute_offset = __ pc() - start;
 #if INCLUDE_JVMCI && !defined(COMPILER1)
-  if (EnableJVMCI && UseJVMCICompiler) {
+  if (UseJVMCICompiler) {
     // JVMCI does not use this kind of deoptimization
     __ should_not_reach_here();
   }
@@ -2435,22 +2446,25 @@ uint SharedRuntime::out_preserve_stack_slots() {
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
 //
-SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_type) {
+SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+  assert(is_polling_page_id(id), "expected a polling page stub id");
+
   ResourceMark rm;
   OopMapSet *oop_maps = new OopMapSet();
   assert_cond(oop_maps != nullptr);
   OopMap* map = nullptr;
 
   // Allocate space for the code.  Setup code generation tools.
-  CodeBuffer buffer("handler_blob", 2048, 1024);
+  const char* name = SharedRuntime::stub_name(id);
+  CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   assert_cond(masm != nullptr);
 
   address start   = __ pc();
   address call_pc = nullptr;
   int frame_size_in_words = -1;
-  bool cause_return = (poll_type == POLL_AT_RETURN);
-  RegisterSaver reg_saver(poll_type == POLL_AT_VECTOR_LOOP /* save_vectors */);
+  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
+  RegisterSaver reg_saver(id == SharedStubId::polling_page_vectors_safepoint_handler_id /* save_vectors */);
 
   // Save Integer and Float registers.
   map = reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
@@ -2556,12 +2570,14 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
   assert(StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
+  assert(is_resolve_id(id), "expected a resolve stub id");
 
   // allocate space for the code
   ResourceMark rm;
 
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 1000, 512);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   assert_cond(masm != nullptr);
@@ -2600,20 +2616,19 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ reset_last_Java_frame(false);
   // check for pending exceptions
   Label pending;
-  __ ld(t0, Address(xthread, Thread::pending_exception_offset()));
-  __ bnez(t0, pending);
+  __ ld(t1, Address(xthread, Thread::pending_exception_offset()));
+  __ bnez(t1, pending);
 
   // get the returned Method*
   __ get_vm_result_2(xmethod, xthread);
   __ sd(xmethod, Address(sp, reg_saver.reg_offset_in_bytes(xmethod)));
 
-  // x10 is where we want to jump, overwrite t0 which is saved and temporary
-  __ sd(x10, Address(sp, reg_saver.reg_offset_in_bytes(t0)));
+  // x10 is where we want to jump, overwrite t1 which is saved and temporary
+  __ sd(x10, Address(sp, reg_saver.reg_offset_in_bytes(t1)));
   reg_saver.restore_live_registers(masm);
 
   // We are back to the original state on entry and ready to go.
-
-  __ jr(t0);
+  __ jr(t1);
 
   // Pending exception after the safepoint
 
@@ -2652,7 +2667,11 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 // otherwise assume that stack unwinding will be initiated, so
 // caller saved registers were assumed volatile in the compiler.
 
-RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+  assert(is_throw_id(id), "expected a throw stub id");
+
+  const char* name = SharedRuntime::stub_name(id);
+
   // Information about frame layout at time of blocking runtime call.
   // Note that we only have to preserve callee-saved registers since
   // the compilers are responsible for supplying a continuation point
@@ -2759,7 +2778,8 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 
   int insts_size = 1024;
   int locs_size = 64;
-  CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
+  CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);
 
@@ -2779,7 +2799,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
   oop_maps->add_gc_map(the_pc - start, map);
 
   RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-    RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
+    RuntimeStub::new_runtime_stub(name, &code, frame_complete,
                                   (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                   oop_maps, false);
   return stub;
@@ -2797,7 +2817,8 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 
   int insts_size = 1024;
   int locs_size = 64;
-  CodeBuffer code("jfr_return_lease", insts_size, locs_size);
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
+  CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);
 
@@ -2816,7 +2837,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
   oop_maps->add_gc_map(the_pc - start, map);
 
   RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-    RuntimeStub::new_runtime_stub("jfr_return_lease", &code, frame_complete,
+    RuntimeStub::new_runtime_stub(name, &code, frame_complete,
                                   (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                   oop_maps, false);
   return stub;

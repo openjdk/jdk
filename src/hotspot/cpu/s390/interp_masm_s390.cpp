@@ -1007,12 +1007,12 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, object);
-    testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     z_btrue(slow_case);
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(object, header, tmp, slow_case);
+    lightweight_lock(monitor, object, header, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
 
     // Load markWord from object into header.
@@ -2131,18 +2131,6 @@ void InterpreterMacroAssembler::notify_method_exit(bool native_method,
     if (!native_method) pop(state);
     bind(jvmti_post_done);
   }
-
-#if 0
-  // Dtrace currently not supported on z/Architecture.
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false);
-    push(state);
-    get_method(c_rarg1);
-    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
-                 r15_thread, c_rarg1);
-    pop(state);
-  }
-#endif
 }
 
 void InterpreterMacroAssembler::skip_if_jvmti_mode(Label &Lskip, Register Rscratch) {

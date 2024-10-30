@@ -352,7 +352,6 @@ class ciMethod : public ciMetadata {
   bool is_getter      () const;
   bool is_setter      () const;
   bool is_accessor    () const;
-  bool is_initializer () const;
   bool is_empty       () const;
   bool can_be_statically_bound() const           { return _can_be_statically_bound; }
   bool has_reserved_stack_access() const         { return _has_reserved_stack_access; }
@@ -365,6 +364,8 @@ class ciMethod : public ciMetadata {
   bool can_be_statically_bound(ciInstanceKlass* context) const;
 
   bool can_omit_stack_trace() const;
+
+  bool equals(const ciMethod* m) const;
 
   // Replay data methods
   static void dump_name_as_ascii(outputStream* st, Method* method);

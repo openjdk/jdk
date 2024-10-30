@@ -43,7 +43,7 @@ public class HiddenClassUnloading {
 
         long initUnloadedClassCount = ManagementFactory.getClassLoadingMXBean().getUnloadedClassCount();
 
-        for (int i = 0; i < 2000; i++) {
+        for (int i = 0; i < 12000; i++) {
             int radix = types.length;
             String str = Integer.toString(i, radix);
             int length = str.length();
