@@ -1084,15 +1084,19 @@ enum CipherSuite {
     enum KeyExchange {
         K_NULL("NULL", "NULL", "NULL", false, true, NAMED_GROUP_NONE),
         K_RSA("RSA", "RSA", "RSA", true, false, NAMED_GROUP_NONE),
-        K_RSA_EXPORT("RSA_EXPORT", "RSA_EXPORT", "RSA_EXPORT", true, false, NAMED_GROUP_NONE),
+        K_RSA_EXPORT("RSA_EXPORT", "RSA_EXPORT", "RSA_EXPORT", true, false,
+                     NAMED_GROUP_NONE),
         K_DH_RSA("DH_RSA", "DH", "RSA", false, false, NAMED_GROUP_NONE),
         K_DH_DSS("DH_DSS", "DH", "DSS", false, false, NAMED_GROUP_NONE),
         K_DHE_DSS("DHE_DSS", "DHE", "DSS", true, false, NAMED_GROUP_FFDHE),
-        K_DHE_DSS_EXPORT("DHE_DSS_EXPORT", "DHE", "DSS_EXPORT", true, false, NAMED_GROUP_NONE),
+        K_DHE_DSS_EXPORT("DHE_DSS_EXPORT", "DHE", "DSS_EXPORT", true, false,
+                         NAMED_GROUP_NONE),
         K_DHE_RSA("DHE_RSA", "DHE", "RSA", true, false, NAMED_GROUP_FFDHE),
-        K_DHE_RSA_EXPORT("DHE_RSA_EXPORT", "DHE", "RSA_EXPORT", true, false, NAMED_GROUP_NONE),
+        K_DHE_RSA_EXPORT("DHE_RSA_EXPORT", "DHE", "RSA_EXPORT", true, false,
+                         NAMED_GROUP_NONE),
         K_DH_ANON("DH_anon", "DH_anon", "NULL", true, true, NAMED_GROUP_FFDHE),
-        K_DH_ANON_EXPORT("DH_anon_EXPORT", "DH_anon_EXPORT", "NULL", true, true, NAMED_GROUP_NONE),
+        K_DH_ANON_EXPORT("DH_anon_EXPORT", "DH_anon_EXPORT", "NULL", true,
+                         true, NAMED_GROUP_NONE),
 
         // These KeyExchanges can use either ECDHE/XDH, so we'll use a
         // varargs here.
@@ -1112,7 +1116,7 @@ enum CipherSuite {
 
         // name of the key exchange algorithm, e.g. DHE_DSS
         final String name;
-        final String kx; // Key Exchange algorithm
+        final String kx;    // Key Exchange algorithm
         final String authn; // Authentication algorithm
         final boolean allowed;
         final NamedGroupSpec[] groupTypes;

@@ -169,7 +169,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             return false;
         }
 
-        if (!algorithmConstraints.checkTLSCipherConstraint(algorithm)) {
+        if (!algorithmConstraints.checkTLSCipherSuiteConstraint(algorithm)) {
             return false;
         }
 
@@ -381,19 +381,19 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
                 final IllegalArgumentException tlsCipherSegmentLinkException =
                     new IllegalArgumentException(
-                        "TLSCipherConstraint should not be linked with other "
+                        "TLSCipherSuiteConstraint should not be linked with other "
                         + "constraints. Constraint: " + constraintEntry);
 
                 for (String rawEntry : policy.split("&")) {
 
-                    // Do not link TLSCipherConstraint with other constraints.
-                    if (lastConstraint instanceof TLSCipherConstraint) {
+                    // Do not link TLSCipherSuiteConstraint with other constraints.
+                    if (lastConstraint instanceof TLSCipherSuiteConstraint) {
                         throw tlsCipherSegmentLinkException;
                     }
 
                     final String entry = rawEntry.trim();
                     Matcher matcher;
-                    TLSCipherSegment segment;
+                    TLSCipherSuiteSegment segment;
 
                     if (entry.startsWith("keySize")) {
                         if (debug != null) {
@@ -447,16 +447,17 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         }
                     } else if (PROPERTY_TLS_DISABLED_ALGS
                                    .equalsIgnoreCase(propertyName) &&
-                               (segment = TLSCipherSegment.nameOf(entry))
+                               (segment = TLSCipherSuiteSegment.nameOf(entry))
                                != null) {
                         if (lastConstraint != null) {
                             throw tlsCipherSegmentLinkException;
                         }
                         if (debug != null) {
-                            debug.println("Constraints set to TLSCipherConstraint: "
+                            debug.println(
+                                "Constraints set to TLSCipherSuiteSegment: "
                                     + segment.name());
                         }
-                        c = new TLSCipherConstraint(algorithm, segment);
+                        c = new TLSCipherSuiteConstraint(algorithm, segment);
 
                     } else {
                         throw new IllegalArgumentException("Error in security" +
@@ -555,14 +556,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             }
         }
 
-        // Special case of TLSCipherConstraint
-        private boolean checkTLSCipherConstraint(String algorithm) {
+        // Special case of TLSCipherSuiteConstraint
+        private boolean checkTLSCipherSuiteConstraint(String algorithm) {
             List<Constraint> constraintList = new ArrayList<>();
 
-            // Match TLSCipherConstraint constraint against any algorithm.
+            // Match TLSCipherSuiteConstraint constraint against any algorithm.
             constraintsMap.forEach((_, list) -> {
                 for (Constraint constraint : list) {
-                    if (constraint instanceof TLSCipherConstraint) {
+                    if (constraint instanceof TLSCipherSuiteConstraint) {
                         constraintList.add(constraint);
                     }
                 }
@@ -1015,34 +1016,36 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    enum TLSCipherSegment {
+    enum TLSCipherSuiteSegment {
         KX("kx"),             // Key Exchange
         AUTHN("authn");       // Authentication
 
         private final String name;
-        private static final Map<String, TLSCipherSegment> tlsCipherSegmentNames;
+        private static final Map<String, TLSCipherSuiteSegment> segmentNames;
 
         static {
-            Map<String, TLSCipherSegment> names = new HashMap<>();
-            Arrays.stream(TLSCipherSegment.values())
-                    .forEach(segment -> names.put(segment.name.toLowerCase(), segment));
-            tlsCipherSegmentNames = Map.copyOf(names);
+            Map<String, TLSCipherSuiteSegment> names = new HashMap<>();
+            Arrays.stream(TLSCipherSuiteSegment.values())
+                .forEach(segment ->
+                             names.put(segment.name.toLowerCase(), segment));
+            segmentNames = Map.copyOf(names);
         }
 
-        TLSCipherSegment(String name) {
+        TLSCipherSuiteSegment(String name) {
             this.name = name;
         }
 
-        static TLSCipherSegment nameOf(String name) {
-            return tlsCipherSegmentNames.get(name.toLowerCase());
+        static TLSCipherSuiteSegment nameOf(String name) {
+            return segmentNames.get(name.toLowerCase());
         }
     }
 
-    private class TLSCipherConstraint extends Constraint {
+    private class TLSCipherSuiteConstraint extends Constraint {
 
-        private final TLSCipherSegment segment;
+        private final TLSCipherSuiteSegment segment;
 
-        TLSCipherConstraint(String algorithm, TLSCipherSegment segment) {
+        TLSCipherSuiteConstraint(String algorithm,
+                                 TLSCipherSuiteSegment segment) {
             this.algorithm = algorithm;
             this.segment = segment;
         }
@@ -1057,11 +1060,11 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             if (parts != null) {
                 String inputAlgorithm = null;
 
-                if (TLSCipherSegment.KX.equals(segment)) {
+                if (TLSCipherSuiteSegment.KX.equals(segment)) {
                     inputAlgorithm = parts[0];
                 }
 
-                if (TLSCipherSegment.AUTHN.equals(segment)) {
+                if (TLSCipherSuiteSegment.AUTHN.equals(segment)) {
                     inputAlgorithm = parts[1];
                 }
 
@@ -1075,7 +1078,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
         @Override
         public void permits(ConstraintsParameters cp) {
-            // Do nothing here, TLSCipherConstraint doesn't apply to certificates.
+            // Do nothing here, this constraint doesn't apply to certificates.
         }
     }
 

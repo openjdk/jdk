@@ -778,7 +778,7 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # syntax of the disabled algorithm string. Besides, one additional
 # TLS-specific constraint can be used here:
 #
-#   TLSCipherConstraint:
+#   TLSCipherSuiteConstraint:
 #     kx | authn
 #       This constraint restricts TLS cipher suite based on its algorithm usage:
 #         - "kx" prohibits algorithm to be used for Key Exchange.

@@ -25,35 +25,31 @@
  * @test
  * @bug 8341964
  * @summary Add mechanism to disable different parts of TLS cipher suite
- * @run testng/othervm TLSCipherConstrainDisablePartsOfCipherSuite
+ * @run testng/othervm TLSCipherSuiteConstraintChainedBefore
  */
 
-import static org.testng.AssertJUnit.assertTrue;
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.fail;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import java.security.Security;
-import java.util.List;
 
-public class TLSCipherConstrainDisablePartsOfCipherSuite extends NoDesRC4DesEdeCiphSuite {
+import javax.net.ssl.SSLContext;
 
-    private static final String SECURITY_PROPERTY = "jdk.tls.disabledAlgorithms";
-    private static final String TEST_ALGORITHMS = "ECDH kX, Rsa kx, ECDSA authn, DH_anoN KX, NuLL Authn";
-    private static final String[] CIPHER_SUITES = new String[] {
-            "TLS_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-            "TLS_DH_anon_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_anon_WITH_AES_128_CBC_SHA"
-    };
-    static final List<Integer> CIPHER_SUITES_IDS = List.of(
-            0x009D,
-            0xC02E,
-            0xC02C,
-            0x0034,
-            0xC018
-    );
+/**
+ * SSLContext loads "jdk.tls.disabledAlgorithms" system property statically
+ * when it's being loaded into memory, so we can't call
+ * Security.setProperty("jdk.tls.disabledAlgorithms") more than once per test
+ * class. Thus, we need a separate test class each time we need to modify
+ * "jdk.tls.disabledAlgorithms" config value for testing.
+ */
+public class TLSCipherSuiteConstraintChainedBefore {
+
+    private static final String SECURITY_PROPERTY =
+        "jdk.tls.disabledAlgorithms";
+    private static final String TEST_ALGORITHMS = "Rsa keySize < 1024 & Authn";
 
     @BeforeTest
     void setUp() throws Exception {
@@ -61,17 +57,17 @@ public class TLSCipherConstrainDisablePartsOfCipherSuite extends NoDesRC4DesEdeC
     }
 
     @Test
-    public void testDefault() throws Exception {
-        assertTrue(testDefaultCase(CIPHER_SUITES_IDS));
-    }
-
-    @Test
-    public void testAddDisabled() throws Exception {
-        assertTrue(testEngAddDisabled(CIPHER_SUITES, CIPHER_SUITES_IDS));
-    }
-
-    @Test
-    public void testOnlyDisabled() throws Exception {
-        assertTrue(testEngOnlyDisabled(CIPHER_SUITES));
+    public void testChainedBefore() throws Exception {
+        try {
+            SSLContext.getInstance("TLS");
+        } catch (ExceptionInInitializerError e) {
+            assertEquals(IllegalArgumentException.class,
+                         e.getCause().getClass());
+            assertEquals("TLSCipherSuiteConstraint should not be linked with" +
+                         " other constraints. Constraint: " + TEST_ALGORITHMS,
+                         e.getCause().getMessage());
+            return;
+        }
+        fail("No IllegalArgumentException was thrown");
     }
 }
