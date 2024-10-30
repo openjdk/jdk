@@ -1600,7 +1600,7 @@ static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, fram
 
   ContinuationWrapper::SafepointOp so(current, cont);
 
-  // Since we might safepoint set the anchor so that the stack can we walked.
+  // Since we might safepoint set the anchor so that the stack can be walked.
   set_anchor(current, top.sp());
 
   JRT_BLOCK
@@ -2232,7 +2232,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
       bool mon_acquired = mon->resume_operation(_thread, waiter, _cont);
       assert(!mon_acquired || mon->has_owner(_thread), "invariant");
       if (!mon_acquired) {
-        // Failed to aquire monitor. Return to enterSpecial to unmount again.
+        // Failed to acquire monitor. Return to enterSpecial to unmount again.
         return push_cleanup_continuation();
       }
       chunk = _cont.tail();  // reload oop in case of safepoint in resume_operation (if posting JVMTI events).
@@ -2489,7 +2489,7 @@ intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::pr
 
 void ThawBase::throw_interrupted_exception(JavaThread* current, frame& top) {
   ContinuationWrapper::SafepointOp so(current, _cont);
-  // Since we might safepoint set the anchor so that the stack can we walked.
+  // Since we might safepoint set the anchor so that the stack can be walked.
   set_anchor(current, top.sp());
   JRT_BLOCK
     THROW(vmSymbols::java_lang_InterruptedException());

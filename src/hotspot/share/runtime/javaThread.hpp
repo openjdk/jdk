@@ -331,7 +331,7 @@ class JavaThread: public Thread {
   bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
   bool                  _pending_jvmti_unmount_event;    // When preempting we post unmount event at unmount end rather than start
   bool                  _on_monitor_waited_event;        // Avoid callee arg processing for enterSpecial when posting waited event
-  ObjectMonitor*        _contended_entered_monitor;      // Monitor por pending monitor_contended_entered callback
+  ObjectMonitor*        _contended_entered_monitor;      // Monitor for pending monitor_contended_entered callback
 #ifdef ASSERT
   bool                  _is_VTMS_transition_disabler;    // thread currently disabled VTMS transitions
 #endif
