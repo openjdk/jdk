@@ -267,7 +267,7 @@ public final class MacHelper {
                     cmd.appInstallationDirectory());
         }
 
-        TKit.assertDirectoryContent(bundleRoot).equals(Path.of("Contents"));
+        TKit.assertDirectoryContent(bundleRoot).match(Path.of("Contents"));
         TKit.assertDirectoryContent(bundleRoot.resolve("Contents")).match(
                 cmd.isRuntime() ? RUNTIME_BUNDLE_CONTENTS : APP_BUNDLE_CONTENTS);
     }
