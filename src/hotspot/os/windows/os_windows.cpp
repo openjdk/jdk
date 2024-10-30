@@ -2547,6 +2547,8 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // idiv opcode (0xF7).
   ctx->Rdx = (DWORD)0;             // remainder
   // Continue the execution
+#else
+  #error unknown architecture
 #endif
   return EXCEPTION_CONTINUE_EXECUTION;
 }
