@@ -96,16 +96,17 @@ public final class ImageFileCreator {
         this.generateRuntimeImage = generateRuntimeImage;
     }
 
-    /*
+    /**
      * Create an executable image based on a set of input archives and a given
-     * plugin stack for a given byte order. It optionally generates a linkable
-     * JDK runtime if {@code generateRuntimeImage} is set to {@code true}.
+     * plugin stack for a given byte order. It optionally generates a runtime
+     * that can be used for linking from the run-time image if
+     * {@code generateRuntimeImage} is set to {@code true}.
      *
      * @param archives The set of input archives
      * @param byteOrder The desired byte order of the result
      * @param plugins The plugin stack to apply to the input
-     * @param generateRuntimeImage if a linkable JDK runtime should
-     *        get created.
+     * @param generateRuntimeImage if a runtime suitable for linking from the
+     *        run-time image should get created.
      * @return The executable image.
      * @throws IOException
      */
@@ -211,15 +212,16 @@ public final class ImageFileCreator {
 
     /**
      * Create a jimage based on content of the given ResourcePoolManager,
-     * optionally creating a linkable JDK runtime.
+     * optionally creating a runtime that can be used for linking from the
+     * run-time image
      *
      * @param allContent The content that needs to get added to the resulting
      *                   lib/modules (jimage) file.
      * @param writer The writer for the jimage file.
      * @param pluginSupport The stack of all plugins to apply.
      * @param out The output stream to write the jimage to.
-     * @param generateRuntimeImage Whether or not a linkable JDK runtime should
-     *                             be generated.
+     * @param generateRuntimeImage if a runtime suitable for linking from the
+     *        run-time image should get created.
      * @return A pool of the actual result resources.
      * @throws IOException
      */
@@ -233,7 +235,7 @@ public final class ImageFileCreator {
         try {
             resultResources = pluginSupport.visitResources(allContent);
             if (generateRuntimeImage) {
-                // Keep track of non-modules resources for linkable JDK runtime
+                // Keep track of non-modules resources for linking from a run-time image
                 resultResources = addNonClassResourcesTrackFiles(resultResources,
                                                                  writer);
                 // Generate the diff between the input resources from packaged
@@ -241,7 +243,7 @@ public final class ImageFileCreator {
                 // generated-content in 'resultResources'
                 resultResources = addResourceDiffFiles(allContent.resourcePool(),
                                                        resultResources,
-                                                        writer);
+                                                       writer);
             }
         } catch (PluginException pe) {
             if (JlinkTask.DEBUG) {
@@ -249,8 +251,8 @@ public final class ImageFileCreator {
             }
             throw pe;
         } catch (RuntimeImageLinkException re) {
-            // might be thrown in the run-image link case. Populate the
-            // actual reason.
+            // Might be thrown when linking from the current run-time image.
+            // Populate the actual reason.
             if (JlinkTask.DEBUG) {
                 re.printStackTrace();
             }
@@ -317,7 +319,8 @@ public final class ImageFileCreator {
     }
 
     /**
-     * Support for linkable JDK runtimes.
+     * Support for creating a runtime suitable for linking from the run-time
+     * image.
      *
      * Generates differences between the packaged modules "view" in
      * {@code jmodContent} to the optimized image in {@code resultContent} and
@@ -395,7 +398,7 @@ public final class ImageFileCreator {
             List<ResourceDiff> diff = perModDiffs.get(module);
             if (diff == null) {
                 // We create empty resource files for modules in the resource
-                // pool view, but which don't themselves have a diff to packaged
+                // pool view that don't themselves have a diff to packaged
                 // modules
                 out.add(ResourcePoolEntry.create(mResource, EMPTY_RESOURCE_BYTES));
             } else {
@@ -413,13 +416,16 @@ public final class ImageFileCreator {
     }
 
     /**
-     * Support for linkable JDK runtimes. Adds meta-data files for resources not
-     * in the lib/modules file of the JDK. That is, mapping files for which
-     * on-disk files belong to which module.
+     * Support for creating runtimes that can be used for linking from the
+     * run-time image. Adds meta-data files for resources not in the lib/modules
+     * file of the JDK. That is, mapping files for which on-disk files belong to
+     * which module.
      *
-     * @param resultResources The original resources which serve as the basis
-     *                        for generating the meta-data files.
-     * @param writer The image writer.
+     * @param resultResources
+     *            The original resources which serve as the basis for generating
+     *            the meta-data files.
+     * @param writer
+     *            The image writer.
      *
      * @return An amended resource pool which includes meta-data files.
      */
@@ -438,13 +444,17 @@ public final class ImageFileCreator {
     }
 
     /**
-     * Support for linkable JDK runtimes. Adds the given mapping of files
-     * as a meta-data file to the given resource pool.
+     * Support for creating runtimes that can be used for linking from the
+     * run-time image. Adds the given mapping of files as a meta-data file to
+     * the given resource pool.
      *
-     * @param resultResources The resource pool to add files to.
-     * @param nonClassResEntries The per module mapping for which to create
-     *                           the meta-data files for.
-     * @param writer The image writer.
+     * @param resultResources
+     *            The resource pool to add files to.
+     * @param nonClassResEntries
+     *            The per module mapping for which to create the meta-data files
+     *            for.
+     * @param writer
+     *            The image writer.
      *
      * @return A resource pool with meta-data files added.
      */
@@ -461,7 +471,7 @@ public final class ImageFileCreator {
             List<String> mResources = nonClassResEntries.get(module);
             if (mResources == null) {
                 // We create empty resource files for modules in the resource
-                // pool view, but which don't themselves contain native resources
+                // pool view that don't themselves contain native resources
                 // or config files.
                 out.add(ResourcePoolEntry.create(mResource, EMPTY_RESOURCE_BYTES));
             } else {
@@ -475,14 +485,15 @@ public final class ImageFileCreator {
     }
 
     /**
-     * Support for linkable JDK runtimes. Generates a per module mapping of
-     * files not part of the modules image (jimage). This mapping is needed so
-     * as to know which files of the installed JDK belong to which module.
+     * Support for creating runtimes that can be used for linking from the
+     * run-time image. Generates a per module mapping of files not part of the
+     * modules image (jimage). This mapping is needed so as to know which files
+     * of the installed JDK belong to which module.
      *
-     * @param resultResources The resources from which the mapping gets
-     *        generated
-     * @return A mapping with the module names as keys and the list of files
-     *         not part of the modules image (jimage) as values.
+     * @param resultResources
+     *            The resources from which the mapping gets generated
+     * @return A mapping with the module names as keys and the list of files not
+     *         part of the modules image (jimage) as values.
      */
     private static Map<String, List<String>> recordAndFilterEntries(ResourcePool resultResources) {
         final Map<String, List<String>> nonClassResEntries = new HashMap<>();
