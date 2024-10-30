@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import javax.crypto.*;
 public class NONEwithRSA {
 
     public static void main(String[] args) throws Exception {
-//      showProvider(Security.getProvider("SUN"));
+//      showProvider(Security.getProvider(System.getProperty("test.provider.name", "SUN")));
         Random random = new Random();
         byte[] b = new byte[16];
         random.nextBytes(b);
@@ -66,9 +66,11 @@ public class NONEwithRSA {
             throw new Exception("decryption failed");
         }
 
-        sig = Signature.getInstance("NONEwithRSA", "SunJCE");
+        sig = Signature.getInstance("NONEwithRSA",
+                System.getProperty("test.provider.name", "SunJCE"));
         sig.initSign(kp.getPrivate());
-        sig = Signature.getInstance("NONEwithRSA", Security.getProvider("SunJCE"));
+        sig = Signature.getInstance("NONEwithRSA", Security.getProvider(
+                System.getProperty("test.provider.name", "SunJCE")));
         sig.initSign(kp.getPrivate());
 
         try {

@@ -1216,7 +1216,7 @@ public class Types {
             @Override
             public Boolean visitUndetVar(UndetVar t, Type s) {
                 //todo: test against origin needed? or replace with substitution?
-                if (t == s || t.qtype == s || s.hasTag(ERROR) || s.hasTag(UNKNOWN)) {
+                if (t == s || t.qtype == s || s.hasTag(ERROR)) {
                     return true;
                 } else if (s.hasTag(BOT)) {
                     //if 's' is 'null' there's no instantiated type U for which
@@ -1466,7 +1466,7 @@ public class Types {
                     return false;
                 }
 
-                if (t == s || t.qtype == s || s.hasTag(ERROR) || s.hasTag(UNKNOWN)) {
+                if (t == s || t.qtype == s || s.hasTag(ERROR)) {
                     return true;
                 }
 
@@ -2422,7 +2422,7 @@ public class Types {
                              ARRAY, MODULE, TYPEVAR, WILDCARD, BOT:
                             return s.dropMetadata(Annotations.class);
                         case VOID, METHOD, PACKAGE, FORALL, DEFERRED,
-                             NONE, ERROR, UNKNOWN, UNDETVAR, UNINITIALIZED_THIS,
+                             NONE, ERROR, UNDETVAR, UNINITIALIZED_THIS,
                              UNINITIALIZED_OBJECT:
                             return s;
                         default:
@@ -3328,6 +3328,10 @@ public class Types {
         return t.map(new Subst(from, to));
     }
 
+    /* this class won't substitute all types for example UndetVars are never substituted, this is
+     * by design as UndetVars are used locally during inference and shouldn't escape from inference routines,
+     * some specialized applications could need a tailored solution
+     */
     private class Subst extends StructuralTypeMapping<Void> {
         List<Type> from;
         List<Type> to;

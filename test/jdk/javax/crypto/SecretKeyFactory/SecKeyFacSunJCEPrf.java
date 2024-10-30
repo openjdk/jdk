@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,8 @@ public class SecKeyFacSunJCEPrf {
         Security.insertProviderAt(evilProv, 1);
 
         SecretKeyFactory pbkdf2 =
-                SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", "SunJCE");
+                SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1",
+                        System.getProperty("test.provider.name", "SunJCE"));
         PBEKeySpec pbks = new PBEKeySpec(PASS, SALT, ITER, 160);
 
         SecretKey secKey1 = pbkdf2.generateSecret(pbks);
