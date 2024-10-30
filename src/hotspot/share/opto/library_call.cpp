@@ -7013,9 +7013,6 @@ bool LibraryCallKit::inline_reference_clear0(bool is_phantom) {
 //-----------------------inline_reference_reachabilityFence-----------------
 // bool java.lang.ref.Reference.reachabilityFence();
 bool LibraryCallKit::inline_reference_reachabilityFence() {
-  if (!UseNewCode) {
-    return false;
-  }
   Node* rfence = MemBarNode::make(C, Op_ReachabilityFence, Compile::AliasIdxTop, argument(0));
   rfence->init_req(TypeFunc::Control, control());
   rfence->init_req(TypeFunc::Memory,  immutable_memory()); //reset_memory());

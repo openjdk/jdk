@@ -2188,7 +2188,7 @@ void Parse::return_current(Node* value) {
     call_register_finalizer();
   }
 
-  if (!method()->is_static()) {
+  if (StressReachabilityFence && !method()->is_static()) {
     Node* receiver = local(0);
     Node* rfence = MemBarNode::make(C, Op_ReachabilityFence, Compile::AliasIdxTop, argument(0));
     rfence->init_req(TypeFunc::Control, control());
