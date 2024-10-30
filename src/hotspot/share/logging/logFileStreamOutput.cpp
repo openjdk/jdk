@@ -116,7 +116,7 @@ bool LogFileStreamOutput::flush() {
   total += result;                                            \
 }
 
-int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, const char* msg, int msg_len) {
+int LogFileStreamOutput::write_internal_lines(const LogDecorations& decorations, const char* msg, int msg_len) {
   int written = 0;
   const bool use_decorations = !_decorators.is_empty();
 
@@ -130,6 +130,9 @@ int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, 
     }
     written += decorator_padding;
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_msg);
+    // If we have not written the whole message lenght by now then we must have a multi-line message.
+    // If we have active decorators then pad the line with an empty decorator string so 
+    // that the output lines up for clear visual reading.
     while (written_msg < msg_len) {
       msg = base + written_msg;
 
@@ -167,7 +170,7 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
   int msg_len = checked_cast<int>(strlen(msg));
 
   // Do not handle multiline messages if foldmultilines has been specified
-  if (_fold_multilines) return write_internal_line(decorations, msg, msg_len);
+  if (_fold_multilines) return write_internal_lines(decorations, msg, msg_len);
 
   // Handle multiline strings: split the string replacing newlines with terminators,
   // and then force write_internal_line to print all of them (i.e. not stopping at the
@@ -186,7 +189,7 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
     }
     ++tmp;
   }
-  int written = write_internal_line(decorations, dupstr, msg_len);
+  int written = write_internal_lines(decorations, dupstr, msg_len);
 
   ALLOW_C_FUNCTION(::free, ::free(dupstr);)
 
