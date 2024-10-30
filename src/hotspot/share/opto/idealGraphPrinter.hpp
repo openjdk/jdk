@@ -34,6 +34,7 @@
 #ifndef PRODUCT
 
 class Compile;
+class CountedLoopNode;
 class PhaseIFG;
 class PhaseChaitin;
 class Matcher;
@@ -124,6 +125,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   IdealGraphPrinter();
   ~IdealGraphPrinter();
 
+  void print_loop_kind(const CountedLoopNode* counted_loop);
  public:
   IdealGraphPrinter(Compile* compile, const char* file_name = nullptr, bool append = false);
   static void clean_up();
