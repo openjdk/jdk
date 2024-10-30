@@ -62,7 +62,8 @@ public class SerializedPSSKey {
 
     private static final String ALGO = "RSASSA-PSS";
     private static final String OID = "1.2.840.113549.1.1.10";
-    private static final String PROVIDER = "SunRsaSign";
+    private static final String PROVIDER =
+                    System.getProperty("test.provider.name", "SunRsaSign");
     private static final int KEY_SIZE = SecurityUtils.getTestKeySize("RSA");
     private static final byte[] DATA = "Test".getBytes();
     /**

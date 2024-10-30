@@ -35,7 +35,8 @@ import jdk.test.lib.security.SecurityUtils;
 public class KeyWrapping {
 
     public static void main(String[] args) throws Exception {
-        Cipher c1 = Cipher.getInstance("DES", "SunJCE");
+        Cipher c1 = Cipher.getInstance("DES",
+                            System.getProperty("test.provider.name", "SunJCE"));
         Cipher c2 = Cipher.getInstance("DES");
 
         KeyGenerator keyGen = KeyGenerator.getInstance("DES");

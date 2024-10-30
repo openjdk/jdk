@@ -49,7 +49,8 @@ public class TestKeyPairGeneratorInit {
     public static void main(String[] args) throws Exception {
         String kpgAlgorithm = "RSA";
         KeyPairGenerator kpg =
-            KeyPairGenerator.getInstance(kpgAlgorithm, "SunRsaSign");
+            KeyPairGenerator.getInstance(kpgAlgorithm,
+                    System.getProperty("test.provider.name", "SunRsaSign"));
         MySecureRandom rnd = new MySecureRandom();
         kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm), rnd);
         System.out.println("Generate keypair then check");

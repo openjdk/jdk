@@ -60,7 +60,8 @@ import jdk.test.lib.security.SecurityUtils;
  */
 
 public class TestCipherKeyWrapperTest {
-    private static final String SUN_JCE = "SunJCE";
+    private static final String PROVIDER_NAME =
+                                System.getProperty("test.provider.name", "SunJCE");
     // Blowfish Variable key length: 32 bits to 448 bits
     private static final int BLOWFISH_MIN_KEYSIZE = 32;
     private static final int BLOWFISH_MAX_KEYSIZE = 448;
@@ -159,9 +160,9 @@ public class TestCipherKeyWrapperTest {
         // PBE and public wrapper test.
         String[] publicPrivateAlgos = new String[] { "DiffieHellman", "DSA",
                 "RSA" };
-        Provider provider = Security.getProvider(SUN_JCE);
+        Provider provider = Security.getProvider(PROVIDER_NAME);
         if (provider == null) {
-            throw new RuntimeException("SUN_JCE provider not exist");
+            throw new RuntimeException(PROVIDER_NAME + " provider not exist");
         }
 
         test.wrapperPBEKeyTest(provider);

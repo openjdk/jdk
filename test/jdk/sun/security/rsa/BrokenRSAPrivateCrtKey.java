@@ -42,7 +42,8 @@ public class BrokenRSAPrivateCrtKey {
     public static void main(String[] args) throws Exception {
         String kpgAlgorithm = "RSA";
         KeyPairGenerator generator =
-                KeyPairGenerator.getInstance(kpgAlgorithm, "SunRsaSign");
+                KeyPairGenerator.getInstance(kpgAlgorithm,
+                        System.getProperty("test.provider.name", "SunRsaSign"));
         generator.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
 
         KeyPair pair = generator.generateKeyPair();
@@ -58,7 +59,8 @@ public class BrokenRSAPrivateCrtKey {
                 privatekey.getPrimeExponentQ(),
                 privatekey.getCrtCoefficient());
 
-        KeyFactory factory = KeyFactory.getInstance("RSA", "SunRsaSign");
+        KeyFactory factory = KeyFactory.getInstance("RSA",
+                System.getProperty("test.provider.name", "SunRsaSign"));
 
         PrivateKey privatekey2 = factory.generatePrivate(spec);
 

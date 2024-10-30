@@ -40,7 +40,7 @@ import jdk.test.lib.security.SecurityUtils;
 public class NONEwithRSA {
 
     public static void main(String[] args) throws Exception {
-//      showProvider(Security.getProvider("SUN"));
+//      showProvider(Security.getProvider(System.getProperty("test.provider.name", "SUN")));
         Random random = new Random();
         byte[] b = new byte[16];
         random.nextBytes(b);
@@ -69,9 +69,11 @@ public class NONEwithRSA {
             throw new Exception("decryption failed");
         }
 
-        sig = Signature.getInstance("NONEwithRSA", "SunJCE");
+        sig = Signature.getInstance("NONEwithRSA",
+                System.getProperty("test.provider.name", "SunJCE"));
         sig.initSign(kp.getPrivate());
-        sig = Signature.getInstance("NONEwithRSA", Security.getProvider("SunJCE"));
+        sig = Signature.getInstance("NONEwithRSA", Security.getProvider(
+                System.getProperty("test.provider.name", "SunJCE")));
         sig.initSign(kp.getPrivate());
 
         try {

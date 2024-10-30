@@ -42,7 +42,8 @@ public class GenerateRSAKeyPair {
         RSAKeyGenParameterSpec rsaSpec =
         new RSAKeyGenParameterSpec (SecurityUtils.getTestKeySize(kpgAlgorithm),
                 RSAKeyGenParameterSpec.F4);
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, "SunRsaSign");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm,
+                System.getProperty("test.provider.name", "SunRsaSign"));
         kpg.initialize(rsaSpec);
 
         // test generateKeyPair

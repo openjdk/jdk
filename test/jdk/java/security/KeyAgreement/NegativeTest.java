@@ -66,7 +66,7 @@ public class NegativeTest {
     public static void main(String[] args) throws Exception {
 
         String kaAlgo = args[0];
-        String provider = args[1];
+        String provider = System.getProperty("test.provider.name", args[1]);
         String kpgAlgo = args[2];
         int keySize = Integer.parseInt(args[3]);
         String kpgInit = (args.length > 4) ? args[4] : args[2];

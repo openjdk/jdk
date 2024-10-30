@@ -56,7 +56,8 @@ public class SecKeyFacSunJCEPrf {
         Security.insertProviderAt(evilProv, 1);
 
         SecretKeyFactory pbkdf2 =
-                SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", "SunJCE");
+                SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1",
+                        System.getProperty("test.provider.name", "SunJCE"));
         PBEKeySpec pbks = new PBEKeySpec(PASS, SALT, ITER, 160);
 
         SecretKey secKey1 = pbkdf2.generateSecret(pbks);

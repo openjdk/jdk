@@ -73,7 +73,8 @@ public class TestRSACipher extends PKCS11Test {
 
         for (String rsaAlgo: RSA_ALGOS) {
             Cipher c1 = Cipher.getInstance(rsaAlgo, p);
-            Cipher c2 = Cipher.getInstance(rsaAlgo, "SunJCE");
+            Cipher c2 = Cipher.getInstance(rsaAlgo,
+                            System.getProperty("test.provider.name", "SunJCE"));
 
             c1.init(Cipher.ENCRYPT_MODE, publicKey);
             e = c1.doFinal(b);

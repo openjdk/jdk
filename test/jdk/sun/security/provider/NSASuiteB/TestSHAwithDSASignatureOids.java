@@ -44,7 +44,8 @@ public class TestSHAwithDSASignatureOids {
     public static void main(String[] args) throws Exception {
         String kpgAlgorithm = "DSA";
         TestSignatureOidHelper helper = new TestSignatureOidHelper(kpgAlgorithm,
-                "SUN", SecurityUtils.getTestKeySize(kpgAlgorithm), DATA);
+                System.getProperty("test.provider.name", "SUN"),
+                SecurityUtils.getTestKeySize(kpgAlgorithm), DATA);
         helper.execute();
     }
 }

@@ -84,7 +84,8 @@ public class TestKeyPairGeneratorExponent {
 
     public static void main(String[] args) throws Exception {
         KeyPairGenerator kpg =
-                KeyPairGenerator.getInstance(KPG_ALGORITHM, "SunRsaSign");
+                KeyPairGenerator.getInstance(KPG_ALGORITHM,
+                    System.getProperty("test.provider.name", "SunRsaSign"));
 
         for(BigInteger validExponent : validExponents) {
             testValidExponents(kpg, validExponent);

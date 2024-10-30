@@ -56,9 +56,11 @@ public class TestOAEPWithParams {
     };
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
-        cp = Security.getProvider("SunJCE");
+        cp = Security.getProvider(
+                    System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + cp.getName() + "...");
-        Provider kfp = Security.getProvider("SunRsaSign");
+        Provider kfp = Security.getProvider(
+                System.getProperty("test.provider.name", "SunRsaSign"));
         String kpgAlgorithm = "RSA";
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, kfp);
         kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));

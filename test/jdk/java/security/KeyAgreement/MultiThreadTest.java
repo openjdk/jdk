@@ -54,7 +54,7 @@ public class MultiThreadTest {
     public static void main(String[] args) throws Exception {
 
         String kaAlgo = args[0];
-        String provider = args[1];
+        String provider = System.getProperty("test.provider.name", args[1]);
         String kpgAlgo = args[2];
         KeyPairGenerator kpg = genKeyGenerator(provider, kpgAlgo,
                 (args.length > 3) ? args[3] : kpgAlgo);

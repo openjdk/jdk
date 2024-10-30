@@ -112,7 +112,8 @@ public class TestKeyPairGenerator {
 
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
-        provider = Security.getProvider("SunRsaSign");
+        provider = Security.getProvider(
+                        System.getProperty("test.provider.name", "SunRsaSign"));
         data = new byte[2048];
         String kpgAlgorithm = "RSA";
         int keySize = SecurityUtils.getTestKeySize(kpgAlgorithm);

@@ -44,7 +44,8 @@ public class TestKeyPairGeneratorLength {
     }
 
     private static void test(int len) throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(KPG_ALGORITHM, "SunRsaSign");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(KPG_ALGORITHM,
+                        System.getProperty("test.provider.name", "SunRsaSign"));
         kpg.initialize(len);
         for (int i = 0; i < 6; i++) {
             System.out.println("Generating keypair " + len + " bit keypair " + (i + 1) + "...");

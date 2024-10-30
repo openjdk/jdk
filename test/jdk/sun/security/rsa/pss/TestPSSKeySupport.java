@@ -134,7 +134,8 @@ public class TestPSSKeySupport {
     public static void main(String[] args) throws Exception {
         int keySize = SecurityUtils.getTestKeySize("RSA");
         KeyPairGenerator kpg =
-            KeyPairGenerator.getInstance(ALGO, "SunRsaSign");
+            KeyPairGenerator.getInstance(ALGO,
+                    System.getProperty("test.provider.name", "SunRsaSign"));
 
         // Algorithm-Independent Initialization
         kpg.initialize(keySize);
@@ -155,7 +156,8 @@ public class TestPSSKeySupport {
         KeyPair kp3 = kpg.generateKeyPair();
         checkKeyPair(kp3);
 
-        KeyFactory kf = KeyFactory.getInstance(ALGO, "SunRsaSign");
+        KeyFactory kf = KeyFactory.getInstance(ALGO,
+                            System.getProperty("test.provider.name", "SunRsaSign"));
         test(kf, kp.getPublic());
         test(kf, kp.getPrivate());
         test(kf, kp2.getPublic());

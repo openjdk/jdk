@@ -108,7 +108,8 @@ public class TestProviderLeak {
     public static void main(String [] args) throws Exception {
         // Prepare the test
         final SecretKeyFactory skf =
-            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", "SunJCE");
+            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1",
+                    System.getProperty("test.provider.name", "SunJCE"));
         final PBEKeySpec pbeKS = new PBEKeySpec(
             "passPhrase".toCharArray(), new byte [SecurityUtils.getTestSaltSize()], 1000, 512);
 
