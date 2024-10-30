@@ -31,7 +31,9 @@ import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.util.Objects;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
 import jdk.internal.ref.Cleaner;
@@ -532,6 +534,15 @@ class Direct$Type$Buffer$RW$$BO$
     @Override
     int scaleFactor() {
         return 0;
+    }
+
+    @Override
+    AbstractMemorySegmentImpl arrayBackedSegment(Object base,
+                                                 long offset,
+                                                 long length,
+                                                 boolean readOnly,
+                                                 MemorySessionImpl bufferScope) {
+        return SegmentFactories.arrayOf$Type$Segment(base, offset, length, readOnly, bufferScope);
     }
 #end[byte]
 

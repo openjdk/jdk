@@ -523,8 +523,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         final Object base = NIO_ACCESS.getBufferBase(b);
         return (base == null)
                 ? arrayFreeSegment(b, offset, length)
-                : arrayBackedSegment(base, offset, length, b.isReadOnly(), bufferScope(b));
-
+                : NIO_ACCESS.arrayBackedSegment(b, base, offset, length, b.isReadOnly(), bufferScope(b));
     }
 
     @ForceInline
@@ -536,24 +535,6 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     private static long length(Buffer b, int scaleFactor) {
         return ((long) b.limit() - b.position()) << scaleFactor;
-    }
-
-    @ForceInline
-    private static AbstractMemorySegmentImpl arrayBackedSegment(Object base,
-                                                                long offset,
-                                                                long length,
-                                                                boolean readOnly,
-                                                                MemorySessionImpl bufferScope) {
-        return switch (base) {
-            case byte[]   _ -> new HeapMemorySegmentImpl.OfByte(offset, base, length, readOnly, bufferScope);
-            case short[]  _ -> new HeapMemorySegmentImpl.OfShort(offset, base, length, readOnly, bufferScope);
-            case char[]   _ -> new HeapMemorySegmentImpl.OfChar(offset, base, length, readOnly, bufferScope);
-            case int[]    _ -> new HeapMemorySegmentImpl.OfInt(offset, base, length, readOnly, bufferScope);
-            case float[]  _ -> new HeapMemorySegmentImpl.OfFloat(offset, base, length, readOnly, bufferScope);
-            case long[]   _ -> new HeapMemorySegmentImpl.OfLong(offset, base, length, readOnly, bufferScope);
-            case double[] _ -> new HeapMemorySegmentImpl.OfDouble(offset, base, length, readOnly, bufferScope);
-            default         -> throw new AssertionError("Cannot get here");
-        };
     }
 
     @ForceInline

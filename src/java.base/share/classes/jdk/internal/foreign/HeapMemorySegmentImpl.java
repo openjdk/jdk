@@ -46,7 +46,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * using sharper types would require use of type-conversions, which in turn would inhibit some C2 optimizations,
  * such as the elimination of store barriers in methods like {@link HeapMemorySegmentImpl#dup(long, long, boolean, MemorySessionImpl)}.
  */
-abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
+public abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     // Constants defining the maximum alignment supported by various kinds of heap arrays.
 

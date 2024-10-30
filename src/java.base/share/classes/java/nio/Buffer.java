@@ -30,6 +30,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MappedMemoryUtilsProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.HeapMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
@@ -791,6 +792,12 @@ public abstract sealed class Buffer
      */
     abstract int scaleFactor();
 
+    abstract AbstractMemorySegmentImpl arrayBackedSegment(Object base,
+                                                          long offset,
+                                                          long length,
+                                                          boolean readOnly,
+                                                          MemorySessionImpl bufferScope);
+
     final int markValue() {                             // package-private
         return mark;
     }
@@ -921,6 +928,16 @@ public abstract sealed class Buffer
                 @Override
                 public int scaleFactor(Buffer buffer) {
                     return buffer.scaleFactor();
+                }
+
+                @Override
+                public AbstractMemorySegmentImpl arrayBackedSegment(Buffer buffer,
+                                                                    Object base,
+                                                                    long offset,
+                                                                    long length,
+                                                                    boolean readOnly,
+                                                                    MemorySessionImpl bufferScope) {
+                    return buffer.arrayBackedSegment(base, offset, length, readOnly, bufferScope);
                 }
             });
     }
