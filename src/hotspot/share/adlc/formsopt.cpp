@@ -175,7 +175,7 @@ int RegisterForm::RegMask_Size() {
   //   calls.
   // - Round up to the next doubleword size.
   // - Add one more word to accommodate a reasonable number of stack locations
-  //   in the register mask regardless of how much slack is created by rounding
+  //   in the register mask regardless of how much slack is created by rounding.
   //   This was found necessary after adding 16 new registers for APX.
   return (words_for_regs + 3 + 1 + 1) & ~1;
 }
