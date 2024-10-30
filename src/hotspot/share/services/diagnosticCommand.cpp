@@ -1210,8 +1210,8 @@ const char *const VMUsageMetadataDCmd::_DEFAULT_FMT[] = {
 #ifdef LINUX
     _JVM_CTR_INFO,
 #endif
-    _USER_NAME,
-    _USER_DIR,
+    //_USER_NAME,
+    //_USER_DIR,
     _OS_HOSTNAME,
     _OS_NAME,
     _OS_VERSION,
@@ -1467,18 +1467,24 @@ void VMUsageMetadataDCmd::execute(DCmdSource source, TRAPS) {
 
     bool written = false;
 
-    if (_fields.has_value()) {
-      char *sav, *fieldSpec = os::strdup(_fields.value());
+    const bool hasFields = _fields.has_value();
+
+    const bool addFields = hasFields && _fields.value()[0] == '+';
+
+    if (!hasFields || addFields) {
+      for (const char *const field : _DEFAULT_FMT) {
+         written |= formatter->field(ostr, field, _omitIfNull.value(), fCnt++ > 1, CHECK);
+      }
+    }
+
+    if (hasFields) {
+      char *sav, *fieldSpec = os::strdup(_fields.value() + (addFields ? 1 : 0));
 
       for (char* fs = strtok_r(fieldSpec, _COMMA_SEP, &sav); fs != nullptr; fs = strtok_r(nullptr, _COMMA_SEP, &sav)) {
          written |= formatter->field(ostr, fs, _omitIfNull.value(), fCnt++ > 1, CHECK);
       }
 
       os::free(fieldSpec);
-    } else { // otherwise default ...
-      for (const char *const field : _DEFAULT_FMT) {
-         written |= formatter->field(ostr, field, _omitIfNull.value(), fCnt++ > 1, CHECK);
-      }
     }
 
     formatter->postfix(ostr);
