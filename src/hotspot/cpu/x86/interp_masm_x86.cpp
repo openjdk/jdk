@@ -357,6 +357,7 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
   push_cont_fastpath();
 
   // Make VM call. In case of preemption set last_pc to the one we want to resume to.
+  // Note: call_VM_helper requires last_Java_pc for anchor to be at the top of the stack.
   lea(rscratch1, resume_pc);
   push(rscratch1);
   MacroAssembler::call_VM_helper(oop_result, entry_point, 1, false /*check_exceptions*/);
