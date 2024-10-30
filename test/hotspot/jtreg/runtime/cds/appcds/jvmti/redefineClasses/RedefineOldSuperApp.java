@@ -30,7 +30,7 @@ public class RedefineOldSuperApp {
     public static void main(String args[]) throws Throwable {
         File bootJar = new File(args[0]);
 
-        Class superCls = Thread.currentThread().getContextClassLoader().loadClass("OldSuper");
+        Class superCls = ClassLoader.getSystemClassLoader().loadClass("OldSuper");
         System.out.println("OldSuper>> loader = " + superCls.getClassLoader());
 
         {
@@ -53,7 +53,7 @@ public class RedefineOldSuperApp {
             }
         }
 
-        Class childCls = Thread.currentThread().getContextClassLoader().loadClass("NewChild");
+        Class childCls = ClassLoader.getSystemClassLoader().loadClass("NewChild");
         System.out.println("NewChild>> loader = " + childCls.getClassLoader());
 
 

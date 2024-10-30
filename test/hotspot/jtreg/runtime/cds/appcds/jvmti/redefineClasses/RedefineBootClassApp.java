@@ -30,7 +30,7 @@ public class RedefineBootClassApp {
     public static void main(String args[]) throws Throwable {
         File bootJar = new File(args[0]);
 
-        Class superCls = Thread.currentThread().getContextClassLoader().loadClass("BootSuper");
+        Class superCls = Class.forName("BootSuper", false, null);
         System.out.println("BootSuper>> loader = " + superCls.getClassLoader());
 
         {
@@ -53,7 +53,7 @@ public class RedefineBootClassApp {
             }
         }
 
-        Class childCls = Thread.currentThread().getContextClassLoader().loadClass("BootChild");
+        Class childCls = Class.forName("BootChild", false, null);
         System.out.println("BootChild>> loader = " + childCls.getClassLoader());
 
 
