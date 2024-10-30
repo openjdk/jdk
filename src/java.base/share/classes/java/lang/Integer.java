@@ -960,16 +960,17 @@ public final class Integer extends Number
             if (archivedCache == null || size > archivedCache.length) {
                 Integer[] c = new Integer[size];
                 int j = low;
-                // Use all cached values from the archive to avoid breaking
-                // identity rules with objects loaded from the archive.
-                int archivedHigh = (archivedCache == null) ? 0 : archivedCache.length;
-                for (int i = 0; i < archivedHigh; i++) {
+                // If archive has Integer cache, we must use all instances from it.
+                // Otherwise, the identity checks between archived Integers and
+                // runtime-cached Integers would fail.
+                int archivedIdx = (archivedCache == null) ? 0 : archivedCache.length;
+                for (int i = 0; i < archivedIdx; i++) {
                     c[i] = archivedCache[i];
                     assert j == archivedCache[i];
                     j++;
                 }
                 // Fill the rest of the cache.
-                for (int i = archivedHigh; i < size; i++) {
+                for (int i = archivedIdx; i < size; i++) {
                     c[i] = new Integer(j++);
                 }
                 archivedCache = c;
