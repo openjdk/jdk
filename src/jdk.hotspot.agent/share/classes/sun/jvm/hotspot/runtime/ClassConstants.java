@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,12 +102,6 @@ public interface ClassConstants
 
     // flags actually put in .class file
     public static final long JVM_ACC_WRITTEN_FLAGS = 0x00007FFF;
-
-    // Klass* flags
-    // True if klass has a non-empty finalize() method
-    public static final long JVM_ACC_HAS_FINALIZER            = 0x40000000;
-    // True if klass supports the Clonable interface
-    public static final long JVM_ACC_IS_CLONEABLE             = 0x80000000;
 
     // flags accepted by set_field_flags
     public static final long JVM_ACC_FIELD_FLAGS = 0x00008000 | JVM_ACC_WRITTEN_FLAGS;

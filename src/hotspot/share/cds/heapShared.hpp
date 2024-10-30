@@ -143,13 +143,18 @@ class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
 
 public:
-  // Can this VM write a heap region into the CDS archive? Currently only G1+compressed{oops,cp}
+  // Can this VM write a heap region into the CDS archive?
   static bool can_write() {
     CDS_JAVA_HEAP_ONLY(
       if (_disable_writing) {
         return false;
       }
-      return (UseG1GC && UseCompressedClassPointers);
+      // Need compressed class pointers for heap region dump.
+      if (!UseCompressedClassPointers) {
+        return false;
+      }
+      // Almost all GCs support heap region dump, except ZGC (so far).
+      return !UseZGC;
     )
     NOT_CDS_JAVA_HEAP(return false;)
   }
@@ -212,9 +217,6 @@ public:
   };
 
 private:
-  static void check_enum_obj(int level, KlassSubGraphInfo* subgraph_info,
-                             oop orig_obj);
-
   static const int INITIAL_TABLE_SIZE = 15889; // prime number
   static const int MAX_TABLE_SIZE     = 1000000;
   typedef ResizeableResourceHashtable<oop, CachedOopInfo,
@@ -293,7 +295,8 @@ private:
   static KlassSubGraphInfo* _default_subgraph_info;
 
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
-  static OopHandle _roots;
+  static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
+  static int _root_segment_max_size_elems;
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
   static MetaspaceObjToOopHandleTable* _scratch_java_mirror_table;
   static MetaspaceObjToOopHandleTable* _scratch_references_table;
@@ -374,7 +377,6 @@ private:
                                              KlassSubGraphInfo* subgraph_info,
                                              oop orig_obj);
 
-  static ResourceBitMap calculate_oopmap(MemRegion region); // marks all the oop pointers
   static void add_to_dumped_interned_strings(oop string);
 
   // Scratch objects for archiving Klass::java_mirror()
@@ -403,11 +405,13 @@ private:
   static GrowableArrayCHeap<oop, mtClassShared>* pending_roots() { return _pending_roots; }
 
   // Dump-time and runtime
-  static objArrayOop roots();
+  static objArrayOop root_segment(int segment_idx);
   static oop get_root(int index, bool clear=false);
 
   // Run-time only
   static void clear_root(int index);
+
+  static void get_segment_indexes(int index, int& segment_index, int& internal_index);
 
   static void setup_test_class(const char* test_class_name) PRODUCT_RETURN;
 #endif // INCLUDE_CDS_JAVA_HEAP
@@ -426,11 +430,13 @@ private:
 
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
-  static void init_roots(oop roots_oop) NOT_CDS_JAVA_HEAP_RETURN;
+  static void add_root_segment(objArrayOop segment_oop) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_root_segment_sizes(int max_size_elems) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
-  static bool initialize_enum_klass(InstanceKlass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
+#ifndef PRODUCT
   static bool is_a_test_class_in_unnamed_module(Klass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
+#endif
 };
 
 #if INCLUDE_CDS_JAVA_HEAP

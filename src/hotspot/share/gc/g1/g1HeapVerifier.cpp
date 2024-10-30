@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
 
       // Now fetch the region containing the object
       G1HeapRegion* hr = _g1h->heap_region_containing(obj);
-      HeapRegionRemSet* hrrs = hr->rem_set();
+      G1HeapRegionRemSet* hrrs = hr->rem_set();
       // Verify that the code root list for this region
       // contains the nmethod
       if (!hrrs->code_roots_list_contains(_nm)) {
@@ -231,7 +231,7 @@ public:
   size_t live_bytes() { return _live_bytes; }
 };
 
-class VerifyRegionClosure: public HeapRegionClosure {
+class VerifyRegionClosure: public G1HeapRegionClosure {
 private:
   VerifyOption     _vo;
   bool             _failures;
@@ -287,10 +287,10 @@ public:
 
 class G1VerifyTask: public WorkerTask {
 private:
-  G1CollectedHeap*  _g1h;
-  VerifyOption      _vo;
-  bool              _failures;
-  HeapRegionClaimer _hrclaimer;
+  G1CollectedHeap*    _g1h;
+  VerifyOption        _vo;
+  bool                _failures;
+  G1HeapRegionClaimer _hrclaimer;
 
 public:
   G1VerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
@@ -377,20 +377,20 @@ void G1HeapVerifier::verify(VerifyOption vo) {
 
 // Heap region set verification
 
-class VerifyRegionListsClosure : public HeapRegionClosure {
+class VerifyRegionListsClosure : public G1HeapRegionClosure {
 private:
-  HeapRegionSet*   _old_set;
-  HeapRegionSet*   _humongous_set;
-  HeapRegionManager* _hrm;
+  G1HeapRegionSet*     _old_set;
+  G1HeapRegionSet*     _humongous_set;
+  G1HeapRegionManager* _hrm;
 
 public:
   uint _old_count;
   uint _humongous_count;
   uint _free_count;
 
-  VerifyRegionListsClosure(HeapRegionSet* old_set,
-                           HeapRegionSet* humongous_set,
-                           HeapRegionManager* hrm) :
+  VerifyRegionListsClosure(G1HeapRegionSet* old_set,
+                           G1HeapRegionSet* humongous_set,
+                           G1HeapRegionManager* hrm) :
     _old_set(old_set), _humongous_set(humongous_set), _hrm(hrm),
     _old_count(), _humongous_count(), _free_count(){ }
 
@@ -412,7 +412,7 @@ public:
     return false;
   }
 
-  void verify_counts(HeapRegionSet* old_set, HeapRegionSet* humongous_set, HeapRegionManager* free_list) {
+  void verify_counts(G1HeapRegionSet* old_set, G1HeapRegionSet* humongous_set, G1HeapRegionManager* free_list) {
     guarantee(old_set->length() == _old_count, "Old set count mismatch. Expected %u, actual %u.", old_set->length(), _old_count);
     guarantee(humongous_set->length() == _humongous_count, "Hum set count mismatch. Expected %u, actual %u.", humongous_set->length(), _humongous_count);
     guarantee(free_list->num_free_regions() == _free_count, "Free list count mismatch. Expected %u, actual %u.", free_list->num_free_regions(), _free_count);
@@ -435,7 +435,7 @@ void G1HeapVerifier::verify_region_sets() {
   _g1h->collection_set()->candidates()->verify();
 }
 
-class G1VerifyRegionMarkingStateClosure : public HeapRegionClosure {
+class G1VerifyRegionMarkingStateClosure : public G1HeapRegionClosure {
   class MarkedBytesClosure {
     size_t _marked_words;
 
@@ -535,7 +535,7 @@ void G1HeapVerifier::verify_bitmap_clear(bool from_tams) {
     return;
   }
 
-  class G1VerifyBitmapClear : public HeapRegionClosure {
+  class G1VerifyBitmapClear : public G1HeapRegionClosure {
     bool _from_tams;
 
   public:
@@ -557,7 +557,7 @@ void G1HeapVerifier::verify_bitmap_clear(bool from_tams) {
 }
 
 #ifndef PRODUCT
-class G1VerifyCardTableCleanup: public HeapRegionClosure {
+class G1VerifyCardTableCleanup: public G1HeapRegionClosure {
   G1HeapVerifier* _verifier;
 public:
   G1VerifyCardTableCleanup(G1HeapVerifier* verifier)
@@ -603,11 +603,11 @@ void G1HeapVerifier::verify_dirty_region(G1HeapRegion* hr) {
   }
 }
 
-class G1VerifyDirtyYoungListClosure : public HeapRegionClosure {
+class G1VerifyDirtyYoungListClosure : public G1HeapRegionClosure {
 private:
   G1HeapVerifier* _verifier;
 public:
-  G1VerifyDirtyYoungListClosure(G1HeapVerifier* verifier) : HeapRegionClosure(), _verifier(verifier) { }
+  G1VerifyDirtyYoungListClosure(G1HeapVerifier* verifier) : G1HeapRegionClosure(), _verifier(verifier) { }
   virtual bool do_heap_region(G1HeapRegion* r) {
     _verifier->verify_dirty_region(r);
     return false;
@@ -619,12 +619,12 @@ void G1HeapVerifier::verify_dirty_young_regions() {
   _g1h->collection_set()->iterate(&cl);
 }
 
-class G1CheckRegionAttrTableClosure : public HeapRegionClosure {
+class G1CheckRegionAttrTableClosure : public G1HeapRegionClosure {
 private:
   bool _failures;
 
 public:
-  G1CheckRegionAttrTableClosure() : HeapRegionClosure(), _failures(false) { }
+  G1CheckRegionAttrTableClosure() : G1HeapRegionClosure(), _failures(false) { }
 
   virtual bool do_heap_region(G1HeapRegion* hr) {
     uint i = hr->hrm_index();

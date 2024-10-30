@@ -1303,7 +1303,7 @@ void MacroAssembler::reserved_stack_check() {
   jcc(Assembler::below, no_reserved_zone_enabling);
 
   call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), thread);
-  jump(RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()));
+  jump(RuntimeAddress(SharedRuntime::throw_delayed_StackOverflowError_entry()));
   should_not_reach_here();
 
   bind(no_reserved_zone_enabling);
@@ -2329,7 +2329,7 @@ void MacroAssembler::incrementl(Address dst, int value) {
 
 void MacroAssembler::jump(AddressLiteral dst, Register rscratch) {
   assert(rscratch != noreg || always_reachable(dst), "missing");
-
+  assert(!dst.rspec().reloc()->is_data(), "should not use ExternalAddress for jump");
   if (reachable(dst)) {
     jmp_literal(dst.target(), dst.rspec());
   } else {
@@ -2340,7 +2340,7 @@ void MacroAssembler::jump(AddressLiteral dst, Register rscratch) {
 
 void MacroAssembler::jump_cc(Condition cc, AddressLiteral dst, Register rscratch) {
   assert(rscratch != noreg || always_reachable(dst), "missing");
-
+  assert(!dst.rspec().reloc()->is_data(), "should not use ExternalAddress for jump_cc");
   if (reachable(dst)) {
     InstructionMark im(this);
     relocate(dst.reloc());
@@ -3479,6 +3479,17 @@ void MacroAssembler::vpbroadcastd(XMMRegister dst, AddressLiteral src, int vecto
   } else {
     lea(rscratch, src);
     Assembler::vpbroadcastd(dst, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vbroadcasti128(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::vbroadcasti128(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vbroadcasti128(dst, Address(rscratch, 0), vector_len);
   }
 }
 
@@ -4945,9 +4956,8 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
 
   // The bitmap is full to bursting.
   // Implicit invariant: BITMAP_FULL implies (length > 0)
-  assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
-  cmpq(r_bitmap, (int32_t)-1); // sign-extends immediate to 64-bit value
-  jcc(Assembler::equal, L_huge);
+  cmpl(r_array_length, (int32_t)Klass::SECONDARY_SUPERS_TABLE_SIZE - 2);
+  jcc(Assembler::greater, L_huge);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet
@@ -5085,7 +5095,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fa
     L_slow_path = &L_fallthrough;
   }
 
-  // Fast path check: class is fully initialized
+  // Fast path check: class is fully initialized.
+  // init_state needs acquire, but x86 is TSO, and so we are already good.
   cmpb(Address(klass, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
   jcc(Assembler::equal, *L_fast_path);
 
@@ -5757,7 +5768,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
   assert (Universe::heap() != nullptr, "java heap should be initialized");
   if (CheckCompressedOops) {
     Label ok;
-    ExternalAddress src2(CompressedOops::ptrs_base_addr());
+    ExternalAddress src2(CompressedOops::base_addr());
     const bool is_src2_reachable = reachable(src2);
     if (!is_src2_reachable) {
       push(rscratch1);  // cmpptr trashes rscratch1
@@ -6048,10 +6059,10 @@ void MacroAssembler::reinit_heapbase() {
       if (CompressedOops::base() == nullptr) {
         MacroAssembler::xorptr(r12_heapbase, r12_heapbase);
       } else {
-        mov64(r12_heapbase, (int64_t)CompressedOops::ptrs_base());
+        mov64(r12_heapbase, (int64_t)CompressedOops::base());
       }
     } else {
-      movptr(r12_heapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
+      movptr(r12_heapbase, ExternalAddress(CompressedOops::base_addr()));
     }
   }
 }
@@ -9303,6 +9314,30 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
   bind(done);
 }
 
+void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, XMMRegister src, bool merge, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+    case T_BOOLEAN:
+      evmovdqub(dst, kmask, src, merge, vector_len);
+      break;
+    case T_CHAR:
+    case T_SHORT:
+      evmovdquw(dst, kmask, src, merge, vector_len);
+      break;
+    case T_INT:
+    case T_FLOAT:
+      evmovdqul(dst, kmask, src, merge, vector_len);
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      evmovdquq(dst, kmask, src, merge, vector_len);
+      break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type));
+      break;
+  }
+}
+
 
 void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, bool merge, int vector_len) {
   switch(type) {
@@ -9489,6 +9524,66 @@ void MacroAssembler::evperm(BasicType type, XMMRegister dst, KRegister mask, XMM
     case T_LONG:
     case T_DOUBLE:
       evpermq(dst, mask, nds, src, merge, vector_len); break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type)); break;
+  }
+}
+
+void MacroAssembler::evpminu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+      evpminub(dst, mask, nds, src, merge, vector_len); break;
+    case T_SHORT:
+      evpminuw(dst, mask, nds, src, merge, vector_len); break;
+    case T_INT:
+      evpminud(dst, mask, nds, src, merge, vector_len); break;
+    case T_LONG:
+      evpminuq(dst, mask, nds, src, merge, vector_len); break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type)); break;
+  }
+}
+
+void MacroAssembler::evpmaxu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+      evpmaxub(dst, mask, nds, src, merge, vector_len); break;
+    case T_SHORT:
+      evpmaxuw(dst, mask, nds, src, merge, vector_len); break;
+    case T_INT:
+      evpmaxud(dst, mask, nds, src, merge, vector_len); break;
+    case T_LONG:
+      evpmaxuq(dst, mask, nds, src, merge, vector_len); break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type)); break;
+  }
+}
+
+void MacroAssembler::evpminu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+      evpminub(dst, mask, nds, src, merge, vector_len); break;
+    case T_SHORT:
+      evpminuw(dst, mask, nds, src, merge, vector_len); break;
+    case T_INT:
+      evpminud(dst, mask, nds, src, merge, vector_len); break;
+    case T_LONG:
+      evpminuq(dst, mask, nds, src, merge, vector_len); break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type)); break;
+  }
+}
+
+void MacroAssembler::evpmaxu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+      evpmaxub(dst, mask, nds, src, merge, vector_len); break;
+    case T_SHORT:
+      evpmaxuw(dst, mask, nds, src, merge, vector_len); break;
+    case T_INT:
+      evpmaxud(dst, mask, nds, src, merge, vector_len); break;
+    case T_LONG:
+      evpmaxuq(dst, mask, nds, src, merge, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
   }
@@ -10202,17 +10297,6 @@ Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond)
   ShouldNotReachHere(); return Assembler::overflow;
 }
 
-SkipIfEqual::SkipIfEqual(
-    MacroAssembler* masm, const bool* flag_addr, bool value, Register rscratch) {
-  _masm = masm;
-  _masm->cmp8(ExternalAddress((address)flag_addr), value, rscratch);
-  _masm->jcc(Assembler::equal, _label);
-}
-
-SkipIfEqual::~SkipIfEqual() {
-  _masm->bind(_label);
-}
-
 // 32-bit Windows has its own fast-path implementation
 // of get_thread
 #if !defined(WIN32) || defined(_LP64)
@@ -10276,9 +10360,9 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
 // reg_rax: rax
 // thread: the thread which attempts to lock obj
 // tmp: a temporary register
-void MacroAssembler::lightweight_lock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow) {
+void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register thread, Register tmp, Label& slow) {
   assert(reg_rax == rax, "");
-  assert_different_registers(obj, reg_rax, thread, tmp);
+  assert_different_registers(basic_lock, obj, reg_rax, thread, tmp);
 
   Label push;
   const Register top = tmp;
@@ -10286,6 +10370,11 @@ void MacroAssembler::lightweight_lock(Register obj, Register reg_rax, Register t
   // Preload the markWord. It is important that this is the first
   // instruction emitted as it is part of C1's null check semantics.
   movptr(reg_rax, Address(obj, oopDesc::mark_offset_in_bytes()));
+
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds.
+    movptr(Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))), 0);
+  }
 
   // Load top.
   movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
@@ -10325,13 +10414,9 @@ void MacroAssembler::lightweight_lock(Register obj, Register reg_rax, Register t
 // reg_rax: rax
 // thread: the thread
 // tmp: a temporary register
-//
-// x86_32 Note: reg_rax and thread may alias each other due to limited register
-//              availiability.
 void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow) {
   assert(reg_rax == rax, "");
-  assert_different_registers(obj, reg_rax, tmp);
-  LP64_ONLY(assert_different_registers(obj, reg_rax, thread, tmp);)
+  assert_different_registers(obj, reg_rax, thread, tmp);
 
   Label unlocked, push_and_slow;
   const Register top = tmp;
@@ -10371,10 +10456,6 @@ void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register
 
   bind(push_and_slow);
   // Restore lock-stack and handle the unlock in runtime.
-  if (thread == reg_rax) {
-    // On x86_32 we may lose the thread.
-    get_thread(thread);
-  }
 #ifdef ASSERT
   movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
   movptr(Address(thread, top), obj);
@@ -10424,5 +10505,14 @@ void MacroAssembler::restore_legacy_gprs() {
   movq(rcx, Address(rsp, 14 * wordSize));
   movq(rax, Address(rsp, 15 * wordSize));
   addq(rsp, 16 * wordSize);
+}
+
+void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
+  if (VM_Version::supports_apx_f()) {
+    esetzucc(comparison, dst);
+  } else {
+    setb(comparison, dst);
+    movzbl(dst, dst);
+  }
 }
 #endif

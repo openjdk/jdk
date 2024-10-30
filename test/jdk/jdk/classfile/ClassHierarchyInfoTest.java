@@ -127,7 +127,7 @@ class ClassHierarchyInfoTest {
                     if (cle instanceof MethodModel mm) {
                         clb.transformMethod(mm, (mb, me) -> {
                             if (me instanceof CodeModel cm) {
-                                mb.withCode(cob -> cm.forEachElement(cob));
+                                mb.withCode(cm::forEach);
                             }
                             else
                                 mb.with(me);

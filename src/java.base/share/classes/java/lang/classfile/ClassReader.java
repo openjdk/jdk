@@ -29,10 +29,10 @@ import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolException;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.ClassReaderImpl;
-
 import java.util.Optional;
 import java.util.function.Function;
+
+import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -189,19 +189,4 @@ public sealed interface ClassReader extends ConstantPool
      * @param len the length of the range
      */
     void copyBytesTo(BufWriter buf, int offset, int len);
-
-    /**
-     * Compare a range of bytes from the classfile to a range of bytes within
-     * a {@link BufWriter}.
-     *
-     * @param bufWriter the {@linkplain BufWriter}
-     * @param bufWriterOffset the offset within the {@linkplain BufWriter}
-     * @param classReaderOffset the offset within the classfile
-     * @param length the length of the range
-     * @return whether the two ranges were identical
-     */
-    boolean compare(BufWriter bufWriter,
-                    int bufWriterOffset,
-                    int classReaderOffset,
-                    int length);
 }

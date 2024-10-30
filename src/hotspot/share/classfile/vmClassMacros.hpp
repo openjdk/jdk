@@ -77,6 +77,7 @@
   do_klass(StackOverflowError_klass,                    java_lang_StackOverflowError                          ) \
   do_klass(IllegalMonitorStateException_klass,          java_lang_IllegalMonitorStateException                ) \
   do_klass(Reference_klass,                             java_lang_ref_Reference                               ) \
+  do_klass(IllegalCallerException_klass,                java_lang_IllegalCallerException                      ) \
                                                                                                                 \
   /* ref klasses and set reference types */                                                                     \
   do_klass(SoftReference_klass,                         java_lang_ref_SoftReference                           ) \
@@ -106,11 +107,9 @@
   do_klass(StackChunk_klass,                            jdk_internal_vm_StackChunk                            ) \
                                                                                                                 \
   do_klass(reflect_MethodAccessorImpl_klass,            reflect_MethodAccessorImpl                            ) \
-  do_klass(reflect_DelegatingClassLoader_klass,         reflect_DelegatingClassLoader                         ) \
   do_klass(reflect_ConstantPool_klass,                  reflect_ConstantPool                                  ) \
   do_klass(reflect_CallerSensitive_klass,               reflect_CallerSensitive                               ) \
   do_klass(reflect_DirectConstructorHandleAccessor_NativeAccessor_klass, reflect_DirectConstructorHandleAccessor_NativeAccessor) \
-  do_klass(reflect_SerializationConstructorAccessorImpl_klass,           reflect_SerializationConstructorAccessorImpl ) \
                                                                                                                 \
   /* support for dynamic typing */                                                                              \
   do_klass(DirectMethodHandle_klass,                    java_lang_invoke_DirectMethodHandle                   ) \

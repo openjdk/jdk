@@ -53,7 +53,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 
 G1Policy::G1Policy(STWGCTimer* gc_timer) :
-  _predictor(G1ConfidencePercent / 100.0),
+  _predictor((100 - G1ConfidencePercent) / 100.0),
   _analytics(new G1Analytics(&_predictor)),
   _remset_tracker(),
   _mmu_tracker(new G1MMUTracker(GCPauseIntervalMillis / 1000.0, MaxGCPauseMillis / 1000.0)),
@@ -1089,6 +1089,11 @@ double G1Policy::predict_base_time_ms(size_t pending_cards,
 double G1Policy::predict_base_time_ms(size_t pending_cards) const {
   bool for_young_only_phase = collector_state()->in_young_only_phase();
   size_t card_rs_length = _analytics->predict_card_rs_length(for_young_only_phase);
+  return predict_base_time_ms(pending_cards, card_rs_length);
+}
+
+double G1Policy::predict_base_time_ms(size_t pending_cards, size_t card_rs_length) const {
+  bool for_young_only_phase = collector_state()->in_young_only_phase();
   size_t code_root_rs_length = _analytics->predict_code_root_rs_length(for_young_only_phase);
   return predict_base_time_ms(pending_cards, card_rs_length, code_root_rs_length);
 }
@@ -1460,219 +1465,6 @@ uint G1Policy::calc_max_old_cset_length() const {
   double result = (double)_g1h->num_regions() * G1OldCSetRegionThresholdPercent / 100;
   // Round up to be conservative.
   return (uint)ceil(result);
-}
-
-static void print_finish_message(const char* reason, bool from_marking) {
-  log_debug(gc, ergo, cset)("Finish adding %s candidates to collection set (%s).",
-                            from_marking ? "marking" : "retained", reason);
-}
-
-double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marking_list,
-                                                double time_remaining_ms,
-                                                G1CollectionCandidateRegionList* initial_old_regions,
-                                                G1CollectionCandidateRegionList* optional_old_regions,
-                                                G1CollectionCandidateRegionList* pinned_old_regions) {
-  assert(marking_list != nullptr, "must be");
-
-  uint num_expensive_regions = 0;
-
-  uint num_initial_regions_selected = 0;
-  uint num_optional_regions_selected = 0;
-  uint num_pinned_regions = 0;
-
-  double predicted_initial_time_ms = 0.0;
-  double predicted_optional_time_ms = 0.0;
-
-  double optional_threshold_ms = time_remaining_ms * optional_prediction_fraction();
-
-  const uint min_old_cset_length = calc_min_old_cset_length(candidates()->last_marking_candidates_length());
-  const uint max_old_cset_length = MAX2(min_old_cset_length, calc_max_old_cset_length());
-  const uint max_optional_regions = max_old_cset_length - min_old_cset_length;
-  bool check_time_remaining = use_adaptive_young_list_length();
-
-  log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
-                            "Min %u regions, max %u regions, available %u regions"
-                            "time remaining %1.2fms, optional threshold %1.2fms",
-                            min_old_cset_length, max_old_cset_length, marking_list->length(), time_remaining_ms, optional_threshold_ms);
-
-  G1CollectionCandidateListIterator iter = marking_list->begin();
-  for (; iter != marking_list->end(); ++iter) {
-    if (num_initial_regions_selected + num_optional_regions_selected >= max_old_cset_length) {
-      // Added maximum number of old regions to the CSet.
-      print_finish_message("Maximum number of regions reached", true);
-      break;
-    }
-    G1HeapRegion* hr = (*iter)->_r;
-    // Skip evacuating pinned marking regions because we are not getting any free
-    // space from them (and we expect to get free space from marking candidates).
-    // Also prepare to move them to retained regions to be evacuated optionally later
-    // to not impact the mixed phase too much.
-    if (hr->has_pinned_objects()) {
-      num_pinned_regions++;
-      (*iter)->update_num_unreclaimed();
-      log_trace(gc, ergo, cset)("Marking candidate %u can not be reclaimed currently. Skipping.", hr->hrm_index());
-      pinned_old_regions->append(hr);
-      continue;
-    }
-    double predicted_time_ms = predict_region_total_time_ms(hr, false);
-    time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
-    // Add regions to old set until we reach the minimum amount
-    if (initial_old_regions->length() < min_old_cset_length) {
-      initial_old_regions->append(hr);
-      num_initial_regions_selected++;
-      predicted_initial_time_ms += predicted_time_ms;
-      // Record the number of regions added with no time remaining
-      if (time_remaining_ms == 0.0) {
-        num_expensive_regions++;
-      }
-    } else if (!check_time_remaining) {
-      // In the non-auto-tuning case, we'll finish adding regions
-      // to the CSet if we reach the minimum.
-      print_finish_message("Region amount reached min", true);
-      break;
-    } else {
-      // Keep adding regions to old set until we reach the optional threshold
-      if (time_remaining_ms > optional_threshold_ms) {
-        predicted_initial_time_ms += predicted_time_ms;
-        initial_old_regions->append(hr);
-        num_initial_regions_selected++;
-      } else if (time_remaining_ms > 0) {
-        // Keep adding optional regions until time is up.
-        assert(optional_old_regions->length() < max_optional_regions, "Should not be possible.");
-        predicted_optional_time_ms += predicted_time_ms;
-        optional_old_regions->append(hr);
-        num_optional_regions_selected++;
-      } else {
-        print_finish_message("Predicted time too high", true);
-        break;
-      }
-    }
-  }
-  if (iter == marking_list->end()) {
-    log_debug(gc, ergo, cset)("Marking candidates exhausted.");
-  }
-
-  if (num_expensive_regions > 0) {
-    log_debug(gc, ergo, cset)("Added %u marking candidates to collection set although the predicted time was too high.",
-                              num_expensive_regions);
-  }
-
-  log_debug(gc, ergo, cset)("Finish adding marking candidates to collection set. Initial: %u, optional: %u, pinned: %u, "
-                            "predicted initial time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2fms",
-                            num_initial_regions_selected, num_optional_regions_selected, num_pinned_regions,
-                            predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms);
-
-  assert(initial_old_regions->length() == num_initial_regions_selected, "must be");
-  assert(optional_old_regions->length() == num_optional_regions_selected, "must be");
-  return time_remaining_ms;
-}
-
-void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retained_list,
-                                               double time_remaining_ms,
-                                               G1CollectionCandidateRegionList* initial_old_regions,
-                                               G1CollectionCandidateRegionList* optional_old_regions,
-                                               G1CollectionCandidateRegionList* pinned_old_regions) {
-
-  uint const min_regions = min_retained_old_cset_length();
-
-  uint num_initial_regions_selected = 0;
-  uint num_optional_regions_selected = 0;
-  uint num_expensive_regions_selected = 0;
-  uint num_pinned_regions = 0;
-
-  double predicted_initial_time_ms = 0.0;
-  double predicted_optional_time_ms = 0.0;
-
-  // We want to make sure that on the one hand we process the retained regions asap,
-  // but on the other hand do not take too many of them as optional regions.
-  // So we split the time budget into budget we will unconditionally take into the
-  // initial old regions, and budget for taking optional regions from the retained
-  // list.
-  double optional_time_remaining_ms = max_time_for_retaining();
-  time_remaining_ms = MIN2(time_remaining_ms, optional_time_remaining_ms);
-
-  log_debug(gc, ergo, cset)("Start adding retained candidates to collection set. "
-                            "Min %u regions, available %u, "
-                            "time remaining %1.2fms, optional remaining %1.2fms",
-                            min_regions, retained_list->length(), time_remaining_ms, optional_time_remaining_ms);
-
-  for (G1CollectionSetCandidateInfo* ci : *retained_list) {
-    G1HeapRegion* r = ci->_r;
-    double predicted_time_ms = predict_region_total_time_ms(r, collector_state()->in_young_only_phase());
-    bool fits_in_remaining_time = predicted_time_ms <= time_remaining_ms;
-    // If we can't reclaim that region ignore it for now.
-    if (r->has_pinned_objects()) {
-      num_pinned_regions++;
-      if (ci->update_num_unreclaimed()) {
-        log_trace(gc, ergo, cset)("Retained candidate %u can not be reclaimed currently. Skipping.", r->hrm_index());
-      } else {
-        log_trace(gc, ergo, cset)("Retained candidate %u can not be reclaimed currently. Dropping.", r->hrm_index());
-        pinned_old_regions->append(r);
-      }
-      continue;
-    }
-
-    if (fits_in_remaining_time || (num_expensive_regions_selected < min_regions)) {
-      predicted_initial_time_ms += predicted_time_ms;
-      if (!fits_in_remaining_time) {
-        num_expensive_regions_selected++;
-      }
-      initial_old_regions->append(r);
-      num_initial_regions_selected++;
-    } else if (predicted_time_ms <= optional_time_remaining_ms) {
-      predicted_optional_time_ms += predicted_time_ms;
-      optional_old_regions->append(r);
-      num_optional_regions_selected++;
-    } else {
-      // Fits neither initial nor optional time limit. Exit.
-      break;
-    }
-    time_remaining_ms = MAX2(0.0, time_remaining_ms - predicted_time_ms);
-    optional_time_remaining_ms = MAX2(0.0, optional_time_remaining_ms - predicted_time_ms);
-  }
-
-  uint num_regions_selected = num_initial_regions_selected + num_optional_regions_selected;
-  if (num_regions_selected == retained_list->length()) {
-    log_debug(gc, ergo, cset)("Retained candidates exhausted.");
-  }
-  if (num_expensive_regions_selected > 0) {
-    log_debug(gc, ergo, cset)("Added %u retained candidates to collection set although the predicted time was too high.",
-                              num_expensive_regions_selected);
-  }
-
-  log_debug(gc, ergo, cset)("Finish adding retained candidates to collection set. Initial: %u, optional: %u, pinned: %u, "
-                            "predicted initial time: %1.2fms, predicted optional time: %1.2fms, "
-                            "time remaining: %1.2fms optional time remaining %1.2fms",
-                            num_initial_regions_selected, num_optional_regions_selected, num_pinned_regions,
-                            predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms, optional_time_remaining_ms);
-}
-
-void G1Policy::calculate_optional_collection_set_regions(G1CollectionCandidateRegionList* optional_regions,
-                                                         double time_remaining_ms,
-                                                         G1CollectionCandidateRegionList* selected_regions) {
-  assert(_collection_set->optional_region_length() > 0,
-         "Should only be called when there are optional regions");
-
-  double total_prediction_ms = 0.0;
-
-  for (G1HeapRegion* r : *optional_regions) {
-    double prediction_ms = predict_region_total_time_ms(r, false);
-
-    if (prediction_ms > time_remaining_ms) {
-      log_debug(gc, ergo, cset)("Prediction %.3fms for region %u does not fit remaining time: %.3fms.",
-                                prediction_ms, r->hrm_index(), time_remaining_ms);
-      break;
-    }
-    // This region will be included in the next optional evacuation.
-
-    total_prediction_ms += prediction_ms;
-    time_remaining_ms -= prediction_ms;
-
-    selected_regions->append(r);
-  }
-
-  log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Total predicted time: %.3fms",
-                            selected_regions->length(), optional_regions->length(), total_prediction_ms);
 }
 
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {

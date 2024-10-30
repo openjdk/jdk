@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301580 8322159 8333107 8332230
+ * @bug 8301580 8322159 8333107 8332230 8338678
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
  * @enablePreview
@@ -34,9 +34,23 @@
  * @run main AttrRecovery
  */
 
+import com.sun.source.tree.VariableTree;
+import com.sun.source.util.TaskEvent;
+import com.sun.source.util.TaskListener;
+import com.sun.source.util.TreePathScanner;
+import com.sun.source.util.Trees;
 import java.nio.file.Path;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
 
 import toolbox.JavacTask;
 import toolbox.Task.Expect;
@@ -227,6 +241,82 @@ public class AttrRecovery extends TestRunner {
                 "C.java:2:24: compiler.err.cant.resolve.location: kindname.class, Undefined, , , (compiler.misc.location: kindname.class, C, null)",
                 "C.java:2:12: compiler.err.cant.resolve.location: kindname.class, Undefined, , , (compiler.misc.location: kindname.class, C, null)",
                 "2 errors"
+        );
+
+        if (!Objects.equals(actual, expected)) {
+            error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
+
+    @Test
+    public void testParameterizedErroneousType() throws Exception {
+        String code = """
+                      public class C {
+                          Undefined1<Undefined2, Undefined3> variable1;
+                      }
+                      """;
+        Path curPath = Path.of(".");
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .sources(code)
+                .outdir(curPath)
+                .callback(task -> {
+                    task.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            Trees trees = Trees.instance(task);
+
+                            if (e.getKind() == TaskEvent.Kind.ANALYZE) {
+                                new TreePathScanner<Void, Void>() {
+                                    @Override
+                                    public Void visitVariable(VariableTree tree, Void p) {
+                                        VariableElement var = (VariableElement) trees.getElement(getCurrentPath());
+
+                                        trees.printMessage(Diagnostic.Kind.NOTE, type2String(var.asType()), tree, e.getCompilationUnit());
+
+                                        return super.visitVariable(tree, p);
+                                    }
+                                }.scan(e.getCompilationUnit(), null);
+                            }
+                        }
+                        Map<Element, Integer> identityRename = new IdentityHashMap<>();
+                        String type2String(TypeMirror type) {
+                            StringBuilder result = new StringBuilder();
+
+                            result.append(type.getKind());
+                            result.append(":");
+                            result.append(type.toString());
+
+                            if (type.getKind() == TypeKind.DECLARED ||
+                                type.getKind() == TypeKind.ERROR) {
+                                DeclaredType dt = (DeclaredType) type;
+                                Element el = task.getTypes().asElement(dt);
+                                result.append(":");
+                                result.append(el.toString());
+                                if (!dt.getTypeArguments().isEmpty()) {
+                                    result.append(dt.getTypeArguments()
+                                                    .stream()
+                                                    .map(tm -> type2String(tm))
+                                                    .collect(Collectors.joining(", ", "<", ">")));
+                                }
+                            } else {
+                                throw new AssertionError(type.getKind().name());
+                            }
+
+                            return result.toString();
+                        }
+                    });
+                })
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "C.java:2:5: compiler.err.cant.resolve.location: kindname.class, Undefined1, , , (compiler.misc.location: kindname.class, C, null)",
+                "C.java:2:16: compiler.err.cant.resolve.location: kindname.class, Undefined2, , , (compiler.misc.location: kindname.class, C, null)",
+                "C.java:2:28: compiler.err.cant.resolve.location: kindname.class, Undefined3, , , (compiler.misc.location: kindname.class, C, null)",
+                "C.java:2:40: compiler.note.proc.messager: ERROR:Undefined1<Undefined2,Undefined3>:Undefined1<ERROR:Undefined2:Undefined2, ERROR:Undefined3:Undefined3>",
+                "3 errors"
         );
 
         if (!Objects.equals(actual, expected)) {

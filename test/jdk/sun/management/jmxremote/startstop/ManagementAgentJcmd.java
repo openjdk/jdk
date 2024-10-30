@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,11 @@ final class ManagementAgentJcmd {
     private static final String CMD_STATUS = "ManagementAgent.status";
     private static final String CMD_PRINTPERF = "PerfCounter.print";
 
-    private final String id;
+    private final long pid;
     private final boolean verbose;
 
-    public ManagementAgentJcmd(String targetApp, boolean verbose) {
-        this.id = targetApp;
+    public ManagementAgentJcmd(Process targetApp, boolean verbose) {
+        this.pid = targetApp.pid();
         this.verbose = verbose;
     }
 
@@ -174,7 +174,7 @@ final class ManagementAgentJcmd {
      * @throws InterruptedException
      */
     private String jcmd(Consumer<String> c, String ... command) throws IOException, InterruptedException {
-        return jcmd(id, c, command);
+        return jcmd(Long.toString(pid), c, command);
     }
 
     /**
