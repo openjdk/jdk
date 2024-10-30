@@ -1679,22 +1679,29 @@ public class Types {
                  */
                 if (!pairsSeen.add(newPair))
                     return false;
-                if (isSubtype(erasure(ts.type), erasure(ss.type))) {
-                    return false;
-                }
-                // if both are classes or both are interfaces, shortcut
-                if (ts.isInterface() == ss.isInterface() && isSubtype(erasure(ss.type), erasure(ts.type))) {
-                    return false;
-                }
-                if (ts.isInterface() && !ss.isInterface()) {
-                    /* so ts is interface but ss is a class
-                     * an interface is disjoint from a class if the class is disjoint form the interface
+                // if both are classes
+                if (!ts.isInterface() && !ss.isInterface()) {
+                    return !isSubtype(erasure(ss.type), erasure(ts.type)) && !isSubtype(erasure(ts.type), erasure(ss.type));
+                } else if (ts.isInterface() && !ss.isInterface() || !ts.isInterface() && ss.isInterface()) {
+                    /* so one is an interface and the other one is a class
                      */
-                    return areDisjoint(ss, ts);
-                }
-                // a final class that is not subtype of ss is disjoint
-                if (!ts.isInterface() && ts.isFinal()) {
-                    return true;
+                    ClassSymbol isym = ts.isInterface() ? ts : ss;
+                    ClassSymbol csym = isym == ts ? ss : ts;
+                    if (isSubtype(erasure(csym.type), erasure(isym.type))) {
+                        return false;
+                    } else {
+                        if (csym.isFinal()) {
+                            return true;
+                        }
+                        if (isClassFreelyExtensible(csym) && !isym.isSealed()) {
+                            // here we can't determine if they are disjoint, bail out
+                            return false;
+                        }
+                    }
+                } else { // both are interfaces
+                    if (isSubtype(erasure(ts.type), erasure(ss.type)) || isSubtype(erasure(ss.type), erasure(ts.type))) {
+                        return false;
+                    }
                 }
                 // if at least one is sealed
                 if (ts.isSealed() || ss.isSealed()) {
@@ -1704,6 +1711,15 @@ public class Types {
                     return sealedOne.getPermittedSubclasses().stream().allMatch(type -> areDisjoint((ClassSymbol)type.tsym, other));
                 }
                 return false;
+            }
+
+            private boolean isClassFreelyExtensible(ClassSymbol csym) {
+                boolean anySuperIsSealed = (csym.getSuperclass().tsym != null && csym.getSuperclass().tsym.isSealed()) || csym.getInterfaces().stream().anyMatch(i -> i.tsym.isSealed());
+                if (anySuperIsSealed) {
+                    return csym.isNonSealed();
+                } else {
+                    return !csym.isSealed() && !csym.isFinal();
+                }
             }
         }
 
