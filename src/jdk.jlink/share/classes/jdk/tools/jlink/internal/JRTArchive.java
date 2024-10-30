@@ -25,7 +25,7 @@
 
 package jdk.tools.jlink.internal;
 
-import static jdk.tools.jlink.internal.LinkableRuntimeImage.*;
+import static jdk.tools.jlink.internal.LinkableRuntimeImage.RESPATH_PATTERN;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -59,9 +59,9 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 
 /**
- * An archive implementation based on the JDK's runtime image (lib/modules,
- * or jimage) as well as associated files from the filesystem of the JDK
- * installation.
+ * An archive implementation based on the JDK's run-time image. That is, classes
+ * and resources from the modules image (lib/modules, or jimage) and other
+ * associated files from the filesystem of the JDK installation.
  */
 public class JRTArchive implements Archive {
 

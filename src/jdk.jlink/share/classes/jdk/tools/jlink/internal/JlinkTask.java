@@ -188,7 +188,8 @@ public class JlinkTask {
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.ignoreModifiedRuntime = true;
         }, true, "--ignore-modified-runtime"),
-        // option for generating linkable JDK runtime (at JDK build time)
+        // option for generating a runtime that can then
+        // be used for linking from the run-time image.
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.generateLinkableRuntime = true;
         }, true, "--generate-linkable-runtime")

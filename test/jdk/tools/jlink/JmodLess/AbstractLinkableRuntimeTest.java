@@ -207,7 +207,8 @@ public abstract class AbstractLinkableRuntimeTest {
      * link.
      *
      * @param baseSpec
-     * @return A path to a JDK image which is prepared for runtime linking.
+     * @return A path to a JDK that is capable for linking from the run-time
+     *         image.
      * @throws Exception
      */
     protected Path createRuntimeLinkImage(BaseJlinkSpec baseSpec) throws Exception {
@@ -220,9 +221,11 @@ public abstract class AbstractLinkableRuntimeTest {
      * (default jmods module path), it needs to get removed to provoke a runtime
      * link.
      *
-     * @param baseSpec The modules to jlink
-     * @param excludedJmods The set of jmod files to exclude in the base JDK. Empty set if
-     *                      all JMODs should be removed.
+     * @param baseSpec
+     *            The modules to jlink
+     * @param excludedJmods
+     *            The set of jmod files to exclude in the base JDK. Empty set if
+     *            all JMODs should be removed.
      * @return A path to a JDK image which is prepared for runtime linking.
      * @throws Exception
      */

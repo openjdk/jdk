@@ -37,9 +37,11 @@ public class JimageDiffGenerator {
 
     /**
      * A resource used for linking. Either packaged modules or
-     * an existing JDK runtime image. The canonical source, the packaged modules,
-     * are being used to devise a delta to a JDK jimage which can then be
-     * also used for jlink input together *with* that delta.
+     * packaged modules transformed to an optimized run-time image by applying
+     * the jlink plug-in pipeline. The canonical source, the packaged modules,
+     * are being used to devise the delta to the transformed run-time image. The
+     * delta can can then be used for jlink input together *with* a prepared
+     * run-time image.
      */
     @SuppressWarnings("try")
     public interface ImageResource extends AutoCloseable {
