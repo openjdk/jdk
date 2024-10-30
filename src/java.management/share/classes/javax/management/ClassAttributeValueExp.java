@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,37 +39,9 @@ import com.sun.jmx.mbeanserver.GetPropertyAction;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID is not constant
 class ClassAttributeValueExp extends AttributeValueExp {
 
-    // Serialization compatibility stuff:
-    // Two serial forms are supported in this class. The selected form depends
-    // on system property "jmx.serial.form":
-    //  - "1.0" for JMX 1.0
-    //  - any other value for JMX 1.1 and higher
-    //
-    // Serial version for old serial form
-    private static final long oldSerialVersionUID = -2212731951078526753L;
-    //
-    // Serial version for new serial form
-    private static final long newSerialVersionUID = -1081892073854801359L;
-
-    private static final long serialVersionUID;
-    static {
-        boolean compat = false;
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            @SuppressWarnings("removal")
-            String form = AccessController.doPrivileged(act);
-            compat = (form != null && form.equals("1.0"));
-        } catch (Exception e) {
-            // OK: exception means no compat with 1.0, too bad
-        }
-        if (compat)
-            serialVersionUID = oldSerialVersionUID;
-        else
-            serialVersionUID = newSerialVersionUID;
-    }
+    private static final long serialVersionUID = -1081892073854801359L;
 
     /**
      * @serial The name of the attribute

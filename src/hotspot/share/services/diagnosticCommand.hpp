@@ -886,27 +886,6 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-#if INCLUDE_JVMTI
-class DebugOnCmdStartDCmd : public DCmd {
-public:
-  DebugOnCmdStartDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
-  static const char* name() {
-    return "VM.start_java_debugging";
-  }
-  static const char* description() {
-    return "Starts up the Java debugging if the jdwp agentlib was enabled with the option onjcmd=y.";
-  }
-  static const char* impact() {
-    return "High: Switches the VM into Java debug mode.";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = { "java.lang.management.ManagementPermission", "control", nullptr };
-    return p;
-  }
-  virtual void execute(DCmdSource source, TRAPS);
-};
-#endif // INCLUDE_JVMTI
-
 class EventLogDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _log;
@@ -981,14 +960,14 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_WIN64)
 
 class SystemMapDCmd : public DCmd {
 public:
   SystemMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.map"; }
   static const char* description() {
-    return "Prints an annotated process memory map of the VM process (linux only).";
+    return "Prints an annotated process memory map of the VM process (linux and Windows only).";
   }
   static const char* impact() { return "Medium; can be high for very large java heaps."; }
   static const JavaPermission permission() {
@@ -1006,7 +985,7 @@ public:
   SystemDumpMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.dump_map"; }
   static const char* description() {
-    return "Dumps an annotated process memory map to an output file (linux only).";
+    return "Dumps an annotated process memory map to an output file (linux and Windows only).";
   }
   static const char* impact() { return "Medium; can be high for very large java heaps."; }
   static const JavaPermission permission() {
@@ -1017,6 +996,6 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-#endif // LINUX
+#endif // LINUX or WINDOWS
 
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP

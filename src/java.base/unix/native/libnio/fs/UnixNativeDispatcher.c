@@ -184,6 +184,7 @@ static jfieldID attrs_st_birthtime_sec;
 #if defined(__linux__) // Linux has nsec granularity if supported
 static jfieldID attrs_st_birthtime_nsec;
 #endif
+static jfieldID attrs_birthtime_available;
 
 static jfieldID attrs_f_frsize;
 static jfieldID attrs_f_blocks;
@@ -203,7 +204,7 @@ typedef int openat_func(int, const char *, int, ...);
 typedef int fstatat_func(int, const char *, struct stat *, int);
 typedef int unlinkat_func(int, const char*, int);
 typedef int renameat_func(int, const char*, int, const char*);
-typedef int futimesat_func(int, const char *, const struct timeval *);
+typedef int futimes_func(int, const struct timeval *);
 typedef int futimens_func(int, const struct timespec *);
 typedef int lutimes_func(const char *, const struct timeval *);
 typedef DIR* fdopendir_func(int);
@@ -216,7 +217,7 @@ static openat_func* my_openat_func = NULL;
 static fstatat_func* my_fstatat_func = NULL;
 static unlinkat_func* my_unlinkat_func = NULL;
 static renameat_func* my_renameat_func = NULL;
-static futimesat_func* my_futimesat_func = NULL;
+static futimes_func* my_futimes_func = NULL;
 static futimens_func* my_futimens_func = NULL;
 static lutimes_func* my_lutimes_func = NULL;
 static fdopendir_func* my_fdopendir_func = NULL;
@@ -332,6 +333,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     attrs_st_birthtime_nsec = (*env)->GetFieldID(env, clazz, "st_birthtime_nsec", "J");
     CHECK_NULL_RETURN(attrs_st_birthtime_nsec, 0);
 #endif
+    attrs_birthtime_available = (*env)->GetFieldID(env, clazz, "birthtime_available", "Z");
+    CHECK_NULL_RETURN(attrs_birthtime_available, 0);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixFileStoreAttributes");
     CHECK_NULL_RETURN(clazz, 0);
@@ -360,8 +363,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     /* system calls that might not be available at run time */
 
 #if defined(_ALLBSD_SOURCE)
-    my_openat_func = (openat_func*)dlsym(RTLD_DEFAULT, "openat");
-    my_fstatat_func = (fstatat_func*)dlsym(RTLD_DEFAULT, "fstatat");
+    my_openat_func = (openat_func*) openat;
+    my_fstatat_func = (fstatat_func*) fstatat;
 #else
     // Make sure we link to the 64-bit version of the functions
     my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "openat64");
@@ -370,22 +373,22 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
 #if defined(__linux__) && defined(__arm__)
-    my_futimesat_func = (futimesat_func*) lookup_time_t_function("futimesat",
-        "__futimesat64");
+    my_futimes_func = (futimes_func*) lookup_time_t_function("futimes",
+        "__futimes64");
     my_lutimes_func = (lutimes_func*) lookup_time_t_function("lutimes",
         "__lutimes64");
     my_futimens_func = (futimens_func*) lookup_time_t_function("futimens",
         "__futimens64");
 #else
-#ifndef _ALLBSD_SOURCE
-    my_futimesat_func = (futimesat_func*) dlsym(RTLD_DEFAULT, "futimesat");
+    my_futimes_func = (futimes_func*) dlsym(RTLD_DEFAULT, "futimes");
     my_lutimes_func = (lutimes_func*) dlsym(RTLD_DEFAULT, "lutimes");
-#endif
     my_futimens_func = (futimens_func*) dlsym(RTLD_DEFAULT, "futimens");
 #endif
 #if defined(_AIX)
     // Make sure we link to the 64-bit version of the function
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
+#elif defined(_ALLBSD_SOURCE)
+    my_fdopendir_func = (fdopendir_func*) fdopendir;
 #else
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir");
 #endif
@@ -396,13 +399,13 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
         my_fstatat_func = (fstatat_func*)&fstatat_wrapper;
 #endif
 
-    /* supports futimes or futimesat, futimens, and/or lutimes */
+    /* supports futimes, futimens, and/or lutimes */
 
 #ifdef _ALLBSD_SOURCE
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_LUTIMES;
 #else
-    if (my_futimesat_func != NULL)
+    if (my_futimes_func != NULL)
         capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
     if (my_lutimes_func != NULL)
         capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_LUTIMES;
@@ -414,7 +417,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     if (my_openat_func != NULL &&  my_fstatat_func != NULL &&
         my_unlinkat_func != NULL && my_renameat_func != NULL &&
-        my_futimesat_func != NULL && my_fdopendir_func != NULL)
+        my_futimes_func != NULL && my_fdopendir_func != NULL)
     {
         capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_OPENAT;
     }
@@ -620,19 +623,19 @@ static void copy_statx_attributes(JNIEnv* env, struct my_statx* buf, jobject att
     (*env)->SetLongField(env, attrs, attrs_st_atime_sec, (jlong)buf->stx_atime.tv_sec);
     (*env)->SetLongField(env, attrs, attrs_st_mtime_sec, (jlong)buf->stx_mtime.tv_sec);
     (*env)->SetLongField(env, attrs, attrs_st_ctime_sec, (jlong)buf->stx_ctime.tv_sec);
+
+    // Check mask for birth time and set flag accordingly. The birth time is
+    // filled in if and only if the STATX_BTIME bit is set in the mask.
+    // Although the statx system call might be supported by the operating
+    // system, the birth time is not necessarily supported by the file system.
     if ((buf->stx_mask & STATX_BTIME) != 0) {
-        //  Birth time was filled in so use it
-        (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec,
-                             (jlong)buf->stx_btime.tv_sec);
-        (*env)->SetLongField(env, attrs, attrs_st_birthtime_nsec,
-                             (jlong)buf->stx_btime.tv_nsec);
+        (*env)->SetBooleanField(env, attrs, attrs_birthtime_available, (jboolean)JNI_TRUE);
+        (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec, (jlong)buf->stx_btime.tv_sec);
+        (*env)->SetLongField(env, attrs, attrs_st_birthtime_nsec, (jlong)buf->stx_btime.tv_nsec);
     } else {
-        //  Birth time was not filled in: fall back to last modification time
-        (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec,
-                             (jlong)buf->stx_mtime.tv_sec);
-        (*env)->SetLongField(env, attrs, attrs_st_birthtime_nsec,
-                             (jlong)buf->stx_mtime.tv_nsec);
+        (*env)->SetBooleanField(env, attrs, attrs_birthtime_available, (jboolean)JNI_FALSE);
     }
+
     (*env)->SetLongField(env, attrs, attrs_st_atime_nsec, (jlong)buf->stx_atime.tv_nsec);
     (*env)->SetLongField(env, attrs, attrs_st_mtime_nsec, (jlong)buf->stx_mtime.tv_nsec);
     (*env)->SetLongField(env, attrs, attrs_st_ctime_nsec, (jlong)buf->stx_ctime.tv_nsec);
@@ -661,7 +664,9 @@ static void copy_stat_attributes(JNIEnv* env, struct stat* buf, jobject attrs) {
     (*env)->SetLongField(env, attrs, attrs_st_ctime_sec, (jlong)buf->st_ctime);
 
 #ifdef _DARWIN_FEATURE_64_BIT_INODE
+    // birthtime_available defaults to 'false'; on Darwin, it is always true
     (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec, (jlong)buf->st_birthtime);
+    (*env)->SetBooleanField(env, attrs, attrs_birthtime_available, (jboolean)JNI_TRUE);
     // rely on default value of 0 for st_birthtime_nsec field on Darwin
 #endif
 
@@ -909,11 +914,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_futimes0(JNIEnv* env, jclass this, jint fil
 #ifdef _ALLBSD_SOURCE
     RESTARTABLE(futimes(filedes, &times[0]), err);
 #else
-    if (my_futimesat_func == NULL) {
-        JNU_ThrowInternalError(env, "my_futimesat_func is NULL");
+    if (my_futimes_func == NULL) {
+        JNU_ThrowInternalError(env, "my_futimes_func is NULL");
         return;
     }
-    RESTARTABLE((*my_futimesat_func)(filedes, NULL, &times[0]), err);
+    RESTARTABLE((*my_futimes_func)(filedes, &times[0]), err);
 #endif
     if (err == -1) {
         throwUnixException(env, errno);

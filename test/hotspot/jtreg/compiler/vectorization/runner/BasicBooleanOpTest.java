@@ -25,6 +25,7 @@
 /*
  * @test
  * @summary Vectorization test on basic boolean operations
+ * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  * @library /test/lib /
  *
  * @build jdk.test.whitebox.WhiteBox

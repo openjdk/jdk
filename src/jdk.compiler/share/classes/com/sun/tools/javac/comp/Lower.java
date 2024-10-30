@@ -267,26 +267,22 @@ public class Lower extends TreeTranslator {
     Map<ClassSymbol,List<VarSymbol>> freevarCache;
 
     /** A navigator class for collecting the free variables accessed
-     *  from a local class. There is only one case; all other cases simply
-     *  traverse down the tree. This class doesn't deal with the specific
-     *  of Lower - it's an abstract visitor that is meant to be reused in
-     *  order to share the local variable capture logic.
+     *  from a local class.
      */
-    abstract class BasicFreeVarCollector extends TreeScanner {
+    class FreeVarCollector extends CaptureScanner {
 
-        /** Add all free variables of class c to fvs list
-         *  unless they are already there.
-         */
-        abstract void addFreeVars(ClassSymbol c);
-
-        /** If tree refers to a variable in owner of local class, add it to
-         *  free variables list.
-         */
-        public void visitIdent(JCIdent tree) {
-            visitSymbol(tree.sym);
+        FreeVarCollector(JCTree ownerTree) {
+            super(ownerTree);
         }
-        // where
-        abstract void visitSymbol(Symbol _sym);
+
+        void addFreeVars(ClassSymbol c) {
+            List<VarSymbol> fvs = freevarCache.get(c);
+            if (fvs != null) {
+                for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
+                    addFreeVar(l.head);
+                }
+            }
+        }
 
         /** If tree refers to a class instance creation expression
          *  add all free variables of the freshly created class.
@@ -306,84 +302,6 @@ public class Lower extends TreeTranslator {
             }
             super.visitApply(tree);
         }
-
-        @Override
-        public void visitYield(JCYield tree) {
-            scan(tree.value);
-        }
-
-    }
-
-    /**
-     * Lower-specific subclass of {@code BasicFreeVarCollector}.
-     */
-    class FreeVarCollector extends BasicFreeVarCollector {
-
-        /** The owner of the local class.
-         */
-        Symbol owner;
-
-        /** The local class.
-         */
-        ClassSymbol clazz;
-
-        /** The list of owner's variables accessed from within the local class,
-         *  without any duplicates.
-         */
-        List<VarSymbol> fvs;
-
-        FreeVarCollector(ClassSymbol clazz) {
-            this.clazz = clazz;
-            this.owner = clazz.owner;
-            this.fvs = List.nil();
-        }
-
-        /** Add free variable to fvs list unless it is already there.
-         */
-        private void addFreeVar(VarSymbol v) {
-            for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail)
-                if (l.head == v) return;
-            fvs = fvs.prepend(v);
-        }
-
-        @Override
-        void addFreeVars(ClassSymbol c) {
-            List<VarSymbol> fvs = freevarCache.get(c);
-            if (fvs != null) {
-                for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
-                    addFreeVar(l.head);
-                }
-            }
-        }
-
-        @Override
-        void visitSymbol(Symbol _sym) {
-            Symbol sym = _sym;
-            if (sym.kind == VAR || sym.kind == MTH) {
-                if (sym != null && sym.owner != owner)
-                    sym = proxies.get(sym);
-                if (sym != null && sym.owner == owner) {
-                    VarSymbol v = (VarSymbol)sym;
-                    if (v.getConstValue() == null) {
-                        addFreeVar(v);
-                    }
-                }
-            }
-        }
-    }
-
-    ClassSymbol ownerToCopyFreeVarsFrom(ClassSymbol c) {
-        if (!c.isDirectlyOrIndirectlyLocal()) {
-            return null;
-        }
-        Symbol currentOwner = c.owner;
-        while (currentOwner.owner.kind.matches(KindSelector.TYP) && currentOwner.isDirectlyOrIndirectlyLocal()) {
-            currentOwner = currentOwner.owner;
-        }
-        if (currentOwner.owner.kind.matches(KindSelector.VAL_MTH) && c.isSubClass(currentOwner, types)) {
-            return (ClassSymbol)currentOwner;
-        }
-        return null;
     }
 
     /** Return the variables accessed from within a local class, which
@@ -395,22 +313,10 @@ public class Lower extends TreeTranslator {
         if (fvs != null) {
             return fvs;
         }
-        if (c.owner.kind.matches(KindSelector.VAL_MTH) && !c.isStatic()) {
-            FreeVarCollector collector = new FreeVarCollector(c);
-            collector.scan(classDef(c));
-            fvs = collector.fvs;
-            freevarCache.put(c, fvs);
-            return fvs;
-        } else {
-            ClassSymbol owner = ownerToCopyFreeVarsFrom(c);
-            if (owner != null) {
-                fvs = freevarCache.get(owner);
-                freevarCache.put(c, fvs);
-                return fvs;
-            } else {
-                return List.nil();
-            }
-        }
+        FreeVarCollector collector = new FreeVarCollector(classDef(c));
+        fvs = collector.analyzeCaptures().reverse();
+        freevarCache.put(c, fvs);
+        return fvs;
     }
 
     Map<TypeSymbol,EnumMapping> enumSwitchMap = new LinkedHashMap<>();
@@ -1501,7 +1407,7 @@ public class Lower extends TreeTranslator {
      *  @param owner      The class in which the definitions go.
      */
     List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner) {
-        return freevarDefs(pos, freevars, owner, 0);
+        return freevarDefs(pos, freevars, owner, LOCAL_CAPTURE_FIELD);
     }
 
     List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner,
@@ -1517,7 +1423,12 @@ public class Lower extends TreeTranslator {
                 proxyName = proxyName(v.name, index++);
             } while (!proxyNames.add(proxyName));
             VarSymbol proxy = new VarSymbol(
-                flags, proxyName, v.erasure(types), owner);
+                flags, proxyName, v.erasure(types), owner) {
+                @Override
+                public Symbol baseSymbol() {
+                    return v;
+                }
+            };
             proxies.put(v, proxy);
             JCVariableDecl vd = make.at(pos).VarDef(proxy, null);
             vd.vartype = access(vd.vartype);
