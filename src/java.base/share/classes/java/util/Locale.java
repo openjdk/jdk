@@ -153,8 +153,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dt><a id="def_variant"><b>variant</b></a></dt>
  *
  *   <dd>- Any arbitrary value used to indicate a variation of a
- *   {@code Locale}. When multiple variant values exist, they should be ordered
- *   by higher importance values preceding the other variant values. BCP 47 deviation:
+ *   {@code Locale}. When multiple variants exist, they should be ordered with
+ *   higher importance values preceding the others. BCP 47 deviation:
  *   BCP 47 subtags are strictly used to indicate
  *   additional variations that define a language or its dialects that
  *   are not covered by any combinations of language, script and
