@@ -47,7 +47,7 @@ void continuations_init();
 class javaVFrame;
 class JavaThread;
 
-// should match Continuation.toPreemptStatus() in Continuation.java
+// should match Continuation.PreemptStatus() in Continuation.java
 enum freeze_result {
   freeze_ok = 0,
   freeze_ok_bottom = 1,
