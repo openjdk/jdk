@@ -284,6 +284,44 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
+template <typename Function>
+void ConstantPool::iterate_archivable_resolved_references(Function function) {
+  objArrayOop rr = resolved_references();
+  if (rr != nullptr && cache() != nullptr && CDSConfig::is_dumping_invokedynamic()) {
+    Array<ResolvedIndyEntry>* indy_entries = cache()->resolved_indy_entries();
+    if (indy_entries != nullptr) {
+      for (int i = 0; i < indy_entries->length(); i++) {
+        ResolvedIndyEntry *rie = indy_entries->adr_at(i);
+        if (rie->is_resolved() && AOTConstantPoolResolver::is_resolution_deterministic(this, rie->constant_pool_index())) {
+          int rr_index = rie->resolved_references_index();
+          assert(resolved_reference_at(rr_index) != nullptr, "must exist");
+          function(rr_index);
+
+          // Save the BSM as well (sometimes the JIT looks up the BSM it for replay)
+          int indy_cp_index = rie->constant_pool_index();
+          int bsm_mh_cp_index = bootstrap_method_ref_index_at(indy_cp_index);
+          int bsm_rr_index = cp_to_object_index(bsm_mh_cp_index);
+          assert(resolved_reference_at(bsm_rr_index) != nullptr, "must exist");
+          function(bsm_rr_index);
+        }
+      }
+    }
+
+    Array<ResolvedMethodEntry>* method_entries = cache()->resolved_method_entries();
+    if (method_entries != nullptr) {
+      for (int i = 0; i < method_entries->length(); i++) {
+        ResolvedMethodEntry* rme = method_entries->adr_at(i);
+        if (rme->is_resolved(Bytecodes::_invokehandle) && rme->has_appendix() &&
+            cache()->can_archive_resolved_method(this, rme)) {
+          int rr_index = rme->resolved_references_index();
+          assert(resolved_reference_at(rr_index) != nullptr, "must exist");
+          function(rr_index);
+        }
+      }
+    }
+  }
+}
+
 // Returns the _resolved_reference array after removing unarchivable items from it.
 // Returns null if this class is not supported, or _resolved_reference doesn't exist.
 objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
@@ -300,15 +338,19 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   }
 
   objArrayOop rr = resolved_references();
-  if (rr == nullptr) {
-    return nullptr;
-  } else {
+  if (rr != nullptr) {
+    ResourceMark rm;
     int rr_len = rr->length();
+    GrowableArray<bool> keep_resolved_refs(rr_len, rr_len, false);
+
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
+    src_cp->iterate_archivable_resolved_references([&](int rr_index) {
+      keep_resolved_refs.at_put(rr_index, true);
+    });
+
     objArrayOop scratch_rr = HeapShared::scratch_resolved_references(src_cp);
     Array<u2>* ref_map = reference_map();
     int ref_map_len = ref_map == nullptr ? 0 : ref_map->length();
-
     for (int i = 0; i < rr_len; i++) {
       oop obj = rr->obj_at(i);
       scratch_rr->obj_at_put(i, nullptr);
@@ -324,21 +366,17 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
           }
         }
 
-        if (CDSConfig::is_dumping_invokedynamic()) {
+        if (keep_resolved_refs.at(i)) {
           scratch_rr->obj_at_put(i, obj);
         }
       }
     }
     return scratch_rr;
   }
+  return rr;
 }
 
 void ConstantPool::find_required_hidden_classes() {
-  if (!CDSConfig::is_dumping_invokedynamic()) {
-    // This function is needed only for supporting aot-linking indy.
-    return;
-  }
-
   if (_cache == nullptr) {
     return;
   }
@@ -357,12 +395,10 @@ void ConstantPool::find_required_hidden_classes() {
 
   objArrayOop rr = resolved_references();
   if (rr != nullptr) {
-    for (int i = 0; i < rr->length(); i++) {
-      oop obj = rr->obj_at(i);
-      if (obj != nullptr) {
-        HeapShared::find_required_hidden_classes_in_object(obj);
-      }
-    }
+    iterate_archivable_resolved_references([&](int rr_index) {
+      oop obj = rr->obj_at(rr_index);
+      HeapShared::find_required_hidden_classes_in_object(obj);
+    });
   }
 }
 
