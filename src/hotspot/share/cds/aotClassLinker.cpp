@@ -125,8 +125,8 @@ void AOTClassLinker::add_new_candidate(InstanceKlass* ik) {
 }
 
 // ik is a candidate for aot-linking; see if it can really work
-// that way, and return success or failure.  Not only must ik itself
-// look like a class we can preload but its supers must also be
+// that way, and return success or failure. Not only must ik itself
+// look like a class that can be aot-linked but its supers must also be
 // aot-linkable.
 bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   assert(is_initialized(), "sanity");

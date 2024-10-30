@@ -295,7 +295,7 @@ private:
 
   static SeenObjectsTable *_seen_objects_table;
 
-  // The "special subgraph" contains all the all archived objects that are reachable
+  // The "special subgraph" contains all the archived objects that are reachable
   // from the following roots:
   //    - interned strings
   //    - Klass::java_mirror() -- including aot-initialized mirrors such as those of Enum klasses.
