@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.internal.AppImageFile;
@@ -831,23 +832,23 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public static enum AppLayoutAssert {
-        AppImageFile(JPackageCommand::assertAppImageFile),
-        PackageFile(JPackageCommand::assertPackageFile),
-        MainLauncher(cmd -> {
+        APP_IMAGE_FILE(JPackageCommand::assertAppImageFile),
+        PACKAGE_FILE(JPackageCommand::assertPackageFile),
+        MAIN_LAUNCHER(cmd -> {
             if (cmd.isRuntime()) {
                 TKit.assertPathExists(convertFromRuntime(cmd).appLauncherPath(), false);
             } else {
                 TKit.assertExecutableFileExists(cmd.appLauncherPath());
             }
         }),
-        MainLauncherCfgFile(cmd -> {
+        MAIN_LAUNCHER_CFG_FILE(cmd -> {
             if (cmd.isRuntime()) {
                 TKit.assertPathExists(convertFromRuntime(cmd).appLauncherCfgPath(null), false);
             } else {
                 TKit.assertFileExists(cmd.appLauncherCfgPath(null));
             }
         }),
-        RuntimeDirectory(cmd -> {
+        RUNTIME_DIRECTORY(cmd -> {
             TKit.assertDirectoryExists(cmd.appRuntimeDirectory());
             if (TKit.isOSX()) {
                 var libjliPath = cmd.appRuntimeDirectory().resolve("Contents/MacOS/libjli.dylib");
@@ -857,7 +858,29 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                     TKit.assertFileExists(libjliPath);
                 }
             }
+        }),
+        MAC_BUNDLE_STRUCTURE(cmd -> {
+            if (TKit.isOSX()) {
+                Path bundleRoot;
+                if (cmd.isImagePackageType()) {
+                    bundleRoot = cmd.outputBundle();
+                } else {
+                    bundleRoot = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
+                }
+
+                TKit.assertDirectoryContent(bundleRoot).equals(Path.of("Contents"));
+
+                TKit.assertDirectoryContent(bundleRoot.resolve("Contents")).equals(
+                        Path.of("Info.plist"),
+                        Path.of("Contents"),
+                        Path.of("MacOS"),
+                        Path.of("app"),
+                        Path.of("runtime"),
+                        Path.of("Resources")
+                );
+            }
         });
+        ;
 
         AppLayoutAssert(Consumer<JPackageCommand> action) {
             this.action = action;
@@ -874,8 +897,13 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand setAppLayoutAsserts(AppLayoutAssert ... asserts) {
-        this.appLayoutAsserts = Set.of(asserts);
+        appLayoutAsserts = Set.of(asserts);
         return this;
+    }
+
+    public JPackageCommand excludeAppLayoutAsserts(AppLayoutAssert... asserts) {
+        return setAppLayoutAsserts(Stream.of(asserts).filter(Predicate.not(
+                appLayoutAsserts::contains)).toArray(AppLayoutAssert[]::new));
     }
 
     JPackageCommand assertAppLayout() {
@@ -1165,7 +1193,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
     private static boolean defaultWithToolProvider;
 
-    private final static Map<String, PackageType> PACKAGE_TYPES = Functional.identity(
+    private static final Map<String, PackageType> PACKAGE_TYPES = Functional.identity(
             () -> {
                 Map<String, PackageType> reply = new HashMap<>();
                 for (PackageType type : PackageType.values()) {
@@ -1174,7 +1202,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 return reply;
             }).get();
 
-    public final static Path DEFAULT_RUNTIME_IMAGE = Functional.identity(() -> {
+    public static final Path DEFAULT_RUNTIME_IMAGE = Functional.identity(() -> {
         // Set the property to the path of run-time image to speed up
         // building app images and platform bundles by avoiding running jlink
         // The value of the property will be automativcally appended to
@@ -1187,5 +1215,5 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return null;
     }).get();
 
-    private final static String UNPACKED_PATH_ARGNAME = "jpt-unpacked-folder";
+    private static final String UNPACKED_PATH_ARGNAME = "jpt-unpacked-folder";
 }
