@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -463,6 +463,16 @@ public class FramesDecoder {
             int val = getInt();
             if (id > 0 && id <= SettingsFrame.MAX_PARAM) {
                 // a known parameter. Ignore otherwise
+                if (id == SettingsFrame.INITIAL_WINDOW_SIZE && val < 0) {
+                    return new MalformedFrame(ErrorFrame.FLOW_CONTROL_ERROR,
+                            "SettingsFrame with INITIAL_WINDOW_SIZE > 2^31 -1: "
+                                    + (val & 0xffffffffL));
+                }
+                if (id == SettingsFrame.MAX_FRAME_SIZE && (val < 16384 || val > 16777215)) {
+                    return new MalformedFrame(ErrorFrame.PROTOCOL_ERROR,
+                            "SettingsFrame with MAX_FRAME_SIZE out of range: "
+                                    + (val & 0xffffffffL));
+                }
                 sf.setParameter(id, val); // TODO parameters validation
             }
         }
@@ -530,7 +540,12 @@ public class FramesDecoder {
             return new MalformedFrame(ErrorFrame.FRAME_SIZE_ERROR,
                     "WindowUpdateFrame length is "+ frameLength+", expected 4");
         }
-        return new WindowUpdateFrame(streamid, getInt() & 0x7fffffff);
+        int update = getInt();
+        if (update < 0) {
+            return new MalformedFrame(ErrorFrame.FLOW_CONTROL_ERROR,
+                    "WindowUpdateFrame with value > 2^31 -1 " + (update & 0xffffffffL));
+        }
+        return new WindowUpdateFrame(streamid, update & 0x7fffffff);
     }
 
     private Http2Frame parseContinuationFrame(int frameLength, int streamid, int flags) {

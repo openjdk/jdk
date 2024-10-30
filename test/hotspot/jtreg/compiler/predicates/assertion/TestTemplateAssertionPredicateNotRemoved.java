@@ -29,14 +29,14 @@
  *          completely with JDK-8288981 and 8314116 just mitigates the problem.
  * @requires vm.compiler2.enabled
  * @run main/othervm -Xbatch -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,compiler.predicates.TestTemplateAssertionPredicateNotRemoved::*
- *                   compiler.predicates.TestTemplateAssertionPredicateNotRemoved
+ *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestTemplateAssertionPredicateNotRemoved::*
+ *                   compiler.predicates.assertion.TestTemplateAssertionPredicateNotRemoved
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:LoopMaxUnroll=0
- *                   -XX:CompileCommand=compileonly,compiler.predicates.TestTemplateAssertionPredicateNotRemoved::*
- *                   compiler.predicates.TestTemplateAssertionPredicateNotRemoved
+ *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestTemplateAssertionPredicateNotRemoved::*
+ *                   compiler.predicates.assertion.TestTemplateAssertionPredicateNotRemoved
  */
 
-package compiler.predicates;
+package compiler.predicates.assertion;
 
 public class TestTemplateAssertionPredicateNotRemoved {
     static int[] iArrFld = new int[10];

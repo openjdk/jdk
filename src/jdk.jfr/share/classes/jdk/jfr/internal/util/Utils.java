@@ -48,6 +48,7 @@ import jdk.internal.module.Checks;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.RecordingState;
+import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
@@ -437,5 +438,14 @@ public final class Utils {
         } catch (ArithmeticException ae) {
             return defaultValue;
         }
+    }
+
+    public static ValueDescriptor findField(List<ValueDescriptor> fields, String name) {
+        for (ValueDescriptor v : fields) {
+            if (v.getName().equals(name)) {
+                return v;
+            }
+        }
+        return null;
     }
 }

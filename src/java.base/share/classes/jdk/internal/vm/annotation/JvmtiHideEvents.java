@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,18 @@
  * questions.
  */
 
-package jdk.internal.reflect;
+package jdk.internal.vm.annotation;
 
-class ByteVectorFactory {
-    static ByteVector create() {
-        return new ByteVectorImpl();
-    }
+import java.lang.annotation.*;
 
-    static ByteVector create(int sz) {
-        return new ByteVectorImpl(sz);
-    }
+/**
+ * A method may be annotated with JvmtiHideEvents to hint that JVMTI events
+ * should not be generated in context of the annotated method.
+ *
+ * @implNote
+ * This annotation is only used for some VirtualThread and Continuation methods.
+ */
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface JvmtiHideEvents {
 }
