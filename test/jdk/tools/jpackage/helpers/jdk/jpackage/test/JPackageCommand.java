@@ -1123,7 +1123,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private final Actions verifyActions;
     private static boolean defaultWithToolProvider;
 
-    private final static Map<String, PackageType> PACKAGE_TYPES = Functional.identity(
+    private static final Map<String, PackageType> PACKAGE_TYPES = Functional.identity(
             () -> {
                 Map<String, PackageType> reply = new HashMap<>();
                 for (PackageType type : PackageType.values()) {
@@ -1132,7 +1132,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 return reply;
             }).get();
 
-    public final static Path DEFAULT_RUNTIME_IMAGE = Functional.identity(() -> {
+    public static final Path DEFAULT_RUNTIME_IMAGE = Functional.identity(() -> {
         // Set the property to the path of run-time image to speed up
         // building app images and platform bundles by avoiding running jlink
         // The value of the property will be automativcally appended to
@@ -1145,5 +1145,5 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return null;
     }).get();
 
-    private final static String UNPACKED_PATH_ARGNAME = "jpt-unpacked-folder";
+    private static final String UNPACKED_PATH_ARGNAME = "jpt-unpacked-folder";
 }
