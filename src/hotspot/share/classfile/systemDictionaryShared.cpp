@@ -661,6 +661,7 @@ bool SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass* k) {
   if (CDSConfig::is_dumping_invokedynamic()) {
     DumpTimeClassInfo* info = _dumptime_table->get(k);
     if (info != nullptr && info->is_required_hidden_class()) {
+      assert(HeapShared::is_archivable_hidden_klass(k), "required hidden class must be archivable");
       return true;
     }
   }
@@ -668,13 +669,16 @@ bool SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass* k) {
   return false;
 }
 
-// Returns true if the class should be excluded. This can be called before
-// SystemDictionaryShared::find_all_archivable_classes().
-bool SystemDictionaryShared::check_for_exclusion(Klass* k) {
+// Returns true if the class should be excluded. This can be called by
+// AOTConstantPoolResolver before or after we enter the CDS safepoint.
+// When called before the safepoint, we need to link the class so that
+// it can be checked by check_for_exclusion().
+bool SystemDictionaryShared::should_be_excluded(Klass* k) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
+  assert(CDSConfig::current_thread_is_vm_or_dumper(), "sanity");
 
   if (k->is_objArray_klass()) {
-    return check_for_exclusion(ObjArrayKlass::cast(k)->bottom_klass());
+    return should_be_excluded(ObjArrayKlass::cast(k)->bottom_klass());
   }
 
   if (!k->is_instance_klass()) {
@@ -682,25 +686,35 @@ bool SystemDictionaryShared::check_for_exclusion(Klass* k) {
   } else {
     InstanceKlass* ik = InstanceKlass::cast(k);
 
-    if (SafepointSynchronize::is_at_safepoint()) {
-      return is_excluded_class(ik);
-    }
+    if (!SafepointSynchronize::is_at_safepoint()) {
+      if (!ik->is_linked()) {
+        // check_for_exclusion() below doesn't link unlinked classes. We come
+        // here only when we are trying to aot-link constant pool entries, so
+        // we'd better link the class.
+        JavaThread* THREAD = JavaThread::current();
+        ik->link_class(THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          CLEAR_PENDING_EXCEPTION;
+          return true; // linking failed -- let's exclude it
+        }
+      }
 
-    if (!ik->is_linked()) {
-      JavaThread* THREAD = JavaThread::current();
-      ik->link_class(THREAD);
-      if (HAS_PENDING_EXCEPTION) {
-        CLEAR_PENDING_EXCEPTION;
+      MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+      DumpTimeClassInfo* p = get_info_locked(ik);
+      if (p->is_excluded()) {
         return true;
       }
+      return check_for_exclusion(ik, p);
+    } else {
+      // No need to check for is_linked() as all eligible classes should have
+      // already been linked in MetaspaceShared::link_class_for_cds().
+      // Can't take the lock as we are in safepoint.
+      DumpTimeClassInfo* p = _dumptime_table->get(ik);
+      if (p->is_excluded()) {
+        return true;
+      }
+      return check_for_exclusion(ik, p);
     }
-
-    MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-    DumpTimeClassInfo* p = get_info_locked(ik);
-    if (p->is_excluded()) {
-      return true;
-    }
-    return check_for_exclusion(ik, p);
   }
 }
 

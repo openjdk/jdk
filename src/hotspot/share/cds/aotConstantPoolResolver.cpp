@@ -371,7 +371,7 @@ bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbo
         return false;
       }
 
-      if (SystemDictionaryShared::check_for_exclusion(k)) {
+      if (SystemDictionaryShared::should_be_excluded(k)) {
         if (log_is_enabled(Warning, cds, resolve)) {
           ResourceMark rm;
           log_warning(cds, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded", k->external_name());

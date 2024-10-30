@@ -292,7 +292,7 @@ public:
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
 
   static void find_all_archivable_classes();
-  static bool check_for_exclusion(Klass* k);
+  static bool should_be_excluded(Klass* k);
   static bool check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);
