@@ -34,4 +34,3 @@ editProperty(matches("name", "CallLeafDirect|CallLeafDirectVector|CallLeafNoFPDi
 // Show pre/main/post at CountedLoopNodes.
 editProperty(hasProperty("loop_kind"), ["loop_kind"], "extra_label",
              function(loop_kind) { return loop_kind[0]; });
-
