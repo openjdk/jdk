@@ -24,8 +24,8 @@
  */
 package jdk.tools.jlink.plugin;
 
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -68,7 +68,7 @@ public interface ResourcePoolEntry {
         MAN_PAGE,
         NATIVE_CMD,
         NATIVE_LIB,
-        TOP;
+        TOP
     }
 
     /**
