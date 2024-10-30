@@ -612,7 +612,7 @@ void* SplashProcAddress(const char* name) {
             return NULL;
         }
         if (ret < 0) {
-            JLI_ReportErrorMessage(LAUNCHER_ERROR4);
+            JLI_ReportErrorMessage(LAUNCHER_ERROR5);
             return NULL;
         }
         hSplashLib = dlopen(splashPath, RTLD_LAZY | RTLD_GLOBAL);
