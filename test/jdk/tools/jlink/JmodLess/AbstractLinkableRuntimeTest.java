@@ -49,7 +49,7 @@ public abstract class AbstractLinkableRuntimeTest {
     protected static final boolean DEBUG = true;
 
     public void run() throws Exception {
-        Helper helper = Helper.newHelper(true /* JDK linkable runtime tests */);
+        Helper helper = Helper.newHelper(true /* linking from run-time image */);
         if (helper == null) {
             System.err.println(AbstractLinkableRuntimeTest.class.getSimpleName() +
                                ": Test not run");
@@ -111,7 +111,7 @@ public abstract class AbstractLinkableRuntimeTest {
     }
 
     protected Path createJavaImageRuntimeLink(BaseJlinkSpec baseSpec, Set<String> excludedJmods) throws Exception {
-        // create a base image only containing the jdk.jlink module and its transitive closure
+        // Be sure we have a JDK without JMODs
         Path runtimeJlinkImage = createRuntimeLinkImage(baseSpec, excludedJmods);
 
         // On Windows jvm.dll is in 'bin' after the jlink
@@ -201,10 +201,10 @@ public abstract class AbstractLinkableRuntimeTest {
     }
 
     /**
-     * Prepares the test for execution. This assumes the current jimage is
-     * runtime-linkable. However, since the 'jmods' dir might be present
-     * (default jmods module path), it needs to get removed to provoke a runtime
-     * link.
+     * Prepares the test for execution. This assumes the current runtime
+     * supports linking from it. However, since the 'jmods' dir might be present
+     * (default jmods module path), the 'jmods' directory needs to get removed
+     * to provoke actual linking from the run-time image.
      *
      * @param baseSpec
      * @return A path to a JDK that is capable for linking from the run-time
@@ -216,17 +216,17 @@ public abstract class AbstractLinkableRuntimeTest {
     }
 
     /**
-     * Prepares the test for execution. This assumes the current jimage is
-     * runtime-linkable. However, since the 'jmods' dir might be present
-     * (default jmods module path), it needs to get removed to provoke a runtime
-     * link.
+     * Prepares the test for execution. This assumes the current runtime
+     * supports linking from it. However, since the 'jmods' dir might be present
+     * (default jmods module path), the 'jmods' directory needs to get removed
+     * to provoke actual linking from the run-time image.
      *
      * @param baseSpec
      *            The modules to jlink
      * @param excludedJmods
      *            The set of jmod files to exclude in the base JDK. Empty set if
      *            all JMODs should be removed.
-     * @return A path to a JDK image which is prepared for runtime linking.
+     * @return A path to a JDK image ready for running jlink
      * @throws Exception
      */
     protected Path createRuntimeLinkImage(BaseJlinkSpec baseSpec,

@@ -30,8 +30,8 @@ import tests.JImageValidator;
 
 /*
  * @test
- * @summary Test SystemModules handling of java --list-modules with system modules
- *          not consistently enabled/disabled.
+ * @summary Test disabled SystemModulesPlugin in run-time image link mode. Expect
+ *          generated classes to not be there.
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
@@ -62,7 +62,6 @@ public class SystemModulesTest2 extends AbstractLinkableRuntimeTest {
                                                             .addExtraOption("--disable-plugin")
                                                             .addExtraOption("system-modules")
                                                             .build());
-        // Verify that SystemModules$all.class is there
         JImageValidator.validate(javaJmodless.resolve("lib").resolve("modules"),
                                     Collections.emptyList(),
                                     List.of("/java.base/jdk/internal/module/SystemModules$all.class",
