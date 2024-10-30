@@ -772,11 +772,11 @@ public final class TKit {
             }).get());
         }
 
-        public void equals(Path ... expected) {
-            equals(Set.of(expected));
+        public void match(Path ... expected) {
+            DirectoryContentVerifier.this.match(Set.of(expected));
         }
 
-        public void equals(Set<Path> expected) {
+        public void match(Set<Path> expected) {
             currentTest.notifyAssert();
 
             var comm = Comm.compare(content, expected);

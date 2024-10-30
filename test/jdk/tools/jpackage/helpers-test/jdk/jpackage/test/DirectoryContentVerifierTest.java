@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import static jdk.jpackage.test.DirectoryContentVerifierTest.AssertType.CONTAINS;
-import static jdk.jpackage.test.DirectoryContentVerifierTest.AssertType.EQUALS;
+import static jdk.jpackage.test.DirectoryContentVerifierTest.AssertType.MATCH;
 import jdk.jpackage.test.TKit.DirectoryContentVerifier;
 import static jdk.jpackage.test.TKit.assertAssert;
 
@@ -52,7 +52,7 @@ import static jdk.jpackage.test.TKit.assertAssert;
 public class DirectoryContentVerifierTest {
 
     enum AssertType {
-        EQUALS(DirectoryContentVerifier::equals),
+        MATCH(DirectoryContentVerifier::match),
         CONTAINS(DirectoryContentVerifier::contains),
         ;
 
@@ -76,9 +76,9 @@ public class DirectoryContentVerifierTest {
         void applyVariantsTo(List<Object[]> data) {
             applyTo(data);
             boolean pathGroupsEqual = List.of(expectedPaths).equals(List.of(actualPaths));
-            if (assertOp == EQUALS) {
+            if (assertOp == MATCH) {
                 if (!pathGroupsEqual) {
-                    data.add(new Object[]{actualPaths, expectedPaths, EQUALS, success});
+                    data.add(new Object[]{actualPaths, expectedPaths, MATCH, success});
                 }
                 if (success) {
                     data.add(new Object[]{expectedPaths, actualPaths, CONTAINS, success});
@@ -111,7 +111,7 @@ public class DirectoryContentVerifierTest {
 
         private String[] expectedPaths = new String[0];
         private String[] actualPaths = new String[0];
-        private AssertType assertOp = EQUALS;
+        private AssertType assertOp = MATCH;
         private boolean success = true;
     }
 
