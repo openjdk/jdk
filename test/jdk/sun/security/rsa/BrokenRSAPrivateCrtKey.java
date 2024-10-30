@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,9 @@ import java.math.BigInteger;
 public class BrokenRSAPrivateCrtKey {
     public static void main(String[] args) throws Exception {
         KeyPairGenerator generator =
-                KeyPairGenerator.getInstance("RSA", "SunRsaSign");
-        generator.initialize(512);
+                KeyPairGenerator.getInstance("RSA",
+                        System.getProperty("test.provider.name", "SunRsaSign"));
+        generator.initialize(2048);
 
         KeyPair pair = generator.generateKeyPair();
 
@@ -55,7 +56,8 @@ public class BrokenRSAPrivateCrtKey {
                 privatekey.getPrimeExponentQ(),
                 privatekey.getCrtCoefficient());
 
-        KeyFactory factory = KeyFactory.getInstance("RSA", "SunRsaSign");
+        KeyFactory factory = KeyFactory.getInstance("RSA",
+                System.getProperty("test.provider.name", "SunRsaSign"));
 
         PrivateKey privatekey2 = factory.generatePrivate(spec);
 

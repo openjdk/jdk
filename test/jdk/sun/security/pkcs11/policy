@@ -1,3 +1,4 @@
 grant {
     permission java.lang.RuntimePermission "setSecurityManager";
+    permission java.util.PropertyPermission "test.provider.name", "read";
 };
