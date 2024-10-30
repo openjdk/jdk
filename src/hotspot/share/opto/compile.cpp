@@ -3490,7 +3490,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         } else if (t->isa_oopptr()) {
           new_in2 = ConNode::make(t->make_narrowoop());
         } else if (t->isa_klassptr()) {
-          new_in2 = ConNode::make(t->make_narrowklass());
+          ciKlass* klass = tkls->exact_klass();
+          if (klass->is_interface() || klass->is_abstract()) {
+            // CmpPNode::Ideal should always fold such comparisons
+            assert(false, "Interface or abstract class pointers should not be compressed");
+          } else {
+            new_in2 = ConNode::make(t->make_narrowklass());
+          }
         }
       }
       if (new_in2 != nullptr) {
