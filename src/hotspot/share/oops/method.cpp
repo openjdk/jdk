@@ -868,7 +868,8 @@ bool Method::needs_clinit_barrier() const {
 }
 
 bool Method::is_object_wait0() const {
-  return name() == vmSymbols::wait_name();
+  return klass_name() == vmSymbols::java_lang_Object()
+         && name() == vmSymbols::wait_name();
 }
 
 objArrayHandle Method::resolved_checked_exceptions_impl(Method* method, TRAPS) {
