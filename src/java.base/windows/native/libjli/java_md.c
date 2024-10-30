@@ -224,7 +224,7 @@ LoadMSVCRT()
     if (!loaded) {
         /*
          * The Microsoft C Runtime Library needs to be loaded first. A copy is
-         * assumed to be present in the JDK installation root directory.
+         * assumed to be present in the "bin" directory of the JDK installation root.
          * If it is not found there (or the JDK installation root fails to resolve),
          * skip the explicit load and let nature take its course, which is likely to
          * be a failure to execute. The makefiles will provide the correct lib contained
@@ -357,10 +357,10 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
     /*
      * The Microsoft C Runtime Library needs to be loaded first. A copy is
-     * assumed to be present in the JDK installation root directory. If it
-     * is not found there (or the JDK installation root fails to resolve),
-     * skip the explicit load and let nature take its course, which is likely
-     * to be a failure to execute.
+     * assumed to be present within the JDK. If it is not found there
+     * (or the JDK installation root fails to resolve), skip the explicit
+     * load and let nature take its course, which is likely to be a failure
+     * to execute.
      *
      */
     LoadMSVCRT();
