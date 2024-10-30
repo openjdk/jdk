@@ -90,7 +90,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 // give the target VM time to start the attach mechanism
                 final int delay_step = 100;
                 final long timeout = attachTimeout();
-                long time_spend = 0;
+                long time_spent = 0;
                 long delay = 0;
                 do {
                     // Increase timeout on each attempt to reduce polling
@@ -99,9 +99,9 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                         Thread.sleep(delay);
                     } catch (InterruptedException x) { }
 
-                    timedout = (time_spend += delay) > timeout;
+                    timedout = (time_spent += delay) > timeout;
 
-                    if (time_spend > timeout/2 && !socket_file.exists()) {
+                    if (time_spent > timeout/2 && !socket_file.exists()) {
                         // Send QUIT again to give target VM the last chance to react
                         checkCatchesAndSendQuitTo(pid, !timedout);
                     }
@@ -111,7 +111,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     throw new AttachNotSupportedException(
                         String.format("Unable to open socket file %s: " +
                           "target process %d doesn't respond within %dms " +
-                          "or HotSpot VM not loaded", socket_path, time_spend));
+                          "or HotSpot VM not loaded", socket_path, pid, time_spent));
                 }
             } finally {
                 f.delete();
