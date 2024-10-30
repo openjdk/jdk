@@ -330,7 +330,7 @@ public class LayoutNode {
         return reverseLeft;
     }
 
-    public int getBackedgeCrossingScore() {
+    private int getBackedgeCrossingScore() {
         int score = 0;
         for (LayoutEdge predEdge : getPreds()) {
             if (predEdge.isReversed()) {
