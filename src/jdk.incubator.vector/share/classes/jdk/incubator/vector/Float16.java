@@ -500,12 +500,12 @@ public final class Float16
                 if (periodIndex != -1) {
                     // Reconstruct integer and fraction digit sequence
                     // without the period.
-                    hexSignificand.append(s.substring(digitStart,      periodIndex));
-                    hexSignificand.append(s.substring(periodIndex + 1, pIndex));
-                    fractionDigits = pIndex - periodIndex -1;
+                    hexSignificand.append(s, digitStart,      periodIndex);
+                    hexSignificand.append(s, periodIndex + 1, pIndex);
+                    fractionDigits = pIndex - periodIndex - 1;
                 } else {
                     // All integer digits, no fraction digits
-                    hexSignificand.append(s.substring(digitStart, pIndex));
+                    hexSignificand.append(s, digitStart, pIndex);
                 }
 
                 // The exponent of a hexadecimal floating-point
