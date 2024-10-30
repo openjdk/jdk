@@ -112,7 +112,6 @@ public class LayoutGraph {
     // inserts dummy nodes acoring to layerNr - 1
     // moves the layer from previous layerNr to layerNr + 1
     private void moveExpandLayerDown(int layerNr) {
-        // TODO: needs improvement, handle reversed edges
         LayoutLayer newLayer =  createNewLayer(layerNr);
 
         if (layerNr == 0) return;
@@ -130,7 +129,9 @@ public class LayoutGraph {
                 dummyNode.setX(fromX + relativeFromX);
                 dummyNode.setLayer(layerNr);
                 dummyNode.getSuccs().addAll(edges);
-                LayoutEdge dummyEdge = new LayoutEdge(fromNode, dummyNode, relativeFromX, 0, null);
+                LayoutEdge dummyEdge = new LayoutEdge(fromNode, dummyNode, relativeFromX, 0, edges.get(0).getLink());
+                if (edges.get(0).isReversed()) dummyEdge.reverse();
+
                 fromNode.getSuccs().add(dummyEdge);
                 dummyNode.getPreds().add(dummyEdge);
                 for (LayoutEdge edge : edges) {
