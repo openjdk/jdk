@@ -49,9 +49,6 @@ import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 
 public class StreamPrintingOrientation implements Printable {
-    public StreamPrintingOrientation() {
-            super();
-    }
 
     public static void main(String[] args) throws Exception {
         StreamPrintingOrientation pd = new StreamPrintingOrientation();
