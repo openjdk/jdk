@@ -44,7 +44,6 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.internal.AppImageFile;
@@ -861,23 +860,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         }),
         MAC_BUNDLE_STRUCTURE(cmd -> {
             if (TKit.isOSX()) {
-                Path bundleRoot;
-                if (cmd.isImagePackageType()) {
-                    bundleRoot = cmd.outputBundle();
-                } else {
-                    bundleRoot = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
-                }
-
-                TKit.assertDirectoryContent(bundleRoot).equals(Path.of("Contents"));
-
-                TKit.assertDirectoryContent(bundleRoot.resolve("Contents")).equals(
-                        Path.of("Info.plist"),
-                        Path.of("Contents"),
-                        Path.of("MacOS"),
-                        Path.of("app"),
-                        Path.of("runtime"),
-                        Path.of("Resources")
-                );
+                MacHelper.verifyBundleStructure(cmd);
             }
         });
         ;
