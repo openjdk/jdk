@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,26 @@ package java.lang.reflect;
  * Type is the common superinterface for all types in the Java
  * programming language. These include raw types, parameterized types,
  * array types, type variables and primitive types.
+ *
+ * <h2 id="hierarchy">Interface Hierarchy of {@code Type}</h2>
+ * Types in the Java programming language are modeled with these subinterfaces:
+ * <ul>
+ * <li>No particular subinterface models primitive types (JLS {@jls 4.2}) and
+ *     non-generic (JLS {@jls 4.5}) and raw types (JLS {@jls 4.8}) of reference
+ *     types (JLS {@jls 4.3}), including classes and interfaces and array types.
+ *     Core reflection models these with {@link Class}.
+ * <li>{@link GenericArrayType} models array types (JLS {@jls 10.1}) with
+ *     generic component types.
+ * <li>{@link ParameterizedType} models parameterized types (JLS {@jls 4.4}),
+ *     including non-generic {@linkplain ParameterizedType##inner-member-class
+ *     inner member classes} of generic classes.
+ * <li>{@link TypeVariable} models type variables (JLS {@jls 4.4}), including
+ *     those from {@linkplain GenericDeclaration#getTypeParameters() type
+ *     parameter declarations}.
+ * <li>{@link WildcardType} models wildcard {@linkplain
+ *     ParameterizedType#getActualTypeArguments() type arguments} (JLS {@jls
+ *     4.5.1}).
+ * </ul>
  *
  * @jls 4.1 The Kinds of Types and Values
  * @jls 4.2 Primitive Types and Values

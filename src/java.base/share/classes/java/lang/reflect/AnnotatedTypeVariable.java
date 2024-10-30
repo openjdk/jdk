@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,17 +46,18 @@ public interface AnnotatedTypeVariable extends AnnotatedType {
     AnnotatedType[] getAnnotatedBounds();
 
     /**
-     * Returns the potentially annotated type that this type is a member of, if
-     * this type represents a nested type. For example, if this type is
-     * {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
-     *
-     * <p>Returns {@code null} for an {@code AnnotatedType} that is an instance
-     *     of {@code AnnotatedTypeVariable}.
-     *
-     * @return {@code null}
+     * {@return {@code null}}  An {@code AnnotatedTypeVariable} is not an inner
+     * member class.
      *
      * @since 9
      */
     @Override
     AnnotatedType getAnnotatedOwnerType();
+
+    /**
+     * {@inheritDoc}  The underlying type of an {@code AnnotatedTypeVariable} is
+     * a {@link TypeVariable}.
+     */
+    @Override
+    Type getType();
 }

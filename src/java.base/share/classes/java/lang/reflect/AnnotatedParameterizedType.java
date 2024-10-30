@@ -36,33 +36,36 @@ package java.lang.reflect;
 public interface AnnotatedParameterizedType extends AnnotatedType {
 
     /**
-     * Returns the potentially annotated actual type arguments of this parameterized type.
+     * {@return the potentially annotated actual type arguments of this
+     * parameterized type}
+     * <p>
+     * This method does not return the type arguments of the {@linkplain
+     * #getAnnotatedOwnerType() enclosing classes} of this type, if this is an
+     * {@linkplain ParameterizedType##inner-member-class inner member class}.
+     * For example, if this type is {@code @TA O<T>.I<S>}, this method
+     * returns {@code [S]}.  In particular, if this inner member class is
+     * non-generic but an enclosing class is, this method returns an empty
+     * array.
      *
-     * <p>Note that in some cases, the returned array can be empty. This can occur
-     * if this annotated type represents a non-parameterized type nested within
-     * a parameterized type.
-     *
-     * @return the potentially annotated actual type arguments of this parameterized type
      * @see ParameterizedType#getActualTypeArguments()
      */
     AnnotatedType[] getAnnotatedActualTypeArguments();
 
     /**
-     * {@return the potentially annotated type that this type is a member of, if
-     * this type represents a nested type, or {@code null}} For example, if this type is
-     * {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
+     * {@inheritDoc}
      *
-     * <p>Returns {@code null} if this {@code AnnotatedType} represents a
-     *     top-level or local class or interface or an anonymous class.
-     *
-     * @throws TypeNotPresentException if the owner type
-     *     refers to a non-existent class or interface declaration
-     * @throws MalformedParameterizedTypeException if the owner type
-     *     refers to a parameterized type that cannot be instantiated
-     *     for any reason
-     *
+     * @throws TypeNotPresentException {@inheritDoc}
+     * @throws MalformedParameterizedTypeException {@inheritDoc}
+     * @see ParameterizedType#getOwnerType()
      * @since 9
      */
     @Override
     AnnotatedType getAnnotatedOwnerType();
+
+    /**
+     * {@inheritDoc}  The underlying type of an {@code
+     * AnnotatedParameterizedType} is a {@link ParameterizedType}.
+     */
+    @Override
+    Type getType();
 }

@@ -32,10 +32,32 @@ import java.lang.annotation.Annotation;
  * the program currently running in this VM. The use may be of any type in the
  * Java programming language, including an array type, a parameterized type, a
  * type variable, or a wildcard type.
- *
+ * <p>
  * Note that any annotations returned by methods on this interface are
  * <em>type annotations</em> (JLS {@jls 9.7.4}) as the entity being
  * potentially annotated is a type.
+ *
+ * <h2 id="hierarchy">Interface Hierarchy of {@code AnnotatedType}</h2>
+ * Annotated use of types in the Java programming language is modeled with these
+ * subinterfaces, and {@link #getType() getType()} can identify their underlying
+ * {@linkplain Type##hierarchy types}:
+ * <ul>
+ * <li>No particular subinterface models primitive types (JLS {@jls 4.2}) and
+ *     non-generic (JLS {@jls 4.5}) and raw types (JLS {@jls 4.8}) of classes
+ *     and interfaces (JLS {@jls 4.3}).  Their underlying type is {@link Class}.
+ * <li>{@link AnnotatedArrayType} models array types (JLS {@jls 10.1}). Their
+ *     underlying type is {@link Class} or {@link GenericArrayType}.
+ * <li>{@link AnnotatedParameterizedType} models parameterized types (JLS {@jls
+ *     4.4}), including non-generic {@linkplain #getAnnotatedOwnerType() inner
+ *     member classes} of generic classes.  Their underlying type is {@link
+ *     ParameterizedType}.
+ * <li>{@link AnnotatedTypeVariable} models type variable (JLS {@jls 4.4})
+ *     usages.  Their underlying type is {@link TypeVariable}.
+ * <li>{@link AnnotatedWildcardType} models wildcard {@linkplain
+ *     AnnotatedParameterizedType#getAnnotatedActualTypeArguments() type
+ *     arguments} (JLS {@jls 4.5.1}).  Their underlying type is {@link
+ *     AnnotatedWildcardType}.
+ * </ul>
  *
  * @jls 4.1 The Kinds of Types and Values
  * @jls 4.2 Primitive Types and Values
@@ -50,28 +72,21 @@ import java.lang.annotation.Annotation;
 public interface AnnotatedType extends AnnotatedElement {
 
     /**
-     * {@return the potentially annotated type that this type is a member of, if
-     * this type represents a nested type, or {@code null}} For example, if this type is
-     * {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
-     *
-     * <p>Returns {@code null} if this {@code AnnotatedType} represents a
-     *     top-level or local class or interface or an anonymous class, or
-     *     a primitive type, or void.
-     *
-     * <p>Returns {@code null} if this {@code AnnotatedType} is an instance of
-     *     {@code AnnotatedArrayType}, {@code AnnotatedTypeVariable}, or
-     *     {@code AnnotatedWildcardType}.
+     * {@return the potentially annotated use of the immediately enclosing class
+     * of this type, or {@code null} if and only if this type is not an inner
+     * member class}  For example, if this type is {@code @TA O<T>.I<S>}, this
+     * method returns a representation of {@code @TA O<T>}.
      *
      * @implSpec
      * This default implementation returns {@code null} and performs no other
      * action.
      *
-     * @throws TypeNotPresentException if the owner type
-     *     refers to a non-existent class or interface declaration
-     * @throws MalformedParameterizedTypeException if the owner type
-     *     refers to a parameterized type that cannot be instantiated
-     *     for any reason
-     *
+     * @throws TypeNotPresentException if the immediate enclosing class refers
+     *     to a non-existent class declaration
+     * @throws MalformedParameterizedTypeException if the immediate enclosing
+     *     class refers to a parameterized type that cannot be instantiated for
+     *     any reason
+     * @see ParameterizedType##inner-member-class Inner member classes
      * @since 9
      */
     default AnnotatedType getAnnotatedOwnerType() {
@@ -79,9 +94,10 @@ public interface AnnotatedType extends AnnotatedElement {
     }
 
     /**
-     * Returns the underlying type that this annotated type represents.
+     * {@return the underlying type that this annotated type represents}
      *
-     * @return the type this annotated type represents
+     * @see ##hierarchy Interface Hierarchy of {@code AnnotatedType}
+     * @see Type##hierarchy Interface Hierarchy of {@code Type}
      */
     public Type getType();
 
