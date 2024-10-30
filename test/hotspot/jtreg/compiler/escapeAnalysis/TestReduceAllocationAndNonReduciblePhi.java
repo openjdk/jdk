@@ -34,36 +34,36 @@
 package compiler.escapeAnalysis;
 
 public class TestReduceAllocationAndNonReduciblePhi {
-	public static void main(String args[]) {
-		int result = 0;
+    public static void main(String args[]) {
+        int result = 0;
 
-		for (int i=0; i<20000; i++) {
-			result += test(i % 2 == 0, i % 3);
-		}
+        for (int i=0; i<20000; i++) {
+            result += test(i % 2 == 0, i % 3);
+        }
 
-		System.out.println("Result is = " + result);
-	}
+        System.out.println("Result is = " + result);
+    }
 
-	public static int test(boolean flag1, int pos) {
-		Point p0 = new Point();
-		Point p1 = flag1 ? null : p0;
+    public static int test(boolean flag1, int pos) {
+        Point p0 = new Point();
+        Point p1 = flag1 ? null : p0;
 
-		Picture pic = new Picture();
-		pic.p = p0;
+        Picture pic = new Picture();
+        pic.p = p0;
 
-		Picture[] ps = new Picture[5];
-		ps[pos] = pic;
+        Picture[] ps = new Picture[5];
+        ps[pos] = pic;
 
-		return p1 != null ? dummy1() : dummy2();
-	}
+        return p1 != null ? dummy1() : dummy2();
+    }
 
-	public static int dummy1() { return 1; }
+    public static int dummy1() { return 1; }
 
-	public static int dummy2() { return 2; }
+    public static int dummy2() { return 2; }
 
-	private static class Picture {
-		public Point p;
-	}
+    private static class Picture {
+        public Point p;
+    }
 
-	private static class Point { }
+    private static class Point { }
 }
