@@ -288,6 +288,7 @@ int os::extra_bang_size_in_bytes() {
 
 extern "C" {
   int SpinPause() {
-    return 0;
+    YieldProcessor();
+    return 1;
   }
 };
