@@ -2321,30 +2321,30 @@ public abstract sealed class $Type$Buffer
 
 #end[byte]
 
-  @Override
-  int scaleFactor() {
+    @Override
+    int scaleFactor() {
 #if[byte]
-      return 0;
+        return 0;
 #end[byte]
 #if[short]
-      return 1;
+        return 1;
 #end[short]
 #if[char]
-      return 1;
+        return 1;
 #end[char]
 #if[int]
-      return 2;
+        return 2;
 #end[int]
 #if[float]
-      return 2;
+        return 2;
 #end[float]
 #if[long]
-      return 3;
+        return 3;
 #end[long]
 #if[double]
-      return 3;
+        return 3;
 #end[double]
-  }
+    }
 
 #if[streamableType]
 
