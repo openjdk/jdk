@@ -131,7 +131,7 @@ int LogFileStreamOutput::write_internal_lines(const LogDecorations& decorations,
     written += decorator_padding;
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_msg);
     // If we have not written the whole message lenght by now then we must have a multi-line message.
-    // If we have active decorators then pad the line with an empty decorator string so 
+    // If we have active decorators then pad the line with an empty decorator string so
     // that the output lines up for clear visual reading.
     while (written_msg < msg_len) {
       msg = base + written_msg;
