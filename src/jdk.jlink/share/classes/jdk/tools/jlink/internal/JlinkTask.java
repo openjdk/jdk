@@ -612,19 +612,19 @@ public class JlinkTask {
                     taskHelper.getMessage("err.automatic.module", mref.descriptor().name(), loc));
             });
 
-        // Perform some sanity checks for linkable runtime image
+        // Perform some sanity checks for linking from the run-time image
         if (config.linkFromRuntimeImage()) {
             if (!LinkableRuntimeImage.isLinkableRuntime()) {
                 String msg = taskHelper.getMessage("err.runtime.link.not.linkable.runtime");
                 throw new IllegalArgumentException(msg);
             }
-            // Disallow to create a custom image to include jdk.jlink if linking from runtime image
+            // Do not permit linking from run-time image and also including jdk.jlink module
             if (cf.findModule(JlinkTask.class.getModule().getName()).isPresent()) {
                 String msg = taskHelper.getMessage("err.runtime.link.jdk.jlink.prohibited");
                 throw new IllegalArgumentException(msg);
             }
 
-            // Print info message indicating jlink is performed on a linkable runtime image
+            // Print info message indicating linking from the run-time image
             if (verbose && log != null) {
                 log.println(taskHelper.getMessage("runtime.link.info"));
             }
@@ -637,10 +637,9 @@ public class JlinkTask {
               .forEach(rm -> log.format("%s %s%s%n",
                                         rm.name(),
                                         rm.reference().location().get(),
+                                        // We have a link from run-time image when scheme is 'jrt'
                                         "jrt".equals(rm.reference().location().get().getScheme())
-                                            // if location is from jrt, should linkFromRuntimeImage() always be true?
-                                            && config.linkFromRuntimeImage() ?
-                                                " " + taskHelper.getMessage("runtime.link.jprt.path.extra")
+                                                ? " " + taskHelper.getMessage("runtime.link.jprt.path.extra")
                                                 : ""));
 
             // print provider info
@@ -741,8 +740,9 @@ public class JlinkTask {
             return modularJarArchive;
         } else if (Files.isDirectory(path) && !"jrt".equals(path.toUri().getScheme())) {
             // The jrt URI path scheme conditional is there since we'd otherwise
-            // enter this branch for linkable JDK runtimes where the path is
-            // a jrt path and for the specific JDK module is a directory.
+            // enter this branch for linking from the run-time image where the
+            // path is a jrt path. Not that the specific module would be a
+            // directory
             Path modInfoPath = path.resolve("module-info.class");
             if (Files.isRegularFile(modInfoPath)) {
                 return new DirArchive(path, findModuleName(modInfoPath));
