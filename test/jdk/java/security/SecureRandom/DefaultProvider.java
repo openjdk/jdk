@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class DefaultProvider {
         out.println("TEST: Default provider with constructor");
         SecureRandom secureRandom = new SecureRandom();
         String provider = secureRandom.getProvider().getName();
-        if (!provider.equals("SUN")) {
+        if (!provider.equals(System.getProperty("test.provider.name", "SUN"))) {
             throw new RuntimeException("Unexpected provider name: "
                     + provider);
         }
@@ -51,7 +51,7 @@ public class DefaultProvider {
         /* Test default provider with getInstance(String algorithm) */
         out.println("TEST: SHA1PRNG supported on all platforms by SUN provider");
         String algorithm = "SHA1PRNG";
-        provider = "SUN";
+        provider = System.getProperty("test.provider.name", "SUN");
 
         SecureRandom instance = SecureRandom.getInstance(algorithm);
         assertInstance(instance, algorithm, provider);
@@ -61,7 +61,7 @@ public class DefaultProvider {
             out.println("TEST: NativePRNG supported on all platforms"
                     + "(except Windows), by SUN provider");
             algorithm = "NativePRNG";
-            provider = "SUN";
+            provider = System.getProperty("test.provider.name", "SUN");
         } else {
             out.println(
                     "TEST: Windows-PRNG supported on windows by SunMSCAPI provider");
