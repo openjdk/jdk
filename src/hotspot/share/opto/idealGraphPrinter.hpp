@@ -126,6 +126,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   ~IdealGraphPrinter();
 
   void print_loop_kind(const CountedLoopNode* counted_loop);
+
  public:
   IdealGraphPrinter(Compile* compile, const char* file_name = nullptr, bool append = false);
   static void clean_up();
