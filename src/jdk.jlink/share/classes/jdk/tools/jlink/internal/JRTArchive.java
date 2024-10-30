@@ -418,7 +418,7 @@ public class JRTArchive implements Archive {
     }
 
     private static final Path BASE = Paths.get(System.getProperty("java.home"));
-    private static final String MISMATCH_FORMAT = "%s has been modified.%n";
+    private static final String MISMATCH_FORMAT = "%s has been modified%n";
 
     interface JRTFile {
         Entry toEntry();
