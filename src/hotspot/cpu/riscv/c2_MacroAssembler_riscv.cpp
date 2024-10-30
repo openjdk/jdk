@@ -165,6 +165,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   Register oop = objectReg;
   Register box = boxReg;
   Register disp_hdr = tmp1Reg;
+  Register owner_addr = tmp1Reg;
   Register tmp = tmp2Reg;
   Label object_has_monitor;
   // Finish fast lock successfully. MUST branch to with flag == 0
@@ -222,15 +223,33 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   j(unlocked);
 
   bind(notRecursive);
-  ld(t0, Address(tmp, ObjectMonitor::EntryList_offset()));
-  ld(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset()));
-  orr(t0, t0, disp_hdr); // Will be 0 if both are 0.
-  bnez(t0, slow_path);
+  // Compute owner address.
+  la(owner_addr, Address(tmp, ObjectMonitor::owner_offset()));
 
-  // need a release store here
-  la(tmp, Address(tmp, ObjectMonitor::owner_offset()));
+  // Set owner to null.
+  // Release to satisfy the JMM
   membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  sd(zr, Address(tmp)); // set unowned
+  sd(zr, Address(owner_addr));
+  // We need a full fence after clearing owner to avoid stranding.
+  // StoreLoad achieves this.
+  membar(StoreLoad);
+
+  // Check if the entry lists are empty (EntryList first - by convention).
+  ld(t0, Address(tmp, ObjectMonitor::EntryList_offset()));
+  ld(tmp1Reg, Address(tmp, ObjectMonitor::cxq_offset()));
+  orr(t0, t0, tmp1Reg);
+  beqz(t0, unlocked); // If so we are done.
+
+  // Check if there is a successor.
+  ld(t0, Address(tmp, ObjectMonitor::succ_offset()));
+  bnez(t0, unlocked); // If so we are done.
+
+  // Save the monitor pointer in the current thread, so we can try to
+  // reacquire the lock in SharedRuntime::monitor_exit_helper().
+  sd(tmp, Address(xthread, JavaThread::unlocked_inflated_monitor_offset()));
+
+  mv(flag, 1);
+  j(slow_path);
 
   bind(unlocked);
   mv(flag, zr);
@@ -534,28 +553,35 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
 
     bind(not_recursive);
 
-    Label release;
     const Register tmp2_owner_addr = tmp2;
 
     // Compute owner address.
     la(tmp2_owner_addr, Address(tmp1_monitor, ObjectMonitor::owner_offset()));
 
-    // Check if the entry lists are empty.
+    // Set owner to null.
+    // Release to satisfy the JMM
+    membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+    sd(zr, Address(tmp2_owner_addr));
+    // We need a full fence after clearing owner to avoid stranding.
+    // StoreLoad achieves this.
+    membar(StoreLoad);
+
+    // Check if the entry lists are empty (EntryList first - by convention).
     ld(t0, Address(tmp1_monitor, ObjectMonitor::EntryList_offset()));
     ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::cxq_offset()));
     orr(t0, t0, tmp3_t);
-    beqz(t0, release);
+    beqz(t0, unlocked); // If so we are done.
 
-    // The owner may be anonymous and we removed the last obj entry in
-    // the lock-stack. This loses the information about the owner.
-    // Write the thread to the owner field so the runtime knows the owner.
-    sd(xthread, Address(tmp2_owner_addr));
+    // Check if there is a successor.
+    ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::succ_offset()));
+    bnez(tmp3_t, unlocked); // If so we are done.
+
+    // Save the monitor pointer in the current thread, so we can try
+    // to reacquire the lock in SharedRuntime::monitor_exit_helper().
+    sd(tmp1_monitor, Address(xthread, JavaThread::unlocked_inflated_monitor_offset()));
+
+    mv(flag, 1);
     j(slow_path);
-
-    bind(release);
-    // Set owner to null.
-    membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    sd(zr, Address(tmp2_owner_addr));
   }
 
   bind(unlocked);
@@ -2383,6 +2409,74 @@ void C2_MacroAssembler::expand_bits_i_v(Register dst, Register src, Register mas
 
 void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mask) {
   expand_bits_v(dst, src, mask, /* is_long */ true);
+}
+
+// j.l.Math.round(float)
+//  Returns the closest int to the argument, with ties rounding to positive infinity.
+// We need to handle 3 special cases defined by java api spec:
+//    NaN,
+//    float >= Integer.MAX_VALUE,
+//    float <= Integer.MIN_VALUE.
+void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp,
+                                           BasicType bt, uint vector_length) {
+  // In riscv, there is no straight corresponding rounding mode to satisfy the behaviour defined,
+  // in java api spec, i.e. any rounding mode can not handle some corner cases, e.g.
+  //  RNE is the closest one, but it ties to "even", which means 1.5/2.5 both will be converted
+  //    to 2, instead of 2 and 3 respectively.
+  //  RUP does not work either, although java api requires "rounding to positive infinity",
+  //    but both 1.3/1.8 will be converted to 2, instead of 1 and 2 respectively.
+  //
+  // The optimal solution for non-NaN cases is:
+  //    src+0.5 => dst, with rdn rounding mode,
+  //    convert dst from float to int, with rnd rounding mode.
+  // and, this solution works as expected for float >= Integer.MAX_VALUE and float <= Integer.MIN_VALUE.
+  //
+  // But, we still need to handle NaN explicilty with vector mask instructions.
+  //
+  // Check MacroAssembler::java_round_float and C2_MacroAssembler::vector_round_sve in aarch64 for more details.
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rdn);
+  vsetvli_helper(bt, vector_length);
+
+  // don't rearrage the instructions sequence order without performance testing.
+  // check MacroAssembler::java_round_float in riscv64 for more details.
+  mv(t0, jint_cast(0.5f));
+  fmv_w_x(ftmp, t0);
+
+  // replacing vfclass with feq as performance optimization
+  vmfeq_vv(v0, src, src);
+  // set dst = 0 in cases of NaN
+  vmv_v_x(dst, zr);
+
+  // dst = (src + 0.5) rounded down towards negative infinity
+  vfadd_vf(dst, src, ftmp, Assembler::v0_t);
+  vfcvt_x_f_v(dst, dst, Assembler::v0_t); // in RoundingMode::rdn
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rne);
+}
+
+// java.lang.Math.round(double a)
+// Returns the closest long to the argument, with ties rounding to positive infinity.
+void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp,
+                                            BasicType bt, uint vector_length) {
+  // check C2_MacroAssembler::java_round_float_v above for more details.
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rdn);
+  vsetvli_helper(bt, vector_length);
+
+  mv(t0, julong_cast(0.5));
+  fmv_d_x(ftmp, t0);
+
+  // replacing vfclass with feq as performance optimization
+  vmfeq_vv(v0, src, src);
+  // set dst = 0 in cases of NaN
+  vmv_v_x(dst, zr);
+
+  // dst = (src + 0.5) rounded down towards negative infinity
+  vfadd_vf(dst, src, ftmp, Assembler::v0_t);
+  vfcvt_x_f_v(dst, dst, Assembler::v0_t); // in RoundingMode::rdn
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rne);
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,

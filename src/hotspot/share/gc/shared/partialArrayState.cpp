@@ -26,7 +26,7 @@
 #include "gc/shared/partialArrayState.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"

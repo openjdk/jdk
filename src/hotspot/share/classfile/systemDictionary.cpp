@@ -598,8 +598,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
 
   HandleMark hm(THREAD);
 
-  // Fix for 4474172; see evaluation for more details
-  class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
   ClassLoaderData* loader_data = register_loader(class_loader);
   Dictionary* dictionary = loader_data->dictionary();
 
@@ -765,12 +763,7 @@ InstanceKlass* SystemDictionary::find_instance_klass(Thread* current,
                                                      Handle class_loader,
                                                      Handle protection_domain) {
 
-  // The result of this call should be consistent with the result
-  // of the call to resolve_instance_class_or_null().
-  // See evaluation 6790209 and 4474172 for more details.
-  oop class_loader_oop = java_lang_ClassLoader::non_reflection_class_loader(class_loader());
-  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(class_loader_oop);
-
+  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(class_loader());
   if (loader_data == nullptr) {
     // If the ClassLoaderData has not been setup,
     // then the class loader has no entries in the dictionary.
@@ -1069,7 +1062,7 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
   }
 
   Klass *found = resolve_with_circularity_detection(klass->name(), super_type->name(),
-                                                    class_loader, protection_domain, is_superclass, CHECK_0);
+                                                    class_loader, protection_domain, is_superclass, CHECK_false);
   if (found == super_type) {
     return true;
   } else {
@@ -1088,16 +1081,21 @@ bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle 
   // If unexpected superclass or interfaces are found, we cannot
   // load <ik> from the shared archive.
 
-  if (ik->super() != nullptr &&
-      !check_shared_class_super_type(ik, InstanceKlass::cast(ik->super()),
-                                     class_loader, protection_domain, true, THREAD)) {
-    return false;
+  if (ik->super() != nullptr) {
+    bool check_super = check_shared_class_super_type(ik, InstanceKlass::cast(ik->super()),
+                                                     class_loader, protection_domain, true,
+                                                     CHECK_false);
+    if (!check_super) {
+      return false;
+    }
   }
 
   Array<InstanceKlass*>* interfaces = ik->local_interfaces();
   int num_interfaces = interfaces->length();
   for (int index = 0; index < num_interfaces; index++) {
-    if (!check_shared_class_super_type(ik, interfaces->at(index), class_loader, protection_domain, false, THREAD)) {
+    bool check_interface = check_shared_class_super_type(ik, interfaces->at(index), class_loader, protection_domain, false,
+                                                         CHECK_false);
+    if (!check_interface) {
       return false;
     }
   }
@@ -1149,10 +1147,13 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
+    ik->set_shared_loading_failed();
     return nullptr;
   }
 
-  if (!check_shared_class_super_types(ik, class_loader, protection_domain, THREAD)) {
+  bool check = check_shared_class_super_types(ik, class_loader, protection_domain, CHECK_NULL);
+  if (!check) {
+    ik->set_shared_loading_failed();
     return nullptr;
   }
 

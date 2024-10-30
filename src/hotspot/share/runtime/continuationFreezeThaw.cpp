@@ -1442,9 +1442,7 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size, int argsize_md)
 
 #if INCLUDE_ZGC
   if (UseZGC) {
-    if (ZGenerational) {
-      ZStackChunkGCData::initialize(chunk);
-    }
+    ZStackChunkGCData::initialize(chunk);
     assert(!chunk->requires_barriers(), "ZGC always allocates in the young generation");
     _barriers = false;
   } else
@@ -2062,7 +2060,7 @@ NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier)
 
   assert(_cont.chunk_invariant(), "");
 
-  JVMTI_ONLY(if (!return_barrier) invalidate_jvmti_stack(_thread));
+  JVMTI_ONLY(invalidate_jvmti_stack(_thread));
 
   _thread->set_cont_fastpath(_fastpath);
 

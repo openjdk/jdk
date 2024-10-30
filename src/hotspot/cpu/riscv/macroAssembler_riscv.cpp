@@ -454,12 +454,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
     ld(t0, Address(java_thread, in_bytes(Thread::pending_exception_offset())));
     Label ok;
     beqz(t0, ok);
-    RuntimeAddress target(StubRoutines::forward_exception_entry());
-    relocate(target.rspec(), [&] {
-      int32_t offset;
-      la(t0, target.target(), offset);
-      jr(t0, offset);
-    });
+    j(RuntimeAddress(StubRoutines::forward_exception_entry()));
     bind(ok);
   }
 
@@ -493,6 +488,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_
 
   // Fast path check: class is fully initialized
   lbu(tmp, Address(klass, InstanceKlass::init_state_offset()));
+  membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   sub(tmp, tmp, InstanceKlass::fully_initialized);
   beqz(tmp, *L_fast_path);
 
@@ -534,7 +530,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     movptr(t0, (address) b);
   }
 
-  // call indirectly to solve generation ordering problem
+  // Call indirectly to solve generation ordering problem
   RuntimeAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
     int32_t offset;
@@ -579,7 +575,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     movptr(t0, (address) b);
   }
 
-  // call indirectly to solve generation ordering problem
+  // Call indirectly to solve generation ordering problem
   RuntimeAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
     int32_t offset;
@@ -759,21 +755,21 @@ void MacroAssembler::emit_static_call_stub() {
 
   // Jump to the entry point of the c2i stub.
   int32_t offset = 0;
-  movptr(t0, 0, offset, t1); // lui + lui + slli + add
-  jr(t0, offset);
+  movptr(t1, 0, offset, t0); // lui + lui + slli + add
+  jr(t1, offset);
 }
 
 void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
   int32_t offset = 0;
-  push_reg(RegSet::of(t0, xmethod), sp);   // push << t0 & xmethod >> to sp
-  mv(t0, entry_point, offset);
-  jalr(t0, offset);
+  push_reg(RegSet::of(t1, xmethod), sp);   // push << t1 & xmethod >> to sp
+  mv(t1, entry_point, offset);
+  jalr(t1, offset);
   if (retaddr != nullptr) {
     bind(*retaddr);
   }
-  pop_reg(RegSet::of(t0, xmethod), sp);   // pop << t0 & xmethod >> from sp
+  pop_reg(RegSet::of(t1, xmethod), sp);   // pop << t1 & xmethod >> from sp
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, int number_of_arguments) {
@@ -940,6 +936,7 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
 
 void MacroAssembler::load_link_jump(const address source, Register temp) {
   assert(temp != noreg && temp != x0, "expecting a register");
+  assert(temp != x5, "temp register must not be x5.");
   assert_cond(source != nullptr);
   int64_t distance = source - pc();
   assert(is_simm32(distance), "Must be");
@@ -967,24 +964,27 @@ void MacroAssembler::j(const address dest, Register temp) {
   if (is_simm21(distance) && ((distance % 2) == 0)) {
     Assembler::jal(x0, distance);
   } else {
-    assert(temp != noreg && temp != x0, "expecting a register");
+    assert(temp != noreg && temp != x0, "Expecting a register");
+    assert(temp != x1 && temp != x5, "temp register must not be x1/x5.");
     int32_t offset = 0;
     la(temp, dest, offset);
     jr(temp, offset);
   }
 }
 
-void MacroAssembler::j(const Address &adr, Register temp) {
-  switch (adr.getMode()) {
+void MacroAssembler::j(const Address &dest, Register temp) {
+  switch (dest.getMode()) {
     case Address::literal: {
-      relocate(adr.rspec(), [&] {
-        j(adr.target(), temp);
+      relocate(dest.rspec(), [&] {
+        int32_t offset;
+        la(temp, dest.target(), offset);
+        jr(temp, offset);
       });
       break;
     }
     case Address::base_plus_offset: {
-      int32_t offset = ((int32_t)adr.offset() << 20) >> 20;
-      la(temp, Address(adr.base(), adr.offset() - offset));
+      int32_t offset = ((int32_t)dest.offset() << 20) >> 20;
+      la(temp, Address(dest.base(), dest.offset() - offset));
       jr(temp, offset);
       break;
     }
@@ -1005,12 +1005,14 @@ void MacroAssembler::j(Label &lab, Register temp) {
 
 void MacroAssembler::jr(Register Rd, int32_t offset) {
   assert(Rd != noreg, "expecting a register");
+  assert(Rd != x1 && Rd != x5, "Rd register must not be x1/x5.");
   Assembler::jalr(x0, Rd, offset);
 }
 
 void MacroAssembler::call(const address dest, Register temp) {
   assert_cond(dest != nullptr);
   assert(temp != noreg, "expecting a register");
+  assert(temp != x5, "temp register must not be x5.");
   int32_t offset = 0;
   la(temp, dest, offset);
   jalr(temp, offset);
@@ -1018,10 +1020,12 @@ void MacroAssembler::call(const address dest, Register temp) {
 
 void MacroAssembler::jalr(Register Rs, int32_t offset) {
   assert(Rs != noreg, "expecting a register");
+  assert(Rs != x5, "Rs register must not be x5.");
   Assembler::jalr(x1, Rs, offset);
 }
 
 void MacroAssembler::rt_call(address dest, Register tmp) {
+  assert(tmp != x5, "tmp register must not be x5.");
   CodeBlob *cb = CodeCache::find_blob(dest);
   RuntimeAddress target(dest);
   if (cb) {
@@ -1454,6 +1458,105 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   xorr(crc, crc, tmp2);
 }
 
+
+#ifdef COMPILER2
+// This improvement (vectorization) is based on java.base/share/native/libzip/zlib/zcrc32.c.
+// To make it, following steps are taken:
+//  1. in zcrc32.c, modify N to 16 and related code,
+//  2. re-generate the tables needed, we use tables of (N == 16, W == 4)
+//  3. finally vectorize the code (original implementation in zcrc32.c is just scalar code).
+// New tables for vector version is after table3.
+void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register len,
+                                         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
+                                         Register table0, Register table3) {
+    assert_different_registers(t1, crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp5, table0, table3);
+    const int N = 16, W = 4;
+    const int64_t single_table_size = 256;
+    const Register blks = tmp2;
+    const Register tmpTable = tmp3, tableN16 = tmp4;
+    const VectorRegister vcrc = v4, vword = v8, vtmp = v12;
+    Label VectorLoop;
+    Label LastBlock;
+
+    add(tableN16, table3, 1*single_table_size*sizeof(juint), tmp1);
+    mv(tmp5, 0xff);
+
+    if (MaxVectorSize == 16) {
+      vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::ma, Assembler::ta);
+    } else if (MaxVectorSize == 32) {
+      vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::ma, Assembler::ta);
+    } else {
+      assert(MaxVectorSize > 32, "sanity");
+      vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+    }
+
+    vmv_v_x(vcrc, zr);
+    vmv_s_x(vcrc, crc);
+
+    // multiple of 64
+    srli(blks, len, 6);
+    slli(t1, blks, 6);
+    sub(len, len, t1);
+    sub(blks, blks, 1);
+    blez(blks, LastBlock);
+
+    bind(VectorLoop);
+    {
+      mv(tmpTable, tableN16);
+
+      vle32_v(vword, buf);
+      vxor_vv(vword, vword, vcrc);
+
+      addi(buf, buf, N*4);
+
+      vand_vx(vtmp, vword, tmp5);
+      vsll_vi(vtmp, vtmp, 2);
+      vluxei32_v(vcrc, tmpTable, vtmp);
+
+      mv(tmp1, 1);
+      for (int k = 1; k < W; k++) {
+        addi(tmpTable, tmpTable, single_table_size*4);
+
+        slli(t1, tmp1, 3);
+        vsrl_vx(vtmp, vword, t1);
+
+        vand_vx(vtmp, vtmp, tmp5);
+        vsll_vi(vtmp, vtmp, 2);
+        vluxei32_v(vtmp, tmpTable, vtmp);
+
+        vxor_vv(vcrc, vcrc, vtmp);
+
+        addi(tmp1, tmp1, 1);
+      }
+
+      sub(blks, blks, 1);
+      bgtz(blks, VectorLoop);
+    }
+
+    bind(LastBlock);
+    {
+      vle32_v(vtmp, buf);
+      vxor_vv(vcrc, vcrc, vtmp);
+      mv(crc, zr);
+      for (int i = 0; i < N; i++) {
+        vmv_x_s(tmp2, vcrc);
+        // in vmv_x_s, the value is sign-extended to SEW bits, but we need zero-extended here.
+        zext_w(tmp2, tmp2);
+        vslidedown_vi(vcrc, vcrc, 1);
+        xorr(crc, crc, tmp2);
+        for (int j = 0; j < W; j++) {
+          andr(t1, crc, tmp5);
+          shadd(t1, t1, table0, tmp1, 2);
+          lwu(t1, Address(t1, 0));
+          srli(tmp2, crc, 8);
+          xorr(crc, tmp2, t1);
+        }
+      }
+      addi(buf, buf, N*4);
+    }
+}
+#endif // COMPILER2
+
 /**
  * @param crc   register containing existing CRC (32-bit)
  * @param buf   register pointing to input byte buffer (byte*)
@@ -1465,33 +1568,41 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
-  Label L_by16_loop, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+  Label L_vector_entry,
+        L_unroll_loop,
+        L_by4_loop_entry, L_by4_loop,
+        L_by1_loop, L_exit;
 
+  const int64_t single_table_size = 256;
   const int64_t unroll = 16;
   const int64_t unroll_words = unroll*wordSize;
   mv(tmp5, right_32_bits);
-  subw(len, len, unroll_words);
   andn(crc, tmp5, crc);
 
   const ExternalAddress table_addr = StubRoutines::crc_table_addr();
   la(table0, table_addr);
-  add(table1, table0, 1*256*sizeof(juint), tmp1);
-  add(table2, table0, 2*256*sizeof(juint), tmp1);
-  add(table3, table2, 1*256*sizeof(juint), tmp1);
+  add(table1, table0, 1*single_table_size*sizeof(juint), tmp1);
+  add(table2, table0, 2*single_table_size*sizeof(juint), tmp1);
+  add(table3, table2, 1*single_table_size*sizeof(juint), tmp1);
 
-  bge(len, zr, L_unroll_loop_entry);
-  addiw(len, len, unroll_words-4);
-  bge(len, zr, L_by4_loop);
-  addiw(len, len, 4);
-  bgt(len, zr, L_by1_loop);
-  j(L_exit);
+#ifdef COMPILER2
+  if (UseRVV) {
+    const int64_t tmp_limit = MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
+    mv(tmp1, tmp_limit);
+    bge(len, tmp1, L_vector_entry);
+  }
+#endif // COMPILER2
+
+  mv(tmp1, unroll_words);
+  blt(len, tmp1, L_by4_loop_entry);
+
+  const Register loop_buf_end = tmp3;
 
   align(CodeEntryAlignment);
-  bind(L_unroll_loop_entry);
-    const Register buf_end = tmp3;
-    add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
+  // Entry for L_unroll_loop
+    add(loop_buf_end, buf, len);    // loop_buf_end will be used as endpoint for loop below
     andi(len, len, unroll_words-1); // len = (len % unroll_words)
-    sub(len, len, unroll_words); // Length after all iterations
+    sub(loop_buf_end, loop_buf_end, len);
   bind(L_unroll_loop);
     for (int i = 0; i < unroll; i++) {
       ld(tmp1, Address(buf, i*wordSize));
@@ -1500,44 +1611,52 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     }
 
     addi(buf, buf, unroll_words);
-    ble(buf, buf_end, L_unroll_loop);
-    addiw(len, len, unroll_words-4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    bgt(len, zr, L_by1_loop);
-    j(L_exit);
+    blt(buf, loop_buf_end, L_unroll_loop);
 
+  bind(L_by4_loop_entry);
+    mv(tmp1, 4);
+    blt(len, tmp1, L_by1_loop);
+    add(loop_buf_end, buf, len); // loop_buf_end will be used as endpoint for loop below
+    andi(len, len, 3);
+    sub(loop_buf_end, loop_buf_end, len);
   bind(L_by4_loop);
     lwu(tmp1, Address(buf));
     update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
-    subw(len, len, 4);
     addi(buf, buf, 4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    ble(len, zr, L_exit);
+    blt(buf, loop_buf_end, L_by4_loop);
 
   bind(L_by1_loop);
+    beqz(len, L_exit);
+
     subw(len, len, 1);
     lwu(tmp1, Address(buf));
     andi(tmp2, tmp1, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
+    beqz(len, L_exit);
 
     subw(len, len, 1);
     srli(tmp2, tmp1, 8);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
+    beqz(len, L_exit);
 
     subw(len, len, 1);
     srli(tmp2, tmp1, 16);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
 
-    srli(tmp2, tmp1, 24);
-    andi(tmp2, tmp2, right_8_bits);
-    update_byte_crc32(crc, tmp2, table0);
+#ifdef COMPILER2
+  // put vector code here, otherwise "offset is too large" error occurs.
+  if (UseRVV) {
+    // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
+    j(L_exit);
+
+    bind(L_vector_entry);
+    vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp6, table0, table3);
+
+    bgtz(len, L_by4_loop_entry);
+  }
+#endif // COMPILER2
 
   bind(L_exit);
     andn(crc, tmp5, crc);
@@ -1646,7 +1765,7 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, int vector_size_in_byte
 
 static int patch_offset_in_jal(address branch, int64_t offset) {
   assert(Assembler::is_simm21(offset) && ((offset % 2) == 0),
-         "offset is too large to be patched in one jal instruction!\n");
+         "offset (%ld) is too large to be patched in one jal instruction!\n", offset);
   Assembler::patch(branch, 31, 31, (offset >> 20) & 0x1);                       // offset[20]    ==> branch[31]
   Assembler::patch(branch, 30, 21, (offset >> 1)  & 0x3ff);                     // offset[10:1]  ==> branch[30:21]
   Assembler::patch(branch, 20, 20, (offset >> 11) & 0x1);                       // offset[11]    ==> branch[20]
@@ -1853,9 +1972,9 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
     if (Universe::is_fully_initialized()) {
-      mv(xheapbase, CompressedOops::ptrs_base());
+      mv(xheapbase, CompressedOops::base());
     } else {
-      ExternalAddress target(CompressedOops::ptrs_base_addr());
+      ExternalAddress target(CompressedOops::base_addr());
       relocate(target.rspec(), [&] {
         int32_t offset;
         la(xheapbase, target.target(), offset);
@@ -1968,23 +2087,11 @@ void MacroAssembler::addw(Register Rd, Register Rn, int32_t increment, Register 
 }
 
 void MacroAssembler::sub(Register Rd, Register Rn, int64_t decrement, Register temp) {
-  if (is_simm12(-decrement)) {
-    addi(Rd, Rn, -decrement);
-  } else {
-    assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    sub(Rd, Rn, temp);
-  }
+  add(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register temp) {
-  if (is_simm12(-decrement)) {
-    addiw(Rd, Rn, -decrement);
-  } else {
-    assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    subw(Rd, Rn, temp);
-  }
+  addw(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::andrw(Register Rd, Register Rs1, Register Rs2) {
@@ -2462,27 +2569,6 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   }
 }
 
-SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value) {
-  int32_t offset = 0;
-  _masm = masm;
-  ExternalAddress target((address)flag_addr);
-  _masm->relocate(target.rspec(), [&] {
-    int32_t offset;
-    _masm->la(t0, target.target(), offset);
-    _masm->lbu(t0, Address(t0, offset));
-  });
-  if (value) {
-    _masm->bnez(t0, _label);
-  } else {
-    _masm->beqz(t0, _label);
-  }
-}
-
-SkipIfEqual::~SkipIfEqual() {
-  _masm->bind(_label);
-  _masm = nullptr;
-}
-
 void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, Register tmp2) {
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ld(dst, Address(xmethod, Method::const_offset()));
@@ -2844,7 +2930,7 @@ int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
   return idivq_offset;
 }
 
-// Look up the method for a megamorpic invkkeinterface call.
+// Look up the method for a megamorphic invokeinterface call.
 // The target method is determined by <intf_klass, itable_index>.
 // The receiver klass is in recv_klass.
 // On success, the result will be in method_result, and execution falls through.
@@ -2859,9 +2945,9 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   assert_different_registers(recv_klass, intf_klass, scan_tmp);
   assert_different_registers(method_result, intf_klass, scan_tmp);
   assert(recv_klass != method_result || !return_method,
-         "recv_klass can be destroyed when mehtid isn't needed");
+         "recv_klass can be destroyed when method isn't needed");
   assert(itable_index.is_constant() || itable_index.as_register() == method_result,
-         "caller must be same register for non-constant itable index as for method");
+         "caller must use same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable).
   int vtable_base = in_bytes(Klass::vtable_start_offset());
@@ -3051,6 +3137,13 @@ void MacroAssembler::membar(uint32_t order_constraint) {
 
     membar_mask_to_pred_succ(order_constraint, predecessor, successor);
     fence(predecessor, successor);
+  }
+}
+
+void MacroAssembler::cmodx_fence() {
+  BLOCK_COMMENT("cmodx fence");
+  if (VM_Version::supports_fencei_barrier()) {
+    Assembler::fencei();
   }
 }
 
@@ -3547,6 +3640,7 @@ void MacroAssembler::far_jump(const Address &entry, Register tmp) {
 }
 
 void MacroAssembler::far_call(const Address &entry, Register tmp) {
+  assert(tmp != x5, "tmp register must not be x5.");
   assert(CodeCache::find_blob(entry.target()) != nullptr,
          "destination of far call not found in code cache");
   assert(entry.rspec().type() == relocInfo::external_word_type
@@ -3961,7 +4055,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
                                                    Register tmp1,
                                                    Register tmp2,
                                                    Register tmp3) {
-  assert_different_registers(r_sub_klass, r_super_klass, tmp1, tmp2, tmp3, result, t0);
+  assert_different_registers(r_sub_klass, r_super_klass, tmp1, tmp2, tmp3, result, t0, t1);
 
   const Register
     r_array_base   = tmp1,  // X11
@@ -4028,8 +4122,8 @@ void MacroAssembler::get_thread(Register thread) {
                       RegSet::range(x28, x31) + ra - thread;
   push_reg(saved_regs, sp);
 
-  mv(ra, CAST_FROM_FN_PTR(address, Thread::current));
-  jalr(ra);
+  mv(t1, CAST_FROM_FN_PTR(address, Thread::current));
+  jalr(t1);
   if (thread != c_rarg0) {
     mv(thread, c_rarg0);
   }
@@ -4076,8 +4170,7 @@ void MacroAssembler::reserved_stack_check() {
   // We have already removed our own frame.
   // throw_delayed_StackOverflowError will think that it's been
   // called by our caller.
-  la(t0, RuntimeAddress(SharedRuntime::throw_delayed_StackOverflowError_entry()));
-  jr(t0);
+  j(RuntimeAddress(SharedRuntime::throw_delayed_StackOverflowError_entry()));
   should_not_reach_here();
 
   bind(no_reserved_zone_enabling);
@@ -4096,7 +4189,7 @@ void MacroAssembler::read_polling_page(Register r, int32_t offset, relocInfo::re
   });
 }
 
-void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
+void MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
 #ifdef ASSERT
   {
     ThreadInVMfromUnknown tiv;
@@ -4188,7 +4281,7 @@ address MacroAssembler::load_and_call(Address entry) {
   }
 #endif
   relocate(entry.rspec(), [&] {
-    load_link_jump(target);
+    load_link_jump(target, t1);
   });
 
   postcond(pc() != badAddress);
@@ -4198,7 +4291,7 @@ address MacroAssembler::load_and_call(Address entry) {
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   IncompressibleRegion ir(this);  // relocations
-  movptr(t1, (address)Universe::non_oop_word(), t0);
+  movptr(t0, (address)Universe::non_oop_word(), t1);
   assert_cond(entry != nullptr);
   return reloc_call(Address(entry, rh));
 }
@@ -4212,9 +4305,9 @@ int MacroAssembler::ic_check_size() {
 int MacroAssembler::ic_check(int end_alignment) {
   IncompressibleRegion ir(this);
   Register receiver = j_rarg0;
-  Register data = t1;
+  Register data = t0;
 
-  Register tmp1 = t0; // t0 always scratch
+  Register tmp1 = t1; // scratch
   // t2 is saved on call, thus should have been saved before this check.
   // Hence we can clobber it.
   Register tmp2 = t2;
@@ -4312,8 +4405,8 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
     // - load the call
     // - call
     Label target;
-    ld(t0, target);  // auipc + ld
-    jr(t0);          // jalr
+    ld(t1, target);  // auipc + ld
+    jr(t1);          // jalr
     bind(target);
     assert(offset() - stub_start_offset == MacroAssembler::NativeShortCall::trampoline_data_offset,
            "should be");
@@ -4397,14 +4490,15 @@ void MacroAssembler::decrementw(const Address dst, int32_t value, Register tmp1,
   sw(tmp1, adr);
 }
 
-void MacroAssembler::cmpptr(Register src1, Address src2, Label& equal) {
-  assert_different_registers(src1, t0);
+void MacroAssembler::cmpptr(Register src1, const Address &src2, Label& equal, Register tmp) {
+  assert_different_registers(src1, tmp);
+  assert(src2.getMode() == Address::literal, "must be applied to a literal address");
   relocate(src2.rspec(), [&] {
     int32_t offset;
-    la(t0, src2.target(), offset);
-    ld(t0, Address(t0, offset));
+    la(tmp, src2.target(), offset);
+    ld(tmp, Address(tmp, offset));
   });
-  beq(src1, t0, equal);
+  beq(src1, tmp, equal);
 }
 
 void MacroAssembler::load_method_holder_cld(Register result, Register method) {
@@ -5037,11 +5131,11 @@ const int MacroAssembler::zero_words_block_size = 8;
 // ptr:   Address of a buffer to be zeroed.
 // cnt:   Count in HeapWords.
 //
-// ptr, cnt, and t0 are clobbered.
+// ptr, cnt, t1, and t0 are clobbered.
 address MacroAssembler::zero_words(Register ptr, Register cnt) {
   assert(is_power_of_2(zero_words_block_size), "adjust this");
   assert(ptr == x28 && cnt == x29, "mismatch in register usage");
-  assert_different_registers(cnt, t0);
+  assert_different_registers(cnt, t0, t1);
 
   BLOCK_COMMENT("zero_words {");
 
@@ -5059,6 +5153,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt) {
         return nullptr;
       }
     } else {
+      // Clobbers t1
       rt_call(zero_blocks.target());
     }
   }

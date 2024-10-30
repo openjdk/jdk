@@ -2127,8 +2127,9 @@ unsigned int MacroAssembler::push_frame_abi160(unsigned int bytes) {
 
 // Pop current C frame.
 void MacroAssembler::pop_frame() {
-  BLOCK_COMMENT("pop_frame:");
+  BLOCK_COMMENT("pop_frame {");
   Assembler::z_lg(Z_SP, _z_abi(callers_sp), Z_SP);
+  BLOCK_COMMENT("} pop_frame");
 }
 
 // Pop current C frame and restore return PC register (Z_R14).
@@ -3458,7 +3459,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fa
     L_slow_path = &L_fallthrough;
   }
 
-  // Fast path check: class is fully initialized
+  // Fast path check: class is fully initialized.
+  // init_state needs acquire, but S390 is TSO, and so we are already good.
   z_cli(Address(klass, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
   z_bre(*L_fast_path);
 
@@ -3655,12 +3657,38 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 
   bind(not_recursive);
 
-  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-  z_brne(done);
-  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-  z_brne(done);
+  NearLabel check_succ, set_eq_unlocked;
+
+  // Set owner to null.
+  // Release to satisfy the JMM
   z_release();
-  z_stg(temp/*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
+  z_lghi(temp, 0);
+  z_stg(temp, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
+  // We need a full fence after clearing owner to avoid stranding.
+  z_fence();
+
+  // Check if the entry lists are empty (EntryList first - by convention).
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+  z_brne(check_succ);
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+  z_bre(done); // If so we are done.
+
+  bind(check_succ);
+
+  // Check if there is a successor.
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)));
+  z_brne(set_eq_unlocked); // If so we are done.
+
+  // Save the monitor pointer in the current thread, so we can try to
+  // reacquire the lock in SharedRuntime::monitor_exit_helper().
+  z_xilf(currentHeader, markWord::monitor_value);
+  z_stg(currentHeader, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
+
+  z_ltgr(oop, oop); // Set flag = NE
+  z_bru(done);
+
+  bind(set_eq_unlocked);
+  z_cr(temp, temp); // Set flag = EQ
 
   bind(done);
 
@@ -3672,6 +3700,11 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->resolve_jobject(this, value, tmp1, tmp2);
+}
+
+void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Register tmp2) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->resolve_global_jobject(this, value, tmp1, tmp2);
 }
 
 // Last_Java_sp must comply to the rules in frame_s390.hpp.
@@ -5983,29 +6016,14 @@ void MacroAssembler::zap_from_to(Register low, Register high, Register val, Regi
 }
 #endif // !PRODUCT
 
-SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value, Register _rscratch) {
-  _masm = masm;
-  _masm->load_absolute_address(_rscratch, (address)flag_addr);
-  _masm->load_and_test_int(_rscratch, Address(_rscratch));
-  if (value) {
-    _masm->z_brne(_label); // Skip if true, i.e. != 0.
-  } else {
-    _masm->z_bre(_label);  // Skip if false, i.e. == 0.
-  }
-}
-
-SkipIfEqual::~SkipIfEqual() {
-  _masm->bind(_label);
-}
-
 // Implements lightweight-locking.
 //  - obj: the object to be locked, contents preserved.
 //  - temp1, temp2: temporary registers, contents destroyed.
 //  Note: make sure Z_R1 is not manipulated here when C2 compiler is in play
-void MacroAssembler::lightweight_lock(Register obj, Register temp1, Register temp2, Label& slow) {
+void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register temp1, Register temp2, Label& slow) {
 
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, temp1, temp2);
+  assert_different_registers(basic_lock, obj, temp1, temp2);
 
   Label push;
   const Register top           = temp1;
@@ -6017,6 +6035,11 @@ void MacroAssembler::lightweight_lock(Register obj, Register temp1, Register tem
   // instruction emitted as it is part of C1's null check semantics.
   z_lg(mark, Address(obj, mark_offset));
 
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds.
+    const Address om_cache_addr = Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes())));
+    z_mvghi(om_cache_addr, 0);
+  }
 
   // First we need to check if the lock-stack has room for pushing the object reference.
   z_lgf(top, Address(Z_thread, ls_top_offset));
@@ -6140,8 +6163,8 @@ void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register t
   bind(unlocked);
 }
 
-void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Register tmp1, Register tmp2) {
-  assert_different_registers(obj, tmp1, tmp2);
+void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2) {
+  assert_different_registers(obj, box, tmp1, tmp2);
 
   // Handle inflated monitor.
   NearLabel inflated;
@@ -6149,6 +6172,11 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   NearLabel locked;
   // Finish fast lock unsuccessfully. MUST branch to with flag == EQ
   NearLabel slow_path;
+
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds.
+    z_mvghi(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
+  }
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
@@ -6214,33 +6242,77 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   { // Handle inflated monitor.
     bind(inflated);
 
+    const Register tmp1_monitor = tmp1;
     if (!UseObjectMonitorTable) {
-      // mark contains the tagged ObjectMonitor*.
-      const Register tagged_monitor = mark;
-      const Register zero           = tmp2;
-
-      // Try to CAS m->owner from null to current thread.
-      // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
-      // Otherwise, register zero is filled with the current owner.
-      z_lghi(zero, 0);
-      z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), tagged_monitor);
-      z_bre(locked);
-
-      // Check if recursive.
-      z_cgr(Z_thread, zero); // zero contains the owner from z_csg instruction
-      z_brne(slow_path);
-
-      // Recursive
-      z_agsi(Address(tagged_monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 1ll);
-      z_cgr(zero, zero);
-      // z_bru(locked);
-      // Uncomment above line in the future, for now jump address is right next to us.
+      assert(tmp1_monitor == mark, "should be the same here");
     } else {
-      // OMCache lookup not supported yet. Take the slowpath.
-      // Set flag to NE
-      z_ltgr(obj, obj);
+      NearLabel monitor_found;
+
+      // load cache address
+      z_la(tmp1, Address(Z_thread, JavaThread::om_cache_oops_offset()));
+
+      const int num_unrolled = 2;
+      for (int i = 0; i < num_unrolled; i++) {
+        z_cg(obj, Address(tmp1));
+        z_bre(monitor_found);
+        add2reg(tmp1, in_bytes(OMCache::oop_to_oop_difference()));
+      }
+
+      NearLabel loop;
+      // Search for obj in cache
+
+      bind(loop);
+
+      // check for match.
+      z_cg(obj, Address(tmp1));
+      z_bre(monitor_found);
+
+      // search until null encountered, guaranteed _null_sentinel at end.
+      add2reg(tmp1, in_bytes(OMCache::oop_to_oop_difference()));
+      z_cghsi(0, tmp1, 0);
+      z_brne(loop); // if not EQ to 0, go for another loop
+
+      // we reached to the end, cache miss
+      z_ltgr(obj, obj); // set CC to NE
       z_bru(slow_path);
+
+      // cache hit
+      bind(monitor_found);
+      z_lg(tmp1_monitor, Address(tmp1, OMCache::oop_to_monitor_difference()));
     }
+    NearLabel monitor_locked;
+    // lock the monitor
+
+    // mark contains the tagged ObjectMonitor*.
+    const Register tagged_monitor = mark;
+    const Register zero           = tmp2;
+
+    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
+    const Address owner_address(tmp1_monitor, ObjectMonitor::owner_offset() - monitor_tag);
+    const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
+
+
+    // Try to CAS m->owner from null to current thread.
+    // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
+    // Otherwise, register zero is filled with the current owner.
+    z_lghi(zero, 0);
+    z_csg(zero, Z_thread, owner_address);
+    z_bre(monitor_locked);
+
+    // Check if recursive.
+    z_cgr(Z_thread, zero); // zero contains the owner from z_csg instruction
+    z_brne(slow_path);
+
+    // Recursive
+    z_agsi(recursions_address, 1ll);
+
+    bind(monitor_locked);
+    if (UseObjectMonitorTable) {
+      // Cache the monitor for unlock
+      z_stg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    }
+    // set the CC now
+    z_cgr(obj, obj);
   }
   BLOCK_COMMENT("} handle_inflated_monitor_lightweight_locking");
 
@@ -6265,11 +6337,11 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   // C2 uses the value of flag (NE vs EQ) to determine the continuation.
 }
 
-void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Register tmp1, Register tmp2) {
-  assert_different_registers(obj, tmp1, tmp2);
+void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2) {
+  assert_different_registers(obj, box, tmp1, tmp2);
 
   // Handle inflated monitor.
-  NearLabel inflated, inflated_load_monitor;
+  NearLabel inflated, inflated_load_mark;
   // Finish fast unlock successfully. MUST reach to with flag == EQ.
   NearLabel unlocked;
   // Finish fast unlock unsuccessfully. MUST branch to with flag == NE.
@@ -6289,7 +6361,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
 
     z_aghi(top, -oopSize);
     z_cg(obj, Address(Z_thread, top));
-    branch_optimized(bcondNotEqual, inflated_load_monitor);
+    branch_optimized(bcondNotEqual, inflated_load_mark);
 
     // Pop lock-stack.
 #ifdef ASSERT
@@ -6310,6 +6382,9 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     // Not recursive
 
     // Check for monitor (0b10).
+    // Because we got here by popping (meaning we pushed in locked)
+    // there will be no monitor in the box. So we need to push back the obj
+    // so that the runtime can fix any potential anonymous owner.
     z_lg(mark, Address(obj, mark_offset));
     z_tmll(mark, markWord::monitor_value);
     if (!UseObjectMonitorTable) {
@@ -6348,7 +6423,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
 
   { // Handle inflated monitor.
 
-    bind(inflated_load_monitor);
+    bind(inflated_load_mark);
 
     z_lg(mark, Address(obj, mark_offset));
 
@@ -6373,49 +6448,77 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     bind(check_done);
 #endif // ASSERT
 
+    const Register tmp1_monitor = tmp1;
+
     if (!UseObjectMonitorTable) {
-      // mark contains the tagged ObjectMonitor*.
-      const Register monitor = mark;
-
-      NearLabel not_recursive;
-      const Register recursions = tmp2;
-
-      // Check if recursive.
-      load_and_test_long(recursions, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-      z_bre(not_recursive); // if 0 then jump, it's not recursive locking
-
-      // Recursive unlock
-      z_agsi(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), -1ll);
-      z_cgr(monitor, monitor); // set the CC to EQUAL
-      z_bru(unlocked);
-
-      bind(not_recursive);
-
-      NearLabel not_ok;
-      // Check if the entry lists are empty.
-      load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-      z_brne(not_ok);
-      load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-      z_brne(not_ok);
-
-      z_release();
-      z_stg(tmp2 /*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
-
-      z_bru(unlocked); // CC = EQ here
-
-      bind(not_ok);
-
-      // The owner may be anonymous, and we removed the last obj entry in
-      // the lock-stack. This loses the information about the owner.
-      // Write the thread to the owner field so the runtime knows the owner.
-      z_stg(Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
-      z_bru(slow_path); // CC = NE here
+      assert(tmp1_monitor == mark, "should be the same here");
     } else {
-      // OMCache lookup not supported yet. Take the slowpath.
-      // Set flag to NE
-      z_ltgr(obj, obj);
-      z_bru(slow_path);
+      // Uses ObjectMonitorTable.  Look for the monitor in our BasicLock on the stack.
+      z_lg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+      // null check with ZF == 0, no valid pointer below alignof(ObjectMonitor*)
+      z_cghi(tmp1_monitor, alignof(ObjectMonitor*));
+
+      z_brl(slow_path);
     }
+
+    // mark contains the tagged ObjectMonitor*.
+    const Register monitor = mark;
+
+    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
+    const Address recursions_address{monitor, ObjectMonitor::recursions_offset() - monitor_tag};
+    const Address cxq_address{monitor, ObjectMonitor::cxq_offset() - monitor_tag};
+    const Address succ_address{monitor, ObjectMonitor::succ_offset() - monitor_tag};
+    const Address EntryList_address{monitor, ObjectMonitor::EntryList_offset() - monitor_tag};
+    const Address owner_address{monitor, ObjectMonitor::owner_offset() - monitor_tag};
+
+    NearLabel not_recursive;
+    const Register recursions = tmp2;
+
+    // Check if recursive.
+    load_and_test_long(recursions, recursions_address);
+    z_bre(not_recursive); // if 0 then jump, it's not recursive locking
+
+    // Recursive unlock
+    z_agsi(recursions_address, -1ll);
+    z_cgr(monitor, monitor); // set the CC to EQUAL
+    z_bru(unlocked);
+
+    bind(not_recursive);
+
+    NearLabel check_succ, set_eq_unlocked;
+
+    // Set owner to null.
+    // Release to satisfy the JMM
+    z_release();
+    z_lghi(tmp2, 0);
+    z_stg(tmp2 /*=0*/, owner_address);
+    // We need a full fence after clearing owner to avoid stranding.
+    z_fence();
+
+    // Check if the entry lists are empty (EntryList first - by convention).
+    load_and_test_long(tmp2, EntryList_address);
+    z_brne(check_succ);
+    load_and_test_long(tmp2, cxq_address);
+    z_bre(unlocked); // If so we are done.
+
+    bind(check_succ);
+
+    // Check if there is a successor.
+    load_and_test_long(tmp2, succ_address);
+    z_brne(set_eq_unlocked); // If so we are done.
+
+    // Save the monitor pointer in the current thread, so we can try to
+    // reacquire the lock in SharedRuntime::monitor_exit_helper().
+    if (!UseObjectMonitorTable) {
+      z_xilf(monitor, markWord::monitor_value);
+    }
+    z_stg(monitor, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
+
+    z_ltgr(obj, obj); // Set flag = NE
+    z_bru(slow_path);
+
+    bind(set_eq_unlocked);
+    z_cr(tmp2, tmp2); // Set flag = EQ
   }
 
   bind(unlocked);

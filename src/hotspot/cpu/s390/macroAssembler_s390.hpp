@@ -752,12 +752,13 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2);
   void compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2);
-  void lightweight_lock(Register obj, Register tmp1, Register tmp2, Label& slow);
+  void lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Label& slow);
   void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Label& slow);
-  void compiler_fast_lock_lightweight_object(Register obj, Register tmp1, Register tmp2);
-  void compiler_fast_unlock_lightweight_object(Register obj, Register tmp1, Register tmp2);
+  void compiler_fast_lock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2);
+  void compiler_fast_unlock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
+  void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
   // Support for last Java frame (but use call_VM instead where possible).
  private:
@@ -819,7 +820,6 @@ class MacroAssembler: public Assembler {
   void compare_klass_ptr(Register Rop1, int64_t disp, Register Rbase, bool maybenull);
 
   // Access heap oop, handle encoding and GC barriers.
- private:
   void access_store_at(BasicType type, DecoratorSet decorators,
                        const Address& addr, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
@@ -1062,24 +1062,6 @@ class MacroAssembler: public Assembler {
   void pop_count_int_with_ext3(Register dst, Register src);
   void pop_count_long_with_ext3(Register dst, Register src);
 
-};
-
-/**
- * class SkipIfEqual:
- *
- * Instantiating this class will result in assembly code being output that will
- * jump around any code emitted between the creation of the instance and it's
- * automatic destruction at the end of a scope block, depending on the value of
- * the flag passed to the constructor, which will be checked at run-time.
- */
-class SkipIfEqual {
- private:
-  MacroAssembler* _masm;
-  Label _label;
-
- public:
-  SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value, Register _rscratch);
-  ~SkipIfEqual();
 };
 
 #ifdef ASSERT

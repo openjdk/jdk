@@ -250,11 +250,17 @@ sealed class DirectMethodHandle extends MethodHandle {
         default:  throw new InternalError("which="+which);
         }
 
-        MethodType mtypeWithArg = mtype.appendParameterTypes(MemberName.class);
-        if (doesAlloc)
-            mtypeWithArg = mtypeWithArg
-                    .insertParameterTypes(0, Object.class)  // insert newly allocated obj
-                    .changeReturnType(void.class);          // <init> returns void
+        MethodType mtypeWithArg;
+        if (doesAlloc) {
+            var ptypes = mtype.ptypes();
+            var newPtypes = new Class<?>[ptypes.length + 2];
+            newPtypes[0] = Object.class; // insert newly allocated obj
+            System.arraycopy(ptypes, 0, newPtypes, 1, ptypes.length);
+            newPtypes[newPtypes.length - 1] = MemberName.class;
+            mtypeWithArg = MethodType.methodType(void.class, newPtypes, true);
+        } else {
+            mtypeWithArg = mtype.appendParameterTypes(MemberName.class);
+        }
         MemberName linker = new MemberName(MethodHandle.class, linkerName, mtypeWithArg, REF_invokeStatic);
         try {
             linker = IMPL_NAMES.resolveOrFail(REF_invokeStatic, linker, null, LM_TRUSTED,
@@ -270,7 +276,7 @@ sealed class DirectMethodHandle extends MethodHandle {
         final int GET_MEMBER  = nameCursor++;
         final int CHECK_RECEIVER = (needsReceiverCheck ? nameCursor++ : -1);
         final int LINKER_CALL = nameCursor++;
-        Name[] names = arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
+        Name[] names = invokeArguments(nameCursor - ARG_LIMIT, mtype);
         assert(names.length == nameCursor);
         if (doesAlloc) {
             // names = { argx,y,z,... new C, init method }
@@ -786,7 +792,7 @@ sealed class DirectMethodHandle extends MethodHandle {
         final int LINKER_CALL = nameCursor++;
         final int POST_CAST = (needsCast && isGetter ? nameCursor++ : -1);
         final int RESULT    = nameCursor-1;  // either the call or the cast
-        Name[] names = arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
+        Name[] names = invokeArguments(nameCursor - ARG_LIMIT, mtype);
         if (needsInit)
             names[INIT_BAR] = new Name(getFunction(NF_ensureInitialized), names[DMH_THIS]);
         if (needsCast && !isGetter)
