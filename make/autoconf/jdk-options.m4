@@ -601,7 +601,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
   #
   UTIL_ARG_ENABLE(NAME: linkable-runtime, DEFAULT: false,
       RESULT: JLINK_PRODUCE_LINKABLE_RUNTIME,
-      DESC: [enable JDK linkable runtime],
+      DESC: [enable a JDK build suitable for linking from the run-time image],
       CHECKING_MSG: [whether or not a JDK suitable for linking from the run-time image should be produced])
   AC_SUBST(JLINK_PRODUCE_LINKABLE_RUNTIME)
 
