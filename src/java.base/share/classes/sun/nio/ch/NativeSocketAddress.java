@@ -25,10 +25,7 @@
 
 package sun.nio.ch;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -38,18 +35,16 @@ import java.net.SocketException;
 import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.nio.channels.UnsupportedAddressTypeException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import jdk.internal.access.JavaNetInetAddressAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.bindings.net.socket.PlatformAdapter;
-import jdk.internal.bindings.net.socket.generated.sockaddr;
-import jdk.internal.bindings.net.socket.generated.sockaddr_in;
-import jdk.internal.bindings.net.socket.generated.sockaddr_in6;
-import jdk.internal.bindings.net.socket.generated.socket_address_h;
+import jdk.internal.ffi.generated.socket.in_addr;
+import jdk.internal.ffi.util.FFMUtils;
+import jdk.internal.ffi.generated.socket.sockaddr;
+import jdk.internal.ffi.generated.socket.sockaddr_in;
+import jdk.internal.ffi.generated.socket.sockaddr_in6;
+import jdk.internal.ffi.generated.socket.socket_address_h;
 
-import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 /**
@@ -60,42 +55,9 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
  */
 class NativeSocketAddress {
 
-    static {
-        // Initialize jextract generated socket_address_h class
-        // in doPrivileged to allow reading the generated
-        // 'jextract.trace.downcalls' system property.
-        @SuppressWarnings("removal")
-        var _unused = AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                 @Override
-                 public Void run() {
-                     try {
-                         Class.forName(
-                                 "jdk.internal.bindings.net.socket.generated.socket_address_h",
-                                 true, null);
-                     } catch (ClassNotFoundException e) {
-                         // ignore
-                     }
-                     return null;
-                 }
-             }
-        );
-    }
-
     private static final JavaNetInetAddressAccess JNINA = SharedSecrets.getJavaNetInetAddressAccess();
     private static final int AF_INET = socket_address_h.AF_INET();
     private static final int AF_INET6 = socket_address_h.AF_INET6();
-    private static final long SIZEOF_SOCKETADDRESS = Math.max(sockaddr_in.sizeof(),
-                                                              sockaddr_in6.sizeof());
-    private static final VarHandle SA_FAMILY_VH;
-    private static final VarHandle INET4_S_ADDR_VH;
-
-    static {
-        var familyVH = sockaddr.layout().varHandle(groupElement("sa_family"));
-        SA_FAMILY_VH = MethodHandles.insertCoordinates(familyVH, 1, 0L);
-        var saddrVH = sockaddr_in.layout().varHandle(PlatformAdapter.ipv4AddressBytesPath());
-        // pos=0 is MemorySegment; pos=1 is the offset
-        INET4_S_ADDR_VH = MethodHandles.insertCoordinates(saddrVH, 1, 0L);
-    }
 
     private final MemorySegment memory;
 
@@ -104,7 +66,7 @@ class NativeSocketAddress {
     }
 
     private NativeSocketAddress(MemorySegment memory) {
-        if (memory.byteSize() != SIZEOF_SOCKETADDRESS) {
+        if (memory.byteSize() != sockaddr_in6.layout().byteSize()) {
             throw new IllegalArgumentException();
         }
         this.memory = memory;
@@ -113,17 +75,15 @@ class NativeSocketAddress {
     /**
      * Allocate an array of native socket addresses.
      */
-    static NativeSocketAddress[] allocate(int count, Arena arena) {
-        MemorySegment addressesMemory = arena.allocate(SIZEOF_SOCKETADDRESS * count);
-
+    static NativeSocketAddress[] allocate(int count) {
         NativeSocketAddress[] array = new NativeSocketAddress[count];
         for (int i = 0; i < count; i++) {
             try {
-                MemorySegment addressMemory = addressesMemory.asSlice(
-                        i * SIZEOF_SOCKETADDRESS, SIZEOF_SOCKETADDRESS);
+                MemorySegment addressMemory = sockaddr_in6.allocate(FFMUtils.SEGMENTS_ALLOCATOR);
+                addressMemory.fill((byte)0);
                 array[i] = new NativeSocketAddress(addressMemory);
             } catch (OutOfMemoryError e) {
-                freeAll(arena);
+                freeAll(array);
                 throw e;
             }
         }
@@ -131,12 +91,11 @@ class NativeSocketAddress {
     }
 
     /**
-     * Close the provided arena. Any off-heap region of memory backing
-     * the native socket addresses are also released.
+     * Free all non-null native socket addresses in the given array.
      */
-    static void freeAll(Arena arena) {
-        if (arena.scope().isAlive()) {
-            arena.close();
+    static void freeAll(NativeSocketAddress[] array) {
+        for (int i = 0; i < array.length; i++) {
+            FFMUtils.free(array[i].memory);
         }
     }
 
@@ -187,11 +146,7 @@ class NativeSocketAddress {
 
     @Override
     public int hashCode() {
-        int h = 0;
-        for (int offset = 0; offset < SIZEOF_SOCKETADDRESS; offset++) {
-            h = 31 * h + memory.get(JAVA_BYTE, offset);
-        }
-        return h;
+        return memory.hashCode();
     }
 
     @Override
@@ -209,22 +164,14 @@ class NativeSocketAddress {
      * Return the value of the sa_family field.
      */
     private int family() {
-        return (int) SA_FAMILY_VH.get(memory);
+        return sockaddr.sa_family(memory);
     }
 
     /**
      * Stores the given family in the sa_family field.
      */
     private void putFamily(int family) {
-        // sa_family type and offset differs between platforms
-        Class<?> familyType = SA_FAMILY_VH.varType();
-        if (familyType == short.class) {
-            SA_FAMILY_VH.set(memory, (short) family);
-        } else if (familyType == byte.class) {
-            SA_FAMILY_VH.set(memory, (byte) family);
-        } else {
-            throw new InternalError();
-        }
+        sockaddr_in.sin_family(memory, family);
     }
 
     /**
@@ -313,7 +260,8 @@ class NativeSocketAddress {
     private static void putAddress(MemorySegment sockaddr, Inet4Address ia) {
         int ipAddress = JNINA.addressValue(ia);
         int saddr = Integer.reverseBytes(ipAddress);
-        INET4_S_ADDR_VH.set(sockaddr, saddr);
+        var sin_addrMemory = sockaddr_in.sin_addr(sockaddr);
+        in_addr.s_addr(sin_addrMemory, saddr);
     }
 
     private static void putAddress(MemorySegment address, Inet6Address ia) {
