@@ -1672,6 +1672,12 @@ public class Types {
     // where
         class DisjointChecker {
             Set<Pair<ClassSymbol, ClassSymbol>> pairsSeen = new HashSet<>();
+            /* there are three cases for ts and ss:
+             *   - one is a class and the other one is an interface (case I)
+             *   - both are classes                                 (case II)
+             *   - both are interfaces                              (case III)
+             * all those cases are covered in JLS 23, section: "5.1.6.1 Allowed Narrowing Reference Conversion"
+             */
             private boolean areDisjoint(ClassSymbol ts, ClassSymbol ss) {
                 Pair<ClassSymbol, ClassSymbol> newPair = new Pair<>(ts, ss);
                 /* if we are seeing the same pair again then there is an issue with the sealed hierarchy
@@ -1679,37 +1685,33 @@ public class Types {
                  */
                 if (!pairsSeen.add(newPair))
                     return false;
-                // if both are classes
-                if (!ts.isInterface() && !ss.isInterface()) {
-                    return !isSubtype(erasure(ss.type), erasure(ts.type)) && !isSubtype(erasure(ts.type), erasure(ss.type));
-                } else if (ts.isInterface() && !ss.isInterface() || !ts.isInterface() && ss.isInterface()) {
-                    /* so one is an interface and the other one is a class
-                     */
-                    ClassSymbol isym = ts.isInterface() ? ts : ss;
+
+                if (ts.isInterface() && !ss.isInterface() || // case I: one is a class and the other one is an interface
+                    !ts.isInterface() && ss.isInterface()) {
+                    ClassSymbol isym = ts.isInterface() ? ts : ss; // isym is the interface and csym the class
                     ClassSymbol csym = isym == ts ? ss : ts;
-                    if (isSubtype(erasure(csym.type), erasure(isym.type))) {
-                        return false;
-                    } else {
+                    if (!isSubtype(erasure(csym.type), erasure(isym.type))) {
                         if (csym.isFinal()) {
                             return true;
-                        }
-                        if (isClassFreelyExtensible(csym) && !isym.isSealed()) {
-                            // here we can't determine if they are disjoint, bail out
-                            return false;
+                        } else if (csym.isSealed()) {
+                            return areDisjoint(isym, csym.getPermittedSubclasses());
+                        } else if (isClassFreelyExtensible(csym) && isym.isSealed()) {
+                            return areDisjoint(csym, isym.getPermittedSubclasses());
                         }
                     }
-                } else { // both are interfaces
-                    if (isSubtype(erasure(ts.type), erasure(ss.type)) || isSubtype(erasure(ss.type), erasure(ts.type))) {
-                        return false;
+                } else if (!ts.isInterface() &&              // case II: both are classes
+                        !ss.isInterface()) {
+                    return !isSubtype(erasure(ss.type), erasure(ts.type)) && !isSubtype(erasure(ts.type), erasure(ss.type));
+                } else {                                     // case III: both are interfaces
+                    if (!isSubtype(erasure(ts.type), erasure(ss.type)) && !isSubtype(erasure(ss.type), erasure(ts.type))) {
+                        if (ts.isSealed()) {
+                            return areDisjoint(ss, ts.getPermittedSubclasses());
+                        } else if (ss.isSealed()) {
+                            return areDisjoint(ts, ss.getPermittedSubclasses());
+                        }
                     }
                 }
-                // if at least one is sealed
-                if (ts.isSealed() || ss.isSealed()) {
-                    // permitted subtypes have to be disjoint with the other symbol
-                    ClassSymbol sealedOne = ts.isSealed() ? ts : ss;
-                    ClassSymbol other = sealedOne == ts ? ss : ts;
-                    return sealedOne.getPermittedSubclasses().stream().allMatch(type -> areDisjoint((ClassSymbol)type.tsym, other));
-                }
+                // at this point we haven't been able to prove that the classes or interfaces are disjoint so we bail out
                 return false;
             }
 
@@ -1720,6 +1722,10 @@ public class Types {
                 } else {
                     return !csym.isSealed() && !csym.isFinal();
                 }
+            }
+
+            boolean areDisjoint(ClassSymbol csym, List<Type> permittedSubtypes) {
+                return permittedSubtypes.stream().allMatch(psubtype -> areDisjoint(csym, (ClassSymbol) psubtype.tsym));
             }
         }
 
