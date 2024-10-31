@@ -31,12 +31,12 @@ public class OldClassAndRedefineClassApp {
 
         System.out.println("Main: loading OldSuper");
         // Load an old class (version 49), but not linking it.
-        ClassLoader.getSystemClassLoader().loadClass("OldSuper");
+        Class.forName("OldSuper", false, ClassLoader.getSystemClassLoader());
 
         // Redefine a class unrelated to the above old class.
         Instrumentation instrumentation = InstrumentationRegisterClassFileTransformer.getInstrumentation();
         System.out.println("INFO: instrumentation = " + instrumentation);
-        Class c = ClassLoader.getSystemClassLoader().loadClass("Hello");
+        Class<?> c = ClassLoader.getSystemClassLoader().loadClass("Hello");
         byte[] bytes = c.getClassLoader().getResourceAsStream(c.getName().replace('.', '/') + ".class").readAllBytes();
         instrumentation.redefineClasses(new ClassDefinition(c, bytes));
 

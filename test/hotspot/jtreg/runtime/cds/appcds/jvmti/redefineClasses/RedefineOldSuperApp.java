@@ -29,8 +29,9 @@ import java.lang.instrument.Instrumentation;
 public class RedefineOldSuperApp {
     public static void main(String args[]) throws Throwable {
         File bootJar = new File(args[0]);
+        ClassLoader appClassLoader = ClassLoader.getSystemClassLoader();
 
-        Class superCls = ClassLoader.getSystemClassLoader().loadClass("OldSuper");
+        Class<?> superCls = Class.forName("OldSuper", false, appClassLoader);
         System.out.println("OldSuper>> loader = " + superCls.getClassLoader());
 
         {
@@ -53,7 +54,7 @@ public class RedefineOldSuperApp {
             }
         }
 
-        Class childCls = ClassLoader.getSystemClassLoader().loadClass("NewChild");
+        Class<?> childCls = Class.forName("NewChild", false, appClassLoader);
         System.out.println("NewChild>> loader = " + childCls.getClassLoader());
 
 
