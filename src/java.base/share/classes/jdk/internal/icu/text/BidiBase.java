@@ -4744,7 +4744,6 @@ public class BidiBase {
         static final Boolean RUN_DIRECTION_LTR = (jafa == null) ?
             Boolean.FALSE : (Boolean)jafa.getTextAttributeConstant("RUN_DIRECTION_LTR");
 
-        @SuppressWarnings("serial")
         private static AttributedCharacterIterator.Attribute
             getTextAttribute(String name)
         {

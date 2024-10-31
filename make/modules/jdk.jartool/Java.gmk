@@ -23,5 +23,4 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += missing-explicit-ctor
 JAVAC_FLAGS += -XDstringConcat=inline
