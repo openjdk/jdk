@@ -40,6 +40,7 @@ import java.util.stream.$Streamtype$Stream;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.vm.annotation.ForceInline;
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
@@ -2324,11 +2325,13 @@ public abstract sealed class $Type$Buffer
 
 #end[byte]
 
+    @ForceInline
     @Override
     int scaleFactor() {
-        return $Fulltype$.BYTES;
+        return Integer.numberOfTrailingZeros($Fulltype$.BYTES);
     }
 
+    @ForceInline
     @Override
     AbstractMemorySegmentImpl arrayBackedSegment(Object base,
                                                  long offset,

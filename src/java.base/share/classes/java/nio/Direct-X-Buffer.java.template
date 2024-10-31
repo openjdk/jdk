@@ -34,6 +34,7 @@ import java.util.Objects;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
 import jdk.internal.ref.Cleaner;
@@ -531,11 +532,13 @@ class Direct$Type$Buffer$RW$$BO$
 #end[char]
 
 #if[byte]
+    @ForceInline
     @Override
     int scaleFactor() {
         return 0;
     }
 
+    @ForceInline
     @Override
     AbstractMemorySegmentImpl arrayBackedSegment(Object base,
                                                  long offset,
