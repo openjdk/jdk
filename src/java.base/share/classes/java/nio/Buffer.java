@@ -779,9 +779,9 @@ public abstract sealed class Buffer
     }
 
     /**
-     * {@return the scale factor for this Buffer}
+     * {@return the scale shifts for this Buffer}
      * <p>
-     * The scale factor is:
+     * The scale shifts are:
      *   ByteBuffer:               0
      *   ShortBuffer, CharBuffer:  1
      *   IntBuffer, FloatBuffer:   2
