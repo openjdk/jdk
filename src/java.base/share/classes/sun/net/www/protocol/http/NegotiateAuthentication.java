@@ -50,7 +50,6 @@ class NegotiateAuthentication extends AuthenticationInfo {
     @java.io.Serial
     private static final long serialVersionUID = 100L;
 
-    @SuppressWarnings("serial") // Not statically typed as Serializable
     private final HttpCallerInfo hci;
 
     // These maps are used to manage the GSS availability for different
@@ -71,7 +70,6 @@ class NegotiateAuthentication extends AuthenticationInfo {
     }
 
     // The HTTP Negotiate Helper
-    @SuppressWarnings("serial") // Not statically typed as Serializable
     private Negotiator negotiator = null;
 
    /**
