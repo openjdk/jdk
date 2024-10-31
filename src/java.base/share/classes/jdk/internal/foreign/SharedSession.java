@@ -44,6 +44,8 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
+    private static final int CLOSED_ACQUIRE_COUNT = -1;
+
     SharedSession() {
         super(null, new SharedResourceList());
     }
@@ -53,15 +55,15 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
     public void acquire0() {
         int value;
         do {
-            value = (int) STATE.getVolatile(this);
-            if (value < OPEN) {
+            value = (int) ACQUIRE_COUNT.getVolatile(this);
+            if (value < 0) {
                 //segment is not open!
                 throw alreadyClosed();
             } else if (value == MAX_FORKS) {
                 //overflow
                 throw tooManyAcquires();
             }
-        } while (!STATE.compareAndSet(this, value, value + 1));
+        } while (!ACQUIRE_COUNT.compareAndSet(this, value, value + 1));
     }
 
     @Override
@@ -69,21 +71,23 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
     public void release0() {
         int value;
         do {
-            value = (int) STATE.getVolatile(this);
-            if (value <= OPEN) {
+            value = (int) ACQUIRE_COUNT.getVolatile(this);
+            if (value <= 0) {
                 //cannot get here - we can't close segment twice
                 throw alreadyClosed();
             }
-        } while (!STATE.compareAndSet(this, value, value - 1));
+        } while (!ACQUIRE_COUNT.compareAndSet(this, value, value - 1));
     }
 
     void justClose() {
-        int prevState = (int) STATE.compareAndExchange(this, OPEN, CLOSED);
-        if (prevState < 0) {
+        int acquireCount = (int) ACQUIRE_COUNT.compareAndExchange(this, 0, CLOSED_ACQUIRE_COUNT);
+        if (acquireCount < 0) {
             throw alreadyClosed();
-        } else if (prevState != OPEN) {
-            throw alreadyAcquired(prevState);
+        } else if (acquireCount > 0) {
+            throw alreadyAcquired(acquireCount);
         }
+
+        state = CLOSED;
         SCOPED_MEMORY_ACCESS.closeScope(this, ALREADY_CLOSED);
     }
 

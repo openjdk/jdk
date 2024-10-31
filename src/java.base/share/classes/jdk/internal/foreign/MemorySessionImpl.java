@@ -38,6 +38,7 @@ import jdk.internal.foreign.GlobalSession.HeapSession;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * This class manages the temporal bounds associated with a memory segment as well
@@ -57,9 +58,9 @@ public abstract sealed class MemorySessionImpl
         permits ConfinedSession, GlobalSession, SharedSession {
     static final int OPEN = 0;
     static final int CLOSED = -1;
+    static final int NONCLOSEABLE = 1;
 
-    static final VarHandle STATE = MhUtil.findVarHandle(
-            MethodHandles.lookup(), "state", int.class);
+    static final VarHandle ACQUIRE_COUNT = MhUtil.findVarHandle(MethodHandles.lookup(), "acquireCount", int.class);
 
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
@@ -70,7 +71,11 @@ public abstract sealed class MemorySessionImpl
 
     final ResourceList resourceList;
     final Thread owner;
-    int state = OPEN;
+
+    @Stable
+    int state;
+
+    int acquireCount;
 
     public Arena asArena() {
         return new ArenaImpl(this);
@@ -214,8 +219,8 @@ public abstract sealed class MemorySessionImpl
         throw new CloneNotSupportedException();
     }
 
-    public boolean isCloseable() {
-        return true;
+    public final boolean isCloseable() {
+        return state <= OPEN;
     }
 
     /**
