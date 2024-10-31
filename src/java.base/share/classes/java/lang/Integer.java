@@ -963,14 +963,14 @@ public final class Integer extends Number
                 // If archive has Integer cache, we must use all instances from it.
                 // Otherwise, the identity checks between archived Integers and
                 // runtime-cached Integers would fail.
-                int archivedIdx = (archivedCache == null) ? 0 : archivedCache.length;
-                for (int i = 0; i < archivedIdx; i++) {
+                int archivedSize = (archivedCache == null) ? 0 : archivedCache.length;
+                for (int i = 0; i < archivedSize; i++) {
                     c[i] = archivedCache[i];
                     assert j == archivedCache[i];
                     j++;
                 }
                 // Fill the rest of the cache.
-                for (int i = archivedIdx; i < size; i++) {
+                for (int i = archivedSize; i < size; i++) {
                     c[i] = new Integer(j++);
                 }
                 archivedCache = c;
