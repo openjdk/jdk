@@ -56,6 +56,13 @@ import jdk.internal.vm.annotation.Stable;
 public abstract sealed class MemorySessionImpl
         implements Scope
         permits ConfinedSession, GlobalSession, SharedSession {
+
+    /**
+     * The value of the {@code state} of a {@code MemorySessionImpl}. The only possible transition
+     * is OPEN -> CLOSED. As a result, the states CLOSED and UNCLOSEABLE are stable. This allows us
+     * to annotate {@code state} with {@link Stable} and elide liveness check on non-closeable
+     * constant scopes, such as {@code GLOBAL_SESSION}.
+     */
     static final int OPEN = 0;
     static final int CLOSED = -1;
     static final int NONCLOSEABLE = 1;
