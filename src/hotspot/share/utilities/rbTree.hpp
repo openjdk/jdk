@@ -25,14 +25,10 @@
 #ifndef SHARE_UTILITIES_RBTREE_HPP
 #define SHARE_UTILITIES_RBTREE_HPP
 
-// #include "memory/allocation.hpp"
-// #include "memory/iterator.hpp"
-// #include "utilities/debug.hpp"
-// #include "opto/callnode.hpp"
 #include "runtime/os.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-// #include "utilities/ostream.hpp"
-// #include "utilities/powerOfTwo.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // COMPARATOR must have a static function `cmp(a,b)` which returns:
 //     - an int < 0 when a < b
@@ -48,6 +44,7 @@ class RBTree {
   enum Color { BLACK, RED };
   ALLOCATOR _allocator;
   size_t _num_nodes;
+  bool _num_outdated;
 
 public:
   // Root node - parent is nullptr
@@ -58,28 +55,35 @@ public:
     RBNode* _left;
     RBNode* _right;
     Color _color;
+    int _black_height;
 
     K _key;
     V _value;
 
   public:
     RBNode(const K& k, const V& v)
-        : _parent(nullptr), _left(nullptr), _right(nullptr), _color(Color::RED),
+        : _parent(nullptr), _left(nullptr), _right(nullptr), _color(Color::RED), _black_height(0),
           _key(k), _value(v) {}
 
     const K& key() const { return _key; }
     V& val() { return _value; }
 
-    RBNode* left() { return _left; }
-    RBNode* right() { return _right; }
-    RBNode* parent() { return _parent; }
-    Color color() { return _color; }
-
     bool is_right_child() {
-      return _parent != nullptr && _parent->right() == this;
+      return _parent != nullptr && _parent->_right == this;
     }
     bool is_left_child() {
-      return _parent != nullptr && _parent->left() == this;
+      return _parent != nullptr && _parent->_left == this;
+    }
+
+    void update_children(RBNode* left, RBNode* right) {
+      _left = left;
+      _right = right;
+      if (left != nullptr) {
+        left->_parent = this;
+      }
+      if (right != nullptr) {
+        right->_parent = this;
+      }
     }
 
     void replace_child(RBNode* old_child, RBNode* new_child) {
@@ -90,49 +94,19 @@ public:
       }
     }
 
-    RBNode* sibling() {
-      if (this == _parent->left()) {
-        return _parent->right();
-      }
-      return _parent->left();
-    }
-
-    RBNode* close_nephew() {
-      if (this == _parent->left()) {
-        return _parent->right()->left();
-      }
-      return _parent->left()->right();
-    }
-
-    RBNode* distant_nephew() {
-      if (this == _parent->left()) {
-        return _parent->right()->right();
-      }
-      return _parent->left()->left();
-    }
-
-    RBNode* uncle() {
-      RBNode* grandparent = _parent->parent();
-      if (_parent == grandparent->left()) {
-        return grandparent->right();
-      }
-      return grandparent->left();
-    }
-
     RBNode* rotate_left() {
       // Move node down, and right child up
       RBNode* old_right = _right;
 
-      _right = old_right->left();
-      if (old_right->left() != nullptr) {
-        old_right->left()->_parent = this;
+      _right = old_right->_left;
+      if (old_right->_left != nullptr) {
+        old_right->_left->_parent = this;
       }
 
       old_right->_parent = _parent;
       if (is_left_child()) {
         _parent->_left = old_right;
-      }
-      else if (is_right_child()) {
+      } else if (is_right_child()) {
         _parent->_right = old_right;
       }
 
@@ -146,16 +120,15 @@ public:
       // Move node down, and left child up
       RBNode* old_left = _left;
 
-      _left = old_left->right();
-      if (old_left->right() != nullptr) {
-        old_left->right()->_parent = this;
+      _left = old_left->_right;
+      if (old_left->_right != nullptr) {
+        old_left->_right->_parent = this;
       }
 
       old_left->_parent = _parent;
       if (is_left_child()) {
         _parent->_left = old_left;
-      }
-      else if (is_right_child()) {
+      } else if (is_right_child()) {
         _parent->_right = old_left;
       }
 
@@ -163,6 +136,104 @@ public:
       _parent = old_left;
 
       return old_left;
+    }
+
+    void inc_black_height() {
+      _black_height++;
+    }
+
+    void dec_black_height() {
+      _black_height--;
+    }
+
+    static RBNode* merge_right(RBNode* left, RBNode* right, RBNode* pivot) {
+      if (black_height(left) == black_height(right) && is_black(left)) {
+        pivot->update_children(left, right);
+        pivot->_color = RED;
+        pivot->_black_height = black_height(left);
+        return pivot;
+      }
+
+      left->_right = merge_right(left->_right, right, pivot);
+      left->_right->_parent = left;
+
+      if (is_black(left) && is_red(left->_right) && is_red(left->_right->_right)) {
+        left->_right->_right->_color = BLACK;
+        left->_right->_right->inc_black_height();
+        left->_right->inc_black_height();
+        return left->rotate_left();
+      }
+      return left;
+    }
+
+    static RBNode* merge_left(RBNode* left, RBNode* right, RBNode* pivot) {
+      if (black_height(left) == black_height(right) && is_black(right)) {
+        pivot->update_children(left, right);
+        pivot->_color = RED;
+        pivot->_black_height = black_height(right);
+        return pivot;
+      }
+
+      right->_left = merge_left(left, right->_left, pivot);
+      right->_left->_parent = right;
+
+      if (is_black(right) && is_red(right->_left) && is_red(right->_left->_left)) {
+        right->_left->_left->_color = BLACK;
+        right->_left->_left->inc_black_height();
+        right->_left->inc_black_height();
+        return right->rotate_right();
+      }
+      return right;
+    }
+
+    static RBNode* merge(RBNode* left, RBNode* right, RBNode* pivot) {
+      RBNode* node;
+      if (black_height(left) < black_height(right)) {
+        node = merge_left(left, right, pivot);
+        if (is_red(node) && is_red(node->_left)) {
+          node->_color = BLACK;
+          node->inc_black_height();
+        }
+      } else if (black_height(left) > black_height(right)) {
+        node = merge_right(left, right, pivot);
+        if (is_red(node) && is_red(node->_right)) {
+          node->_color = BLACK;
+          node->inc_black_height();
+        }
+      } else {
+        pivot->update_children(left, right);
+        pivot->_parent = nullptr;
+        if (is_black(left) && is_black(right)) {
+          pivot->_color = RED;
+          pivot->_black_height = black_height(left);
+        } else {
+          pivot->_color = BLACK;
+          pivot->_black_height = black_height(left) + 1;
+        }
+        node = pivot;
+      }
+      return node;
+    }
+
+    static RBNode* split(RBNode* node, const K& key, RBNode** left, RBNode** right) {
+      if (node == nullptr) {
+        *left = nullptr;
+        *right = nullptr;
+        return nullptr;
+      }
+      if (COMPARATOR::cmp(node->key(), key) == 0) {
+        *left = node->_left;
+        *right = node->_right;
+        return node;
+      }
+      if (COMPARATOR::cmp(node->key(), key) > 0) { // key < node
+        RBNode* key_node = split(node->_left, key, left, right);
+        *right = merge(*right, node->_right, node);
+        return key_node;
+      }
+      RBNode* key_node = split(node->_right, key, left, right);
+      *left = merge(node->_left, *left, node);
+      return key_node;
     }
 
     template <typename F>
@@ -194,23 +265,28 @@ public:
 
 #ifdef ASSERT
     bool is_correct(int num_blacks) const {
+      if (_black_height != num_blacks) {
+        return false;
+      }
+
       if (_color == BLACK) {
         num_blacks--;
       }
+
       bool left_is_correct = num_blacks == 0;
       bool right_is_correct = num_blacks == 0;
       if (_left != nullptr) {
         if (COMPARATOR::cmp(_left->key(), _key) >= 0 || // left >= root, or
-            (_color == RED && _left->color() == RED) || // 2 red nodes, or
-            (_left->parent() != this)) {                // Pointer mismatch,
+            (_color == RED && _left->_color == RED) || // 2 red nodes, or
+            (_left->_parent != this)) {                // Pointer mismatch,
           return false;                                 // incorrect.
         }
         left_is_correct = _left->is_correct(num_blacks);
       }
       if (_right != nullptr) {
         if (COMPARATOR::cmp(_right->key(), _key) <= 0 || // left >= root, or
-            (_color == RED && _left->color() == RED)  || // 2 red nodes, or
-            (_right->parent() != this)) {                // Pointer mismatch,
+            (_color == RED && _left->_color == RED)  || // 2 red nodes, or
+            (_right->_parent != this)) {                // Pointer mismatch,
           return false;                                  // incorrect.
         }
         right_is_correct = _right->is_correct(num_blacks);
@@ -219,9 +295,9 @@ public:
     }
 
     size_t count_nodes() const {
-      size_t right_nodes = _right == nullptr ? 0 : _right->count_nodes();
       size_t left_nodes = _left == nullptr ? 0 : _left->count_nodes();
-      return 1 + right_nodes + left_nodes;
+      size_t right_nodes = _right == nullptr ? 0 : _right->count_nodes();
+      return 1 + left_nodes + right_nodes;
     }
 #endif // ASSERT
 
@@ -232,9 +308,10 @@ private:
 
   RBNode* allocate_node(const K& k, const V& v) {
     void* node_place = _allocator.allocate(sizeof(RBNode));
-    if (node_place != nullptr) {
-      _num_nodes++;
+    if (node_place == nullptr) {
+      return nullptr;
     }
+    _num_nodes++;
     return new (node_place) RBNode(k, v);
   }
 
@@ -243,12 +320,19 @@ private:
     _num_nodes--;
   }
 
-  inline bool is_black(RBNode* node) {
-    return node == nullptr || node->color() == BLACK;
+  static inline int black_height(RBNode* node) {
+    if (node == nullptr) {
+      return 0;
+    }
+    return node->_black_height;
   }
 
-  inline bool is_red(RBNode* node) {
-    return node != nullptr && node->color() == RED;
+  static inline bool is_black(RBNode* node) {
+    return node == nullptr || node->_color == BLACK;
+  }
+
+  static inline bool is_red(RBNode* node) {
+    return node != nullptr && node->_color == RED;
   }
 
   RBNode* find(RBNode* curr, const K& k) {
@@ -258,9 +342,9 @@ private:
       if (key_cmp_k == 0) {       // k == key
         return curr;
       } else if (key_cmp_k < 0) { // k < key
-        curr = curr->left();
+        curr = curr->_left;
       } else {                    // k > key
-        curr = curr->right();
+        curr = curr->_right;
       }
     }
 
@@ -271,6 +355,7 @@ private:
     RBNode* curr = _root;
     if (curr == nullptr) { // Tree is empty
       _root = allocate_node(k, v);
+      // _root->_color = BLACK;
       return _root;
     }
 
@@ -287,9 +372,9 @@ private:
 
       parent = curr;
       if (key_cmp_k < 0) { // k < key
-        curr = curr->left();
+        curr = curr->_left;
       } else {             // k > key
-        curr = curr->right();
+        curr = curr->_right;
       }
     }
 
@@ -308,21 +393,22 @@ private:
   }
 
   void fix_violations(RBNode* node) {
-    if(node->color() == BLACK) { // node's value was updated
+    if(node->_color == BLACK) { // node's value was updated
       return;                    // Tree is already correct
     }
 
-    RBNode* parent = node->parent();
-    while (parent != nullptr && parent->color() != Color::BLACK) {
+    RBNode* parent = node->_parent;
+    while (parent != nullptr && parent->_color != Color::BLACK) {
       // Node and parent are both red, creating a red-violation
 
-      RBNode* grandparent = parent->parent();
+      RBNode* grandparent = parent->_parent;
       if (grandparent == nullptr) { // Parent is the tree root
         parent->_color = BLACK;     // Color parent black to eliminate the red-violation
+        parent->_black_height += 1;
         return;
       }
 
-      RBNode* uncle = node->uncle();
+      RBNode* uncle = parent->is_left_child() ? grandparent->_right : grandparent->_left;
       if (is_black(uncle)) { // Parent is red, uncle is black
         // Rotate the parent to the position of the grandparent
 
@@ -345,7 +431,9 @@ private:
 
         // Swap parent and grandparent colors to eliminate the red-violation
         parent->_color = BLACK;
+        parent->_black_height += 1;
         grandparent->_color = RED;
+        grandparent->_black_height -= 1;
         if (_root == grandparent) {
           _root = parent;
         }
@@ -357,37 +445,41 @@ private:
       // Paint both black, paint grandparent red to not create a black-violation
       parent->_color = BLACK;
       uncle->_color = BLACK;
+      parent->_black_height += 1;
+      uncle->_black_height += 1;
       grandparent->_color = RED;
 
       // Move up two levels to check for new potential red-violation
       node = grandparent;
-      parent = grandparent->parent();
+      parent = grandparent->_parent;
     }
   }
 
   void remove_inner(RBNode* node) {
-    RBNode* parent = node->parent();
+    RBNode* parent = node->_parent;
     while (parent != nullptr) {
-      RBNode* sibling = node->sibling();
+      RBNode* sibling = node->is_left_child() ? parent->_right : parent->_left;
       if (is_red(sibling)) { // Sibling red, parent and nephews must be black
         // Rotate so sibling becomes parent, swap parent and sibling colors
         parent->_color = RED;
+        parent->_black_height -= 1;
         sibling->_color = BLACK;
+        sibling->_black_height += 1;
         if (node->is_left_child()) {
           parent->rotate_left();
-          sibling = parent->right();
+          sibling = parent->_right;
         } else {
           parent->rotate_right();
-          sibling = parent->left();
+          sibling = parent->_left;
         }
 
         if (_root == parent) {
-          _root = parent->parent();
+          _root = parent->_parent;
         }
       }
 
-      RBNode* close_nephew = node->close_nephew();
-      RBNode* distant_nephew = node->distant_nephew();
+      RBNode* close_nephew = node->is_left_child() ? sibling->_left : sibling->_right;
+      RBNode* distant_nephew = node->is_left_child() ? sibling->_right : sibling->_left;
       if (is_red(distant_nephew) || is_red(close_nephew)) {
         if (is_black(distant_nephew)) { // close red, distant black,
           // Rotate sibling down and inner nephew up
@@ -397,7 +489,9 @@ private:
             sibling->rotate_left();
           }
           sibling->_color = RED;
+          sibling->_black_height -= 1;
           close_nephew->_color = BLACK;
+          close_nephew->_black_height += 1;
           distant_nephew = sibling;
           sibling = close_nephew;
         }
@@ -411,40 +505,128 @@ private:
         if (_root == parent) {
           _root = sibling;
         }
-        sibling->_color = parent->color();
+
+        if (parent->_color == BLACK) {
+          parent->_black_height -= 1;
+          sibling->_black_height += 1;
+        }
+        sibling->_color = parent->_color;
         parent->_color = BLACK;
         distant_nephew->_color = BLACK;
+        distant_nephew->_black_height += 1;
         return;
       }
 
       if (is_red(parent)) { // parent red, sibling and nephews black
         // Swap parent and sibling colors to restore black balance
         sibling->_color = RED;
+        sibling->_black_height -= 1;
         parent->_color = BLACK;
         return;
       }
 
       // Parent, sibling, both nephews black
       sibling->_color = RED;
+      sibling->_black_height -= 1;
+      parent->_black_height -= 1;
       node = parent;
-      parent = node->parent();
+      parent = node->_parent;
+    }
+  }
+
+  void remove_from_tree(RBNode* node) {
+    RBNode* parent = node->_parent;
+    RBNode* left = node->_left;
+    RBNode* right = node->_right;
+    if (left != nullptr) { // node has a left only-child
+      // node must be black, and child red, otherwise a black-violation would exist
+      // Remove node and color the child black.
+      node->_left->_color = BLACK;
+      node->_left->_black_height += 1;
+      node->_left->_parent = node->_parent;
+      if (parent == nullptr) {
+        _root = node->_left;
+      } else {
+        node->_parent->replace_child(node, left);
+      }
+    } else if (right != nullptr) { // node has a right only-child
+      node->_right->_color = BLACK;
+      node->_right->_black_height += 1;
+      node->_right->_parent = node->_parent;
+      if (parent == nullptr) {
+        _root = node->_right;
+      } else {
+        node->_parent->replace_child(node, right);
+      }
+    } else { // node has no children
+      if (node == _root) { // Tree empty
+        _root = nullptr;
+      } else { // node is black, creating a black imbalance
+        if (is_black(node)) {
+          remove_inner(node);
+        }
+        node->_parent->replace_child(node, nullptr);
+      }
     }
   }
 
   void remove_all_inner(RBNode* node) {
-    if (node == nullptr)
+    if (node == nullptr) {
       return;
-    remove_all_inner(node->left());
-    remove_all_inner(node->right());
+    }
+    remove_all_inner(node->_left);
+    remove_all_inner(node->_right);
     free_node(node);
+  }
+
+  int black_depth() {
+    int black_nodes = 0;
+    RBNode* node = _root;
+    while (node != nullptr) {
+      if (node->_color == BLACK) {
+        black_nodes++;
+      }
+      node = node->_left;
+    }
+    return black_nodes;
+  }
+
+  RBNode* leftmost_node() {
+    if (_root == nullptr) {
+      return nullptr;
+    }
+    RBNode* node = _root;
+    while (node->_left != nullptr) {
+      node = node->_left;
+    }
+    return node;
+  }
+
+  RBNode* rightmost_node() {
+    if (_root == nullptr) {
+      return nullptr;
+    }
+    RBNode* node = _root;
+    while (node->_right != nullptr) {
+      node = node->_right;
+    }
+    return node;
   }
 
 public:
   NONCOPYABLE(RBTree);
 
-  RBTree() : _allocator(), _num_nodes(0), _root(nullptr) {}
+  RBTree() : _allocator(), _num_nodes(0), _num_outdated(false), _root(nullptr) {}
 
-  size_t num_nodes() const { return _num_nodes; }
+  size_t num_nodes() {
+    if (!_num_outdated) {
+      return _num_nodes;
+    }
+
+    _num_nodes = _root->count_nodes();
+    _num_outdated = false;
+    return _num_nodes;
+    }
 
   void insert(const K& k, const V& v) {
     RBNode* node = insert_node(k, v, false);
@@ -462,55 +644,24 @@ public:
     if (node == nullptr) {
       return false;
     }
-    RBNode* left= node->left();
-    RBNode* right = node->right();
+    RBNode* left= node->_left;
+    RBNode* right = node->_right;
 
     if (left != nullptr && right != nullptr) { // node has two children
       // Copy the k/v from the in-order successor and delete that node instead
       RBNode* curr = right;
-      while (curr->left() != nullptr) {
-        curr = curr->left();
+      while (curr->_left != nullptr) {
+        curr = curr->_left;
       }
       node->_key = curr->key();
       node->_value = curr->val();
 
       node = curr;
-      right = curr->right();
+      right = curr->_right;
       left = nullptr; // Must be, since curr is the left-most child of the right subtree
     }
 
-    RBNode* parent = node->parent();
-    if (left != nullptr) { // node has a left only-child
-      // node must be black, and child red, otherwise a black-violation would exist
-      // Remove node and color the child black.
-      node->_left->_color = BLACK;
-      node->_left->_parent = node->parent();
-      if (parent == nullptr) {
-        _root = node->left();
-      } else {
-        node->parent()->replace_child(node, left);
-      }
-    } else if (right != nullptr) { // node has a right only-child
-      node->_right->_color = BLACK;
-      node->_right->_parent = node->parent();
-      if (parent == nullptr) {
-        _root = node->right();
-      } else {
-        node->parent()->replace_child(node, right);
-      }
-    }
-
-    else { // node has no children
-      if (node == _root) { // Tree empty
-        _root = nullptr;
-      } else { // node is black, creating a black imbalance
-        if (is_black(node)) {
-          remove_inner(node);
-        }
-        node->parent()->replace_child(node, nullptr);
-      }
-    }
-
+    remove_from_tree(node);
     free_node(node);
     return true;
   }
@@ -541,9 +692,91 @@ public:
     return candidate;
   }
 
-  V& find(K& key) {
+  V* find(K& key) {
     RBNode* node = find(_root, key);
-    return node->val();
+    if (node == nullptr) {
+      return nullptr;
+    }
+    return &node->val();
+  }
+
+  static RBTree& merge(RBTree& left, RBTree& right) {
+    if (left._root == nullptr) {
+      return right;
+    }
+    if (right._root == nullptr) {
+      return left;
+    }
+
+    RBNode* pivot = right.leftmost_node();
+    right.remove_from_tree(pivot);
+
+    RBNode* node = RBNode::merge(left._root, right._root, pivot);
+
+    left._root = node;
+    left._num_nodes += right._num_nodes;
+    left._num_outdated = left._num_outdated || right._num_outdated;
+
+    right._root = nullptr;
+    right._num_nodes = 0;
+
+    return left;
+  }
+
+  enum SplitMode {
+    LT, // <
+    LEQ // <=
+  };
+
+  bool split(RBTree& left, RBTree& right, const K& key, SplitMode mode = LEQ) {
+    RBNode* key_node = RBNode::split(_root, key, &left._root, &right._root);
+    if (left._root == nullptr) {
+      left._num_nodes = 0;
+      left._num_outdated = false;
+    } else {
+      left._num_outdated = true;
+      left._root->_parent = nullptr;
+    }
+    if (right._root == nullptr) {
+      right._num_nodes = 0;
+      right._num_outdated = false;
+    } else {
+      right._num_outdated = true;
+      right._root->_parent = nullptr;
+    }
+
+    if (key_node == nullptr) {
+      return false;
+    }
+
+    key_node->_color = RED;
+    key_node->_black_height = 0;
+    key_node->_left = nullptr;
+    key_node->_right = nullptr;
+
+    if (mode == LEQ) { // place key in left tree
+      RBNode* parent = left.rightmost_node();
+      key_node->_parent = parent;
+      if (parent == nullptr) {
+        left._root = key_node;
+        left._num_nodes = 1;
+      } else {
+        parent->_right = key_node;
+      }
+      left.fix_violations(key_node);
+    } else { // place key in right tree
+      RBNode* parent = right.leftmost_node();
+      key_node->_parent = parent;
+      if (parent == nullptr) {
+        right._root = key_node;
+        right._num_nodes = 1;
+      } else {
+        parent->_left = key_node;
+      }
+      right.fix_violations(key_node);
+    }
+
+    return true;
   }
 
   // Visit all RBNodes in ascending order.
@@ -555,32 +788,36 @@ public:
   // Visit all RBNodes in ascending order whose keys are in range [from, to).
   template <typename F>
   void visit_range_in_order(const K& from, const K& to, F f) {
+    if (_root == nullptr)
+      return;
     _root->visit_range_in_order_inner(from, to, f);
   }
 
 #ifdef ASSERT
-  bool verify_tree() {
+  void verify_self() {
     if (_root == nullptr) {
-      return _num_nodes == 0;
+      assert(_num_nodes == 0, "rbtree has nodes but no root");
+      return;
     }
+
+    assert(_root->_parent == nullptr, "root of rbtree has a parent");
 
     int black_nodes = 0;
     RBNode* node = _root;
     while (node != nullptr) {
-      if (node->color() == BLACK) {
+      if (node->_color == BLACK) {
         black_nodes++;
       }
-      node = node->left();
+      node = node->_left;
     }
 
-    const size_t num_nodes = _root->count_nodes();
-    const int maximum_depth = log2i(_num_nodes + 1) * 2;
+    const size_t actual_num_nodes = _root->count_nodes();
+    const size_t expected_num_nodes = num_nodes();
+    const int maximum_depth = log2i(num_nodes() + 1) * 2;
 
-    bool count_fail = num_nodes != _num_nodes;
-    bool too_deep = 2 * black_nodes > maximum_depth;
-    bool correct = _root->is_correct(black_nodes);
-
-    return correct && !count_fail && !too_deep;
+    assert(expected_num_nodes == actual_num_nodes, "unexpected number of nodes in rbtree. expected: " SIZE_FORMAT ", actual: " SIZE_FORMAT, expected_num_nodes, actual_num_nodes);
+    assert(2 * black_nodes <= maximum_depth, "rbtree is too deep for its number of nodes. can be at most: " INT32_FORMAT ", but is: " INT32_FORMAT, maximum_depth, 2 * black_nodes);
+    assert(_root->is_correct(black_nodes), "rbtree does not hold rb-properties");
   }
 #endif // ASSERT
 
