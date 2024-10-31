@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,12 +49,14 @@ public class SupportedDHParamGens {
 
         System.out.println("Checking " + primeSize + " ...");
         AlgorithmParameterGenerator apg =
-                AlgorithmParameterGenerator.getInstance("DH", "SunJCE");
+                AlgorithmParameterGenerator.getInstance("DH",
+                        System.getProperty("test.provider.name", "SunJCE"));
         apg.init(primeSize);
         AlgorithmParameters ap = apg.generateParameters();
         DHParameterSpec spec = ap.getParameterSpec(DHParameterSpec.class);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", "SunJCE");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH",
+                        System.getProperty("test.provider.name", "SunJCE"));
         kpg.initialize(spec);
         KeyPair kp = kpg.generateKeyPair();
         checkKeyPair(kp, primeSize);
