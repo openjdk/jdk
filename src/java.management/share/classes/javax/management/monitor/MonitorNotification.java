@@ -162,7 +162,6 @@ public class MonitorNotification extends javax.management.Notification {
     /**
      * @serial Monitor notification observed object.
      */
-    @SuppressWarnings("serial") // Not statically typed as Serializable
     private ObjectName observedObject = null;
 
     /**

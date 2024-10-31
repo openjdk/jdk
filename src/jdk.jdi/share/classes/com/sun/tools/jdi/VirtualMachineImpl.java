@@ -376,7 +376,6 @@ class VirtualMachineImpl extends MirrorImpl
         }
         Iterator<?> it = classToBytes.entrySet().iterator();
         for (int i = 0; it.hasNext(); i++) {
-            @SuppressWarnings("rawtypes")
             Map.Entry<?, ?> entry = (Map.Entry)it.next();
             ReferenceTypeImpl refType = (ReferenceTypeImpl)entry.getKey();
             validateMirror(refType);

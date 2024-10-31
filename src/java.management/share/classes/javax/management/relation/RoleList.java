@@ -134,7 +134,6 @@ public class RoleList extends ArrayList<Object> {
      *
      * @since 1.6
      */
-    @SuppressWarnings("unchecked")
     public List<Role> asList() {
         if (!typeSafe) {
             if (tainted)

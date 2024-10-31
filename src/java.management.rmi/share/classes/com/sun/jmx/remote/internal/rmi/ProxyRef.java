@@ -35,8 +35,7 @@ import java.rmi.server.RemoteObject;
 import java.rmi.server.RemoteRef;
 
 
-@SuppressWarnings({"deprecation",
-                   "serial"}) // Externalizable class w/o no-arg c'tor
+@SuppressWarnings("serial") // Externalizable class w/o no-arg c'tor
 public class ProxyRef implements RemoteRef {
     private static final long serialVersionUID = -6503061366316814723L;
 

@@ -58,7 +58,6 @@ public class OpenMBeanParameterInfoSupport
     /**
      * @serial The open mbean parameter's <i>open type</i>
      */
-    @SuppressWarnings("serial") // Not statically typed as Serializable
     private OpenType<?>    openType;
 
     /**

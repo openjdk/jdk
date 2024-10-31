@@ -47,7 +47,6 @@ public class BadAttributeValueExpException extends Exception   {
      * @serial A string representation of the attribute that originated this exception.
      * For example, the string value can be the return of {@code attribute.toString()}.
      */
-    @SuppressWarnings("serial") // See handling in constructor and readObject
     private String val;
 
     /**

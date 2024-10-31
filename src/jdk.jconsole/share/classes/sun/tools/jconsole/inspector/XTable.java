@@ -42,7 +42,6 @@ public abstract class XTable extends JTable {
 
     public XTable () {
         super();
-        @SuppressWarnings("serial")
         final TableSorter sorter = new TableSorter();
         setModel(sorter);
         sorter.addMouseListenerToHeaderInTable(this);

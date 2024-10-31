@@ -1154,7 +1154,6 @@ public class Timer extends NotificationBroadcasterSupport
      *
      * @param notification The TimerAlarmClock notification.
      */
-    @SuppressWarnings("deprecation")
     void notifyAlarmClock(TimerAlarmClockNotification notification) {
 
         TimerNotification timerNotification = null;

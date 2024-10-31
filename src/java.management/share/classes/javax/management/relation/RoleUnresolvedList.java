@@ -134,7 +134,6 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      *
      * @since 1.6
      */
-    @SuppressWarnings("unchecked")
     public List<RoleUnresolved> asList() {
         if (!typeSafe) {
             if (tainted)

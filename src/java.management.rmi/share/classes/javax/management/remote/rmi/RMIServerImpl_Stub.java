@@ -32,7 +32,7 @@ package javax.management.remote.rmi;
  *
  * @since 1.5
  */
-@SuppressWarnings({"deprecation", "rawtypes", "unchecked"})
+@SuppressWarnings({"deprecation", "rawtypes"})
 public final class RMIServerImpl_Stub
         extends java.rmi.server.RemoteStub
         implements javax.management.remote.rmi.RMIServer {

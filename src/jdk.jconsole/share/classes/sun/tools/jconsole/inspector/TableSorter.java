@@ -221,7 +221,6 @@ public class TableSorter extends DefaultTableModel implements MouseListener {
         return dataVector.elementAt(row);
     }
 
-    @SuppressWarnings("unchecked")
     private void setRow(Vector<?> data, int row) {
         dataVector.setElementAt(data,row);
     }
