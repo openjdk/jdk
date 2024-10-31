@@ -25,11 +25,11 @@
  * @test
  * @bug 8048357
  * @summary test PKCS7 data signing, encoding and verification
- * @library /test/lib
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
- * @run main SignerOrder
+ * @run main SignerOrder default 1024
+ * @run main SignerOrder Sha256 2048
  */
 import java.io.IOException;
 import java.math.BigInteger;
@@ -55,7 +55,6 @@ import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CertInfo;
 import sun.security.x509.X509Key;
 import jdk.test.lib.hexdump.HexPrinter;
-import jdk.test.lib.security.SecurityUtils;
 
 public class SignerOrder {
 
@@ -63,20 +62,21 @@ public class SignerOrder {
     static final byte[] data1 = "12345".getBytes();
     static final byte[] data2 = "abcde".getBytes();
 
-    public static void main(String[] argv) throws Exception {
-        String digestAlg = "Sha256";
+    public static void main(String[] args) throws Exception {
+        String digestAlg = "default".equals(args[0]) ? null : args[0];
+        int keySize = Integer.parseInt(args[1]);
         SignerInfo[] signerInfos = new SignerInfo[9];
-        SimpleSigner signer1 = new SimpleSigner(digestAlg, null, null, null);
+        SimpleSigner signer1 = new SimpleSigner(digestAlg, null, null, null, keySize);
         signerInfos[8] = signer1.genSignerInfo(data1);
         signerInfos[7] = signer1.genSignerInfo(new byte[]{});
         signerInfos[6] = signer1.genSignerInfo(data2);
 
-        SimpleSigner signer2 = new SimpleSigner(digestAlg, null, null, null);
+        SimpleSigner signer2 = new SimpleSigner(digestAlg, null, null, null, keySize);
         signerInfos[5] = signer2.genSignerInfo(data1);
         signerInfos[4] = signer2.genSignerInfo(new byte[]{});
         signerInfos[3] = signer2.genSignerInfo(data2);
 
-        SimpleSigner signer3 = new SimpleSigner(digestAlg, null, null, null);
+        SimpleSigner signer3 = new SimpleSigner(digestAlg, null, null, null, keySize);
         signerInfos[2] = signer3.genSignerInfo(data1);
         signerInfos[1] = signer3.genSignerInfo(new byte[]{});
         signerInfos[0] = signer3.genSignerInfo(data2);
@@ -157,28 +157,33 @@ class SimpleSigner {
     public SimpleSigner(String digestAlg,
             String encryptionAlg,
             KeyPair keyPair,
-            X500Name agent) throws Exception {
+            X500Name agent,
+            int keySize) throws Exception {
 
+        String signAlgoDigest;
         if (agent == null) {
             agent = new X500Name("cn=test");
-        }
-        if (digestAlg == null) {
-            digestAlg = "SHA";
         }
         if (encryptionAlg == null) {
             encryptionAlg = "DSA";
         }
+        if (digestAlg == null) {
+            digestAlg = "SHA";
+            signAlgoDigest = encryptionAlg;
+        } else {
+            signAlgoDigest = digestAlg + "with" + encryptionAlg;
+        }
         if (keyPair == null) {
             KeyPairGenerator keyGen =
                     KeyPairGenerator.getInstance(encryptionAlg);
-            keyGen.initialize(SecurityUtils.getTestKeySize(encryptionAlg));
+            keyGen.initialize(keySize);
             keyPair = keyGen.generateKeyPair();
         }
         publicKey = (X509Key) keyPair.getPublic();
         privateKey = keyPair.getPrivate();
 
         if ("DSA".equals(encryptionAlg)) {
-            this.sig = Signature.getInstance(digestAlg + "with" + encryptionAlg);
+            this.sig = Signature.getInstance(signAlgoDigest);
         } else { // RSA
             this.sig = Signature.getInstance(digestAlg + "/" + encryptionAlg);
         }

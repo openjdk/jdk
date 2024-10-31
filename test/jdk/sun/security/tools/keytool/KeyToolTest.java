@@ -957,6 +957,9 @@ public class KeyToolTest {
                 "-keypass changeit -selfcert -dname CN=NewName");
         // sig not compatible
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
+                "-keypass changeit -selfcert -sigalg MD5withRSA");
+        // sig not compatible
+        testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -selfcert -sigalg SHA256withRSA");
         // bad pass
         testFail("", "-keystore x.jks -storetype JKS -storepass wrong " +
@@ -1078,7 +1081,10 @@ public class KeyToolTest {
                 "-sigalg MD2withRSA -alias n9");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -dname CN=olala -keyalg RSA " +
-                "-sigalg SHA256withRSA -alias n10");
+                "-sigalg MD5withRSA -alias n10");
+        testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
+                "-keypass changeit -genkeypair -dname CN=olala -keyalg RSA " +
+                "-sigalg SHA256withRSA -alias n10-1");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -dname CN=olala -keyalg RSA " +
                 "-sigalg SHA1withRSA -alias n11");
@@ -1163,7 +1169,10 @@ public class KeyToolTest {
                 "-certreq -file csr1");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-certreq -file csr1 -sigalg SHA256withDSA");
-        // unmatched sigalg
+        // unmatched md5
+        testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
+                "-certreq -file csr1 -sigalg MD5withRSA");
+        // unmatched sha
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-certreq -file csr1 -sigalg SHA256withRSA");
         // misc test
@@ -1224,8 +1233,11 @@ public class KeyToolTest {
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-export -file mykey.cert -alias mykey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
+                "-keypass changeit -genkeypair -dname CN=weak -keyalg rsa " +
+                "-keysize 512 -sigalg MD5withRSA -alias myweakkey");
+        testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -dname CN=weak -keyalg rsa -keysize " +
-                KEY_LENGTH_RSA + " -sigalg SHA256withRSA -alias myweakkey");
+                KEY_LENGTH_RSA + " -sigalg SHA256withRSA -alias myweakkey-sha");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-export -file myweakkey.cert -alias myweakkey");
         testFail("", "-printcert -file badkeystore");

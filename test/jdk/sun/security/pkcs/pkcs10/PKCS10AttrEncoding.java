@@ -24,14 +24,14 @@
 /*
  * @test
  * @bug 8048357 8242151
- * @library /test/lib
  * @summary test DER encoding of PKCS10 attributes
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.pkcs10
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
  * @compile -XDignore.symbol.file PKCS10AttrEncoding.java
- * @run main PKCS10AttrEncoding
+ * @run main PKCS10AttrEncoding DSA 512
+ * @run main PKCS10AttrEncoding Sha256withDSA 2048
  */
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -39,7 +39,6 @@ import java.security.PrivateKey;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import jdk.test.lib.security.SecurityUtils;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs10.PKCS10;
 import sun.security.pkcs10.PKCS10Attribute;
@@ -74,9 +73,10 @@ public class PKCS10AttrEncoding {
         String kpgAlgorithm = "DSA";
         X500Name subject = new X500Name("cn=Test");
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(kpgAlgorithm);
-        String sigAlg = "Sha256withDSA";
+        String sigAlg = args[0];
+        int keySize = Integer.parseInt(args[1]);
 
-        keyGen.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
+        keyGen.initialize(keySize);
 
         KeyPair pair = keyGen.generateKeyPair();
         X509Key publicKey = (X509Key) pair.getPublic();

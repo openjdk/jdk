@@ -27,6 +27,8 @@
  * @summary Test the Mac.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @key randomness
+ * @run main ByteBuffers HmacMD5
+ * @run main ByteBuffers HmacSha256
  */
 
 import java.util.*;
@@ -46,11 +48,12 @@ public class ByteBuffers {
         byte[] t = new byte[n];
         random.nextBytes(t);
 
+        String algo = args[0];
         byte[] keyBytes = new byte[16];
         random.nextBytes(keyBytes);
-        SecretKey key = new SecretKeySpec(keyBytes, "HmacSha256");
+        SecretKey key = new SecretKeySpec(keyBytes, algo);
 
-        Mac mac = Mac.getInstance("HmacSha256");
+        Mac mac = Mac.getInstance(algo);
         mac.init(key);
         byte[] macValue = mac.doFinal(t);
 

@@ -24,13 +24,13 @@
 /*
  * @test
  * @bug 4114896
- * @library /test/lib
  * @summary Signature should support a sign() method that places the signature
  * in an already existing array.
+ * @run main SignWithOutputBuffer DSS 512
+ * @run main SignWithOutputBuffer SHA256withDSA 2048
  */
 
 import java.security.*;
-import jdk.test.lib.security.SecurityUtils;
 
 public class SignWithOutputBuffer {
 
@@ -39,11 +39,13 @@ public class SignWithOutputBuffer {
         int numBytes;
 
         String kpgAlgorithm = "DSA";
+        int keySize = Integer.parseInt(args[1]);
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance(kpgAlgorithm);
-        kpGen.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
+        kpGen.initialize(keySize);
         KeyPair kp = kpGen.genKeyPair();
 
-        Signature sig = Signature.getInstance("SHA224withDSA");
+        String signAlgo = args[0];
+        Signature sig = Signature.getInstance(signAlgo);
         sig.initSign(kp.getPrivate());
         sig.update((byte)0xff);
 
@@ -58,7 +60,7 @@ public class SignWithOutputBuffer {
         }
 
         // Now repeat the same with a buffer that's big enough
-        sig = Signature.getInstance("SHA224withDSA");
+        sig = Signature.getInstance(signAlgo);
         sig.initSign(kp.getPrivate());
         sig.update((byte)0xff);
         out = new byte[64];

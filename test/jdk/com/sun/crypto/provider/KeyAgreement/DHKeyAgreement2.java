@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,20 +227,26 @@ public class DHKeyAgreement2 {
         }
         System.err.println("Shared secrets are the same");
 
+        testSecretKey(bobKeyAgree, alicePubKey, "DES");
+        testSecretKey(bobKeyAgree, alicePubKey, "AES");
+    }
+
+    private static void testSecretKey(KeyAgreement bobKeyAgree, PublicKey alicePubKey, String algo)
+            throws Exception {
         // Now let's return the shared secret as a SecretKey object
         // and use it for encryption
-        System.out.println("Return shared secret as SecretKey object ...");
+        System.out.println("Return shared secret as SecretKey object with algorithm: " + algo);
         bobKeyAgree.doPhase(alicePubKey, true);
-        SecretKey aesKey = bobKeyAgree.generateSecret("AES");
+        SecretKey key = bobKeyAgree.generateSecret(algo);
 
-        Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-        aesCipher.init(Cipher.ENCRYPT_MODE, aesKey);
+        Cipher cipher = Cipher.getInstance(algo + "/ECB/PKCS5Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, key);
 
         byte[] cleartext = "This is just an example".getBytes();
-        byte[] ciphertext = aesCipher.doFinal(cleartext);
+        byte[] ciphertext = cipher.doFinal(cleartext);
 
-        aesCipher.init(Cipher.DECRYPT_MODE, aesKey);
-        byte[] cleartext1 = aesCipher.doFinal(ciphertext);
+        cipher.init(Cipher.DECRYPT_MODE, key);
+        byte[] cleartext1 = cipher.doFinal(ciphertext);
 
         int clearLen = cleartext.length;
         int clear1Len = cleartext1.length;

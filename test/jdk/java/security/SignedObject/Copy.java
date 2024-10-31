@@ -26,39 +26,40 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Signature;
 import java.security.SignedObject;
-import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
  * @bug 8050374
- * @library /test/lib
  * @summary Checks if a signed object is a copy of an original object
+ * @run main Copy DSA 512
+ * @run main Copy SHA256withDSA 2048
  */
 public class Copy {
 
     private static final String DSA = "DSA";
-    private static final int KEY_SIZE = SecurityUtils.getTestKeySize(DSA);
     private static final int MAGIC = 123;
 
     public static void main(String args[]) throws Exception {
+        int keySize = Integer.parseInt(args[1]);
         KeyPairGenerator kg = KeyPairGenerator.getInstance(DSA);
-        kg.initialize(KEY_SIZE);
+        kg.initialize(keySize);
         KeyPair kp = kg.genKeyPair();
 
-        Signature signature = Signature.getInstance("SHA224withDSA");
+        String signAlgo = args[0];
+        Signature signature = Signature.getInstance(signAlgo);
         Test original = new Test();
         SignedObject so = new SignedObject(original, kp.getPrivate(),
                 signature);
         System.out.println("Signature algorithm: " + so.getAlgorithm());
 
-        signature = Signature.getInstance("SHA224withDSA",
+        signature = Signature.getInstance(signAlgo,
                 System.getProperty("test.provider.name", "SUN"));
         if (!so.verify(kp.getPublic(), signature)) {
             throw new RuntimeException("Verification failed");
         }
 
         kg = KeyPairGenerator.getInstance(DSA);
-        kg.initialize(KEY_SIZE);
+        kg.initialize(keySize);
         kp = kg.genKeyPair();
 
         if (so.verify(kp.getPublic(), signature)) {
