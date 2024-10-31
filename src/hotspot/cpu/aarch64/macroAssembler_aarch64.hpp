@@ -1652,24 +1652,6 @@ private:
 inline bool AbstractAssembler::pd_check_instruction_mark() { return false; }
 #endif
 
-/**
- * class SkipIfEqual:
- *
- * Instantiating this class will result in assembly code being output that will
- * jump around any code emitted between the creation of the instance and it's
- * automatic destruction at the end of a scope block, depending on the value of
- * the flag passed to the constructor, which will be checked at run-time.
- */
-class SkipIfEqual {
- private:
-  MacroAssembler* _masm;
-  Label _label;
-
- public:
-   SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value);
-   ~SkipIfEqual();
-};
-
 struct tableswitch {
   Register _reg;
   int _insn_index; jint _first_key; jint _last_key;

@@ -123,7 +123,7 @@ public class ProtectionDomainBench {
     }
 
     @Benchmark
-    @Fork(value = 3, jvmArgsPrepend={"-Djava.security.manager=allow"})
+    @Fork(value = 3, jvmArgs={"-Djava.security.manager=allow"})
     public void withSecurityManager()  throws ClassNotFoundException {
         work();
     }

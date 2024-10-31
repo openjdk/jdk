@@ -49,7 +49,7 @@ import static org.openjdk.bench.java.util.stream.ops.ref.BenchmarkGathererImpls.
 @BenchmarkMode(Mode.Throughput)
 @Warmup(iterations = 4, time = 5, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 7, time = 5, timeUnit = TimeUnit.SECONDS)
-@Fork(jvmArgsAppend = "--enable-preview", value = 1)
+@Fork(jvmArgs = "--enable-preview", value = 1)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
 public class GatherReducePar {
