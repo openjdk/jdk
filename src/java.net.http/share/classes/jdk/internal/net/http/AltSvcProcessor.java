@@ -285,10 +285,10 @@ final class AltSvcProcessor {
                 debug.log("skipping %s", altSvc);
                 continue;
             }
-            final var deadline = getValidTill(parsed.parameters.get("ma"));
-            final var persist = getPersist(parsed.parameters.get("persist"));
-            final AltService.Identity altSvcId = new AltService.Identity(parsed.alpnName,
-                    parsed.host, parsed.port);
+            final var deadline = getValidTill(parsed.parameters().get("ma"));
+            final var persist = getPersist(parsed.parameters().get("persist"));
+            final AltService.Identity altSvcId = new AltService.Identity(parsed.alpnName(),
+                    parsed.host(), parsed.port());
             AltService.create(altSvcId, origin, originSNIServerNames, deadline, persist)
                     .ifPresent(altServices::add);
         }
@@ -343,12 +343,12 @@ final class AltSvcProcessor {
         final HostPort hostPort = getHostPort(origin, altAuthority);
         if (nextDoubleQuoteIndex == remaining.length() - 1) {
             // there's nothing more left to parse
-            return new ParsedHeaderValue(altValue, alpnName, hostPort.host, hostPort.port, Map.of());
+            return new ParsedHeaderValue(altValue, alpnName, hostPort.host(), hostPort.port(), Map.of());
         }
         // parse the semi-colon delimited parameters out of the rest of the remaining string
         remaining = remaining.substring(nextDoubleQuoteIndex + 1);
         final Map<String, String> parameters = extractParameters(remaining);
-        return new ParsedHeaderValue(altValue, alpnName, hostPort.host, hostPort.port, parameters);
+        return new ParsedHeaderValue(altValue, alpnName, hostPort.host(), hostPort.port(), parameters);
     }
 
     private static String decodePotentialPercentEncoded(final String val) {
