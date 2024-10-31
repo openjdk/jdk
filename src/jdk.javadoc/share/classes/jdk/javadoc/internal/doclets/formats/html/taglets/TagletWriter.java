@@ -367,7 +367,6 @@ public class TagletWriter {
         return createAnchorAndSearchIndex(element, tagText, Text.of(tagText), desc, tree);
     }
 
-    @SuppressWarnings("preview")
     Content createAnchorAndSearchIndex(Element element, String tagText, Content tagContent, String desc, DocTree tree) {
         Content result;
         if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)
