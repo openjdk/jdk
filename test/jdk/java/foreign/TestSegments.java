@@ -397,7 +397,7 @@ public class TestSegments {
     void testReinterpretArenaClose() {
         MemorySegment segment;
         try (Arena arena = Arena.ofConfined()){
-            try (Arena otherArena= Arena.ofConfined()) {
+            try (Arena otherArena = Arena.ofConfined()) {
                 segment = arena.allocate(100);
                 segment = segment.reinterpret(otherArena, null);
             }
