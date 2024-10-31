@@ -3490,13 +3490,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         } else if (t->isa_oopptr()) {
           new_in2 = ConNode::make(t->make_narrowoop());
         } else if (t->isa_klassptr()) {
-          ciKlass* klass = t->is_klassptr()->exact_klass();
-          if (klass->is_interface() || klass->is_abstract()) {
-            // CmpPNode::Ideal should always fold such comparisons
-            assert(false, "Interface or abstract class pointers should not be compressed");
-          } else {
-            new_in2 = ConNode::make(t->make_narrowklass());
-          }
+          new_in2 = ConNode::make(t->make_narrowklass());
         }
       }
       if (new_in2 != nullptr) {
@@ -3788,6 +3782,14 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
+#ifdef ASSERT
+  case Op_ConNKlass: {
+    const TypePtr* tp = n->as_Type()->type()->make_ptr();
+    ciKlass* klass = tp->is_klassptr()->exact_klass();
+    assert(!klass->is_interface() && !klass->is_abstract(), "Interface or abstract class pointers should not be compressed");
+    break;
+  }
+#endif
   default:
     assert(!n->is_Call(), "");
     assert(!n->is_Mem(), "");
