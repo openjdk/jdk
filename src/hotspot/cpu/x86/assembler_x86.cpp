@@ -7461,6 +7461,8 @@ void Assembler::xorl(Register dst, Register src) {
 
 void Assembler::exorl(Register dst, Register src1, Register src2, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
+  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
   (void) evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
   // opcode matches gcc
   emit_arith(0x31, 0xC0, src2, src1);
@@ -14323,6 +14325,8 @@ void Assembler::addq(Register dst, Register src) {
 
 void Assembler::eaddq(Register dst, Register src1, Register src2, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
+  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
   (void) evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
   // opcode matches gcc
   emit_arith(0x01, 0xC0, src2, src1);
