@@ -27,7 +27,6 @@ package build.tools.cldrconverter;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
