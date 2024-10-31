@@ -523,7 +523,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     private static AbstractMemorySegmentImpl ofBuffer(Buffer b, long offset, long length) {
         final Object base = NIO_ACCESS.getBufferBase(b);
         return (base == null)
-                ? arrayLessSegment(b, offset, length)
+                ? nativeSegment(b, offset, length)
                 : NIO_ACCESS.arrayBackedSegment(b, base, offset, length, b.isReadOnly(), bufferScope(b));
     }
 
@@ -539,7 +539,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    private static AbstractMemorySegmentImpl arrayLessSegment(Buffer b, long offset, long length) {
+    private static AbstractMemorySegmentImpl nativeSegment(Buffer b, long offset, long length) {
         if (!b.isDirect()) {
             throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
         }
