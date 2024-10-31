@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -770,6 +770,9 @@ public abstract class SSLSocket extends Socket
      *         if a value was successfully negotiated.
      * @throws UnsupportedOperationException if the underlying provider
      *         does not implement the operation.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc7301
+     *      RFC 7301: Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension
      * @since 9
      */
     public String getApplicationProtocol() {

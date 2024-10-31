@@ -25,12 +25,12 @@
 #include "precompiled.hpp"
 
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGC.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
@@ -42,7 +42,7 @@ ShenandoahOldGC::ShenandoahOldGC(ShenandoahOldGeneration* generation, Shenandoah
     ShenandoahConcurrentGC(generation, false), _old_generation(generation), _allow_preemption(allow_preemption) {
 }
 
-// Final mark for old-gen is different than for young or old, so we
+// Final mark for old-gen is different for young than old, so we
 // override the implementation.
 void ShenandoahOldGC::op_final_mark() {
 
