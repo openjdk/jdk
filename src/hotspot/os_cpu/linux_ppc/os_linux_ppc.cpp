@@ -449,15 +449,16 @@ void os::print_context(outputStream *st, const void *context) {
   const ucontext_t* uc = (const ucontext_t*)context;
 
   st->print_cr("Registers:");
-  st->print("pc =" INTPTR_FORMAT "  ", uc->uc_mcontext.regs->nip);
-  st->print("lr =" INTPTR_FORMAT "  ", uc->uc_mcontext.regs->link);
-  st->print("ctr=" INTPTR_FORMAT "  ", uc->uc_mcontext.regs->ctr);
+  print_reg(st, "pc =", uc->uc_mcontext.regs->nip);
+  print_reg(st, "lr =", uc->uc_mcontext.regs->link);
+  print_reg(st, "ctr=", uc->uc_mcontext.regs->ctr);
   st->cr();
   for (int i = 0; i < 32; i++) {
-    st->print("r%-2d=" INTPTR_FORMAT "  ", i, uc->uc_mcontext.regs->gpr[i]);
-    if (i % 3 == 2) st->cr();
+    /* st->print("r%-2d=" INTPTR_FORMAT "  ", i, uc->uc_mcontext.regs->gpr[i]); */
+    char regname[6] = {0};
+    snprintf(regname, sizeof(regname), "r%-2d=", i);
+    print_reg(st, regname, uc->uc_mcontext.regs->gpr[i]);
   }
-  st->cr();
   st->cr();
 }
 

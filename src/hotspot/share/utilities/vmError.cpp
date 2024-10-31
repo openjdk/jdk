@@ -485,6 +485,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool pri
   } else {
     st->print_cr("Native frames: <unavailable>");
   }
+  st->cr();
 }
 
 static void print_oom_reasons(outputStream* st) {
