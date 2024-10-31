@@ -116,32 +116,34 @@ bool LogFileStreamOutput::flush() {
   total += result;                                            \
 }
 
-int LogFileStreamOutput::write_internal_lines(const LogDecorations& decorations, const char* msg, int msg_len) {
+int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
   int written = 0;
   const bool use_decorations = !_decorators.is_empty();
 
   if (!_fold_multilines) {
     const char* base = msg;
-    int written_msg = 0;
     int decorator_padding = 0;
     if (use_decorations) {
       WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), decorator_padding);
       WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
     }
     written += decorator_padding;
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_msg);
-    // If we have not written the whole message length by now then we must have a multi-line message.
-    // If we have active decorators then pad the line with an empty decorator string so
-    // that the output lines up for clear visual reading.
-    while (written_msg < msg_len) {
-      msg = base + written_msg;
 
+    // Search for newlines in the string and repeatedly print the substrings that end
+    // with each newline.
+    const char* next = strstr(msg, "\n");
+    while (next != NULL) {  // We have some newlines to print
+      int to_print = next - base;
+      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%.*s\n", to_print, base), written);
       if (use_decorations) {
         WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "[%*c] ", decorator_padding - 2, ' '), written); // Substracting 2 because decorator_padding includes the brackets
       }
-      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_msg);
+      base = next + 1;
+      next = strstr(base, "\n");
     }
-    written += written_msg;
+
+    // Print the end of the message
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", base), written);
   } else {
     if (use_decorations) {
       WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
@@ -163,36 +165,6 @@ int LogFileStreamOutput::write_internal_lines(const LogDecorations& decorations,
     } while (next != nullptr);
     os::free(dupstr);
   }
-  return written;
-}
-
-int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
-  int msg_len = checked_cast<int>(strlen(msg));
-
-  // Do not handle multiline messages if foldmultilines has been specified
-  if (_fold_multilines) return write_internal_lines(decorations, msg, msg_len);
-
-  // Handle multiline strings: split the string replacing newlines with terminators,
-  // and then force write_internal_line to print all of them (i.e. not stopping at the
-  // first null but until msg_len bytes are printed)
-  ALLOW_C_FUNCTION(::malloc, char* dupstr = (char*)::malloc((msg_len + 1) * sizeof(char));)
-  if (dupstr == nullptr) {
-    return 0;
-  }
-  memcpy(dupstr, msg, msg_len + 1);
-  char* tmp = dupstr;
-
-  char* end = dupstr + msg_len;
-  while (tmp < end) {
-    if (*tmp == '\n') {
-      *tmp = '\0';
-    }
-    ++tmp;
-  }
-  int written = write_internal_lines(decorations, dupstr, msg_len);
-
-  ALLOW_C_FUNCTION(::free, ::free(dupstr);)
-
   return written;
 }
 
