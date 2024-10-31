@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,8 @@ public class DHKeyFactory {
         dhSkipParamSpec = new DHParameterSpec(skip1024Modulus,
                                               skip1024Base);
 
-        KeyPairGenerator kpgen = KeyPairGenerator.getInstance("DH", "SunJCE");
+        KeyPairGenerator kpgen = KeyPairGenerator.getInstance("DH",
+                                    System.getProperty("test.provider.name", "SunJCE"));
         kpgen.initialize(dhSkipParamSpec);
         KeyPair kp = kpgen.generateKeyPair();
 
@@ -72,7 +73,8 @@ public class DHKeyFactory {
         // get the private key encoding
         byte[] privKeyEnc = kp.getPrivate().getEncoded();
 
-        KeyFactory kfac = KeyFactory.getInstance("DH", "SunJCE");
+        KeyFactory kfac = KeyFactory.getInstance("DH",
+                                System.getProperty("test.provider.name", "SunJCE"));
 
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(pubKeyEnc);
         PublicKey pubKey = kfac.generatePublic(x509KeySpec);

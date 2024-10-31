@@ -82,6 +82,8 @@ import sun.net.www.HeaderParser;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.stream.Collectors.joining;
+import static java.net.Authenticator.RequestorType.PROXY;
+import static java.net.Authenticator.RequestorType.SERVER;
 
 /**
  * Miscellaneous utilities
@@ -210,24 +212,10 @@ public final class Utils {
                 return true;
             };
 
-    // Headers that are not generally restricted, and can therefore be set by users,
-    // but can in some contexts be overridden by the implementation.
-    // Currently, only contains "Authorization" which will
-    // be overridden, when an Authenticator is set on the HttpClient.
-    // Needs to be BiPred<String,String> to fit with general form of predicates
-    // used by caller.
-
-    public static final BiPredicate<String, String> CONTEXT_RESTRICTED(HttpClient client) {
-        return (k, v) -> client.authenticator().isEmpty() ||
-                (!k.equalsIgnoreCase("Authorization")
-                        && !k.equalsIgnoreCase("Proxy-Authorization"));
-    }
-
     public record ProxyHeaders(HttpHeaders userHeaders, HttpHeaders systemHeaders) {}
 
-    private static final BiPredicate<String, String> HOST_RESTRICTED = (k,v) -> !"host".equalsIgnoreCase(k);
-    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED(HttpClient client)  {
-        return CONTEXT_RESTRICTED(client).and(HOST_RESTRICTED);
+    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED()  {
+        return (k,v) -> !"host".equalsIgnoreCase(k);
     }
 
     private static final Predicate<String> IS_HOST = "host"::equalsIgnoreCase;
@@ -310,6 +298,19 @@ public final class Utils {
     public static final BiPredicate<String, String> NO_PROXY_HEADERS_FILTER =
             (n,v) -> Utils.NO_PROXY_HEADER.test(n);
 
+    /**
+     * Check the user headers to see if the Authorization or ProxyAuthorization
+     * were set. We need to set special flags in the request if so. Otherwise
+     * we can't distinguish user set from Authenticator set headers
+     */
+    public static void setUserAuthFlags(HttpRequestImpl request, HttpHeaders userHeaders) {
+        if (userHeaders.firstValue("Authorization").isPresent()) {
+            request.setUserSetAuthFlag(SERVER, true);
+        }
+        if (userHeaders.firstValue("Proxy-Authorization").isPresent()) {
+            request.setUserSetAuthFlag(PROXY, true);
+        }
+    }
 
     public static boolean proxyHasDisabledSchemes(boolean tunnel) {
         return tunnel ? ! PROXY_AUTH_TUNNEL_DISABLED_SCHEMES.isEmpty()

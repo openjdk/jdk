@@ -2736,7 +2736,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty.
+  // Check if the entry lists are empty (EntryList first - by convention).
   ld(temp,             in_bytes(ObjectMonitor::EntryList_offset()), current_header);
   ld(displaced_header, in_bytes(ObjectMonitor::cxq_offset()), current_header);
   orr(temp, temp, displaced_header); // Will be 0 if both are 0.
@@ -3083,7 +3083,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty.
+    // Check if the entry lists are empty (EntryList first - by convention).
     ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
     ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
     orr(t, t, t2);
@@ -4618,23 +4618,6 @@ void MacroAssembler::zap_from_to(Register low, int before, Register high, int af
 }
 
 #endif // !PRODUCT
-
-void SkipIfEqualZero::skip_to_label_if_equal_zero(MacroAssembler* masm, Register temp,
-                                                  const bool* flag_addr, Label& label) {
-  int simm16_offset = masm->load_const_optimized(temp, (address)flag_addr, R0, true);
-  assert(sizeof(bool) == 1, "PowerPC ABI");
-  masm->lbz(temp, simm16_offset, temp);
-  masm->cmpwi(CCR0, temp, 0);
-  masm->beq(CCR0, label);
-}
-
-SkipIfEqualZero::SkipIfEqualZero(MacroAssembler* masm, Register temp, const bool* flag_addr) : _masm(masm), _label() {
-  skip_to_label_if_equal_zero(masm, temp, flag_addr, _label);
-}
-
-SkipIfEqualZero::~SkipIfEqualZero() {
-  _masm->bind(_label);
-}
 
 void MacroAssembler::cache_wb(Address line) {
   assert(line.index() == noreg, "index should be noreg");

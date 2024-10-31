@@ -611,7 +611,7 @@ void Node::destruct(PhaseValues* phase) {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
-  if (is_Opaque4()) {
+  if (is_OpaqueTemplateAssertionPredicate()) {
     compile->remove_template_assertion_predicate_opaq(this);
   }
   if (is_ParsePredicate()) {
@@ -2770,9 +2770,7 @@ const RegMask &Node::in_RegMask(uint) const {
 
 void Node_Array::grow(uint i) {
   _nesting.check(_a); // Check if a potential reallocation in the arena is safe
-  if (i < _max) {
-    return; // No need to grow
-  }
+  assert(i >= _max, "Should have been checked before, use maybe_grow?");
   assert(_max > 0, "invariant");
   uint old = _max;
   _max = next_power_of_2(i);

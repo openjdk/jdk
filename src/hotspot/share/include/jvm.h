@@ -1146,9 +1146,6 @@ JNIEXPORT void JNICALL
 JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadHideFrames(JNIEnv* env, jclass clazz, jboolean hide);
-
-JNIEXPORT void JNICALL
 JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter);
 
 /*
