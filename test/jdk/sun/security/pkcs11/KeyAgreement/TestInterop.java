@@ -89,7 +89,8 @@ public class TestInterop extends PKCS11Test {
             DHPrivateKeySpec privateSpec;
             KeyFactory kf = KeyFactory.getInstance("DH");
             KeyAgreement ka = KeyAgreement.getInstance("DH", prov);
-            KeyAgreement kbSunJCE = KeyAgreement.getInstance("DH", "SunJCE");
+            KeyAgreement kbSunJCE = KeyAgreement.getInstance("DH",
+                    System.getProperty("test.provider.name", "SunJCE"));
             DHPrivateKeySpec privSpecA = new DHPrivateKeySpec(xa, p, g);
             DHPublicKeySpec pubSpecA = new DHPublicKeySpec(ya, p, g);
             PrivateKey privA = kf.generatePrivate(privSpecA);

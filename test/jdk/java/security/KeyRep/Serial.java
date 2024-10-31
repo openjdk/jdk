@@ -37,9 +37,9 @@ import javax.crypto.spec.*;
 public class Serial {
 
     // providers
-    private static final String SUN = "SUN";
-    private static final String RSA = "SunRsaSign";
-    private static final String JCE = "SunJCE";
+    private static final String SUN = System.getProperty("test.provider.name", "SUN");
+    private static final String RSA = System.getProperty("test.provider.name", "SunRsaSign");
+    private static final String JCE = System.getProperty("test.provider.name", "SunJCE");
 
     public static void main(String[] args) throws Exception {
 

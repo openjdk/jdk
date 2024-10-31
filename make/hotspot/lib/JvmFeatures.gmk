@@ -150,7 +150,6 @@ endif
 ifneq ($(call check-jvm-feature, zgc), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_ZGC=0
   JVM_EXCLUDE_PATTERNS += gc/z
-  JVM_EXCLUDE_PATTERNS += gc/x
 endif
 
 ifneq ($(call check-jvm-feature, shenandoahgc), true)

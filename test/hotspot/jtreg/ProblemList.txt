@@ -59,8 +59,7 @@ compiler/codecache/CheckLargePages.java 8332654 linux-x64
 
 compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897 aix-ppc64,linux-ppc64le
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
-compiler/vectorapi/VectorRebracket128Test.java#ZSinglegen 8330538 generic-all
-compiler/vectorapi/VectorRebracket128Test.java#ZGenerational 8330538 generic-all
+compiler/vectorapi/VectorRebracket128Test.java#Z 8330538 generic-all
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/DataPatchTest.java 8331704 linux-riscv64
@@ -94,8 +93,7 @@ gc/TestAlwaysPreTouchBehavior.java#ParallelCollector 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#SerialCollector 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Shenandoah 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#G1 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#ZGenerational 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#ZSinglegen 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#Z 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
 
