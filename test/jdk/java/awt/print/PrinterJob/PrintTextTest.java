@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,33 @@
  * @run main/manual PrintTextTest
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.text.*;
-import java.util.*;
-import java.awt.font.*;
-import java.awt.geom.*;
-import java.awt.print.*;
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
+import java.awt.RenderingHints;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
+import java.awt.font.TextLayout;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
+import java.awt.print.Book;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+import java.text.AttributedCharacterIterator;
+import java.text.AttributedString;
+import java.util.HashMap;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JTabbedPane;
 
 public class PrintTextTest extends Component implements Printable {
 
@@ -67,7 +86,7 @@ public class PrintTextTest extends Component implements Printable {
     String page;
     boolean useFM;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
 
         PrinterJob pjob = PrinterJob.getPrinterJob();
         PageFormat portrait = pjob.defaultPage();
@@ -202,13 +221,13 @@ public class PrintTextTest extends Component implements Printable {
             }
         });
 
-        JFrame f = new JFrame();
+        JFrame f = new JFrame("PrintTextTest");
         f.add(BorderLayout.CENTER, p);
         f.add(BorderLayout.SOUTH, printButton);
         f.pack();
 
         PassFailJFrame.builder()
-            .title("Print Text Test")
+            .title("PrintTextTest")
             .instructions(INSTRUCTIONS)
             .columns(60)
             .testUI(f)
