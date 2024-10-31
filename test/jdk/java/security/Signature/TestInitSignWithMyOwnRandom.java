@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@ public class TestInitSignWithMyOwnRandom {
     public static void main(String[] argv) throws Exception {
         // any signature implementation will do as long as
         // it needs a random source
-        Provider p = Security.getProvider("SUN");
+        Provider p = Security.getProvider(
+                            System.getProperty("test.provider.name", "SUN"));
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", p);
         kpg.initialize(512);
         KeyPair kp = kpg.generateKeyPair();

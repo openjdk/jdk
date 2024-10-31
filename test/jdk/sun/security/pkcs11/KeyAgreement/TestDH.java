@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.security.Provider;
 import java.util.Arrays;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestDH extends PKCS11Test {
 
@@ -47,8 +48,9 @@ public class TestDH extends PKCS11Test {
             System.out.println("DH not supported, skipping");
             return;
         }
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", p);
-        kpg.initialize(512);
+        String kpgAlgorithm = "DH";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp1 = kpg.generateKeyPair();
         KeyPair kp2 = kpg.generateKeyPair();
 
@@ -68,7 +70,8 @@ public class TestDH extends PKCS11Test {
             throw new Exception("Secrets (1,2) do not match");
         }
 
-        ka2 = KeyAgreement.getInstance("DH", "SunJCE");
+        ka2 = KeyAgreement.getInstance("DH",
+                    System.getProperty("test.provider.name", "SunJCE"));
         ka2.init(kp1.getPrivate());
         ka2.doPhase(kp2.getPublic(), true);
         System.out.println("Derive 3...");
@@ -101,7 +104,8 @@ public class TestDH extends PKCS11Test {
 
         ka1.init(kp1.getPrivate());
         ka1.doPhase(kp2.getPublic(), true);
-        System.out.println("Derive " + algorithm + " using SunJCE...");
+        System.out.println("Derive " + algorithm + " using " +
+                    System.getProperty("test.provider.name", "SunJCE") + "...");
         key1 = ka1.generateSecret(algorithm);
 
         ka2.init(kp1.getPrivate());
