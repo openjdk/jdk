@@ -311,7 +311,6 @@ class JavaThread: public Thread {
 #if INCLUDE_JVMTI
   volatile bool         _carrier_thread_suspended;       // Carrier thread is externally suspended
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
-  bool                  _is_in_tmp_VTMS_transition;      // thread is in temporary virtual thread mount state transition
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
   bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
 #ifdef ASSERT
@@ -675,11 +674,7 @@ private:
   }
 
   bool is_in_VTMS_transition() const             { return _is_in_VTMS_transition; }
-  bool is_in_tmp_VTMS_transition() const         { return _is_in_tmp_VTMS_transition; }
-  bool is_in_any_VTMS_transition() const         { return _is_in_VTMS_transition || _is_in_tmp_VTMS_transition; }
-
   void set_is_in_VTMS_transition(bool val);
-  void toggle_is_in_tmp_VTMS_transition()        { _is_in_tmp_VTMS_transition = !_is_in_tmp_VTMS_transition; };
 
   bool is_disable_suspend() const                { return _is_disable_suspend; }
   void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; };
@@ -851,7 +846,6 @@ private:
 
 #if INCLUDE_JVMTI
   static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }
-  static ByteSize is_in_tmp_VTMS_transition_offset() { return byte_offset_of(JavaThread, _is_in_tmp_VTMS_transition); }
   static ByteSize is_disable_suspend_offset()        { return byte_offset_of(JavaThread, _is_disable_suspend); }
 #endif
 
