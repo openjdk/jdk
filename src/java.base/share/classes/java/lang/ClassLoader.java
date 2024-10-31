@@ -67,6 +67,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.StaticProperty;
+import jdk.internal.vm.annotation.Stable;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
@@ -298,17 +299,17 @@ public abstract class ClassLoader {
     // class loader is parallel capable.
     // Note: VM also uses this field to decide if the current class loader
     // is parallel capable and the appropriate lock object for class loading.
-    private final ConcurrentHashMap<String, Object> parallelLockMap;
+    private @Stable ConcurrentHashMap<String, Object> parallelLockMap;
 
     // Maps packages to certs
-    private final ConcurrentHashMap<String, Certificate[]> package2certs;
+    private @Stable ConcurrentHashMap<String, Certificate[]> package2certs;
 
     // Shared among all packages with unsigned classes
     private static final Certificate[] nocerts = new Certificate[0];
 
     // The classes loaded by this class loader. The only purpose of this table
     // is to keep the classes from being GC'ed until the loader is GC'ed.
-    private final ArrayList<Class<?>> classes = new ArrayList<>();
+    private @Stable ArrayList<Class<?>> classes = new ArrayList<>();
 
     // The "default" domain. Set as the default ProtectionDomain on newly
     // created classes.
@@ -330,7 +331,7 @@ public abstract class ClassLoader {
     // Class::getPackage, ClassLoader::getDefinePackage(s) or
     // Package::getPackage(s) method is called to define it.
     // Otherwise, the value is a NamedPackage object.
-    private final ConcurrentHashMap<String, NamedPackage> packages
+    private @Stable ConcurrentHashMap<String, NamedPackage> packages
             = new ConcurrentHashMap<>();
 
     /*
@@ -2729,15 +2730,19 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Called by the VM, during -Xshare:dump
+     * Called only by the VM, during -Xshare:dump.
+     *
+     * @implNote This is done while the JVM is running in single-threaded mode,
+     * and at the very end of Java bytecode execution. We know that no more classes
+     * will be loaded and none of the fields modified by this method will be used again.
      */
     private void resetArchivedStates() {
         if (parallelLockMap != null) {
-            parallelLockMap.clear();
+            parallelLockMap = new ConcurrentHashMap<>();
         }
-        packages.clear();
-        package2certs.clear();
-        classes.clear();
+        packages = new ConcurrentHashMap<>();
+        package2certs = new ConcurrentHashMap<>();
+        classes = new ArrayList<>();
         classLoaderValueMap = null;
     }
 }
