@@ -862,7 +862,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             if (TKit.isOSX()) {
                 MacHelper.verifyBundleStructure(cmd);
             }
-        });
+        }),
         ;
 
         AppLayoutAssert(Consumer<JPackageCommand> action) {
