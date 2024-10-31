@@ -149,7 +149,7 @@ public sealed class PacketSpaceManager implements PacketSpace
     // The next packet number to use in this space
     private final AtomicLong nextPN = new AtomicLong();
     private final TimeLine instantSource;
-    private QuicRttEstimator rttEstimator;
+    private final QuicRttEstimator rttEstimator;
     // first packet number sent after handshake confirmed
     private long handshakeConfirmedPN;
 
@@ -676,7 +676,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                 final StringBuilder sb = new StringBuilder();
                 pendingAcknowledgements.forEach((p) -> sb.append(" ").append(p));
                 if (!sb.isEmpty()) {
-                    debug.log("forgetting pending acks: " + sb.toString());
+                    debug.log("forgetting pending acks: " + sb);
                 }
             }
             pendingAcknowledgements.clear();
@@ -685,7 +685,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                 final StringBuilder sb = new StringBuilder();
                 pendingRetransmission.forEach((p) -> sb.append(" ").append(p));
                 if (!sb.isEmpty()) {
-                    debug.log("forgetting pending retransmissions: " + sb.toString());
+                    debug.log("forgetting pending retransmissions: " + sb);
                 }
             }
             pendingRetransmission.clear();
@@ -841,7 +841,7 @@ public sealed class PacketSpaceManager implements PacketSpace
 
     private final QuicTLSEngine quicTLSEngine;
     private final EmittedAckTracker emittedAckTracker;
-    private volatile NextAckFrame nextAckFrame;
+    private volatile NextAckFrame nextAckFrame; // assigned through VarHandle
     // exponent for outgoing packets; defaults to 3
     public static final int ACK_DELAY_EXPONENT = 3;
     // max ack delay sent in quic transport parameters, in millis
@@ -869,11 +869,11 @@ public sealed class PacketSpaceManager implements PacketSpace
 
     // The largest packet number successfully processed in this space.
     // Needed to decode received packet numbers, see RFC 9000 appendix A.3
-    private volatile long largestProcessedPN;
+    private volatile long largestProcessedPN; // assigned through VarHandle
 
     // The largest ACK-eliciting packet number received in this space.
     // Needed to determine if we should send ACK without delay, see RFC 9000 section 13.2.1
-    private volatile long largestAckElicitingReceivedPN;
+    private volatile long largestAckElicitingReceivedPN; // assigned through VarHandle
 
     // The largest ACK-eliciting packet number sent in this space.
     // Needed to determine if we should arm PTO timer
@@ -881,19 +881,19 @@ public sealed class PacketSpaceManager implements PacketSpace
 
     // The largest packet number acknowledged by peer.
     // Needed to determine packet number length, see RFC 9000 appendix A.2
-    private volatile long largestReceivedAckedPN;
+    private volatile long largestReceivedAckedPN; // assigned through VarHandle
 
     // The largest packet number acknowledged in this space
     // This is the largest packet number we have acknowledged.
     // This should be less or equal to the largestProcessedPN always.
     // Not used.
-    private volatile long largestSentAckedPN;
+    private volatile long largestSentAckedPN; // assigned through VarHandle
 
     // The largest packet number that this instance has included
     // in an AckFrame sent to the peer, and of which the peer has
     // acknowledged reception.
     // Used to limit ack ranges, see RFC 9000 section 13.2.4
-    private volatile long largestAckedPNReceivedByPeer;
+    private volatile long largestAckedPNReceivedByPeer; // assigned through VarHandle
 
     /**
      * Creates a new {@code PacketSpaceManager} for the given
@@ -1121,6 +1121,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         addToAckFrame(packetNumber, isAckEliciting);
     }
 
+    // used in tests
     public <T> T triggeredForRetransmission(Function<LongStream, T> walker) {
         return walker.apply(triggeredForRetransmission.stream()
                 .mapToLong(PendingAcknowledgement::packetNumber));
@@ -1131,6 +1132,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                 .mapToLong(PendingAcknowledgement::packetNumber));
     }
 
+    // used in tests
     public <T> T pendingAcknowledgements(Function<LongStream, T> walker) {
         return walker.apply(pendingAcknowledgements.stream()
                 .mapToLong(PendingAcknowledgement::packetNumber));
@@ -1654,16 +1656,6 @@ public sealed class PacketSpaceManager implements PacketSpace
         return ackDelay << peerAckDelayExponent;
     }
 
-    /**
-     * Get the next ack frame to send.
-     *
-     * @return The next AckFrame to send to the peer, or {@code null}
-     * if there is nothing to acknowledge.
-     */
-    private NextAckFrame getNextAck(boolean onlyOverdue) {
-        return getNextAck(onlyOverdue, Integer.MAX_VALUE);
-    }
-
     private NextAckFrame getNextAck(boolean onlyOverdue, int maxSize) {
         Deadline now = now();
         // This method is called to retrieve the AckFrame that will
@@ -2074,7 +2066,8 @@ public sealed class PacketSpaceManager implements PacketSpace
         var ackFrame = ack == null ? null : ack.ackFrame();
         assert packetNumber <= largestAckAcked
                 || ackFrame != null && ackFrame.isAcknowledging(packetNumber)
-                || nextAckFrame != null && nextAckFrame.ackFrame().isAcknowledging(packetNumber)
+                || nextAckFrame != null && nextAckFrame.ackFrame() != null
+                         && nextAckFrame.ackFrame.isAcknowledging(packetNumber)
                 : "packet %s(%s) should be in ackFrame"
                 .formatted(packetNumberSpace, packetNumber);
 
@@ -2138,7 +2131,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         do {
             nextAckFrame = this.nextAckFrame;
             if (nextAckFrame == null) return; // nothing to do!
-            var frame = nextAckFrame == null ? null : nextAckFrame.ackFrame();
+            var frame = nextAckFrame.ackFrame();
             largestAckAcked = emittedAckTracker.largestAckAcked();
             boolean needNewFrame = frame != null
                     && frame.smallestAcknowledged() <= largestAckAcked;
