@@ -140,6 +140,11 @@ import java.util.regex.Pattern;
  * <li>{@link SecureRandomSpi#engineReseed(SecureRandomParameters)}
  * </ul>
  *
+ * @spec https://www.rfc-editor.org/info/rfc4086
+ *      RFC 4086: Randomness Requirements for Security
+ * @spec https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-2.pdf
+ *      Security Requirements for Cryptographic Modules
+ *
  * @see java.security.SecureRandomSpi
  * @see java.util.Random
  *

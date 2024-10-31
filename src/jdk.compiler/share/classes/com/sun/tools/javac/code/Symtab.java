@@ -51,7 +51,6 @@ import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.JCPrimitiveType;
 import com.sun.tools.javac.code.Type.JCVoidType;
 import com.sun.tools.javac.code.Type.MethodType;
-import com.sun.tools.javac.code.Type.UnknownType;
 import com.sun.tools.javac.code.Types.UniqueType;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.jvm.Target;
@@ -408,9 +407,6 @@ public class Symtab {
 
         names = Names.instance(context);
 
-        // Create the unknown type
-        unknownType = new UnknownType();
-
         messages = JavacMessages.instance(context);
 
         MissingInfoHandler missingInfoHandler = MissingInfoHandler.instance(context);
@@ -483,8 +479,8 @@ public class Symtab {
         errType = new ErrorType(errSymbol, Type.noType);
 
         unknownSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.fromString("<any?>"), null, rootPackage);
-        unknownSymbol.members_field = new Scope.ErrorScope(unknownSymbol);
-        unknownSymbol.type = unknownType;
+        // Create the unknown type
+        unknownType = new ErrorType(unknownSymbol, Type.noType);
 
         // initialize builtin types
         initType(byteType, "byte", "Byte");
