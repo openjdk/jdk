@@ -27,7 +27,17 @@
  * @summary Check that Reduce Allocation Merges doesn't crash when
  *          a reducible Phi becomes irreducible after the last of
  *          its SR inputs is flagged as NSR.
- * @run main/othervm compiler.escapeAnalysis.TestReduceAllocationAndNonReduciblePhi
+ * @run main/othervm -XX:CompileCommand=dontinline,*TestReduceAllocationAndNonReduciblePhi*::test
+ *                   -XX:CompileCommand=compileonly,*TestReduceAllocationAndNonReduciblePhi*::test
+ *                   -XX:CompileCommand=compileonly,*Picture*::*
+ *                   -XX:CompileCommand=compileonly,*Point*::*
+ *                   -XX:CompileCommand=inline,*Picture*::*
+ *                   -XX:CompileCommand=inline,*Point*::*
+ *                   -XX:CompileCommand=exclude,*::dummy*
+ *                   -Xbatch
+ *                   -server
+ *                   compiler.escapeAnalysis.TestReduceAllocationAndNonReduciblePhi
+ *
  * @run main compiler.escapeAnalysis.TestReduceAllocationAndNonReduciblePhi
  */
 
