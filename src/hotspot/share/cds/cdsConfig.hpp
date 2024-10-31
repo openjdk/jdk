@@ -143,7 +143,7 @@ public:
     ~DumperThreadMark();
   };
 
-  static bool current_thread_is_vm_or_dumper() NOT_CDS(false);
+  static bool current_thread_is_vm_or_dumper() NOT_CDS_RETURN_(false);
 };
 
 #endif // SHARE_CDS_CDSCONFIG_HPP

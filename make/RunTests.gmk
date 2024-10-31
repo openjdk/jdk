@@ -722,7 +722,7 @@ define SetupAotBody
 
   $$($1_AOT_JDK_CACHE): $$(JDK_IMAGE_DIR)/release
 	$$(call MakeDir, $$($1_TEST_SUPPORT_DIR)/aot)
-	
+
 	$(foreach jtool, javac javap jlink jar, \
 	    $(info AOT: Create cache configuration for $(jtool)) \
 	    $$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot.$(jtool), ( \
