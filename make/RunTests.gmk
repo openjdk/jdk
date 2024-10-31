@@ -853,11 +853,7 @@ define SetupRunJtregTestBody
   endif
 
   ifneq ($$(findstring -XX:+UseZGC, $$(JTREG_ALL_OPTIONS)), )
-    ifneq ($$(findstring -XX:-ZGenerational, $$(JTREG_ALL_OPTIONS)), )
-      JTREG_AUTO_PROBLEM_LISTS += ProblemList-zgc.txt
-    else
-      JTREG_AUTO_PROBLEM_LISTS += ProblemList-generational-zgc.txt
-    endif
+    JTREG_AUTO_PROBLEM_LISTS += ProblemList-zgc.txt
   endif
 
   ifneq ($$(JTREG_EXTRA_PROBLEM_LISTS), )
