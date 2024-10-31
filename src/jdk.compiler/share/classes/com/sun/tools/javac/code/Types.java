@@ -1686,8 +1686,7 @@ public class Types {
                 if (!pairsSeen.add(newPair))
                     return false;
 
-                if (ts.isInterface() && !ss.isInterface() || // case I: one is a class and the other one is an interface
-                    !ts.isInterface() && ss.isInterface()) {
+                if (ts.isInterface() != ss.isInterface()) { // case I: one is a class and the other one is an interface
                     ClassSymbol isym = ts.isInterface() ? ts : ss; // isym is the interface and csym the class
                     ClassSymbol csym = isym == ts ? ss : ts;
                     if (!isSubtype(erasure(csym.type), erasure(isym.type))) {
@@ -1695,7 +1694,7 @@ public class Types {
                             return true;
                         } else if (csym.isSealed()) {
                             return areDisjoint(isym, csym.getPermittedSubclasses());
-                        } else if (isClassFreelyExtensible(csym) && isym.isSealed()) {
+                        } else if (!csym.isSealed() && isym.isSealed()) {
                             return areDisjoint(csym, isym.getPermittedSubclasses());
                         }
                     }
@@ -1713,15 +1712,6 @@ public class Types {
                 }
                 // at this point we haven't been able to prove that the classes or interfaces are disjoint so we bail out
                 return false;
-            }
-
-            private boolean isClassFreelyExtensible(ClassSymbol csym) {
-                boolean anySuperIsSealed = (csym.getSuperclass().tsym != null && csym.getSuperclass().tsym.isSealed()) || csym.getInterfaces().stream().anyMatch(i -> i.tsym.isSealed());
-                if (anySuperIsSealed) {
-                    return csym.isNonSealed();
-                } else {
-                    return !csym.isSealed() && !csym.isFinal();
-                }
             }
 
             boolean areDisjoint(ClassSymbol csym, List<Type> permittedSubtypes) {
