@@ -63,8 +63,8 @@ class Continuation : AllStatic {
 public:
 
   enum preempt_kind {
-    freeze_on_monitorenter = 1,
-    freeze_on_wait         = 2
+    freeze_on_monitorenter,
+    freeze_on_wait
   };
 
   enum thaw_kind {
