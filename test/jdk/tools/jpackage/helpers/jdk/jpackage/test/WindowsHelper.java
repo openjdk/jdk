@@ -240,8 +240,9 @@ public class WindowsHelper {
         var pids = findAppLauncherPIDs(cmd, launcherName);
         try {
             TKit.assertEquals(expectedCount, pids.length, String.format(
-                    "Check [%d] app launcher processes found running",
-                    expectedCount));
+                    "Check [%d] %s app launcher processes found running",
+                    expectedCount, Optional.ofNullable(launcherName).map(
+                            str -> "[" + str + "]").orElse("<main>")));
         } finally {
             if (pids.length != 0) {
                 killProcess(pids[0]);
