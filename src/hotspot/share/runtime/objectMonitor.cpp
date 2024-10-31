@@ -1194,7 +1194,6 @@ void ObjectMonitor::VThreadEpilog(JavaThread* current, ObjectWaiter* node) {
     }
   }
 
-  assert(node->TState == ObjectWaiter::TS_ENTER || node->TState == ObjectWaiter::TS_CXQ, "");
   UnlinkAfterAcquire(current, node);
   delete node;
 
