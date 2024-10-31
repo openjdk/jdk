@@ -37,7 +37,7 @@ public class TestReduceAllocationAndNonReduciblePhi {
     public static void main(String args[]) {
         int result = 0;
 
-        for (int i=0; i<20000; i++) {
+        for (int i = 0; i < 20000; i++) {
             result += test(i % 2 == 0, i % 3);
         }
 
