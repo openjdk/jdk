@@ -5337,15 +5337,14 @@ void MacroAssembler::tlab_allocate(Register obj,
   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
 }
 
-// Clobbers: rscratch1 and rscratch2
-void MacroAssembler::inc_held_monitor_count() {
+void MacroAssembler::inc_held_monitor_count(Register tmp) {
   Address dst(rthread, JavaThread::held_monitor_count_offset());
 #ifdef ASSERT
-  ldr(rscratch2, dst);
-  increment(rscratch2);
-  str(rscratch2, dst);
+  ldr(tmp, dst);
+  increment(tmp);
+  str(tmp, dst);
   Label ok;
-  tbz(rscratch2, 63, ok);
+  tbz(tmp, 63, ok);
   STOP("assert(held monitor count underflow)");
   should_not_reach_here();
   bind(ok);
@@ -5354,15 +5353,14 @@ void MacroAssembler::inc_held_monitor_count() {
 #endif
 }
 
-// Clobbers: rscratch1 and rscratch2
-void MacroAssembler::dec_held_monitor_count() {
+void MacroAssembler::dec_held_monitor_count(Register tmp) {
   Address dst(rthread, JavaThread::held_monitor_count_offset());
 #ifdef ASSERT
-  ldr(rscratch2, dst);
-  decrement(rscratch2);
-  str(rscratch2, dst);
+  ldr(tmp, dst);
+  decrement(tmp);
+  str(tmp, dst);
   Label ok;
-  tbz(rscratch2, 63, ok);
+  tbz(tmp, 63, ok);
   STOP("assert(held monitor count underflow)");
   should_not_reach_here();
   bind(ok);

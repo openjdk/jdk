@@ -789,7 +789,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
       bnez(swap_reg, slow_case);
 
       bind(count);
-      inc_held_monitor_count();
+      inc_held_monitor_count(t0);
       j(done);
     }
 
@@ -860,7 +860,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       cmpxchg_obj_header(swap_reg, header_reg, obj_reg, tmp_reg, count, &slow_case);
 
       bind(count);
-      dec_held_monitor_count();
+      dec_held_monitor_count(t0);
       j(done);
     }
 

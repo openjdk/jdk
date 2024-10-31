@@ -140,7 +140,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
   bind(locked);
   mv(flag, zr);
   if (LockingMode == LM_LEGACY) {
-    inc_held_monitor_count();
+    inc_held_monitor_count(t0);
   }
 
 #ifdef ASSERT
@@ -256,7 +256,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   bind(unlocked);
   mv(flag, zr);
   if (LockingMode == LM_LEGACY) {
-    dec_held_monitor_count();
+    dec_held_monitor_count(t0);
   }
 
 #ifdef ASSERT

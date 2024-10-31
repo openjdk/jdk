@@ -139,7 +139,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
 
   bind(count);
   if (LockingMode == LM_LEGACY) {
-    inc_held_monitor_count();
+    inc_held_monitor_count(rscratch1);
   }
 
   bind(no_count);
@@ -248,7 +248,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
 
   bind(count);
   if (LockingMode == LM_LEGACY) {
-    dec_held_monitor_count();
+    dec_held_monitor_count(rscratch1);
   }
 
   bind(no_count);

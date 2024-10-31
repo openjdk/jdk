@@ -1730,7 +1730,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ bnez(swap_reg, slow_path_lock);
 
       __ bind(count);
-      __ inc_held_monitor_count();
+      __ inc_held_monitor_count(t0);
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       __ lightweight_lock(lock_reg, obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
@@ -1839,7 +1839,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // Simple recursive lock?
       __ ld(t0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
       __ bnez(t0, not_recursive);
-      __ dec_held_monitor_count();
+      __ dec_held_monitor_count(t0);
       __ j(done);
     }
 
@@ -1862,7 +1862,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       Label count;
       __ cmpxchg_obj_header(x10, old_hdr, obj_reg, lock_tmp, count, &slow_path_unlock);
       __ bind(count);
-      __ dec_held_monitor_count();
+      __ dec_held_monitor_count(t0);
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "");
       __ lightweight_unlock(obj_reg, old_hdr, swap_reg, lock_tmp, slow_path_unlock);

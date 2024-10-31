@@ -737,7 +737,7 @@ void MacroAssembler::clobber_volatile_gprs(Register excluded_register) {
 
 void MacroAssembler::clobber_nonvolatile_registers() {
   BLOCK_COMMENT("clobber nonvolatile registers {");
-  Register regs[] = {
+  static const Register regs[] = {
       R14,
       R15,
       // don't zap R16_thread

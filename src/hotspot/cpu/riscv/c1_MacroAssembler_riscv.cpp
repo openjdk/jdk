@@ -109,7 +109,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
     // done
     bind(done);
-    inc_held_monitor_count();
+    inc_held_monitor_count(t0);
   }
 
   return null_check_offset;
@@ -150,7 +150,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
 
     // done
     bind(done);
-    dec_held_monitor_count();
+    dec_held_monitor_count(t0);
   }
 }
 
