@@ -486,6 +486,7 @@ public class LayoutGraph {
 
             List<LayoutEdge> successorEdges = dummyNode.getSuccs();
             for (LayoutEdge successorEdge : successorEdges) {
+                successorEdge.setRelativeFromX(layoutEdge.getRelativeFromX());
                 successorEdge.setFrom(fromNode);
                 fromNode.getSuccs().add(successorEdge);
             }
