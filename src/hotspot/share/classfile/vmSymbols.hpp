@@ -306,6 +306,7 @@ class SerializeClosure;
   template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;") \
                                                                                                   \
   template(jdk_internal_vm_annotation_ChangesCurrentThread_signature,  "Ljdk/internal/vm/annotation/ChangesCurrentThread;")  \
+  template(jdk_internal_vm_annotation_JvmtiHideEvents_signature,       "Ljdk/internal/vm/annotation/JvmtiHideEvents;")  \
   template(jdk_internal_vm_annotation_JvmtiMountTransition_signature,  "Ljdk/internal/vm/annotation/JvmtiMountTransition;")  \
                                                                                                   \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
@@ -397,7 +398,6 @@ class SerializeClosure;
   template(notifyJvmtiEnd_name,                       "notifyJvmtiEnd")                           \
   template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
   template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
-  template(notifyJvmtiHideFrames_name,                "notifyJvmtiHideFrames")                    \
   template(notifyJvmtiDisableSuspend_name,            "notifyJvmtiDisableSuspend")                \
   template(doYield_name,                              "doYield")                                  \
   template(enter_name,                                "enter")                                    \
