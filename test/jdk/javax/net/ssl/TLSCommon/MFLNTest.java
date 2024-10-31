@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.security.Security;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
@@ -33,6 +35,7 @@ public class MFLNTest extends SSLEngineTestCase {
 
     public static void main(String[] args) {
         setUpAndStartKDCIfNeeded();
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
         System.setProperty("jsse.enableMFLNExtension", "true");
         String testMode = System.getProperty("test.mode", "norm");
         int mflLen;

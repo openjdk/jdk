@@ -235,6 +235,7 @@ public class CheckCipherSuites {
     }
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
         long start = System.currentTimeMillis();
 
         if (args.length != 1) {

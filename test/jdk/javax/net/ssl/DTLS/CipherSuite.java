@@ -65,8 +65,9 @@ public class CipherSuite extends DTLSOverDatagram {
     private static boolean reenable;
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
         if (args.length > 1 && "re-enable".equals(args[1])) {
-            Security.setProperty("jdk.tls.disabledAlgorithms", "");
             reenable = true;
         }
 
