@@ -1354,7 +1354,6 @@ public final class TransformerImpl extends Transformer
                  * Performs the access check without any interface changes
                  * (e.g. Translet and DOMCache).
                  */
-                @SuppressWarnings("unchecked") //AbstractTranslet is the sole impl.
                 AbstractTranslet t = (AbstractTranslet)translet;
                 String systemId = SystemIDResolver.getAbsoluteURI(href, baseURI);
                 String errMsg = null;

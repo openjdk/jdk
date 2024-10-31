@@ -96,7 +96,6 @@ public class Continuation extends ResolveResult {
      * @param environment The environment used by the caller. It is used
      *          when setting the "environment" of a CannotProceedException.
      */
-    @SuppressWarnings("unchecked")  // For Hashtable clone: environment.clone()
     public Continuation(Name top, Hashtable<?,?> environment) {
         super();
         starter = top;

@@ -652,7 +652,6 @@ public interface ChronoLocalDate
      * @param localTime  the local time to use, not null
      * @return the local date-time formed from this date and the specified time, not null
      */
-    @SuppressWarnings("unchecked")
     default ChronoLocalDateTime<?> atTime(LocalTime localTime) {
         return ChronoLocalDateTimeImpl.of(this, localTime);
     }

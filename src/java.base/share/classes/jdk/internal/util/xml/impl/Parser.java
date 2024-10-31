@@ -2086,7 +2086,6 @@ public abstract class Parser {
      * @exception Exception is parser specific exception form panic method.
      * @exception IOException
      */
-    @SuppressWarnings("fallthrough")
     private void pent(char flag) throws Exception {
         char ch;
         int idx = mBuffIdx + 1;

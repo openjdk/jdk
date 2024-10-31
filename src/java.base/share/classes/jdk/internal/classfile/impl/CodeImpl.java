@@ -272,7 +272,6 @@ public final class CodeImpl
             }
             return;
         }
-        @SuppressWarnings("unchecked")
         int stackMapPos = ((BoundAttribute<StackMapTableAttribute>) a.get()).payloadStart;
 
         int bci = -1; //compensate for offsetDelta + 1

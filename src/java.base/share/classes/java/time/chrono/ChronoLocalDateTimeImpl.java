@@ -269,7 +269,6 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
     }
 
     //-----------------------------------------------------------------------
-    @SuppressWarnings("unchecked")
     @Override
     public ChronoLocalDateTimeImpl<D> with(TemporalAdjuster adjuster) {
         if (adjuster instanceof ChronoLocalDate) {

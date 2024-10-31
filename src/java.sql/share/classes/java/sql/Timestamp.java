@@ -493,7 +493,6 @@ public class Timestamp extends java.util.Date {
      * @throws NullPointerException if {@code dateTime} is null.
      * @since 1.8
      */
-    @SuppressWarnings("deprecation")
     public static Timestamp valueOf(LocalDateTime dateTime) {
         return new Timestamp(dateTime.getYear() - 1900,
                              dateTime.getMonthValue() - 1,

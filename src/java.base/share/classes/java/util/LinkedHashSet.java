@@ -226,7 +226,6 @@ public class LinkedHashSet<E>
         return new LinkedHashSet<>(HashMap.calculateHashMapCapacity(numElements));
     }
 
-    @SuppressWarnings("unchecked")
     LinkedHashMap<E, Object> map() {
         return (LinkedHashMap<E, Object>) map;
     }

@@ -202,7 +202,6 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public final <R> Stream<R> map(Function<? super P_OUT, ? extends R> mapper) {
         Objects.requireNonNull(mapper);
         return new StatelessOp<>(this, StreamShape.REFERENCE,
@@ -509,7 +508,6 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         mapper.accept(u, (IntConsumer)downstream);
                     }
@@ -533,7 +531,6 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         mapper.accept(u, (LongConsumer) downstream);
                     }
@@ -558,7 +555,6 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     }
 
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(P_OUT u) {
                         mapper.accept(u, (DoubleConsumer) downstream);
                     }

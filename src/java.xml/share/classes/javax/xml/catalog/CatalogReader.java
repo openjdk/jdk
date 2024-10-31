@@ -84,7 +84,6 @@ class CatalogReader extends DefaultHandler implements EntityResolver, URIResolve
      *
      * @param catalog The Catalog object that represents a catalog
      */
-    @SuppressWarnings("unchecked")
     public CatalogReader(Catalog catalog, SAXParser parser) {
         this.catalog = (CatalogImpl) catalog;
         this.parser = parser;

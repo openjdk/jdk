@@ -501,7 +501,7 @@ public interface List<E> extends SequencedCollection<E> {
      *         contract
      * @since 1.8
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     default void sort(Comparator<? super E> c) {
         Object[] a = this.toArray();
         Arrays.sort(a, (Comparator) c);

@@ -52,7 +52,7 @@ public class StringComparable implements Comparable<StringComparable>  {
          m_mask = getMask(m_collator.getStrength());
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     public final static Comparable getComparator( final String text, final Locale locale,
             final Collator collator, final String caseOrder){
         if((caseOrder == null) ||(caseOrder.length() == 0)){// no case-order specified

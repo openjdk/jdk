@@ -170,7 +170,6 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
         return ArraysSupport.reverse(base.toArray());
     }
 
-    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         return ArraysSupport.toArrayReversed(base, a);
     }

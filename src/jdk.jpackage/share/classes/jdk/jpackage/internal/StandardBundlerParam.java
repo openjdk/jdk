@@ -268,7 +268,6 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> s
             );
 
-    @SuppressWarnings("unchecked")
     public static final StandardBundlerParam<String> LICENSE_FILE =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.LICENSE_FILE.getId(),

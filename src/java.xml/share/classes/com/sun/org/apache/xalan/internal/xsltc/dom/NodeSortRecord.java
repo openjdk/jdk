@@ -127,7 +127,7 @@ public abstract class NodeSortRecord {
      * element. The value is extracted from the DOM if it is not already in
      * our sort key vector.
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private final Comparable stringValue(int level) {
         // Get value from our array if possible
         if (_scanned <= level) {

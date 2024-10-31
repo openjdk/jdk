@@ -70,7 +70,6 @@ final class JrtFileStore extends FileStore {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> type) {
         Objects.requireNonNull(type, "type");
         return (V) null;

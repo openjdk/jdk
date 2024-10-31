@@ -249,7 +249,6 @@ public class Time extends java.util.Date {
      * @throws NullPointerException if {@code time} is null
      * @since 1.8
      */
-    @SuppressWarnings("deprecation")
     public static Time valueOf(LocalTime time) {
         return new Time(time.getHour(), time.getMinute(), time.getSecond());
     }

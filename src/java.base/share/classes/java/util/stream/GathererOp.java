@@ -589,7 +589,6 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
                 // The completion of this task *and* the dumping of elements
                 // "happens-before" completion of the associated left-most leaf task
                 // of right subtree (if any, which can be this task's right sibling)
-                @SuppressWarnings("unchecked")
                 var leftDescendant = (Hybrid) NEXT.getAndSet(this, null);
                 if (leftDescendant != null) {
                     leftDescendant.tryComplete();

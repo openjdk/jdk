@@ -596,7 +596,6 @@ public class NamedNodeMapImpl
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException {
         in.defaultReadObject();

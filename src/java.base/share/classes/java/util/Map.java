@@ -1658,7 +1658,6 @@ public interface Map<K, V> {
      * @since 9
      */
     @SafeVarargs
-    @SuppressWarnings("varargs")
     static <K, V> Map<K, V> ofEntries(Entry<? extends K, ? extends V>... entries) {
         if (entries.length == 0) { // implicit null check of entries array
             @SuppressWarnings("unchecked")

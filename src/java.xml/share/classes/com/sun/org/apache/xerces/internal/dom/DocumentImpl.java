@@ -681,7 +681,7 @@ public class DocumentImpl
      *              method was invoked by an EventListener; otherwise false.
     */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
     protected boolean dispatchEvent(NodeImpl node, Event event) {
         if (event == null) return false;
 

@@ -314,7 +314,6 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
         final K head; // head key, or negative infinity if null
         final K tail; // tail key, or positive infinity if null
 
-        @SuppressWarnings("unchecked")
         Submap(K head, K tail) {
             this.head = head;
             this.tail = tail;

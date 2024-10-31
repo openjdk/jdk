@@ -133,7 +133,6 @@ import org.xml.sax.XMLReader;
  *
  * @LastModified: July 2023
  */
-@SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public class XSDHandler {
 
     /** Feature identifier: validation. */
@@ -2768,7 +2767,6 @@ public class XSDHandler {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void addNewImportedGrammars(SchemaGrammar srcGrammar, SchemaGrammar dstGrammar) {
         final ArrayList<SchemaGrammar> src = (ArrayList<SchemaGrammar>)srcGrammar.getImportedGrammars();
         if (src != null) {

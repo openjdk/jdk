@@ -339,7 +339,6 @@ abstract class LongPipeline<E_IN>
                     }
 
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(long t) {
                         mapper.accept(t, (LongConsumer) downstream);
                     }

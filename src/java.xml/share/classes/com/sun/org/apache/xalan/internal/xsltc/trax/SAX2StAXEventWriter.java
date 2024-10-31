@@ -250,7 +250,7 @@ public class SAX2StAXEventWriter extends SAX2StAXBaseWriter {
         super.endCDATA();
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
     protected void createStartEvents(Attributes attributes, Collection<Attribute>[] events) {
 
         Map<String, Attribute> nsMap = null;

@@ -164,7 +164,6 @@ public class PropertyResourceBundle extends ResourceBundle {
      *     {@code java.util.PropertyResourceBundle.encoding} is set to "UTF-8"
      *     and {@code stream} contains an unmappable UTF-8 byte sequence.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public PropertyResourceBundle (InputStream stream) throws IOException {
         this(new InputStreamReader(stream,
             "ISO-8859-1".equals(encoding) ?

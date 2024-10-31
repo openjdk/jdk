@@ -3347,7 +3347,6 @@ public class Collections {
 
         @SuppressWarnings("serial") // Conditionally serializable
         final Collection<E> c;
-        @SuppressWarnings("serial") // Conditionally serializable
         final Class<E> type;
 
         @SuppressWarnings("unchecked")
@@ -3903,9 +3902,7 @@ public class Collections {
 
         @SuppressWarnings("serial") // Conditionally serializable
         private final Map<K, V> m;
-        @SuppressWarnings("serial") // Conditionally serializable
         final Class<K> keyType;
-        @SuppressWarnings("serial") // Conditionally serializable
         final Class<V> valueType;
 
         private void typeCheck(Object key, Object value) {

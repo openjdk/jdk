@@ -640,7 +640,6 @@ class BindingEnumeration implements NamingEnumeration<Binding> {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void close () {
         finalize();
     }

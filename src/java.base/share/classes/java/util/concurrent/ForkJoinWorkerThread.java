@@ -243,7 +243,7 @@ public class ForkJoinWorkerThread extends Thread {
             super(innocuousThreadGroup, pool, true, true);
         }
 
-        @Override @SuppressWarnings("removal")
+        @Override
         protected void onStart() {
             Thread t = Thread.currentThread();
             ThreadLocalRandom.setInheritedAccessControlContext(t, innocuousACC);

@@ -245,7 +245,6 @@ interface Node<T> {
          * @param action a consumer that is to be invoked with each
          *        element in this {@code Node.OfPrimitive}
          */
-        @SuppressWarnings("overloads")
         void forEach(T_CONS action);
 
         @Override

@@ -45,7 +45,6 @@ import org.xml.sax.helpers.XMLFilterImpl;
  *
  * @LastModified: July 2023
  */
-@SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public class TrAXFilter extends XMLFilterImpl {
     private Templates              _templates;
     private TransformerImpl        _transformer;

@@ -340,6 +340,5 @@ public interface Attribute extends Cloneable, java.io.Serializable {
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     static final long serialVersionUID = 8707690322213556804L;
 }

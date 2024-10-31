@@ -52,7 +52,6 @@ import org.xml.sax.XMLReader;
  *
  * @LastModified: July 2023
  */
-@SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public final class Util {
     private static final String property = "org.xml.sax.driver";
 

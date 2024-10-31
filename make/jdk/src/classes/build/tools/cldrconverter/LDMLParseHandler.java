@@ -1079,7 +1079,6 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
     }
 
     @Override
-    @SuppressWarnings("fallthrough")
     public void endElement(String uri, String localName, String qName) throws SAXException {
         assert qName.equals(currentContainer.getqName()) : "current=" + currentContainer.getqName() + ", param=" + qName;
         switch (qName) {

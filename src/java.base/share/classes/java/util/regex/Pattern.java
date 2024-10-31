@@ -3369,7 +3369,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * Parses the second part of inlined match flags and turns off
      * flags appropriately.
      */
-    @SuppressWarnings("fallthrough")
     private void subFlag() {
         int ch = peek();
         for (;;) {

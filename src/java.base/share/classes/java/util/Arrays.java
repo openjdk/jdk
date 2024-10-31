@@ -1129,7 +1129,7 @@ public final class Arrays {
      * off is the offset to generate corresponding low, high in src
      * To be removed in a future release.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     private static void mergeSort(Object[] src,
                                   Object[] dest,
                                   int low,

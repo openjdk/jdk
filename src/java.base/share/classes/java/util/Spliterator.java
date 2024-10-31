@@ -628,7 +628,6 @@ public interface Spliterator<T> {
          * upon entry to this method, else {@code true}.
          * @throws NullPointerException if the specified action is null
          */
-        @SuppressWarnings("overloads")
         boolean tryAdvance(T_CONS action);
 
         /**
@@ -649,7 +648,6 @@ public interface Spliterator<T> {
          * @param action The action
          * @throws NullPointerException if the specified action is null
          */
-        @SuppressWarnings("overloads")
         default void forEachRemaining(T_CONS action) {
             do { } while (tryAdvance(action));
         }

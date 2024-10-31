@@ -68,7 +68,6 @@ public interface Name
     * ineffectual. Do not use; no replacement.
     */
     @Deprecated
-    @SuppressWarnings("serial")
     static final long serialVersionUID = -3617482732056931635L;
 
     /**

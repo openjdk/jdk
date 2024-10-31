@@ -44,7 +44,6 @@ public interface ServerRef extends RemoteRef {
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     static final long serialVersionUID = -4557750989390278438L;
 
     /**

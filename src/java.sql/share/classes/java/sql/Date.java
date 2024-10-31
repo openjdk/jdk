@@ -286,7 +286,6 @@ public class Date extends java.util.Date {
      * @throws NullPointerException if {@code date} is null
      * @since 1.8
      */
-    @SuppressWarnings("deprecation")
     public static Date valueOf(LocalDate date) {
         return new Date(date.getYear() - 1900, date.getMonthValue() -1,
                         date.getDayOfMonth());

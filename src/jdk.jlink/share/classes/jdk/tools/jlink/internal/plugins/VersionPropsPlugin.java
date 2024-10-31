@@ -99,7 +99,6 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
 
     private boolean redefined = false;
 
-    @SuppressWarnings("deprecation")
     private byte[] redefine(String path, byte[] classFile) {
         return ClassFile.of().transformClass(newClassReader(path, classFile),
             ClassTransform.transformingMethodBodies(

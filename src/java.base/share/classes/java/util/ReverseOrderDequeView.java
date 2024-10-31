@@ -161,7 +161,6 @@ class ReverseOrderDequeView<E> implements Deque<E> {
         return ArraysSupport.reverse(base.toArray());
     }
 
-    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         return ArraysSupport.toArrayReversed(base, a);
     }

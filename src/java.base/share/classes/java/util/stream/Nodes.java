@@ -643,7 +643,6 @@ final class Nodes {
         final T[] array;
         int curSize;
 
-        @SuppressWarnings("unchecked")
         ArrayNode(long size, IntFunction<T[]> generator) {
             if (size >= MAX_ARRAY_SIZE)
                 throw new IllegalArgumentException(BAD_SIZE);
@@ -720,7 +719,6 @@ final class Nodes {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public T[] asArray(IntFunction<T[]> generator) {
             return c.toArray(generator.apply(c.size()));
         }

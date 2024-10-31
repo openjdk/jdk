@@ -338,7 +338,6 @@ public class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
      * cachedBreakPositions so that we only have to do this work once
      * for each time we enter the range.
      */
-    @SuppressWarnings("unchecked")
     private void divideUpDictionaryRange(int startPos, int endPos) {
         CharacterIterator text = getText();
 

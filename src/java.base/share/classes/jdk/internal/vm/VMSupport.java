@@ -459,7 +459,7 @@ public class VMSupport {
      * @param <X> type of the object representing a decoded error
      * @return an immutable list of {@code A} objects
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
     public static <T, A, E, X> List<A> decodeAnnotations(byte[] encoded, AnnotationDecoder<T, A, E, X> decoder) {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(encoded);

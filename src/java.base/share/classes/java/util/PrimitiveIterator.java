@@ -84,7 +84,6 @@ public interface PrimitiveIterator<T, T_CONS> extends Iterator<T> {
      * @param action The action to be performed for each element
      * @throws NullPointerException if the specified action is null
      */
-    @SuppressWarnings("overloads")
     void forEachRemaining(T_CONS action);
 
     /**

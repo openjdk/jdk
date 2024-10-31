@@ -30,7 +30,7 @@ package com.sun.jndi.rmi.registry;
 /**
  * ReferenceWrapper_Stub.
  */
-@SuppressWarnings({"deprecation", "rawtypes", "unchecked"})
+@SuppressWarnings({"deprecation", "rawtypes"})
 public final class ReferenceWrapper_Stub
         extends java.rmi.server.RemoteStub
         implements com.sun.jndi.rmi.registry.RemoteReference, java.rmi.Remote {

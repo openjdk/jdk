@@ -90,7 +90,6 @@ public final class ClassFileImpl implements ClassFile {
             null  // _ -> null
         );
 
-    @SuppressWarnings("unchecked")
     @Override
     public ClassFileImpl withOptions(Option... options) {
         var smo = stackMapsOption;

@@ -44,7 +44,6 @@ public interface RemoteRef extends java.io.Externalizable {
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     static final long serialVersionUID = 3632638527362204081L;
 
     /**

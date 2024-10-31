@@ -340,7 +340,6 @@ public final class FileDescriptor {
      *
      * The caller closeable gets to call close0().
      */
-    @SuppressWarnings("try")
     synchronized void closeAll(Closeable releaser) throws IOException {
         if (!closed) {
             closed = true;
