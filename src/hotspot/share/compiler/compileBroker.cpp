@@ -1023,6 +1023,20 @@ void CompileBroker::init_compiler_threads() {
 
 void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
 
+  int old_c2_count = 0, new_c2_count = 0, old_c1_count = 0, new_c1_count = 0;
+  const int c2_tasks_per_thread = 2, c1_tasks_per_thread = 4;
+
+  // Do a quick check first without taking the lock. The later ones are more expensive.
+  if (_c2_compile_queue != nullptr) {
+    old_c2_count = _compilers[1]->num_compiler_threads();
+    new_c2_count = MIN2(_c2_count, _c2_compile_queue->size() / c2_tasks_per_thread);
+  }
+  if (_c1_compile_queue != nullptr) {
+    old_c1_count = _compilers[0]->num_compiler_threads();
+    new_c1_count = MIN2(_c1_count, _c1_compile_queue->size() / c1_tasks_per_thread);
+  }
+  if (new_c2_count <= old_c2_count && new_c1_count <= old_c1_count) return;
+
   julong free_memory = os::free_memory();
   // If SegmentedCodeCache is off, both values refer to the single heap (with type CodeBlobType::All).
   size_t available_cc_np  = CodeCache::unallocated_capacity(CodeBlobType::MethodNonProfiled),
@@ -1032,9 +1046,9 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
   if (!CompileThread_lock->try_lock()) return;
 
   if (_c2_compile_queue != nullptr) {
-    int old_c2_count = _compilers[1]->num_compiler_threads();
-    int new_c2_count = MIN4(_c2_count,
-        _c2_compile_queue->size() / 2,
+    old_c2_count = _compilers[1]->num_compiler_threads();
+    new_c2_count = MIN4(_c2_count,
+        _c2_compile_queue->size() / c2_tasks_per_thread,
         (int)(free_memory / (200*M)),
         (int)(available_cc_np / (128*K)));
 
@@ -1093,9 +1107,9 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
   }
 
   if (_c1_compile_queue != nullptr) {
-    int old_c1_count = _compilers[0]->num_compiler_threads();
-    int new_c1_count = MIN4(_c1_count,
-        _c1_compile_queue->size() / 4,
+    old_c1_count = _compilers[0]->num_compiler_threads();
+    new_c1_count = MIN4(_c1_count,
+        _c1_compile_queue->size() / c1_tasks_per_thread,
         (int)(free_memory / (100*M)),
         (int)(available_cc_p / (128*K)));
 
