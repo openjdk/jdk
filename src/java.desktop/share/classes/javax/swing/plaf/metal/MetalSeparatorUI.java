@@ -50,7 +50,6 @@ import javax.swing.plaf.basic.BasicSeparatorUI;
  *
  * @author Jeff Shapiro
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalSeparatorUI extends BasicSeparatorUI
 {
     /**

@@ -1020,7 +1020,6 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
             if (component == null) {
                 menuItem = new JMenuItem(tabPane.getTitleAt(i), tabPane.getIconAt(i));
             } else {
-                @SuppressWarnings("serial") // anonymous class
                 JMenuItem tmp = new JMenuItem() {
                     public void paintComponent(final Graphics g) {
                         super.paintComponent(g);

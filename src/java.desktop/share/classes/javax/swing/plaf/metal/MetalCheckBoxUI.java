@@ -51,7 +51,6 @@ import java.io.Serializable;
  * @author Michael C. Albers
  *
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalCheckBoxUI extends MetalRadioButtonUI {
 
     // NOTE: MetalCheckBoxUI inherits from MetalRadioButtonUI instead

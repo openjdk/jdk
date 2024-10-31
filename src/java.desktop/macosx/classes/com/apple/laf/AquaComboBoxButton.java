@@ -63,7 +63,6 @@ class AquaComboBoxButton extends JButton {
     boolean isPopDown;
     boolean isSquare;
 
-    @SuppressWarnings("serial") // anonymous class
     protected AquaComboBoxButton(final AquaComboBoxUI ui,
                                  final JComboBox<Object> comboBox,
                                  final CellRendererPane rendererPane,

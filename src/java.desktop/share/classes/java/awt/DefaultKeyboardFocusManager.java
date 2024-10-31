@@ -1096,7 +1096,6 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private boolean preDispatchKeyEvent(KeyEvent ke) {
         if (((AWTEvent) ke).isPosted) {
             Component focusOwner = getFocusOwner();

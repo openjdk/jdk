@@ -171,7 +171,6 @@ public class StyledEditorKit extends DefaultEditorKit {
     /**
      * Creates the AttributeSet used for the selection.
      */
-    @SuppressWarnings("serial") // anonymous class
     private void createInputAttributes() {
         inputAttributes = new SimpleAttributeSet() {
             public AttributeSet getResolveParent() {

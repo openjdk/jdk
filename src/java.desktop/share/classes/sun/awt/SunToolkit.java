@@ -525,7 +525,6 @@ public abstract class SunToolkit extends Toolkit
      * Fixed 5064013: the InvocationEvent time should be equals
      * the time of the ActionEvent
      */
-    @SuppressWarnings("serial")
     public static void executeOnEventHandlerThread(Object target,
                                                    Runnable runnable,
                                                    final long when) {
@@ -1569,7 +1568,6 @@ public abstract class SunToolkit extends Toolkit
      * Should return {@code true} if more processing is
      * necessary, {@code false} otherwise.
      */
-    @SuppressWarnings("serial")
     private final boolean waitForIdle(final long end) {
         if (timeout(end) <= 0) {
             return false;

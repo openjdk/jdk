@@ -696,7 +696,6 @@ public class BasicFileChooserUI extends FileChooserUI {
             if(!evt.getValueIsAdjusting()) {
                 JFileChooser chooser = getFileChooser();
                 FileSystemView fsv = chooser.getFileSystemView();
-                @SuppressWarnings("unchecked")
                 JList<?> list = (JList)evt.getSource();
 
                 int fsm = chooser.getFileSelectionMode();

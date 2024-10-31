@@ -49,7 +49,6 @@ import javax.swing.plaf.*;
  *
  * @author  Timothy Prinzing
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class BasicTextAreaUI extends BasicTextUI {
 
     /**

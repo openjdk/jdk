@@ -127,7 +127,6 @@ import java.awt.Component;
  * @author      Philip Milne
  * @since       1.4
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public abstract class Spring {
 
     /**

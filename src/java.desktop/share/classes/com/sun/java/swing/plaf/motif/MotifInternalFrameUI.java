@@ -132,7 +132,6 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
       }
     }
 
-    @SuppressWarnings("serial") // anonymous class
     protected void setupMenuOpenKey(){
         super.setupMenuOpenKey();
         ActionMap map = SwingUtilities.getUIActionMap(frame);
@@ -152,7 +151,6 @@ public class MotifInternalFrameUI extends BasicInternalFrameUI {
         }
     }
 
-    @SuppressWarnings("serial") // anonymous class
     protected void setupMenuCloseKey(){
         ActionMap map = SwingUtilities.getUIActionMap(frame);
         if (map != null) {

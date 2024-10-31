@@ -714,7 +714,6 @@ class ColorChooserDialog extends JDialog {
         cancelButton.getAccessibleContext().setAccessibleDescription(cancelString);
 
         // The following few lines are used to register esc to close the dialog
-        @SuppressWarnings("serial") // anonymous class
         Action cancelKeyAction = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 ((AbstractButton)e.getSource()).fireActionPerformed(e);

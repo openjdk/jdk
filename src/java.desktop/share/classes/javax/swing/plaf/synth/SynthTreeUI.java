@@ -771,7 +771,6 @@ public class SynthTreeUI extends BasicTreeUI
 
         @Override
         protected TreeCellEditor createTreeCellEditor() {
-            @SuppressWarnings("serial") // anonymous class
             JTextField tf = new JTextField() {
                 @Override
                 public String getName() {

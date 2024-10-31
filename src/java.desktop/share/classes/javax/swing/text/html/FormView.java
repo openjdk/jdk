@@ -382,7 +382,6 @@ public class FormView extends ComponentView implements ActionListener {
             // BasicListUI$Handler.
             // For JComboBox, there are 2 stale ListDataListeners, which are
             // BasicListUI$Handler and BasicComboBoxUI$Handler.
-            @SuppressWarnings("unchecked")
             AbstractListModel<?> listModel = (AbstractListModel) model;
             String listenerClass1 =
                     "javax.swing.plaf.basic.BasicListUI$Handler";
@@ -850,7 +849,6 @@ public class FormView extends ComponentView implements ActionListener {
                 }
             }
         } else if (m instanceof ComboBoxModel) {
-            @SuppressWarnings("unchecked")
             ComboBoxModel<?> model = (ComboBoxModel)m;
             Option option = (Option)model.getSelectedItem();
             if (option != null) {
@@ -962,7 +960,6 @@ public class FormView extends ComponentView implements ActionListener {
                         } catch (BadLocationException e) {
                         }
                     } else if (m instanceof OptionListModel) {
-                        @SuppressWarnings("unchecked")
                         OptionListModel<?> model = (OptionListModel) m;
                         int size = model.getSize();
                         for (int i = 0; i < size; i++) {
@@ -975,7 +972,6 @@ public class FormView extends ComponentView implements ActionListener {
                             }
                         }
                     } else if (m instanceof OptionComboBoxModel) {
-                        @SuppressWarnings("unchecked")
                         OptionComboBoxModel<?> model = (OptionComboBoxModel) m;
                         Option option = model.getInitialSelection();
                         if (option != null) {

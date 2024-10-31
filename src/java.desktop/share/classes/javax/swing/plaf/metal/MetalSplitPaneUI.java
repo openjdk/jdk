@@ -43,7 +43,6 @@ import javax.swing.plaf.basic.*;
  *
  * @author Steve Wilson
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalSplitPaneUI extends BasicSplitPaneUI
 {
     /**

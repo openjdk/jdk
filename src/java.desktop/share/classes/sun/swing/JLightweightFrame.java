@@ -331,7 +331,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         content.imageUpdated(x, y, width, height);
     }
 
-    @SuppressWarnings({"removal","serial"}) // anonymous class inside
+    @SuppressWarnings("removal")
     private void initInterior() {
         contentPane = new JPanel() {
             @Override

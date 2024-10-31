@@ -50,7 +50,6 @@ import javax.swing.plaf.*;
  *
  * @author Tom Santos
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalSliderUI extends BasicSliderUI {
 
     /**

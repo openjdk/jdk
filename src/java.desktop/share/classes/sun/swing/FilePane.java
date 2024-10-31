@@ -659,7 +659,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         JPanel p = new JPanel(new BorderLayout());
         final JFileChooser fileChooser = getFileChooser();
 
-        @SuppressWarnings("serial") // anonymous class
         final JList<Object> list = new JList<Object>() {
             public int getNextMatch(String prefix, int startIndex, Position.Bias bias) {
                 ListModel<?> model = getModel();
@@ -1262,7 +1261,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
         JPanel p = new JPanel(new BorderLayout());
 
-        @SuppressWarnings("serial") // anonymous class
         final JTable detailsTable = new JTable(getDetailsTableModel()) {
             // Handle Escape key events here
             protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
@@ -1575,7 +1573,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
     protected Action newFolderAction;
 
-    @SuppressWarnings("serial") // anonymous class inside
     public Action getNewFolderAction() {
         if (!readOnly && newFolderAction == null) {
             newFolderAction = new AbstractAction(newFolderActionLabelText) {

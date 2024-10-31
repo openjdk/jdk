@@ -323,7 +323,6 @@ public final class AWTAutoShutdown implements Runnable {
         }
     }
 
-    @SuppressWarnings("serial")
     static AWTEvent getShutdownEvent() {
         return new AWTEvent(getInstance(), 0) {
         };

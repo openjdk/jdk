@@ -1579,7 +1579,6 @@ public class BasicListUI extends ListUI
      * @see #installKeyboardActions
      * @see #installUI
      */
-    @SuppressWarnings("serial") // Same-version serialization only
     public class MouseInputHandler implements MouseInputListener
     {
         /**
@@ -1703,7 +1702,6 @@ public class BasicListUI extends ListUI
      * @see #getCellBounds
      * @see #installUI
      */
-    @SuppressWarnings("serial") // Same-version serialization only
     public class ListSelectionHandler implements ListSelectionListener
     {
         /**
@@ -1769,7 +1767,6 @@ public class BasicListUI extends ListUI
      * @see #createListDataListener
      * @see #installUI
      */
-    @SuppressWarnings("serial") // Same-version serialization only
     public class ListDataHandler implements ListDataListener
     {
         /**
@@ -1842,7 +1839,6 @@ public class BasicListUI extends ListUI
      * @see #createPropertyChangeListener
      * @see #installUI
      */
-    @SuppressWarnings("serial") // Same-version serialization only
     public class PropertyChangeHandler implements PropertyChangeListener
     {
         /**
@@ -2653,9 +2649,7 @@ public class BasicListUI extends ListUI
              * listDataListener from the old model and add it to the new one.
              */
             if (propertyName == "model") {
-                @SuppressWarnings("unchecked")
                 ListModel<?> oldModel = (ListModel)e.getOldValue();
-                @SuppressWarnings("unchecked")
                 ListModel<?> newModel = (ListModel)e.getNewValue();
                 if (oldModel != null) {
                     oldModel.removeListDataListener(listDataListener);

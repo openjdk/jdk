@@ -50,7 +50,6 @@ import javax.swing.plaf.*;
  *
  * @author Tom Santos
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalButtonUI extends BasicButtonUI {
 
     // NOTE: These are not really needed, but at this point we can't pull

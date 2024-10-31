@@ -391,7 +391,6 @@ public class FocusEvent extends ComponentEvent {
      * @since 9
      */
     @Serial
-    @SuppressWarnings("serial")
     Object readResolve() throws ObjectStreamException {
         if (cause != null) {
             return this;

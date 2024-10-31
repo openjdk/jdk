@@ -61,7 +61,6 @@ class CausedFocusEvent extends FocusEvent {
         RETARGETED
     }
 
-    @SuppressWarnings("serial")
     private static final Component dummy = new Component(){};
 
     private final Cause cause;

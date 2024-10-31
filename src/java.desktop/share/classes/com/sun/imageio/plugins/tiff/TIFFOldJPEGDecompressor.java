@@ -610,7 +610,6 @@ public class TIFFOldJPEGDecompressor extends TIFFJPEGDecompressor {
         JPEGReader.read(0, JPEGParam);
     }
 
-    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         super.finalize();
         JPEGReader.dispose();

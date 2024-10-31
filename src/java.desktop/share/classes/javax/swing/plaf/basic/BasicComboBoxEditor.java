@@ -173,7 +173,6 @@ public class BasicComboBoxEditor implements ComboBoxEditor,FocusListener {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
-    @SuppressWarnings("serial") // Same-version serialization only
     public static class UIResource extends BasicComboBoxEditor
     implements javax.swing.plaf.UIResource {
         /**

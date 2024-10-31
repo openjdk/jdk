@@ -188,7 +188,6 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         readOnly = UIManager.getBoolean("FileChooser.readOnly");
     }
 
-    @SuppressWarnings("serial") // anonymous classes inside
     public void installComponents(JFileChooser fc) {
         super.installComponents(fc);
 

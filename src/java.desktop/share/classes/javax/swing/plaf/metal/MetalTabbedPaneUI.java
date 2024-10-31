@@ -47,7 +47,6 @@ import javax.swing.plaf.basic.BasicTabbedPaneUI;
  *
  * @author Tom Santos
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
 
     /**

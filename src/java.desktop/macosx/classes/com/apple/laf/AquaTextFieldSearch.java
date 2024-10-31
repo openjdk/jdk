@@ -249,7 +249,6 @@ public class AquaTextFieldSearch {
         label.setText(promptText);
     }
 
-    @SuppressWarnings("serial") // anonymous class inside
     protected static JButton getCancelButton(final JTextComponent c) {
         final JButton b = createButton(c, getCancelIcon());
         b.setName("cancel");
@@ -326,7 +325,6 @@ public class AquaTextFieldSearch {
         }
 
         protected boolean doingLayout;
-        @SuppressWarnings("serial") // anonymous class inside
         protected LayoutManager getCustomLayout() {
             // unfortunately, the default behavior of BorderLayout, which accommodates for margins
             // is not what we want, so we "turn off margins" for layout for layout out our buttons

@@ -41,7 +41,6 @@ import java.util.Enumeration;
  *
  * @author Scott Violet
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public abstract class AbstractLayoutCache implements RowMapper {
     /** Object responsible for getting the size of a node. */
     protected NodeDimensions     nodeDimensions;

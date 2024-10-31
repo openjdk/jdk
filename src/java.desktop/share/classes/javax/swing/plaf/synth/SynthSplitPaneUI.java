@@ -277,7 +277,6 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings("serial") // anonymous class
     protected Component createDefaultNonContinuousLayoutDivider() {
         return new Canvas() {
             public void paint(Graphics g) {

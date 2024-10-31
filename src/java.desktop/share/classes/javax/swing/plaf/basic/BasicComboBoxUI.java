@@ -1792,12 +1792,9 @@ public class BasicComboBoxUI extends ComboBoxUI {
                     comboBox.revalidate();
                 }
             } else {
-                @SuppressWarnings("unchecked")
                 JComboBox<?> comboBox = (JComboBox)e.getSource();
                 if ( propertyName == "model" ) {
-                    @SuppressWarnings("unchecked")
                     ComboBoxModel<?> newModel = (ComboBoxModel)e.getNewValue();
-                    @SuppressWarnings("unchecked")
                     ComboBoxModel<?> oldModel = (ComboBoxModel)e.getOldValue();
 
                     if ( oldModel != null && listDataListener != null ) {
@@ -2012,7 +2009,6 @@ public class BasicComboBoxUI extends ComboBoxUI {
         }
 
         public void layoutContainer(Container parent) {
-            @SuppressWarnings("unchecked")
             JComboBox<?> cb = (JComboBox)parent;
             int width = cb.getWidth();
             int height = cb.getHeight();

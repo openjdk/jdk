@@ -254,7 +254,6 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public void valueChanged(final ListSelectionEvent e) {
             if (!e.getValueIsAdjusting() && !isSkipStateChangedEvent()) {
                 final JList<?> source = (JList<?>) e.getSource();

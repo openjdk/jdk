@@ -88,7 +88,6 @@ public abstract class LightweightFrame extends Frame {
     @Override public final void toFront() {}
     @Override public final void toBack() {}
 
-    @SuppressWarnings("deprecation")
     @Override public void addNotify() {
         synchronized (getTreeLock()) {
             if (!isDisplayable()) {

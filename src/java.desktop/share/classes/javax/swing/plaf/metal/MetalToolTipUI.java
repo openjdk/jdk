@@ -49,7 +49,6 @@ import javax.swing.text.View;
  *
  * @author Steve Wilson
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalToolTipUI extends BasicToolTipUI {
 
     static MetalToolTipUI sharedInstance = new MetalToolTipUI();

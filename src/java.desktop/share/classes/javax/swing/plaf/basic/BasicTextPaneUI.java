@@ -47,7 +47,6 @@ import javax.swing.border.*;
  *
  * @author  Timothy Prinzing
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class BasicTextPaneUI extends BasicEditorPaneUI {
 
     /**

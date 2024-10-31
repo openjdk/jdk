@@ -161,7 +161,6 @@ final class AquaComboBoxPopup extends BasicComboPopup {
     }
 
     @Override
-    @SuppressWarnings("serial") // anonymous class
     protected JList<Object> createList() {
         return new JList<Object>(comboBox.getModel()) {
             @Override

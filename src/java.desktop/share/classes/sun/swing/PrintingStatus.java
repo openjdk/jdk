@@ -62,7 +62,6 @@ public class PrintingStatus {
     private final AtomicBoolean isAborted = new AtomicBoolean(false);
 
     // the action that will abort printing
-    @SuppressWarnings("serial") // anonymous class
     private final Action abortAction = new AbstractAction() {
         public void actionPerformed(ActionEvent ae) {
             if (!isAborted.get()) {

@@ -376,7 +376,6 @@ public class SynthScrollBarUI extends BasicScrollBarUI
      */
     @Override
     protected JButton createDecreaseButton(int orientation)  {
-        @SuppressWarnings("serial") // anonymous class
         SynthArrowButton synthArrowButton = new SynthArrowButton(orientation) {
             @Override
             public boolean contains(int x, int y) {
@@ -406,7 +405,6 @@ public class SynthScrollBarUI extends BasicScrollBarUI
      */
     @Override
     protected JButton createIncreaseButton(int orientation)  {
-        @SuppressWarnings("serial") // anonymous class
         SynthArrowButton synthArrowButton = new SynthArrowButton(orientation) {
             @Override
             public boolean contains(int x, int y) {

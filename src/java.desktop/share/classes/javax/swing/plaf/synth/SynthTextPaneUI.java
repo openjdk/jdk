@@ -47,7 +47,6 @@ import java.awt.*;
  * @author  Shannon Hickey
  * @since 1.7
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class SynthTextPaneUI extends SynthEditorPaneUI {
 
     /**

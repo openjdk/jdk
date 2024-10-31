@@ -55,7 +55,6 @@ import java.io.Serializable;
  *
  * @author Tom Santos
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalToggleButtonUI extends BasicToggleButtonUI {
 
     private static final Object METAL_TOGGLE_BUTTON_UI_KEY = new Object();

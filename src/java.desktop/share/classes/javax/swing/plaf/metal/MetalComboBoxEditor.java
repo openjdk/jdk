@@ -135,7 +135,6 @@ public class MetalComboBoxEditor extends BasicComboBoxEditor {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
-    @SuppressWarnings("serial") // Same-version serialization only
     public static class UIResource extends MetalComboBoxEditor
     implements javax.swing.plaf.UIResource {
         /**

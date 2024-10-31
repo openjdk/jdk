@@ -51,7 +51,6 @@ import sun.swing.DefaultLookup;
  *
  * @author  Timothy Prinzing
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class BasicTextFieldUI extends BasicTextUI {
 
     /**

@@ -625,7 +625,6 @@ public class AWTEventMulticaster implements
      * @return the resulting listener
      * @since 1.4
      */
-    @SuppressWarnings("overloads")
     public static WindowStateListener add(WindowStateListener a,
                                           WindowStateListener b) {
         return (WindowStateListener)addInternal(a, b);
@@ -828,7 +827,6 @@ public class AWTEventMulticaster implements
      * @return the resulting listener
      * @since 1.4
      */
-    @SuppressWarnings("overloads")
     public static WindowStateListener remove(WindowStateListener l,
                                              WindowStateListener oldl) {
         return (WindowStateListener) removeInternal(l, oldl);

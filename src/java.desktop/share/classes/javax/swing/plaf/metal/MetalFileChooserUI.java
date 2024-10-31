@@ -238,7 +238,6 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         topPanel.add(lookInLabel, BorderLayout.BEFORE_LINE_BEGINS);
 
         // CurrentDir ComboBox
-        @SuppressWarnings("serial") // anonymous class
         JComboBox<Object> tmp1 = new JComboBox<Object>() {
             public Dimension getPreferredSize() {
                 Dimension d = super.getPreferredSize();
@@ -381,7 +380,6 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         populateFileNameLabel();
         fileNamePanel.add(fileNameLabel);
 
-        @SuppressWarnings("serial") // anonymous class
         JTextField tmp2 = new JTextField(35) {
             public Dimension getMaximumSize() {
                 return new Dimension(Short.MAX_VALUE, super.getPreferredSize().height);

@@ -899,7 +899,6 @@ public class BasicSplitPaneUI extends SplitPaneUI
      *
      * @return the default non continuous layout divider
      */
-    @SuppressWarnings("serial") // anonymous class
     protected Component createDefaultNonContinuousLayoutDivider() {
         return new Canvas() {
             public void paint(Graphics g) {

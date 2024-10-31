@@ -39,7 +39,6 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-@SuppressWarnings("serial") // JDK implementation class
 class AquaFileView extends FileView {
     private static final boolean DEBUG = false;
 

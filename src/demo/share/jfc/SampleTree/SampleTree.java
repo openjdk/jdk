@@ -142,7 +142,6 @@ public final class SampleTree {
 
     /** Constructs a JPanel containing check boxes for the different
      * options that tree supports. */
-    @SuppressWarnings("serial")
     private JPanel constructOptionsPanel() {
         JCheckBox aCheckbox;
         JPanel retPanel = new JPanel(false);

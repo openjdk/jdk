@@ -88,7 +88,6 @@ import sun.swing.SwingUtilities2;
  *
  * @author Steve Wilson
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class DefaultMetalTheme extends MetalTheme {
     /**
      * Whether or not fonts should be plain.  This is only used if

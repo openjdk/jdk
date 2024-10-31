@@ -76,7 +76,6 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
     @Override
     protected void installComponents() {
         if (UIManager.getBoolean("InternalFrame.useTaskBar")) {
-            @SuppressWarnings("serial") // anonymous class
             JToggleButton tmp = new JToggleButton(frame.getTitle(), frame.getFrameIcon()) {
                 @Override public String getToolTipText() {
                     return getText();

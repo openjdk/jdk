@@ -737,7 +737,6 @@ public final class JLayer<V extends Component>
      *
      * @return the AccessibleContext associated with this {@code JLayer}.
      */
-    @SuppressWarnings("serial") // anonymous class
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJComponent() {

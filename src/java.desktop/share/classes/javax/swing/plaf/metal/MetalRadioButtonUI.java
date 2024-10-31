@@ -53,7 +53,6 @@ import javax.swing.text.View;
  * @author Michael C. Albers (Metal modifications)
  * @author Jeff Dinkins (original BasicRadioButtonCode)
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalRadioButtonUI extends BasicRadioButtonUI {
 
     private static final Object METAL_RADIO_BUTTON_UI_KEY = new Object();

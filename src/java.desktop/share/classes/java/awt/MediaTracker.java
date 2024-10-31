@@ -927,7 +927,6 @@ abstract class MediaEntry {
  * The entry of the list of {@code Images} that is being tracked by the
  * {@code MediaTracker}.
  */
-@SuppressWarnings("serial") // MediaEntry does not have a no-arg ctor
 class ImageMediaEntry extends MediaEntry implements ImageObserver,
 java.io.Serializable {
     @SuppressWarnings("serial") // Not statically typed as Serializable

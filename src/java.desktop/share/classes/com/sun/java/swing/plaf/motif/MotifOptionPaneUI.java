@@ -72,7 +72,6 @@ public class MotifOptionPaneUI extends BasicOptionPaneUI
         return null;
     }
 
-    @SuppressWarnings("serial") // anonymous class
     protected Container createSeparator() {
         return new JPanel() {
 

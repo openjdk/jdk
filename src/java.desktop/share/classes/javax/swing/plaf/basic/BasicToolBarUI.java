@@ -554,13 +554,11 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
     @Deprecated(since = "17", forRemoval = true)
     protected JFrame createFloatingFrame(JToolBar toolbar) {
         Window window = SwingUtilities.getWindowAncestor(toolbar);
-        @SuppressWarnings("serial") // anonymous class
         JFrame frame = new JFrame(toolbar.getName(),
                                   (window != null) ? window.getGraphicsConfiguration() : null) {
             // Override createRootPane() to automatically resize
             // the frame when contents change
             protected JRootPane createRootPane() {
-                @SuppressWarnings("serial") // anonymous class
                 JRootPane rootPane = new JRootPane() {
                     private boolean packing = false;
 
@@ -606,7 +604,6 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
             // Override createRootPane() to automatically resize
             // the frame when contents change
             protected JRootPane createRootPane() {
-                @SuppressWarnings("serial") // anonymous class
                 JRootPane rootPane = new JRootPane() {
                     private boolean packing = false;
 

@@ -395,7 +395,7 @@ public final class AppContext {
      *                                    contained within this AppContext
      * @since      1.2
      */
-    @SuppressWarnings({"deprecation", "removal"})
+    @SuppressWarnings("removal")
     public void dispose() throws IllegalThreadStateException {
         System.err.println(
             """

@@ -43,7 +43,6 @@ import javax.swing.JComponent;
  *
  * @author Steve Wilson
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class ColorChooserComponentFactory {
 
     private ColorChooserComponentFactory() { } // can't instantiate

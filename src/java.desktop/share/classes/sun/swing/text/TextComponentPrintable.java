@@ -332,7 +332,6 @@ public class TextComponentPrintable implements CountingPrintable {
         }
     }
 
-    @SuppressWarnings("serial") // anonymous class inside
     private JTextComponent createPrintShellOnEDT(final JTextComponent textComponent) {
         assert SwingUtilities.isEventDispatchThread();
 

@@ -44,7 +44,6 @@ import java.awt.*;
  *
  * @author Michael C. Albers
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalProgressBarUI extends BasicProgressBarUI {
 
     private Rectangle innards;

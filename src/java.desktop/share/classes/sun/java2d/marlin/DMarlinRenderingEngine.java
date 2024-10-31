@@ -1300,7 +1300,6 @@ public final class DMarlinRenderingEngine extends RenderingEngine
      * Get the RendererContext instance dedicated to the current thread
      * @return RendererContext instance
      */
-    @SuppressWarnings({"unchecked"})
     static RendererContext getRendererContext() {
         final RendererContext rdrCtx = RDR_CTX_PROVIDER.acquire();
         if (DO_MONITORS) {

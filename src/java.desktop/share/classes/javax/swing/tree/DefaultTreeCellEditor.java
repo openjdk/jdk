@@ -537,7 +537,6 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      */
     protected TreeCellEditor createTreeCellEditor() {
         Border              aBorder = UIManager.getBorder("Tree.editorBorder");
-        @SuppressWarnings("serial") // Safe: outer class is non-serializable
         DefaultCellEditor   editor = new DefaultCellEditor
             (new DefaultTextField(aBorder)) {
             public boolean shouldSelectCell(EventObject event) {

@@ -50,7 +50,6 @@ import java.awt.event.*;
  *
  * @author Steve Wilson
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalScrollPaneUI extends BasicScrollPaneUI
 {
 

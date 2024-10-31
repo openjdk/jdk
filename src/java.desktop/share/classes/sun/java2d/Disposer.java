@@ -241,7 +241,6 @@ public class Disposer implements Runnable {
      * so will clutter the records hashmap and no one will be cleaning up
      * the reference queue.
      */
-    @SuppressWarnings("unchecked")
     public static void addReference(Reference<Object> ref, DisposerRecord rec) {
         records.put(ref, rec);
     }

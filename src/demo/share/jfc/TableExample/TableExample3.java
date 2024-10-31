@@ -97,7 +97,6 @@ public class TableExample3 {
         };
 
         // Create a model of the data.
-        @SuppressWarnings("serial")
         TableModel dataModel = new AbstractTableModel() {
             // These methods always need to be implemented.
 

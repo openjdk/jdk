@@ -746,7 +746,6 @@ public class BasicSplitPaneDivider extends Container
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
-    @SuppressWarnings("serial") // Same-version serialization only
     protected class DragController
     {
         /**

@@ -46,7 +46,6 @@ import javax.swing.JList;
  *
  * @author Tom Santos
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public interface ComboPopup {
     /**
      * Shows the popup

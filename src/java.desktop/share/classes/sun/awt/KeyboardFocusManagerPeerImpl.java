@@ -104,7 +104,6 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
     /*
      * Posts proper lost/gain focus events to the event queue.
      */
-    @SuppressWarnings("deprecation")
     public static boolean deliverFocus(Component lightweightChild,
                                        Component target,
                                        boolean temporary,

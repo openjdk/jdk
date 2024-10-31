@@ -210,7 +210,6 @@ class MetalUtils {
      */
     static boolean drawGradient(Component c, Graphics g, String key,
                                 int x, int y, int w, int h, boolean vertical) {
-        @SuppressWarnings("unchecked")
         java.util.List<?> gradient = (java.util.List)UIManager.get(key);
         if (gradient == null || !(g instanceof Graphics2D)) {
             return false;
@@ -275,7 +274,6 @@ class MetalUtils {
         protected void paintToImage(Component c, Image image, Graphics g,
                                     int w, int h, Object[] args) {
             Graphics2D g2 = (Graphics2D)g;
-            @SuppressWarnings("unchecked")
             java.util.List<?> gradient = (java.util.List)args[0];
             boolean isVertical = ((Boolean)args[1]).booleanValue();
             // Render to the VolatileImage

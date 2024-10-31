@@ -51,7 +51,6 @@ import java.beans.PropertyChangeEvent;
  * @author  Shannon Hickey
  * @since 1.7
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class SynthTextAreaUI extends BasicTextAreaUI implements SynthUI {
     private Handler handler = new Handler();
     private SynthStyle style;

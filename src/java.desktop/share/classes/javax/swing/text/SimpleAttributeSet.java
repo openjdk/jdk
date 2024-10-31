@@ -48,7 +48,6 @@ import java.util.LinkedHashMap;
  *
  * @author Tim Prinzing
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cloneable
 {
     /**

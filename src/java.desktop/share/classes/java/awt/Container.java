@@ -814,7 +814,6 @@ public class Container extends Component {
      * to new heavyweight parent.
      * @since 1.5
      */
-    @SuppressWarnings("deprecation")
     private void reparentTraverse(ContainerPeer parentPeer, Container child) {
         checkTreeLock();
 
@@ -838,7 +837,6 @@ public class Container extends Component {
      * Container must be heavyweight.
      * @since 1.5
      */
-    @SuppressWarnings("deprecation")
     private void reparentChild(Component comp) {
         checkTreeLock();
         if (comp == null) {
@@ -4212,7 +4210,6 @@ public class Container extends Component {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void recursiveShowHeavyweightChildren() {
         if (!hasHeavyweightDescendants() || !isVisible()) {
             return;
@@ -4234,7 +4231,6 @@ public class Container extends Component {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void recursiveHideHeavyweightChildren() {
         if (!hasHeavyweightDescendants()) {
             return;
@@ -4256,7 +4252,6 @@ public class Container extends Component {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void recursiveRelocateHeavyweightChildren(Point origin) {
         for (int index = 0; index < getComponentCount(); index++) {
             Component comp = getComponent(index);

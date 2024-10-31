@@ -352,7 +352,6 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * @param p1 the ending document location to use
      * @return the break position
      */
-    @SuppressWarnings("deprecation")
     protected int calculateBreakPosition(int p0, int p1) {
         int p;
         Segment segment = SegmentCache.getSharedSegment();
@@ -798,7 +797,6 @@ public class WrappedPlainView extends BoxView implements TabExpander {
          *  given point in the view
          * @see View#viewToModel
          */
-        @SuppressWarnings("deprecation")
         public int viewToModel(float fx, float fy, Shape a, Position.Bias[] bias) {
             // PENDING(prinz) implement bias properly
             bias[0] = Position.Bias.Forward;

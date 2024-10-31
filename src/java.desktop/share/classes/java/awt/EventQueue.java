@@ -1108,7 +1108,7 @@ public class EventQueue {
         }
     }
 
-    @SuppressWarnings({"deprecation", "removal"})
+    @SuppressWarnings("removal")
     final void initDispatchThread() {
         pushPopLock.lock();
         try {

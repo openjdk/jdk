@@ -105,7 +105,7 @@ public class Beans {
      * @deprecated this method will be removed when java.beans.beancontext is removed
      */
     @Deprecated(since = "23", forRemoval = true)
-    @SuppressWarnings({"deprecation", "removal"})
+    @SuppressWarnings("removal")
     public static Object instantiate(ClassLoader cls, String beanName,
                                      BeanContext beanContext)
             throws IOException, ClassNotFoundException {

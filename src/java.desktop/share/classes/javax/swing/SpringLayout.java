@@ -184,7 +184,6 @@ import java.util.*;
  * @author      Joe Winchester
  * @since       1.4
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class SpringLayout implements LayoutManager2 {
     private Map<Component, Constraints> componentConstraints = new HashMap<Component, Constraints>();
 

@@ -77,7 +77,6 @@ import javax.swing.plaf.basic.BasicRootPaneUI;
  * @author Terry Kellerman
  * @since 1.4
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalRootPaneUI extends BasicRootPaneUI
 {
     /**
