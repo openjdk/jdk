@@ -235,8 +235,21 @@ public class WindowsHelper {
         Executor.of("taskkill", "/F", "/PID", Long.toString(pid)).dumpOutput(true).execute();
     }
 
-    public static Optional<Long> findAppLauncherPID(JPackageCommand cmd,
+    public static void killAppLauncherProcess(JPackageCommand cmd,
             String launcherName, int expectedCount) {
+        var pids = findAppLauncherPIDs(cmd, launcherName);
+        try {
+            TKit.assertEquals(expectedCount, pids.length, String.format(
+                    "Check [%d] app launcher processes found running",
+                    expectedCount));
+        } finally {
+            if (pids.length != 0) {
+                killProcess(pids[0]);
+            }
+        }
+    }
+
+    private static long[] findAppLauncherPIDs(JPackageCommand cmd, String launcherName) {
         // Get the list of PIDs and PPIDs of app launcher processes.
         // wmic process where (name = "foo.exe") get ProcessID,ParentProcessID
         List<String> output = Executor.of("wmic", "process", "where", "(name",
@@ -245,10 +258,8 @@ public class WindowsHelper {
                 ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).
                 saveOutput().executeAndGetOutput();
 
-        if (expectedCount == 0) {
-            TKit.assertEquals("No Instance(s) Available.", output.getFirst().
-                    trim(), "Check no app launcher processes found running");
-            return Optional.empty();
+        if ("No Instance(s) Available.".equals(output.getFirst().trim())) {
+            return new long[0];
         }
 
         String[] headers = Stream.of(output.getFirst().split("\\s+", 2)).map(
@@ -275,24 +286,31 @@ public class WindowsHelper {
             return pids;
         }).filter(Objects::nonNull).toList();
 
-        TKit.assertEquals(expectedCount, processes.size(), String.format(
-                "Check [%d] app launcher processes found running", expectedCount));
-
-        switch (expectedCount) {
+        switch (processes.size()) {
             case 2 -> {
+                final long parentPID;
+                final long childPID;
                 if (processes.get(0)[0] == processes.get(1)[1]) {
-                    return Optional.of(processes.get(0)[0]);
+                    parentPID = processes.get(0)[0];
+                    childPID = processes.get(1)[0];
                 } else if (processes.get(1)[0] == processes.get(0)[1]) {
-                    return Optional.of(processes.get(1)[0]);
+                    parentPID = processes.get(1)[0];
+                    childPID = processes.get(0)[0];
                 } else {
-                    throw new RuntimeException("App launcher processes unrelated");
+                    TKit.assertUnexpected("App launcher processes unrelated");
+                    return null; // Unreachable
                 }
+                return new long[]{parentPID, childPID};
             }
             case 1 -> {
-                return Optional.of(processes.get(0)[0]);
+                return new long[]{processes.get(0)[0]};
             }
-            default ->
-                throw new IllegalArgumentException();
+            default -> {
+                TKit.assertUnexpected(String.format(
+                        "Unexpected numer of running processes [%d]",
+                        processes.size()));
+                return null; // Unreachable
+            }
         }
     }
 

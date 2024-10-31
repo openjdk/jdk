@@ -21,7 +21,18 @@
  * questions.
  */
 
- /* @test
+import java.io.IOException;
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CfgFile;
+import jdk.jpackage.test.HelloApp;
+import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
+
+/* @test
  * @bug 8340311
  * @summary Test that jpackage windows app launcher doesn't create child process
  *          if `win.norestart` property is set in the corresponding .cfg file
@@ -33,19 +44,7 @@
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinNoRestartTest
- *
  */
-import java.io.IOException;
-import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.CfgFile;
-import jdk.jpackage.test.HelloApp;
-import static jdk.jpackage.test.WindowsHelper.findAppLauncherPID;
-import static jdk.jpackage.test.WindowsHelper.killProcess;
 
 public class WinNoRestartTest {
 
@@ -104,12 +103,8 @@ public class WinNoRestartTest {
                 // Wait a bit to let the app start
                 Thread.sleep(Duration.ofSeconds(10));
 
-                // Get PID of the main app launcher process
-                final long pid = findAppLauncherPID(cmd, null,
-                        expectedNoRestarted ? 1 : 2).get();
-
-                // Kill the main app launcher process
-                killProcess(pid);
+                // Find the main app launcher process and kill it
+                killAppLauncherProcess(cmd, null, expectedNoRestarted ? 1 : 2);
             }
         }
     }

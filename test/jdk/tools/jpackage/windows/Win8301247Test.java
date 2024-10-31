@@ -28,8 +28,7 @@ import java.util.concurrent.Executors;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.HelloApp;
-import static jdk.jpackage.test.WindowsHelper.findAppLauncherPID;
-import static jdk.jpackage.test.WindowsHelper.killProcess;
+import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
 
 /**
  * Test that terminating of the parent app launcher process automatically
@@ -67,16 +66,13 @@ public class Win8301247Test {
             // Wait a bit to let the app start
             Thread.sleep(Duration.ofSeconds(10));
 
-            // Get PID of the main app launcher process
-            final long pid = findAppLauncherPID(cmd, null, 2).get();
-
-            // Kill the main app launcher process
-            killProcess(pid);
+            // Find the main app launcher process and kill it
+            killAppLauncherProcess(cmd, null, 2);
 
             // Wait a bit and check if child app launcher process is still running (it must NOT)
             Thread.sleep(Duration.ofSeconds(5));
 
-            findAppLauncherPID(cmd, null, 0);
+            killAppLauncherProcess(cmd, null, 0);
         }
     }
 }
