@@ -414,8 +414,12 @@ public class LayoutGraph {
         int optimalLayer = -1;
         int minDistance = Integer.MAX_VALUE;
         for (int l = 0; l < getLayerCount(); l++) {
-            int layerY = getLayer(l).getCenter();
-            int distance = Math.abs(layerY - y);
+            // Check if y is within this layer's bounds
+            if (y >= getLayer(l).getTop() && y <= getLayer(l).getBottom()) {
+                return l;
+            }
+
+            int distance = Math.abs(getLayer(l).getCenter() - y);
             if (distance < minDistance) {
                 minDistance = distance;
                 optimalLayer = l;
