@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,15 +56,10 @@ public final class HelloApp {
 
     private JarBuilder prepareSources(Path srcDir) throws IOException {
         final String srcClassName = appDesc.srcClassName();
-
-        final String qualifiedClassName = appDesc.className();
-
-        final String className = qualifiedClassName.substring(
-                qualifiedClassName.lastIndexOf('.') + 1);
+        final String className = appDesc.shortClassName();
         final String packageName = appDesc.packageName();
 
-        final Path srcFile = srcDir.resolve(Path.of(String.join(
-                File.separator, qualifiedClassName.split("\\.")) + ".java"));
+        final Path srcFile = appDesc.classNameAsPath(".java");
         Files.createDirectories(srcFile.getParent());
 
         JarBuilder jarBuilder = createJarBuilder().addSourceFile(srcFile);

@@ -22,8 +22,8 @@
  */
 package jdk.jpackage.test;
 
-import java.io.File;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 
 public final class JavaAppDesc {
@@ -72,10 +72,20 @@ public final class JavaAppDesc {
     public String className() {
         return qualifiedClassName;
     }
+    
+    public String shortClassName() {
+        return qualifiedClassName.substring(qualifiedClassName.lastIndexOf('.') + 1);
+    }
+    
+    Path classNameAsPath(String extension) {
+        final String[] pathComponents = qualifiedClassName.split("\\.");
+        pathComponents[pathComponents.length - 1] = shortClassName() + extension;
+        return Path.of(pathComponents[0], Arrays.copyOfRange(pathComponents, 1,
+                pathComponents.length - 1));
+    }
 
     public Path classFilePath() {
-        return Path.of(qualifiedClassName.replace(".", File.separator)
-                + ".class");
+        return classNameAsPath(".class");
     }
 
     public String moduleName() {

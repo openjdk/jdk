@@ -22,7 +22,6 @@
  */
 
 import java.nio.file.Path;
-import java.io.File;
 import java.util.Map;
 import java.lang.invoke.MethodHandles;
 import jdk.jpackage.test.PackageTest;
@@ -233,8 +232,8 @@ public class AddLauncherTest {
         TKit.assertEquals(ExpectedCN, mainClass,
                 String.format("Check value of app.mainclass=[%s]" +
                 "in NonModularAppLauncher cfg file is as expected", ExpectedCN));
-        TKit.assertTrue(classpath.startsWith("$APPDIR" + File.separator
-                + nonModularAppDesc.jarFileName()),
+        TKit.assertTrue(classpath.startsWith(Path.of("$APPDIR",
+                nonModularAppDesc.jarFileName()).toString()),
                 "Check app.classpath value in ModularAppLauncher cfg file");
     }
 

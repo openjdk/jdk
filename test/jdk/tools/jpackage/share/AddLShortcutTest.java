@@ -22,8 +22,6 @@
  */
 
 import java.nio.file.Path;
-import java.io.File;
-import java.util.Map;
 import java.lang.invoke.MethodHandles;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.FileAssociations;
