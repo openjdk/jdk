@@ -185,6 +185,7 @@ inline void jdk_internal_vm_StackChunk::set_maxThawingSize(oop chunk, int value)
   chunk->int_field_put(_maxThawingSize_offset, value);
 }
 
+// lockStackSize is read concurrently by GC threads so we use Atomic.
 inline uint8_t jdk_internal_vm_StackChunk::lockStackSize(oop chunk) {
   return Atomic::load(chunk->field_addr<uint8_t>(_lockStackSize_offset));
 }
