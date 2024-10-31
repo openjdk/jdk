@@ -3828,8 +3828,27 @@ public class Check {
     }
 
     void checkPreview(DiagnosticPosition pos, Symbol other, Symbol s) {
-        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(syms, other, s) && !disablePreviewCheck) {
-            if ((s.flags() & PREVIEW_REFLECTIVE) == 0) {
+        checkPreview(pos, other, Type.noType, s);
+    }
+
+    void checkPreview(DiagnosticPosition pos, Symbol other, Type site, Symbol s) {
+        boolean sIsPreview;
+        Symbol previewSymbol;
+        if ((s.flags() & PREVIEW_API) != 0) {
+            sIsPreview = true;
+            previewSymbol=  s;
+        } else if ((s.kind == Kind.MTH || s.kind == Kind.VAR) &&
+                   site.tsym != null &&
+                   (site.tsym.flags() & PREVIEW_API) == 0 &&
+                   (s.owner.flags() & PREVIEW_API) != 0) {
+            sIsPreview = true;
+            previewSymbol = s.owner;
+        } else {
+            sIsPreview = false;
+            previewSymbol = null;
+        }
+        if (sIsPreview && !preview.participatesInPreview(syms, other, s) && !disablePreviewCheck) {
+            if ((previewSymbol.flags() & PREVIEW_REFLECTIVE) == 0) {
                 if (!preview.isEnabled()) {
                     log.error(pos, Errors.IsPreview(s));
                 } else {

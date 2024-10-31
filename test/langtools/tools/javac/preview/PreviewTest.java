@@ -463,6 +463,128 @@ public class PreviewTest extends TestRunner {
         }
     }
 
+    @Test
+    public void nonPreviewImplementsPreview(Path base) throws Exception {
+        Path apiSrc = base.resolve("api-src");
+        tb.writeJavaFiles(apiSrc,
+                          """
+                          package preview.api;
+                          @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
+                          public interface Preview {
+                              public static final int FIELD = 0;
+                              public default void test() {}
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST,
+                                                             reflective=true)
+                          public interface ReflectivePreview {
+                              public default void test() {}
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public interface NonPreviewIntf extends Preview {
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public class NonPreview implements Preview {
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public class ReflectiveNonPreview implements ReflectivePreview {
+                          }
+                          """);
+        Path apiClasses = base.resolve("api-classes");
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(apiClasses)
+                .options("-XDrawDiagnostics", "-doe",
+                         "--patch-module", "java.base=" + apiSrc.toString(),
+                         "-Werror")
+                .files(tb.findJavaFiles(apiSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        Path testSrc = base.resolve("test-src");
+        tb.writeJavaFiles(testSrc,
+                          """
+                          package test;
+                          import preview.api.NonPreview;
+                          import preview.api.NonPreviewIntf;
+                          import preview.api.Preview;
+                          import preview.api.ReflectiveNonPreview;
+                          public class Test {
+                              public void test(NonPreview np,
+                                               Produce<? extends NonPreview> prod) {
+                                  np.test();
+                                  acceptRunnable(np::test);
+                                  accept(NonPreview::test);
+                                  prod.produce().test();
+                                  acceptRunnable(prod.produce()::test);
+                                  int i = np.FIELD;
+                              }
+                              public <T1 extends NonPreview,
+                                      T2 extends Test & NonPreviewIntf,
+                                      T3 extends T2> void test(T1 t1, T2 t2, T3 t3) {
+                                  t1.test();
+                                  t2.test();
+                                  t3.test();
+                              }
+                              public void test(ReflectiveNonPreview np) {
+                                  np.test();
+                              }
+                              public void test(Preview p) {
+                                  p.test();
+                                  acceptRunnable(p::test);
+                                  accept(Preview::test);
+                              }
+                              private void acceptRunnable(Runnable r) {}
+                              private void accept(Accept<NonPreview> accept) {}
+                              interface Accept<T> {
+                                  public void accept(T t);
+                              }
+                              interface Produce<T> {
+                                  public T produce();
+                              }
+                          }
+                          """);
+        Path testClasses = base.resolve("test-classes");
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(testClasses)
+                .options("--patch-module", "java.base=" + apiClasses.toString(),
+                         "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                         "-XDrawDiagnostics")
+                .files(tb.findJavaFiles(testSrc))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected =
+                List.of("Test.java:4:19: compiler.err.is.preview: preview.api.Preview",
+                        "Test.java:26:22: compiler.err.is.preview: preview.api.Preview",
+                        "Test.java:9:11: compiler.err.is.preview: test()",
+                        "Test.java:10:24: compiler.err.is.preview: test()",
+                        "Test.java:11:16: compiler.err.is.preview: test()",
+                        "Test.java:12:23: compiler.err.is.preview: test()",
+                        "Test.java:13:24: compiler.err.is.preview: test()",
+                        "Test.java:14:19: compiler.err.is.preview: FIELD",
+                        "Test.java:19:11: compiler.err.is.preview: test()",
+                        "Test.java:20:11: compiler.err.is.preview: test()",
+                        "Test.java:21:11: compiler.err.is.preview: test()",
+                        "Test.java:24:11: compiler.warn.is.preview.reflective: test()",
+                        "Test.java:29:16: compiler.err.is.preview: preview.api.Preview",
+                        "12 errors",
+                        "1 warning");
+
+        if (!log.equals(expected))
+            throw new Exception("expected output not found" + log);
+    }
+
     private int verifyPreviewClassfiles(Path directory) throws Exception {
         Path[] classfiles = tb.findFiles("class", directory);
 
