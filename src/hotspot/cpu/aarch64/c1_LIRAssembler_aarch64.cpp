@@ -275,14 +275,14 @@ void LIR_Assembler::osr_entry() {
       // verify the interpreter's monitor has a non-null object
       {
         Label L;
-        __ ldr(rscratch1, Address(OSR_buf, slot_offset + 1*BytesPerWord));
+        __ ldr(rscratch1, __ form_address(rscratch1, OSR_buf, slot_offset + 1*BytesPerWord, 0));
         __ cbnz(rscratch1, L);
         __ stop("locked object is null");
         __ bind(L);
       }
 #endif
-      __ ldr(r19, Address(OSR_buf, slot_offset));
-      __ ldr(r20, Address(OSR_buf, slot_offset + BytesPerWord));
+      __ ldr(r19, __ form_address(rscratch1, OSR_buf, slot_offset, 0));
+      __ ldr(r20, __ form_address(rscratch1, OSR_buf, slot_offset + BytesPerWord, 0));
       __ str(r19, frame_map()->address_for_monitor_lock(i));
       __ str(r20, frame_map()->address_for_monitor_object(i));
     }
@@ -990,10 +990,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       __ decode_heap_oop(dest->as_register());
     }
 
-    if (!(UseZGC && !ZGenerational)) {
-      // Load barrier has not yet been applied, so ZGC can't verify the oop here
-      __ verify_oop(dest->as_register());
-    }
+    __ verify_oop(dest->as_register());
   }
 }
 

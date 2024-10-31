@@ -95,6 +95,9 @@ import java.util.List;
  * }
  * </pre>
  *
+ * @spec https://www.rfc-editor.org/info/rfc5280
+ *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+ *              and Certificate Revocation List (CRL) Profile
  * @author Hemma Prafullchandra
  * @since 1.2
  *
@@ -386,6 +389,11 @@ implements X509Extension {
      * relevant ASN.1 definitions.
      *
      * @return the signature algorithm OID string.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc3279
+     *      RFC 3279: Algorithms and Identifiers for the Internet X.509
+     *              Public Key Infrastructure Certificate and Certificate
+     *              Revocation List (CRL) Profile
      */
     public abstract String getSigAlgOID();
 
@@ -614,6 +622,12 @@ implements X509Extension {
      * @return an immutable {@code Collection} of subject alternative
      * names (or {@code null})
      * @throws CertificateParsingException if the extension cannot be decoded
+     *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
+     * @spec https://www.rfc-editor.org/info/rfc822
+     *      RFC 822: STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
      * @since 1.4
      */
     public Collection<List<?>> getSubjectAlternativeNames()

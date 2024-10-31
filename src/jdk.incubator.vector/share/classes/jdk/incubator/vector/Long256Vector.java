@@ -496,6 +496,13 @@ final class Long256Vector extends LongVector {
                                      Long256Mask.class, (Long256Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Long256Vector selectFrom(Vector<Long> v1,
+                                   Vector<Long> v2) {
+        return (Long256Vector)
+            super.selectFromTemplate((Long256Vector) v1, (Long256Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

@@ -26,6 +26,7 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
+import java.net.Authenticator;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -50,6 +51,8 @@ import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.websocket.WebSocketRequest;
 
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.Authenticator.RequestorType.PROXY;
+import static java.net.Authenticator.RequestorType.SERVER;
 import static jdk.internal.net.http.common.Utils.ALLOWED_HEADERS;
 import static jdk.internal.net.http.common.Utils.ProxyHeaders;
 
@@ -71,6 +74,8 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     private final Optional<HttpClient.Version> version;
     // An alternative would be to have one field per supported option
     private final Map<HttpRequestOption<?>, Object> options;
+    private volatile boolean userSetAuthorization;
+    private volatile boolean userSetProxyAuthorization;
 
     private static String userAgent() {
         PrivilegedAction<String> pa = () -> System.getProperty("java.version");
@@ -366,6 +371,30 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
     boolean isWebSocket() {
         return isWebSocket;
+    }
+
+    /**
+     * These flags are set if the user set an Authorization or Proxy-Authorization header
+     * overriding headers produced by an Authenticator that was also set
+     *
+     * The values are checked in the AuthenticationFilter which tells the library
+     * to return whatever response received to the user instead of causing request
+     * to be resent, in case of error.
+     */
+    public void setUserSetAuthFlag(Authenticator.RequestorType type, boolean value) {
+        if (type == SERVER) {
+            userSetAuthorization = value;
+        } else {
+            userSetProxyAuthorization = value;
+        }
+    }
+
+    public boolean getUserSetAuthFlag(Authenticator.RequestorType type) {
+        if (type == SERVER) {
+            return userSetAuthorization;
+        } else {
+            return userSetProxyAuthorization;
+        }
     }
 
     @Override

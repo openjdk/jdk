@@ -478,6 +478,8 @@ java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemoni
 
 java/awt/Window/GetScreenLocation/GetScreenLocationTest.java 8225787 linux-x64
 java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 8266243 macosx-aarch64
+java/awt/Dialog/PrintToFileTest/PrintToFileRevoked.java 8029249 macosx-all
+java/awt/Dialog/PrintToFileTest/PrintToFileGranted.java 8029249 macosx-all
 java/awt/Dialog/ChoiceModalDialogTest.java 8161475 macosx-all
 java/awt/Dialog/FileDialogUserFilterTest.java 8001142 generic-all
 
@@ -529,6 +531,7 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
+java/io/IO/IO.java                                              8337935 linux-ppc64le
 
 ############################################################################
 
@@ -583,7 +586,7 @@ java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc6
 
 # jdk_nio
 
-java/nio/Buffer/LimitDirectMemory.java                          8340728 generic-all
+java/nio/Buffer/LimitDirectMemory.java                          8342849 generic-all
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
