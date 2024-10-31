@@ -229,6 +229,7 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      *
      * @param b true if the transparency of a color can be selected
      * @see #isColorTransparencySelectionEnabled()
+     * @since 9
      */
     @BeanProperty(description
             = "Sets the transparency of a color selection on or off.")
@@ -241,6 +242,7 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      *
      * @return true if the transparency of a color can be selected
      * @see #setColorTransparencySelectionEnabled(boolean)
+     * @since 9
      */
     public boolean isColorTransparencySelectionEnabled(){
         return true;

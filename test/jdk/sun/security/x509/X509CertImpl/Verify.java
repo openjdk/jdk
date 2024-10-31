@@ -90,7 +90,8 @@ public class Verify {
          * Verify certificate with its own public key.
          * Should pass.
          */
-        verifyCert(selfSignedCertPubKey,"SunRsaSign");
+        verifyCert(selfSignedCertPubKey,
+                System.getProperty("test.provider.name", "SunRsaSign"));
 
         /*
          * Try to verify certificate with a provider that does not have a
@@ -98,7 +99,8 @@ public class Verify {
          * Should fail with NoSuchAlgorithmException.
          */
         try {
-            verifyCert(selfSignedCertPubKey, "SunJCE");
+            verifyCert(selfSignedCertPubKey,
+                System.getProperty("test.provider.name", "SunJCE"));
             throw new RuntimeException("Didn't catch the exception properly");
         } catch (NoSuchAlgorithmException e) {
             System.out.println("Caught the correct exception.");
@@ -110,7 +112,8 @@ public class Verify {
          * Should fail with NoSuchAlgorithmException.
          */
         try {
-            verifyCert(selfSignedCertPubKey, "SUN");
+            verifyCert(selfSignedCertPubKey,
+                System.getProperty("test.provider.name", "SUN"));
             throw new RuntimeException("Didn't catch the exception properly");
         } catch (NoSuchAlgorithmException e) {
             System.out.println("Caught the correct exception.");
@@ -121,7 +124,8 @@ public class Verify {
          * Should fail with SignatureException.
          */
         try {
-            verifyCert(crlIssuerCertPubKey, "SunRsaSign");
+            verifyCert(crlIssuerCertPubKey,
+                System.getProperty("test.provider.name", "SunRsaSign"));
             throw new RuntimeException("Didn't catch the exception properly");
         } catch (SignatureException e) {
             System.out.println("Caught the correct exception.");

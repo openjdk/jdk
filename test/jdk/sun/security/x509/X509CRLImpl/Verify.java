@@ -103,7 +103,8 @@ public class Verify {
          * Verify CRL with its own public key.
          * Should pass.
          */
-        verifyCRL(crlIssuerCertPubKey, "SunRsaSign");
+        verifyCRL(crlIssuerCertPubKey,
+                System.getProperty("test.provider.name", "SunRsaSign"));
 
         /*
          * Try to verify CRL with a provider that does not have a Signature
@@ -123,7 +124,8 @@ public class Verify {
          * Should fail with NoSuchAlgorithmException.
          */
         try {
-            verifyCRL(crlIssuerCertPubKey, "SUN");
+            verifyCRL(crlIssuerCertPubKey,
+                System.getProperty("test.provider.name", "SUN"));
             throw new RuntimeException("Didn't catch the exception properly");
         } catch (NoSuchAlgorithmException e) {
             System.out.println("Caught the correct exception.");
@@ -134,7 +136,8 @@ public class Verify {
          * Should fail with SignatureException.
          */
         try {
-            verifyCRL(selfSignedCertPubKey, "SunRsaSign");
+            verifyCRL(selfSignedCertPubKey,
+                    System.getProperty("test.provider.name","SunRsaSign"));
             throw new RuntimeException("Didn't catch the exception properly");
         } catch (SignatureException e) {
             System.out.println("Caught the correct exception.");
@@ -164,6 +167,7 @@ public class Verify {
             throws CRLException, NoSuchAlgorithmException, InvalidKeyException,
             SignatureException {
         Provider provider = Security.getProvider(providerName);
+        System.out.println("Provider = " + provider.getName());
         if (provider == null) {
             throw new RuntimeException("Provider " + providerName
                                                    + " not found.");

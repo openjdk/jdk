@@ -62,7 +62,8 @@ public class DHKeyFactory {
         DHParameterSpec dhParamSpec = new DHParameterSpec(dhGroup.getPrime(), dhGroup.getBase());
         System.out.println("Using " + dhGroup.name() + " Diffie-Hellman parameters");
 
-        KeyPairGenerator kpgen = KeyPairGenerator.getInstance("DH", "SunJCE");
+        KeyPairGenerator kpgen = KeyPairGenerator.getInstance("DH",
+                                    System.getProperty("test.provider.name", "SunJCE"));
         kpgen.initialize(dhParamSpec);
         KeyPair kp = kpgen.generateKeyPair();
 
@@ -72,7 +73,8 @@ public class DHKeyFactory {
         // get the private key encoding
         byte[] privKeyEnc = kp.getPrivate().getEncoded();
 
-        KeyFactory kfac = KeyFactory.getInstance("DH", "SunJCE");
+        KeyFactory kfac = KeyFactory.getInstance("DH",
+                                System.getProperty("test.provider.name", "SunJCE"));
 
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(pubKeyEnc);
         PublicKey pubKey = kfac.generatePublic(x509KeySpec);

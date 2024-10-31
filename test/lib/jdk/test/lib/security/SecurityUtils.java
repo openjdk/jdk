@@ -37,6 +37,27 @@ import jdk.test.lib.security.DiffieHellmanGroup;
  */
 public final class SecurityUtils {
 
+    /*
+     * Key Sizes for various algorithms.
+     */
+    private enum KeySize{
+        RSA(2048),
+        DSA(2048),
+        DH(2048);
+
+        private final int keySize;
+        KeySize(int keySize) {
+            this.keySize = keySize;
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(keySize);
+        }
+    }
+
+    private final static int DEFAULT_SALTSIZE = 16;
+
     private static String getCacerts() {
         String sep = File.separator;
         return System.getProperty("java.home") + sep
@@ -106,6 +127,25 @@ public final class SecurityUtils {
      */
     public static void removeAlgsFromDSigPolicy(String... algs) {
         removeFromDSigPolicy("disallowAlg", List.<String>of(algs));
+    }
+
+    /**
+     * Returns a salt size for tests
+     */
+    public static int getTestSaltSize() {
+        return DEFAULT_SALTSIZE;
+    }
+
+    /**
+     * Returns a key size in bits for tests, depending on the specified algorithm
+     */
+    public static int getTestKeySize(String algo) {
+        return switch (algo) {
+            case "RSA" -> KeySize.RSA.keySize;
+            case "DSA" -> KeySize.DSA.keySize;
+            case "DH", "DiffieHellman" -> KeySize.DH.keySize;
+            default -> throw new RuntimeException("Test key size not defined for " + algo);
+        };
     }
 
     /**

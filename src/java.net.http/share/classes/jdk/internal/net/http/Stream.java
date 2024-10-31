@@ -160,14 +160,13 @@ class Stream<T> extends ExchangeImpl<T> {
     // send lock: prevent sending DataFrames after reset occurred.
     private final Lock sendLock = new ReentrantLock();
     private final Lock stateLock = new ReentrantLock();
-
     /**
      * A reference to this Stream's connection Send Window controller. The
      * stream MUST acquire the appropriate amount of Send Window before
      * sending any data. Will be null for PushStreams, as they cannot send data.
      */
     private final WindowController windowController;
-    private final WindowUpdateSender windowUpdater;
+    private final WindowUpdateSender streamWindowUpdater;
 
     // Only accessed in all method calls from incoming(), no need for volatile
     private boolean endStreamSeen;
@@ -217,7 +216,8 @@ class Stream<T> extends ExchangeImpl<T> {
                 int size = Utils.remaining(dsts, Integer.MAX_VALUE);
                 if (size == 0 && finished) {
                     inputQ.remove();
-                    connection.ensureWindowUpdated(df); // must update connection window
+                    // consumed will not be called
+                    connection.releaseUnconsumed(df); // must update connection window
                     Log.logTrace("responseSubscriber.onComplete");
                     if (debug.on()) debug.log("incoming: onComplete");
                     connection.decrementStreamsCount(streamid);
@@ -232,7 +232,11 @@ class Stream<T> extends ExchangeImpl<T> {
                     try {
                         subscriber.onNext(dsts);
                     } catch (Throwable t) {
-                        connection.dropDataFrame(df); // must update connection window
+                        // Data frames that have been added to the inputQ
+                        // must be released using releaseUnconsumed() to
+                        // account for the amount of unprocessed bytes
+                        // tracked by the connection.windowUpdater.
+                        connection.releaseUnconsumed(df);
                         throw t;
                     }
                     if (consumed(df)) {
@@ -283,8 +287,12 @@ class Stream<T> extends ExchangeImpl<T> {
     private void drainInputQueue() {
         Http2Frame frame;
         while ((frame = inputQ.poll()) != null) {
-            if (frame instanceof DataFrame) {
-                connection.dropDataFrame((DataFrame)frame);
+            if (frame instanceof DataFrame df) {
+                // Data frames that have been added to the inputQ
+                // must be released using releaseUnconsumed() to
+                // account for the amount of unprocessed bytes
+                // tracked by the connection.windowUpdater.
+                connection.releaseUnconsumed(df);
             }
         }
     }
@@ -310,12 +318,13 @@ class Stream<T> extends ExchangeImpl<T> {
         boolean endStream = df.getFlag(DataFrame.END_STREAM);
         if (len == 0) return endStream;
 
-        connection.windowUpdater.update(len);
-
+        connection.windowUpdater.processed(len);
         if (!endStream) {
+            streamWindowUpdater.processed(len);
+        } else {
             // Don't send window update on a stream which is
             // closed or half closed.
-            windowUpdater.update(len);
+            streamWindowUpdater.released(len);
         }
 
         // true: end of stream; false: more data coming
@@ -385,8 +394,21 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     private void receiveDataFrame(DataFrame df) {
-        inputQ.add(df);
-        sched.runOrSchedule();
+        try {
+            int len = df.payloadLength();
+            if (len > 0) {
+                // we return from here if the connection is being closed.
+                if (!connection.windowUpdater.canBufferUnprocessedBytes(len)) return;
+                // we return from here if the stream is being closed.
+                if (closed || !streamWindowUpdater.canBufferUnprocessedBytes(len)) {
+                    connection.releaseUnconsumed(df);
+                    return;
+                }
+            }
+            inputQ.add(df);
+        } finally {
+            sched.runOrSchedule();
+        }
     }
 
     /** Handles a RESET frame. RESET is always handled inline in the queue. */
@@ -470,7 +492,7 @@ class Stream<T> extends ExchangeImpl<T> {
         this.responseHeadersBuilder = new HttpHeadersBuilder();
         this.rspHeadersConsumer = new HeadersConsumer();
         this.requestPseudoHeaders = createPseudoHeaders(request);
-        this.windowUpdater = new StreamWindowUpdateSender(connection);
+        this.streamWindowUpdater = new StreamWindowUpdateSender(connection);
     }
 
     private boolean checkRequestCancelled() {
@@ -506,6 +528,8 @@ class Stream<T> extends ExchangeImpl<T> {
                 if (debug.on()) {
                     debug.log("request cancelled or stream closed: dropping data frame");
                 }
+                // Data frames that have not been added to the inputQ
+                // can be released using dropDataFrame
                 connection.dropDataFrame(df);
             } else {
                 receiveDataFrame(df);
@@ -1427,12 +1451,18 @@ class Stream<T> extends ExchangeImpl<T> {
 
     @Override
     void onProtocolError(final IOException cause) {
+        onProtocolError(cause, ResetFrame.PROTOCOL_ERROR);
+    }
+
+    void onProtocolError(final IOException cause, int code) {
         if (debug.on()) {
-            debug.log("cancelling exchange on stream %d due to protocol error: %s", streamid, cause.getMessage());
+            debug.log("cancelling exchange on stream %d due to protocol error [%s]: %s",
+                    streamid, ErrorFrame.stringForCode(code),
+                    cause.getMessage());
         }
         Log.logError("cancelling exchange on stream {0} due to protocol error: {1}\n", streamid, cause);
         // send a RESET frame and close the stream
-        cancelImpl(cause, ResetFrame.PROTOCOL_ERROR);
+        cancelImpl(cause, code);
     }
 
     void connectionClosing(Throwable cause) {
@@ -1735,6 +1765,13 @@ class Stream<T> extends ExchangeImpl<T> {
                 dbg = connection.dbgString() + ":WindowUpdateSender(stream: " + streamid + ")";
                 return dbgString = dbg;
             }
+        }
+
+        @Override
+        protected boolean windowSizeExceeded(long received) {
+            onProtocolError(new ProtocolException("stream %s flow control window exceeded"
+                            .formatted(streamid)), ResetFrame.FLOW_CONTROL_ERROR);
+            return true;
         }
     }
 

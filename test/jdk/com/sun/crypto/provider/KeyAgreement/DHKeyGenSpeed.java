@@ -58,7 +58,8 @@ public class DHKeyGenSpeed {
 
         // generate keyPairs using parameters
         KeyPairGenerator keyGen =
-            KeyPairGenerator.getInstance("DH", "SunJCE");
+            KeyPairGenerator.getInstance("DH",
+                    System.getProperty("test.provider.name", "SunJCE"));
         start = System.currentTimeMillis();
         keyGen.initialize(spec);
         KeyPair keys = keyGen.generateKeyPair();
