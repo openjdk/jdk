@@ -68,7 +68,7 @@ public interface AnnotatedParameterizedType extends AnnotatedType {
      * {@return the potentially annotated use of the immediately enclosing class
      * of the parameterized type, or {@code null} if and only if the
      * parameterized type is not an inner member class}  For example, if this
-     * use is {@code Outer<@TC Long>.@TA nner<@TB String>}, this method returns
+     * use is {@code Outer<@TC Long>.@TA Inner<@TB String>}, this method returns
      * a representation of {@code Outer<@TC Long>}.
      *
      * @throws TypeNotPresentException {@inheritDoc}

@@ -60,6 +60,7 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      *     non-existent type declaration
      * @throws MalformedParameterizedTypeException if any of the bounds refer to
      *     a parameterized type that cannot be instantiated for any reason
+     * @jls 4.9 Intersection Types
      */
     Type[] getBounds();
 
@@ -81,6 +82,11 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      * this method returns an array containing exactly the unannotated use of
      * the {@code Object} class.
      *
+     * @throws TypeNotPresentException if any of the bounds refers to a
+     *     non-existent type declaration
+     * @throws MalformedParameterizedTypeException if any of the bounds refer to
+     *     a parameterized type that cannot be instantiated for any reason
+     * @jls 4.9 Intersection Types
      * @since 1.8
      */
     AnnotatedType[] getAnnotatedBounds();

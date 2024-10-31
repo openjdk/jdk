@@ -28,8 +28,9 @@ package java.lang.reflect;
 /**
  * {@code WildcardType} represents a wildcard type argument, such as {@code ?},
  * {@code ? extends Number}, or {@code ? super Integer}.  Since a wildcard type
- * argument is not a type, and it will only be returned by APIs where type
- * arguments may appear.
+ * argument is not a type, it will only be returned by APIs where type arguments
+ * may appear, such as {@link ParameterizedType#getActualTypeArguments()
+ * ParameterizedType::getActualTypeArguments}.
  * <p>
  * Two {@code WildcardType} objects should be compared using the {@link
  * Object#equals equals} method.

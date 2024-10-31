@@ -28,38 +28,45 @@ package java.lang.reflect;
 import java.lang.annotation.Annotation;
 
 /**
- * {@code AnnotatedType} represents the potentially annotated (JLS {@jls 9.7.4})
- * use of a type or type argument in the current runtime. See {@link Type} for
- * the complete list of types and type arguments.
- * <p>
- * Here is a mapping from types and type arguments of the use, with examples,
- * to the modeling interfaces. "{@code AnnotatedType} alone" means the modeling
- * class does not implement any of the subinterfaces of {@code AnnotatedType}.
- * <ul>
- * <li>Primitive types (such as {@code @TA int}):
- *     {@code AnnotatedType} alone
- * <li>Reference types: <ul>
- *     <li>Class types and interface types:<ul>
- *         <li>Parameterized types (such as {@code @TA List<@TB ? extends @TC
- *             String>}): {@link AnnotatedParameterizedType}
- *         <li>Non-generic classes and interfaces (such as {@code @TC String})
- *             and raw types (such as {@code @TA List}):
- *             {@code AnnotatedType} alone
- *     </ul>
- *     <li>Type variables (such as {@code @TA T}):
- *         {@link AnnotatedTypeVariable}
- *     <li>Array types (such as {@code @TB int @TA []}):
- *         {@link AnnotatedArrayType}
- * </ul>
- * <li>Wildcard type arguments (such as {@code @TB ? extends @TC String}):
- *     {@link AnnotatedWildcardType}
- * </ul>
- * <p>
- * For example, an annotated use {@code @TB Outer.@TA Inner}, represented by
- * {@code AnnotatedType} alone, has an annotation {@code @TA} and represents the
- * non-generic {@code Outer.Inner} class. The use of its immediately enclosing
- * class is {@code @TB Outer}, with an annotation {@code @TB}, representing the
- * non-generic {@code Outer} class.
+ * {@code AnnotatedType} represents the potentially annotated use of a type or
+ * type argument in the current runtime.  The use of a type (JLS {@jls 4.1}) is
+ * the use of a primitive type or a reference type.  The use of a type argument
+ * (JLS {@jls 4.5.1}) is the use of a reference type or a wildcard type
+ * argument.
+ * <table class="striped">
+ * <caption style="display:none">
+ * Types and Type Arguments Used to Modeling Interfaces
+ * </caption>
+ * <thead>
+ * <tr><th colspan="3">Type or Type Argument Used
+ *     <th>Example
+ *     <th>Modeling interface
+ * </thead>
+ * <tbody>
+ * <tr><td colspan="3">Primitive Types (JLS {@jls 4.2})
+ *     <td>{@code @TA int}
+ *     <td rowspan="3">{@link ##alone AnnotatedType}
+ * <tr><td rowspan="5">Reference<br>Types<br>(JLS {@jls 4.3})
+ *     <td rowspan="3">Classes<br>and<br>Interfaces
+ *     <td>Non-generic Classes and<br>Interfaces
+ *         (JLS {@jls 8.1.3}, {@jls 9.1.3})
+ *     <td>{@code @TC String}
+ * <tr><td>Raw Types (JLS {@jls 4.8})
+ *     <td>{@code @TA List}
+ * <tr><td>Parameterized Types (JLS {@jls 4.5})
+ *     <td>{@code @TA List<@TB ? extends @TC String>}
+ *     <td>{@link AnnotatedParameterizedType}
+ * <tr><td colspan="2">Type Variables (JLS {@jls 4.4})
+ *     <td>{@code @TA T}
+ *     <td>{@link AnnotatedTypeVariable}
+ * <tr><td colspan="2">Array Types (JLS {@jls 10.1})
+ *     <td>{@code @TB int @TA []}
+ *     <td>{@link AnnotatedArrayType}
+ * <tr><td colspan="3">Wildcard Type Arguments (JLS {@jls 4.5.1})
+ *     <td>{@code @TB ? extends @TC String}
+ *     <td>{@link AnnotatedWildcardType}
+ * </tbody>
+ * </table>
  * <p>
  * Note that any annotations returned by methods on this interface are
  * <em>type annotations</em> (JLS {@jls 9.7.4}) as the entity being
@@ -68,15 +75,22 @@ import java.lang.annotation.Annotation;
  * Two {@code AnnotatedType} objects should be compared using the {@link
  * Object#equals equals} method.
  *
+ * <h2 id="alone">The {@code AnnotatedType} interface alone</h2>
+ * Some {@code AnnotatedType} objects are not instances of the {@link
+ * AnnotatedArrayType}, {@link AnnotatedParameterizedType}, {@link
+ * AnnotatedTypeVariable}, or {@link AnnotatedWildcardType} subinterfaces.
+ * Such a potentially annotated use represents a primitive type, a non-generic
+ * class or interface, or a raw type, and the {@link #getType() getType()}
+ * method returns a {@link Class}.
+ * <p>
+ * For example, an annotated use {@code @TB Outer.@TA Inner} has an annotation
+ * {@code @TA} and represents the non-generic {@code Outer.Inner} class. The use
+ * of its immediately enclosing class is {@code @TB Outer}, with an annotation
+ * {@code @TB}, representing the non-generic {@code Outer} class.
+ *
  * @see Type
- * @jls 4.1 The Kinds of Types and Values
- * @jls 4.2 Primitive Types and Values
- * @jls 4.3 Reference Types and Values
- * @jls 4.4 Type Variables
- * @jls 4.5 Parameterized Types
- * @jls 4.8 Raw Types
- * @jls 4.9 Intersection Types
- * @jls 10.1 Array Types
+ * @jls 4.11 Where Types Are Used
+ * @jls 9.7.4 Where Annotations May Appear
  * @since 1.8
  */
 public interface AnnotatedType extends AnnotatedElement {
@@ -106,9 +120,11 @@ public interface AnnotatedType extends AnnotatedElement {
     /**
      * {@return the type that this potentially annotated use represents}
      * <p>
-     * If this object does not implement any of the subinterfaces of {@code
-     * AnnotatedType}, this use represents a primitive type, a non-generic class
-     * or interface, or a raw type, and this method returns a {@link Class}.
+     * If this object is not an instance of {@link AnnotatedArrayType}, {@link
+     * AnnotatedParameterizedType}, {@link AnnotatedTypeVariable}, or {@link
+     * AnnotatedWildcardType}, this method returns a {@link Class}.
+     *
+     * @see ##alone The {@code AnnotatedType} interface alone
      */
     Type getType();
 

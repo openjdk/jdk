@@ -26,58 +26,70 @@
 package java.lang.reflect;
 
 /**
- * {@code Type} represents types in the Java programming language (JLS {@jls
- * 4.1}) and type arguments (JLS {@jls 4.5.1}).  Types are primitive types (JLS
- * {@jls 4.2}) and reference types (JLS {@jls 4.3}).  Reference types are
- * non-generic classes (JLS {@jls 8.1.2}) (which must not be an {@linkplain
- * ParameterizedType##inner-member-class inner member class} of a generic class)
- * and interfaces (JLS {@jls 9.1.2}), raw types (JLS {@jls 4.8}) and
- * parameterized types (JLS {@jls 4.5}) of generic classes and interfaces,
- * type variables (JLS {@jls 4.4}), and array types (JLS {@jls 10.1}).  Type
- * arguments are reference types and wildcard type arguments.
- * <p>
- * Here is a mapping from types and type arguments to the modeling interfaces.
- * "{@code Type} alone" means the modeling class does not implement any other
- * {@code Type} subinterface.  The modeling class is {@link Class} in core
- * reflection representation of types in the current runtime.  Other
- * implementations may use different modeling classes to represent types not
- * in the current runtime.
- * <ul>
- * <li>Primitive types (such as {@code int}): {@code Type} alone
- * <li>Reference types: <ul>
- *     <li>Class types and interface types:<ul>
- *         <li>Parameterized types (such as {@code List<String>}):
- *             {@link ParameterizedType}
- *         <li>Non-generic classes and interfaces (such as {@code String}) and
- *             raw types (such as {@code List}): {@code Type} alone
- *     </ul>
- *     <li>Type variables (such as {@code T}): {@link TypeVariable}
- *     <li>Array types: Depends on its element type. <ul>
- *         <li>If the element type is modeled by {@code Type} alone, such as
- *             {@code int} for the array type {@code int[]}, the array type is
- *             modeled by {@code Type} alone.
- *         <li>Otherwise, the element type must be modeled by {@link
- *             ParameterizedType}, such as {@code Comparable<?>} for the array
- *             type {@code Comparable<?>[]}, or {@link TypeVariable}, such as
- *             {@code T} for the array type {@code T[]}, and the array type is
- *             modeled by {@link GenericArrayType}.
- *     </ul>
- * </ul>
- * <li>Wildcard type arguments (such as {@code ? extends String}):
- *     {@link WildcardType}
- * </ul>
+ * {@code Type} represents types in the Java programming language and type
+ * arguments.  Types (JLS {@jls 4.1}) are primitive types and reference types.
+ * Type arguments (JLS {@jls 4.5.1}) are reference types and wildcard type
+ * arguments.
+ * <table class="striped">
+ * <caption style="display:none">
+ * Types and Type Arguments to Modeling Interfaces
+ * </caption>
+ * <thead>
+ * <tr><th colspan="3">Type or Type Argument
+ *     <th>Example
+ *     <th>Modeling interface
+ * </thead>
+ * <tbody>
+ * <tr><td colspan="3">Primitive Types (JLS {@jls 4.2})
+ *     <td>{@code int}
+ *     <td rowspan="3">{@link ##alone Type}
+ * <tr><td rowspan="9">Reference<br>Types<br>(JLS {@jls 4.3})
+ *     <td rowspan="3">Classes<br>and<br>Interfaces
+ *     <td>Non-generic Classes and<br>Interfaces
+ *         (JLS {@jls 8.1.3}, {@jls 9.1.3})
+ *     <td>{@code String}
+ * <tr><td>Raw Types (JLS {@jls 4.8})
+ *     <td>{@code List}
+ * <tr><td>Parameterized Types (JLS {@jls 4.5})
+ *     <td>{@code List<String>}
+ *     <td>{@link ParameterizedType}
+ * <tr><td colspan="2">Type Variables (JLS {@jls 4.4})
+ *     <td>{@code T}
+ *     <td>{@link TypeVariable}
+ * <tr><td rowspan="5">Array<br>Types<br>(JLS {@jls 10.1})
+ *     <td>Primitive Type Elements
+ *     <td>{@code int[]}
+ *     <td rowspan="3">{@link ##alone Type}
+ * <tr><td>Non-generic Class or<br>Interface Elements
+ *     <td>{@code String[]}
+ * <tr><td>Raw Type Elements
+ *     <td>{@code List[]}
+ * <tr><td>Parameterized Type Elements
+ *     <td>{@code List<String>[][]}
+ *     <td rowspan="2">{@link GenericArrayType}
+ * <tr><td>Types Variable Elements
+ *     <td>{@code T[][][]}
+ * <tr><td colspan="3">Wildcard Type Arguments (JLS {@jls 4.5.1})
+ *     <td>{@code ? extends String}
+ *     <td>{@link WildcardType}
+ * </tbody>
+ * </table>
  * <p>
  * Two {@code Type} objects should be compared using the {@link Object#equals
  * equals} method.
  *
+ * <h2 id="alone">The {@code Type} interface alone</h2>
+ * Some {@code Type} objects are not instances of the {@link GenericArrayType},
+ * {@link ParameterizedType}, {@link TypeVariable}, or {@link WildcardType}
+ * subinterfaces.  Such a type is a primitive type, a non-generic class or
+ * interface, a raw type, or an array type with any of these types as its
+ * element type.  In core reflection, they are all represented by {@link Class}.
+ * <p>
+ * Examples include the primitive type {@code int}, the non-generic {@link
+ * Object} class, the raw type {@code List}, and the array type {@code int[]}.
+ *
  * @jls 4.1 The Kinds of Types and Values
- * @jls 4.2 Primitive Types and Values
- * @jls 4.3 Reference Types and Values
- * @jls 4.4 Type Variables
- * @jls 4.5 Parameterized Types
- * @jls 4.8 Raw Types
- * @jls 4.9 Intersection Types
- * @jls 10.1 Array Types
+ * @jls 4.11 Where Types Are Used
  * @since 1.5
  */
 public interface Type {

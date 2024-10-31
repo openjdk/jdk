@@ -28,9 +28,11 @@ package java.lang.reflect;
 /**
  * {@code AnnotatedWildcardType} represents the potentially annotated use of a
  * wildcard type argument, whose upper or lower bounds may themselves represent
- * annotated uses of types.  Note that the use of a wildcard type argument is
- * not the use of a type, and thus will only be returned by APIs where uses of
- * type arguments may appear.
+ * annotated uses of types.  Since the use of a wildcard type argument is not
+ * the use of a type, it will only be returned by APIs where uses of type
+ * arguments may appear, such as {@link
+ * AnnotatedParameterizedType#getAnnotatedActualTypeArguments()
+ * AnnotatedParameterizedType::getAnnotatedActualTypeArguments}.
  * <p>
  * For example, an annotated use {@code @TA ? extends @TB Number} has an
  * annotation {@code @TA} and represents the wildcard type argument {@code ?

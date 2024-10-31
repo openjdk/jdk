@@ -54,6 +54,11 @@ public interface AnnotatedTypeVariable extends AnnotatedType {
      * // @end
      * }
      *
+     * @throws TypeNotPresentException if any of the bounds refers to a
+     *     non-existent type declaration
+     * @throws MalformedParameterizedTypeException if any of the bounds refer to
+     *     a parameterized type that cannot be instantiated for any reason
+     * @jls 4.9 Intersection Types
      * @see TypeVariable#getAnnotatedBounds()
      * @see TypeVariable#getBounds()
      */
