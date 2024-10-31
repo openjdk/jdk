@@ -24,6 +24,7 @@
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Frame;
@@ -47,11 +48,15 @@ import javax.imageio.ImageIO;
  */
 public class ScreenCaptureRobotTest {
 
-    private static Frame frame;
-    private static volatile Canvas canvas;
-    private static BufferedImage realImage;
     private static final int IMAGE_WIDTH = 200;
     private static final int IMAGE_HEIGHT = 100;
+    private static final int OFFSET = 10;
+
+    private static Frame frame;
+    private static Canvas canvas;
+
+    private static BufferedImage realImage;
+
     private static volatile Point point;
 
     public static void main(String[] args) throws Exception {
@@ -79,9 +84,11 @@ public class ScreenCaptureRobotTest {
 
         canvas = new ImageCanvas();
         canvas.setBackground(Color.YELLOW);
+        canvas.setPreferredSize(new Dimension(IMAGE_WIDTH + (OFFSET * 2),
+                IMAGE_HEIGHT + (OFFSET * 2)));
         frame.setLayout(new BorderLayout());
         frame.add(canvas);
-        frame.setSize(300, 200);
+        frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
@@ -95,15 +102,14 @@ public class ScreenCaptureRobotTest {
             point = canvas.getLocationOnScreen();
         });
 
-        Rectangle rect = new Rectangle(point.x + 10, point.y + 10, IMAGE_WIDTH,
-                IMAGE_HEIGHT);
+        Rectangle rect = new Rectangle(point.x + OFFSET, point.y + OFFSET,
+                IMAGE_WIDTH, IMAGE_HEIGHT);
 
         BufferedImage capturedImage = robot.createScreenCapture(rect);
 
         if (!compareImages(capturedImage, realImage)) {
             String errorMessage = "FAIL : Captured Image is different from "
                     + "the real image";
-            System.err.println("Test failed");
             saveImage(capturedImage, "CapturedImage.png");
             saveImage(realImage, "RealImage.png");
             throw new RuntimeException(errorMessage);
@@ -114,8 +120,8 @@ public class ScreenCaptureRobotTest {
             BufferedImage realImg) {
         int capturedPixel;
         int realPixel;
-        int imgWidth = capturedImg.getWidth(null);
-        int imgHeight = capturedImg.getHeight(null);
+        int imgWidth = capturedImg.getWidth();
+        int imgHeight = capturedImg.getHeight();
 
         if (imgWidth != IMAGE_WIDTH || imgHeight != IMAGE_HEIGHT) {
             System.out
@@ -142,27 +148,18 @@ public class ScreenCaptureRobotTest {
     private static class ImageCanvas extends Canvas {
         @Override
         public void paint(Graphics g) {
-            g.drawImage(realImage, 10, 10, this);
+            g.drawImage(realImage, OFFSET, OFFSET, this);
         }
     }
 
-    private static void saveImage(BufferedImage image, String fileName) {
-        // Save BufferedImage to PNG file
-        try {
-            File file = new File(fileName);
-            System.out.println("Saving image : " + image + " to \n"
-                    + file.getAbsolutePath());
-            ImageIO.write(image, "PNG", file);
-        } catch (IOException ioe) {
-            throw new RuntimeException(
-                    "Image save failed : " + ioe.getMessage());
-        }
+    private static void saveImage(BufferedImage image, String fileName)
+            throws IOException {
+        ImageIO.write(image, "png", new File(fileName));
     }
 
     private static void disposeFrame() {
         if (frame != null) {
             frame.dispose();
-            frame = null;
         }
     }
 }
