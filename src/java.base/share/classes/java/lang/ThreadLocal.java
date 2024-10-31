@@ -810,7 +810,7 @@ public class ThreadLocal<T> {
     }
 
     /**
-     * Print the print stack of the current thread, skipping the printStackTrace frame.
+     * Print the stack trace of the current thread, skipping the printStackTrace frame.
      * A thread local is used to detect reentrancy as the printing may itself use
      * thread locals.
      */
