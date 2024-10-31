@@ -522,7 +522,7 @@ public final class Currency implements Serializable {
      * the symbol returned from this method reflects
      * the value specified with that extension.
      *
-     * @implNote
+     * @implSpec
      * This is equivalent to calling
      * {@link #getSymbol(Locale)
      *     getSymbol(Locale.getDefault(Locale.Category.DISPLAY))}.
@@ -623,7 +623,7 @@ public final class Currency implements Serializable {
      * If there is no suitable display name found
      * for the default locale, the ISO 4217 currency code is returned.
      *
-     * @implNote
+     * @implSpec
      * This is equivalent to calling
      * {@link #getDisplayName(Locale)
      *     getDisplayName(Locale.getDefault(Locale.Category.DISPLAY))}.
