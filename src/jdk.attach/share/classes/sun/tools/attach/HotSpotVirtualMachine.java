@@ -42,6 +42,8 @@ import java.security.PrivilegedAction;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import java.nio.charset.StandardCharsets;
+
 /*
  * The HotSpot implementation of com.sun.tools.attach.VirtualMachine.
  */
@@ -102,7 +104,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
                                      agentLibrary,
                                      isAbsolute ? "true" : "false",
                                      options);
-            String result = readErrorMessage(in);
+            String result = readMessage(in);
             if (result.isEmpty()) {
                 throw new AgentLoadException("Target VM did not respond");
             } else if (result.startsWith(msgPrefix)) {
@@ -327,6 +329,45 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         }
     }
 
+    // Attach API version support
+    protected static final int VERSION_1 = 1;
+    protected static final int VERSION_2 = 2;
+
+    /*
+     * Detects Attach API version supported by target VM.
+     */
+    protected int detectVersion() throws IOException {
+        try {
+            InputStream reply = execute("getversion");
+            String message = readMessage(reply);
+            reply.close();
+            try {
+                int supportedVersion = Integer.parseUnsignedInt(message);
+                // we expect only VERSION_2
+                if (supportedVersion == VERSION_2) {
+                    return VERSION_2;
+                }
+            } catch (NumberFormatException nfe) {
+                // bad reply - fallback to VERSION_1
+            }
+        } catch (AttachOperationFailedException | AgentLoadException ex) {
+            // the command is not supported, the VM supports VERSION_1 only
+        }
+        return VERSION_1;
+    }
+
+    /*
+     * For testing purposes Attach API v2 may be disabled.
+     */
+    protected boolean isAPIv2Enabled() {
+        // if "jdk.attach.compat" property is set, only v1 is enabled.
+        try {
+            String value = System.getProperty("jdk.attach.compat");
+            return !("true".equalsIgnoreCase(value));
+        } catch (SecurityException se) {
+        }
+        return true;
+    }
 
     /*
      * Utility method to read an 'int' from the input stream. Ideally
@@ -367,7 +408,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     /*
      * Utility method to read data into a String.
      */
-    String readErrorMessage(InputStream in) throws IOException {
+    String readMessage(InputStream in) throws IOException {
         String s;
         StringBuilder message = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
@@ -400,7 +441,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         }
         if (completionStatus != 0) {
             // read from the stream and use that as the error message
-            String message = readErrorMessage(sis);
+            String message = readMessage(sis);
             sis.close();
 
             // In the event of a protocol mismatch then the target VM
@@ -414,6 +455,51 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
                 message = "Command failed in target VM";
             }
             throw new AttachOperationFailedException(message);
+        }
+    }
+
+    /*
+     * Helper writer interface to send commands to the target VM.
+     */
+    public static interface AttachOutputStream {
+        abstract void write(byte[] buffer, int offset, int length) throws IOException;
+    }
+
+    private int dataSize(Object obj) {
+        return (obj == null ? 0 : obj.toString().getBytes(StandardCharsets.UTF_8).length) + 1;
+    }
+
+    /*
+     * Writes object (usually String or Integer) to the attach writer.
+     */
+    private void writeString(AttachOutputStream writer, Object obj) throws IOException {
+        if (obj != null) {
+            String s = obj.toString();
+            if (s.length() > 0) {
+                byte[] b = s.getBytes(StandardCharsets.UTF_8);
+                writer.write(b, 0, b.length);
+            }
+        }
+        byte b[] = new byte[1];
+        b[0] = 0;
+        writer.write(b, 0, 1);
+    }
+
+    protected void writeCommand(AttachOutputStream writer, int ver, String cmd, Object ... args) throws IOException {
+        writeString(writer, ver);
+        if (ver == VERSION_2) {
+            // for v2 write size of the data
+            int size = dataSize(cmd);
+            for (Object arg: args) {
+                size += dataSize(arg);
+            }
+            writeString(writer, size);
+        }
+        writeString(writer, cmd);
+        // v1 commands always write 3 arguments
+        int argNumber = ver == VERSION_1 ? 3 : args.length;
+        for (int i = 0; i < argNumber; i++) {
+            writeString(writer, i < args.length ? args[i] : null);
         }
     }
 

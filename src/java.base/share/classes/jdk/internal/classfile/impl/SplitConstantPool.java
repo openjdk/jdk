@@ -34,8 +34,6 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.constant.ConstantUtils;
-
 import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.util.Objects.requireNonNull;
 
