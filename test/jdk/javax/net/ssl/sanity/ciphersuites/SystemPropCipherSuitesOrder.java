@@ -53,26 +53,6 @@ import jdk.test.lib.security.SecurityUtils;
  * @run main/othervm
  *      -Djdk.tls.server.cipherSuites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
  *      SystemPropCipherSuitesOrder TLSv1.2
- * @run main/othervm
- *      -Djdk.tls.client.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      -Djdk.tls.server.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1.1
- * @run main/othervm
- *      -Djdk.tls.client.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1.1
- * @run main/othervm
- *      -Djdk.tls.server.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1.1
- * @run main/othervm
- *      -Djdk.tls.client.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      -Djdk.tls.server.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1
- * @run main/othervm
- *      -Djdk.tls.client.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1
- * @run main/othervm
- *      -Djdk.tls.server.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1
  */
 public class SystemPropCipherSuitesOrder extends SSLSocketTemplate {
 
