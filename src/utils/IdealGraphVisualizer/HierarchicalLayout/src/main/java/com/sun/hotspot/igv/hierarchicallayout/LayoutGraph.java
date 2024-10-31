@@ -474,6 +474,7 @@ public class LayoutGraph {
     }
 
     private void removeEmptyLayer(int layerNr) {
+        // TODO: not working for cut edges
         LayoutLayer layer = getLayer(layerNr);
         if (!layer.isDummyLayer()) return;
 
