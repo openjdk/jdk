@@ -449,7 +449,8 @@ bool HeapShared::is_lambda_form_klass(InstanceKlass* ik) {
   return ik->is_hidden() &&
     (ik->name()->starts_with("java/lang/invoke/LambdaForm$MH+") ||
      ik->name()->starts_with("java/lang/invoke/LambdaForm$DMH+") ||
-     ik->name()->starts_with("java/lang/invoke/LambdaForm$BMH+"));
+     ik->name()->starts_with("java/lang/invoke/LambdaForm$BMH+") ||
+     ik->name()->starts_with("java/lang/invoke/LambdaForm$VH+"));
 }
 
 bool HeapShared::is_lambda_proxy_klass(InstanceKlass* ik) {

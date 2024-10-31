@@ -661,7 +661,7 @@ bool SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass* k) {
   if (CDSConfig::is_dumping_invokedynamic()) {
     DumpTimeClassInfo* info = _dumptime_table->get(k);
     if (info != nullptr && info->is_required_hidden_class()) {
-      assert(HeapShared::is_archivable_hidden_klass(k), "required hidden class must be archivable");
+      guarantee(HeapShared::is_archivable_hidden_klass(k), "required hidden class must be archivable");
       return true;
     }
   }

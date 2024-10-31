@@ -559,6 +559,8 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/loaderConstraints/LoaderConstraintsTest.java \
  -runtime/cds/appcds/redefineClass \
+ -runtime/cds/appcds/resolvedConstants/AOTLinkedLambdas.java \
+ -runtime/cds/appcds/resolvedConstants/AOTLinkedVarHandles.java \
  -runtime/cds/appcds/resolvedConstants/ResolvedConstants.java \
  -runtime/cds/appcds/RewriteBytecodesTest.java \
  -runtime/cds/appcds/SpecifySysLoaderProp.java \
