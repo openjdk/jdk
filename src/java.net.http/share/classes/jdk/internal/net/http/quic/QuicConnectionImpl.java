@@ -175,6 +175,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     // See https://www.rfc-editor.org/rfc/rfc9000#name-datagram-size
     public static final int SMALLEST_MAXIMUM_DATAGRAM_SIZE =
             QuicClient.SMALLEST_MAXIMUM_DATAGRAM_SIZE;
+
+    public static final int DEFAULT_MAX_INITIAL_TIMEOUT = Math.clamp(
+            Utils.getIntegerProperty("jdk.httpclient.quic.maxInitialTimeout", 30),
+            1, Integer.MAX_VALUE);
     public static final long DEFAULT_INITIAL_MAX_DATA = Math.clamp(
             Utils.getLongProperty("jdk.httpclient.quic.maxInitialData", 15 << 20),
             0, 1L << 60);
@@ -300,6 +304,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     // incoming PATH_CHALLENGE frames waiting for PATH_RESPONSE
     private final Queue<PathChallengeFrame> pathChallengeFrameQueue = new ConcurrentLinkedQueue<>();
 
+    private MaxInitialTimer maxInitialTimer;
+
     static String dbgTag(QuicInstance quicInstance, String logTag) {
         return String.format("QuicConnection(%s, %s)",
                 quicInstance.instanceId(), logTag);
@@ -401,6 +407,105 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             List<String> states = new ArrayList<>();
             if (isMarked(state, HISENT)) states.add("helloSent");
             return String.join("+", states);
+        }
+    }
+
+    /**
+     * A {link QuicTimedEvent} used to interrupt the handshake
+     * if no response to the first initial packet is received within
+     * a reasonable delay (default is ~ 30s).
+     * This avoids waiting more than 30s for ConnectionException
+     * to be raised if no server is available at the peer address.
+     * This class is only used on the client side.
+     */
+    final class MaxInitialTimer implements QuicTimedEvent {
+        private final Deadline maxInitialDeadline;
+        private final QuicTimerQueue timerQueue;
+        private final long eventId;
+        private volatile Deadline deadline;
+        private volatile boolean initialPacketReceived;
+        private volatile boolean connectionClosed;
+
+        // optimization: if done is true it avoids volatile read
+        // of initialPacketReceived and/or connectionClosed
+        // from initialPacketReceived()
+        private boolean done;
+        private MaxInitialTimer(QuicTimerQueue timerQueue, Deadline maxDeadline) {
+            this.eventId = QuicTimerQueue.newEventId();
+            this.timerQueue = timerQueue;
+            maxInitialDeadline = deadline = maxDeadline;
+            assert isClientConnection() : "MaxInitialTimer should only be used on QuicClients";
+        }
+
+        /**
+         * Called when an initial packet is received from the
+         * peer. At this point the MaxInitialTimer is disarmed,
+         * and further calls to this method are no-op.
+         */
+        void initialPacketReceived() {
+            if (done) return; // races are OK - avoids volatile read
+            boolean firsPacketReceived = initialPacketReceived;
+            boolean closed = connectionClosed;
+            if (done = (firsPacketReceived || closed)) return;
+            initialPacketReceived = true;
+            if (debug.on()) {
+                debug.log("Quic initial timer disarmed after %s seconds",
+                        DEFAULT_MAX_INITIAL_TIMEOUT -
+                                Deadline.between(now(), maxInitialDeadline).toSeconds());
+            }
+            if (!closed) {
+                // rescheduling with Deadline.MAX will take the
+                // MaxInitialTimer out of the timer queue.
+                timerQueue.reschedule(this, Deadline.MAX);
+            }
+        }
+
+        @Override
+        public Deadline deadline() {
+            return deadline;
+        }
+
+        /**
+         * This method is called if the timer expires.
+         * If no initial packet has been received (
+         * {@link #initialPacketReceived()} was never called),
+         * the connection's handshakeCF is completed with a
+         * {@link ConnectException}.
+         * Calling this method a second time is a no-op.
+         * @return {@link Deadline#MAX}, always.
+         */
+        @Override
+        public Deadline handle() {
+            if (done) return Deadline.MAX;
+            boolean firsPacketReceived = initialPacketReceived;
+            boolean closed = connectionClosed;
+            if (!firsPacketReceived && !closed) {
+                assert !now().isBefore(maxInitialDeadline);
+                QuicConnectionImpl.this.handshakeFlow.handshakeCF()
+                        .completeExceptionally(new ConnectException("No response from peer for %s seconds"
+                                .formatted(DEFAULT_MAX_INITIAL_TIMEOUT)));
+                connectionClosed = done = closed = true;
+            }
+            assert firsPacketReceived || closed;
+            return Deadline.MAX;
+        }
+
+        @Override
+        public long eventId() {
+            return eventId;
+        }
+
+        @Override
+        public Deadline refreshDeadline() {
+            boolean firstPacketReceived = initialPacketReceived;
+            boolean closed = connectionClosed;
+            Deadline newDeadlne = deadline;
+            if (closed || firstPacketReceived) newDeadlne = deadline = Deadline.MAX;
+            return newDeadlne;
+        }
+
+        private Deadline now() {
+            return QuicConnectionImpl.this.endpoint().timeSource().instant();
         }
     }
 
@@ -2338,6 +2443,13 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         }
         try {
             if (quicPacket instanceof InitialPacket initial) {
+                MaxInitialTimer initialTimer = this.maxInitialTimer;
+                if (initialTimer != null) {
+                    // will be a no-op after the first call;
+                    initialTimer.initialPacketReceived();
+                    // we no longer need the timer
+                    this.maxInitialTimer = null;
+                }
                 int total;
                 updatePeerConnectionId(initial);
                 total = processInitialPacketPayload(initial);
@@ -3071,6 +3183,33 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return handshakeFlow;
     }
 
+    protected void startInitialTimer() {
+        if (!isClientConnection()) return;
+        MaxInitialTimer initialTimer = maxInitialTimer;
+        if (initialTimer == null && DEFAULT_MAX_INITIAL_TIMEOUT < Integer.MAX_VALUE) {
+            Deadline maxInitialDeadline = null;
+            synchronized (this) {
+                initialTimer = maxInitialTimer;
+                if (initialTimer == null) {
+                    Deadline now = this.endpoint().timeSource().instant();
+                    maxInitialDeadline = now.plusSeconds(DEFAULT_MAX_INITIAL_TIMEOUT);
+                    initialTimer = maxInitialTimer = new MaxInitialTimer(this.endpoint().timer(), maxInitialDeadline);
+                }
+            }
+            if (maxInitialDeadline != null) {
+                if (Log.quic()) {
+                    Log.logQuic("{0}: Arming quic initial timer for {1}", logTag(),
+                            Deadline.between(this.endpoint().timeSource().instant(), maxInitialDeadline));
+                }
+                if (debug.on()) {
+                    debug.log("Arming quic initial timer for %s seconds",
+                            Deadline.between(this.endpoint().timeSource().instant(), maxInitialDeadline).toSeconds());
+                }
+                initialTimer.timerQueue.reschedule(initialTimer, maxInitialDeadline);
+            }
+        }
+    }
+
     // adaptation to Function<? super Void, HandshakeFlow>
     private HandshakeFlow sendFirstInitialPacket(Void unused) {
         // may happen if connection cancelled before endpoint is
@@ -3080,6 +3219,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             throw new CompletionException(tc.getCloseCause());
         }
         try {
+            startInitialTimer();
             if (Log.quic()) {
                 Log.logQuic(logTag() + ": connectionId: "
                     + connectionId.toHexString()

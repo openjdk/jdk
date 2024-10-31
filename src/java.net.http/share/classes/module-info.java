@@ -273,12 +273,15 @@
  * the range [0, 2^60]. The initial limit is also used to initialize the receive window
  * size. If less than 16kB, the window size will be set to 16kB.
  * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.maxInitialTimeout}</b> (default: 30
+ * seconds)<br>
+ * This is the maximum time, in seconds, during which the client will wait for a
+ * response from the server, and continue retransmitting the first Quic INITIAL packet,
+ * before raising a {@link java.net.ConnectException}. The first INITIAL packet received
+ * from the target server will disarm this timeout.
+ * </li>
  *
  * </ul>
- * <blockquote>
- *     // TODO: Revisit - there are more properties we may want to expose and
- *     //       and document for HTTP/3, QPack, and Quic related settings
- </blockquote>
  * @moduleGraph
  * @since 11
  */

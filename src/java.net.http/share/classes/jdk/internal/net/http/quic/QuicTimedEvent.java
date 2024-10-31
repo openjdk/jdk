@@ -46,7 +46,8 @@ public sealed interface QuicTimedEvent
                 QuicTimerQueue.Marker,
                 QuicEndpoint.ClosedConnection,
                 IdleTimeoutManager.IdleTimeoutEvent,
-                IdleTimeoutManager.PreIdleTimeoutEvent {
+                IdleTimeoutManager.PreIdleTimeoutEvent,
+                QuicConnectionImpl.MaxInitialTimer {
 
     /**
      * {@return the deadline at which the event should be triggered,
