@@ -95,7 +95,10 @@ class NativeSocketAddress {
      */
     static void freeAll(NativeSocketAddress[] array) {
         for (int i = 0; i < array.length; i++) {
-            FFMUtils.free(array[i].memory);
+            NativeSocketAddress sa = array[i];
+            if (sa != null) {
+                FFMUtils.free(sa.memory);
+            }
         }
     }
 
