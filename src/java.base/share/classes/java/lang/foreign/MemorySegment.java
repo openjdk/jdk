@@ -769,8 +769,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <ol>
      *     <li>The reinterpreted segment can be accessed <em>after</em> its region
      *         of memory has been deallocated via the original arena (use after free).</li>
-     *     <li>The reinterpreted segments' region of memory will <em>not</em> be deallocated
-     *         when the provided scope becomes invalid.
+     *     <li>The reinterpreted segment's region of memory will <em>not</em> be
+     *         deallocated when the provided {@code arena} becomes invalid.
      *     </li>
      * </ol>
      * <p>
@@ -830,8 +830,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <ol>
      *     <li>The reinterpreted segment can be accessed <em>after</em> its region
      *         of memory has been deallocated via the original arena (use after free).</li>
-     *     <li>The reinterpreted segments' region of memory will not be deallocated
-     *         when the <em>provided scope becomes invalid.</em>
+     *     <li>The reinterpreted segment's region of memory will <em>not</em> be
+     *         deallocated when the provided {@code arena} becomes invalid.
      *     </li>
      * </ol>
      * <p>
