@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8216012
+ * @library /test/lib
  * @summary Tests the RSA public key exponent for KeyPairGenerator
  * @run main/timeout=60 TestKeyPairGeneratorExponent
  */
@@ -33,14 +34,16 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestKeyPairGeneratorExponent {
-    private static int keyLen = 512;
+    private static final String KPG_ALGORITHM = "RSA";
+    private static final int KEY_LENGTH = SecurityUtils.getTestKeySize(KPG_ALGORITHM);
 
     private static BigInteger[] validExponents = new BigInteger[] {
         RSAKeyGenParameterSpec.F0,
         RSAKeyGenParameterSpec.F4,
-        BigInteger.ONE.shiftLeft(keyLen - 1).subtract(BigInteger.ONE)
+        BigInteger.ONE.shiftLeft(KEY_LENGTH - 1).subtract(BigInteger.ONE)
     };
 
     private static BigInteger[] invalidExponents = new BigInteger[] {
@@ -55,7 +58,7 @@ public class TestKeyPairGeneratorExponent {
             BigInteger exponent) {
         System.out.println("Testing exponent = " + exponent.toString(16));
         try {
-            kpg.initialize(new RSAKeyGenParameterSpec(keyLen, exponent));
+            kpg.initialize(new RSAKeyGenParameterSpec(KEY_LENGTH, exponent));
             kpg.generateKeyPair();
             System.out.println("OK, key pair generated");
         } catch(InvalidAlgorithmParameterException iape){
@@ -67,7 +70,7 @@ public class TestKeyPairGeneratorExponent {
             BigInteger exponent) {
         System.out.println("Testing exponent = " + exponent.toString(16));
         try {
-            kpg.initialize(new RSAKeyGenParameterSpec(keyLen, exponent));
+            kpg.initialize(new RSAKeyGenParameterSpec(KEY_LENGTH, exponent));
             kpg.generateKeyPair();
             throw new RuntimeException("Error: Expected IAPE not thrown.");
         } catch(InvalidAlgorithmParameterException iape){
@@ -81,7 +84,7 @@ public class TestKeyPairGeneratorExponent {
 
     public static void main(String[] args) throws Exception {
         KeyPairGenerator kpg =
-                KeyPairGenerator.getInstance("RSA",
+                KeyPairGenerator.getInstance(KPG_ALGORITHM,
                     System.getProperty("test.provider.name", "SunRsaSign"));
 
         for(BigInteger validExponent : validExponents) {

@@ -24,6 +24,7 @@
  /*
  * @test
  * @bug 8184359
+ * @library /test/lib
  * @summary KeyPairGenerator Test with multiple threads.
  *  Arguments order <KeyExchangeAlgorithm> <Provider> <KeyGenAlgorithm> <Curve*>
  * @run main MultiThreadTest DiffieHellman SunJCE DiffieHellman
@@ -39,6 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import javax.crypto.KeyAgreement;
+import jdk.test.lib.security.SecurityUtils;
 
 /**
  * This test targets KeyPairGenerator API related issue in a multi threaded
@@ -68,7 +70,7 @@ public class MultiThreadTest {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgo, provider);
         switch (kpgInit) {
             case "DiffieHellman":
-                kpg.initialize(512);
+                kpg.initialize(SecurityUtils.getTestKeySize(kpgInit));
                 break;
             case "EC":
                 kpg.initialize(256);

@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4503229 8220016
+ * @library /test/lib
  * @summary default RSA KeyFactory can return broken RSAPrivateCrtKey objects
  *      This test was taken directly from the bug report, which
  *      was fixed in the crippled JSAFE provider, and needed
@@ -35,13 +36,15 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.math.BigInteger;
+import jdk.test.lib.security.SecurityUtils;
 
 public class BrokenRSAPrivateCrtKey {
     public static void main(String[] args) throws Exception {
+        String kpgAlgorithm = "RSA";
         KeyPairGenerator generator =
-                KeyPairGenerator.getInstance("RSA",
+                KeyPairGenerator.getInstance(kpgAlgorithm,
                         System.getProperty("test.provider.name", "SunRsaSign"));
-        generator.initialize(2048);
+        generator.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
 
         KeyPair pair = generator.generateKeyPair();
 

@@ -43,6 +43,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestRSACipherWrap extends PKCS11Test {
 
@@ -57,8 +58,9 @@ public class TestRSACipherWrap extends PKCS11Test {
             System.out.println(RSA_ALGOS[0] + " unsupported, skipping");
             return;
         }
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
-        kpg.initialize(1024);
+        String kpgAlgorithm = "RSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
 
         for (String rsaAlgo: RSA_ALGOS) {

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @library /test/lib
  * @modules java.base/com.sun.crypto.provider:+open
  * @run main/othervm PBEKeyCleanupTest
  * @summary Verify that key storage is cleared
@@ -38,6 +39,7 @@ import java.util.Random;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import jdk.test.lib.security.SecurityUtils;
 
 /**
  * Test that the array holding the key bytes is cleared when it is
@@ -67,7 +69,7 @@ public class PBEKeyCleanupTest {
     }
 
     private static void testPBKSecret(String algorithm) throws Exception {
-        byte[] salt = new byte[8];
+        byte[] salt = new byte[SecurityUtils.getTestSaltSize()];
         new Random().nextBytes(salt);
         char[] password = new char[] {'f', 'o', 'o'};
         PBEKeySpec pbeKeySpec = new PBEKeySpec(PASS_PHRASE.toCharArray(), salt,

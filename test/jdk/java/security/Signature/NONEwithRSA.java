@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4955844
+ * @library /test/lib
  * @summary ensure that the NONEwithRSA adapter works correctly
  * @author Andreas Sterbenz
  * @key randomness
@@ -34,6 +35,7 @@ import java.util.*;
 import java.security.*;
 
 import javax.crypto.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class NONEwithRSA {
 
@@ -43,8 +45,9 @@ public class NONEwithRSA {
         byte[] b = new byte[16];
         random.nextBytes(b);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(512);
+        String kpgAlgorithm = "RSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
 
         Signature sig = Signature.getInstance("NONEwithRSA");

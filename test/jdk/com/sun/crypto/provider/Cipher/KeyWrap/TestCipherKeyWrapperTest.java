@@ -50,10 +50,12 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
  * @bug 8048599 8248268 8288050
+ * @library /test/lib
  * @summary  Tests for key wrap and unwrap operations
  */
 
@@ -270,7 +272,7 @@ public class TestCipherKeyWrapperTest {
             System.out.println("Generate key pair (algorithm: " + algo
                     + ", provider: " + p.getName() + ")");
             KeyPairGenerator kpg = KeyPairGenerator.getInstance(algo);
-            kpg.initialize(512);
+            kpg.initialize(SecurityUtils.getTestKeySize(algo));
             KeyPair kp = kpg.genKeyPair();
             // key generated
             String algoWrap = "DES";
