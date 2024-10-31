@@ -65,18 +65,19 @@ public interface ParameterizedType extends Type {
     Type[] getActualTypeArguments();
 
     /**
-     * {@return the raw type of this type}  Returns a {@code Type} alone, which
-     * is a {@link Class} in core reflection.
+     * {@return the raw type of this type}  This is the generic class or
+     * interface that defines this parameterized type, and applies recursively
+     * to the {@linkplain #getOwnerType() immediately enclosing class} of this
+     * type if there is one.  For example, if this type is {@code O<T>.I<S>},
+     * this method returns a representation of {@code O.I}.
      * <p>
-     * This is the generic class or interface that defines this parameterized
-     * type, and applies recursively to the {@linkplain #getOwnerType()
-     * immediately enclosing class} of this type if there is one.  For example,
-     * if this type is {@code O<T>.I<S>}, this method returns a representation
-     * of {@code O.I}.
+     * The returned object is not an instance of {@link GenericArrayType},
+     * {@link ParameterizedType}, {@link TypeVariable}, or {@link WildcardType}.
      * <p>
      * This method performs type erasure (JLS {@jls 4.6}) for parameterized
      * types.
      *
+     * @see Type##alone The {@code Type} interface alone
      * @jls 4.8 Raw Types
      */
     Type getRawType();
