@@ -594,9 +594,10 @@ public class ML_DSA {
 
         //Initialize vectors used in loop
         int[][] z = null;
-        boolean[][] h = null;
+        boolean[][] h = new boolean[mlDsa_k][ML_DSA_N];
         byte[] commitmentHash = new byte[lambda/4];
         int[][] y = new int[mlDsa_l][ML_DSA_N];
+        int[][] yy = new int[mlDsa_l][ML_DSA_N];
         int[][] w = new int[mlDsa_k][ML_DSA_N];
         int[][] w0 = new int[mlDsa_k][ML_DSA_N];
         int[][] w1 = new int[mlDsa_k][ML_DSA_N];
@@ -606,12 +607,17 @@ public class ML_DSA {
         while (true) {
             expandMask(y, rhoDoublePrime, kappa);
 
+            //Save non-ntt version of y for later use
+            for (int i = 0; i < y.length; i++) {
+                System.arraycopy(y[i], 0, yy[i], 0, ML_DSA_N);
+            }
+
             //Compute w and w1
             mlDsaVectorNtt(y); //y is now in NTT domain
             matrixVectorPointwiseMultiply(w, aHat, y);
             mlDsaVectorInverseNtt(w); //w is now in normal domain
             decompose(w, w0, w1);
-            mlDsaVectorInverseNtt(y);
+            //mlDsaVectorInverseNtt(y);
 
             //Get commitment hash
             hash.update(mu);
@@ -626,8 +632,8 @@ public class ML_DSA {
             int[][] cs2 = nttConstMultiply(c, sk.s2());
             mlDsaVectorInverseNtt(cs1);
             mlDsaVectorInverseNtt(cs2);
-            z = vectorAdd(y, cs1);
-            int[][] r0 = vectorSub(w0, cs2);
+            z = vectorAdd(yy, cs1);
+            int[][] r0 = vectorSub(w0, cs2, false);
 
             //Update z and h
             kappa += mlDsa_l;
@@ -636,8 +642,9 @@ public class ML_DSA {
             } else {
                 int[][] ct0 = nttConstMultiply(c, sk.t0());
                 mlDsaVectorInverseNtt(ct0);
-                h = makeHint(vectorConstMul(-1, ct0), vectorAdd(vectorAdd(w, vectorConstMul(-1, cs2)), ct0));
-                if (vectorNormBound(ct0, gamma2) || (hammingWeight(h) > omega)) {
+                w = vectorSub(w, cs2, false);
+                int hint_weight = makeHint(h, w, vectorAdd(w, ct0));
+                if (vectorNormBound(ct0, gamma2) || (hint_weight > omega)) {
                     continue;
                 }
             }
@@ -685,7 +692,7 @@ public class ML_DSA {
         matrixVectorPointwiseMultiply(aHatZ, aHat, sig.response());
         int[][] t1Hat = vectorConstMul(1 << ML_DSA_D, pk.t1());
         mlDsaVectorNtt(t1Hat);
-        int[][] wApprox = vectorSub(aHatZ, nttConstMultiply(cHat, t1Hat));
+        int[][] wApprox = vectorSub(aHatZ, nttConstMultiply(cHat, t1Hat), true);
         mlDsaVectorInverseNtt(wApprox);
         int[][] w1Prime = useHint(sig.hint(), wApprox);
 
@@ -1191,16 +1198,22 @@ public class ML_DSA {
         return highPart;
     }
 
-    private boolean[][] makeHint(int[][] z, int[][] r) {
+    //Creates the hint polynomial and returns its hamming weight
+    private int makeHint(boolean[][] res, int[][] z, int[][] r) {
+        int hammingWeight = 0;
         int[][] r1 = highBits(r);
-        int[][] v1 = highBits(vectorAdd(r,z));
-        boolean[][] res = new boolean[mlDsa_k][ML_DSA_N];
+        int[][] v1 = highBits(z);
         for (int i = 0; i < mlDsa_k; i++) {
             for (int j = 0; j < ML_DSA_N; j++) {
-                res[i][j] = (r1[i][j] != v1[i][j]);
+                if (r1[i][j] != v1[i][j]) {
+                    res[i][j] = true;
+                    hammingWeight++;
+                } else {
+                    res[i][j] = false;
+                }
             }
         }
-        return res;
+        return hammingWeight;
     }
 
     private int[][] useHint(boolean[][] h, int[][] r) {
@@ -1388,19 +1401,24 @@ public class ML_DSA {
         for (int i = 0; i < dim; i++) {
             for (int j = 0; j < ML_DSA_N; j++) {
                 int tmp = vec1[i][j] + vec2[i][j];
-                tmp -= tmp >= ML_DSA_Q ? ML_DSA_Q : 0;
                 result[i][j] = tmp;
             }
         }
         return result;
     }
 
-    int[][] vectorSub(int[][] vec1, int[][] vec2) {
+    int[][] vectorSub(int[][] vec1, int[][] vec2, boolean needsAdjustment) {
         int dim = vec1.length;
         for (int i = 0; i < dim; i++) {
             for (int j = 0; j < ML_DSA_N; j++) {
                 int tmp = vec1[i][j] - vec2[i][j];
-                tmp += tmp < 0 ? ML_DSA_Q : 0;
+                if (needsAdjustment) {
+                    if (tmp <= -ML_DSA_Q) {
+                        tmp += ML_DSA_Q;
+                    } else if (tmp >= ML_DSA_Q) {
+                        tmp -= ML_DSA_Q;
+                    }
+                }
                 vec1[i][j] = tmp;
             }
         }
@@ -1420,16 +1438,6 @@ public class ML_DSA {
             }
         }
         return res;
-    }
-
-    private int hammingWeight(boolean[][] vec) {
-        int weight = 0;
-        for (int i = 0; i < mlDsa_k; i++) {
-            for (int j = 0; j < ML_DSA_N; j++) {
-                weight += vec[i][j] ? 1 : 0;
-            }
-        }
-        return weight;
     }
 
     // precondition: -2^31 * MONT_Q <= a, b < 2^31, -2^31 < a * b < 2^31 * MONT_Q
