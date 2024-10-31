@@ -30,6 +30,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -359,12 +360,9 @@ import jdk.internal.invoke.MhUtil;
  * @since 21
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
-public class StructuredTaskScope<T, R> implements AutoCloseable {
-    private static final VarHandle CANCELLED;
-    static {
-        MethodHandles.Lookup l = MethodHandles.lookup();
-        CANCELLED = MhUtil.findVarHandle(l, "cancelled", boolean.class);
-    }
+public final class StructuredTaskScope<T, R> implements AutoCloseable {
+    private static final VarHandle CANCELLED =
+            MhUtil.findVarHandle(MethodHandles.lookup(), "cancelled", boolean.class);
 
     private final Joiner<? super T, ? extends R> joiner;
     private final ThreadFactory threadFactory;
@@ -952,7 +950,7 @@ public class StructuredTaskScope<T, R> implements AutoCloseable {
      * @since 24
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
-    public static class FailedException extends RuntimeException {
+    public static final class FailedException extends RuntimeException {
         @java.io.Serial
         static final long serialVersionUID = -1533055100078459923L;
 
@@ -974,7 +972,7 @@ public class StructuredTaskScope<T, R> implements AutoCloseable {
      * @see Config#withTimeout(Duration)
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
-    public static class TimeoutException extends RuntimeException {
+    public static final class TimeoutException extends RuntimeException {
         @java.io.Serial
         static final long serialVersionUID = 705788143955048766L;
 
@@ -1176,6 +1174,7 @@ public class StructuredTaskScope<T, R> implements AutoCloseable {
      * the task's {@link Runnable#run() run} method, and its result is {@code null}.
      *
      * @param task the task for the thread to execute
+     * @param <U> the result type
      * @return the subtask
      * @throws WrongThreadException if the current thread is not the scope owner
      * @throws IllegalStateException if the owner has already {@linkplain #join() joined}
@@ -1186,7 +1185,7 @@ public class StructuredTaskScope<T, R> implements AutoCloseable {
      * thread to run the subtask
      * @since 24
      */
-    public Subtask<? extends T> fork(Runnable task) {
+    public <U extends T> Subtask<U> fork(Runnable task) {
         Objects.requireNonNull(task);
         return fork(() -> { task.run(); return null; });
     }
@@ -1432,15 +1431,28 @@ public class StructuredTaskScope<T, R> implements AutoCloseable {
     }
 
     /**
+     * Maps a Subtask.State to an int that can be compared: UNAVAILABLE < FAILED < SUCCESS.
+     */
+    private static int subtaskStateToInt(Subtask.State s) {
+        return switch (s) {
+            case UNAVAILABLE -> 0;
+            case FAILED      -> 1;
+            case SUCCESS     -> 2;
+        };
+    }
+
+    // RUNNING < CANCELLED < FAILED < SUCCESS
+    private static final Comparator<Subtask.State> SUBTASK_STATE_COMPARATOR =
+            Comparator.comparingInt(StructuredTaskScope::subtaskStateToInt);
+
+    /**
      * A joiner that returns a stream of all subtasks when all subtasks complete
      * successfully. Cancels the scope if any subtask fails.
      */
     private static final class AllSuccessful<T> implements Joiner<T, Stream<Subtask<T>>> {
-        private static final VarHandle FIRST_EXCEPTION;
-        static {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            FIRST_EXCEPTION = MhUtil.findVarHandle(l, "firstException", Throwable.class);
-        }
+        private static final VarHandle FIRST_EXCEPTION =
+                MhUtil.findVarHandle(MethodHandles.lookup(), "firstException", Throwable.class);
+
         private volatile Throwable firstException;
 
         // list of forked subtasks, only accessed by owner thread
@@ -1448,15 +1460,22 @@ public class StructuredTaskScope<T, R> implements AutoCloseable {
 
         @Override
         public boolean onFork(Subtask<? extends T> subtask) {
+            if (subtask.state() != Subtask.State.UNAVAILABLE) {
+                throw new IllegalArgumentException();
+            }
             @SuppressWarnings("unchecked")
-            var tmp = (Subtask<T>) Objects.requireNonNull(subtask);
-            subtasks.add(tmp);
+            var s = (Subtask<T>) subtask;
+            subtasks.add(s);
             return false;
         }
 
         @Override
         public boolean onComplete(Subtask<? extends T> subtask) {
-            return (subtask.state() == Subtask.State.FAILED)
+            Subtask.State state = subtask.state();
+            if (state == Subtask.State.UNAVAILABLE) {
+                throw new IllegalArgumentException();
+            }
+            return (state == Subtask.State.FAILED)
                     && (firstException == null)
                     && FIRST_EXCEPTION.compareAndSet(this, null, subtask.exception());
         }
@@ -1477,26 +1496,21 @@ public class StructuredTaskScope<T, R> implements AutoCloseable {
      * Cancels the scope if any subtasks succeeds.
      */
     private static final class AnySuccessful<T> implements Joiner<T, T> {
-        private static final VarHandle FIRST_SUCCESS;
-        private static final VarHandle FIRST_EXCEPTION;
-        static {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            FIRST_SUCCESS = MhUtil.findVarHandle(l, "firstSuccess", Subtask.class);
-            FIRST_EXCEPTION = MhUtil.findVarHandle(l, "firstException", Throwable.class);
-        }
-        private volatile Subtask<T> firstSuccess;
-        private volatile Throwable firstException;
+        private static final VarHandle SUBTASK =
+                MhUtil.findVarHandle(MethodHandles.lookup(), "subtask", Subtask.class);
+        private volatile Subtask<T> subtask;
 
         @Override
         public boolean onComplete(Subtask<? extends T> subtask) {
-            Objects.requireNonNull(subtask);
-            if (firstSuccess == null) {
-                if (subtask.state() == Subtask.State.SUCCESS) {
-                    // capture the first subtask that completes successfully
-                    return FIRST_SUCCESS.compareAndSet(this, null, subtask);
-                } else if (firstException == null) {
-                    // capture the exception thrown by the first task to fail
-                    FIRST_EXCEPTION.compareAndSet(this, null, subtask.exception());
+            Subtask.State state = subtask.state();
+            if (state == Subtask.State.UNAVAILABLE) {
+                throw new IllegalArgumentException();
+            }
+            Subtask<T> s;
+            while (((s = this.subtask) == null)
+                    || SUBTASK_STATE_COMPARATOR.compare(s.state(), state) < 0) {
+                if (SUBTASK.compareAndSet(this, s, subtask)) {
+                    return (state == Subtask.State.SUCCESS);
                 }
             }
             return false;
@@ -1504,16 +1518,15 @@ public class StructuredTaskScope<T, R> implements AutoCloseable {
 
         @Override
         public T result() throws Throwable {
-            Subtask<T> firstSuccess = this.firstSuccess;
-            if (firstSuccess != null) {
-                return firstSuccess.get();
-            }
-            Throwable firstException = this.firstException;
-            if (firstException != null) {
-                throw firstException;
-            } else {
+            Subtask<T> subtask = this.subtask;
+            if (subtask == null) {
                 throw new NoSuchElementException("No subtasks completed");
             }
+            return switch (subtask.state()) {
+                case SUCCESS -> subtask.get();
+                case FAILED -> throw subtask.exception();
+                default -> throw new InternalError();
+            };
         }
     }
 
@@ -1522,11 +1535,8 @@ public class StructuredTaskScope<T, R> implements AutoCloseable {
      * subtask fails.
      */
     private static final class AwaitSuccessful<T> implements Joiner<T, Void> {
-        private static final VarHandle FIRST_EXCEPTION;
-        static {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            FIRST_EXCEPTION = MhUtil.findVarHandle(l, "firstException", Throwable.class);
-        }
+        private static final VarHandle FIRST_EXCEPTION =
+                MhUtil.findVarHandle(MethodHandles.lookup(), "firstException", Throwable.class);
         private volatile Throwable firstException;
 
         @Override
@@ -1561,15 +1571,21 @@ public class StructuredTaskScope<T, R> implements AutoCloseable {
 
         @Override
         public boolean onFork(Subtask<? extends T> subtask) {
+            if (subtask.state() != Subtask.State.UNAVAILABLE) {
+                throw new IllegalArgumentException();
+            }
             @SuppressWarnings("unchecked")
-            var tmp = (Subtask<T>) Objects.requireNonNull(subtask);
-            subtasks.add(tmp);
+            var s = (Subtask<T>) subtask;
+            subtasks.add(s);
             return false;
         }
 
         @Override
         public boolean onComplete(Subtask<? extends T> subtask) {
-            return isDone.test(Objects.requireNonNull(subtask));
+            if (subtask.state() == Subtask.State.UNAVAILABLE) {
+                throw new IllegalArgumentException();
+            }
+            return isDone.test(subtask);
         }
 
         @Override
