@@ -2551,7 +2551,7 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("  _recursions = " INTX_FORMAT, _recursions);
   st->print_cr("  _EntryList = " INTPTR_FORMAT, p2i(_EntryList));
   st->print_cr("  _cxq = " INTPTR_FORMAT, p2i(_cxq));
-  st->print_cr("  _succ = " INT64_FORMAT, _succ);
+  st->print_cr("  _succ = " INT64_FORMAT, successor());
   st->print_cr("  _SpinDuration = %d", _SpinDuration);
   st->print_cr("  _contentions = %d", contentions());
   st->print_cr("  _WaitSet = " INTPTR_FORMAT, p2i(_WaitSet));

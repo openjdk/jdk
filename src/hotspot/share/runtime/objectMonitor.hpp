@@ -309,11 +309,12 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // from _cxq/_EntryList by the current owner when releasing the monitor,
   // to run again and re-try acquiring the monitor. It is used to avoid
   // unnecessary wake-ups if there is already a successor set.
-  bool      has_successor();
-  bool      has_successor(JavaThread* thread);
+  bool      has_successor() const;
+  bool      has_successor(JavaThread* thread) const;
   void      set_successor(JavaThread* thread);
   void      set_successor(oop vthread);
   void      clear_successor();
+  int64_t   successor() const;
 
   // Returns true if _owner field == tid of thread, false otherwise.
   bool has_owner(JavaThread* thread) const { return owner() == owner_from(thread); }

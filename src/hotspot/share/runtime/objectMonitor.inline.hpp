@@ -41,7 +41,7 @@
 
 inline int64_t ObjectMonitor::owner_from(JavaThread* thread) {
   int64_t tid = thread->lock_id();
-  assert(tid >= 3 && tid < ThreadIdentifier::current(), "must be reasonable");
+  assert(tid >= ThreadIdentifier::initial() && tid < ThreadIdentifier::current(), "must be reasonable");
   return tid;
 }
 
@@ -204,11 +204,11 @@ inline int64_t ObjectMonitor::try_set_owner_from(int64_t old_value, JavaThread* 
   return try_set_owner_from_raw(old_value, owner_from(current));
 }
 
-inline bool ObjectMonitor::has_successor() {
+inline bool ObjectMonitor::has_successor() const {
   return Atomic::load(&_succ) != NO_OWNER;
 }
 
-inline bool ObjectMonitor::has_successor(JavaThread* thread) {
+inline bool ObjectMonitor::has_successor(JavaThread* thread) const {
   return owner_from(thread) == Atomic::load(&_succ);
 }
 
@@ -222,6 +222,10 @@ inline void ObjectMonitor::set_successor(oop vthread) {
 
 inline void ObjectMonitor::clear_successor() {
   Atomic::store(&_succ, NO_OWNER);
+}
+
+inline int64_t ObjectMonitor::successor() const {
+  return Atomic::load(&_succ);
 }
 
 // The _next_om field can be concurrently read and modified so we
