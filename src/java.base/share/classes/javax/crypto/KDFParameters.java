@@ -41,8 +41,6 @@ import jdk.internal.javac.PreviewFeature;
  * {@link KDF#getParameters()} and may contain additional default or random
  * parameter values used by the underlying KDF implementation.
  *
- * @spec https://www.rfc-editor.org/info/rfc5869
- *      RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
  * @see KDF#getInstance(String, KDFParameters)
  * @see KDF#getParameters()
  * @see KDF

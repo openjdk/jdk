@@ -96,8 +96,6 @@ import java.util.Objects;
  * {@code getProviderName} or {@code getParameters} methods until after a key
  * derivation operation. Once a provider is selected, it cannot be changed.
  *
- * @spec https://www.rfc-editor.org/info/rfc5869
- *      RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
  * @see KDFParameters
  * @see SecretKey
  * @since 24

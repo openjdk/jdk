@@ -65,8 +65,6 @@ import java.security.spec.AlgorithmParameterSpec;
  * default values or supply random values as used by the underlying {@code KDF}
  * algorithm. See {@link KDFSpi#engineGetParameters()} for more details.
  *
- * @spec https://www.rfc-editor.org/info/rfc5869
- *      RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
  * @see KDF
  * @see KDFParameters
  * @see KDF#getParameters()
