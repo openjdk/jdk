@@ -29,7 +29,6 @@ import com.sun.hotspot.igv.layout.Vertex;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.sun.hotspot.igv.hierarchicallayout.LayoutManager.NODE_OFFSET;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_POS_COMPARATOR;
 
 /**
@@ -81,6 +80,17 @@ public class LayoutGraph {
             }
         }
         return layer;
+    }
+
+    private void deleteLayer(int layerNr) {
+        layers.remove(layerNr);
+
+        // Update the layer field in nodes below the deleted layer
+        for (int l = layerNr; l < getLayerCount(); l++) {
+            for (LayoutNode layoutNode : getLayer(l)) {
+                layoutNode.setLayer(l);
+            }
+        }
     }
 
 
@@ -449,6 +459,42 @@ public class LayoutGraph {
         for (LayoutNode node : getLayoutNodes()) {
             node.optimizeBackEdgeCrossing();
         }
+    }
+
+    public void removeEmptyLayers() {
+        int i = 0;
+        while (i < getLayerCount()) {
+            LayoutLayer layer = getLayer(i);
+            if (layer.isDummyLayer()) {
+                removeEmptyLayer(i);
+            } else {
+                i++; // Move to the next layer only if no removal occurred
+            }
+        }
+    }
+
+    private void removeEmptyLayer(int layerNr) {
+        LayoutLayer layer = getLayer(layerNr);
+        if (!layer.isDummyLayer()) return;
+
+        for (LayoutNode dummyNode : layer) {
+            LayoutEdge layoutEdge = dummyNode.getPreds().get(0);
+
+            // remove the layoutEdge
+            LayoutNode fromNode = layoutEdge.getFrom();
+            fromNode.getSuccs().remove(layoutEdge);
+
+            List<LayoutEdge> successorEdges = dummyNode.getSuccs();
+            for (LayoutEdge successorEdge : successorEdges) {
+                successorEdge.setFrom(fromNode);
+                fromNode.getSuccs().add(successorEdge);
+            }
+            dummyNode.getPreds().clear();
+            dummyNode.getSuccs().clear();
+            dummyNodes.remove(dummyNode);
+        }
+
+        deleteLayer(layerNr);
     }
 
     /**

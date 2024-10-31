@@ -80,7 +80,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             graph.addNodeToLayer(movedNode, layerNr);
             movedNode.setX(newLoc.x);
             graph.getLayer(layerNr).sortNodesByXAndSetPositions();
-            // TODO remove empty layers
+            graph.removeEmptyLayers();
             // TODO add edges
         }
     }
