@@ -72,6 +72,8 @@ import java.util.Objects;
  *                              .addSalt(salt).thenExpand(info, 32);
  *}
  *
+ * @spec https://www.rfc-editor.org/info/rfc5869
+ *      RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
  * @see javax.crypto.KDF
  * @since 24
  */

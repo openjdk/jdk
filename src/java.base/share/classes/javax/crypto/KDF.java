@@ -96,6 +96,8 @@ import java.util.Objects;
  * {@code getProviderName} or {@code getParameters} methods until after a key
  * derivation operation. Once a provider is selected, it cannot be changed.
  *
+ * @spec https://www.rfc-editor.org/info/rfc5869
+ *      RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
  * @see KDFParameters
  * @see SecretKey
  * @since 24
@@ -384,8 +386,8 @@ public final class KDF {
      *         if the specified provider is not registered in the security
      *         provider list
      * @throws InvalidAlgorithmParameterException
-     *         if the specified provider does not support a {@code KDF}
-     *         implementation for the specified algorithm and parameters
+     *         if the specified provider supports the specified {@code KDF}
+     *         algorithm but does not support the specified parameters
      * @throws NullPointerException
      *         if {@code algorithm} or {@code provider} is {@code null}
      */
@@ -432,8 +434,8 @@ public final class KDF {
      *         if the specified provider does not support the specified
      *         {@code KDF} algorithm
      * @throws InvalidAlgorithmParameterException
-     *         if the specified provider does not support a {@code KDF}
-     *         implementation for the specified algorithm and parameters
+     *         if the specified provider supports the specified {@code KDF}
+     *         algorithm but does not support the specified parameters
      * @throws NullPointerException
      *         if {@code algorithm} or {@code provider} is {@code null}
      */

@@ -48,6 +48,9 @@ import java.util.List;
  * This class implements the HKDF-Extract and HKDF-Expand functions from RFC
  * 5869.  This implementation provides the complete Extract-then-Expand HKDF
  * function as well as Extract-only and Expand-only variants.
+ *
+ * @spec https://www.rfc-editor.org/info/rfc5869
+ *      RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
  */
 abstract class HKDFKeyDerivation extends KDFSpi {
 
