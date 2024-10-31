@@ -220,7 +220,7 @@ public class AnnotationProxyMaker {
             }
         }
 
-        @SuppressWarnings({"unchecked", "rawtypes"})
+        @SuppressWarnings("unchecked")
         public void visitEnum(Attribute.Enum e) {
             if (returnClass.isEnum()) {
                 String constName = e.value.toString();

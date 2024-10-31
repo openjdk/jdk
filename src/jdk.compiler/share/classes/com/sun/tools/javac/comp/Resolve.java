@@ -5186,7 +5186,6 @@ public class Resolve {
          * while inapplicable candidates contain further details about the
          * reason why the method has been considered inapplicable.
          */
-        @SuppressWarnings("overrides")
         class Candidate {
 
             final MethodResolutionPhase step;

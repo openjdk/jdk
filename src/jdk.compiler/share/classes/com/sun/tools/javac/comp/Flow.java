@@ -3289,7 +3289,6 @@ public class Flow {
             //do nothing
         }
 
-        @SuppressWarnings("fallthrough")
         void checkEffectivelyFinal(DiagnosticPosition pos, VarSymbol sym) {
             if (currentTree != null &&
                     sym.owner.kind == MTH &&
@@ -3310,7 +3309,6 @@ public class Flow {
                                                      : currentTree.getStartPosition();
         }
 
-        @SuppressWarnings("fallthrough")
         void letInit(JCTree tree) {
             tree = TreeInfo.skipParens(tree);
             if (tree.hasTag(IDENT) || tree.hasTag(SELECT)) {

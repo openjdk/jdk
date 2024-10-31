@@ -274,7 +274,6 @@ public class Operators {
         /** An array of operator symbol suppliers (used to lazily populate the symbol list). */
         List<Supplier<OperatorSymbol>> operatorSuppliers = List.nil();
 
-        @SuppressWarnings("varargs")
         OperatorHelper(Tag tag) {
             this.name = operatorName(tag);
         }

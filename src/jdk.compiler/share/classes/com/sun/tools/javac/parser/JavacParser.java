@@ -2824,7 +2824,6 @@ public class JavacParser implements Parser {
      *  LocalVariableDeclarationStatement
      *                  = { FINAL | '@' Annotation } Type VariableDeclarators ";"
      */
-    @SuppressWarnings("fallthrough")
     List<JCStatement> blockStatements() {
         //todo: skip to anchor on error(?)
         int lastErrPos = -1;
@@ -2882,7 +2881,6 @@ public class JavacParser implements Parser {
 
     /**This method parses a statement appearing inside a block.
      */
-    @SuppressWarnings("fallthrough")
     List<JCStatement> blockStatement() {
         //todo: skip to anchor on error(?)
         Comment dc;

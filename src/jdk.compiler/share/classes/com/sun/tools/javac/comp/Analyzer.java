@@ -611,7 +611,6 @@ public class Analyzer {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public void scan(JCTree tree) {
             if (tree != null) {
                 for (StatementAnalyzer<JCTree, JCTree> analyzer : analyzers) {

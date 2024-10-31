@@ -151,7 +151,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
 
     /** Construct a list consisting of given elements.
      */
-    @SuppressWarnings({"varargs", "unchecked"})
+    @SuppressWarnings("unchecked")
     public static <A> List<A> of(A x1, A x2, A x3, A... rest) {
         return new List<>(x1, new List<>(x2, new List<>(x3, from(rest))));
     }

@@ -339,7 +339,6 @@ public class JNIWriter {
             }
         }
     }
-    @SuppressWarnings("fallthrough")
     protected final String jniType(Type t) {
         switch (t.getKind()) {
             case ARRAY: {
@@ -442,7 +441,6 @@ public class JNIWriter {
         JNI,
         SIGNATURE
     }
-    @SuppressWarnings("fallthrough")
     static String encode(CharSequence name, EncoderType mtype) {
         StringBuilder result = new StringBuilder(100);
         int length = name.length();

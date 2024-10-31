@@ -254,7 +254,6 @@ public class Main {
     /**
      * Starts main program with the specified arguments.
      */
-    @SuppressWarnings({"removal"})
     public synchronized boolean run(String[] args) {
         ok = true;
         if (!parseArgs(args)) {
@@ -1373,7 +1372,6 @@ public class Main {
         });
     }
 
-    @SuppressWarnings("serial")
     Set<ZipEntry> newDirSet() {
         return new HashSet<ZipEntry>() {
             public boolean add(ZipEntry e) {
