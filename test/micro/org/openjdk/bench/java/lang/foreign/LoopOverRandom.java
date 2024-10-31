@@ -48,8 +48,9 @@ import sun.misc.Unsafe;
 @Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
 public class LoopOverRandom extends JavaLayouts {
 
-    static final int ELEM_SIZE = 1_000;
-    static final long ALLOC_SIZE = ELEM_SIZE * ValueLayout.JAVA_INT.byteSize();
+    static final long ELEM_SIZE = ValueLayout.JAVA_INT.byteSize();
+    static final int ELEM_COUNT = 1_000;
+    static final long ALLOC_SIZE = ELEM_COUNT * ELEM_SIZE;
 
     static final Unsafe unsafe = Utils.unsafe;
 
@@ -61,10 +62,10 @@ public class LoopOverRandom extends JavaLayouts {
 
     @Setup
     public void setup() {
-        indices = new Random().ints(0, ELEM_SIZE).limit(ELEM_SIZE).toArray();
+        indices = new Random().ints(0, ELEM_COUNT).limit(ELEM_COUNT).toArray();
         arena = Arena.ofConfined();
         segment = arena.allocate(ALLOC_SIZE);
-        for (int i = 0; i < ELEM_SIZE; i++) {
+        for (int i = 0; i < ELEM_COUNT; i++) {
             segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
         }
     }
@@ -77,7 +78,7 @@ public class LoopOverRandom extends JavaLayouts {
     @Benchmark
     public long segment_loop() {
         int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
+        for (int i = 0; i < ELEM_COUNT; i++) {
             sum += segment.getAtIndex(ValueLayout.JAVA_INT_UNALIGNED, indices[i]);
             target_dontInline();
         }
@@ -87,8 +88,8 @@ public class LoopOverRandom extends JavaLayouts {
     @Benchmark
     public long segment_loop_all() {
         int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += ALL.get(ValueLayout.JAVA_INT_UNALIGNED, ValueLayout.JAVA_INT.scale(segment.address(), indices[i]));
+        for (int i = 0; i < ELEM_COUNT; i++) {
+            sum += ALL.get(ValueLayout.JAVA_INT_UNALIGNED, segment.address() + indices[i] * ELEM_SIZE);
             target_dontInline();
         }
         return sum;
@@ -97,7 +98,7 @@ public class LoopOverRandom extends JavaLayouts {
     @Benchmark
     public long segment_loop_asUnchecked() {
         int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
+        for (int i = 0; i < ELEM_COUNT; i++) {
             sum += asUnchecked(segment).getAtIndex(ValueLayout.JAVA_INT_UNALIGNED, indices[i]);
             target_dontInline();
         }
@@ -107,8 +108,8 @@ public class LoopOverRandom extends JavaLayouts {
     @Benchmark
     public long unsafe_loop() {
         int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += unsafe.getInt(ValueLayout.JAVA_INT.scale(segment.address(), indices[i]));
+        for (int i = 0; i < ELEM_COUNT; i++) {
+            sum += unsafe.getInt(segment.address() + indices[i] * ELEM_SIZE);
             target_dontInline();
         }
         return sum;
