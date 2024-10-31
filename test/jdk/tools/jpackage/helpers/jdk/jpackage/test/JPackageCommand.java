@@ -408,12 +408,14 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public Path outputBundle() {
         final String bundleName;
         if (isImagePackageType()) {
-            if (TKit.isOSX() && hasArgument("--app-image")) {
-                return Path.of(getArgumentValue("--app-image", () -> null));
-            }
-            String dirName = name();
-            if (TKit.isOSX()) {
-                dirName = dirName + ".app";
+            String dirName;
+            if (!TKit.isOSX()) {
+                dirName = name();
+            } else if (hasArgument("--app-image") && hasArgument("--mac-sign")) {
+                // Request to sign external app image, not to build a new one
+                dirName = getArgumentValue("--app-image");
+            } else {
+                dirName = name() + ".app";
             }
             bundleName = dirName;
         } else if (TKit.isLinux()) {
