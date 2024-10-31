@@ -216,7 +216,6 @@ inline bool LockStack::contains(oop o) const {
 }
 
 inline void LockStack::oops_do(OopClosure* cl) {
-  verify("pre-oops-do");
   int end = to_index(_top);
   for (int i = 0; i < end; i++) {
     cl->do_oop(&_base[i]);
