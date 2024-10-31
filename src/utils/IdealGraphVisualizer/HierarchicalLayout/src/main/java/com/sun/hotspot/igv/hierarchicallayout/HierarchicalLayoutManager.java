@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.hierarchicallayout;
 
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutEdge.LAYOUT_EDGE_LAYER_COMPARATOR;
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutGraph.LINK_COMPARATOR;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.*;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
@@ -81,9 +82,224 @@ public class HierarchicalLayoutManager extends LayoutManager {
             movedNode.setX(newLoc.x);
             graph.getLayer(layerNr).sortNodesByXAndSetPositions();
             graph.removeEmptyLayers();
-            // TODO add edges
+            addEdges(movedNode);
         }
     }
+
+    public void addEdges(LayoutNode movedNode) {
+
+        // BuildDatastructure
+        List<Link> nodeLinks = new ArrayList<>(graph.getInputLinks(movedNode.getVertex()));
+        nodeLinks.addAll(graph.getOutputLinks(movedNode.getVertex()));
+        nodeLinks.sort(LINK_COMPARATOR);
+
+        Set<LayoutNode> reversedLayoutNodes = new HashSet<>();
+        for (Link link : nodeLinks) {
+            if (link.getFrom().getVertex() == link.getTo().getVertex()) continue;
+            LayoutEdge layoutEdge = graph.createLayoutEdge(link);
+
+            LayoutNode fromNode = layoutEdge.getFrom();
+            LayoutNode toNode = layoutEdge.getTo();
+
+            if (fromNode.getLayer() > toNode.getLayer()) {
+                ReverseEdges.reverseEdge(layoutEdge);
+                reversedLayoutNodes.add(fromNode);
+                reversedLayoutNodes.add(toNode);
+            }
+        }
+
+        // ReverseEdges
+        for (LayoutNode layoutNode : reversedLayoutNodes) {
+            layoutNode.computeReversedLinkPoints(false);
+        }
+
+        // CreateDummyNodes
+        LayerManager.createDummiesForNodeSuccessor(graph, movedNode, maxLayerLength);
+        for (LayoutEdge predEdge : movedNode.getPreds()) {
+            insertDummyNodes(predEdge);
+        }
+
+        graph.updatePositions();
+    }
+
+    private void insertDummyNodes(LayoutEdge edge) {
+        LayoutNode fromNode = edge.getFrom();
+        LayoutNode toNode = edge.getTo();
+        if (Math.abs(toNode.getLayer() - fromNode.getLayer()) <= 1) return;
+
+        boolean hasEdgeFromSamePort = false;
+        LayoutEdge edgeFromSamePort = new LayoutEdge(fromNode, toNode);
+        if (edge.isReversed()) edgeFromSamePort.reverse();
+
+        for (LayoutEdge succEdge : fromNode.getSuccs()) {
+            if (succEdge.getRelativeFromX() == edge.getRelativeFromX() && succEdge.getTo().isDummy()) {
+                edgeFromSamePort = succEdge;
+                hasEdgeFromSamePort = true;
+                break;
+            }
+        }
+
+        if (!hasEdgeFromSamePort) {
+            processSingleEdge(edge);
+        } else {
+            LayoutEdge curEdge = edgeFromSamePort;
+            boolean newEdge = true;
+            while (curEdge.getTo().getLayer() < toNode.getLayer() - 1 && curEdge.getTo().isDummy() && newEdge) {
+                // Traverse down the chain of dummy nodes linking together the edges originating
+                // from the same port
+                newEdge = false;
+                if (curEdge.getTo().getSuccs().size() == 1) {
+                    curEdge = curEdge.getTo().getSuccs().get(0);
+                    newEdge = true;
+                } else {
+                    for (LayoutEdge e : curEdge.getTo().getSuccs()) {
+                        if (e.getTo().isDummy()) {
+                            curEdge = e;
+                            newEdge = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            LayoutNode prevDummy;
+            if (!curEdge.getTo().isDummy()) {
+                prevDummy = curEdge.getFrom();
+            } else {
+                prevDummy = curEdge.getTo();
+            }
+
+            edge.setFrom(prevDummy);
+            edge.setRelativeFromX(prevDummy.getWidth() / 2);
+            fromNode.getSuccs().remove(edge);
+            prevDummy.getSuccs().add(edge);
+            processSingleEdge(edge);
+        }
+    }
+
+    private LayoutNode createDummyBetween(LayoutEdge layoutEdge) {
+        LayoutNode dummyNode = new LayoutNode();
+        dummyNode.getSuccs().add(layoutEdge);
+        LayoutEdge result = new LayoutEdge(layoutEdge.getFrom(), dummyNode, layoutEdge.getRelativeFromX(), 0, null);
+        if (layoutEdge.isReversed()) result.reverse();
+        dummyNode.getPreds().add(result);
+        layoutEdge.setRelativeFromX(0);
+        layoutEdge.getFrom().getSuccs().remove(layoutEdge);
+        layoutEdge.getFrom().getSuccs().add(result);
+        layoutEdge.setFrom(dummyNode);
+        return dummyNode;
+    }
+
+    /**
+     * Find the optimal position within the given layerNr to insert the given node.
+     * The optimum is given by the least amount of edge crossings.
+     */
+    private int optimalPosition(LayoutNode node, int layerNr) {
+
+        graph.getLayer(layerNr).sort(NODE_POS_COMPARATOR);
+        int edgeCrossings = Integer.MAX_VALUE;
+        int optimalPos = -1;
+
+        // Try each possible position in the layerNr
+        for (int i = 0; i < graph.getLayer(layerNr).size() + 1; i++) {
+            int xCoord;
+            if (i == 0) {
+                xCoord = graph.getLayer(layerNr).get(i).getX() - node.getWidth() - 1;
+            } else {
+                xCoord = graph.getLayer(layerNr).get(i - 1).getX() + graph.getLayer(layerNr).get(i - 1).getWidth() + 1;
+            }
+
+            int currentCrossings = 0;
+
+            if (0 <= layerNr - 1) {
+                // For each link with an end point in vertex, check how many edges cross it
+                for (LayoutEdge edge : node.getPreds()) {
+                    if (edge.getFrom().getLayer() == layerNr - 1) {
+                        int fromNodeXCoord = edge.getFromX();
+                        int toNodeXCoord = xCoord;
+                        if (!node.isDummy()) {
+                            toNodeXCoord += edge.getRelativeToX();
+                        }
+                        for (LayoutNode n : graph.getLayer(layerNr - 1)) {
+                            for (LayoutEdge e : n.getSuccs()) {
+                                if (e.getTo() == null) {
+                                    continue;
+                                }
+                                int compFromXCoord = e.getFromX();
+                                int compToXCoord = e.getToX();
+                                if ((fromNodeXCoord > compFromXCoord && toNodeXCoord < compToXCoord)
+                                        || (fromNodeXCoord < compFromXCoord
+                                        && toNodeXCoord > compToXCoord)) {
+                                    currentCrossings += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Edge crossings across current layerNr and layerNr below
+            if (layerNr + 1 < graph.getLayerCount()) {
+                // For each link with an end point in vertex, check how many edges cross it
+                for (LayoutEdge edge : node.getSuccs()) {
+                    if (edge.getTo().getLayer() == layerNr + 1) {
+                        int toNodeXCoord = edge.getToX();
+                        int fromNodeXCoord = xCoord;
+                        if (!node.isDummy()) {
+                            fromNodeXCoord += edge.getRelativeFromX();
+                        }
+                        for (LayoutNode n : graph.getLayer(layerNr + 1)) {
+                            for (LayoutEdge e : n.getPreds()) {
+                                if (e.getFrom() == null) {
+                                    continue;
+                                }
+                                int compFromXCoord = e.getFromX();
+                                int compToXCoord = e.getToX();
+                                if ((fromNodeXCoord > compFromXCoord && toNodeXCoord < compToXCoord)
+                                        || (fromNodeXCoord < compFromXCoord
+                                        && toNodeXCoord > compToXCoord)) {
+                                    currentCrossings += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (currentCrossings <= edgeCrossings) {
+                edgeCrossings = currentCrossings;
+                optimalPos = i;
+            }
+        }
+        return optimalPos;
+    }
+
+    private void processSingleEdge(LayoutEdge layoutEdge) {
+        LayoutNode layoutNode = layoutEdge.getTo();
+        if (layoutEdge.getTo().getLayer() - 1 > layoutEdge.getFrom().getLayer()) {
+            LayoutEdge prevEdge = layoutEdge;
+            for (int l = layoutNode.getLayer() - 1; l > prevEdge.getFrom().getLayer(); l--) {
+                LayoutNode node = createDummyBetween(prevEdge);
+                node.setLayer(l);
+                List<LayoutNode> layerNodes = graph.getLayer(l);
+
+                if (layerNodes.isEmpty()) {
+                    node.setPos(0);
+                } else {
+                    node.setPos(optimalPosition(node, l));
+                }
+
+                for (LayoutNode n : layerNodes) {
+                    if (n.getPos() >= node.getPos()) {
+                        n.setPos(n.getPos() + 1);
+                    }
+                }
+
+                graph.addNodeToLayer(node, l);
+
+                prevEdge = node.getPreds().get(0);
+            }
+        }
+    }
+
 
     private void writeBack() {
         graph.optimizeBackEdgeCrossings();
@@ -211,7 +427,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             return node.getVertex().getPriority() < 4 && !node.getVertex().isRoot();
         }
 
-        private static void reverseEdge(LayoutEdge edge) {
+        public static void reverseEdge(LayoutEdge edge) {
             edge.reverse();
 
             LayoutNode fromNode = edge.getFrom();
