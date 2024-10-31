@@ -593,7 +593,7 @@ public class ML_DSA {
         hash.reset();
 
         //Initialize vectors used in loop
-        int[][] z = null;
+        int[][] z = new int[mlDsa_l][ML_DSA_N];
         boolean[][] h = new boolean[mlDsa_k][ML_DSA_N];
         byte[] commitmentHash = new byte[lambda/4];
         int[][] y = new int[mlDsa_l][ML_DSA_N];
@@ -601,7 +601,11 @@ public class ML_DSA {
         int[][] w = new int[mlDsa_k][ML_DSA_N];
         int[][] w0 = new int[mlDsa_k][ML_DSA_N];
         int[][] w1 = new int[mlDsa_k][ML_DSA_N];
+        int[][] w_ct0 = new int[mlDsa_k][ML_DSA_N];
         int[] c =  new int[ML_DSA_N];
+        int[][] cs1 = new int[mlDsa_l][ML_DSA_N];
+        int[][] cs2 = new int[mlDsa_k][ML_DSA_N];
+        int[][] ct0 = new int[mlDsa_k][ML_DSA_N];
 
         int kappa = 0;
         while (true) {
@@ -628,22 +632,24 @@ public class ML_DSA {
             //Get z and r0
             sampleInBall(c, commitmentHash);
             mlDsaNtt(c); //c is now in NTT domain
-            int[][] cs1 = nttConstMultiply(c, sk.s1());
-            int[][] cs2 = nttConstMultiply(c, sk.s2());
+            nttConstMultiply(cs1, c, sk.s1());
+            nttConstMultiply(cs2, c, sk.s2());
             mlDsaVectorInverseNtt(cs1);
             mlDsaVectorInverseNtt(cs2);
-            z = vectorAdd(yy, cs1);
-            int[][] r0 = vectorSub(w0, cs2, false);
+            z = vectorAdd(z, yy, cs1);
+
+            //w0 = w0 - cs2 (this is r0 in the spec)
+            vectorSub(w0, cs2, false);
 
             //Update z and h
             kappa += mlDsa_l;
-            if (vectorNormBound(z, gamma1 - beta) || vectorNormBound(r0, gamma2 - beta)) {
+            if (vectorNormBound(z, gamma1 - beta) || vectorNormBound(w0, gamma2 - beta)) {
                 continue;
             } else {
-                int[][] ct0 = nttConstMultiply(c, sk.t0());
+                nttConstMultiply(ct0, c, sk.t0());
                 mlDsaVectorInverseNtt(ct0);
                 w = vectorSub(w, cs2, false);
-                int hint_weight = makeHint(h, w, vectorAdd(w, ct0));
+                int hint_weight = makeHint(h, w, vectorAdd(w_ct0, w, ct0));
                 if (vectorNormBound(ct0, gamma2) || (hint_weight > omega)) {
                     continue;
                 }
@@ -690,9 +696,14 @@ public class ML_DSA {
         //Reconstruct signer's commitment
         int[][] aHatZ = new int[mlDsa_k][ML_DSA_N];
         matrixVectorPointwiseMultiply(aHatZ, aHat, sig.response());
+
         int[][] t1Hat = vectorConstMul(1 << ML_DSA_D, pk.t1());
         mlDsaVectorNtt(t1Hat);
-        int[][] wApprox = vectorSub(aHatZ, nttConstMultiply(cHat, t1Hat), true);
+
+        int[][] ct1 = new int[mlDsa_k][ML_DSA_N];
+        nttConstMultiply(ct1, cHat, t1Hat);
+
+        int[][] wApprox = vectorSub(aHatZ, ct1, true);
         mlDsaVectorInverseNtt(wApprox);
         int[][] w1Prime = useHint(sig.hint(), wApprox);
 
@@ -1291,10 +1302,9 @@ public class ML_DSA {
         }
     }
 
-    public static int[] mlDsaNttMultiply(int[] coeffs1, int[] coeffs2) {
-        int[] product = new int[ML_DSA_N];
-        implMlDsaNttMultJava(product, coeffs1, coeffs2);
-        return product;
+    //Todo
+    public static void mlDsaNttMultiply(int[] res, int[] coeffs1, int[] coeffs2) {
+        implMlDsaNttMultJava(res, coeffs1, coeffs2);
     }
 
     static void implMlDsaNttMultJava(int[] product, int[] coeffs1, int[] coeffs2) {
@@ -1344,12 +1354,13 @@ public class ML_DSA {
 
     private void matrixVectorPointwiseMultiply(int[][] res, int[][][] matrix, int[][] vector) {
         int resulti[] = new int[ML_DSA_N];
+        int[] product = new int[ML_DSA_N];
         for (int i = 0; i < mlDsa_k; i++) {
             for (int m = 0; m < ML_DSA_N; m++) {
                 resulti[m] = 0;
             }
             for (int j = 0; j < mlDsa_l; j++) {
-                int[] product = mlDsaNttMultiply(matrix[i][j], vector[j]);
+                mlDsaNttMultiply(product, matrix[i][j], vector[j]);
                 for (int m = 0; m < ML_DSA_N; m++) {
                     resulti[m] += product[m];
                 }
@@ -1360,12 +1371,10 @@ public class ML_DSA {
         }
     }
 
-    private int[][] nttConstMultiply(int[] a, int[][] b) {
-        int[][] res = new int[b.length][ML_DSA_N];
+    private void nttConstMultiply(int[][] res, int[] a, int[][] b) {
         for (int i = 0; i < b.length; i++) {
-            res[i] = mlDsaNttMultiply(a, b[i]);
+            mlDsaNttMultiply(res[i], a, b[i]);
         }
-        return res;
     }
 
     private int[][] vectorConstMul(int c, int[][] vec) {
@@ -1395,10 +1404,8 @@ public class ML_DSA {
         return result;
     }
 
-    int[][] vectorAdd(int[][] vec1, int[][] vec2) {
-        int dim = vec1.length;
-        int[][] result = new int[dim][ML_DSA_N];
-        for (int i = 0; i < dim; i++) {
+    int[][] vectorAdd(int[][] result, int[][] vec1, int[][] vec2) {
+        for (int i = 0; i < result.length; i++) {
             for (int j = 0; j < ML_DSA_N; j++) {
                 int tmp = vec1[i][j] + vec2[i][j];
                 result[i][j] = tmp;
