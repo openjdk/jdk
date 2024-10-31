@@ -1098,7 +1098,7 @@ void os::print_tos_pc(outputStream* st, const void* context) {
   // this at the end, and hope for the best.
   // This version of fetch_frame_from_context finds the caller pc if the actual
   // one is bad.
-  address pc = os::fetch_frame_from_context(context).pc();
+  address pc = fetch_frame_from_context(context).pc();
   print_instructions(st, pc);
   st->cr();
 }
