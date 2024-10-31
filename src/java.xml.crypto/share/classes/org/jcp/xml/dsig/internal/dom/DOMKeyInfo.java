@@ -57,7 +57,6 @@ public final class DOMKeyInfo extends DOMStructure implements KeyInfo {
      * @param ki
      * @return the content of a KeyInfo Object
      */
-    @SuppressWarnings("unchecked")
     public static List<XMLStructure> getContent(KeyInfo ki) {
         return ki.getContent();
     }

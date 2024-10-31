@@ -369,9 +369,7 @@ public final class DOMUtils {
     private static boolean paramsEqual(XPathFilter2ParameterSpec spec1,
                                        XPathFilter2ParameterSpec spec2)
     {
-        @SuppressWarnings("unchecked")
         List<XPathType> types = spec1.getXPathList();
-        @SuppressWarnings("unchecked")
         List<XPathType> otypes = spec2.getXPathList();
         int size = types.size();
         if (size != otypes.size()) {

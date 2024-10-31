@@ -171,7 +171,6 @@ public final class DOMSignatureProperty extends DOMStructure
         boolean idsEqual = id == null ? osp.getId() == null
                                        : id.equals(osp.getId());
 
-        @SuppressWarnings("unchecked")
         List<XMLStructure> ospContent = osp.getContent();
         return equalsContent(content, ospContent) &&
                 target.equals(osp.getTarget()) && idsEqual;

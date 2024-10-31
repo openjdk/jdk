@@ -323,7 +323,6 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
                 references.equals(osi.getReferences()) && idEqual;
     }
 
-    @SuppressWarnings("unchecked")
     public static List<Reference> getSignedInfoReferences(SignedInfo si) {
         return si.getReferences();
     }

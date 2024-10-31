@@ -68,6 +68,5 @@ public interface SecretKey extends
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     long serialVersionUID = -4795878709595146952L;
 }

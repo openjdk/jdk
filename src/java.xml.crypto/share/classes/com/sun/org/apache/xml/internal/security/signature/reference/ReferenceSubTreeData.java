@@ -131,7 +131,6 @@ public class ReferenceSubTreeData implements ReferenceNodeSetData {
          * @param nodeSet the set of nodes traversed so far
          * @param prevSibling the previous sibling node
          */
-        @SuppressWarnings("fallthrough")
         private void nodeSetMinusCommentNodes(Node node, List<Node> nodeSet,
                                               Node prevSibling)
         {

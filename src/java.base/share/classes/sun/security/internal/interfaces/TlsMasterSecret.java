@@ -49,7 +49,6 @@ public interface TlsMasterSecret extends SecretKey {
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = -461748105810469773L;
 

@@ -96,7 +96,6 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
         this.params = new ExcC14NParameterSpec(prefixList);
     }
 
-    @SuppressWarnings("unchecked")
     public List<String> getParameterSpecPrefixList(ExcC14NParameterSpec paramSpec) {
         return paramSpec.getPrefixList();
     }

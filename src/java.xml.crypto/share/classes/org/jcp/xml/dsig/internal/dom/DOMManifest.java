@@ -124,7 +124,6 @@ public final class DOMManifest extends DOMStructure implements Manifest {
         return id;
     }
 
-    @SuppressWarnings("unchecked")
     public static List<Reference> getManifestReferences(Manifest mf) {
         return mf.getReferences();
     }

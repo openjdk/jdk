@@ -1117,7 +1117,6 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     // create the poller thread, if not already active
-    @SuppressWarnings("removal")
     private void createPoller() {
         if (poller != null) {
             return;
@@ -1197,7 +1196,6 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     // create the cleaner thread, if not already active
-    @SuppressWarnings("removal")
     private void createCleaner() {
         cleaner = new NativeResourceCleaner();
         Thread t = InnocuousThread.newSystemThread(

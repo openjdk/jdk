@@ -107,7 +107,6 @@ final class P11TlsPrfGenerator extends KeyGeneratorSpi {
     // compatibility, it is nonsensical for an anonymous class to define a
     // serialVersionUID. Suppress warnings relative to missing serialVersionUID
     // field in the anonymous subclass of serializable SecretKey.
-    @SuppressWarnings("serial")
     private static final SecretKey NULL_KEY = new SecretKey() {
         public byte[] getEncoded() {
             return new byte[0];

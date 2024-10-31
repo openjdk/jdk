@@ -44,7 +44,6 @@ public interface PBEKey extends javax.crypto.SecretKey {
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = -1430015993304333921L;
 

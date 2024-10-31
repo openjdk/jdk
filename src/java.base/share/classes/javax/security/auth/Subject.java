@@ -443,7 +443,6 @@ public final class Subject implements java.io.Serializable {
         } else {
             try {
                 PrivilegedExceptionAction<T> pa = () -> action.call();
-                @SuppressWarnings("removal")
                 var result = doAs(subject, pa);
                 return result;
             } catch (PrivilegedActionException e) {

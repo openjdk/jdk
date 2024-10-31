@@ -86,7 +86,6 @@ final class SealedObjectForKeyProtector extends SealedObject {
                         return null;
                     });
             try {
-                @SuppressWarnings("unchecked")
                 Key t = (Key) ois.readObject();
                 return t;
             } catch (InvalidClassException ice) {

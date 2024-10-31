@@ -200,7 +200,6 @@ public final class DOMXMLObject extends DOMStructure implements XMLObject {
         parent.appendChild(objElem);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -54,7 +54,6 @@ public interface PublicKey extends AsymmetricKey {
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = 7187392471159151072L;
 }

@@ -115,7 +115,6 @@ public interface Key extends java.io.Serializable {
     * ineffectual. Do not use; no replacement.
     */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
    long serialVersionUID = 6603384152749567654L;
 

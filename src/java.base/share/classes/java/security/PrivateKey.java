@@ -68,7 +68,6 @@ public interface PrivateKey extends AsymmetricKey, javax.security.auth.Destroyab
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = 6034044314589513430L;
 }
