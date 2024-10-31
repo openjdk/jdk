@@ -468,7 +468,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
                             dummyNode.setLayer(i);
                             dummyNode.getPreds().add(previousEdge);
                             graph.addNodeToLayer(dummyNode, dummyNode.getLayer());
-                            LayoutEdge dummyEdge = new LayoutEdge(dummyNode, previousEdge.getTo(), dummyNode.getWidth() / 2, previousEdge.getRelativeToX(), null);
+                            LayoutEdge dummyEdge = new LayoutEdge(dummyNode, previousEdge.getTo(), dummyNode.getWidth() / 2, previousEdge.getRelativeToX(), singleEdge.getLink());
                             if (previousEdge.isReversed()) dummyEdge.reverse();
                             dummyNode.getSuccs().add(dummyEdge);
                             previousEdge.setRelativeToX(dummyNode.getWidth() / 2);
@@ -477,7 +477,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
                             previousEdge.setTo(dummyNode);
                             previousEdge = dummyEdge;
                         }
-                        previousEdge.setLink(singleEdge.getLink());
                     }
                 } else {
                     int lastLayer = unprocessedEdges.get(unprocessedEdges.size() - 1).getTo().getLayer();
