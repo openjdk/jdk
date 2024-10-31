@@ -73,8 +73,6 @@ public class UsageMetadataTest {
          // newEntry("jvm.ctr.info.name"),
          // newEntry("jvm.ctr.info.memory.limit"),
          // newEntry("jvm.ctr.info.active.cpus"),
-         newEntry("user.name"),
-         newEntry("user.dir"),
          newEntry("os.hostname"),
          newEntry("os.name"),
          newEntry("os.version"),
