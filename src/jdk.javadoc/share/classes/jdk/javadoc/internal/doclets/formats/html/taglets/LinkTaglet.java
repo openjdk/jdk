@@ -249,7 +249,8 @@ public class LinkTaglet extends BaseTaglet {
                 }
             }
             if (refSignature.trim().startsWith("#") &&
-                    ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
+                    ! (utils.isPublic(containing) || utils.isLinkable(containing)) &&
+                    ! (utils.isPrivate(refMem) ||utils.isPackagePrivate(refMem))) {
                 // Since the link is relative and the holder is not even being
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or
