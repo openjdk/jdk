@@ -464,6 +464,14 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
       } else if (waitingToLockMonitor != nullptr) {
         if (waitingToLockMonitor->has_owner()) {
           currentThread = Threads::owning_thread_from_monitor(t_list, waitingToLockMonitor);
+          // If currentThread is nullptr we would like to know if the owner
+          // is an unmounted vthread (no JavaThread*), because if it's not,
+          // it would mean the previous currentThread is blocked permanently
+          // and we should record this as a deadlock. Since there is currently
+          // no fast way to determine if the owner is indeed an unmounted
+          // vthread we never record this as a deadlock. Note: unless there
+          // is a bug in the VM, or a thread exits without releasing monitors
+          // acquired through JNI, nullptr should imply unmounted vthread owner.
         }
       } else {
         if (concurrent_locks) {
