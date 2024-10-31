@@ -309,7 +309,7 @@ public abstract class FileChannel
         return provider.newFileChannel(path, options, attrs);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"}) // generic array construction
+    @SuppressWarnings("rawtypes") // generic array construction
     private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute[0];
 
     /**
