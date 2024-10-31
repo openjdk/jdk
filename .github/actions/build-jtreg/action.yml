@@ -52,24 +52,8 @@ runs:
 
     - name: 'Build JTReg'
       run: |
-        # Try building JTReg several times, backing off exponentially on failure.
-        # ~500 seconds in total should be enough to capture most of the transient
-        # failures.
-        for I in `seq 0 8`; do
-          rm -rf build/images/jtreg
-          bash make/build.sh --jdk "$JAVA_HOME_17_X64" && break
-          S=$(( 2 ** $I ))
-          echo "Failure. Waiting $S seconds before retrying"
-          sleep $S
-        done
-
-        # Check if build was successful
-        if [ ! -d build/images/jtreg ]; then
-          echo "Build failed"
-          exit 1;
-        fi
-
-        # Move files to the proper locations
+        # Build JTReg and move files to the proper locations
+        bash make/build.sh --jdk "$JAVA_HOME_17_X64"
         mkdir ../installed
         mv build/images/jtreg/* ../installed
       working-directory: jtreg/src
