@@ -99,12 +99,6 @@ public class CheckCipherSuites {
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
 
         // deprecated
-        "TLS_RSA_WITH_AES_256_GCM_SHA384",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
@@ -124,9 +118,6 @@ public class CheckCipherSuites {
         "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
@@ -194,12 +185,6 @@ public class CheckCipherSuites {
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
 
         // deprecated
-        "TLS_RSA_WITH_AES_256_GCM_SHA384",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
@@ -219,9 +204,6 @@ public class CheckCipherSuites {
         "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
@@ -235,7 +217,6 @@ public class CheckCipherSuites {
     }
 
     public static void main(String[] args) throws Exception {
-        Security.setProperty("jdk.tls.disabledAlgorithms", "");
         long start = System.currentTimeMillis();
 
         if (args.length != 1) {
