@@ -2327,7 +2327,7 @@ public abstract sealed class $Type$Buffer
 
     @ForceInline
     @Override
-    int scaleFactor() {
+    int scaleShifts() {
         return Integer.numberOfTrailingZeros($Fulltype$.BYTES);
     }
 

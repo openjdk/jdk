@@ -534,7 +534,7 @@ class Direct$Type$Buffer$RW$$BO$
 #if[byte]
     @ForceInline
     @Override
-    int scaleFactor() {
+    int scaleShifts() {
         return 0;
     }
 

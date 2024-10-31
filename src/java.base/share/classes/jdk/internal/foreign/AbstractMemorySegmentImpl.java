@@ -514,9 +514,9 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @ForceInline
     public static AbstractMemorySegmentImpl ofBuffer(Buffer b) {
-        // Implicit null check via NIO_ACCESS.scaleFactor(b)
-        final int scaleFactor = NIO_ACCESS.scaleFactor(b);
-        return ofBuffer(b, offset(b, scaleFactor), length(b, scaleFactor));
+        // Implicit null check via NIO_ACCESS.scaleShifts(b)
+        final int scaleShifts = NIO_ACCESS.scaleShifts(b);
+        return ofBuffer(b, offset(b, scaleShifts), length(b, scaleShifts));
     }
 
     @ForceInline
@@ -528,14 +528,14 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    private static long offset(Buffer b, int scaleFactor) {
+    private static long offset(Buffer b, int scaleShifts) {
         final long bbAddress = NIO_ACCESS.getBufferAddress(b);
-        return bbAddress + (((long) b.position()) << scaleFactor);
+        return bbAddress + (((long) b.position()) << scaleShifts);
     }
 
     @ForceInline
-    private static long length(Buffer b, int scaleFactor) {
-        return ((long) b.limit() - b.position()) << scaleFactor;
+    private static long length(Buffer b, int scaleShifts) {
+        return ((long) b.limit() - b.position()) << scaleShifts;
     }
 
     @ForceInline

@@ -32,7 +32,6 @@ import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.VM.BufferPool;
 
 import java.lang.foreign.MemorySegment;
-import java.io.FileDescriptor;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
@@ -130,7 +129,7 @@ public interface JavaNioAccess {
      */
     int pageSize();
 
-    int scaleFactor(Buffer buffer);
+    int scaleShifts(Buffer buffer);
 
     AbstractMemorySegmentImpl arrayBackedSegment(Buffer buffer,
                                                  Object base,

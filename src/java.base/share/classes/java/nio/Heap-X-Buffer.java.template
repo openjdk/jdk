@@ -742,7 +742,7 @@ class Heap$Type$Buffer$RW$
 #if[byte]
     @ForceInline
     @Override
-    int scaleFactor() {
+    int scaleShifts() {
         return 0;
     }
 

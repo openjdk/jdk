@@ -787,7 +787,7 @@ public abstract sealed class Buffer
      *   IntBuffer, FloatBuffer:   2
      *   LongBuffer, DoubleBuffer: 3
      */
-    abstract int scaleFactor();
+    abstract int scaleShifts();
 
     abstract AbstractMemorySegmentImpl arrayBackedSegment(Object base,
                                                           long offset,
@@ -925,8 +925,8 @@ public abstract sealed class Buffer
 
                 @ForceInline
                 @Override
-                public int scaleFactor(Buffer buffer) {
-                    return buffer.scaleFactor();
+                public int scaleShifts(Buffer buffer) {
+                    return buffer.scaleShifts();
                 }
 
                 @ForceInline
