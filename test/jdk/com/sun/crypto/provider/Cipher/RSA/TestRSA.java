@@ -168,7 +168,8 @@ public class TestRSA {
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
 
-        p = Security.getProvider("SunJCE");
+        p = Security.getProvider(
+                System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + p.getName() + "...");
 
         KeyFactory kf;

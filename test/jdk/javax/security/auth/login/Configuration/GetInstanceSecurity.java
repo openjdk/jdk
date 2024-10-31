@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class GetInstanceSecurity {
 
         try {
             Configuration c = Configuration.getInstance
-                        (JAVA_CONFIG, null, "SUN");
+                        (JAVA_CONFIG, null, System.getProperty("test.provider.name","SUN"));
             throw new RuntimeException("did not catch security exception");
         } catch (SecurityException se) {
             // good
@@ -59,7 +59,8 @@ public class GetInstanceSecurity {
 
         try {
             Configuration c = Configuration.getInstance
-                        (JAVA_CONFIG, null, Security.getProvider("SUN"));
+                        (JAVA_CONFIG, null, Security.getProvider(
+                                System.getProperty("test.provider.name","SUN")));
             throw new RuntimeException("did not catch security exception");
         } catch (SecurityException se) {
             // good
@@ -71,7 +72,8 @@ public class GetInstanceSecurity {
                                 "GetInstanceSecurity.grantedPolicy");
         URI uri = file.toURI();
         URIParameter param = new URIParameter(uri);
-        Policy p = Policy.getInstance("JavaPolicy", param, "SUN");
+        Policy p = Policy.getInstance("JavaPolicy", param,
+                System.getProperty("test.provider.name","SUN"));
         Policy.setPolicy(p);
 
         // retry operations
@@ -88,7 +90,7 @@ public class GetInstanceSecurity {
 
         try {
             Configuration c = Configuration.getInstance
-                        (JAVA_CONFIG, uriParam, "SUN");
+                        (JAVA_CONFIG, uriParam, System.getProperty("test.provider.name","SUN"));
             // good
         } catch (SecurityException se) {
             throw new RuntimeException("unexpected SecurityException");
@@ -96,7 +98,8 @@ public class GetInstanceSecurity {
 
         try {
             Configuration c = Configuration.getInstance
-                        (JAVA_CONFIG, uriParam, Security.getProvider("SUN"));
+                        (JAVA_CONFIG, uriParam, Security.getProvider(
+                                System.getProperty("test.provider.name","SUN")));
             // good
         } catch (SecurityException se) {
             throw new RuntimeException("unexpected SecurityException");

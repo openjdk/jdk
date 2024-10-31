@@ -509,6 +509,10 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       print_prop("idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]);
     }
 
+    if (node->is_CountedLoop()) {
+      print_loop_kind(node->as_CountedLoop());
+    }
+
     print_field(node);
 
     buffer[0] = 0;
@@ -636,6 +640,20 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
     tail(PROPERTIES_ELEMENT);
     tail(NODE_ELEMENT);
+  }
+}
+
+void IdealGraphPrinter::print_loop_kind(const CountedLoopNode* counted_loop) {
+  const char* loop_kind = nullptr;
+  if (counted_loop->is_pre_loop()) {
+    loop_kind = "pre";
+  } else if (counted_loop->is_main_loop()) {
+    loop_kind = "main";
+  } else if (counted_loop->is_post_loop()) {
+    loop_kind = "post";
+  }
+  if (loop_kind != nullptr) {
+    print_prop("loop_kind", loop_kind);
   }
 }
 
