@@ -76,7 +76,7 @@ class JfrThreadLocal {
   JfrStackFrame* install_stackframes() const;
   void release(Thread* t);
   static void release(JfrThreadLocal* tl, Thread* t);
-  static void initialize_primordial_thread(JavaThread* jt);
+  static void initialize_main_thread(JavaThread* jt);
 
   static void set(bool* excluded_field, bool state);
   static traceid assign_thread_id(const Thread* t, JfrThreadLocal* tl);

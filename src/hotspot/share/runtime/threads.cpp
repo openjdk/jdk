@@ -167,7 +167,7 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                           CHECK);
 
   JFR_ONLY(assert(JFR_JVM_THREAD_ID(thread) == static_cast<traceid>(java_lang_Thread::thread_id(thread_oop())),
-             "primordial tid mismatch");)
+             "initial tid mismatch");)
 
   // Set thread status to running since main thread has
   // been started and running.
@@ -543,7 +543,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return JNI_ENOMEM;
   }
 
-  JFR_ONLY(Jfr::initialize_primordial_thread(main_thread);)
+  JFR_ONLY(Jfr::initialize_main_thread(main_thread);)
 
   // Enable guard page *after* os::create_main_thread(), otherwise it would
   // crash Linux VM, see notes in os_linux.cpp.

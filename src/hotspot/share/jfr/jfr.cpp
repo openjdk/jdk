@@ -100,8 +100,8 @@ void Jfr::on_set_current_thread(JavaThread* jt, oop thread) {
   JfrThreadLocal::on_set_current_thread(jt, thread);
 }
 
-void Jfr::initialize_primordial_thread(JavaThread* jt) {
-  JfrThreadLocal::initialize_primordial_thread(jt);
+void Jfr::initialize_main_thread(JavaThread* jt) {
+  JfrThreadLocal::initialize_main_thread(jt);
 }
 
 void Jfr::on_resolution(const CallInfo& info, TRAPS) {
