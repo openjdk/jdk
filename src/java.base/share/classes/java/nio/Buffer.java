@@ -30,7 +30,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MappedMemoryUtilsProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.HeapMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
@@ -38,11 +37,9 @@ import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.util.List;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -850,6 +847,7 @@ public abstract sealed class Buffer
                     return new HeapByteBuffer(hb, -1, 0, capacity, capacity, offset, segment);
                 }
 
+                @ForceInline
                 @Override
                 public Object getBufferBase(Buffer buffer) {
                     return buffer.base();
@@ -925,11 +923,13 @@ public abstract sealed class Buffer
                     return Bits.pageSize();
                 }
 
+                @ForceInline
                 @Override
                 public int scaleFactor(Buffer buffer) {
                     return buffer.scaleFactor();
                 }
 
+                @ForceInline
                 @Override
                 public AbstractMemorySegmentImpl arrayBackedSegment(Buffer buffer,
                                                                     Object base,

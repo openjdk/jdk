@@ -542,7 +542,8 @@ class Direct$Type$Buffer$RW$$BO$
                                                  long length,
                                                  boolean readOnly,
                                                  MemorySessionImpl bufferScope) {
-        return SegmentFactories.arrayOf$Type$Segment(base, offset, length, readOnly, bufferScope);
+        // Direct buffers are not backed by an array.
+        throw new UnsupportedOperationException();
     }
 #end[byte]
 
