@@ -269,7 +269,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
         // fp always points to the address above the pushed return pc. We need correct address.
         ? frame_sp + fsize - frame::sender_sp_offset
         // we need to re-read fp because it may be an oop and we might have fixed the frame.
-        : *(intptr_t**)(hf.sp() - 2);
+        : *(intptr_t**)(hf.sp() - frame::sender_sp_offset);
     }
     // TODO PERF : this computes deopt state; is it necessary?
     return frame(frame_sp, frame_sp, fp, hf.pc(), hf.cb(), hf.oop_map(), false);
