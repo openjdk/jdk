@@ -240,6 +240,7 @@ bool CfgFile::asBoolean(Properties::const_reference property) {
         return true;
     }
 
+    // Parse integer.
     tistringstream iss(str);
     int intValue = 0;
     iss >> intValue;
