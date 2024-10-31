@@ -302,7 +302,6 @@ public class LineReaderImpl implements LineReader, Flushable {
         this(terminal, appName, null);
     }
 
-    @SuppressWarnings("this-escape")
     public LineReaderImpl(Terminal terminal, String appName, Map<String, Object> variables) {
         Objects.requireNonNull(terminal, "terminal can not be null");
         this.terminal = terminal;
@@ -1223,7 +1222,6 @@ public class LineReaderImpl implements LineReader, Flushable {
         }
     }
 
-    @SuppressWarnings("unchecked")
     protected Widget getWidget(Object binding) {
         Widget w;
         if (binding instanceof Widget) {

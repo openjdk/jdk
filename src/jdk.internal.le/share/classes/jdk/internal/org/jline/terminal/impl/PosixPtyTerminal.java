@@ -55,7 +55,6 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
         this(name, type, pty, in, out, encoding, signalHandler, false);
     }
 
-    @SuppressWarnings("this-escape")
     public PosixPtyTerminal(
             String name,
             String type,
