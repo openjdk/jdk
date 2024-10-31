@@ -28,31 +28,48 @@ package java.lang.reflect;
 /**
  * {@code AnnotatedParameterizedType} represents the potentially annotated use
  * of a parameterized type, whose type arguments may themselves represent
- * annotated uses of types.
+ * annotated uses of type arguments.
+ * <p>
+ * For example, an annotated use {@code Outer<@TC Long>.@TA Inner<@TB String>}
+ * has an annotation {@code @TA} and represents the parameterized type {@code
+ * Outer<Long>.Inner<String>}, a class.  It has exactly one type argument, which
+ * is the annotated use {@code @TB String}, with an annotation {@code @TB},
+ * representing the {@code String} class.  The use of its immediately enclosing
+ * class is {@code Outer<@TC Long>}, with no annotation, representing the
+ * parameterized type {@code Outer<Long>}.
+ * <p>
+ * Two {@code AnnotatedParameterizedType} objects should be compared using the
+ * {@link Object#equals equals} method.
  *
+ * @see ParameterizedType
  * @jls 4.5 Parameterized Types
  * @since 1.8
  */
 public interface AnnotatedParameterizedType extends AnnotatedType {
 
     /**
-     * {@return the potentially annotated actual type arguments of this
-     * parameterized type}
+     * {@return the potentially annotated use, as in the source code, of type
+     * arguments of the parameterized type}
      * <p>
-     * This method does not return the type arguments of the {@linkplain
-     * #getAnnotatedOwnerType() enclosing classes} of this type, if this is an
-     * {@linkplain ParameterizedType##inner-member-class inner member class}.
-     * For example, if this type is {@code @TA O<T>.I<S>}, this method
-     * returns {@code [S]}.  In particular, if this inner member class is
-     * non-generic but an enclosing class is, this method returns an empty
-     * array.
+     * This method does not return the potentially annotated use of type
+     * arguments of the {@linkplain #getAnnotatedOwnerType() enclosing classes}
+     * of the parameterized type, if the parameterized type is an {@linkplain
+     * ParameterizedType##inner-member-class inner member class}.  For example,
+     * if this use is {@code @TA O<T>.I<S>}, this method returns an array
+     * containing exactly the use of {@code S}.  In particular, if this inner
+     * member class is non-generic but an enclosing class of it is, this method
+     * returns an empty array.
      *
      * @see ParameterizedType#getActualTypeArguments()
      */
     AnnotatedType[] getAnnotatedActualTypeArguments();
 
     /**
-     * {@inheritDoc}
+     * {@return the potentially annotated use of the immediately enclosing class
+     * of the parameterized type, or {@code null} if and only if the
+     * parameterized type is not an inner member class}  For example, if this
+     * use is {@code Outer<@TC Long>.@TA nner<@TB String>}, this method returns
+     * a representation of {@code Outer<@TC Long>}.
      *
      * @throws TypeNotPresentException {@inheritDoc}
      * @throws MalformedParameterizedTypeException {@inheritDoc}
@@ -63,8 +80,8 @@ public interface AnnotatedParameterizedType extends AnnotatedType {
     AnnotatedType getAnnotatedOwnerType();
 
     /**
-     * {@inheritDoc}  The underlying type of an {@code
-     * AnnotatedParameterizedType} is a {@link ParameterizedType}.
+     * {@return the parameterized type that this potentially annotated use
+     * represents}  Returns a {@link ParameterizedType}.
      */
     @Override
     Type getType();

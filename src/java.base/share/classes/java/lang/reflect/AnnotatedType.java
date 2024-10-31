@@ -28,37 +28,47 @@ package java.lang.reflect;
 import java.lang.annotation.Annotation;
 
 /**
- * {@code AnnotatedType} represents the potentially annotated use of a type in
- * the program currently running in this VM. The use may be of any type in the
- * Java programming language, including an array type, a parameterized type, a
- * type variable, or a wildcard type.
+ * {@code AnnotatedType} represents the potentially annotated (JLS {@jls 9.7.4})
+ * use of a type or type argument in the current runtime. See {@link Type} for
+ * the complete list of types and type arguments.
+ * <p>
+ * Here is a mapping from types and type arguments of the use, with examples,
+ * to the modeling interfaces. "{@code AnnotatedType} alone" means the modeling
+ * class does not implement any of the subinterfaces of {@code AnnotatedType}.
+ * <ul>
+ * <li>Primitive types (such as {@code @TA int}):
+ *     {@code AnnotatedType} alone
+ * <li>Reference types: <ul>
+ *     <li>Class types and interface types:<ul>
+ *         <li>Parameterized types (such as {@code @TA List<@TB ? extends @TC
+ *             String>}): {@link AnnotatedParameterizedType}
+ *         <li>Non-generic classes and interfaces (such as {@code @TC String})
+ *             and raw types (such as {@code @TA List}):
+ *             {@code AnnotatedType} alone
+ *     </ul>
+ *     <li>Type variables (such as {@code @TA T}):
+ *         {@link AnnotatedTypeVariable}
+ *     <li>Array types (such as {@code @TB int @TA []}):
+ *         {@link AnnotatedArrayType}
+ * </ul>
+ * <li>Wildcard type arguments (such as {@code @TB ? extends @TC String}):
+ *     {@link AnnotatedWildcardType}
+ * </ul>
+ * <p>
+ * For example, an annotated use {@code @TB Outer.@TA Inner}, represented by
+ * {@code AnnotatedType} alone, has an annotation {@code @TA} and represents the
+ * non-generic {@code Outer.Inner} class. The use of its immediately enclosing
+ * class is {@code @TB Outer}, with an annotation {@code @TB}, representing the
+ * non-generic {@code Outer} class.
  * <p>
  * Note that any annotations returned by methods on this interface are
  * <em>type annotations</em> (JLS {@jls 9.7.4}) as the entity being
  * potentially annotated is a type.
+ * <p>
+ * Two {@code AnnotatedType} objects should be compared using the {@link
+ * Object#equals equals} method.
  *
- * <h2 id="hierarchy">Interface Hierarchy of {@code AnnotatedType}</h2>
- * Annotated use of types in the Java programming language is modeled with these
- * subinterfaces, and {@link #getType() getType()} can identify their underlying
- * {@linkplain Type##hierarchy types}:
- * <ul>
- * <li>No particular subinterface models primitive types (JLS {@jls 4.2}) and
- *     non-generic (JLS {@jls 4.5}) and raw types (JLS {@jls 4.8}) of classes
- *     and interfaces (JLS {@jls 4.3}).  Their underlying type is {@link Class}.
- * <li>{@link AnnotatedArrayType} models array types (JLS {@jls 10.1}). Their
- *     underlying type is {@link Class} or {@link GenericArrayType}.
- * <li>{@link AnnotatedParameterizedType} models parameterized types (JLS {@jls
- *     4.4}), including non-generic {@linkplain #getAnnotatedOwnerType() inner
- *     member classes} of generic classes.  Their underlying type is {@link
- *     ParameterizedType}.
- * <li>{@link AnnotatedTypeVariable} models type variable (JLS {@jls 4.4})
- *     usages.  Their underlying type is {@link TypeVariable}.
- * <li>{@link AnnotatedWildcardType} models wildcard {@linkplain
- *     AnnotatedParameterizedType#getAnnotatedActualTypeArguments() type
- *     arguments} (JLS {@jls 4.5.1}).  Their underlying type is {@link
- *     AnnotatedWildcardType}.
- * </ul>
- *
+ * @see Type
  * @jls 4.1 The Kinds of Types and Values
  * @jls 4.2 Primitive Types and Values
  * @jls 4.3 Reference Types and Values
@@ -73,9 +83,9 @@ public interface AnnotatedType extends AnnotatedElement {
 
     /**
      * {@return the potentially annotated use of the immediately enclosing class
-     * of this type, or {@code null} if and only if this type is not an inner
-     * member class}  For example, if this type is {@code @TA O<T>.I<S>}, this
-     * method returns a representation of {@code @TA O<T>}.
+     * of the type, or {@code null} if and only if the type is not an inner
+     * member class}  For example, if this use is {@code @TB Outer.@TA Inner},
+     * this method returns a representation of {@code @TB Outer}.
      *
      * @implSpec
      * This default implementation returns {@code null} and performs no other
@@ -94,12 +104,13 @@ public interface AnnotatedType extends AnnotatedElement {
     }
 
     /**
-     * {@return the underlying type that this annotated type represents}
-     *
-     * @see ##hierarchy Interface Hierarchy of {@code AnnotatedType}
-     * @see Type##hierarchy Interface Hierarchy of {@code Type}
+     * {@return the type that this potentially annotated use represents}
+     * <p>
+     * If this object does not implement any of the subinterfaces of {@code
+     * AnnotatedType}, this use represents a primitive type, a non-generic class
+     * or interface, or a raw type, and this method returns a {@link Class}.
      */
-    public Type getType();
+    Type getType();
 
     /**
      * {@inheritDoc}

@@ -30,6 +30,16 @@ package java.lang.reflect;
  * {@code AnnotatedArrayType} represents the potentially annotated use of an
  * array type, whose component type may itself represent the annotated use of a
  * type.
+ * <p>
+ * For example, an annotated use {@code @TC int @TA [] @TB []} has an annotation
+ * {@code @TA} and represents the array type {@code int[][]}.  Its component
+ * type is the use {@code @TC int @TB []}, with an annotation {@code @TB},
+ * representing the array type {@code int[]}.  Its element type is the use
+ * {@code @TC int}, with an annotation {@code @TC}, representing the primitive
+ * type {@code int}.
+ * <p>
+ * Two {@code AnnotatedArrayType} objects should be compared using the {@link
+ * Object#equals equals} method.
  *
  * @jls 10.1 Array Types
  * @since 1.8
@@ -37,17 +47,17 @@ package java.lang.reflect;
 public interface AnnotatedArrayType extends AnnotatedType {
 
     /**
-     * {@return the potentially annotated component type of this array type}
+     * {@return the potentially annotated use of the component type of the array
+     * type}
      *
+     * @see Class#componentType() Class::componentType
      * @see GenericArrayType#getGenericComponentType()
      *      GenericArrayType::getGenericComponentType
-     * @see Class#componentType() Class::componentType
      */
     AnnotatedType getAnnotatedGenericComponentType();
 
     /**
-     * {@return {@code null}}  An {@code AnnotatedArrayType} is not an inner
-     * member class.
+     * {@return {@code null}}  An array type is not an inner member class.
      *
      * @since 9
      */
@@ -55,8 +65,9 @@ public interface AnnotatedArrayType extends AnnotatedType {
     AnnotatedType getAnnotatedOwnerType();
 
     /**
-     * {@inheritDoc}  The underlying type of an {@code AnnotatedArrayType} is
-     * a {@link Class} representing an array type or a {@link GenericArrayType}.
+     * {@return the array type that this potentially annotated use represents}
+     * Returns a {@link Class} representing an array type or a {@link
+     * GenericArrayType}.
      */
     @Override
     Type getType();

@@ -27,27 +27,40 @@ package java.lang.reflect;
 
 /**
  * {@code AnnotatedTypeVariable} represents the potentially annotated use of a
- * type variable, whose declaration may have bounds which themselves represent
- * annotated uses of types.
+ * type variable.
+ * <p>
+ * For example, an annotated use {@code @TA T} has an annotation {@code @TA}
+ * and represents the type variable {@code T}.
+ * <p>
+ * Two {@code AnnotatedTypeVariable} objects should be compared using the {@link
+ * Object#equals equals} method.
  *
+ * @see TypeVariable
  * @jls 4.4 Type Variables
  * @since 1.8
  */
 public interface AnnotatedTypeVariable extends AnnotatedType {
 
     /**
-     * Returns the potentially annotated bounds of this type variable.
-     * If no bound is explicitly declared, the bound is unannotated
-     * {@code Object}.
+     * {@return the potentially annotated use of upper bounds of the type
+     * variable}
+     * <p>
+     * Given an {@code AnnotatedTypeVariable tv}, the call {@code
+     * tv.getAnnotatedBounds()} is equivalent to:
+     * {@snippet lang=java :
+     * // @link region substring="getType" target="#getType()"
+     * // @link substring="getAnnotatedBounds" target="TypeVariable#getAnnotatedBounds()" :
+     * ((TypeVariable<?>) tv.getType()).getAnnotatedBounds()
+     * // @end
+     * }
      *
-     * @return the potentially annotated bounds of this type variable
+     * @see TypeVariable#getAnnotatedBounds()
      * @see TypeVariable#getBounds()
      */
     AnnotatedType[] getAnnotatedBounds();
 
     /**
-     * {@return {@code null}}  An {@code AnnotatedTypeVariable} is not an inner
-     * member class.
+     * {@return {@code null}}  A type variable is not an inner member class.
      *
      * @since 9
      */
@@ -55,8 +68,8 @@ public interface AnnotatedTypeVariable extends AnnotatedType {
     AnnotatedType getAnnotatedOwnerType();
 
     /**
-     * {@inheritDoc}  The underlying type of an {@code AnnotatedTypeVariable} is
-     * a {@link TypeVariable}.
+     * {@return the type variable that this potentially annotated use
+     * represents}  Returns a {@link TypeVariable}.
      */
     @Override
     Type getType();

@@ -28,45 +28,55 @@ package java.lang.reflect;
 /**
  * {@code AnnotatedWildcardType} represents the potentially annotated use of a
  * wildcard type argument, whose upper or lower bounds may themselves represent
- * annotated uses of types.
+ * annotated uses of types.  Note that the use of a wildcard type argument is
+ * not the use of a type, and thus will only be returned by APIs where uses of
+ * type arguments may appear.
+ * <p>
+ * For example, an annotated use {@code @TA ? extends @TB Number} has an
+ * annotation {@code @TA} and represents the wildcard type argument {@code ?
+ * extends Number}.  Its lower bound is the annotated use {@code @TB Number}
+ * with an annotation {@code @TB}, representing the {@code Number} class.  It
+ * has no upper bound.
+ * <p>
+ * Two {@code AnnotatedWildcardType} objects should be compared using the {@link
+ * Object#equals equals} method.
  *
+ * @see WildcardType
  * @jls 4.5.1 Type Arguments of Parameterized Types
  * @since 1.8
  */
 public interface AnnotatedWildcardType extends AnnotatedType {
 
     /**
-     * Returns the potentially annotated lower bounds of this wildcard type.
-     * If no lower bound is explicitly declared, the lower bound is the
-     * type of null. In this case, a zero length array is returned.
+     * {@return the potentially annotated use of lower bounds of the wildcard
+     * type argument}  If no lower bound is explicitly declared, the lower bound
+     * is the null type (JLS {@jls 4.1}) and the use is unannotated. In this
+     * case, a zero length array is returned.
      *
-     * @apiNote While to date a wildcard may have at most one lower
-     * bound, callers of this method should be written to accommodate
-     * multiple bounds.
+     * @apiNote
+     * While to date a wildcard type argument may have at most one upper bound,
+     * callers of this method should be written to accommodate multiple bounds.
      *
-     * @return the potentially annotated lower bounds of this wildcard type or
-     * an empty array if no lower bound is explicitly declared.
      * @see WildcardType#getLowerBounds()
      */
     AnnotatedType[] getAnnotatedLowerBounds();
 
     /**
-     * Returns the potentially annotated upper bounds of this wildcard type.
-     * If no upper bound is explicitly declared, the upper bound is
-     * unannotated {@code Object}
+     * {@return the potentially annotated use of upper bounds of the wildcard
+     * type argument}  If no upper bound is explicitly declared, the upper bound
+     * is the {@code Object} class and the use is unannotated.
      *
-     * @apiNote While to date a wildcard may have at most one upper
-     * bound, callers of this method should be written to accommodate
-     * multiple bounds.
+     * @apiNote
+     * While to date a wildcard type argument may have at most one upper bound,
+     * callers of this method should be written to accommodate multiple bounds.
      *
-     * @return the potentially annotated upper bounds of this wildcard type
      * @see WildcardType#getUpperBounds()
      */
     AnnotatedType[] getAnnotatedUpperBounds();
 
     /**
-     * {@return {@code null}}  An {@code AnnotatedTypeVariable} is not an inner
-     * member class.
+     * {@return {@code null}}  A wildcard type argument is not an inner member
+     * class.
      *
      * @since 9
      */
@@ -74,8 +84,8 @@ public interface AnnotatedWildcardType extends AnnotatedType {
     AnnotatedType getAnnotatedOwnerType();
 
     /**
-     * {@inheritDoc}  The underlying type of an {@code AnnotatedWildcardType} is
-     * a {@link WildcardType}.
+     * {@return the wildcard type argument that this potentially annotated use
+     * represents}  Returns a {@link WildcardType}.
      */
     @Override
     Type getType();

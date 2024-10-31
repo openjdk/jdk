@@ -26,29 +26,32 @@
 package java.lang.reflect;
 
 /**
- * {@code GenericArrayType} represents an array type whose component
- * type is either a parameterized type or a type variable.
+ * {@code GenericArrayType} represents an array type whose element
+ * type is either a parameterized type, such as {@code Comparable<?>} for the
+ * array type {@code Comparable<?>[]}, or a type variable, such as {@code T}
+ * for the array type {@code T[][]}.
+ * <p>
+ * Two {@code GenericArrayType} objects should be compared using the {@link
+ * Object#equals equals} method.
  *
  * @jls 10.1 Array Types
  * @since 1.5
  */
 public interface GenericArrayType extends Type {
     /**
-     * Returns a {@code Type} object representing the component type
-     * of this array. This method creates the component type of the
-     * array.  See the declaration of {@link
-     * java.lang.reflect.ParameterizedType ParameterizedType} for the
-     * semantics of the creation process for parameterized types and
-     * see {@link java.lang.reflect.TypeVariable TypeVariable} for the
-     * creation process for type variables.
+     * {@return the component type of this array type}  The component type must
+     * be one of {@link GenericArrayType}, {@link ParameterizedType}, or {@link
+     * TypeVariable}.
+     * <p>
+     * This method creates the component type of the array.  See {@link
+     * ParameterizedType} for the semantics of the creation process for
+     * parameterized types and see {@link TypeVariable} for the creation process
+     * for type variables.
      *
-     * @return  a {@code Type} object representing the component type
-     *     of this array
-     * @throws TypeNotPresentException if the underlying array type's component
-     *     type refers to a non-existent class or interface declaration
-     * @throws MalformedParameterizedTypeException if  the
-     *     underlying array type's component type refers to a
-     *     parameterized type that cannot be instantiated for any reason
+     * @throws TypeNotPresentException if the component type refers to a
+     *     non-existent class or interface declaration
+     * @throws MalformedParameterizedTypeException if the component type refers
+     *     to a parameterized type that cannot be instantiated for any reason
      */
     Type getGenericComponentType();
 }
