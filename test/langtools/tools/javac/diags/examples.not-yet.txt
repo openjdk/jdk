@@ -16,13 +16,13 @@ compiler.err.limit.code                                 # Code
 compiler.err.limit.code.too.large.for.try.stmt          # Gen
 compiler.err.limit.dimensions                           # Gen
 compiler.err.limit.locals                               # Code
+compiler.err.annotation.array.too.large                 # Code
 compiler.err.limit.parameters                           # Gen
 compiler.err.limit.pool                                 # Gen,JavaCompiler
 compiler.err.limit.pool.in.class                        # UNUSED?
 compiler.err.limit.stack                                # Code
 compiler.err.limit.string                               # Gen
 compiler.err.limit.string.overflow                      # JavaCompiler
-compiler.warn.proc.annotation.array.too.large           # Code
 compiler.err.module.non.zero.opens                      # bad class file
 compiler.err.name.reserved.for.internal.use             # UNUSED
 compiler.err.no.annotation.member
