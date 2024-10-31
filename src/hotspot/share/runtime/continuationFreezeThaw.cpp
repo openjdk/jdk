@@ -886,6 +886,8 @@ NOINLINE freeze_result FreezeBase::recurse_freeze(frame& f, frame& caller, int c
     assert(f.is_native_frame() || f.is_runtime_frame(), "");
     return f.is_native_frame() ? recurse_freeze_native_frame(f, caller) : recurse_freeze_stub_frame(f, caller);
   } else {
+    // frame can't be freezed. Most likely the call_stub or upcall_stub
+    // which indicates there are further natives frames up the stack.
     return freeze_pinned_native;
   }
 }

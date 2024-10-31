@@ -124,7 +124,7 @@ class JvmtiUnmountBeginMark : public StackObj {
   bool failed() { return _failed; }
 };
 
-static bool is_safe_vthread_to_preempt_for_jvmti(JavaThread* target, oop vthread) {
+static bool is_vthread_safe_to_preempt_for_jvmti(JavaThread* target, oop vthread) {
   if (target->is_in_any_VTMS_transition()) {
     // We caught target at the end of a mount transition (is_in_VTMS_transition()) or at the
     // beginning or end of a temporary switch to carrier thread (is_in_tmp_VTMS_transition()).
@@ -134,12 +134,12 @@ static bool is_safe_vthread_to_preempt_for_jvmti(JavaThread* target, oop vthread
 }
 #endif // INCLUDE_JVMTI
 
-static bool is_safe_vthread_to_preempt(JavaThread* target, oop vthread) {
+static bool is_vthread_safe_to_preempt(JavaThread* target, oop vthread) {
   if (!java_lang_VirtualThread::is_instance(vthread) ||                               // inside tmp transition
       java_lang_VirtualThread::state(vthread) != java_lang_VirtualThread::RUNNING) {  // inside transition
     return false;
   }
-  return JVMTI_ONLY(is_safe_vthread_to_preempt_for_jvmti(target, vthread)) NOT_JVMTI(true);
+  return JVMTI_ONLY(is_vthread_safe_to_preempt_for_jvmti(target, vthread)) NOT_JVMTI(true);
 }
 
 typedef int (*FreezeContFnT)(JavaThread*, intptr_t*);
@@ -161,7 +161,7 @@ int Continuation::try_preempt(JavaThread* target, oop continuation) {
     return freeze_unsupported;
   }
 
-  if (!is_safe_vthread_to_preempt(target, target->vthread())) {
+  if (!is_vthread_safe_to_preempt(target, target->vthread())) {
     return freeze_pinned_native;
   }
 
