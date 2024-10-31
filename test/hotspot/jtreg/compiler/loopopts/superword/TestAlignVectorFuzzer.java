@@ -1090,11 +1090,11 @@ public class TestAlignVectorFuzzer {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
-        int scale  = scale_con();
-        int offset = offset1_con_or_var();
+        long scale  = scale_con();
+        long offset = offset1_con_or_var();
 
         for (int i = init; i < limit; i += stride) {
-            int adr = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset + i * scale;
+            long adr = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset + i * scale;
             int v = UNSAFE.getIntUnaligned(a, adr);
             UNSAFE.putIntUnaligned(a, adr, v + 1);
         }
@@ -1105,19 +1105,19 @@ public class TestAlignVectorFuzzer {
         int init   = init_con_or_var();
         int limit  = limit_con_or_var();
         int stride = stride_con();
-        int scale  = scale_con();
-        int offset1 = offset1_con_or_var();
-        int offset2 = offset2_con_or_var();
-        int offset3 = offset3_con_or_var();
+        long scale  = scale_con();
+        long offset1 = offset1_con_or_var();
+        long offset2 = offset2_con_or_var();
+        long offset3 = offset3_con_or_var();
 
         int h1 = hand_unrolling1_con();
         int h2 = hand_unrolling2_con();
         int h3 = hand_unrolling3_con();
 
         for (int i = init; i < limit; i += stride) {
-            int adr1 = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset1 + i * scale;
-            int adr2 = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset2 + i * scale;
-            int adr3 = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset3 + i * scale;
+            long adr1 = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset1 + i * scale;
+            long adr2 = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset2 + i * scale;
+            long adr3 = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset3 + i * scale;
 
             if (h1 >=  1) { UNSAFE.putIntUnaligned(a, adr1 +  0*4, UNSAFE.getIntUnaligned(a, adr1 +  0*4) + 1); }
             if (h1 >=  2) { UNSAFE.putIntUnaligned(a, adr1 +  1*4, UNSAFE.getIntUnaligned(a, adr1 +  1*4) + 1); }
