@@ -70,7 +70,6 @@ final class IndirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl 
      */
     private Object rawAudit;
 
-    @SuppressWarnings("serial")
     @VMEntryPoint
     private IndirectHotSpotObjectConstantImpl(long objectHandle, boolean compressed, boolean skipRegister) {
         super(compressed);
