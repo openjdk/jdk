@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,39 +63,9 @@ import java.lang.System.Logger.Level;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class RelationTypeSupport implements RelationType {
 
-    // Serialization compatibility stuff:
-    // Two serial forms are supported in this class. The selected form depends
-    // on system property "jmx.serial.form":
-    //  - "1.0" for JMX 1.0
-    //  - any other value for JMX 1.1 and higher
-    //
-    // Serial version for old serial form
-    private static final long oldSerialVersionUID = -8179019472410837190L;
-    //
-    // Serial version for new serial form
-    private static final long newSerialVersionUID = 4611072955724144607L;
-    //
-    // Serializable fields in old serial form
-    private static final ObjectStreamField[] oldSerialPersistentFields =
-    {
-      new ObjectStreamField("myTypeName", String.class),
-      new ObjectStreamField("myRoleName2InfoMap", HashMap.class),
-      new ObjectStreamField("myIsInRelServFlg", boolean.class)
-    };
-    //
-    // Serializable fields in new serial form
-    private static final ObjectStreamField[] newSerialPersistentFields =
-    {
-      new ObjectStreamField("typeName", String.class),
-      new ObjectStreamField("roleName2InfoMap", Map.class),
-      new ObjectStreamField("isInRelationService", boolean.class)
-    };
-    //
-    // Actual serial version and serial form
-    private static final long serialVersionUID;
+    private static final long serialVersionUID = 4611072955724144607L;
     /**
      * @serialField typeName String Relation type name
      * @serialField roleName2InfoMap Map {@link Map} holding the mapping:
@@ -103,27 +73,12 @@ public class RelationTypeSupport implements RelationType {
      * @serialField isInRelationService boolean Flag specifying whether the relation type has been declared in the
      *              Relation Service (so can no longer be updated)
      */
-    private static final ObjectStreamField[] serialPersistentFields;
-    private static boolean compat = false;
-    static {
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            @SuppressWarnings("removal")
-            String form = AccessController.doPrivileged(act);
-            compat = (form != null && form.equals("1.0"));
-        } catch (Exception e) {
-            // OK : Too bad, no compat with 1.0
-        }
-        if (compat) {
-            serialPersistentFields = oldSerialPersistentFields;
-            serialVersionUID = oldSerialVersionUID;
-        } else {
-            serialPersistentFields = newSerialPersistentFields;
-            serialVersionUID = newSerialVersionUID;
-        }
-    }
-    //
-    // END Serialization compatibility stuff
+    private static final ObjectStreamField[] serialPersistentFields =
+    {
+      new ObjectStreamField("typeName", String.class),
+      new ObjectStreamField("roleName2InfoMap", Map.class),
+      new ObjectStreamField("isInRelationService", boolean.class)
+    };
 
     //
     // Private members
@@ -421,33 +376,7 @@ public class RelationTypeSupport implements RelationType {
      */
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
-      if (compat)
-      {
-        // Read an object serialized in the old serial form
-        //
-        ObjectInputStream.GetField fields = in.readFields();
-        typeName = (String) fields.get("myTypeName", null);
-        if (fields.defaulted("myTypeName"))
-        {
-          throw new NullPointerException("myTypeName");
-        }
-        roleName2InfoMap = cast(fields.get("myRoleName2InfoMap", null));
-        if (fields.defaulted("myRoleName2InfoMap"))
-        {
-          throw new NullPointerException("myRoleName2InfoMap");
-        }
-        isInRelationService = fields.get("myIsInRelServFlg", false);
-        if (fields.defaulted("myIsInRelServFlg"))
-        {
-          throw new NullPointerException("myIsInRelServFlg");
-        }
-      }
-      else
-      {
-        // Read an object serialized in the new serial form
-        //
-        in.defaultReadObject();
-      }
+      in.defaultReadObject();
     }
 
 
@@ -456,21 +385,6 @@ public class RelationTypeSupport implements RelationType {
      */
     private void writeObject(ObjectOutputStream out)
             throws IOException {
-      if (compat)
-      {
-        // Serializes this instance in the old serial form
-        //
-        ObjectOutputStream.PutField fields = out.putFields();
-        fields.put("myTypeName", typeName);
-        fields.put("myRoleName2InfoMap", roleName2InfoMap);
-        fields.put("myIsInRelServFlg", isInRelationService);
-        out.writeFields();
-      }
-      else
-      {
-        // Serializes this instance in the new serial form
-        //
-        out.defaultWriteObject();
-      }
+      out.defaultWriteObject();
     }
 }

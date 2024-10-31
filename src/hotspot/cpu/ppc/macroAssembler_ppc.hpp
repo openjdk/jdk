@@ -654,7 +654,7 @@ class MacroAssembler: public Assembler {
   void inc_held_monitor_count(Register tmp);
   void dec_held_monitor_count(Register tmp);
   void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
-  void lightweight_lock(Register obj, Register t1, Register t2, Label& slow);
+  void lightweight_lock(Register box, Register obj, Register t1, Register t2, Label& slow);
   void lightweight_unlock(Register obj, Register t1, Label& slow);
 
   // allocation (for C1)
@@ -675,11 +675,11 @@ class MacroAssembler: public Assembler {
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
                                    Register tmp1, Register tmp2, Register tmp3);
 
-  void compiler_fast_lock_lightweight_object(ConditionRegister flag, Register oop, Register tmp1,
-                                             Register tmp2, Register tmp3);
+  void compiler_fast_lock_lightweight_object(ConditionRegister flag, Register oop, Register box,
+                                             Register tmp1, Register tmp2, Register tmp3);
 
-  void compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register oop, Register tmp1,
-                                               Register tmp2, Register tmp3);
+  void compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register oop, Register box,
+                                               Register tmp1, Register tmp2, Register tmp3);
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);
@@ -958,25 +958,6 @@ class MacroAssembler: public Assembler {
   void should_not_reach_here(const char* msg = nullptr) { stop(stop_shouldnotreachhere, msg); }
 
   void zap_from_to(Register low, int before, Register high, int after, Register val, Register addr) PRODUCT_RETURN;
-};
-
-// class SkipIfEqualZero:
-//
-// Instantiating this class will result in assembly code being output that will
-// jump around any code emitted between the creation of the instance and it's
-// automatic destruction at the end of a scope block, depending on the value of
-// the flag passed to the constructor, which will be checked at run-time.
-class SkipIfEqualZero : public StackObj {
- private:
-  MacroAssembler* _masm;
-  Label _label;
-
- public:
-   // 'Temp' is a temp register that this object can use (and trash).
-   explicit SkipIfEqualZero(MacroAssembler*, Register temp, const bool* flag_addr);
-   static void skip_to_label_if_equal_zero(MacroAssembler*, Register temp,
-                                           const bool* flag_addr, Label& label);
-   ~SkipIfEqualZero();
 };
 
 #endif // CPU_PPC_MACROASSEMBLER_PPC_HPP

@@ -1838,7 +1838,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register scratch, Label* L_f
     L_slow_path = &L_fallthrough;
   }
   // Fast path check: class is fully initialized
-  ldrb(scratch, Address(klass, InstanceKlass::init_state_offset()));
+  lea(scratch, Address(klass, InstanceKlass::init_state_offset()));
+  ldarb(scratch, scratch);
   subs(zr, scratch, InstanceKlass::fully_initialized);
   br(Assembler::EQ, *L_fast_path);
 
@@ -2967,7 +2968,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
   if (CheckCompressedOops) {
     Label ok;
     push(1 << rscratch1->encoding(), sp); // cmpptr trashes rscratch1
-    cmpptr(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
+    cmpptr(rheapbase, ExternalAddress(CompressedOops::base_addr()));
     br(Assembler::EQ, ok);
     stop(msg);
     bind(ok);
@@ -3133,9 +3134,9 @@ void MacroAssembler::reinit_heapbase()
 {
   if (UseCompressedOops) {
     if (Universe::is_fully_initialized()) {
-      mov(rheapbase, CompressedOops::ptrs_base());
+      mov(rheapbase, CompressedOops::base());
     } else {
-      lea(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
+      lea(rheapbase, ExternalAddress(CompressedOops::base_addr()));
       ldr(rheapbase, Address(rheapbase));
     }
   }
@@ -4781,23 +4782,6 @@ void MacroAssembler::kernel_crc32_common_fold_using_crypto_pmull(Register crc, R
     mov(tmp1, v0, D, 1);
 }
 
-SkipIfEqual::SkipIfEqual(
-    MacroAssembler* masm, const bool* flag_addr, bool value) {
-  _masm = masm;
-  uint64_t offset;
-  _masm->adrp(rscratch1, ExternalAddress((address)flag_addr), offset);
-  _masm->ldrb(rscratch1, Address(rscratch1, offset));
-  if (value) {
-    _masm->cbnzw(rscratch1, _label);
-  } else {
-    _masm->cbzw(rscratch1, _label);
-  }
-}
-
-SkipIfEqual::~SkipIfEqual() {
-  _masm->bind(_label);
-}
-
 void MacroAssembler::addptr(const Address &dst, int32_t src) {
   Address adr;
   switch(dst.getMode()) {
@@ -5010,8 +4994,10 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
   verify_heapbase("MacroAssembler::decode_heap_oop: heap base corrupted?");
 #endif
   if (CompressedOops::base() == nullptr) {
-    if (CompressedOops::shift() != 0 || d != s) {
+    if (CompressedOops::shift() != 0) {
       lsl(d, s, CompressedOops::shift());
+    } else if (d != s) {
+      mov(d, s);
     }
   } else {
     Label done;
@@ -5082,8 +5068,8 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
 
   if (operand_valid_for_logical_immediate(
         /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
-    const uint64_t range_mask =
-      (1ULL << log2i(CompressedKlassPointers::range())) - 1;
+    const size_t range = CompressedKlassPointers::klass_range_end() - CompressedKlassPointers::base();
+    const uint64_t range_mask = (1ULL << log2i(range)) - 1;
     if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
       return (_klass_decode_mode = KlassDecodeXor);
     }

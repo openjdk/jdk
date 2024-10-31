@@ -405,6 +405,86 @@ TEST_VM(os, jio_snprintf) {
   test_snprintf(jio_snprintf, false);
 }
 
+#ifndef MAX_PATH
+#define MAX_PATH    (2 * K)
+#endif
+
+TEST_VM(os, realpath) {
+  // POSIX requires that the file exists; Windows tests for a valid drive letter
+  // but may or may not test if the file exists. */
+  static const char* nosuchpath = "/1234567890123456789";
+  static const char* tmppath = "/tmp";
+
+  char buffer[MAX_PATH];
+
+  // Test a non-existant path, but provide a short buffer.
+  errno = 0;
+  const char* returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) - 2);
+  // Reports ENOENT on Linux, ENAMETOOLONG on Windows.
+  EXPECT_TRUE(returnedBuffer == nullptr);
+#ifdef _WINDOWS
+  EXPECT_TRUE(errno == ENAMETOOLONG);
+#else
+  EXPECT_TRUE(errno == ENOENT);
+#endif
+
+  // Test a non-existant path, but provide an adequate buffer.
+  errno = 0;
+  buffer[0] = 0;
+  returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) + 3);
+  // Reports ENOENT on Linux, may return 0 (and report an error) or buffer on some versions of Windows.
+#ifdef _WINDOWS
+  if (returnedBuffer != nullptr) {
+    EXPECT_TRUE(returnedBuffer == buffer);
+  } else {
+    EXPECT_TRUE(errno != 0);
+  }
+#else
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == ENOENT);
+#endif
+
+  // Test an existing path using a large buffer.
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, buffer, MAX_PATH);
+  EXPECT_TRUE(returnedBuffer == buffer);
+
+  // Test an existing path using a buffer that is too small on a normal macOS install.
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) + 3);
+  // On MacOS, /tmp is a symlink to /private/tmp, so doesn't fit in a small buffer.
+#ifndef __APPLE__
+  EXPECT_TRUE(returnedBuffer == buffer);
+#else
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == ENAMETOOLONG);
+#endif
+
+  // Test an existing path using a buffer that is too small.
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) - 1);
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == ENAMETOOLONG);
+
+  // The following tests cause an assert inside os::realpath() in fastdebug mode:
+#ifndef ASSERT
+  errno = 0;
+  returnedBuffer = os::realpath(nullptr, buffer, sizeof(buffer));
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == EINVAL);
+
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, nullptr, sizeof(buffer));
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == EINVAL);
+
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, buffer, 0);
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == EINVAL);
+#endif
+}
+
 #ifdef __APPLE__
 // Not all macOS versions can use os::reserve_memory (i.e. anon_mmap) API
 // to reserve executable memory, so before attempting to use it,

@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
+#include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
 
 ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(size_t num_bits) :
     _num_bits(num_bits),
@@ -43,8 +43,8 @@ size_t ShenandoahSimpleBitMap::count_leading_ones(idx_t start_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
   size_t array_idx = start_idx >> LogBitsPerWord;
   uintx element_bits = _bitmap[array_idx];
-  uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
-  uintx mask = ~right_n_bits(bit_number);
+  uintx bit_number = start_idx & (BitsPerWord - 1);
+  uintx mask = ~tail_mask(bit_number);
   size_t counted_ones = 0;
   while ((element_bits & mask) == mask) {
     // All bits numbered >= bit_number are set
@@ -54,7 +54,7 @@ size_t ShenandoahSimpleBitMap::count_leading_ones(idx_t start_idx) const {
     // Strength reduction:                array_idx = (start_idx >> LogBitsPerWord)
     array_idx++;
     element_bits = _bitmap[array_idx];
-    // Constant folding:                  bit_number = start_idx & right_n_bits(LogBitsPerWord);
+    // Constant folding:                  bit_number = start_idx & (BitsPerWord - 1);
     bit_number = 0;
     // Constant folding:                  mask = ~right_n_bits(bit_number);
     mask = ~0;
@@ -70,9 +70,9 @@ size_t ShenandoahSimpleBitMap::count_trailing_ones(idx_t last_idx) const {
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
   size_t array_idx = last_idx >> LogBitsPerWord;
   uintx element_bits = _bitmap[array_idx];
-  uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
+  uintx bit_number = last_idx & (BitsPerWord - 1);
   // All ones from bit 0 to the_bit
-  uintx mask = right_n_bits(bit_number + 1);
+  uintx mask = tail_mask(bit_number + 1);
   size_t counted_ones = 0;
   while ((element_bits & mask) == mask) {
     // All bits numbered <= bit_number are set
@@ -81,7 +81,7 @@ size_t ShenandoahSimpleBitMap::count_trailing_ones(idx_t last_idx) const {
     // Dead code: do not need to compute: last_idx -= found_ones;
     array_idx--;
     element_bits = _bitmap[array_idx];
-    // Constant folding:                  bit_number = last_idx & right_n_bits(LogBitsPerWord);
+    // Constant folding:                  bit_number = last_idx & (BitsPerWord - 1);
     bit_number = BitsPerWord - 1;
     // Constant folding:                  mask = right_n_bits(bit_number + 1);
     mask = ~0;
@@ -99,7 +99,7 @@ bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(idx_t start_idx, idx_t 
            start_idx, count);
     assert(start_idx + count <= (idx_t) _num_bits, "precondition");
     size_t array_idx = start_idx >> LogBitsPerWord;
-    uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
+    uintx bit_number = start_idx & (BitsPerWord - 1);
     uintx element_bits = _bitmap[array_idx];
     uintx bits_to_examine  = BitsPerWord - bit_number;
     element_bits >>= bit_number;
@@ -128,7 +128,7 @@ bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(idx_t last_idx, idx_t 
     assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
     assert(last_idx - count >= -1, "precondition");
     size_t array_idx = last_idx >> LogBitsPerWord;
-    uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
+    uintx bit_number = last_idx & (BitsPerWord - 1);
     uintx element_bits = _bitmap[array_idx];
     uintx bits_to_examine = bit_number + 1;
     element_bits <<= (BitsPerWord - bits_to_examine);
@@ -161,10 +161,10 @@ idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, idx_t e
     return end;
   }
   uintx array_idx = beg >> LogBitsPerWord;
-  uintx bit_number = beg & right_n_bits(LogBitsPerWord);
+  uintx bit_number = beg & (BitsPerWord - 1);
   uintx element_bits = _bitmap[array_idx];
   if (bit_number > 0) {
-    uintx mask_out = right_n_bits(bit_number);
+    uintx mask_out = tail_mask(bit_number);
     element_bits &= ~mask_out;
   }
 
@@ -222,9 +222,9 @@ idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, idx_t e
       }
       array_idx = beg >> LogBitsPerWord;
       element_bits = _bitmap[array_idx];
-      bit_number = beg & right_n_bits(LogBitsPerWord);
+      bit_number = beg & (BitsPerWord - 1);
       if (bit_number > 0) {
-        size_t mask_out = right_n_bits(bit_number);
+        size_t mask_out = tail_mask(bit_number);
         element_bits &= ~mask_out;
       }
     }
@@ -242,10 +242,10 @@ idx_t ShenandoahSimpleBitMap::find_last_consecutive_set_bits(const idx_t beg, id
   }
 
   size_t array_idx = end >> LogBitsPerWord;
-  uintx bit_number = end & right_n_bits(LogBitsPerWord);
+  uintx bit_number = end & (BitsPerWord - 1);
   uintx element_bits = _bitmap[array_idx];
   if (bit_number < BitsPerWord - 1) {
-    uintx mask_in = right_n_bits(bit_number + 1);
+    uintx mask_in = tail_mask(bit_number + 1);
     element_bits &= mask_in;
   }
 
@@ -280,10 +280,10 @@ idx_t ShenandoahSimpleBitMap::find_last_consecutive_set_bits(const idx_t beg, id
         return beg;
       }
       array_idx = end >> LogBitsPerWord;
-      bit_number = end & right_n_bits(LogBitsPerWord);
+      bit_number = end & (BitsPerWord - 1);
       element_bits = _bitmap[array_idx];
       if (bit_number < BitsPerWord - 1){
-        size_t mask_in = right_n_bits(bit_number + 1);
+        size_t mask_in = tail_mask(bit_number + 1);
         element_bits &= mask_in;
       }
     }

@@ -202,6 +202,8 @@ public:
   virtual bool is_CFG() const  { return false; }
   virtual uint ideal_reg() const { return NotAMachineReg; }
 
+  static DivModNode* make(Node* div_or_mod, BasicType bt, bool is_unsigned);
+
   ProjNode* div_proj() { return proj_out_or_null(div_proj_num); }
   ProjNode* mod_proj() { return proj_out_or_null(mod_proj_num); }
 };

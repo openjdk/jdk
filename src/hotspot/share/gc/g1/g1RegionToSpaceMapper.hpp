@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,9 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
   // Mapping management
   CHeapBitMap _region_commit_map;
 
-  MEMFLAGS _memory_type;
+  MemTag _memory_tag;
 
-  G1RegionToSpaceMapper(ReservedSpace rs, size_t used_size, size_t page_size, size_t region_granularity, size_t commit_factor, MEMFLAGS type);
+  G1RegionToSpaceMapper(ReservedSpace rs, size_t used_size, size_t page_size, size_t region_granularity, size_t commit_factor, MemTag mem_tag);
 
   void fire_on_commit(uint start_idx, size_t num_regions, bool zero_filled);
  public:
@@ -85,7 +85,7 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
                                               size_t page_size,
                                               size_t region_granularity,
                                               size_t byte_translation_factor,
-                                              MEMFLAGS type);
+                                              MemTag mem_tag);
 };
 
 #endif // SHARE_GC_G1_G1REGIONTOSPACEMAPPER_HPP

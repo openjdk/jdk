@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
 import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * An InputStream that reads bytes from a channel.
@@ -53,11 +54,26 @@ class ChannelInputStream extends InputStream {
     private byte[] bs;       // Invoker's previous array
     private byte[] b1;
 
+    // if isOther is true, then the file being read is not a regular file,
+    // nor a directory, nor a symbolic link, hence possibly not seekable
+    private @Stable Boolean isOther;
+
     /**
      * Initialize a ChannelInputStream that reads from the given channel.
      */
     ChannelInputStream(ReadableByteChannel ch) {
         this.ch = ch;
+    }
+
+    private boolean isOther() throws IOException {
+        Boolean isOther = this.isOther;
+        if (isOther == null) {
+            if (ch instanceof FileChannelImpl fci)
+                this.isOther = isOther = fci.isOther();
+            else
+                this.isOther = isOther = Boolean.FALSE;
+        }
+        return isOther;
     }
 
     /**
@@ -105,7 +121,8 @@ class ChannelInputStream extends InputStream {
 
     @Override
     public byte[] readAllBytes() throws IOException {
-        if (!(ch instanceof SeekableByteChannel sbc))
+        if (!(ch instanceof SeekableByteChannel sbc) ||
+             (ch instanceof FileChannelImpl fci && isOther()))
             return super.readAllBytes();
 
         long length = sbc.size();
@@ -156,7 +173,8 @@ class ChannelInputStream extends InputStream {
         if (len == 0)
             return new byte[0];
 
-        if (!(ch instanceof SeekableByteChannel sbc))
+        if (!(ch instanceof SeekableByteChannel sbc) ||
+             (ch instanceof FileChannelImpl fci && isOther()))
             return super.readNBytes(len);
 
         long length = sbc.size();
@@ -192,7 +210,9 @@ class ChannelInputStream extends InputStream {
     @Override
     public int available() throws IOException {
         // special case where the channel is to a file
-        if (ch instanceof SeekableByteChannel sbc) {
+        if (ch instanceof FileChannelImpl fci) {
+            return fci.available();
+        } else if (ch instanceof SeekableByteChannel sbc) {
             long rem = Math.max(0, sbc.size() - sbc.position());
             return (rem > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)rem;
         }
@@ -202,7 +222,8 @@ class ChannelInputStream extends InputStream {
     @Override
     public synchronized long skip(long n) throws IOException {
         // special case where the channel is to a file
-        if (ch instanceof SeekableByteChannel sbc) {
+        if (ch instanceof SeekableByteChannel sbc &&
+            !(ch instanceof FileChannelImpl fci && isOther())) {
             long pos = sbc.position();
             long newPos;
             if (n > 0) {
@@ -224,7 +245,8 @@ class ChannelInputStream extends InputStream {
     public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
 
-        if (ch instanceof FileChannel fc) {
+        if (ch instanceof FileChannel fc &&
+            !(fc instanceof FileChannelImpl fci && isOther())) {
             // FileChannel -> SocketChannel
             if (out instanceof SocketOutputStream sos) {
                 SocketChannelImpl sc = sos.channel();

@@ -30,7 +30,6 @@
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "nmt/vmatree.hpp"
-#include "runtime/mutex.hpp"
 #include "runtime/os.inline.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -66,7 +65,7 @@ public:
   MemoryFileTracker(bool is_detailed_mode);
 
   void allocate_memory(MemoryFile* file, size_t offset, size_t size, const NativeCallStack& stack,
-                       MEMFLAGS flag);
+                       MemTag mem_tag);
   void free_memory(MemoryFile* file, size_t offset, size_t size);
 
   MemoryFile* make_file(const char* descriptive_name);
@@ -81,14 +80,8 @@ public:
 
   class Instance : public AllStatic {
     static MemoryFileTracker* _tracker;
-    static PlatformMutex* _mutex;
 
   public:
-    class Locker : public StackObj {
-    public:
-      Locker();
-      ~Locker();
-    };
 
     static bool initialize(NMT_TrackingLevel tracking_level);
 
@@ -96,7 +89,7 @@ public:
     static void free_file(MemoryFile* device);
 
     static void allocate_memory(MemoryFile* device, size_t offset, size_t size,
-                                const NativeCallStack& stack, MEMFLAGS flag);
+                                const NativeCallStack& stack, MemTag mem_tag);
     static void free_memory(MemoryFile* device, size_t offset, size_t size);
 
     static void summary_snapshot(VirtualMemorySnapshot* snapshot);

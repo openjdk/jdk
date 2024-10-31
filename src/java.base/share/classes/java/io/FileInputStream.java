@@ -29,6 +29,7 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.event.FileReadEvent;
+import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.FileChannelImpl;
 
 /**
@@ -81,11 +82,16 @@ public class FileInputStream extends InputStream
 
     private volatile boolean closed;
 
+    // This field indicates whether the file is a regular file as some
+    // operations need the current position which requires seeking
+    private @Stable Boolean isRegularFile;
+
     /**
-     * Creates a {@code FileInputStream} by
-     * opening a connection to an actual file,
-     * the file named by the path name {@code name}
-     * in the file system.  A new {@code FileDescriptor}
+     * Creates a {@code FileInputStream} to read from an existing file
+     * named by the path name {@code name}.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * A new {@code FileDescriptor}
      * object is created to represent this file
      * connection.
      * <p>
@@ -113,10 +119,10 @@ public class FileInputStream extends InputStream
     }
 
     /**
-     * Creates a {@code FileInputStream} by
-     * opening a connection to an actual file,
-     * the file named by the {@code File}
-     * object {@code file} in the file system.
+     * Creates a {@code FileInputStream} to read from an existing file
+     * represented by the {@code File} object {@code file}.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
      * A new {@code FileDescriptor} object
      * is created to represent this file connection.
      * <p>
@@ -330,6 +336,9 @@ public class FileInputStream extends InputStream
 
     @Override
     public byte[] readAllBytes() throws IOException {
+        if (!isRegularFile())
+            return super.readAllBytes();
+
         long length = length();
         long position = position();
         long size = length - position;
@@ -381,6 +390,9 @@ public class FileInputStream extends InputStream
         if (len == 0)
             return new byte[0];
 
+        if (!isRegularFile())
+            return super.readNBytes(len);
+
         long length = length();
         long position = position();
         long size = length - position;
@@ -417,7 +429,7 @@ public class FileInputStream extends InputStream
     @Override
     public long transferTo(OutputStream out) throws IOException {
         long transferred = 0L;
-        if (out instanceof FileOutputStream fos) {
+        if (out instanceof FileOutputStream fos && isRegularFile()) {
             FileChannel fc = getChannel();
             long pos = fc.position();
             transferred = fc.transferTo(pos, Long.MAX_VALUE, fos.getChannel());
@@ -470,7 +482,10 @@ public class FileInputStream extends InputStream
      */
     @Override
     public long skip(long n) throws IOException {
-        return skip0(n);
+        if (isRegularFile())
+            return skip0(n);
+
+        return super.skip(n);
     }
 
     private native long skip0(long n) throws IOException;
@@ -601,6 +616,18 @@ public class FileInputStream extends InputStream
         }
         return fc;
     }
+
+    /**
+     * Determine whether the file is a regular file.
+     */
+    private boolean isRegularFile() {
+        Boolean isRegularFile = this.isRegularFile;
+        if (isRegularFile == null) {
+            this.isRegularFile = isRegularFile = isRegularFile0(fd);
+        }
+        return isRegularFile;
+    }
+    private native boolean isRegularFile0(FileDescriptor fd);
 
     private static native void initIDs();
 

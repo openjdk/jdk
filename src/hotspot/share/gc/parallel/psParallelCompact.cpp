@@ -60,6 +60,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -235,7 +236,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
                        rs.size(), page_sz);
 
-  MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
 
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
   if (vspace != nullptr) {
