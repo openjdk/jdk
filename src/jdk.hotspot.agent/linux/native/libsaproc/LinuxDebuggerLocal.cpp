@@ -70,7 +70,7 @@ class AutoJavaString {
   const char* m_buf;
 
 public:
-  // check env->ExceptionOccurred() after ctor
+  // check env->ExceptionCheck() after ctor
   AutoJavaString(JNIEnv* env, jstring str)
     : m_env(env), m_str(str), m_buf(str == NULL ? NULL : env->GetStringUTFChars(str, NULL)) {
   }
