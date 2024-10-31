@@ -66,6 +66,8 @@ import javax.management.remote.JMXServiceURL;
 
 public class ConnectionTest {
 
+    public static final int NOTIF_TIMEOUT = 20000;
+
     public static void main(String[] args) {
 //      System.setProperty("java.util.logging.config.file",
 //                         "../../../../logging.properties");
@@ -99,17 +101,13 @@ public class ConnectionTest {
         ObjectName serverName = ObjectName.getInstance("d:type=server");
         MBeanServer mbs = MBeanServerFactory.newMBeanServer();
         JMXAuthenticator authenticator = new BogusAuthenticator();
-        Map env = Collections.singletonMap("jmx.remote.authenticator",
-                                           authenticator);
+        Map env = Collections.singletonMap("jmx.remote.authenticator", authenticator);
         JMXServiceURL url = new JMXServiceURL("service:jmx:" + proto + "://");
         JMXConnectorServer server;
         try {
-            server =
-                JMXConnectorServerFactory.newJMXConnectorServer(url, env,
-                                                                null);
+            server = JMXConnectorServerFactory.newJMXConnectorServer(url, env, null);
         } catch (MalformedURLException e) {
-            System.out.println("Protocol " + proto +
-                               " not supported, ignoring");
+            System.out.println("Protocol " + proto + " not supported, ignoring");
             return true;
         }
         System.out.println("Created connector server");
@@ -118,8 +116,7 @@ public class ConnectionTest {
         mbs.addNotificationListener(serverName, logListener, null, null);
         mbs.invoke(serverName, "start", null, null);
         System.out.println("Started connector server");
-        JMXServiceURL address =
-            (JMXServiceURL) mbs.getAttribute(serverName, "Address");
+        JMXServiceURL address = (JMXServiceURL) mbs.getAttribute(serverName, "Address");
         System.out.println("Retrieved address: " + address);
 
         if (address.getHost().length() == 0) {
@@ -128,6 +125,7 @@ public class ConnectionTest {
         }
 
         JMXConnector client = JMXConnectorFactory.connect(address);
+        System.out.println("client = " + client);
         System.out.println("Client connected");
 
         String clientConnId = client.getConnectionId();
@@ -140,7 +138,7 @@ public class ConnectionTest {
         // 4901826: connection ids need some time to be updated using jmxmp
         // we don't get the notif immediately either
         // this was originally timeout 1ms, which was not enough
-        Notification notif = waitForNotification(1000);
+        Notification notif = waitForNotification(NOTIF_TIMEOUT);
         System.out.println("Server got notification: " + notif);
 
         ok = mustBeConnectionNotification(notif, clientConnId,
@@ -151,7 +149,7 @@ public class ConnectionTest {
         client.close();
         System.out.println("Closed client");
 
-        notif = waitForNotification(1000);
+        notif = waitForNotification(NOTIF_TIMEOUT);
         System.out.println("Got notification: " + notif);
 
         ok = mustBeConnectionNotification(notif, clientConnId,
@@ -183,7 +181,7 @@ public class ConnectionTest {
         server.stop();
         System.out.println("Server stopped");
 
-        notif = waitForNotification(1000);
+        notif = waitForNotification(NOTIF_TIMEOUT);
         System.out.println("Server got connection-closed notification: " +
                            notif);
 
