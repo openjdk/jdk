@@ -57,7 +57,8 @@ public class DirectBBRemaining {
         random.nextBytes(keyBytes);
         SecretKey key = new SecretKeySpec(keyBytes, "AES");
 
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding",
+                System.getProperty("test.provider.name", "SunJCE"));
         cipher.init(Cipher.ENCRYPT_MODE, key);
 
         /*

@@ -37,7 +37,7 @@ import java.security.*;
 public class ByteBuffers {
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider("SUN");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SUN"));
         Random random = new Random();
         int n = 10 * 1024;
         byte[] t = new byte[n];

@@ -51,7 +51,8 @@ public class Copy {
                 signature);
         System.out.println("Signature algorithm: " + so.getAlgorithm());
 
-        signature = Signature.getInstance("SHA224withDSA", "SUN");
+        signature = Signature.getInstance("SHA224withDSA",
+                System.getProperty("test.provider.name", "SUN"));
         if (!so.verify(kp.getPublic(), signature)) {
             throw new RuntimeException("Verification failed");
         }

@@ -46,7 +46,7 @@ public class LowercasePermCheck {
     };
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + p.getName() + "...");
         if (Cipher.getMaxAllowedKeyLength("AES") == Integer.MAX_VALUE) {
             // skip this test for unlimited jurisdiction policy files

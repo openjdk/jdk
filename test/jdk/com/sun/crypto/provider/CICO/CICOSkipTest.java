@@ -204,9 +204,10 @@ class CipherGenerator {
             AlgorithmParameterSpec aps) throws NoSuchAlgorithmException,
             NoSuchPaddingException, InvalidKeyException,
             InvalidAlgorithmParameterException {
-        Provider provider = Security.getProvider("SunJCE");
+        String providerName = System.getProperty("test.provider.name", "SunJCE");
+        Provider provider = Security.getProvider(providerName);
         if (provider == null) {
-            throw new RuntimeException("SunJCE provider does not exist.");
+            throw new RuntimeException(providerName + " provider does not exist.");
         }
         Cipher ci1 = Cipher.getInstance(algo, provider);
         ci1.init(Cipher.ENCRYPT_MODE, key, aps);

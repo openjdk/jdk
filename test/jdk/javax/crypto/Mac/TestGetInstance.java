@@ -43,13 +43,13 @@ public class TestGetInstance {
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
 
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
 
         Mac mac;
 
         mac = Mac.getInstance("hmacsha256");
         System.out.println("Default: " + mac.getProvider().getName());
-        mac = Mac.getInstance("hmacsha256", "SunJCE");
+        mac = Mac.getInstance("hmacsha256", System.getProperty("test.provider.name", "SunJCE"));
         same(p, mac.getProvider());
         mac = Mac.getInstance("hmacsha256", p);
         same(p, mac.getProvider());
@@ -61,7 +61,7 @@ public class TestGetInstance {
             System.out.println(e);
         }
         try {
-            mac = Mac.getInstance("foo", "SunJCE");
+            mac = Mac.getInstance("foo", System.getProperty("test.provider.name", "SunJCE"));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
@@ -74,13 +74,14 @@ public class TestGetInstance {
         }
 
         try {
-            mac = Mac.getInstance("foo", "SUN");
+            mac = Mac.getInstance("foo", System.getProperty("test.provider.name", "SUN"));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
         }
         try {
-            mac = Mac.getInstance("foo", Security.getProvider("SUN"));
+            mac = Mac.getInstance("foo", Security.getProvider(
+                    System.getProperty("test.provider.name", "SUN")));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);

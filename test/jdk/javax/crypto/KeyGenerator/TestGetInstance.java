@@ -43,13 +43,14 @@ public class TestGetInstance {
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
 
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
 
         KeyGenerator kg;
 
         kg = KeyGenerator.getInstance("aes");
         System.out.println("Default: " + kg.getProvider().getName());
-        kg = KeyGenerator.getInstance("aes", "SunJCE");
+        kg = KeyGenerator.getInstance("aes",
+                System.getProperty("test.provider.name", "SunJCE"));
         same(p, kg.getProvider());
         kg = KeyGenerator.getInstance("aes", p);
         same(p, kg.getProvider());
@@ -61,7 +62,8 @@ public class TestGetInstance {
             System.out.println(e);
         }
         try {
-            kg = KeyGenerator.getInstance("foo", "SunJCE");
+            kg = KeyGenerator.getInstance("foo",
+                    System.getProperty("test.provider.name", "SunJCE"));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
@@ -74,13 +76,15 @@ public class TestGetInstance {
         }
 
         try {
-            kg = KeyGenerator.getInstance("foo", "SUN");
+            kg = KeyGenerator.getInstance("foo",
+                    System.getProperty("test.provider.name", "SUN"));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
         }
         try {
-            kg = KeyGenerator.getInstance("foo", Security.getProvider("SUN"));
+            kg = KeyGenerator.getInstance("foo",
+                    Security.getProvider(System.getProperty("test.provider.name", "SUN")));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);

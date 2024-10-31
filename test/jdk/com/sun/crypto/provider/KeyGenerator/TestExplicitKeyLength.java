@@ -41,7 +41,8 @@ public class TestExplicitKeyLength {
         { 64, 80, 128, 192, 256 }; // in bits
 
     public static void runTest(String algo, int keysize) throws Exception {
-        KeyGenerator kg = KeyGenerator.getInstance(algo, "SunJCE");
+        KeyGenerator kg = KeyGenerator.getInstance(algo,
+                                System.getProperty("test.provider.name", "SunJCE"));
         kg.init(keysize);
         Key generatedKey = kg.generateKey();
         int actualSizeInBits = generatedKey.getEncoded().length*8;

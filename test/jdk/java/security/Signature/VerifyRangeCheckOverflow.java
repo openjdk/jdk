@@ -27,6 +27,7 @@
 
 /* @test
  * @bug 7172149
+ * @library /test/lib
  * @summary AIOOBE from Signature.verify after integer overflow
  * @author Jonathan Lu
  */
@@ -35,12 +36,14 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PublicKey;
 import java.security.Signature;
+import jdk.test.lib.security.SecurityUtils;
 
 public class VerifyRangeCheckOverflow {
 
     public static void main(String[] args) throws Exception {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DSA");
-        keyPairGenerator.initialize(1024);
+        String kpgAlgorithm = "DSA";
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(kpgAlgorithm);
+        keyPairGenerator.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair keys = keyPairGenerator.generateKeyPair();
         PublicKey publicKey = keys.getPublic();
         byte[] sigBytes = new byte[100];

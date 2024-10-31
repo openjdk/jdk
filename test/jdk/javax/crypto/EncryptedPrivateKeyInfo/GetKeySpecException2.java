@@ -54,7 +54,8 @@ public class GetKeySpecException2 {
         // TEST#1: getKeySpec(Cipher) with Cipher in an illegal state,
         // i.e. WRAP_MODE, UNWRAP_MODE.
         System.out.println("Testing getKeySpec(Cipher) with WRAP_MODE...");
-        Cipher c = Cipher.getInstance(cipherAlg, "SunJCE");
+        Cipher c = Cipher.getInstance(cipherAlg,
+                System.getProperty("test.provider.name", "SunJCE"));
         MyPBEKey key = new MyPBEKey(passwd);
         c.init(Cipher.WRAP_MODE, key);
         try {

@@ -47,7 +47,8 @@ public class TestCipherPBECons {
 
     public static void main(String[] args) {
         TestCipherPBECons test = new TestCipherPBECons();
-        Provider sunjce = Security.getProvider("SunJCE");
+        Provider sunjce = Security.getProvider(
+                            System.getProperty("test.provider.name", "SunJCE"));
 
         if (!test.runAll(sunjce, System.out)) {
             throw new RuntimeException("One or more tests have failed....");

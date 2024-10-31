@@ -40,7 +40,8 @@ import javax.crypto.spec.*;
 public class ByteBuffers {
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(
+                        System.getProperty("test.provider.name", "SunJCE"));
         Random random = new Random();
         int n = 10 * 1024;
         byte[] t = new byte[n];

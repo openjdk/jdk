@@ -36,7 +36,8 @@ public class TestInitSignWithMyOwnRandom {
     public static void main(String[] argv) throws Exception {
         // any signature implementation will do as long as
         // it needs a random source
-        Provider p = Security.getProvider("SUN");
+        Provider p = Security.getProvider(
+                System.getProperty("test.provider.name", "SUN"));
         String kpgAlgorithm = "DSA";
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
         kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));

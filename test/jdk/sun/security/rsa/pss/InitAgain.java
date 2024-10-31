@@ -22,10 +22,12 @@
  */
 import java.security.*;
 import java.security.spec.*;
+import jdk.test.lib.security.SecurityUtils;
 
 /**
  * @test
  * @bug 8205445
+ * @library /test/lib
  * @summary Make sure old state is cleared when init is called again
  */
 public class InitAgain {
@@ -42,8 +44,9 @@ public class InitAgain {
         s1.setParameter(SHA224_PSS_PARAM_SPEC);
         s2.setParameter(SHA224_PSS_PARAM_SPEC);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(1024);
+        String kpgAlgorithm = "RSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
 
         s1.initSign(kp.getPrivate());

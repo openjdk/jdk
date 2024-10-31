@@ -48,7 +48,7 @@ public class GetKeySpecInvalidEncoding {
             PBEParameterSpec goodParamSpec =
                 new PBEParameterSpec(new byte[8], 6);
             GOOD_PARAMS = AlgorithmParameters.getInstance
-                (cipherAlg, "SunJCE");
+                    (cipherAlg, System.getProperty("test.provider.name", "SunJCE"));
             GOOD_PARAMS.init(goodParamSpec);
         } catch (Exception ex) {
             // should never happen
@@ -101,7 +101,7 @@ public class GetKeySpecInvalidEncoding {
         }
         byte[] encryptedData = parse(encryptedPKCS8);
 
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
 
         // generate encrypted data and EncryptedPrivateKeyInfo object
         EncryptedPrivateKeyInfo epki =

@@ -56,14 +56,16 @@ public class SupportedDHParamGens {
             case 2048, 3072, 4096 -> spec = getDHParameterSpec(primeSize);
             default -> {
                 AlgorithmParameterGenerator apg =
-                        AlgorithmParameterGenerator.getInstance("DH", "SunJCE");
+                        AlgorithmParameterGenerator.getInstance("DH",
+                                System.getProperty("test.provider.name", "SunJCE"));
                 apg.init(primeSize);
                 AlgorithmParameters ap = apg.generateParameters();
                 spec = ap.getParameterSpec(DHParameterSpec.class);
             }
         }
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", "SunJCE");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH",
+                        System.getProperty("test.provider.name", "SunJCE"));
         kpg.initialize(spec);
         KeyPair kp = kpg.generateKeyPair();
         checkKeyPair(kp, primeSize);

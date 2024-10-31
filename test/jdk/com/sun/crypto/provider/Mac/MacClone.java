@@ -64,7 +64,8 @@ public class MacClone {
         //
         // Clone an uninitialized Mac object
         //
-        Mac mac = Mac.getInstance(algo, "SunJCE");
+        Mac mac = Mac.getInstance(algo,
+                    System.getProperty("test.provider.name", "SunJCE"));
         Mac macClone = (Mac)mac.clone();
         System.out.println(macClone.getProvider().toString());
         System.out.println(macClone.getAlgorithm());
@@ -81,7 +82,8 @@ public class MacClone {
         //
         // Clone an initialized Mac object
         //
-        mac = Mac.getInstance(algo, "SunJCE");
+        mac = Mac.getInstance(algo,
+                    System.getProperty("test.provider.name", "SunJCE"));
         mac.init(skey, params);
         macClone = (Mac)mac.clone();
         System.out.println(macClone.getProvider().toString());

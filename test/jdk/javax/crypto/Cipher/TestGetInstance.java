@@ -42,16 +42,19 @@ public class TestGetInstance {
     }
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(
+                System.getProperty("test.provider.name", "SunJCE"));
 
         Cipher c;
 
         c = Cipher.getInstance("PBEWithHmacSHA1AndAES_128");
         same(p, c.getProvider());
 
-        c = Cipher.getInstance("aes", "SunJCE");
+        c = Cipher.getInstance("aes",
+                System.getProperty("test.provider.name", "SunJCE"));
         same(p, c.getProvider());
-        c = Cipher.getInstance("aes/cbc/pkcs5padding", "SunJCE");
+        c = Cipher.getInstance("aes/cbc/pkcs5padding",
+                System.getProperty("test.provider.name", "SunJCE"));
         same(p, c.getProvider());
 
         c = Cipher.getInstance("aes", p);
@@ -66,7 +69,8 @@ public class TestGetInstance {
             System.out.println(e);
         }
         try {
-            c = Cipher.getInstance("AES/XYZ/PKCS5Padding", "SunJCE");
+            c = Cipher.getInstance("AES/XYZ/PKCS5Padding",
+                    System.getProperty("test.provider.name", "SunJCE"));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
@@ -85,7 +89,8 @@ public class TestGetInstance {
             System.out.println(e);
         }
         try {
-            c = Cipher.getInstance("AES/CBC/XYZPadding", "SunJCE");
+            c = Cipher.getInstance("AES/CBC/XYZPadding",
+                    System.getProperty("test.provider.name", "SunJCE"));
             throw new AssertionError();
         } catch (NoSuchPaddingException e) {
             System.out.println(e);
@@ -104,7 +109,8 @@ public class TestGetInstance {
             System.out.println(e);
         }
         try {
-            c = Cipher.getInstance("foo", "SunJCE");
+            c = Cipher.getInstance("foo",
+                    System.getProperty("test.provider.name", "SunJCE"));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
@@ -117,13 +123,15 @@ public class TestGetInstance {
         }
 
         try {
-            c = Cipher.getInstance("foo", "SUN");
+            c = Cipher.getInstance("foo",
+                    System.getProperty("test.provider.name", "SUN"));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
         }
         try {
-            c = Cipher.getInstance("foo", Security.getProvider("SUN"));
+            c = Cipher.getInstance("foo", Security.getProvider(
+                    System.getProperty("test.provider.name", "SUN")));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
