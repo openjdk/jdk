@@ -837,3 +837,10 @@ tools/launcher/MainClassCantBeLoadedTest.java 8338411 generic-all
 tools/launcher/modules/basic/LauncherErrors.java 8338411 generic-all
 
 # :tier3
+
+# Client manual tests
+java/awt/print/PrinterJob/CheckPrivilege.java 8343219 generic-all
+javax/print/PrintSE/PrintSE.sh 8343219 generic-all
+java/awt/print/PrinterJob/SecurityDialogTest.java 8343219 generic-all
+java/awt/Dialog/PrintToFileTest/PrintToFileGranted.java 8343219 generic-all
+java/awt/Dialog/PrintToFileTest/PrintToFileRevoked.java 8343219 generic-all
