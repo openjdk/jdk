@@ -34,6 +34,18 @@ import java.security.Security;
  */
 public class Launcher {
 
+    private static final String ONLY_ALG
+            = System.getProperty("acvp.test.alg");
+
+    private static final Provider PROVIDER;
+
+    static {
+        var provProp = System.getProperty("acvp.test.provider");
+        PROVIDER = provProp != null
+                ? Security.getProvider(provProp)
+                : null;
+    }
+
     public static void main(String[] args) throws Exception {
 
         // This test runs on "internalProjection.json"-style files generated
@@ -43,7 +55,10 @@ public class Launcher {
         // directory specified by the "acvp.test.data" system property.
         // The test walks through the directory recursively and looks for
         // file names equals to or ending with "internalProjection.json" and
-        // runs test on them. Only very limited algorithms are supported.
+        // runs test on them.
+        //
+        // Set the "acvp.test.alg" system property to only test this algorithm.
+        //
         // Sample files can be downloaded from
         // https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files.
         //
@@ -61,38 +76,40 @@ public class Launcher {
                 : Path.of(System.getProperty("test.src"), "data");
         System.out.println("Data path: " + dataPath);
 
-        var provProp = System.getProperty("acvp.test.provider");
-        Provider provider = provProp != null
-                ? Security.getProvider(provProp)
-                : null;
-        if (provider != null) {
-            System.out.println("Provider: " + provProp);
+        if (PROVIDER != null) {
+            System.out.println("Provider: " + PROVIDER.getName());
+        }
+        if (ONLY_ALG != null) {
+            System.out.println("Algorithm: " + ONLY_ALG);
         }
 
         try (var stream = Files.walk(dataPath)) {
             stream.filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString()
                             .endsWith("internalProjection.json"))
-                    .forEach(p -> run(provider, p));
+                    .forEach(Launcher::run);
         }
     }
 
-    static void run(Provider provider, Path test) {
-        System.out.println(">>> Testing " + test + "...");
+    static void run(Path test) {
         try {
             JSONValue kat;
             try {
                 kat = JSONValue.parse(Files.readString(test));
             } catch (Exception e) {
-                System.out.println("Warning: cannot parse JSON. Skipped");
+                System.out.println("Warning: cannot parse " + test + ". Skipped");
                 return;
             }
             var alg = kat.get("algorithm").asString();
+            if (ONLY_ALG != null && !alg.equals(ONLY_ALG)) {
+                return;
+            }
+            System.out.println(">>> Testing " + test + "...");
             switch (alg) {
-                case "ML-DSA" -> ML_DSA_Test.run(kat, provider);
-                case "ML-KEM" -> ML_KEM_Test.run(kat, provider);
+                case "ML-DSA" -> ML_DSA_Test.run(kat, PROVIDER);
+                case "ML-KEM" -> ML_KEM_Test.run(kat, PROVIDER);
                 case "SHA2-256", "SHA2-224", "SHA3-256", "SHA3-224"
-                    -> SHA_Test.run(kat, provider);
+                    -> SHA_Test.run(kat, PROVIDER);
                 default -> System.out.println("Skipped unsupported algorithm: " + alg);
             }
         } catch (RuntimeException re) {
