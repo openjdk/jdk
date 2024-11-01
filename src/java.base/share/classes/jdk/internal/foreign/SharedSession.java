@@ -58,7 +58,7 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
             value = (int) ACQUIRE_COUNT.getVolatile(this);
             if (value < 0) {
                 //segment is not open!
-                throw alreadyClosed();
+                throw sharedSessionAlreadyClosed();
             } else if (value == MAX_FORKS) {
                 //overflow
                 throw tooManyAcquires();
@@ -74,7 +74,7 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
             value = (int) ACQUIRE_COUNT.getVolatile(this);
             if (value <= 0) {
                 //cannot get here - we can't close segment twice
-                throw alreadyClosed();
+                throw sharedSessionAlreadyClosed();
             }
         } while (!ACQUIRE_COUNT.compareAndSet(this, value, value - 1));
     }
@@ -82,13 +82,22 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
     void justClose() {
         int acquireCount = (int) ACQUIRE_COUNT.compareAndExchange(this, 0, CLOSED_ACQUIRE_COUNT);
         if (acquireCount < 0) {
-            throw alreadyClosed();
+            throw sharedSessionAlreadyClosed();
         } else if (acquireCount > 0) {
             throw alreadyAcquired(acquireCount);
         }
 
-        state = CLOSED;
+        STATE.setOpaque(this, CLOSED);
         SCOPED_MEMORY_ACCESS.closeScope(this, ALREADY_CLOSED);
+    }
+
+    private IllegalStateException sharedSessionAlreadyClosed() {
+        // To avoid the situation where a scope fails to be acquired or closed but still reports as
+        // alive afterward, we wait for the state to change before throwing the exception
+        while ((int) STATE.getVolatile(this) == OPEN) {
+            Thread.onSpinWait();
+        }
+        return alreadyClosed();
     }
 
     /**
