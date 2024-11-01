@@ -134,7 +134,7 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
     return nullptr;
   }
 
-  return acquire_class_for_current_thread(record->_klass, class_loader,
+  return acquire_class_for_current_thread(record->klass(), class_loader,
                                           protection_domain, cfs,
                                           THREAD);
 }
@@ -1333,14 +1333,14 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
                                                &_dynamic_archive._builtin_dictionary,
                                                name);
   if (record != nullptr) {
-    assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
-    assert(check_alignment(record->_klass), "Address not aligned");
+    assert(!record->klass()->is_hidden(), "hidden class cannot be looked up by name");
+    assert(check_alignment(record->klass()), "Address not aligned");
     // We did not save the classfile data of the generated LambdaForm invoker classes,
     // so we cannot support CLFH for such classes.
-    if (record->_klass->is_generated_shared_class() && JvmtiExport::should_post_class_file_load_hook()) {
+    if (record->klass()->is_generated_shared_class() && JvmtiExport::should_post_class_file_load_hook()) {
        return nullptr;
     }
-    return record->_klass;
+    return record->klass();
   } else {
     return nullptr;
   }
@@ -1378,10 +1378,10 @@ public:
 
   void do_value(const RunTimeClassInfo* record) {
     ResourceMark rm;
-    _st->print_cr("%4d: %s %s", _index++, record->_klass->external_name(),
-        class_loader_name_for_shared(record->_klass));
-    if (record->_klass->array_klasses() != nullptr) {
-      record->_klass->array_klasses()->cds_print_value_on(_st);
+    _st->print_cr("%4d: %s %s", _index++, record->klass()->external_name(),
+        class_loader_name_for_shared(record->klass()));
+    if (record->klass()->array_klasses() != nullptr) {
+      record->klass()->array_klasses()->cds_print_value_on(_st);
       _st->cr();
     }
   }
