@@ -25,10 +25,6 @@
  * @test
  * @bug 8343442
  * @summary Test for `@since` for java.net.http module
- * @library /test/lib
- *          /test/jdk/tools/sincechecker
- * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.compiler/com.sun.tools.javac.code
+ * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker java.net.http
  */
