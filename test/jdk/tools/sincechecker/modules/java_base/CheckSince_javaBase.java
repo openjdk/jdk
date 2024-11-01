@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8343442
+ * @bug 8331051
  * @summary Test for `@since` for java.base module
  * @library /test/lib
  *          /test/jdk/tools/sincechecker
