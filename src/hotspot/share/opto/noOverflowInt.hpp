@@ -25,7 +25,6 @@
 #ifndef SHARE_OPTO_NOOVERFLOWINT_HPP
 #define SHARE_OPTO_NOOVERFLOWINT_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 // Wrapper around jint, which detects overflow.
@@ -92,7 +91,7 @@ public:
     return NoOverflowInt(0) - *this;
   }
 
-  bool is_multiple_of(const NoOverflowInt other) const {
+  bool is_multiple_of(const NoOverflowInt& other) const {
     NoOverflowInt a = this->abs();
     NoOverflowInt b = other.abs();
     if (a.is_NaN()) { return false; }

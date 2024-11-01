@@ -340,7 +340,8 @@
 //
 //        This shows that p1 and p2 have a distance greater than the array size, and hence at least one of the two
 //        pointers must be out of bounds. This contradicts our assumption (S1) and we are done.
-//
+
+
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
 private:
@@ -382,7 +383,7 @@ private:
     _aliasing(aliasing),
     _distance(distance)
   {
-    assert(_distance != min_jint, "given by condition S3 of MemPointer Lemma");
+    assert(_distance != min_jint, "given by condition (S3) of MemPointer Lemma");
   }
 
 public:
@@ -495,7 +496,7 @@ public:
 
 private:
   MemPointerDecomposedForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con)
-    :_pointer(pointer), _con(con) {
+    : _pointer(pointer), _con(con) {
     assert(!_con.is_NaN(), "non-NaN constant");
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
     for (int i = 0; i < summands.length(); i++) {
