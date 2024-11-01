@@ -26,20 +26,12 @@ import jdk.test.lib.json.JSONValue;
 import java.security.*;
 import java.util.Arrays;
 import java.util.HexFormat;
-import java.util.List;
 
 // JSON spec at https://pages.nist.gov/ACVP/draft-celi-acvp-sha.html
 // and https://pages.nist.gov/ACVP/draft-celi-acvp-sha3.html
-public class SHA_Test implements Launcher.Test {
+public class SHA_Test {
 
-    @Override
-    public List<String> supportedAlgs() {
-        return List.of("SHA2-256", "SHA2-224",
-                "SHA3-256", "SHA3-224");
-    }
-
-    @Override
-    public void run(JSONValue kat, Provider provider) throws Exception {
+    public static void run(JSONValue kat, Provider provider) throws Exception {
         var alg = kat.get("algorithm").asString();
         if (alg.startsWith("SHA2-")) alg = "SHA-" + alg.substring(5);
         var md = provider == null ? MessageDigest.getInstance(alg)

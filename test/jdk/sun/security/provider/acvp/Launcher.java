@@ -20,34 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.json.JSONValue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Provider;
 import java.security.Security;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /*
  * @test
  * @bug 8342442
  * @library /test/lib
- * @build jdk.test.lib.Asserts jdk.test.lib.json.JSONValue
- * @run main Launcher
  */
 public class Launcher {
-
-    public interface Test {
-        /// Algorithms (as named in ACVP JSON files) this test supports
-        List<String> supportedAlgs();
-        /// Runs the KAT with an optional provider
-        void run(JSONValue kat, Provider p) throws Exception;
-    }
-
-    private static Map<String, Test> tests = new HashMap<>();
 
     public static void main(String[] args) throws Exception {
 
@@ -67,9 +52,7 @@ public class Launcher {
         // "acvp.test.provider" system property. The provider must be
         // registered.
         //
-        // Tests are included in this directory and each must implement
-        // the Launcher.Test interface. Tests for each algorithm must be
-        // compliant to its specification linked from
+        // Tests for each algorithm must be compliant to its specification linked from
         // https://github.com/usnistgov/ACVP?tab=readme-ov-file#supported-algorithms.
 
         var testDataProp = System.getProperty("acvp.test.data");
@@ -86,38 +69,11 @@ public class Launcher {
             System.out.println("Provider: " + provProp);
         }
 
-        setup();
-
         try (var stream = Files.walk(dataPath)) {
             stream.filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString()
                             .endsWith("internalProjection.json"))
                     .forEach(p -> run(provider, p));
-        }
-    }
-
-    static void setup() throws Exception {
-        var srcDir = Path.of(System.getProperty("test.src"));
-        try (var files = Files.newDirectoryStream(srcDir)) {
-            for (var file : files) {
-                var name = file.getFileName().toString();
-                if (!name.equals("Launcher.java") && name.endsWith(".java")) {
-                    CompilerUtils.compile(file,
-                            Path.of(System.getProperty("test.classes")),
-                            "-cp",
-                            System.getProperty("test.class.path"));
-                    var obj = Class.forName(name.substring(0, name.length() - 5))
-                            .getConstructor().newInstance();
-                    if (obj instanceof Test t) {
-                        for (var alg : t.supportedAlgs()) {
-                            tests.put(alg, t);
-                        }
-                    } else {
-                        throw new RuntimeException(
-                                name + " has not implemented Test");
-                    }
-                }
-            }
         }
     }
 
@@ -132,11 +88,12 @@ public class Launcher {
                 return;
             }
             var alg = kat.get("algorithm").asString();
-            var t = tests.get(alg);
-            if (t != null) {
-                t.run(kat, provider);
-            } else {
-                System.out.println("Skipped unsupported algorithm: " + alg);
+            switch (alg) {
+                case "ML-DSA" -> ML_DSA_Test.run(kat, provider);
+                case "ML-KEM" -> ML_KEM_Test.run(kat, provider);
+                case "SHA2-256", "SHA2-224", "SHA3-256", "SHA3-224"
+                    -> SHA_Test.run(kat, provider);
+                default -> System.out.println("Skipped unsupported algorithm: " + alg);
             }
         } catch (RuntimeException re) {
             throw re;

@@ -29,18 +29,11 @@ import java.security.*;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.HexFormat;
-import java.util.List;
 
 // JSON spec at https://pages.nist.gov/ACVP/draft-celi-acvp-ml-kem.html
-public class ML_KEM_Test implements Launcher.Test {
+public class ML_KEM_Test {
 
-    @Override
-    public List<String> supportedAlgs() {
-        return List.of("ML-KEM");
-    }
-
-    @Override
-    public void run(JSONValue kat, Provider provider) throws Exception {
+    public static void run(JSONValue kat, Provider provider) throws Exception {
         switch (kat.get("mode").asString()) {
             case "keyGen" -> mlkemGen(kat, provider);
             case "encapDecap" -> mlkemEnc(kat, provider);
