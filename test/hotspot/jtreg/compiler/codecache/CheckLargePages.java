@@ -131,7 +131,7 @@ public class CheckLargePages {
     public static void main(String[] args) throws Exception {
         if (isLargePageSizeEqual(LP_1G)) {
             testSegmented2GbCodeCacheWith1GbPage();
-            if (numberOfLargePages(LP_1G) > 0) {
+            if (numberOfLargePages(LP_1G) >= 1) {
                 testDefaultCodeCacheWith1GbLargePages();
                 testNonSegmented1GbCodeCacheWith1GbLargePages();
             } else {
