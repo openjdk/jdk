@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -257,6 +258,20 @@ public final class MacHelper {
         return pkg;
     }
 
+    static void verifyBundleStructure(JPackageCommand cmd) {
+        Path bundleRoot;
+        if (cmd.isImagePackageType()) {
+            bundleRoot = cmd.outputBundle();
+        } else {
+            bundleRoot = cmd.pathToUnpackedPackageFile(
+                    cmd.appInstallationDirectory());
+        }
+
+        TKit.assertDirectoryContent(bundleRoot).match(Path.of("Contents"));
+        TKit.assertDirectoryContent(bundleRoot.resolve("Contents")).match(
+                cmd.isRuntime() ? RUNTIME_BUNDLE_CONTENTS : APP_BUNDLE_CONTENTS);
+    }
+
     static String getBundleName(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.MAC);
         return String.format("%s-%s%s", getPackageName(cmd), cmd.version(),
@@ -390,5 +405,19 @@ public final class MacHelper {
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "Contents/Home/lib/server/libjvm.dylib"));
 
-    private final static Method getServicePListFileName = initGetServicePListFileName();
+    private static final Method getServicePListFileName = initGetServicePListFileName();
+
+    private static final Set<Path> APP_BUNDLE_CONTENTS = Stream.of(
+            "Info.plist",
+            "MacOS",
+            "app",
+            "runtime",
+            "Resources",
+            "PkgInfo",
+            "_CodeSignature"
+    ).map(Path::of).collect(toSet());
+
+    private static final Set<Path> RUNTIME_BUNDLE_CONTENTS = Stream.of(
+            "Home"
+    ).map(Path::of).collect(toSet());
 }
