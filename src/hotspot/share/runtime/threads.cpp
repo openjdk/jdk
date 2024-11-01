@@ -1333,15 +1333,8 @@ void Threads::print_on(outputStream* st, bool print_stacks,
       } else {
         p->print_stack_on(st);
         if (p->is_vthread_mounted()) {
-          st->print("   Mounted virtual thread #");
-          // _lock_id is the thread ID of the mounted virtual thread. If it equals
-          // the tid of the carrier we caught thread at the start of a temporary
-          // transition in VirtualThread.switchToCarrierThread. Ignore that case.
-          if (p->lock_id() != java_lang_Thread::thread_id(p->threadObj())) {
-            st->print_cr(INT64_FORMAT, p->lock_id());
-          } else {
-            st->print_cr("%s", "(Unavailable)");
-          }
+          // _lock_id is the thread ID of the mounted virtual thread
+          st->print_cr("   Mounted virtual thread #" INT64_FORMAT, p->lock_id());
           p->print_vthread_stack_on(st);
         }
       }
