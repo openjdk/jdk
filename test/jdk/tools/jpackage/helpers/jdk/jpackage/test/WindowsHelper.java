@@ -308,7 +308,7 @@ public class WindowsHelper {
             }
             default -> {
                 TKit.assertUnexpected(String.format(
-                        "Unexpected numer of running processes [%d]",
+                        "Unexpected number of running processes [%d]",
                         processes.size()));
                 return null; // Unreachable
             }

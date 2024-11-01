@@ -38,7 +38,7 @@ AppLauncher::AppLauncher() {
     setInitJvmFromCmdlineOnly(false);
     launcherPath = SysInfo::getProcessModulePath();
     args = SysInfo::getCommandArgs();
-    externalCfgFile = 0;
+    externalCfgFile = nullptr;
 }
 
 
