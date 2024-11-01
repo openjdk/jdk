@@ -28,15 +28,16 @@ import java.lang.instrument.Instrumentation;
 public class OldClassAndRedefineClassApp {
 
     public static void main(String args[]) throws Throwable {
+        ClassLoader appClassLoader = ClassLoader.getSystemClassLoader();
 
         System.out.println("Main: loading OldSuper");
         // Load an old class (version 49), but not linking it.
-        Class.forName("OldSuper", false, ClassLoader.getSystemClassLoader());
+        Class.forName("OldSuper", false, appClassLoader);
 
         // Redefine a class unrelated to the above old class.
         Instrumentation instrumentation = InstrumentationRegisterClassFileTransformer.getInstrumentation();
         System.out.println("INFO: instrumentation = " + instrumentation);
-        Class<?> c = ClassLoader.getSystemClassLoader().loadClass("Hello");
+        Class<?> c = Class.forName("Hello", false, appClassLoader);
         byte[] bytes = c.getClassLoader().getResourceAsStream(c.getName().replace('.', '/') + ".class").readAllBytes();
         instrumentation.redefineClasses(new ClassDefinition(c, bytes));
 
