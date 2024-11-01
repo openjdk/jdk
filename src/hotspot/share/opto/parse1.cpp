@@ -2190,11 +2190,13 @@ void Parse::return_current(Node* value) {
 
   if (StressReachabilityFence && !method()->is_static()) {
     Node* receiver = local(0);
-    Node* rfence = MemBarNode::make(C, Op_ReachabilityFence, Compile::AliasIdxTop, receiver);
-    rfence->init_req(TypeFunc::Control, control());
-    rfence->init_req(TypeFunc::Memory,  immutable_memory());
-    rfence = _gvn.transform(rfence);
-    set_control(_gvn.transform(new ProjNode(rfence, TypeFunc::Control)));
+    if (!receiver->is_top()) {
+      Node* rfence = MemBarNode::make(C, Op_ReachabilityFence, Compile::AliasIdxTop, receiver);
+      rfence->init_req(TypeFunc::Control, control());
+      rfence->init_req(TypeFunc::Memory,  immutable_memory());
+      rfence = _gvn.transform(rfence);
+      set_control(_gvn.transform(new ProjNode(rfence, TypeFunc::Control)));
+    }
   }
 
   // Do not set_parse_bci, so that return goo is credited to the return insn.
