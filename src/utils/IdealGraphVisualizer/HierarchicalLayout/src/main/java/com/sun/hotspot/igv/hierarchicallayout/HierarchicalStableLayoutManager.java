@@ -814,7 +814,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
             LayoutNode to = edge.getTo();
 
             boolean hasEdgeFromSamePort = false;
-            LayoutEdge edgeFromSamePort = new LayoutEdge(from, to);
+            LayoutEdge edgeFromSamePort = new LayoutEdge(from, to, edge.getLink());
 
             for (LayoutEdge e : edge.getFrom().getSuccs()) {
                 if (e.getRelativeFromX() == edge.getRelativeFromX() && e.getTo().isDummy()) {

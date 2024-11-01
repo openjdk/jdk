@@ -130,7 +130,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             if (Math.abs(toNode.getLayer() - fromNode.getLayer()) <= 1) continue;
 
             boolean hasEdgeFromSamePort = false;
-            LayoutEdge edgeFromSamePort = new LayoutEdge(fromNode, toNode);
+            LayoutEdge edgeFromSamePort = new LayoutEdge(fromNode, toNode, predEdge.getLink());
             if (predEdge.isReversed()) edgeFromSamePort.reverse();
 
             for (LayoutEdge succEdge : fromNode.getSuccs()) {
@@ -181,7 +181,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 for (int l = layoutNode1.getLayer() - 1; l > prevEdge.getFrom().getLayer(); l--) {
                     LayoutNode dummyNode = new LayoutNode();
                     dummyNode.getSuccs().add(prevEdge);
-                    LayoutEdge result = new LayoutEdge(prevEdge.getFrom(), dummyNode, prevEdge.getRelativeFromX(), 0, null);
+                    LayoutEdge result = new LayoutEdge(prevEdge.getFrom(), dummyNode, prevEdge.getRelativeFromX(), 0, prevEdge.getLink());
                     if (prevEdge.isReversed()) result.reverse();
                     dummyNode.getPreds().add(result);
                     prevEdge.setRelativeFromX(0);
@@ -685,6 +685,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
                         }
                     }
                 } else {
+                    Link link =  unprocessedEdges.get(unprocessedEdges.size() - 1).getLink();
                     int lastLayer = unprocessedEdges.get(unprocessedEdges.size() - 1).getTo().getLayer();
                     int dummyCnt = lastLayer - layoutNode.getLayer() - 1;
                     LayoutEdge[] newDummyEdges = new LayoutEdge[dummyCnt];
@@ -692,13 +693,13 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
                     newDummyNodes[0] = new LayoutNode();
                     newDummyNodes[0].setLayer(layoutNode.getLayer() + 1);
-                    newDummyEdges[0] = new LayoutEdge(layoutNode, newDummyNodes[0], startPort, newDummyNodes[0].getWidth() / 2, null);
+                    newDummyEdges[0] = new LayoutEdge(layoutNode, newDummyNodes[0], startPort, newDummyNodes[0].getWidth() / 2, link);
                     newDummyNodes[0].getPreds().add(newDummyEdges[0]);
                     layoutNode.getSuccs().add(newDummyEdges[0]);
                     for (int j = 1; j < dummyCnt; j++) {
                         newDummyNodes[j] = new LayoutNode();
                         newDummyNodes[j].setLayer(layoutNode.getLayer() + j + 1);
-                        newDummyEdges[j] = new LayoutEdge(newDummyNodes[j - 1], newDummyNodes[j]);
+                        newDummyEdges[j] = new LayoutEdge(newDummyNodes[j - 1], newDummyNodes[j], link);
                         newDummyNodes[j].getPreds().add(newDummyEdges[j]);
                         newDummyNodes[j - 1].getSuccs().add(newDummyEdges[j]);
                     }
