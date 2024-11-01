@@ -25,6 +25,7 @@
  * @test
  * @bug 8048357
  * @summary test PKCS7 data signing, encoding and verification
+ * @library /test/lib
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
