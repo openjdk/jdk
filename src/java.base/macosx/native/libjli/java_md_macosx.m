@@ -415,6 +415,8 @@ GetJDKInstallRoot(char *path, jint pathsize, jboolean speculative)
 {
     char libjava[MAXPATHLEN];
 
+    JLI_TraceLauncher("Attempt to get JDK installation root from launcher executable path\n");
+
     if (GetApplicationHome(path, pathsize)) {
         /* Is the JDK co-located with the application? */
         if (JLI_IsStaticallyLinked()) {
