@@ -63,10 +63,11 @@ public class CheckLargePages {
 
     private static int numberOfLargePages(long size) {
         String largePageNumberFile = String.format(LARGE_PAGE_NUMBER_FILE_BASE, size / 1024);
-        Scanner scanner = new Scanner(new File(largePageNumberFile));
-        if (scanner.hasNextInt()) {
-            return scanner.nextInt();
-        }
+        try (Scanner scanner = new Scanner(new File(largePageNumberFile))) {
+            if (scanner.hasNextInt()) {
+                return scanner.nextInt();
+            }
+        } catch (FileNotFoundException e);
         return 0;
     }
 
