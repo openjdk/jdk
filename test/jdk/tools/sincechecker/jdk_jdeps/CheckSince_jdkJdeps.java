@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8341399
- * @summary Test for `@since` for java.base module
+ * @summary Test for `@since` for jdk.jdeps module
  * @library /test/lib
  *          /test/jdk/tools/sincechecker
  * @modules jdk.compiler/com.sun.tools.javac.api

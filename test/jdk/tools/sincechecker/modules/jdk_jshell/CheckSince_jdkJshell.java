@@ -1,4 +1,4 @@
-/*
+package modules.jdk_jshell;/*
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 8341399
- * @summary Test for `@since` for jdk.compiler module
+ * @summary Test for `@since` for jdk.jshell module
  * @library /test/lib
  *          /test/jdk/tools/sincechecker
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.compiler/com.sun.tools.javac.code
- * @run main SinceChecker jdk.compiler
+ * @run main SinceChecker jdk.jshell
  */
