@@ -211,7 +211,6 @@ private:
   //      validate_shared_path_table()
   //      validate_non_existent_class_paths()
   size_t _shared_path_table_offset;
-  size_t _main_module_name_offset;      // property of "jdk.module.main"
 
   jshort _app_class_paths_start_index;  // Index of first app classpath entry
   jshort _app_module_paths_start_index; // Index of first module path entry
@@ -266,7 +265,6 @@ public:
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
-  char* main_module_name()                 const { return from_mapped_offset(_main_module_name_offset); }
   const char* jvm_ident()                  const { return _jvm_ident; }
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
@@ -290,7 +288,6 @@ public:
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
-  void set_main_module_name(char* p)             { set_as_offset(p, &_main_module_name_offset); }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_root_segments(HeapRootSegments segments) { _heap_root_segments = segments; }
   void set_heap_oopmap_start_pos(size_t n)       { _heap_oopmap_start_pos = n; }
@@ -405,8 +402,6 @@ public:
   void  set_cloned_vtables(char* p)           const { header()->set_cloned_vtables(p); }
   char* serialized_data()                     const { return header()->serialized_data(); }
   void  set_serialized_data(char* p)          const { header()->set_serialized_data(p); }
-  char* main_module_name()                    const { return header()->main_module_name(); }
-  void  set_main_module_name(char* p)         const { header()->set_main_module_name(p); }
 
   bool  is_file_position_aligned() const;
   void  align_file_position();
@@ -492,7 +487,6 @@ public:
   bool validate_shared_path_table();
   bool validate_non_existent_class_paths();
   bool validate_aot_class_linking();
-  void check_main_module_name();
   static void set_shared_path_table(FileMapInfo* info) {
     _shared_path_table = info->header()->shared_path_table();
   }

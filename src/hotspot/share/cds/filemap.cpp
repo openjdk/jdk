@@ -1056,8 +1056,6 @@ bool FileMapInfo::validate_shared_path_table() {
     return false;
   }
 
-  check_main_module_name();
-
   _validating_shared_path_table = false;
 
 #if INCLUDE_JVMTI
@@ -2443,36 +2441,6 @@ bool FileMapInfo::validate_aot_class_linking() {
   }
 
   return true;
-}
-
-void FileMapInfo::check_main_module_name() {
-  const char* runtime_main_module_name = Arguments::get_property("jdk.module.main");
-  const char* archived_main_module_name = main_module_name();
-  bool no_archived_main_module_name = strcmp(archived_main_module_name, "") == 0;
-
-  log_info(cds)("_archived_main_module_name: '%s'", archived_main_module_name);
-  bool disable = false;
-  if (runtime_main_module_name == nullptr) {
-    if (!no_archived_main_module_name) {
-      log_info(cds)("Module %s specified during dump time but not during runtime", archived_main_module_name);
-      disable = true;
-    }
-  } else {
-    if (no_archived_main_module_name) {
-      log_info(cds)("Module %s specified during runtime but not during dump time", runtime_main_module_name);
-      disable = true;
-    } else if (strcmp(runtime_main_module_name, archived_main_module_name) != 0) {
-      log_info(cds)("Mismatched modules: runtime %s dump time %s", runtime_main_module_name, archived_main_module_name);
-      disable = true;
-    }
-  }
-
-  if (disable) {
-    log_info(cds)("Disabling optimized module handling");
-    CDSConfig::stop_using_optimized_module_handling();
-  }
-  log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
-  log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
 }
 
 // The 2 core spaces are RW->RO
