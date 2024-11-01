@@ -2127,8 +2127,9 @@ unsigned int MacroAssembler::push_frame_abi160(unsigned int bytes) {
 
 // Pop current C frame.
 void MacroAssembler::pop_frame() {
-  BLOCK_COMMENT("pop_frame:");
+  BLOCK_COMMENT("pop_frame {");
   Assembler::z_lg(Z_SP, _z_abi(callers_sp), Z_SP);
+  BLOCK_COMMENT("} pop_frame");
 }
 
 // Pop current C frame and restore return PC register (Z_R14).
@@ -3458,7 +3459,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fa
     L_slow_path = &L_fallthrough;
   }
 
-  // Fast path check: class is fully initialized
+  // Fast path check: class is fully initialized.
+  // init_state needs acquire, but S390 is TSO, and so we are already good.
   z_cli(Address(klass, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
   z_bre(*L_fast_path);
 
@@ -3665,7 +3667,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   // We need a full fence after clearing owner to avoid stranding.
   z_fence();
 
-  // Check if the entry lists are empty.
+  // Check if the entry lists are empty (EntryList first - by convention).
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
   z_brne(check_succ);
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
@@ -6014,21 +6016,6 @@ void MacroAssembler::zap_from_to(Register low, Register high, Register val, Regi
 }
 #endif // !PRODUCT
 
-SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value, Register _rscratch) {
-  _masm = masm;
-  _masm->load_absolute_address(_rscratch, (address)flag_addr);
-  _masm->load_and_test_int(_rscratch, Address(_rscratch));
-  if (value) {
-    _masm->z_brne(_label); // Skip if true, i.e. != 0.
-  } else {
-    _masm->z_bre(_label);  // Skip if false, i.e. == 0.
-  }
-}
-
-SkipIfEqual::~SkipIfEqual() {
-  _masm->bind(_label);
-}
-
 // Implements lightweight-locking.
 //  - obj: the object to be locked, contents preserved.
 //  - temp1, temp2: temporary registers, contents destroyed.
@@ -6508,7 +6495,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     // We need a full fence after clearing owner to avoid stranding.
     z_fence();
 
-    // Check if the entry lists are empty.
+    // Check if the entry lists are empty (EntryList first - by convention).
     load_and_test_long(tmp2, EntryList_address);
     z_brne(check_succ);
     load_and_test_long(tmp2, cxq_address);

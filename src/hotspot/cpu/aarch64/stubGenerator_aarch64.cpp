@@ -1374,7 +1374,9 @@ class StubGenerator: public StubCodeGenerator {
       // r15 is the byte adjustment needed to align s.
       __ cbz(r15, aligned);
       int shift = exact_log2(granularity);
-      if (shift)  __ lsr(r15, r15, shift);
+      if (shift > 0) {
+        __ lsr(r15, r15, shift);
+      }
       __ sub(count, count, r15);
 
 #if 0
@@ -1402,9 +1404,15 @@ class StubGenerator: public StubCodeGenerator {
 
     // s is now 2-word-aligned.
 
-    // We have a count of units and some trailing bytes.  Adjust the
-    // count and do a bulk copy of words.
-    __ lsr(r15, count, exact_log2(wordSize/granularity));
+    // We have a count of units and some trailing bytes. Adjust the
+    // count and do a bulk copy of words. If the shift is zero
+    // perform a move instead to benefit from zero latency moves.
+    int shift = exact_log2(wordSize/granularity);
+    if (shift > 0) {
+      __ lsr(r15, count, shift);
+    } else {
+      __ mov(r15, count);
+    }
     if (direction == copy_forwards) {
       if (type != T_OBJECT) {
         __ bl(copy_f);
@@ -7320,6 +7328,28 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // load Method* target of MethodHandle
+  // j_rarg0 = jobject receiver
+  // rmethod = result
+  address generate_upcall_stub_load_target() {
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(j_rarg0, rscratch1, rscratch2);
+      // Load target method from receiver
+    __ load_heap_oop(rmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), rscratch1, rscratch2);
+    __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1, rscratch2);
+    __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_MemberName::method_offset()), rscratch1, rscratch2);
+    __ access_load_at(T_ADDRESS, IN_HEAP, rmethod,
+                      Address(rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                      noreg, noreg);
+    __ str(rmethod, Address(rthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+    __ ret(lr);
+
+    return start;
+  }
+
 #undef __
 #define __ masm->
 
@@ -8241,6 +8271,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }

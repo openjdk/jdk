@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,12 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -57,13 +59,14 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Functional.ExceptionBox;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingRunnable;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
 
-final public class TKit {
+public final class TKit {
 
     private static final String OS = System.getProperty("os.name").toLowerCase();
 
@@ -84,7 +87,7 @@ final public class TKit {
         return TEST_SRC_ROOT.resolve("../../../../src/jdk.jpackage").normalize().toAbsolutePath();
     }).get();
 
-    public final static String ICON_SUFFIX = Functional.identity(() -> {
+    public static final String ICON_SUFFIX = Functional.identity(() -> {
         if (isOSX()) {
             return ".icns";
         }
@@ -273,7 +276,23 @@ final public class TKit {
         throw new AssertionError(v);
     }
 
-    private final static String TEMP_FILE_PREFIX = null;
+    static void assertAssert(boolean expectedSuccess, Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (AssertionError err) {
+            if (expectedSuccess) {
+                assertUnexpected("Assertion failed");
+            } else {
+                return;
+            }
+        }
+
+        if (!expectedSuccess) {
+            assertUnexpected("Assertion passed");
+        }
+    }
+
+    private static final String TEMP_FILE_PREFIX = null;
 
     private static Path createUniqueFileName(String defaultName) {
         final String[] nameComponents;
@@ -296,7 +315,9 @@ final public class TKit {
             if (!path.toFile().exists()) {
                 return path;
             }
-            nameComponents[0] = String.format("%s.%d", baseName, i);
+            // Don't use period (.) as a separator. OSX codesign fails to sign folders
+            // with subfolders with names like "input.0".
+            nameComponents[0] = String.format("%s-%d", baseName, i);
         }
         throw new IllegalStateException(String.format(
                 "Failed to create unique file name from [%s] basename after %d attempts",
@@ -379,7 +400,7 @@ final public class TKit {
             try {
                 final List<Path> paths;
                 if (contentsOnly) {
-                    try (var pathStream = Files.walk(root, 0)) {
+                    try (var pathStream = Files.list(root)) {
                         paths = pathStream.collect(Collectors.toList());
                     }
                 } else {
@@ -673,26 +694,40 @@ final public class TKit {
             assertTrue(path.toFile().exists(), String.format(
                     "Check [%s] path exists", path));
         } else {
-            assertFalse(path.toFile().exists(), String.format(
+            assertTrue(!path.toFile().exists(), String.format(
                     "Check [%s] path doesn't exist", path));
         }
     }
 
-    public static void assertPathNotEmptyDirectory(Path path) {
-        if (Files.isDirectory(path)) {
+    public static void assertDirectoryNotEmpty(Path path) {
+        assertDirectoryExists(path, Optional.of(false));
+    }
+
+    public static void assertDirectoryEmpty(Path path) {
+        assertDirectoryExists(path, Optional.of(true));
+    }
+
+    public static void assertDirectoryExists(Path path, Optional<Boolean> isEmptyCheck) {
+        assertPathExists(path, true);
+        boolean isDirectory = Files.isDirectory(path);
+        if (isEmptyCheck.isEmpty() || !isDirectory) {
+            assertTrue(isDirectory, String.format("Check [%s] is a directory", path));
+        } else {
             ThrowingRunnable.toRunnable(() -> {
                 try (var files = Files.list(path)) {
-                    TKit.assertFalse(files.findFirst().isEmpty(), String.format
-                            ("Check [%s] is not an empty directory", path));
+                    boolean actualIsEmpty = files.findFirst().isEmpty();
+                    if (isEmptyCheck.get()) {
+                        TKit.assertTrue(actualIsEmpty, String.format("Check [%s] is not an empty directory", path));
+                    } else {
+                        TKit.assertTrue(!actualIsEmpty, String.format("Check [%s] is an empty directory", path));
+                    }
                 }
             }).run();
-         }
+        }
     }
 
     public static void assertDirectoryExists(Path path) {
-        assertPathExists(path, true);
-        assertTrue(path.toFile().isDirectory(), String.format(
-                "Check [%s] is a directory", path));
+        assertDirectoryExists(path, Optional.empty());
     }
 
     public static void assertSymbolicLinkExists(Path path) {
@@ -722,6 +757,101 @@ final public class TKit {
     public static void assertUnexpected(String msg) {
         currentTest.notifyAssert();
         error(concatMessages("Unexpected", msg));
+    }
+
+    public static DirectoryContentVerifier assertDirectoryContent(Path dir) {
+        return new DirectoryContentVerifier(dir);
+    }
+
+    public static final class DirectoryContentVerifier {
+        public DirectoryContentVerifier(Path baseDir) {
+            this(baseDir, ThrowingSupplier.toSupplier(() -> {
+                try (var files = Files.list(baseDir)) {
+                    return files.map(Path::getFileName).collect(toSet());
+                }
+            }).get());
+        }
+
+        public void match(Path ... expected) {
+            DirectoryContentVerifier.this.match(Set.of(expected));
+        }
+
+        public void match(Set<Path> expected) {
+            currentTest.notifyAssert();
+
+            var comm = Comm.compare(content, expected);
+            if (!comm.unique1.isEmpty() && !comm.unique2.isEmpty()) {
+                error(String.format(
+                        "assertDirectoryContentEquals(%s): Some expected %s. Unexpected %s. Missing %s",
+                        baseDir, format(comm.common), format(comm.unique1), format(comm.unique2)));
+            } else if (!comm.unique1.isEmpty()) {
+                error(String.format(
+                        "assertDirectoryContentEquals%s: Expected %s. Unexpected %s",
+                        baseDir, format(comm.common), format(comm.unique1)));
+            } else if (!comm.unique2.isEmpty()) {
+                error(String.format(
+                        "assertDirectoryContentEquals(%s): Some expected %s. Missing %s",
+                        baseDir, format(comm.common), format(comm.unique2)));
+            } else {
+                traceAssert(String.format(
+                        "assertDirectoryContentEquals(%s): Expected %s",
+                        baseDir, format(expected)));
+            }
+        }
+
+        public void contains(Path ... expected) {
+            contains(Set.of(expected));
+        }
+
+        public void contains(Set<Path> expected) {
+            currentTest.notifyAssert();
+
+            var comm = Comm.compare(content, expected);
+            if (!comm.unique2.isEmpty()) {
+                error(String.format(
+                        "assertDirectoryContentContains(%s): Some expected %s. Missing %s",
+                        baseDir, format(comm.common), format(comm.unique2)));
+            } else {
+                traceAssert(String.format(
+                        "assertDirectoryContentContains(%s): Expected %s",
+                        baseDir, format(expected)));
+            }
+        }
+
+        public DirectoryContentVerifier removeAll(Path ... paths) {
+            Set<Path> newContent = new HashSet<>(content);
+            newContent.removeAll(List.of(paths));
+            return new DirectoryContentVerifier(baseDir, newContent);
+        }
+
+        private DirectoryContentVerifier(Path baseDir, Set<Path> contents) {
+            this.baseDir = baseDir;
+            this.content = contents;
+        }
+
+        private static record Comm(Set<Path> common, Set<Path> unique1, Set<Path> unique2) {
+            static Comm compare(Set<Path> a, Set<Path> b) {
+                Set<Path> common = new HashSet<>(a);
+                common.retainAll(b);
+
+                Set<Path> unique1 = new HashSet<>(a);
+                unique1.removeAll(common);
+
+                Set<Path> unique2 = new HashSet<>(b);
+                unique2.removeAll(common);
+
+                return new Comm(common, unique1, unique2);
+            }
+        }
+
+        private static String format(Set<Path> paths) {
+            return Arrays.toString(
+                    paths.stream().sorted().map(Path::toString).toArray(
+                            String[]::new));
+        }
+
+        private final Path baseDir;
+        private final Set<Path> content;
     }
 
     public static void assertStringListEquals(List<String> expected,
@@ -801,7 +931,7 @@ final public class TKit {
         };
     }
 
-    public final static class TextStreamVerifier {
+    public static final class TextStreamVerifier {
         TextStreamVerifier(String value) {
             this.value = value;
             predicate(String::contains);
@@ -864,7 +994,7 @@ final public class TKit {
         private String label;
         private boolean negate;
         private Supplier<RuntimeException> createException;
-        final private String value;
+        private final String value;
     }
 
     public static TextStreamVerifier assertTextStream(String what) {
