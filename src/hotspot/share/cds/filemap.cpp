@@ -1745,7 +1745,7 @@ void FileMapInfo::close() {
  */
 static char* map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
-                        bool allow_exec, MemTag mem_tag = mtNone) {
+                        bool allow_exec, MemTag mem_tag) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
                              AlwaysPreTouch ? false : read_only,
                              allow_exec, mem_tag);
@@ -1774,7 +1774,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
   // Replace old mapping with new one that is writable.
   char *base = os::map_memory(_fd, _full_path, r->file_offset(),
                               addr, size, false /* !read_only */,
-                              r->allow_exec());
+                              r->allow_exec(), mtClassShared);
   close();
   // These have to be errors because the shared region is now unmapped.
   if (base == nullptr) {
@@ -2224,7 +2224,7 @@ bool FileMapInfo::map_heap_region_impl() {
   } else {
     base = map_memory(_fd, _full_path, r->file_offset(),
                       addr, _mapped_heap_memregion.byte_size(), r->read_only(),
-                      r->allow_exec());
+                      r->allow_exec(), mtJavaHeap);
     if (base == nullptr || base != addr) {
       dealloc_heap_region();
       log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "

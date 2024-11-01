@@ -297,7 +297,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
  public:
   ReservedMemoryRegion(address base, size_t size, const NativeCallStack& stack,
-    MemTag mem_tag = mtNone) :
+    MemTag mem_tag) :
     VirtualMemoryRegion(base, size), _stack(stack), _mem_tag(mem_tag) { }
 
 
@@ -380,7 +380,7 @@ class VirtualMemoryTracker : AllStatic {
  public:
   static bool initialize(NMT_TrackingLevel level);
 
-  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MemTag mem_tag = mtNone);
+  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MemTag mem_tag);
 
   static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
   static bool remove_uncommitted_region (address base_addr, size_t size);
