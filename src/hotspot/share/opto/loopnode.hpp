@@ -952,18 +952,22 @@ private:
                                               Node* zero_trip_guard_proj_post, const Node_List& old_new);
   Node* clone_template_assertion_predicate(IfNode* iff, Node* new_init, Node* predicate, Node* uncommon_proj, Node* control,
                                            IdealLoopTree* outer_loop, Node* new_control);
+ public:
   IfTrueNode* create_initialized_assertion_predicate(IfNode* template_assertion_predicate, Node* new_init,
                                                      Node* new_stride, Node* control);
-  static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
+ private:
+  DEBUG_ONLY(static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);)
   DEBUG_ONLY(static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);)
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                               Node* stride);
-  void initialize_assertion_predicates_for_peeled_loop(const PredicateBlock* predicate_block, LoopNode* outer_loop_head,
-                                                       int dd_outer_loop_head, Node* init, Node* stride,
-                                                       IdealLoopTree* outer_loop, uint idx_before_clone,
+  void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
+                                                       CountedLoopNode* remaining_loop_head,
+                                                       uint first_node_index_in_cloned_loop_body,
                                                        const Node_List& old_new);
+  void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
+                                           const NodeInLoopBody& _node_in_loop_body);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
   void log_loop_tree();

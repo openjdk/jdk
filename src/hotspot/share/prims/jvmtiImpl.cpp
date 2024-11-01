@@ -833,11 +833,6 @@ VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Hand
 }
 
 javaVFrame *VM_VirtualThreadGetOrSetLocal::get_java_vframe() {
-  Thread* cur_thread = Thread::current();
-  oop cont = java_lang_VirtualThread::continuation(_vthread_h());
-  assert(cont != nullptr, "vthread contintuation must not be null");
-
-  javaVFrame* jvf = nullptr;
   JavaThread* java_thread = JvmtiEnvBase::get_JavaThread_or_null(_vthread_h());
   bool is_cont_mounted = (java_thread != nullptr);
 
@@ -845,22 +840,8 @@ javaVFrame *VM_VirtualThreadGetOrSetLocal::get_java_vframe() {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return nullptr;
   }
+  javaVFrame* jvf = JvmtiEnvBase::get_vthread_jvf(_vthread_h());
 
-  if (is_cont_mounted) {
-    vframeStream vfs(java_thread);
-
-    if (!vfs.at_end()) {
-      jvf = vfs.asJavaVFrame();
-      jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
-    }
-  } else {
-    vframeStream vfs(cont);
-
-    if (!vfs.at_end()) {
-      jvf = vfs.asJavaVFrame();
-      jvf = JvmtiEnvBase::check_and_skip_hidden_frames(_vthread_h(), jvf);
-    }
-  }
   int d = 0;
   while ((jvf != nullptr) && (d < _depth)) {
     jvf = jvf->java_sender();
