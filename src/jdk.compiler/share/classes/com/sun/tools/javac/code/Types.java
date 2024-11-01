@@ -1694,7 +1694,7 @@ public class Types {
                             return true;
                         } else if (csym.isSealed()) {
                             return areDisjoint(isym, csym.getPermittedSubclasses());
-                        } else if (!csym.isSealed() && isym.isSealed()) {
+                        } else if (isym.isSealed()) {
                             return areDisjoint(csym, isym.getPermittedSubclasses());
                         }
                     }
@@ -1710,7 +1710,7 @@ public class Types {
                         }
                     }
                 }
-                // at this point we haven't been able to prove that the classes or interfaces are disjoint so we bail out
+                // at this point we haven't been able to statically prove that the classes or interfaces are disjoint
                 return false;
             }
 
