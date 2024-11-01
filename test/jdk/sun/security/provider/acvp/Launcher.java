@@ -57,8 +57,8 @@ public class Launcher {
         // The files are either put into the "data" directory or another
         // directory specified by the "acvp.test.data" system property.
         // The test walks through the directory recursively and looks for
-        // file names equals to or ends with "internalProjection.json" and
-        // run test on it. Only very limited algorithms are supported.
+        // file names equals to or ending with "internalProjection.json" and
+        // runs test on them. Only very limited algorithms are supported.
         // Sample files can be downloaded from
         // https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files.
         //
@@ -67,7 +67,7 @@ public class Launcher {
         // "acvp.test.provider" system property. The provider must be
         // registered.
         //
-        // Tests are including in this directory and each must implement
+        // Tests are included in this directory and each must implement
         // the Launcher.Test interface. Tests for each algorithm must be
         // compliant to its specification linked from
         // https://github.com/usnistgov/ACVP?tab=readme-ov-file#supported-algorithms.
