@@ -23,8 +23,6 @@
  */
 
 import java.io.File;
-import java.lang.instrument.ClassDefinition;
-import java.lang.instrument.Instrumentation;
 
 public class RedefineOldSuperApp {
     public static void main(String args[]) throws Throwable {
@@ -40,10 +38,9 @@ public class RedefineOldSuperApp {
         }
 
         // Redefine the class
-        Instrumentation instrumentation = InstrumentationRegisterClassFileTransformer.getInstrumentation();
         byte[] bytes = Util.getClassFileFromJar(bootJar, "OldSuper");
         Util.replace(bytes, "Hello", "HELLO");
-        instrumentation.redefineClasses(new ClassDefinition(superCls, bytes));
+        RedefineClassHelper.redefineClass(superCls, bytes);
 
         {
             OldSuper obj = (OldSuper)superCls.newInstance();

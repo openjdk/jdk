@@ -22,9 +22,6 @@
  *
  */
 
-import java.lang.instrument.ClassDefinition;
-import java.lang.instrument.Instrumentation;
-
 public class OldClassAndRedefineClassApp {
 
     public static void main(String args[]) throws Throwable {
@@ -35,11 +32,10 @@ public class OldClassAndRedefineClassApp {
         Class.forName("OldSuper", false, appClassLoader);
 
         // Redefine a class unrelated to the above old class.
-        Instrumentation instrumentation = InstrumentationRegisterClassFileTransformer.getInstrumentation();
-        System.out.println("INFO: instrumentation = " + instrumentation);
+        System.out.println("INFO: instrumentation = " + RedefineClassHelper.instrumentation);
         Class<?> c = Class.forName("Hello", false, appClassLoader);
         byte[] bytes = c.getClassLoader().getResourceAsStream(c.getName().replace('.', '/') + ".class").readAllBytes();
-        instrumentation.redefineClasses(new ClassDefinition(c, bytes));
+        RedefineClassHelper.redefineClass(c, bytes);
 
         System.out.println("Main: loading ChildOldSuper");
         // Load and link a subclass of the above old class.

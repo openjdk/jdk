@@ -36,6 +36,7 @@
  * @compile ../../test-classes/OldSuper.jasm
  *          ../../test-classes/ChildOldSuper.java
  *          ../../test-classes/Hello.java
+ * @run driver RedefineClassHelper
  * @run driver OldClassAndRedefineClass
  */
 
@@ -52,11 +53,6 @@ public class OldClassAndRedefineClass {
     };
     public static String sharedClasses[] = TestCommon.concat(appClasses);
 
-    public static String agentClasses[] = {
-        "InstrumentationClassFileTransformer",
-        "InstrumentationRegisterClassFileTransformer",
-    };
-
     public static void main(String[] args) throws Throwable {
         runTest();
     }
@@ -64,12 +60,8 @@ public class OldClassAndRedefineClass {
     public static void runTest() throws Throwable {
         String appJar =
             ClassFileInstaller.writeJar("OldClassAndRedefineClassApp.jar", appClasses);
-        String agentJar =
-            ClassFileInstaller.writeJar("InstrumentationAgent.jar",
-                                        ClassFileInstaller.Manifest.fromSourceFile("../InstrumentationAgent.mf"),
-                                        agentClasses);
 
-        String agentCmdArg = "-javaagent:" + agentJar;
+        String agentCmdArg = "-javaagent:redefineagent.jar";
 
         OutputAnalyzer out = TestCommon.testDump(appJar, sharedClasses, "-Xlog:cds,cds+class=debug");
         out.shouldMatch("klasses.*OldSuper.[*][*].unlinked")

@@ -37,6 +37,7 @@
  *        NewChild
  *        InstrumentationClassFileTransformer
  *        InstrumentationRegisterClassFileTransformer
+ * @run driver RedefineClassHelper
  * @run driver RedefineOldSuperTest
  */
 
@@ -55,14 +56,9 @@ public class RedefineOldSuperTest {
         "OldSuper",
         "NewChild",
         "RedefineOldSuperApp",
-    };
-    public static String sharedClasses[] = TestCommon.concat(appClasses);
-
-    public static String agentClasses[] = {
-        "InstrumentationClassFileTransformer",
-        "InstrumentationRegisterClassFileTransformer",
         "Util",
     };
+    public static String sharedClasses[] = TestCommon.concat(appClasses);
 
     public static void main(String[] args) throws Throwable {
         runTest();
@@ -71,12 +67,8 @@ public class RedefineOldSuperTest {
     public static void runTest() throws Throwable {
         String appJar =
             ClassFileInstaller.writeJar("RedefineClassApp.jar", appClasses);
-        String agentJar =
-            ClassFileInstaller.writeJar("InstrumentationAgent.jar",
-                                        ClassFileInstaller.Manifest.fromSourceFile("../InstrumentationAgent.mf"),
-                                        agentClasses);
 
-        String agentCmdArg = "-javaagent:" + agentJar;
+        String agentCmdArg = "-javaagent:redefineagent.jar";
 
         TestCommon.testDump(appJar, sharedClasses, "-Xlog:cds,cds+class=debug");
 

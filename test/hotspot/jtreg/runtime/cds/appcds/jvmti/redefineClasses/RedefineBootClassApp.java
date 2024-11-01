@@ -23,8 +23,6 @@
  */
 
 import java.io.File;
-import java.lang.instrument.ClassDefinition;
-import java.lang.instrument.Instrumentation;
 
 public class RedefineBootClassApp {
     public static void main(String args[]) throws Throwable {
@@ -39,10 +37,9 @@ public class RedefineBootClassApp {
         }
 
         // Redefine the class
-        Instrumentation instrumentation = InstrumentationRegisterClassFileTransformer.getInstrumentation();
         byte[] bytes = Util.getClassFileFromJar(bootJar, "BootSuper");
         Util.replace(bytes, "Hello", "HELLO");
-        instrumentation.redefineClasses(new ClassDefinition(superCls, bytes));
+        RedefineClassHelper.redefineClass(superCls, bytes);
 
         {
             BootSuper obj = (BootSuper)superCls.newInstance();

@@ -36,6 +36,7 @@
  *        BootSuper BootChild
  *        InstrumentationClassFileTransformer
  *        InstrumentationRegisterClassFileTransformer
+ * @run driver RedefineClassHelper
  * @run driver RedefineBootClassTest
  */
 
@@ -56,14 +57,9 @@ public class RedefineBootClassTest {
     };
     public static String appClasses[] = {
         "RedefineBootClassApp",
-    };
-    public static String sharedClasses[] = TestCommon.concat(bootClasses, appClasses);
-
-    public static String agentClasses[] = {
-        "InstrumentationClassFileTransformer",
-        "InstrumentationRegisterClassFileTransformer",
         "Util",
     };
+    public static String sharedClasses[] = TestCommon.concat(bootClasses, appClasses);
 
     public static void main(String[] args) throws Throwable {
         runTest();
@@ -74,13 +70,9 @@ public class RedefineBootClassTest {
             ClassFileInstaller.writeJar("RedefineClassBoot.jar", bootClasses);
         String appJar =
             ClassFileInstaller.writeJar("RedefineClassApp.jar", appClasses);
-        String agentJar =
-            ClassFileInstaller.writeJar("InstrumentationAgent.jar",
-                                        ClassFileInstaller.Manifest.fromSourceFile("../InstrumentationAgent.mf"),
-                                        agentClasses);
 
         String bootCP = "-Xbootclasspath/a:" + bootJar;
-        String agentCmdArg = "-javaagent:" + agentJar;
+        String agentCmdArg = "-javaagent:redefineagent.jar";
 
         TestCommon.testDump(appJar, sharedClasses, bootCP, "-Xlog:cds,cds+class=debug");
 
