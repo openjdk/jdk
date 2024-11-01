@@ -229,13 +229,13 @@ public class PreviewTest extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected =
-                List.of("IUseIntf2P.java:3:8: compiler.err.is.preview: test()",
-                        "IUseIntfDef2P.java:3:8: compiler.err.is.preview: test()",
+                List.of("IUseIntf2P.java:4:25: compiler.err.is.preview: test()",
+                        "IUseIntfDef2P.java:4:25: compiler.err.is.preview: test()",
                         "UseClass2P.java:4:17: compiler.err.is.preview: test()",
-                        "UseIntf2P.java:3:8: compiler.err.is.preview: test()",
-                        "UseIntfDef2P.java:3:8: compiler.err.is.preview: test()",
+                        "UseIntf2P.java:4:17: compiler.err.is.preview: test()",
+                        "UseIntfDef2P.java:4:17: compiler.err.is.preview: test()",
                         "UseSubClass12P.java:3:17: compiler.err.is.preview: test()",
-                        "UseSubIntfDef12P.java:2:8: compiler.err.is.preview: test()",
+                        "UseSubIntfDef12P.java:3:17: compiler.err.is.preview: test()",
                         "7 errors");
 
         if (!log.equals(expected))
@@ -257,13 +257,13 @@ public class PreviewTest extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         expected =
-                List.of("IUseIntf2P.java:3:8: compiler.warn.is.preview: test()",
-                        "IUseIntfDef2P.java:3:8: compiler.warn.is.preview: test()",
+                List.of("IUseIntf2P.java:4:25: compiler.warn.is.preview: test()",
+                        "IUseIntfDef2P.java:4:25: compiler.warn.is.preview: test()",
                         "UseClass2P.java:4:17: compiler.warn.is.preview: test()",
-                        "UseIntf2P.java:3:8: compiler.warn.is.preview: test()",
-                        "UseIntfDef2P.java:3:8: compiler.warn.is.preview: test()",
+                        "UseIntf2P.java:4:17: compiler.warn.is.preview: test()",
+                        "UseIntfDef2P.java:4:17: compiler.warn.is.preview: test()",
                         "UseSubClass12P.java:3:17: compiler.warn.is.preview: test()",
-                        "UseSubIntfDef12P.java:2:8: compiler.warn.is.preview: test()",
+                        "UseSubIntfDef12P.java:3:17: compiler.warn.is.preview: test()",
                         "7 warnings");
 
         if (!log.equals(expected))
@@ -392,7 +392,7 @@ public class PreviewTest extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected =
-                List.of("AbstractP.java:3:17: compiler.err.is.preview: test()",
+                List.of("AbstractP.java:4:26: compiler.err.is.preview: test()",
                         "ReabstractP.java:4:26: compiler.err.is.preview: test()",
                         "2 errors");
 
@@ -415,7 +415,7 @@ public class PreviewTest extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         expected =
-                List.of("AbstractP.java:3:17: compiler.warn.is.preview: test()",
+                List.of("AbstractP.java:4:26: compiler.warn.is.preview: test()",
                         "ReabstractP.java:4:26: compiler.warn.is.preview: test()",
                         "2 warnings");
 
@@ -502,8 +502,7 @@ public class PreviewTest extends TestRunner {
 
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(apiClasses)
-                .options("-XDrawDiagnostics", "-doe",
-                         "--patch-module", "java.base=" + apiSrc.toString(),
+                .options("--patch-module", "java.base=" + apiSrc.toString(),
                          "-Werror")
                 .files(tb.findJavaFiles(apiSrc))
                 .run()
@@ -543,6 +542,13 @@ public class PreviewTest extends TestRunner {
                                   acceptRunnable(p::test);
                                   accept(Preview::test);
                               }
+                              private static class ExtendsNonPreview extends NonPreview {
+                                  public void test() {} //error/warning here:
+                              }
+                              private static class ImplementsPreview implements Preview {
+                                  //no error/warning (already was on Preview after implements)
+                                  public void test() {}
+                              }
                               private void acceptRunnable(Runnable r) {}
                               private void accept(Accept<NonPreview> accept) {}
                               interface Accept<T> {
@@ -567,6 +573,7 @@ public class PreviewTest extends TestRunner {
         List<String> expected =
                 List.of("Test.java:4:19: compiler.err.is.preview: preview.api.Preview",
                         "Test.java:26:22: compiler.err.is.preview: preview.api.Preview",
+                        "Test.java:34:55: compiler.err.is.preview: preview.api.Preview",
                         "Test.java:9:11: compiler.err.is.preview: test()",
                         "Test.java:10:24: compiler.err.is.preview: test()",
                         "Test.java:11:16: compiler.err.is.preview: test()",
@@ -578,7 +585,9 @@ public class PreviewTest extends TestRunner {
                         "Test.java:21:11: compiler.err.is.preview: test()",
                         "Test.java:24:11: compiler.warn.is.preview.reflective: test()",
                         "Test.java:29:16: compiler.err.is.preview: preview.api.Preview",
-                        "12 errors",
+                        "Test.java:32:21: compiler.err.is.preview: test()",
+                        "Test.java:36:21: compiler.err.is.preview: test()",
+                        "15 errors",
                         "1 warning");
 
         if (!log.equals(expected))

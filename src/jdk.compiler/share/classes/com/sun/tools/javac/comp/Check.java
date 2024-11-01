@@ -1845,7 +1845,8 @@ public class Check {
         }
 
         if (shouldCheckPreview(m, other, origin)) {
-            checkPreview(tree.pos(), m, other);
+            checkPreview(TreeInfo.diagnosticPositionFor(m, tree),
+                         m, origin.type, other);
         }
 
         Type mt = types.memberType(origin.type, m);
@@ -1925,7 +1926,8 @@ public class Check {
         private boolean shouldCheckPreview(MethodSymbol m, MethodSymbol other, ClassSymbol origin) {
             if (m.owner != origin ||
                 //performance - only do the expensive checks when the overridden method is a Preview API:
-                (other.flags() & PREVIEW_API) == 0) {
+                ((other.flags() & PREVIEW_API) == 0 &&
+                 (other.owner.flags() & PREVIEW_API) == 0)) {
                 return false;
             }
 
@@ -3841,6 +3843,8 @@ public class Check {
                    site.tsym != null &&
                    (site.tsym.flags() & PREVIEW_API) == 0 &&
                    (s.owner.flags() & PREVIEW_API) != 0) {
+            //calling a method, or using a field, whose owner is a preview, but
+            //using a site that is not a preview. Also produce an error or warning:
             sIsPreview = true;
             previewSymbol = s.owner;
         } else {
