@@ -91,10 +91,10 @@ bool NativeShortCallTrampolineStub::is_at(address addr) {
   if (MacroAssembler::is_auipc_at(addr) &&
       MacroAssembler::is_ld_at(addr + instr_size) &&
       MacroAssembler::is_jalr_at(addr + 2 * instr_size) &&
-      (MacroAssembler::extract_rd(addr)                    == x5) &&
-      (MacroAssembler::extract_rd(addr + instr_size)       == x5) &&
-      (MacroAssembler::extract_rs1(addr + instr_size)      == x5) &&
-      (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x5) &&
+      (MacroAssembler::extract_rd(addr)                    == x6) &&
+      (MacroAssembler::extract_rd(addr + instr_size)       == x6) &&
+      (MacroAssembler::extract_rs1(addr + instr_size)      == x6) &&
+      (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x6) &&
       (Assembler::extract(Assembler::ld_instr(addr + 4), 31, 20) == trampoline_data_offset)) {
     return true;
   }
@@ -215,10 +215,10 @@ void NativeShortCall::print() {
 // Used in the runtime linkage of calls; see class CompiledIC.
 //
 // Add parameter assert_lock to switch off assertion
-// during code generation, where no patching lock is needed.
+// during code generation, where no lock is needed.
 bool NativeShortCall::set_destination_mt_safe(address dest, bool assert_lock) {
   assert(!assert_lock ||
-         (Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+         (CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(instruction_address()),
          "concurrent code patching");
 
@@ -386,7 +386,7 @@ void NativeFarCall::print() {
 bool NativeFarCall::set_destination_mt_safe(address dest, bool assert_lock) {
   assert(NativeFarCall::is_at(addr_at(0)), "unexpected code at call site");
   assert(!assert_lock ||
-         (Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+         (CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
@@ -460,10 +460,10 @@ bool NativeFarCall::is_at(address addr) {
   if (MacroAssembler::is_auipc_at(addr) &&
       MacroAssembler::is_ld_at(addr + instr_size) &&
       MacroAssembler::is_jalr_at(addr + 2 * instr_size) &&
-      (MacroAssembler::extract_rd(addr)                    == x5) &&
-      (MacroAssembler::extract_rd(addr + instr_size)       == x5) &&
-      (MacroAssembler::extract_rs1(addr + instr_size)      == x5) &&
-      (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x5) &&
+      (MacroAssembler::extract_rd(addr)                    == x6) &&
+      (MacroAssembler::extract_rd(addr + instr_size)       == x6) &&
+      (MacroAssembler::extract_rs1(addr + instr_size)      == x6) &&
+      (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x6) &&
       (MacroAssembler::extract_rd(addr + 2 * instr_size)  == x1)) {
     return true;
   }
@@ -789,8 +789,8 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   Assembler::IncompressibleRegion ir(&a);  // Fixed length: see NativeGeneralJump::get_instruction_size()
 
   int32_t offset = 0;
-  a.movptr(t0, entry, offset, t1); // lui, lui, slli, add
-  a.jr(t0, offset); // jalr
+  a.movptr(t1, entry, offset, t0); // lui, lui, slli, add
+  a.jr(t1, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);
 }
