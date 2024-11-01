@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -41,6 +42,8 @@ import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Functional.ThrowingConsumer;
+import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 
 import static jdk.jpackage.test.WindowsHelper.getTempDirectory;
 
@@ -250,6 +253,63 @@ public final class BasicTest {
     }
 
     @Test
+    @Parameter("true")
+    @Parameter("false")
+    public void testNoOutputDir(boolean appImage) throws Throwable {
+        var cmd = JPackageCommand.helloAppImage();
+
+        final var execDir = cmd.outputDir();
+
+        final ThrowingConsumer<JPackageCommand> initializer = cmdNoOutputDir -> {
+            cmd.executePrerequisiteActions();
+
+            final var pkgType = cmdNoOutputDir.packageType();
+
+            cmdNoOutputDir
+                    .clearArguments()
+                    .addArguments(cmd.getAllArguments())
+                    // Restore the value of `--type` parameter.
+                    .setPackageType(pkgType)
+                    .removeArgumentWithValue("--dest")
+                    .setArgumentValue("--input", execDir.relativize(cmd.inputDir()))
+                    .setDirectory(execDir)
+                    // Force to use jpackage as executable because we need to
+                    // change the current directory.
+                    .useToolProvider(false);
+
+            Optional.ofNullable(cmdNoOutputDir.getArgumentValue("--runtime-image",
+                    () -> null, Path::of)).ifPresent(runtimePath -> {
+                        if (!runtimePath.isAbsolute()) {
+                            cmdNoOutputDir.setArgumentValue("--runtime-image",
+                                    execDir.relativize(runtimePath));
+                        }
+                    });
+
+            // JPackageCommand.execute() will not do the cleanup if `--dest` parameter
+            // is not specified, do it manually.
+            TKit.createDirectories(execDir);
+            TKit.deleteDirectoryContentsRecursive(execDir);
+        };
+
+        if (appImage) {
+            var cmdNoOutputDir = new JPackageCommand()
+                    .setPackageType(cmd.packageType());
+            initializer.accept(cmdNoOutputDir);
+            cmdNoOutputDir.executeAndAssertHelloAppImageCreated();
+        } else {
+            // Save time by packing non-functional runtime.
+            // Build the runtime in app image only. This is sufficient coverage.
+            cmd.setFakeRuntime();
+            new PackageTest()
+                    .addInitializer(initializer)
+                    .addInstallVerifier(HelloApp::executeLauncherAndVerifyOutput)
+                    // Prevent adding `--dest` parameter to jpackage command line.
+                    .ignoreBundleOutputDir()
+                    .run(CREATE_AND_UNPACK);
+        }
+    }
+
+    @Test
     @Parameter("ALL-MODULE-PATH")
     @Parameter("ALL-DEFAULT")
     @Parameter("java.desktop")
@@ -317,7 +377,7 @@ public final class BasicTest {
             pkgTest.addBundleVerifier(cmd -> {
                 // Check jpackage used the supplied directory.
                 Path tempDir = getTempDirectory(cmd, tempRoot);
-                TKit.assertPathNotEmptyDirectory(tempDir);
+                TKit.assertDirectoryNotEmpty(tempDir);
             });
         }
 

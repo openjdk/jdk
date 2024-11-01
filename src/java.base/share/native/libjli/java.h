@@ -111,15 +111,15 @@ GetApplicationHomeFromDll(char *buf, jint bufsize);
  * Different platforms will implement this, here
  * pargc is a pointer to the original argc,
  * pargv is a pointer to the original argv,
- * jrepath is an accessible path to the jre as determined by the call
- * so_jrepath is the length of the buffer jrepath
+ * jdkroot is an accessible path to the JDK installation root as determined by the call
+ * so_jdkroot is the length of the buffer jdkroot
  * jvmpath is an accessible path to the jvm as determined by the call
  * so_jvmpath is the length of the buffer jvmpath
  */
 void CreateExecutionEnvironment(int *argc, char ***argv,
-                                char *jrepath, jint so_jrepath,
+                                char *jdkroot, jint so_jdkroot,
                                 char *jvmpath, jint so_jvmpath,
-                                char *jvmcfg,  jint so_jvmcfg);
+                                char *jvmcfg, jint so_jvmcfg);
 
 /* Reports an error message to stderr or a window as appropriate. */
 JNIEXPORT void JNICALL
