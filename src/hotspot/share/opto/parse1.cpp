@@ -2190,7 +2190,7 @@ void Parse::return_current(Node* value) {
 
   if (StressReachabilityFence && !method()->is_static()) {
     Node* receiver = local(0);
-    Node* rfence = MemBarNode::make(C, Op_ReachabilityFence, Compile::AliasIdxTop, argument(0));
+    Node* rfence = MemBarNode::make(C, Op_ReachabilityFence, Compile::AliasIdxTop, receiver);
     rfence->init_req(TypeFunc::Control, control());
     rfence->init_req(TypeFunc::Memory,  immutable_memory());
     rfence = _gvn.transform(rfence);
