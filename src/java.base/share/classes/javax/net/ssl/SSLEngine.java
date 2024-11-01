@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -413,6 +413,8 @@ import java.util.function.BiFunction;
  *      because there is no way to guarantee the eventual packet ordering.
  * </OL>
  *
+ * @spec https://www.rfc-editor.org/info/rfc2246
+ *      RFC 2246: The TLS Protocol Version 1.0
  * @see SSLContext
  * @see SSLSocket
  * @see SSLServerSocket
@@ -859,6 +861,8 @@ public abstract class SSLEngine {
      *          if this engine has not received the proper SSL/TLS/DTLS close
      *          notification message from the peer.
      *
+     * @spec https://www.rfc-editor.org/info/rfc2246
+     *      RFC 2246: The TLS Protocol Version 1.0
      * @see     #isInboundDone()
      * @see     #isOutboundDone()
      */
@@ -1351,6 +1355,8 @@ public abstract class SSLEngine {
      * Application-Layer Protocol Negotiation (ALPN), can negotiate
      * application-level values between peers.
      *
+     * @spec https://www.rfc-editor.org/info/rfc7301
+     *      RFC 7301: Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension
      * @implSpec
      * The implementation in this class throws
      * {@code UnsupportedOperationException} and performs no other action.
