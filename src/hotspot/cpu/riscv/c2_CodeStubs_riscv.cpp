@@ -63,7 +63,7 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   // emits auipc + jalr for address inside code cache
   __ far_call(StubRoutines::method_entry_barrier());
 
-  // emits auipc + jr assumming continuation is not near
+  // emits auipc + jr assuming continuation is not near
   __ j(continuation());
 
   // make guard value 4-byte aligned so that it can be accessed atomically
