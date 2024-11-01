@@ -764,15 +764,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * method returns a segment that can be used as any other segment allocated using the
      * provided arena. However, The returned segment is backed by the same memory region
      * as that of the original segment. As such, the region of memory backing the
-     * returned segment is deallocated only when the original segment's arena is closed.
-     * Care must be taken as this might lead to unexpected behavior:
-     * <ol>
-     *     <li>The reinterpreted segment can be accessed <em>after</em> its region
-     *         of memory has been deallocated via the original arena (use after free).</li>
-     *     <li>The reinterpreted segment's region of memory will <em>not</em> be
-     *         deallocated when the provided {@code arena} becomes invalid.
-     *     </li>
-     * </ol>
+     * returned segment is deallocated only when this segment's arena is closed.
+     * This might lead to <em>use-after-free</em> issues, as the returned segment can be
+     * accessed <em>after</em> its region of memory has been deallocated via this
+     * segment's arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
      * provided scope becomes invalid. This cleanup action receives a fresh memory
@@ -825,15 +820,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * method returns a segment that can be used as any other segment allocated using the
      * provided arena. However, The returned segment is backed by the same memory region
      * as that of the original segment. As such, the region of memory backing the
-     * returned segment is deallocated only when the original segment's arena is closed.
-     * Care must be taken as this might lead to unexpected behavior:
-     * <ol>
-     *     <li>The reinterpreted segment can be accessed <em>after</em> its region
-     *         of memory has been deallocated via the original arena (use after free).</li>
-     *     <li>The reinterpreted segment's region of memory will <em>not</em> be
-     *         deallocated when the provided {@code arena} becomes invalid.
-     *     </li>
-     * </ol>
+     * returned segment is deallocated only when this segment's arena is closed.
+     * This might lead to <em>use-after-free</em> issues, as the returned segment can be
+     * accessed <em>after</em> its region of memory has been deallocated via this
+     * segment's arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
      * provided scope becomes invalid. This cleanup action receives a fresh memory
