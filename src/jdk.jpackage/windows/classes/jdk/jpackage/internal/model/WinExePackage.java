@@ -32,14 +32,11 @@ public interface WinExePackage extends Package {
 
     Path icon();
 
-    public static class Impl extends Package.Proxy<WinMsiPackage> implements WinExePackage {
+    class Impl extends Package.Proxy<WinMsiPackage> implements WinExePackage {
 
         public Impl(WinMsiPackage msiPackage, Path icon) throws ConfigException {
             super(msiPackage);
             this.icon = icon;
-            if (icon != null) {
-                Launcher.validateIcon(icon);
-            }
         }
 
         @Override

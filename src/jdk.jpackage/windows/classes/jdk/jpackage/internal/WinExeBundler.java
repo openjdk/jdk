@@ -81,7 +81,7 @@ public class WinExeBundler extends AbstractBundler {
             throws PackagerException {
 
         // Order is important!
-        var pkg = WinMsiPackageFromParams.PACKAGE.fetchFrom(params);
+        var pkg = WinFromParams.MSI_PACKAGE.fetchFrom(params);
         var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
         IOUtils.writableOutputDir(outdir);
@@ -100,7 +100,7 @@ public class WinExeBundler extends AbstractBundler {
             .setEnvironmentVariable("JpMsiFile", msi.toAbsolutePath().toString())
             .run(env, pkg.packageName());
 
-            var exePkg = new WinExePackage.Impl(pkg, ICON.fetchFrom(params));
+            var exePkg = new WinExePackageBuilder(pkg).icon(ICON.fetchFrom(params)).create();
             return buildEXE(env, exePkg, msi, outdir);
         } catch (IOException|ConfigException ex) {
             Log.verbose(ex);

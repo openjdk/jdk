@@ -62,7 +62,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     private static final String TOOL_FAKEROOT = "fakeroot";
 
     public LinuxDebBundler() {
-        super(LinuxDebPackageFromParams.PACKAGE);
+        super(LinuxFromParams.DEB_PACKAGE);
     }
 
     @Override

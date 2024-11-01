@@ -49,7 +49,7 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
             Path outputDir) throws IOException {
 
         // Order is important!
-        var pkg = PackageFromParams.PACKAGE.fetchFrom(params);
+        var pkg = FromParams.PACKAGE.fetchFrom(params);
         var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
         if (pkg.isRuntimeInstaller()) {

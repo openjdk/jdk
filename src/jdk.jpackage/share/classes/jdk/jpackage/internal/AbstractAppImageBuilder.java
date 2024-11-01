@@ -40,6 +40,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.FileUtils;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 /*
  * AbstractAppImageBuilder
@@ -74,7 +75,7 @@ public abstract class AbstractAppImageBuilder {
         }, new Launcher.Unsupported() {
             @Override
             public LauncherStartupInfo startupInfo() {
-                return LauncherStartupInfoFromParams.create(params);
+                return toSupplier(() -> new LauncherFromParams().create(params).startupInfo()).get();
             }
 
             @Override

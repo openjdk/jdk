@@ -58,10 +58,10 @@ public interface LauncherStartupInfo {
 
     }
 
-    static class Proxy<T extends LauncherStartupInfo> extends ProxyBase<T>
+    class Proxy<T extends LauncherStartupInfo> extends ProxyBase<T>
             implements LauncherStartupInfo {
 
-        Proxy(T target) {
+        public Proxy(T target) {
             super(target);
         }
 
@@ -86,7 +86,7 @@ public interface LauncherStartupInfo {
         }
     }
 
-    static class Unsupported implements LauncherStartupInfo {
+    class Unsupported implements LauncherStartupInfo {
 
         @Override
         public String qualifiedClassName() {

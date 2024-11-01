@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 import jdk.jpackage.internal.model.ConfigException;
 import java.nio.file.Path;
 import java.util.Map;
-import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import jdk.jpackage.internal.BuildEnv.Impl;
 import static jdk.jpackage.internal.BuildEnv.withAppImageDir;
 import jdk.jpackage.internal.resources.ResourceLocator;
@@ -46,15 +45,13 @@ final class BuildEnvFromParams {
         } else if (StandardBundlerParam.hasPredefinedAppImage(params)) {
             appImageDir = StandardBundlerParam.getPredefinedAppImage(params);
         } else {
-            Path dir = ApplicationFromParams.APPLICATION.fetchFrom(params).appImageDirName();
+            Path dir = FromParams.APPLICATION.fetchFrom(params).appImageDirName();
             appImageDir = defaultEnv.buildRoot().resolve("image").resolve(dir);
         }
 
         return withAppImageDir(defaultEnv, appImageDir);
     }
 
-    static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam("env", BuildEnvFromParams::create);
-
-    static final BundlerParamInfo<String> PACKAGE_TYPE = createStringBundlerParam(
-            Arguments.CLIOptions.PACKAGE_TYPE.getId());
+    static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam(
+            "env", BuildEnvFromParams::create);
 }

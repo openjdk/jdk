@@ -24,18 +24,15 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.util.Optional;
-
 public interface LinuxRpmPackage extends LinuxPackage {
 
     String licenseType();
 
-    public static class Impl extends LinuxPackage.Proxy<LinuxPackage> implements LinuxRpmPackage {
+    class Impl extends LinuxPackage.Proxy<LinuxPackage> implements LinuxRpmPackage {
 
         public Impl(LinuxPackage target, String licenseType) {
             super(target);
-            this.licenseType = Optional.ofNullable(licenseType).orElseGet(
-                    LinuxRpmPackage.Defaults.INSTANCE::licenseType);
+            this.licenseType = licenseType;
         }
 
         @Override
@@ -44,11 +41,5 @@ public interface LinuxRpmPackage extends LinuxPackage {
         }
 
         private final String licenseType;
-    }
-
-    static record Defaults(String licenseType) {
-
-        private final static Defaults INSTANCE = new Defaults(I18N.getString(
-                "param.license-type.default"));
     }
 }

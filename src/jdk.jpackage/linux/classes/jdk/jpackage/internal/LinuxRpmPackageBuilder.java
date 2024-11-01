@@ -24,26 +24,37 @@
  */
 package jdk.jpackage.internal;
 
+import java.util.Objects;
+import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.LinuxDebPackage;
-import java.util.Map;
-import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
-import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
-import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
+import jdk.jpackage.internal.model.LinuxRpmPackage;
 
-final class LinuxDebPackageFromParams {
+final class LinuxRpmPackageBuilder {
 
-    private static LinuxDebPackage create(Map<String, ? super Object> params) throws ConfigException {
-        var pkg = LinuxPackageFromParams.create(params, LINUX_DEB);
-
-        var maintainerEmail = MAINTAINER_EMAIL.fetchFrom(params);
-
-        return new LinuxDebPackage.Impl(pkg, maintainerEmail);
+    LinuxRpmPackageBuilder(LinuxPackageBuilder pkgBuilder) {
+        Objects.requireNonNull(pkgBuilder);
+        this.pkgBuilder = pkgBuilder;
     }
 
-    static final BundlerParamInfo<LinuxDebPackage> PACKAGE = createBundlerParam(
-            LinuxDebPackageFromParams::create);
+    LinuxRpmPackage create() throws ConfigException {
+        var pkg = pkgBuilder.create();
+        return new LinuxRpmPackage.Impl(
+                pkg,
+                Optional.ofNullable(licenseType).orElseGet(DEFAULTS::licenseType));
+    }
 
-    private static final BundlerParamInfo<String> MAINTAINER_EMAIL = createStringBundlerParam(
-            Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId());
+    LinuxRpmPackageBuilder licenseType(String v) {
+        licenseType = v;
+        return this;
+    }
+
+    private record Defaults(String licenseType) {
+    }
+
+    private String licenseType;
+
+    private final LinuxPackageBuilder pkgBuilder;
+
+    private static final Defaults DEFAULTS = new Defaults(I18N.getString(
+            "param.license-type.default"));
 }

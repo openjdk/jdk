@@ -25,7 +25,6 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,39 +47,20 @@ public interface WinMsiPackage extends Package {
 
     boolean isSystemWideInstall();
 
-    default UUID upgradeCode() {
-        return createNameUUID("UpgradeCode", app().vendor(), app().name());
-    }
+    UUID upgradeCode();
 
-    default UUID productCode() {
-        return createNameUUID("ProductCode", app().vendor(), app().name(), version());
-    }
+    UUID productCode();
 
     Path serviceInstaller();
 
-    public static class Impl extends Package.Proxy<Package> implements WinMsiPackage {
+    class Impl extends Package.Proxy<Package> implements WinMsiPackage {
 
         public Impl(Package pkg, boolean withInstallDirChooser,
                 boolean withShortcutPrompt, String helpURL, String updateURL,
                 String startMenuGroupName, boolean isSystemWideInstall,
-                UUID upgradeCode, Path serviceInstaller) throws ConfigException {
+                UUID upgradeCode, UUID productCode, Path serviceInstaller)
+                throws ConfigException {
             super(pkg);
-
-            try {
-                MsiVersion.of(pkg.version());
-            } catch (IllegalArgumentException ex) {
-                throw ConfigException.build()
-                        .causeAndMessage(ex)
-                        .advice("error.version-string-wrong-format.advice")
-                        .create();
-            }
-
-            if (pkg.app().isService() && (serviceInstaller == null || !Files.exists(serviceInstaller))) {
-                throw ConfigException.build()
-                        .message("error.missing-service-installer")
-                        .advice("error.missing-service-installer.advice")
-                        .create();
-            }
 
             this.withInstallDirChooser = withInstallDirChooser;
             this.withShortcutPrompt = withShortcutPrompt;
@@ -89,6 +69,7 @@ public interface WinMsiPackage extends Package {
             this.startMenuGroupName = startMenuGroupName;
             this.isSystemWideInstall = isSystemWideInstall;
             this.upgradeCode = upgradeCode;
+            this.productCode = productCode;
             this.serviceInstaller = serviceInstaller;
         }
 
@@ -124,7 +105,12 @@ public interface WinMsiPackage extends Package {
 
         @Override
         public UUID upgradeCode() {
-            return Optional.ofNullable(upgradeCode).orElseGet(WinMsiPackage.super::upgradeCode);
+            return upgradeCode;
+        }
+
+        @Override
+        public UUID productCode() {
+            return productCode;
         }
 
         @Override
@@ -139,11 +125,7 @@ public interface WinMsiPackage extends Package {
         private final String startMenuGroupName;
         private final boolean isSystemWideInstall;
         private final UUID upgradeCode;
+        private final UUID productCode;
         private final Path serviceInstaller;
-    }
-
-    private static UUID createNameUUID(String... components) {
-        String key = String.join("/", components);
-        return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
     }
 }

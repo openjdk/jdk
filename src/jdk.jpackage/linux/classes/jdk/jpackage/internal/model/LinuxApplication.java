@@ -26,7 +26,7 @@
 package jdk.jpackage.internal.model;
 
 public interface LinuxApplication extends Application {
-    public static class Impl extends Application.Proxy<Application> implements LinuxApplication {
+    class Impl extends Application.Proxy<Application> implements LinuxApplication {
         public Impl(Application app) {
             super(app);
         }

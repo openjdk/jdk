@@ -26,14 +26,13 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.List;
-import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.Launcher;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.jpackage.internal.model.Launcher.Impl;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.ARGUMENTS;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.FA_CONTENT_TYPE;
 import static jdk.jpackage.internal.StandardBundlerParam.FA_DESCRIPTION;
@@ -43,32 +42,37 @@ import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
+import static jdk.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
-record LauncherFromParams(Function<FileAssociation, Optional<FileAssociation>> faSupplier) {
+record LauncherFromParams(Function<FileAssociation, Optional<FileAssociation>> faMapper) {
 
     LauncherFromParams {
-        Objects.requireNonNull(faSupplier);
+        Objects.requireNonNull(faMapper);
     }
-    
+
     LauncherFromParams() {
-        this(FileAssociation::create);
+        this(LauncherBuilder::mapFileAssociation);
     }
 
-    Launcher create(Map<String, ? super Object> params) {
-        var name = APP_NAME.fetchFrom(params);
+    Launcher create(Map<String, ? super Object> params) throws ConfigException {
+        var builder = new LauncherBuilder()
+                .description(DESCRIPTION.fetchFrom(params))
+                .icon(ICON.fetchFrom(params))
+                .isService(LAUNCHER_AS_SERVICE.fetchFrom(params))
+                .name(APP_NAME.fetchFrom(params))
+                .faMapper(faMapper);
 
-        LauncherStartupInfo startupInfo = null;
         if (PREDEFINED_APP_IMAGE.fetchFrom(params) == null) {
-            startupInfo = LauncherStartupInfoFromParams.create(params);
+            builder.startupInfo(new LauncherStartupInfoBuilder()
+                    .launcherData(StandardBundlerParam.LAUNCHER_DATA.fetchFrom(params))
+                    .defaultParameters(ARGUMENTS.fetchFrom(params))
+                    .javaOptions(JAVA_OPTIONS.fetchFrom(params))
+                    .create());
         }
 
-        var isService = LAUNCHER_AS_SERVICE.fetchFrom(params);
-        var desc = DESCRIPTION.fetchFrom(params);
-        var icon = ICON.fetchFrom(params);
-
-        var faStream = Optional.ofNullable(
+        var faSources = Optional.ofNullable(
                 FILE_ASSOCIATIONS.fetchFrom(params)).orElseGet(List::of).stream().map(faParams -> {
             var faDesc = FA_DESCRIPTION.fetchFrom(faParams);
             var faIcon = FA_ICON.fetchFrom(faParams);
@@ -77,7 +81,7 @@ record LauncherFromParams(Function<FileAssociation, Optional<FileAssociation>> f
 
             return faExtensions.stream().map(faExtension -> {
                 return faMimeTypes.stream().map(faMimeType -> {
-                    return faSupplier.apply(new FileAssociation() {
+                    return (FileAssociation)new FileAssociation() {
                         @Override
                         public String description() {
                             return faDesc;
@@ -97,13 +101,11 @@ record LauncherFromParams(Function<FileAssociation, Optional<FileAssociation>> f
                         public String extension() {
                             return faExtension;
                         }
-                    });
+                    };
                 });
             }).flatMap(x -> x);
-        }).flatMap(x -> x).filter(Optional::isPresent).map(Optional::get);
+        }).flatMap(x -> x).toList();
 
-        var fa = toSupplier(() -> FileAssociation.create(faStream)).get().toList();
-
-        return new Impl(name, startupInfo, fa, isService, desc, icon);
+        return builder.faSources(faSources).create();
     }
 }

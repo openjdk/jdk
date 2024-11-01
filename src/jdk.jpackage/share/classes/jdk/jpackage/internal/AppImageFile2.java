@@ -94,6 +94,13 @@ final class AppImageFile2 {
     }
 
     /**
+     * Returns application name. Never returns null or empty value.
+     */
+    String getAppName() {
+        return launcherName;
+    }
+
+    /**
      * Returns main application launcher name. Never returns null or empty value.
      */
     String getLauncherName() {
@@ -331,11 +338,15 @@ final class AppImageFile2 {
         private final Set<String> stdKeys;
     }
 
-    static record LauncherInfo(String name, boolean service, Map<String, String> extra) {
+    record LauncherInfo(String name, boolean service, Map<String, String> extra) {
         LauncherInfo {
             if (name == null || name.isBlank()) {
                 throw new InavlidAppImageFileException();
             }
+        }
+        
+        Launcher asLauncher() {
+            return new Launcher.Impl(name, null, null, service, null, null);
         }
     }
 

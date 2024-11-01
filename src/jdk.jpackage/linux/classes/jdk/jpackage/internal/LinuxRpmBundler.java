@@ -66,7 +66,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
             "4.10");
 
     public LinuxRpmBundler() {
-        super(LinuxRpmPackageFromParams.PACKAGE);
+        super(LinuxFromParams.RPM_PACKAGE);
     }
 
     @Override

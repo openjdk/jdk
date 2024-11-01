@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,37 +24,39 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
-public interface LinuxLauncher extends Launcher {
+public record ApplicationLaunchers(Launcher mainLauncher,
+        List<Launcher> additionalLaunchers) {
 
-    Optional<Boolean> shortcut();
-
-    @Override
-    default Map<String, String> extraAppImageFileData() {
-        return shortcut().map(v -> {
-            return Map.of("shortcut", Boolean.toString(v));
-        }).orElseGet(Map::of);
-    }
-    
-    @Override
-    default String defaultIconResourceName() {
-        return "JavaApp.png";
+    public ApplicationLaunchers  {
+        if (mainLauncher == null && additionalLaunchers != null) {
+            throw new IllegalArgumentException();
+        }
     }
 
-    class Impl extends Launcher.Proxy<Launcher> implements LinuxLauncher {
+    public ApplicationLaunchers() {
+        this(null, null);
+    }
 
-        public Impl(Launcher launcher, Optional<Boolean> shortcut) {
-            super(launcher);
-            this.shortcut = shortcut;
+    public ApplicationLaunchers(Launcher mainLauncher) {
+        this(mainLauncher, List.of());
+    }
+
+    public List<Launcher> asList() {
+        return Optional.ofNullable(mainLauncher).map(v -> {
+            return Stream.concat(Stream.of(v), additionalLaunchers.stream()).toList();
+        }).orElseGet(List::of);
+    }
+
+    public static ApplicationLaunchers fromList(List<Launcher> launchers) {
+        if (launchers == null || launchers.isEmpty()) {
+            return new ApplicationLaunchers();
+        } else {
+            return new ApplicationLaunchers(launchers.getFirst(),
+                    launchers.subList(1, launchers.size() - 1));
         }
-
-        @Override
-        public Optional<Boolean> shortcut() {
-            return shortcut;
-        }
-
-        private final Optional<Boolean> shortcut;
     }
 }

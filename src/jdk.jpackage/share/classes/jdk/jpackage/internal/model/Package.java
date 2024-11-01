@@ -26,10 +26,8 @@ package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
 import java.util.Optional;
-import static jdk.jpackage.internal.Getter.getValueOrDefault;
 
 public interface Package {
-
 
     Application app();
 
@@ -102,14 +100,7 @@ public interface Package {
      * Returns package file name.
      */
     default String packageFileName() {
-        if (type() instanceof StandardPackageType type) {
-            switch (type) {
-                case WIN_MSI, WIN_EXE -> {
-                    return String.format("%s-%s", packageName(), version());
-                }
-            }
-        }
-        throw new UnsupportedOperationException();
+        return String.format("%s-%s", packageName(), version());
     }
 
     default String packageFileSuffix() {
@@ -134,47 +125,14 @@ public interface Package {
      * On Windows it should be relative to %ProgramFiles% and relative
      * to the system root ('/') on other platforms.
      */
-    default Path relativeInstallDir() {
-        var path = Optional.ofNullable(configuredInstallBaseDir()).map(v -> {
-            switch (asStandardPackageType()) {
-                case LINUX_DEB, LINUX_RPM -> {
-                    switch (v.toString()) {
-                        case "/usr", "/usr/local" -> {
-                            return v;
-                        }
-                    }
-                }
-                case WIN_EXE, WIN_MSI -> {
-                    return v;
-                }
-            }
-            return v.resolve(packageName());
-        }).orElseGet(() -> defaultInstallDir(this));
+    Path relativeInstallDir();
 
-        switch (asStandardPackageType()) {
-            case WIN_EXE, WIN_MSI -> {
-                return path;
-            }
-            default -> {
-                return Path.of("/").relativize(path);
-            }
-        }
-    }
-
-    Path configuredInstallBaseDir();
-
-    static record Impl(Application app, PackageType type, String packageName,
+    record Impl(Application app, PackageType type, String packageName,
             String description, String version, String aboutURL, Path licenseFile,
-            Path predefinedAppImage, Path configuredInstallBaseDir) implements Package {
-
-        public Impl {
-            description = Optional.ofNullable(description).orElseGet(app::description);
-            version = Optional.ofNullable(version).orElseGet(app::version);
-            packageName = Optional.ofNullable(packageName).orElseGet(app::name);
-        }
+            Path predefinedAppImage, Path relativeInstallDir) implements Package {
     }
 
-    static class Unsupported implements Package {
+    class Unsupported implements Package {
 
         @Override
         public Application app() {
@@ -217,13 +175,13 @@ public interface Package {
         }
 
         @Override
-        public Path configuredInstallBaseDir() {
+        public Path relativeInstallDir() {
             throw new UnsupportedOperationException();
         }
 
     }
 
-    static class Proxy<T extends Package> extends ProxyBase<T> implements Package {
+    class Proxy<T extends Package> extends ProxyBase<T> implements Package {
 
         Proxy(T target) {
             super(target);
@@ -270,82 +228,8 @@ public interface Package {
         }
 
         @Override
-        public Path configuredInstallBaseDir() {
-            return target.configuredInstallBaseDir();
-        }
-    }
-
-    static Package override(Package base, Package overrides) {
-        return new Impl(
-                getValueOrDefault(overrides, base, Package::app),
-                getValueOrDefault(overrides, base, Package::type),
-                getValueOrDefault(overrides, base, Package::packageName),
-                getValueOrDefault(overrides, base, Package::description),
-                getValueOrDefault(overrides, base, Package::version),
-                getValueOrDefault(overrides, base, Package::aboutURL),
-                getValueOrDefault(overrides, base, Package::licenseFile),
-                getValueOrDefault(overrides, base, Package::predefinedAppImage),
-                getValueOrDefault(overrides, base, Package::configuredInstallBaseDir));
-    }
-
-    static Path mapInstallDir(Path installDir, PackageType pkgType) throws ConfigException {
-        var ex = ConfigException.build().message("error.invalid-install-dir",
-                installDir).create();
-
-        if (installDir.getNameCount() == 0) {
-            throw ex;
-        }
-
-        if (installDir.getFileName().equals(Path.of(""))) {
-            // Trailing '/' or '\\'. Strip them away.
-            installDir = installDir.getParent();
-        }
-
-        if (installDir.toString().isEmpty()) {
-            throw ex;
-        }
-
-        switch (pkgType) {
-            case StandardPackageType.WIN_EXE, StandardPackageType.WIN_MSI -> {
-                if (installDir.isAbsolute()) {
-                    throw ex;
-                }
-            }
-            default -> {
-                if (!installDir.isAbsolute()) {
-                    throw ex;
-                }
-            }
-        }
-
-        if (!installDir.normalize().toString().equals(installDir.toString())) {
-            // Don't allow '..' or '.' in path components
-            throw ex;
-        }
-
-        return installDir;
-    }
-
-    private static Path defaultInstallDir(Package pkg) {
-        switch (pkg.asStandardPackageType()) {
-            case WIN_EXE, WIN_MSI -> {
-                return Path.of(pkg.app().name());
-            }
-            case LINUX_DEB, LINUX_RPM -> {
-                return Path.of("/opt").resolve(pkg.packageName());
-            }
-            case MAC_DMG, MAC_PKG -> {
-                Path base;
-                if (pkg.isRuntimeInstaller()) {
-                    base = Path.of("/Library/Java/JavaVirtualMachines");
-                } else {
-                    base = Path.of("/Applications");
-                }
-                return base.resolve(pkg.packageName());
-            }
-            default -> {
-                throw new UnsupportedOperationException();
-            }
+        public Path relativeInstallDir() {
+            return target.relativeInstallDir();
         }
     }
 }

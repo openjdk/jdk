@@ -36,7 +36,7 @@ public interface LauncherJarStartupInfo extends LauncherStartupInfo {
 
     boolean isClassNameFromMainJar();
 
-    final static class Impl extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
+    final class Impl extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
             implements LauncherJarStartupInfo {
 
         public Impl(LauncherStartupInfo target, Path jarPath, boolean isClassNameFromMainJar) {

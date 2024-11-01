@@ -24,27 +24,33 @@
  */
 package jdk.jpackage.internal;
 
+import java.nio.file.Path;
+import java.util.Objects;
 import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.LinuxRpmPackage;
-import java.util.Map;
-import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
-import jdk.jpackage.internal.model.LinuxRpmPackage.Impl;
-import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
-import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
+import jdk.jpackage.internal.model.WinExePackage;
+import jdk.jpackage.internal.model.WinMsiPackage;
 
-final class LinuxRpmPackageFromParams {
+final class WinExePackageBuilder {
 
-    private static LinuxRpmPackage create(Map<String, ? super Object> params) throws ConfigException {
-        var pkg = LinuxPackageFromParams.create(params, LINUX_RPM);
-
-        var licenseType = LICENSE_TYPE.fetchFrom(params);
-
-        return new Impl(pkg, licenseType);
+    WinExePackageBuilder(WinMsiPackage pkg) {
+        Objects.requireNonNull(pkg);
+        this.pkg = pkg;
     }
 
-    static final BundlerParamInfo<LinuxRpmPackage> PACKAGE = createBundlerParam(
-            LinuxRpmPackageFromParams::create);
+    WinExePackage create() throws ConfigException {
+        if (icon != null) {
+            LauncherBuilder.validateIcon(icon);
+        }
 
-    private static final BundlerParamInfo<String> LICENSE_TYPE = createStringBundlerParam(
-            Arguments.CLIOptions.LINUX_RPM_LICENSE_TYPE.getId());
+        return new WinExePackage.Impl(pkg, icon);
+    }
+
+    WinExePackageBuilder icon(Path v) {
+        icon = v;
+        return this;
+    }
+
+    private Path icon;
+
+    private final WinMsiPackage pkg;
 }

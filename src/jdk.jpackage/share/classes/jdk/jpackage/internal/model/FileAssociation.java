@@ -26,11 +26,6 @@ package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.Optional;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
-import java.util.stream.Stream;
 
 public interface FileAssociation {
 
@@ -74,38 +69,5 @@ public interface FileAssociation {
         public String extension() {
             return target.extension();
         }
-    }
-
-    static Optional<FileAssociation> create(FileAssociation src) {
-        var mimeType = src.mimeType();
-        if (mimeType == null) {
-            return Optional.empty();
-        }
-
-        var extension = src.extension();
-        if (extension == null) {
-            return Optional.empty();
-        }
-
-        return Optional.of(new Impl(src.description(), src.icon(), mimeType, extension));
-    }
-
-    static Stream<FileAssociation> create(Stream<FileAssociation> sources) throws ConfigException {
-        var fas = sources.map(FileAssociation::create).filter(Optional::isPresent).map(
-                Optional::get).toList();
-
-        // Check extension to mime type relationship is 1:1
-        var mimeTypeToExtension = fas.stream().collect(groupingBy(
-                FileAssociation::extension, mapping(FileAssociation::mimeType,
-                        toList())));
-        for (var entry : mimeTypeToExtension.entrySet()) {
-            if (entry.getValue().size() != 1) {
-                var extension = entry.getKey();
-                throw ConfigException.build().message(
-                        "error.fa-extension-with-multiple-mime-types", extension).create();
-            }
-        }
-
-        return fas.stream();
     }
 }

@@ -25,7 +25,10 @@
 package jdk.jpackage.internal.model;
 
 import java.io.InputStream;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import static java.util.stream.Collectors.toMap;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 public interface WinLauncher extends Launcher {
@@ -44,18 +47,35 @@ public interface WinLauncher extends Launcher {
     }
 
     @Override
+    default Map<String, String> extraAppImageFileData() {
+        return Optional.ofNullable(shortcuts()).orElseGet(Set::of).stream().collect(
+                toMap(WinShortcut::name, v -> Boolean.toString(true)));
+    }
+
+    @Override
     default String defaultIconResourceName() {
         return "JavaApp.ico";
     }
 
     enum WinShortcut {
-        WIN_SHORTCUT_DESKTOP,
-        WIN_SHORTCUT_START_MENU
+        WIN_SHORTCUT_DESKTOP("shortcut"),
+        WIN_SHORTCUT_START_MENU("menu"),
+        ;
+
+        WinShortcut(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        private final String name;
     }
 
     Set<WinShortcut> shortcuts();
 
-    public static class Impl extends Launcher.Proxy<Launcher> implements WinLauncher {
+    class Impl extends Launcher.Proxy<Launcher> implements WinLauncher {
         public Impl(Launcher launcher, boolean isConsole, Set<WinShortcut> shortcuts) {
             super(launcher);
             this.isConsole = isConsole;

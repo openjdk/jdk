@@ -25,14 +25,10 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import java.text.MessageFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.internal.util.PathUtils;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
@@ -55,34 +51,17 @@ public interface Application {
     RuntimeBuilder runtimeBuilder();
 
     default Path appImageDirName() {
-        switch (OperatingSystem.current()) {
-            case MACOS -> {
-                return Path.of(name() + ".app");
-            }
-            default -> {
-                return Path.of(name());
-            }
-        }
+        return Path.of(name());
     }
 
     List<Launcher> launchers();
 
     default Launcher mainLauncher() {
-        return Optional.ofNullable(launchers()).map(launchers -> {
-            Launcher launcher;
-            if (launchers.isEmpty()) {
-                launcher = null;
-            } else {
-                launcher = launchers.getFirst();
-            }
-            return launcher;
-        }).orElse(null);
+        return ApplicationLaunchers.fromList(launchers()).mainLauncher();
     }
 
     default List<Launcher> additionalLaunchers() {
-        return Optional.ofNullable(launchers()).map(launchers -> {
-            return launchers.subList(1, launchers.size());
-        }).orElseGet(List::of);
+        return ApplicationLaunchers.fromList(launchers()).additionalLaunchers();
     }
 
     default boolean isRuntime() {
@@ -137,29 +116,12 @@ public interface Application {
         return resource;
     }
 
-    static record Impl(String name, String description, String version,
+    record Impl(String name, String description, String version,
             String vendor, String copyright, Path srcDir, List<Path> contentDirs,
-            RuntimeBuilder runtimeBuilder, List<Launcher> launchers) implements Application {
-        public Impl {
-            name = Optional.ofNullable(name).orElseGet(() -> {
-                return mainLauncher().name();
-            });
-            description = Optional.ofNullable(description).orElseGet(Defaults.INSTANCE::description);
-            version = Optional.ofNullable(version).orElseGet(Defaults.INSTANCE::version);
-            vendor = Optional.ofNullable(vendor).orElseGet(Defaults.INSTANCE::vendor);
-            copyright = Optional.ofNullable(copyright).orElseGet(Defaults.INSTANCE::copyright);
-        }
+            RuntimeBuilder runtimeBuilder, List<Launcher> launchers) implements Application {        
     }
 
-    static record Defaults(String description, String version, String vendor, String copyright) {
-        private static final Defaults INSTANCE = new Defaults(
-                I18N.getString("param.description.default"),
-                "1.0",
-                I18N.getString("param.vendor.default"),
-                MessageFormat.format(I18N.getString("param.copyright.default"), new Date()));
-    }
-
-    static class Proxy<T extends Application> extends ProxyBase<T> implements Application {
+    class Proxy<T extends Application> extends ProxyBase<T> implements Application {
 
         Proxy(T target) {
             super(target);
@@ -211,7 +173,7 @@ public interface Application {
         }
     }
 
-    static class Unsupported implements Application {
+    class Unsupported implements Application {
 
         @Override
         public String name() {

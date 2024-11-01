@@ -175,7 +175,7 @@ public class WinMsiBundler  extends AbstractBundler {
             throws ConfigException {
         try {
             // Order is important!
-            WinApplicationFromParams.APPLICATION.fetchFrom(params);
+            WinFromParams.APPLICATION.fetchFrom(params);
             BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
             if (wixToolset == null) {
@@ -262,7 +262,7 @@ public class WinMsiBundler  extends AbstractBundler {
         IOUtils.writableOutputDir(outputParentDir);
 
         // Order is important!
-        var pkg = WinMsiPackageFromParams.PACKAGE.fetchFrom(params);
+        var pkg = WinFromParams.MSI_PACKAGE.fetchFrom(params);
         var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
         Path imageDir = env.appImageDir();

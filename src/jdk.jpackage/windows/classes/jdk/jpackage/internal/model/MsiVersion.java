@@ -27,7 +27,7 @@ package jdk.jpackage.internal.model;
 import java.math.BigInteger;
 
 
-final class MsiVersion {
+public final class MsiVersion {
     /**
      * Parse the given string as Windows MSI Product version.
      * https://msdn.microsoft.com/en-us/library/aa370859%28v=VS.85%29.aspx The
@@ -38,7 +38,7 @@ final class MsiVersion {
      * 65,535.
      * @throws IllegalArgumentException
      */
-    static DottedVersion of(String value) {
+    public static DottedVersion of(String value) {
         DottedVersion ver = DottedVersion.greedy(value);
 
         BigInteger[] components = ver.getComponents();

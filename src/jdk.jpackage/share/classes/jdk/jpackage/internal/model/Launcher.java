@@ -29,10 +29,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import jdk.internal.util.OperatingSystem;
-import static jdk.internal.util.OperatingSystem.LINUX;
-import static jdk.internal.util.OperatingSystem.WINDOWS;
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 public interface Launcher {
@@ -79,39 +75,14 @@ public interface Launcher {
         return null;
     }
 
-    static record Impl(String name, LauncherStartupInfo startupInfo,
+    record Impl(String name, LauncherStartupInfo startupInfo,
             List<FileAssociation> fileAssociations, boolean isService,
-            String description, Path icon) implements Launcher {
-        public Impl {
-            if (icon != null && !icon.toString().isEmpty()) {
-                toConsumer(Launcher::validateIcon).accept(icon);
-            }
-        }
+            String description, Path icon) implements Launcher {        
     }
     
-    static void validateIcon(Path icon) throws ConfigException {
-        switch (OperatingSystem.current()) {
-            case WINDOWS -> {
-                if (!icon.getFileName().toString().toLowerCase().endsWith(".ico")) {
-                    throw ConfigException.build().message("message.icon-not-ico", icon).create();
-                }
-            }
-            case LINUX -> {
-                if (!icon.getFileName().toString().endsWith(".png")) {
-                    throw ConfigException.build().message("message.icon-not-png", icon).create();
-                }
-            }
-            case MACOS -> {
-                if (!icon.getFileName().toString().endsWith(".icns")) {
-                    throw ConfigException.build().message("message.icon-not-icns", icon).create();
-                }
-            }
-        }
-    }
+    class Proxy<T extends Launcher> extends ProxyBase<T> implements Launcher {
 
-    static class Proxy<T extends Launcher> extends ProxyBase<T> implements Launcher {
-
-        Proxy(T target) {
+        public Proxy(T target) {
             super(target);
         }
 
@@ -146,7 +117,7 @@ public interface Launcher {
         }
     }
 
-    static class Unsupported implements Launcher {
+    class Unsupported implements Launcher {
 
         @Override
         public String name() {

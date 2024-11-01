@@ -33,7 +33,7 @@ public interface LauncherModularStartupInfo extends LauncherStartupInfo {
 
     List<Path> modulePath();
 
-    final static class Impl extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
+    final class Impl extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
             implements LauncherModularStartupInfo {
 
         public Impl(LauncherStartupInfo target, String moduleName,
