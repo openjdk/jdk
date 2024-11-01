@@ -71,6 +71,7 @@ public:
 
 private:
   u4 _klass_offset;
+  u4 _nest_host_offset;
 public:
   int _num_verifier_constraints;
   int _num_loader_constraints;
@@ -176,12 +177,12 @@ public:
     return (char*)(address(this) + verifier_constraint_flags_offset());
   }
 
-  InstanceKlass** nest_host_addr() {
-    assert(klass()->is_hidden(), "sanity");
-    return (InstanceKlass**)(address(this) + nest_host_offset());
-  }
   InstanceKlass* nest_host() {
-    return *nest_host_addr();
+    if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space((address)this)) {
+      return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(_nest_host_offset);
+    } else {
+      return (InstanceKlass*)(SharedBaseAddress + _nest_host_offset);
+    }
   }
 
   RTLoaderConstraint* loader_constraints() {

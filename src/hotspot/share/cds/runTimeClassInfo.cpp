@@ -63,7 +63,7 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   }
 
   if (k->is_hidden()) {
-    builder->write_pointer_in_buffer(nest_host_addr(), info.nest_host());
+    _nest_host_offset = builder->any_to_offset_u4(info.nest_host());
   }
   if (k->has_archived_enum_objs()) {
     int num = info.num_enum_klass_static_fields();
