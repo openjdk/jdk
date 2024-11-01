@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class GetKeySpec {
             PBEParameterSpec goodParamSpec =
                 new PBEParameterSpec(new byte[8], 1024);
             GOOD_PARAMS = AlgorithmParameters.getInstance
-                (cipherAlg, "SunJCE");
+                    (cipherAlg, System.getProperty("test.provider.name", "SunJCE"));
             GOOD_PARAMS.init(goodParamSpec);
         } catch (Exception ex) {
             // should never happen
@@ -102,7 +102,7 @@ public class GetKeySpec {
         byte[] encryptedData = parse(encryptedPKCS8);
         boolean result = true;
 
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
 
         // generate encrypted data and EncryptedPrivateKeyInfo object
         EncryptedPrivateKeyInfo epki =

@@ -1803,7 +1803,7 @@ void PerfMemory::detach(char* addr, size_t bytes) {
 
   if (MemTracker::enabled()) {
     // it does not go through os api, the operation has to record from here
-    ThreadCritical tc;
+    NmtVirtualMemoryLocker ml;
     remove_file_mapping(addr);
     MemTracker::record_virtual_memory_release((address)addr, bytes);
   } else {

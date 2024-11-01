@@ -338,7 +338,8 @@ void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree
 }
 
 // Put all Assertion Predicate projections on a list, starting at 'predicate' and going up in the tree. If 'get_opaque'
-// is set, then the Opaque4 nodes of the Assertion Predicates are put on the list instead of the projections.
+// is set, then the OpaqueTemplateAssertionPredicate nodes of the Assertion Predicates are put on the list instead of
+// the projections.
 void PhaseIdealLoop::get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque) {
   ParsePredicateNode* parse_predicate = predicate->in(0)->as_ParsePredicate();
   ProjNode* uncommon_proj = parse_predicate->proj_out(1 - predicate->as_Proj()->_con);
@@ -353,10 +354,10 @@ void PhaseIdealLoop::get_assertion_predicates(Node* predicate, Unique_Node_List&
     }
     Node* bol = iff->in(1);
     assert(!bol->is_OpaqueInitializedAssertionPredicate(), "should not find an Initialized Assertion Predicate");
-    if (bol->is_Opaque4()) {
+    if (bol->is_OpaqueTemplateAssertionPredicate()) {
       assert(assertion_predicate_has_loop_opaque_node(iff), "must find OpaqueLoop* nodes");
       if (get_opaque) {
-        // Collect the predicate Opaque4 node.
+        // Collect the OpaqueTemplateAssertionPredicateNode.
         list.push(bol);
       } else {
         // Collect the predicate projection.
@@ -374,11 +375,11 @@ IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfNod
                                                                            IfProjNode* predicate,
                                                                            Deoptimization::DeoptReason reason,
                                                                            ParsePredicateSuccessProj* parse_predicate_proj) {
-  TemplateAssertionExpression template_assertion_expression(template_assertion_predicate->in(1)->as_Opaque4());
-  Opaque4Node* cloned_opaque4_node = template_assertion_expression.clone(parse_predicate_proj->in(0)->in(0), this);
+  TemplateAssertionExpression template_assertion_expression(template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate());
+  OpaqueTemplateAssertionPredicateNode* cloned_opaque_node = template_assertion_expression.clone(parse_predicate_proj->in(0)->in(0), this);
   IfProjNode* if_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason,
                                                     template_assertion_predicate->Opcode(), false);
-  _igvn.replace_input_of(if_proj->in(0), 1, cloned_opaque4_node);
+  _igvn.replace_input_of(if_proj->in(0), 1, cloned_opaque_node);
   _igvn.replace_input_of(parse_predicate_proj->in(0), 0, if_proj);
   set_idom(parse_predicate_proj->in(0), if_proj, dom_depth(if_proj));
   return if_proj;
