@@ -789,9 +789,20 @@ InstanceKlass* SystemDictionaryShared::get_shared_lambda_proxy_class(InstanceKla
                                                                      Symbol* method_type,
                                                                      Method* member_method,
                                                                      Symbol* instantiated_method_type) {
+  if (!caller_ik->is_shared()     ||
+      !invoked_name->is_shared()  ||
+      !invoked_type->is_shared()  ||
+      !method_type->is_shared()   ||
+      !member_method->is_shared() ||
+      !instantiated_method_type->is_shared()) {
+    // These can't be represented as u4 offset, but we wouldn't have archived a lambda proxy in this case anyway.
+    return nullptr;
+  }
+
   MutexLocker ml(CDSLambda_lock, Mutex::_no_safepoint_check_flag);
-  LambdaProxyClassKey key(caller_ik, invoked_name, invoked_type,
-                          method_type, member_method, instantiated_method_type);
+  RunTimeLambdaProxyClassKey key =
+    RunTimeLambdaProxyClassKey::init_for_runtime(caller_ik, invoked_name, invoked_type,
+                                                 method_type, member_method, instantiated_method_type);
 
   // Try to retrieve the lambda proxy class from static archive.
   const RunTimeLambdaProxyClassInfo* info = _static_archive.lookup_lambda_proxy_class(&key);
