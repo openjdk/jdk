@@ -4109,7 +4109,7 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 
 XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
   int num_xmm_registers = XMMRegister::available_xmm_registers();
-#if defined(WINDOWS) && defined(_LP64)
+#if defined(WINDOWS)
   XMMRegSet result = XMMRegSet::range(xmm0, xmm5);
   if (num_xmm_registers > 16) {
      result += XMMRegSet::range(xmm16, as_XMMRegister(num_xmm_registers - 1));
