@@ -39,6 +39,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
+import java.util.Scanner;
 
 import java.util.Arrays;
 import java.util.List;
@@ -47,6 +48,7 @@ public class CheckLargePages {
     private final static long LP_1G = 1024 * 1024 * 1024;
     private final static boolean LARGE_PAGES_ENABLED;
     private final static long LARGE_PAGE_SIZE;
+    private final static String LARGE_PAGE_NUMBER_FILE_BASE = "/sys/kernel/mm/hugepages/hugepages-%skB/nr_hugepages";
 
     static {
         WhiteBox whiteBox = WhiteBox.getWhiteBox();
@@ -56,6 +58,15 @@ public class CheckLargePages {
 
     private static boolean isLargePageSizeEqual(long size) {
         return LARGE_PAGE_SIZE == size;
+    }
+
+    private static int numberOfLargePages(long size) {
+        String largePageNumberFile = String.format(LARGE_PAGE_NUMBER_FILE_BASE, size / 1024);
+        Scanner scanner = new Scanner(new File(largePageNumberFile));
+        if (scanner.hasNextInt()) {
+            return scanner.nextInt();
+        }
+        return 0;
     }
 
     private static void testSegmented2GbCodeCacheWith1GbPage() throws Exception {
@@ -111,25 +122,19 @@ public class CheckLargePages {
         out.shouldNotContain("CodeHeap 'profiled nmethods'");
         out.shouldNotContain("CodeHeap 'non-profiled nmethods'");
         out.shouldContain("UseLargePages=1, UseTransparentHugePages=0");
-        out.shouldMatch("Large page support enabled\\. Usable page sizes: .*1[gG].*\\. Default large page size: .*\\.");
-        out.shouldMatch(
-                // 1GB large pages configured and available
-                "CodeCache:\\s+min=1[gG] max=1[gG] base=[^ ]+ size=1[gG] page_size=1[gG]|" +
-                // 1GB large pages configured but none available
-                "Failed to reserve and commit memory with given page size\\. " +
-                "req_addr: [^ ]+ size: 1[gG], page size: 1[gG], \\(errno = 12\\)");
-        out.shouldMatch(
-                // 1GB large pages configured and available
-                "CodeCache:\\s+min=1[gG] max=1[gG] base=[^ ]+ size=1[gG] page_size=1[gG]|" +
-                // 1GB large pages configured but only 2MB pages available
-                "CodeCache:\\s+min=1[gG] max=1[gG] base=[^ ]+ size=1[gG] page_size=2[mM]");
+        out.shouldMatch("CodeCache:  min=1[gG] max=1[gG] base=[^ ]+ size=1[gG] page_size=1[gG]");
     }
 
     public static void main(String[] args) throws Exception {
         if (isLargePageSizeEqual(LP_1G)) {
             testSegmented2GbCodeCacheWith1GbPage();
-            testDefaultCodeCacheWith1GbLargePages();
-            testNonSegmented1GbCodeCacheWith1GbLargePages();
+            if (numberOfLargePages(LP_1G) > 0) {
+                testDefaultCodeCacheWith1GbLargePages();
+                testNonSegmented1GbCodeCacheWith1GbLargePages();
+            } else {
+                System.out.println("Skipping testDefaultCodeCacheWith1GbLargePages and " +
+                        "testNonSegmented1GbCodeCacheWith1GbLargePages, no 1Gb pages available");
+            }
         } else {
             System.out.println("1GB large pages not supported: UseLargePages=" + LARGE_PAGES_ENABLED +
                     (LARGE_PAGES_ENABLED ? ", largePageSize=" + LARGE_PAGE_SIZE : "") + ". Skipping");
