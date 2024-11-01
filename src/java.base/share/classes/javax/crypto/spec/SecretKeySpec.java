@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,13 +98,13 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * for information about standard algorithm names.
      * @exception IllegalArgumentException if <code>algorithm</code>
      * is null or <code>key</code> is null or empty.
+     *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public SecretKeySpec(byte[] key, String algorithm) {
-        if (key == null || algorithm == null) {
-            throw new IllegalArgumentException("Missing argument");
-        }
-        if (key.length == 0) {
-            throw new IllegalArgumentException("Empty key");
+        String errMsg = doSanityCheck(key, algorithm);
+        if (errMsg != null) {
+            throw new IllegalArgumentException(errMsg);
         }
         this.key = key.clone();
         this.algorithm = algorithm;
@@ -146,6 +146,8 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * @exception ArrayIndexOutOfBoundsException is thrown if
      * <code>offset</code> or <code>len</code> index bytes outside the
      * <code>key</code>.
+     *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public SecretKeySpec(byte[] key, int offset, int len, String algorithm) {
         if (key == null || algorithm == null) {
@@ -266,14 +268,22 @@ public class SecretKeySpec implements KeySpec, SecretKey {
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
         stream.defaultReadObject();
+        String errMsg = doSanityCheck(key, algorithm);
+        if (errMsg != null) {
+            throw new InvalidObjectException(errMsg);
+        }
+        byte[] temp = key;
+        this.key = temp.clone();
+        Arrays.fill(temp, (byte) 0);
+    }
 
+    private static String doSanityCheck(byte[] key, String algorithm) {
+        String errMsg = null;
         if (key == null || algorithm == null) {
-            throw new InvalidObjectException("Missing argument");
+            errMsg = "Missing argument";
+        } else if (key.length == 0) {
+            errMsg = "Empty key";
         }
-
-        this.key = key.clone();
-        if (key.length == 0) {
-            throw new InvalidObjectException("Invalid key length");
-        }
+        return errMsg;
     }
 }

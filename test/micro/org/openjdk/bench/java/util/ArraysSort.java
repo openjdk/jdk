@@ -47,7 +47,7 @@ import java.lang.reflect.Method;
 /**
  * Performance test of Arrays.sort() methods
  */
-@Fork(value=1, jvmArgsAppend={"-XX:CompileThreshold=1", "-XX:-TieredCompilation"})
+@Fork(value=1, jvmArgs={"-XX:CompileThreshold=1", "-XX:-TieredCompilation"})
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)

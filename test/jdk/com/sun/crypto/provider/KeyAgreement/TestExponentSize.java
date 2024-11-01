@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,8 @@ public class TestExponentSize {
 
     public static void main(String[] args) throws Exception {
         KeyPair kp;
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", "SunJCE");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH",
+                                System.getProperty("test.provider.name", "SunJCE"));
 
         // Sun's default uses a default psize of 3072 and
         // lsize of (pSize / 2) but at least 384 bits

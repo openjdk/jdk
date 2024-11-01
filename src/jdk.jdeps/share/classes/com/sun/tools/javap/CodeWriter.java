@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,13 +70,11 @@ public class CodeWriter extends BasicWriter {
     }
 
     void write(CodeAttribute attr) {
-        println("Code:");
-        indent(+1);
-        writeVerboseHeader(attr);
-        writeInstrs(attr);
-        writeExceptionTable(attr);
-        attrWriter.write(attr.attributes(), attr);
-        indent(-1);
+        writeInternal(attr, false);
+    }
+
+    void writeMinimal(CodeAttribute attr) {
+        writeInternal(attr, true);
     }
 
     public void writeVerboseHeader(CodeAttribute attr) {
@@ -92,20 +90,22 @@ public class CodeWriter extends BasicWriter {
     public void writeInstrs(CodeAttribute attr) {
         List<InstructionDetailWriter> detailWriters = getDetailWriters(attr);
 
-        int pc = 0;
+        int[] pcState = {0};
         try {
-            for (var coe: attr) {
+            attr.forEach(coe -> {
                 if (coe instanceof Instruction instr) {
-                    for (InstructionDetailWriter w: detailWriters)
+                    int pc = pcState[0];
+                    for (InstructionDetailWriter w : detailWriters)
                         w.writeDetails(pc, instr);
                     writeInstr(pc, instr, attr);
-                    pc += instr.sizeInBytes();
+                    pcState[0] = pc + instr.sizeInBytes();
                 }
-            }
+            });
         } catch (IllegalArgumentException e) {
-            report("error at or after byte " + pc);
+            report("error at or after address " + pcState[0] + ": " + e.getMessage());
         }
 
+        int pc = pcState[0];
         for (InstructionDetailWriter w: detailWriters)
             w.flush(pc);
     }
@@ -255,6 +255,20 @@ public class CodeWriter extends BasicWriter {
         }
 
         return detailWriters;
+    }
+
+    private void writeInternal(CodeAttribute attr, boolean minimal) {
+        println("Code:");
+        indent(+1);
+        if (!minimal) {
+            writeVerboseHeader(attr);
+        }
+        writeInstrs(attr);
+        writeExceptionTable(attr);
+        if (!minimal) {
+            attrWriter.write(attr.attributes(), attr);
+        }
+        indent(-1);
     }
 
     private AttributeWriter attrWriter;
