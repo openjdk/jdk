@@ -53,25 +53,25 @@ public:
   jint value() const { assert(!is_NaN(), "NaN not allowed"); return _value; }
   bool is_zero() const { return !is_NaN() && value() == 0; }
 
-  friend NoOverflowInt operator+(const NoOverflowInt a, const NoOverflowInt b) {
+  friend NoOverflowInt operator+(const NoOverflowInt& a, const NoOverflowInt& b) {
     if (a.is_NaN()) { return a; }
     if (b.is_NaN()) { return b; }
     return NoOverflowInt((jlong)a.value() + (jlong)b.value());
   }
 
-  friend NoOverflowInt operator-(const NoOverflowInt a, const NoOverflowInt b) {
+  friend NoOverflowInt operator-(const NoOverflowInt& a, const NoOverflowInt& b) {
     if (a.is_NaN()) { return a; }
     if (b.is_NaN()) { return b; }
     return NoOverflowInt((jlong)a.value() - (jlong)b.value());
   }
 
-  friend NoOverflowInt operator*(const NoOverflowInt a, const NoOverflowInt b) {
+  friend NoOverflowInt operator*(const NoOverflowInt& a, const NoOverflowInt& b) {
     if (a.is_NaN()) { return a; }
     if (b.is_NaN()) { return b; }
     return NoOverflowInt((jlong)a.value() * (jlong)b.value());
   }
 
-  friend NoOverflowInt operator<<(const NoOverflowInt a, const NoOverflowInt b) {
+  friend NoOverflowInt operator<<(const NoOverflowInt& a, const NoOverflowInt& b) {
     if (a.is_NaN()) { return a; }
     if (b.is_NaN()) { return b; }
     jint shift = b.value();
@@ -79,14 +79,14 @@ public:
     return NoOverflowInt((jlong)a.value() << shift);
   }
 
-  friend bool operator==(const NoOverflowInt a, const NoOverflowInt b) {
+  friend bool operator==(const NoOverflowInt& a, const NoOverflowInt& b) {
     if (a.is_NaN()) { return false; }
     if (b.is_NaN()) { return false; }
     return a.value() == b.value();
   }
 
   NoOverflowInt abs() const {
-    if (is_NaN()) { return make_NaN(); }
+    if (is_NaN()) { return *this; }
     if (value() >= 0) { return *this; }
     return NoOverflowInt(0) - *this;
   }

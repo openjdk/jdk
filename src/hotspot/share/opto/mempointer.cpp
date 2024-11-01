@@ -82,7 +82,7 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form()
 // Parse a sub-expression of the pointer, starting at the current summand. We parse the
 // current node, and see if it can be decomposed into further summands, or if the current
 // summand is terminal.
-void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSummand summand) {
+void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSummand& summand) {
   Node* n = summand.variable();
   const NoOverflowInt scale = summand.scale();
   const NoOverflowInt one(1);
@@ -188,7 +188,7 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
 
 // Check if the decomposition of operation opc is guaranteed to be safe.
 // Please refer to the definition of "safe decomposition" in mempointer.hpp
-bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, const NoOverflowInt scale) const {
+bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const {
 #ifndef _LP64
   // On 32-bit platforms, the pointer has 32bits, and thus any higher bits will always
   // be truncated. Thus, it does not matter if we have int or long overflows.

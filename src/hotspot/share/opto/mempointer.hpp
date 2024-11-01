@@ -387,10 +387,8 @@ private:
   }
 
 public:
-  MemPointerAliasing() : MemPointerAliasing(Unknown, 0) {}
-
   static MemPointerAliasing make_unknown() {
-    return MemPointerAliasing();
+    return MemPointerAliasing(Unknown, 0);
   }
 
   static MemPointerAliasing make_always(const jint distance) {
@@ -427,7 +425,7 @@ public:
   MemPointerSummand() :
       _variable(nullptr),
       _scale(NoOverflowInt::make_NaN()) {}
-  MemPointerSummand(Node* variable, const NoOverflowInt scale) :
+  MemPointerSummand(Node* variable, const NoOverflowInt& scale) :
       _variable(variable),
       _scale(scale)
   {
@@ -476,8 +474,10 @@ public:
 //
 class MemPointerDecomposedForm : public StackObj {
 private:
-  // We limit the number of summands to 10. Usually, a pointer contains a base pointer
-  // (e.g. array pointer or null for native memory) and a few variables.
+  // We limit the number of summands to 10. This is just a best guess, and not at this
+  // point supported by evidence. But I think it is reasonable: usually, a pointer
+  // contains a base pointer (e.g. array pointer or null for native memory) and a few
+  // variables. It should be rare that we have more than 9 variables.
   static const int SUMMANDS_SIZE = 10;
 
   Node* _pointer; // pointer node associated with this (sub)pointer
@@ -495,7 +495,7 @@ public:
   }
 
 private:
-  MemPointerDecomposedForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con)
+  MemPointerDecomposedForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt& con)
     : _pointer(pointer), _con(con) {
     assert(!_con.is_NaN(), "non-NaN constant");
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
@@ -508,7 +508,7 @@ private:
   }
 
 public:
-  static MemPointerDecomposedForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con) {
+  static MemPointerDecomposedForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt& con) {
     if (summands.length() <= SUMMANDS_SIZE) {
       return MemPointerDecomposedForm(pointer, summands, con);
     } else {
@@ -567,9 +567,9 @@ public:
 
 private:
   MemPointerDecomposedForm parse_decomposed_form();
-  void parse_sub_expression(const MemPointerSummand summand);
+  void parse_sub_expression(const MemPointerSummand& summand);
 
-  bool is_safe_to_decompose_op(const int opc, const NoOverflowInt scale) const;
+  bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;
 };
 
 // Facility to parse the pointer of a Load or Store, so that aliasing between two such
