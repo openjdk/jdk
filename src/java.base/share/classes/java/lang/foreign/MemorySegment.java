@@ -501,7 +501,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * All the methods that can be used to manipulate zero-length memory segments
  * ({@link #reinterpret(long)}, {@link #reinterpret(Arena, Consumer)}, {@link #reinterpret(long, Arena, Consumer)} and
  * {@link AddressLayout#withTargetLayout(MemoryLayout)}) are
- * <a href="package-summary.html#restricted"><em>restricted</em></a> methods, and should
+ * <a href="{@docRoot}/java.base/java/lang/doc-files/RestrictedMethods.html#restricted"><em>restricted</em></a> methods, and should
  * be used with caution: assigning a segment incorrect spatial and/or temporal bounds
  * could result in a VM crash when attempting to access the memory segment.
  *
