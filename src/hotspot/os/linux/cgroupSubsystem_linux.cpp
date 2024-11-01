@@ -167,7 +167,7 @@ static bool find_ro_opt(char* mount_opts) {
   char* token;
   char* mo_ptr = mount_opts;
   // mount options are comma-separated (man proc).
-  while ((token = strsep(&mo_ptr, ",")) != NULL) {
+  while ((token = strsep(&mo_ptr, ",")) != nullptr) {
     if (strcmp(token, "ro") == 0) {
       return true;
     }
