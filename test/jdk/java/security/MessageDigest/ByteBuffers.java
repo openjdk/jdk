@@ -27,6 +27,8 @@
  * @summary Test the MessageDigest.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @key randomness
+ * @run main ByteBuffers MD5
+ * @run main ByteBuffers SHA-1
  */
 
 import java.util.*;
@@ -43,7 +45,8 @@ public class ByteBuffers {
         byte[] t = new byte[n];
         random.nextBytes(t);
 
-        MessageDigest md = MessageDigest.getInstance("MD5", p);
+        String digestAlgo = args[0];
+        MessageDigest md = MessageDigest.getInstance(digestAlgo, p);
         byte[] d1 = md.digest(t);
 
         // test 1: ByteBuffer with an accessible backing array
