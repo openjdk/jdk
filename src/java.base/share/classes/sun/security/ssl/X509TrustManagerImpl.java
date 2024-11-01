@@ -53,6 +53,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         implements X509TrustManager {
 
     static {
+        // eagerly initialize to avoid pinning virtual thread during TLS handshake
         try {
             MethodHandles.lookup().ensureInitialized(AnchorCertificates.class);
         } catch (IllegalAccessException e) {
