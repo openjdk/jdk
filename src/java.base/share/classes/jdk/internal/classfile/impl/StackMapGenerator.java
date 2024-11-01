@@ -1111,7 +1111,7 @@ public final class StackMapGenerator {
         Frame decStack1PushStack(Type type1, Type type2) {
             int stackSize = this.stackSize - 1;
             if (stackSize < 0) throw stackUnderflow();
-            checkStack(stackSize + 2);
+            checkStack(stackSize + 1);
             stack[stackSize    ] = type1;
             stack[stackSize + 1] = type2;
             this.stackSize = stackSize + 2;
