@@ -29,6 +29,9 @@
 module name java.base
 header exports java/io,java/lang,java/lang/annotation,java/lang/classfile,java/lang/classfile/attribute,java/lang/classfile/components,java/lang/classfile/constantpool,java/lang/classfile/instruction,java/lang/constant,java/lang/foreign,java/lang/invoke,java/lang/module,java/lang/ref,java/lang/reflect,java/lang/runtime,java/math,java/net,java/net/spi,java/nio,java/nio/channels,java/nio/channels/spi,java/nio/charset,java/nio/charset/spi,java/nio/file,java/nio/file/attribute,java/nio/file/spi,java/security,java/security/cert,java/security/interfaces,java/security/spec,java/text,java/text/spi,java/time,java/time/chrono,java/time/format,java/time/temporal,java/time/zone,java/util,java/util/concurrent,java/util/concurrent/atomic,java/util/concurrent/locks,java/util/function,java/util/jar,java/util/random,java/util/regex,java/util/spi,java/util/stream,java/util/zip,javax/crypto,javax/crypto/interfaces,javax/crypto/spec,javax/net,javax/net/ssl,javax/security/auth,javax/security/auth/callback,javax/security/auth/login,javax/security/auth/spi,javax/security/auth/x500,javax/security/cert,jdk/internal/event[jdk.jfr],jdk/internal/vm/vector[jdk.incubator.vector] extraModulePackages jdk/internal/access/foreign,jdk/internal/classfile/impl,jdk/internal/constant,jdk/internal/foreign/abi,jdk/internal/foreign/abi/aarch64/linux,jdk/internal/foreign/abi/aarch64/macos,jdk/internal/foreign/abi/aarch64/windows,jdk/internal/foreign/abi/fallback,jdk/internal/foreign/abi/ppc64/aix,jdk/internal/foreign/abi/ppc64/linux,jdk/internal/foreign/abi/riscv64/linux,jdk/internal/foreign/abi/s390/linux,jdk/internal/foreign/abi/x64/sysv,jdk/internal/foreign/abi/x64/windows,jdk/internal/foreign/layout,sun/nio/ch,sun/net,jdk/internal/foreign,jdk/internal/foreign,sun/net,sun/nio/ch uses java/lang/System$LoggerFinder,java/net/ContentHandlerFactory,java/net/spi/InetAddressResolverProvider,java/net/spi/URLStreamHandlerProvider,java/nio/channels/spi/AsynchronousChannelProvider,java/nio/channels/spi/SelectorProvider,java/nio/charset/spi/CharsetProvider,java/nio/file/spi/FileSystemProvider,java/nio/file/spi/FileTypeDetector,java/security/Provider,java/text/spi/BreakIteratorProvider,java/text/spi/CollatorProvider,java/text/spi/DateFormatProvider,java/text/spi/DateFormatSymbolsProvider,java/text/spi/DecimalFormatSymbolsProvider,java/text/spi/NumberFormatProvider,java/time/chrono/AbstractChronology,java/time/chrono/Chronology,java/time/zone/ZoneRulesProvider,java/util/spi/CalendarDataProvider,java/util/spi/CalendarNameProvider,java/util/spi/CurrencyNameProvider,java/util/spi/LocaleNameProvider,java/util/spi/ResourceBundleControlProvider,java/util/spi/ResourceBundleProvider,java/util/spi/TimeZoneNameProvider,java/util/spi/ToolProvider,javax/security/auth/spi/LoginModule,jdk/internal/io/JdkConsoleProvider,jdk/internal/logger/DefaultLoggerFinder,sun/text/spi/JavaTimeDateTimePatternProvider,sun/util/locale/provider/LocaleDataMetaInfo,sun/util/resources/LocaleData$CommonResourceBundleProvider,sun/util/resources/LocaleData$SupplementaryResourceBundleProvider,sun/util/spi/CalendarProvider provides interface\u0020;java/nio/file/spi/FileSystemProvider\u0020;impls\u0020;jdk/internal/jrtfs/JrtFileSystemProvider target macos-aarch64 flags 8000
 
+class name java/io/Reader
+method name of descriptor (Ljava/lang/CharSequence;)Ljava/io/Reader; flags 9
+
 class name java/lang/Class
 -method name getSigners descriptor ()[Ljava/lang/Object;
 method name getSigners descriptor ()[Ljava/lang/Object; flags 1
@@ -839,6 +842,17 @@ header extends java/lang/Object implements java/lang/classfile/Instruction seale
 innerclass innerClass jdk/internal/classfile/impl/AbstractInstruction$UnboundStoreInstruction outerClass jdk/internal/classfile/impl/AbstractInstruction innerClassName UnboundStoreInstruction flags 19
 innerclass innerClass java/lang/classfile/Opcode$Kind outerClass java/lang/classfile/Opcode innerClassName Kind flags 4019
 innerclass innerClass jdk/internal/classfile/impl/AbstractInstruction$BoundStoreInstruction outerClass jdk/internal/classfile/impl/AbstractInstruction innerClassName BoundStoreInstruction flags 19
+
+class name java/lang/constant/ClassDesc
+header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfField sealed true permittedSubclasses jdk/internal/constant/PrimitiveClassDescImpl,jdk/internal/constant/ClassOrInterfaceDescImpl,jdk/internal/constant/ArrayClassDescImpl flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfField<Ljava/lang/constant/ClassDesc;>;
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
+-method name arrayType descriptor ()Ljava/lang/constant/ClassDesc;
+-method name arrayType descriptor (I)Ljava/lang/constant/ClassDesc;
+-method name displayName descriptor ()Ljava/lang/String;
+method name arrayType descriptor ()Ljava/lang/constant/ClassDesc; flags 401
+method name arrayType descriptor (I)Ljava/lang/constant/ClassDesc; flags 401
+method name displayName descriptor ()Ljava/lang/String; flags 401
 
 class name java/lang/foreign/MemorySegment
 header extends java/lang/Object nestMembers java/lang/foreign/MemorySegment$Scope sealed true permittedSubclasses jdk/internal/foreign/AbstractMemorySegmentImpl flags 601
@@ -2020,7 +2034,51 @@ header extends java/lang/Object nestHost jdk/internal/classfile/impl/Util flags 
 innerclass innerClass jdk/internal/classfile/impl/Util$WritableLocalVariable outerClass jdk/internal/classfile/impl/Util innerClassName WritableLocalVariable flags 608
 method name writeLocalTo descriptor (Ljdk/internal/classfile/impl/BufWriterImpl;)Z flags 401
 
+class name jdk/internal/constant/ArrayClassDescImpl
+header extends java/lang/Object implements java/lang/constant/ClassDesc flags 31
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
+method name ofValidatedDescriptor descriptor (Ljava/lang/String;)Ljdk/internal/constant/ArrayClassDescImpl; flags 9
+method name ofValidated descriptor (Ljava/lang/constant/ClassDesc;I)Ljdk/internal/constant/ArrayClassDescImpl; flags 9
+method name arrayType descriptor ()Ljava/lang/constant/ClassDesc; flags 1
+method name arrayType descriptor (I)Ljava/lang/constant/ClassDesc; flags 1
+method name isArray descriptor ()Z flags 1
+method name componentType descriptor ()Ljava/lang/constant/ClassDesc; flags 1
+method name displayName descriptor ()Ljava/lang/String; flags 1
+method name descriptorString descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Class; thrownTypes java/lang/ReflectiveOperationException flags 1 signature (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Class<*>;
+method name equals descriptor (Ljava/lang/Object;)Z flags 1
+method name hashCode descriptor ()I flags 1
+method name toString descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041 methodParameters 1000:null
+method name arrayType descriptor ()Ljava/lang/invoke/TypeDescriptor$OfField; flags 1041
+method name componentType descriptor ()Ljava/lang/invoke/TypeDescriptor$OfField; flags 1041
+
+class name jdk/internal/constant/ClassOrInterfaceDescImpl
+header extends java/lang/Object implements java/lang/constant/ClassDesc flags 31
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
+method name ofValidated descriptor (Ljava/lang/String;)Ljdk/internal/constant/ClassOrInterfaceDescImpl; flags 9
+method name internalName descriptor ()Ljava/lang/String; flags 1
+method name arrayType descriptor (I)Ljava/lang/constant/ClassDesc; flags 1
+method name arrayType descriptor ()Ljava/lang/constant/ClassDesc; flags 1
+method name nested descriptor (Ljava/lang/String;)Ljava/lang/constant/ClassDesc; flags 1
+method name nested descriptor (Ljava/lang/String;[Ljava/lang/String;)Ljava/lang/constant/ClassDesc; flags 81
+method name isClassOrInterface descriptor ()Z flags 1
+method name packageName descriptor ()Ljava/lang/String; flags 1
+method name displayName descriptor ()Ljava/lang/String; flags 1
+method name descriptorString descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Class; thrownTypes java/lang/ReflectiveOperationException flags 1 signature (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Class<*>;
+method name equals descriptor (Ljava/lang/Object;)Z flags 1
+method name hashCode descriptor ()I flags 1
+method name toString descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041 methodParameters 1000:null
+method name arrayType descriptor ()Ljava/lang/invoke/TypeDescriptor$OfField; flags 1041
+
 class name jdk/internal/constant/PrimitiveClassDescImpl
+header extends java/lang/constant/DynamicConstantDesc implements java/lang/constant/ClassDesc flags 31 signature Ljava/lang/constant/DynamicConstantDesc<Ljava/lang/Class<*>;>;Ljava/lang/constant/ClassDesc;
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
 -method name <init> descriptor (Ljava/lang/String;)V
 field name CD_int descriptor Ljdk/internal/constant/PrimitiveClassDescImpl; flags 19
 field name CD_long descriptor Ljdk/internal/constant/PrimitiveClassDescImpl; flags 19
@@ -2032,12 +2090,21 @@ field name CD_char descriptor Ljdk/internal/constant/PrimitiveClassDescImpl; fla
 field name CD_boolean descriptor Ljdk/internal/constant/PrimitiveClassDescImpl; flags 19
 field name CD_void descriptor Ljdk/internal/constant/PrimitiveClassDescImpl; flags 19
 method name wrapper descriptor ()Lsun/invoke/util/Wrapper; flags 1
+method name isPrimitive descriptor ()Z flags 1
+method name arrayType descriptor (I)Ljava/lang/constant/ClassDesc; flags 1
+method name arrayType descriptor ()Ljava/lang/constant/ClassDesc; flags 1
+method name displayName descriptor ()Ljava/lang/String; flags 1
+method name arrayType descriptor ()Ljava/lang/invoke/TypeDescriptor$OfField; flags 1041
 
-class name jdk/internal/constant/ReferenceClassDescImpl
--method name ofValidatedBinaryName descriptor (Ljava/lang/String;)Ljava/lang/constant/ClassDesc;
-method name internalName descriptor ()Ljava/lang/String; flags 1
+-class name jdk/internal/constant/ReferenceClassDescImpl
 
 class name jdk/internal/vm/vector/VectorSupport
+field name VECTOR_OP_SADD descriptor I constantValue 119 flags 19
+field name VECTOR_OP_SSUB descriptor I constantValue 120 flags 19
+field name VECTOR_OP_SUADD descriptor I constantValue 121 flags 19
+field name VECTOR_OP_SUSUB descriptor I constantValue 122 flags 19
+field name VECTOR_OP_UMIN descriptor I constantValue 123 flags 19
+field name VECTOR_OP_UMAX descriptor I constantValue 124 flags 19
 method name wrapShuffleIndexes descriptor (Ljava/lang/Class;Ljava/lang/Class;Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;ILjdk/internal/vm/vector/VectorSupport$WrapShuffleIndexesOperation;)Ljdk/internal/vm/vector/VectorSupport$VectorShuffle; flags 9 signature <E:Ljava/lang/Object;SH:Ljdk/internal/vm/vector/VectorSupport$VectorShuffle<TE;>;>(Ljava/lang/Class<TE;>;Ljava/lang/Class<+TSH;>;TSH;ILjdk/internal/vm/vector/VectorSupport$WrapShuffleIndexesOperation<TSH;>;)TSH; runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name selectFromTwoVectorOp descriptor (Ljava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$SelectFromTwoVector;)Ljdk/internal/vm/vector/VectorSupport$Vector; flags 9 signature <V:Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;E:Ljava/lang/Object;>(Ljava/lang/Class<+TV;>;Ljava/lang/Class<TE;>;ITV;TV;TV;Ljdk/internal/vm/vector/VectorSupport$SelectFromTwoVector<TV;>;)TV; runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name selectFromOp descriptor (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$VectorMask;Ljdk/internal/vm/vector/VectorSupport$VectorSelectFromOp;)Ljdk/internal/vm/vector/VectorSupport$Vector; flags 9 signature <V:Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;M:Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;E:Ljava/lang/Object;>(Ljava/lang/Class<+TV;>;Ljava/lang/Class<TM;>;Ljava/lang/Class<TE;>;ITV;TV;TM;Ljdk/internal/vm/vector/VectorSupport$VectorSelectFromOp<TV;TM;>;)TV; runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;

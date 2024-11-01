@@ -56,3 +56,46 @@ method name selectFrom descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/v
 class name jdk/incubator/vector/Vector
 method name selectFrom descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 401 signature (Ljdk/incubator/vector/Vector<TE;>;Ljdk/incubator/vector/Vector<TE;>;)Ljdk/incubator/vector/Vector<TE;>;
 
+class name jdk/incubator/vector/VectorMath
+header extends java/lang/Object flags 31
+method name minUnsigned descriptor (JJ)J flags 9
+method name maxUnsigned descriptor (JJ)J flags 9
+method name addSaturating descriptor (JJ)J flags 9
+method name subSaturating descriptor (JJ)J flags 9
+method name addSaturatingUnsigned descriptor (JJ)J flags 9
+method name subSaturatingUnsigned descriptor (JJ)J flags 9
+method name minUnsigned descriptor (II)I flags 9
+method name maxUnsigned descriptor (II)I flags 9
+method name addSaturating descriptor (II)I flags 9
+method name subSaturating descriptor (II)I flags 9
+method name addSaturatingUnsigned descriptor (II)I flags 9
+method name subSaturatingUnsigned descriptor (II)I flags 9
+method name minUnsigned descriptor (SS)S flags 9
+method name maxUnsigned descriptor (SS)S flags 9
+method name addSaturating descriptor (SS)S flags 9
+method name subSaturating descriptor (SS)S flags 9
+method name addSaturatingUnsigned descriptor (SS)S flags 9
+method name subSaturatingUnsigned descriptor (SS)S flags 9
+method name minUnsigned descriptor (BB)B flags 9
+method name maxUnsigned descriptor (BB)B flags 9
+method name addSaturating descriptor (BB)B flags 9
+method name subSaturating descriptor (BB)B flags 9
+method name addSaturatingUnsigned descriptor (BB)B flags 9
+method name subSaturatingUnsigned descriptor (BB)B flags 9
+
+class name jdk/incubator/vector/VectorOperators
+-field name UNSIGNED_LT descriptor Ljdk/incubator/vector/VectorOperators$Comparison;
+-field name UNSIGNED_LE descriptor Ljdk/incubator/vector/VectorOperators$Comparison;
+-field name UNSIGNED_GT descriptor Ljdk/incubator/vector/VectorOperators$Comparison;
+-field name UNSIGNED_GE descriptor Ljdk/incubator/vector/VectorOperators$Comparison;
+field name SADD descriptor Ljdk/incubator/vector/VectorOperators$Binary; flags 19
+field name SUADD descriptor Ljdk/incubator/vector/VectorOperators$Binary; flags 19
+field name SSUB descriptor Ljdk/incubator/vector/VectorOperators$Binary; flags 19
+field name SUSUB descriptor Ljdk/incubator/vector/VectorOperators$Binary; flags 19
+field name UMIN descriptor Ljdk/incubator/vector/VectorOperators$Associative; flags 19
+field name UMAX descriptor Ljdk/incubator/vector/VectorOperators$Associative; flags 19
+field name ULT descriptor Ljdk/incubator/vector/VectorOperators$Comparison; flags 19
+field name ULE descriptor Ljdk/incubator/vector/VectorOperators$Comparison; flags 19
+field name UGT descriptor Ljdk/incubator/vector/VectorOperators$Comparison; flags 19
+field name UGE descriptor Ljdk/incubator/vector/VectorOperators$Comparison; flags 19
+
