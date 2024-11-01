@@ -41,6 +41,7 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form()
   // parses the pointer expression recursively.
   int traversal_count = 0;
   while (_worklist.is_nonempty()) {
+    // Bail out if the graph is too complex.
     if (traversal_count++ > 1000) { return MemPointerDecomposedForm(pointer); }
     parse_sub_expression(_worklist.pop());
   }
@@ -48,8 +49,9 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form()
   // Bail out if there is a constant overflow.
   if (_con.is_NaN()) { return MemPointerDecomposedForm(pointer); }
 
-  // Sort summands by variable->_idx
-  _summands.sort(MemPointerSummand::cmp_for_sort);
+  // Sorting by variable idx means that all summands with the same variable are consecutive.
+  // This simplifies the combining of summands with the same variable below.
+  _summands.sort(MemPointerSummand::cmp_by_variable_idx);
 
   // Combine summands for the same variable, adding up the scales.
   int pos_put = 0;

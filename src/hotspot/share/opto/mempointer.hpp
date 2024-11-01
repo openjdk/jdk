@@ -222,18 +222,23 @@
 //   are such "safe decompositions".
 //
 //
-//  Definition: Safe decomposition (from some mp_i to mp_{i+1})
-//    We decompose summand in:
-//      mp_i     = con + summand                     + SUM(other_summands)
-//    Resulting in:      +-------------------------+
-//      mp_{i+1} = con + dec_con + SUM(dec_summands) + SUM(other_summands)
-//               = new_con + SUM(new_summands)
+// Definition: Safe decomposition
+//   Trivial decomposition:
+//     (SAFE0) The trivial decomposition from p to mp_0 = 0 + 1 * p is always safe.
 //
-//    We call a decomposition safe if either:
-//      SAFE1) No matter the values of the summand variables:
+//   Non-trivial decomposition:
+//     We decompose summand in:
+//       mp_i     = con + summand                     + SUM(other_summands)
+//     Resulting in:      +-------------------------+
+//       mp_{i+1} = con + dec_con + SUM(dec_summands) + SUM(other_summands)
+//                = new_con + SUM(new_summands)
+//   where mp_i means that the original pointer p was decomposed i times.
+//
+//   We call a non-trivial decomposition safe if either:
+//     (SAFE1) No matter the values of the summand variables:
 //               mp_i = mp_{i+1}
 //
-//      SAFE2) The pointer is on an array with a known array_element_size_in_bytes,
+//     (SAFE2) The pointer is on an array with a known array_element_size_in_bytes,
 //             and there is an integer x, such that:
 //               mp_i = mp_{i+1} + x * array_element_size_in_bytes * 2^32
 //
@@ -241,16 +246,14 @@
 //                   have a distance at least twice as large as the array size, and so
 //                   at least one of mp1 or mp2 must be out of bounds of the array.
 //
-//    Note: MemPointerDecomposedFormParser::is_safe_to_decompose_op checks that all
-//          decompositions we apply are safe.
-//
-//
-//  MemPointer Lemma:
+// MemPointer Lemma:
 //    Given two pointers p1 and p2, and their respective MemPointers mp1 and mp2.
 //    If these conditions hold:
-//      S1) Both p1 and p2 are within the bounds of the same memory object.
-//      S2) The constants do not differ too much: abs(mp1.con - mp2.con) < 2^31
-//      S3) All summands of mp1 and mp2 are identical.
+//      (S0) mp1 and mp2 are constructed only with safe decompositions (SAFE0, SAFE1, SAFE2)
+//           from p1 and p2, respectively.
+//      (S1) Both p1 and p2 are within the bounds of the same memory object.
+//      (S2) The constants do not differ too much: abs(mp1.con - mp2.con) < 2^31.
+//      (S3) All summands of mp1 and mp2 are identical (i.e. only the constants are possibly different).
 //
 //    Then the pointer difference between p1 and p2 is identical to the difference between
 //    mp1 and mp2:
@@ -260,22 +263,34 @@
 //          prove the correctness of its aliasing computation between two MemPointers.
 //
 //
+//    Note: MemPointerDecomposedFormParser::is_safe_to_decompose_op checks that all
+//          decompositions we apply are safe.
+//
+//
 //  Proof of the "MemPointer Lemma":
-//    Case 0: no decompositions were used:
+//    Assume (S0-S3) and show that
+//      p1 - p2 = mp1 - mp2
+//
+//    We make a case distinction over the types of decompositions used in the construction of mp1 and mp2.
+//
+//    Trivial Case: Only trivial (SAFE0) decompositions were used:
 //      mp1 = 0 + 1 * p1 = p1
 //      mp2 = 0 + 1 * p2 = p2
 //      =>
 //      p1 - p2 = mp1 - mp2
 //
-//    Case 1: only decompositions of type (SAFE1) were used:
+//    Unsafe Case: We apply at least one unsafe decomposition:
+//      This is a contradiction to (S0) and we are done.
+//
+//    Case 1: Only decomposition of type (SAFE0) and (SAFE1) are used:
 //      We make an induction proof over the decompositions from p1 to mp1, starting with
-//      the trivial decomposition:
+//      the trivial decomposition (SAFE0):
 //        mp1_0 = 0 + 1 * p1 = p1
-//      and then for the i'th decomposition, we know that
+//      Then for the i-th non-trivial decomposition (SAFE1) we know that
 //        mp1_i = mp1_{i+1}
-//      and hence, if mp1 was decomposed with n decompositions from p1:
+//      and hence, after the n-th non-trivial decomposition from p1:
 //        p1 = mp1_0 = mp1_i = mp1_n = mp1
-//      The analogue can be proven for p2 and mp2:
+//      Analogously, we can prove:
 //        p2 = mp2
 //
 //      p1 = mp1
@@ -283,30 +298,28 @@
 //      =>
 //      p1 - p2 = mp1 - mp2
 //
-//    Case 2: decompositions of type (SAFE2) were used, and possibly also decompositions of
-//            type (SAFE1).
-//       Given we have (SAFE2) decompositions, we know that we are operating on an array of
-//       known array_element_size_in_bytes. We can weaken the guarantees from (SAFE1)
-//       decompositions to the same guarantee as (SAFE2) decompositions, hence all applied
-//       decompositions satisfy:
-//         mp1_i = mp1_{i+1} + x1_i * array_element_size_in_bytes * 2^32
-//       where x_i = 0 for (SAFE1) decompositions.
+//    Case 2: At least one decomposition of type (SAFE2) and no unsafe decomposition is used.
+//      Given we have (SAFE2) decompositions, we know that we are operating on an array of
+//      known array_element_size_in_bytes. We can weaken the guarantees from (SAFE1)
+//      decompositions to the same guarantee as (SAFE2) decompositions. Hence all applied
+//      non-trivial decompositions satisfy:
+//        mp1_i = mp1_{i+1} + x1_i * array_element_size_in_bytes * 2^32
+//      where x1_i = 0 for (SAFE1) decompositions.
 //
 //      We make an induction proof over the decompositions from p1 to mp1, starting with
-//      the trivial decompoisition:
+//      the trivial decomposition (SAFE0):
 //        mp1_0 = 0 + 1 * p1 = p1
-//      and then for the i'th decomposition, we know that
+//      Then for the i-th non-trivial decomposition (SAFE1) or (SAFE2), we know that
 //        mp1_i = mp1_{i+1} + x1_i * array_element_size_in_bytes * 2^32
-//      and hence, if mp1 was decomposed with n decompositions from p1:
+//      and hence, if mp1 was decomposed with n non-trivial decompositions (SAFE1) or (SAFE2) from p1:
 //        p1 = mp1 + x1 * array_element_size_in_bytes * 2^32
-//      where x1 = sum(x1_i).
-//      The analogue can be proven for p2 and mp2:
+//      where
+//        x1 = SUM(x1_i)
+//      Analogously, we can prove:
 //        p2 = mp2 + x2 * array_element_size_in_bytes * 2^32
 //
-//      And hence, there must be an x, such that:
+//      And hence, with x = x1 - x2 we have:
 //        p1 - p2 = mp1 - mp2 + x * array_element_size_in_bytes * 2^32
-//      where
-//        x = x1 - x2
 //
 //      If "x = 0", then it follows:
 //        p1 - p2 = mp1 - mp2
@@ -316,18 +329,18 @@
 //                     >= abs(x * array_element_size_in_bytes * 2^32) - abs(mp1 - mp2)
 //                            -- apply x != 0 --
 //                     >= array_element_size_in_bytes * 2^32          - abs(mp1 - mp2)
-//                                                               -- apply S2 and S3 --
+//                                                                    -- apply (S3)  --
+//                     =  array_element_size_in_bytes * 2^32          - abs(mp1.con - mp2.con)
+//                                                                        -- apply (S2)  --
 //                     >  array_element_size_in_bytes * 2^32          - 2^31
 //                        -- apply array_element_size_in_bytes > 0 --
 //                     >= array_element_size_in_bytes * 2^31
 //                     >= max_possible_array_size_in_bytes
 //                     >= array_size_in_bytes
 //
-//        Thus we get a contradiction: p1 and p2 have a distance greater than the array
-//        size, and hence at least one of the two must be out of bounds. But condition S1
-//        of the MemPointer Lemma requires that both p1 and p2 are both in bounds of the
-//        same memory object.
-
+//        This shows that p1 and p2 have a distance greater than the array size, and hence at least one of the two
+//        pointers must be out of bounds. This contradicts our assumption (S1) and we are done.
+//
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
 private:
@@ -424,7 +437,7 @@ public:
   Node* variable() const { return _variable; }
   NoOverflowInt scale() const { return _scale; }
 
-  static int cmp_for_sort(MemPointerSummand* p1, MemPointerSummand* p2) {
+  static int cmp_by_variable_idx(MemPointerSummand* p1, MemPointerSummand* p2) {
     if (p1->variable() == nullptr) {
       return (p2->variable() == nullptr) ? 0 : 1;
     } else if (p2->variable() == nullptr) {
