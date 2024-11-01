@@ -31,8 +31,6 @@
  * @requires vm.jvmti
  * @build jdk.test.whitebox.WhiteBox
  *        OldClassAndRedefineClassApp
- *        InstrumentationClassFileTransformer
- *        InstrumentationRegisterClassFileTransformer
  * @compile ../../test-classes/OldSuper.jasm
  *          ../../test-classes/ChildOldSuper.java
  *          ../../test-classes/Hello.java
@@ -40,7 +38,6 @@
  * @run driver OldClassAndRedefineClass
  */
 
-import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
 

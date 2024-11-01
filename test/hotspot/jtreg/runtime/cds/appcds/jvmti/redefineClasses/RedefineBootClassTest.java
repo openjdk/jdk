@@ -34,20 +34,11 @@
  * @build RedefineBootClassTest
  *        RedefineBootClassApp
  *        BootSuper BootChild
- *        InstrumentationClassFileTransformer
- *        InstrumentationRegisterClassFileTransformer
  * @run driver RedefineClassHelper
  * @run driver RedefineBootClassTest
  */
 
-import com.sun.tools.attach.VirtualMachine;
-import com.sun.tools.attach.VirtualMachineDescriptor;
-import java.io.File;
-import java.util.List;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class RedefineBootClassTest {
