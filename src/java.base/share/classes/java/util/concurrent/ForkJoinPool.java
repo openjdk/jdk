@@ -655,7 +655,9 @@ public class ForkJoinPool extends AbstractExecutorService {
      * atomically set a runState mode bit.  However, the process of
      * termination is intrinsically non-atomic. The calling thread, as
      * well as other workers thereafter terminating help cancel queued
-     * tasks and interrupt other workers. These actions race with
+     * tasks and interrupt other workers (staggering queues and
+     * backing off on interference to avoid contention while doing
+     * so-- see method helpTerminate). These actions race with
      * unterminated workers.  By default, workers check for
      * termination only when accessing pool state.  This may take a
      * while but suffices for structured computational tasks.  But not
@@ -1827,7 +1829,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) {
         if ((runState & STOP) != 0L)       // ensure released
-            releaseAll();
+            dropWaiters();
         WorkQueue w = null;
         int src = 0, phase = 0;
         boolean replaceable = false;
@@ -1911,33 +1913,29 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Releases all waiting workers. Called only during shutdown.
-     *
-     * @return current ctl
+     * Releases and drops all waiting workers. Called only during shutdown.
      */
-    private long releaseAll() {
-        long c = ctl;
-        for (;;) {
+    private void dropWaiters() {
+        for (long c = ctl;;) {
             WorkQueue[] qs; WorkQueue v; int sp, i;
             if ((sp = (int)c) == 0 || (qs = queues) == null ||
                 qs.length <= (i = sp & SMASK) || (v = qs[i]) == null)
                 break;
             if (c == (c = compareAndExchangeCtl(
-                          c, ((UMASK & (c + RC_UNIT)) | (c & TC_MASK) |
-                              (v.stackPred & LMASK))))) {
+                          c, (v.stackPred & LMASK) | (UMASK & (c - TC_UNIT))))) {
+                v.source = DROPPED;
                 v.phase = sp;
                 if (v.parking != 0)
                     U.unpark(v.owner);
             }
         }
-        return c;
     }
 
     /**
      * Internal version of isQuiescent and related functionality.
-     * @return positive if stopping, nonnegative if terminating or all
-     * workers are inactive and submission queues are empty and
-     * unlocked; if so, setting STOP if shutdown is enabled
+     * @return nonnegative if terminating or all workers are inactive
+     * and submission queues are empty and unlocked; if so, setting
+     * STOP if shutdown is enabled and returning greater than 1, else 0.
      */
     private int quiescent() {
         outer: for (;;) {
@@ -1967,7 +1965,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 else if ((e & SHUTDOWN) == 0)
                     return 0;
                 else if (compareAndSetCtl(c, c) && casRunState(e, e | STOP))
-                    return 1;                             // enable termination
+                    return 2;                             // enable termination
                 else
                     break;                                // restart
             }
@@ -2742,31 +2740,67 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return runState on exit
      */
     private long tryTerminate(boolean now, boolean enable) {
-        long e = runState, isShutdown;
-        if ((e & STOP) == 0L) {
-            if (now)
-                runState = e = (lockRunState() + RS_LOCK) | STOP | SHUTDOWN;
-            else if ((isShutdown = (e & SHUTDOWN)) != 0 || enable) {
-                if (isShutdown == 0)
-                    getAndBitwiseOrRunState(SHUTDOWN);
-                if (quiescent() > 0)
-                    e = runState;
+        long e;
+        if (((e = runState) & STOP) == 0L) {
+            long isShutdown, ps;
+            boolean startTerminating = false;
+            if (now) {
+                runState = ((ps = lockRunState()) + RS_LOCK) | STOP | SHUTDOWN;
+                if ((ps & STOP) == 0L)
+                    startTerminating = true;
             }
-            if ((e & STOP) != 0L) {
-                releaseAll();
+            else if ((isShutdown = (e & SHUTDOWN)) != 0L || enable) {
+                if (isShutdown == 0L)
+                    getAndBitwiseOrRunState(SHUTDOWN);
+                if (quiescent() > 1)
+                    startTerminating = true;
+            }
+            if (startTerminating) {
+                dropWaiters();
                 if (now)
                     interruptAll();
-                e = runState;
             }
         }
-        if ((e & (STOP | TERMINATED)) == STOP) { // help cancel tasks
-            int r = (int)Thread.currentThread().threadId();
-            WorkQueue[] qs = queues;             // stagger traversals
-            int n = (qs == null) ? 0 : qs.length;
-            for (int l = n; l > 0; --l, ++r) {
-                WorkQueue q; ForkJoinTask<?> t;
-                if ((q = qs[r & (n - 1)]) != null) {
-                    while (q.source != DROPPED && (t = q.poll()) != null) {
+        if ((runState & STOP) != 0L)
+            helpTerminate();
+        if (((e = runState) & (STOP | TERMINATED)) == STOP && ctl == 0L) {
+            e |= TERMINATED;
+            if ((getAndBitwiseOrRunState(TERMINATED) & TERMINATED) == 0L) {
+                CountDownLatch done; SharedThreadContainer ctr;
+                if ((done = termination) != null)
+                    done.countDown();
+                if ((ctr = container) != null)
+                    ctr.close();
+            }
+        }
+        return e;
+    }
+
+    /**
+     * Scans queues (with start index based on thread id to stagger
+     * traversals), cancelling tasks until empty or interference (in
+     * which case one or more other threads will finish cancellation).
+     */
+    private void helpTerminate() {
+        int r = (int)Thread.currentThread().threadId();
+        r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
+        WorkQueue[] qs = queues;             // stagger traversals
+        int n = (qs == null) ? 0 : qs.length;
+        for (int l = n; l > 0; --l, ++r) {
+            WorkQueue q;
+            if ((q = qs[r & (n - 1)]) != null) {
+                for (;;) {
+                    ForkJoinTask<?> t; int cap, b; long k; ForkJoinTask<?>[] a;
+                    if ((a = q.array) == null || (cap = a.length) <= 0)
+                        break;
+                    t = (ForkJoinTask<?>)U.getReferenceAcquire(
+                        a, k = slotOffset((cap - 1) & (b = q.base)));
+                    if (q.base != b)                   // inconsistent
+                        ;
+                    else if (t == null || !U.compareAndSetReference(a, k, t, null))
+                        break;                         // empty or contended
+                    else {
+                        q.updateBase(b + 1);
                         try {
                             t.cancel(false);
                         } catch (Throwable ignore) {
@@ -2774,18 +2808,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     }
                 }
             }
-            if (((e = runState) & TERMINATED) == 0L && ctl == 0L) {
-                e |= TERMINATED;
-                if ((getAndBitwiseOrRunState(TERMINATED) & TERMINATED) == 0L) {
-                    CountDownLatch done; SharedThreadContainer ctr;
-                    if ((done = termination) != null)
-                        done.countDown();
-                    if ((ctr = container) != null)
-                        ctr.close();
-                }
-            }
         }
-        return e;
     }
 
     /**
