@@ -3786,7 +3786,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_ConNKlass: {
     const TypePtr* tp = n->as_Type()->type()->make_ptr();
     ciKlass* klass = tp->is_klassptr()->exact_klass();
-    assert(!klass->is_interface() && !klass->is_abstract(), "Interface or abstract class pointers should not be compressed");
+    assert(klass->is_encodable(), "klass cannot be compressed");
     break;
   }
 #endif
