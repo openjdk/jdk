@@ -45,7 +45,7 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form()
     parse_sub_expression(_worklist.pop());
   }
 
-  // Check for constant overflow.
+  // Bail out if there is a constant overflow.
   if (_con.is_NaN()) { return MemPointerDecomposedForm(pointer); }
 
   // Sort summands by variable->_idx
@@ -55,7 +55,7 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form()
   int pos_put = 0;
   int pos_get = 0;
   while (pos_get < _summands.length()) {
-    MemPointerSummand summand = _summands.at(pos_get++);
+    const MemPointerSummand& summand = _summands.at(pos_get++);
     Node* variable      = summand.variable();
     NoOverflowInt scale = summand.scale();
     // Add up scale of all summands with the same variable.
@@ -300,8 +300,9 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, cons
 // prove that the computed aliasing also applies for the underlying pointers.
 //
 // Pre-Condition:
-//   We assume that both pointers are in-bounds of their respective memory object.
-//
+//   We assume that both pointers are in-bounds of their respective memory object. If this does
+//   not hold, for example, with the use of Unsafe, then we would already have undefined behavior,
+//   and we are allowed to do anything.
 MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerDecomposedForm& other
                                                                NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const {
 #ifndef PRODUCT

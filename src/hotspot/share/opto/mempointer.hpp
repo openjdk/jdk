@@ -36,7 +36,9 @@
 // Intuition and Examples:
 //   We parse / decompose pointers into a linear form:
 //
-//     pointer = sum_i(scale_i * variable_i) + con
+//     pointer = SUM(scale_i * variable_i) + con
+//
+//   where SUM() adds all "scale_i * variable_i" for each i together.
 //
 //   The con and scale_i are compile-time constants (NoOverflowInt), and the variable_i are
 //   compile-time variables (C2 nodes).
@@ -401,6 +403,7 @@ public:
 //
 //   summand = scale * variable
 //
+// where variable is a C2 node.
 class MemPointerSummand : public StackObj {
 private:
   Node* _variable;
@@ -455,7 +458,7 @@ public:
 
 // Decomposed form of the pointer sub-expression of "pointer".
 //
-//   pointer = sum(summands) + con
+//   pointer = SUM(summands) + con
 //
 class MemPointerDecomposedForm : public StackObj {
 private:
