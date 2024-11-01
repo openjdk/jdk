@@ -524,7 +524,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         final Object base = NIO_ACCESS.getBufferBase(b);
         return (base == null)
                 ? nativeSegment(b, offset, length)
-                : NIO_ACCESS.arrayBackedSegment(b, base, offset, length, b.isReadOnly(), bufferScope(b));
+                : NIO_ACCESS.heapSegment(b, base, offset, length, b.isReadOnly(), bufferScope(b));
     }
 
     @ForceInline

@@ -258,11 +258,11 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
     @ForceInline
     @Override
-    AbstractMemorySegmentImpl arrayBackedSegment(Object base,
-                                                 long offset,
-                                                 long length,
-                                                 boolean readOnly,
-                                                 MemorySessionImpl bufferScope) {
+    AbstractMemorySegmentImpl heapSegment(Object base,
+                                          long offset,
+                                          long length,
+                                          boolean readOnly,
+                                          MemorySessionImpl bufferScope) {
         return SegmentFactories.arrayOfByteSegment(base, offset, length, readOnly, bufferScope);
     }
 

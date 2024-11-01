@@ -748,11 +748,11 @@ class Heap$Type$Buffer$RW$
 
     @ForceInline
     @Override
-    AbstractMemorySegmentImpl arrayBackedSegment(Object base,
-                                                 long offset,
-                                                 long length,
-                                                 boolean readOnly,
-                                                 MemorySessionImpl bufferScope) {
+    AbstractMemorySegmentImpl heapSegment(Object base,
+                                          long offset,
+                                          long length,
+                                          boolean readOnly,
+                                          MemorySessionImpl bufferScope) {
         return SegmentFactories.arrayOf$Type$Segment(base, offset, length, readOnly, bufferScope);
     }
 #end[byte]

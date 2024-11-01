@@ -131,11 +131,11 @@ public interface JavaNioAccess {
 
     int scaleShifts(Buffer buffer);
 
-    AbstractMemorySegmentImpl arrayBackedSegment(Buffer buffer,
-                                                 Object base,
-                                                 long offset,
-                                                 long length,
-                                                 boolean readOnly,
-                                                 MemorySessionImpl bufferScope);
+    AbstractMemorySegmentImpl heapSegment(Buffer buffer,
+                                          Object base,
+                                          long offset,
+                                          long length,
+                                          boolean readOnly,
+                                          MemorySessionImpl bufferScope);
 
 }

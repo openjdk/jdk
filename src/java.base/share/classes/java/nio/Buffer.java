@@ -789,11 +789,11 @@ public abstract sealed class Buffer
      */
     abstract int scaleShifts();
 
-    abstract AbstractMemorySegmentImpl arrayBackedSegment(Object base,
-                                                          long offset,
-                                                          long length,
-                                                          boolean readOnly,
-                                                          MemorySessionImpl bufferScope);
+    abstract AbstractMemorySegmentImpl heapSegment(Object base,
+                                                   long offset,
+                                                   long length,
+                                                   boolean readOnly,
+                                                   MemorySessionImpl bufferScope);
 
     final int markValue() {                             // package-private
         return mark;
@@ -931,13 +931,13 @@ public abstract sealed class Buffer
 
                 @ForceInline
                 @Override
-                public AbstractMemorySegmentImpl arrayBackedSegment(Buffer buffer,
-                                                                    Object base,
-                                                                    long offset,
-                                                                    long length,
-                                                                    boolean readOnly,
-                                                                    MemorySessionImpl bufferScope) {
-                    return buffer.arrayBackedSegment(base, offset, length, readOnly, bufferScope);
+                public AbstractMemorySegmentImpl heapSegment(Buffer buffer,
+                                                             Object base,
+                                                             long offset,
+                                                             long length,
+                                                             boolean readOnly,
+                                                             MemorySessionImpl bufferScope) {
+                    return buffer.heapSegment(base, offset, length, readOnly, bufferScope);
                 }
             });
     }
