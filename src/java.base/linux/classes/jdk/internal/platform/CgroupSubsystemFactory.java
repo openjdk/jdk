@@ -348,20 +348,15 @@ public class CgroupSubsystemFactory {
     }
 
     private static void setMountPoints(CgroupInfo info, String mountPath, String mountRoot, String mountOptions) {
-        if (info.getMountPoint() != null) {
+        if (info.getMountPoint() == null || !info.getMountPoint().startsWith("/sys/fs/cgroup")) {
             // On some systems duplicate controllers get mounted in addition to
             // the main cgroup controllers (which are under /sys/fs/cgroup). In that
             // case pick the main one and discard others as the limits
             // are associated with the ones in /sys/fs/cgroup.
-            if (!info.getMountPoint().startsWith("/sys/fs/cgroup")) {
-                info.setMountPoint(mountPath);
-                info.setMountRoot(mountRoot);
-            }
-        } else {
             info.setMountPoint(mountPath);
             info.setMountRoot(mountRoot);
+            info.setMountOptions(mountOptions);
         }
-        info.setMountOptions(mountOptions);
     }
 
     public static final class CgroupTypeResult {
