@@ -3231,7 +3231,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             n = h.node;
             est = getAdderCount();
         }
-        return new KeySpliterator<K,V>(comparator, h, n, null, est);
+        return new KeySpliterator<K,V>(comparator, h, n.next, null, est);
     }
 
     static final class ValueSpliterator<K,V> extends CSLMSpliterator<K,V>
@@ -3317,7 +3317,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             n = h.node;
             est = getAdderCount();
         }
-        return new ValueSpliterator<K,V>(comparator, h, n, null, est);
+        return new ValueSpliterator<K,V>(comparator, h, n.next, null, est);
     }
 
     static final class EntrySpliterator<K,V> extends CSLMSpliterator<K,V>
@@ -3421,7 +3421,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             n = h.node;
             est = getAdderCount();
         }
-        return new EntrySpliterator<K,V>(comparator, h, n, null, est);
+        return new EntrySpliterator<K,V>(comparator, h, n.next, null, est);
     }
 
     // VarHandle mechanics
