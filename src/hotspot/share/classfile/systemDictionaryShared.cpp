@@ -910,7 +910,7 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
   assert(!CDSConfig::is_dumping_static_archive() && CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   RunTimeClassInfo* record = RunTimeClassInfo::get_for(klass);
 
-  int length = record->_num_verifier_constraints;
+  int length = record->num_verifier_constraints();
   if (length > 0) {
     for (int i = 0; i < length; i++) {
       RunTimeClassInfo::RTVerifierConstraint* vc = record->verifier_constraint_at(i);
@@ -1026,9 +1026,9 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
   if (klass->is_shared_platform_class() || klass->is_shared_app_class()) {
     RunTimeClassInfo* info = RunTimeClassInfo::get_for(klass);
     assert(info != nullptr, "Sanity");
-    if (info->_num_loader_constraints > 0) {
+    if (info->num_loader_constraints() > 0) {
       HandleMark hm(current);
-      for (int i = 0; i < info->_num_loader_constraints; i++) {
+      for (int i = 0; i < info->num_loader_constraints(); i++) {
         RunTimeClassInfo::RTLoaderConstraint* lc = info->loader_constraint_at(i);
         Symbol* name = lc->constraint_name();
         Handle loader1(current, get_class_loader_by(lc->_loader_type1));

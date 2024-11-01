@@ -52,17 +52,15 @@ public:
   struct RTVerifierConstraint {
     u4 _name;
     u4 _from_name;
-    Symbol* name() { return (Symbol*)(SharedBaseAddress + _name);}
-    Symbol* from_name() { return (Symbol*)(SharedBaseAddress + _from_name); }
+    Symbol* name() { return ArchiveUtils::from_offset<Symbol*>(_name); }
+    Symbol* from_name() { return ArchiveUtils::from_offset<Symbol*>(_from_name); }
   };
 
   struct RTLoaderConstraint {
     u4   _name;
     char _loader_type1;
     char _loader_type2;
-    Symbol* constraint_name() {
-      return (Symbol*)(SharedBaseAddress + _name);
-    }
+    Symbol* constraint_name() { return ArchiveUtils::from_offset<Symbol*>(_name); }
   };
   struct RTEnumKlassStaticFields {
     int _num;
@@ -72,7 +70,6 @@ public:
 private:
   u4 _klass_offset;
   u4 _nest_host_offset;
-public:
   int _num_verifier_constraints;
   int _num_loader_constraints;
 
@@ -83,7 +80,6 @@ public:
   // optional char                    _verifier_constraint_flags[_num_verifier_constraints]
   // optional RTEnumKlassStaticFields _enum_klass_static_fields;
 
-private:
   static size_t header_size_size() {
     return align_up(sizeof(RunTimeClassInfo), wordSize);
   }
@@ -112,6 +108,8 @@ private:
   static size_t crc_size(InstanceKlass* klass);
 public:
   InstanceKlass* klass() const;
+  int num_verifier_constraints() const { return _num_verifier_constraints; }
+  int num_loader_constraints() const { return _num_loader_constraints; }
   static size_t byte_size(InstanceKlass* klass, int num_verifier_constraints, int num_loader_constraints,
                           int num_enum_klass_static_fields) {
     return header_size_size() +
@@ -181,7 +179,7 @@ public:
     if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space((address)this)) {
       return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(_nest_host_offset);
     } else {
-      return (InstanceKlass*)(SharedBaseAddress + _nest_host_offset);
+      return ArchiveUtils::from_offset<InstanceKlass*>(_nest_host_offset);
     }
   }
 
