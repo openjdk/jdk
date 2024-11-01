@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class EdDSAParamSpec {
     private static final String EDDSA = "EdDSA";
     private static final String ED25519 = "Ed25519";
     private static final String ED448 = "Ed448";
-    private static final String PROVIDER = "SunEC";
+    private static final String PROVIDER = System.getProperty("test.provider.name", "SunEC");
     private static final byte[] MSG = "TEST".getBytes();
     private static final SecureRandom RND = new SecureRandom(new byte[]{0x1});
 
