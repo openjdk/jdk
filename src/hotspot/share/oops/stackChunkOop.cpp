@@ -441,8 +441,8 @@ void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMapT* map
 template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMap* map);
 template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const SmallRegisterMap* map);
 
-void stackChunkOopDesc::transfer_lockstack(oop* dst) {
-  const bool requires_gc_barriers = is_gc_mode() || requires_barriers();
+void stackChunkOopDesc::transfer_lockstack(oop* dst, bool requires_barriers) {
+  const bool requires_gc_barriers = is_gc_mode() || requires_barriers;
   const bool requires_uncompress = has_bitmap() && UseCompressedOops;
   const auto load_and_clear_obj = [&](intptr_t* at) -> oop {
     if (requires_gc_barriers) {
@@ -457,7 +457,6 @@ void stackChunkOopDesc::transfer_lockstack(oop* dst) {
       }
     } else {
       oop value = *reinterpret_cast<oop*>(at);
-      HeapAccess<>::oop_store(reinterpret_cast<oop*>(at), nullptr);
       return value;
     }
   };

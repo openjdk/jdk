@@ -2091,7 +2091,7 @@ void ThawBase::thaw_lockstack(stackChunkOop chunk) {
   assert(lockStackSize > 0 && lockStackSize <= LockStack::CAPACITY, "");
 
   oop tmp_lockstack[LockStack::CAPACITY];
-  chunk->transfer_lockstack(tmp_lockstack);
+  chunk->transfer_lockstack(tmp_lockstack, _barriers);
   _thread->lock_stack().move_from_address(tmp_lockstack, lockStackSize);
 
   chunk->set_lockstack_size(0);
