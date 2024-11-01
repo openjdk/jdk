@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The class contains common functionality for algorithm constraints classes.
@@ -85,8 +87,10 @@ public abstract class AbstractAlgorithmConstraints
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
-        if (algorithms.contains(algorithm)) {
-            return false;
+        for (String pattern : algorithms) {
+            if (wildCardMatch(algorithm, pattern)) {
+                return false;
+            }
         }
 
         // decompose the algorithm into sub-elements
@@ -102,4 +106,10 @@ public abstract class AbstractAlgorithmConstraints
         return true;
     }
 
+    private static boolean wildCardMatch(String text, String pattern) {
+        String regexPattern = pattern.replace("*", ".*");
+        Pattern p = Pattern.compile(regexPattern);
+        Matcher m = p.matcher(text);
+        return m.matches();
+    }
 }

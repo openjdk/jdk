@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,26 +274,5 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
         }
 
         return super.decompose(algorithm);
-    }
-
-    @Override
-    public String[] decomposeCipherSuiteKeyExchange(String algorithm) {
-        if (algorithm.startsWith("SSL_") || algorithm.startsWith("TLS_")) {
-            CipherSuite cipherSuite = CipherSuite.nameOf(algorithm);
-
-            if (cipherSuite != null) {
-                // keyExchange is null for TLSv1.3 cipher suites, it means
-                // undefined for both key exchange and authentication.
-                if (cipherSuite.keyExchange == null) {
-                    return new String[]{null, null};
-                } else {
-                    return new String[]{
-                        cipherSuite.keyExchange.kx,
-                        cipherSuite.keyExchange.authn};
-                }
-            }
-        }
-
-        return super.decomposeCipherSuiteKeyExchange(algorithm);
     }
 }

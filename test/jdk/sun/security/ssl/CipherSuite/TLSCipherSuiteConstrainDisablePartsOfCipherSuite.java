@@ -40,7 +40,8 @@ public class TLSCipherSuiteConstrainDisablePartsOfCipherSuite extends
     NoDesRC4DesEdeCiphSuite {
 
     private static final String SECURITY_PROPERTY = "jdk.tls.disabledAlgorithms";
-    private static final String TEST_ALGORITHMS = "ECDH kX, Rsa kx, ECDSA authn, DH_anoN KX, NuLL Authn";
+    private static final String TEST_ALGORITHMS =
+            "TLS_ECDH_*, TLS_RSA_*, *ECDHE_*_WITH_AES_256_GCM_*, *DH_anon_*SHA, *ECDH_anon_WITH_AES_*_SHA";
     private static final String[] CIPHER_SUITES = new String[] {
             "TLS_RSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
