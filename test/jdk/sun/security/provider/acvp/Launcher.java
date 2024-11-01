@@ -35,12 +35,12 @@ import java.security.Security;
 public class Launcher {
 
     private static final String ONLY_ALG
-            = System.getProperty("acvp.test.alg");
+            = System.getProperty("test.acvp.alg");
 
     private static final Provider PROVIDER;
 
     static {
-        var provProp = System.getProperty("acvp.test.provider");
+        var provProp = System.getProperty("test.acvp.provider");
         PROVIDER = provProp != null
                 ? Security.getProvider(provProp)
                 : null;
@@ -52,25 +52,32 @@ public class Launcher {
         // by NIST's ACVP Server. See https://github.com/usnistgov/ACVP-Server.
         //
         // The files are either put into the "data" directory or another
-        // directory specified by the "acvp.test.data" system property.
+        // directory specified by the "test.acvp.data" test property.
         // The test walks through the directory recursively and looks for
         // file names equals to or ending with "internalProjection.json" and
         // runs test on them.
         //
-        // Set the "acvp.test.alg" system property to only test this algorithm.
+        // Set the "test.acvp.alg" test property to only test this algorithm.
         //
         // Sample files can be downloaded from
         // https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files.
         //
         // By default, the test uses system-preferred implementations.
         // If you want to test on a specific provider, set the
-        // "acvp.test.provider" system property. The provider must be
+        // "test.acvp.provider" test property. The provider must be
         // registered.
         //
         // Tests for each algorithm must be compliant to its specification linked from
         // https://github.com/usnistgov/ACVP?tab=readme-ov-file#supported-algorithms.
+        //
+        // Example:
+        //
+        // jtreg -Dtest.acvp.provider=SunJCE \
+        //       -Dtest.acvp.alg=ML-KEM \
+        //       -Dtest.acvp.data=/path/to/json-files/ \
+        //       -jdk:/path/to/jdk Launcher.java
 
-        var testDataProp = System.getProperty("acvp.test.data");
+        var testDataProp = System.getProperty("test.acvp.data");
         Path dataPath = testDataProp != null
                 ? Path.of(testDataProp)
                 : Path.of(System.getProperty("test.src"), "data");
