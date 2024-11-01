@@ -271,8 +271,14 @@ public:
 //      to different arrays, where we would have no forwarding failures.
 //  (2) There could be some loops where vectorization introduces forwarding failures, and thus
 //      the latency of the loop body is high, but this does not matter because it is dominated
-//      by other latency/throughput based costs in the loop body. This is a very rare case,
-//      and we can reasonably ignore it.
+//      by other latency/throughput based costs in the loop body.
+//
+// Performance measurements with the JMH benchmark StoreToLoadForwarding.java have indicated
+// that there is some iteration threshold: if the failure happens between a store and load that
+// have an iteration distance below this threshold, the latency is the limiting factor, and we
+// should not vectorize to avoid the latency penalty of store-to-load-forwarding failures. If
+// the iteration distance is larger than this threshold, the throughput is the limiting factor,
+// and we should vectorize in these cases to improve throughput.
 //
 bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const {
   if (SuperWordStoreToLoadForwardingFailureDetection == 0) { return false; }
@@ -281,9 +287,15 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
   ResourceMark rm;
   GrowableArray<VPointerRecord> records;
 
+  // To detect store-to-load-forwarding failures at the iteration threshold or below, we
+  // simulate a super-unrolling to reach SuperWordStoreToLoadForwardingFailureDetection
+  // iterations at least.
+  int simulated_unrolling_count = SuperWordStoreToLoadForwardingFailureDetection;
+  int unrolled_count = vloop_analyzer.vloop().cl()->unrolled_count();
+  uint simulated_super_unrolling_count = MAX(1, simulated_unrolling_count / unrolled_count);
   int iv_stride = vloop_analyzer.vloop().iv_stride();
   int order = 0;
-  for (uint k = 0; k < SuperWordStoreToLoadForwardingFailureDetection; k++) {
+  for (uint k = 0; k < simulated_super_unrolling_count; k++) {
     int iv_offset = k * iv_stride; // virtual super-unrolling
     for (int i = 0; i < _schedule.length(); i++) {
       VTransformNode* vtn = _schedule.at(i);
@@ -304,6 +316,8 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
 #ifndef PRODUCT
   if (_trace._verbose) {
     tty->print_cr("VTransformGraph::has_store_to_load_forwarding_failure:");
+    tty->print_cr("  simulated_unrolling_count = %d", simulated_unrolling_count);
+    tty->print_cr("  simulated_super_unrolling_count = %d", simulated_super_unrolling_count);
     for (int i = 0; i < records.length(); i++) {
       VPointerRecord& record = records.at(i);
       record.print();
