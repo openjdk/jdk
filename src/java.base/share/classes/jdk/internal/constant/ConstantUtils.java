@@ -183,12 +183,22 @@ public final class ConstantUtils {
      * @throws NullPointerException if class name is {@code null}
      */
     public static String validateBinaryClassName(String name) {
-        for (int i = 0; i < name.length(); i++) {
+        int afterSeparator = 0;
+        int len = name.length();
+        for (int i = 0; i < len; i++) {
             char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '/'
-                    || ch == '.' && (i == 0 || i + 1 == name.length() || name.charAt(i - 1) == '.'))
+            if (ch == ';' || ch == '[' || ch == '/')
                 throw invalidClassName(name);
+            if (ch == '.') {
+                if (i == afterSeparator) {
+                    throw invalidClassName(name);
+                } else {
+                    afterSeparator = i + 1;
+                }
+            }
         }
+        if (len == afterSeparator)
+            throw invalidClassName(name);
         return name;
     }
 
@@ -202,12 +212,22 @@ public final class ConstantUtils {
      * @throws NullPointerException if class name is {@code null}
      */
     public static String validateInternalClassName(String name) {
-        for (int i = 0; i < name.length(); i++) {
+        int afterSeparator = 0;
+        int len = name.length();
+        for (int i = 0; i < len; i++) {
             char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '.'
-                    || ch == '/' && (i == 0 || i + 1 == name.length() || name.charAt(i - 1) == '/'))
+            if (ch == ';' || ch == '[' || ch == '.')
                 throw invalidClassName(name);
+            if (ch == '/') {
+                if (i == afterSeparator) {
+                    throw invalidClassName(name);
+                } else {
+                    afterSeparator = i + 1;
+                }
+            }
         }
+        if (len == afterSeparator)
+            throw invalidClassName(name);
         return name;
     }
 
@@ -222,12 +242,10 @@ public final class ConstantUtils {
      * @throws NullPointerException if the package name is {@code null}
      */
     public static String validateBinaryPackageName(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '/')
-                throw new IllegalArgumentException("Invalid package name: " + name);
-        }
-        return name;
+        // Empty names are explicitly allowed
+        if (name.isEmpty())
+            return name;
+        return validateBinaryClassName(name);
     }
 
     /**
@@ -241,12 +259,10 @@ public final class ConstantUtils {
      * @throws NullPointerException if the package name is {@code null}
      */
     public static String validateInternalPackageName(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '.')
-                throw new IllegalArgumentException("Invalid package name: " + name);
-        }
-        return name;
+        // Empty names are explicitly allowed
+        if (name.isEmpty())
+            return name;
+        return validateInternalClassName(name);
     }
 
     /**
