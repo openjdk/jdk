@@ -25,16 +25,36 @@
 
 package javax.swing.plaf.basic;
 
-import sun.swing.SwingUtilities2;
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
 import java.awt.geom.AffineTransform;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
+import javax.swing.BoundedRangeModel;
+import javax.swing.JComponent;
+import javax.swing.JProgressBar;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.UIManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.ProgressBarUI;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import sun.swing.DefaultLookup;
+import sun.swing.SwingUtilities2;
 
 /**
  * A Basic L&amp;F implementation of ProgressBarUI.
@@ -1224,7 +1244,7 @@ public class BasicProgressBarUI extends ProgressBarUI {
         private Timer timer;
         private long previousDelay; //used to tune the repaint interval
         private long lastCall; //the last time actionPerformed was called
-        private int MINIMUM_DELAY = 5;
+        private static final int MINIMUM_DELAY = 5;
 
         /**
          * Creates a timer if one doesn't already exist,
