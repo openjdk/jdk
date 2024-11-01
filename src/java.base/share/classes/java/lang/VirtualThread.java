@@ -293,7 +293,7 @@ final class VirtualThread extends BaseVirtualThread {
             if (initialState == UNPARKED) {
                 cancelTimeoutTask();
                 setParkPermit(false);
-            } if (initialState == UNBLOCKED) {
+            } else if (initialState == UNBLOCKED) {
                 cancelTimeoutTask();
                 blockPermit = false;
             }
@@ -603,7 +603,8 @@ final class VirtualThread extends BaseVirtualThread {
 
             // may have been unblocked while blocking
             if (blockPermit && compareAndSetState(BLOCKED, UNBLOCKED)) {
-                submitRunContinuation();
+                // lazy submit if local queue is empty
+                lazySubmitRunContinuation();
             }
             return;
         }
