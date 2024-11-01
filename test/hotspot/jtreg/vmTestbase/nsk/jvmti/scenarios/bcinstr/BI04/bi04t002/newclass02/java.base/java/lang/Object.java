@@ -386,10 +386,6 @@ public class Object {
                 // virtual thread's interrupt status needs to be cleared
                 vthread.getAndClearInterrupt();
                 throw e;
-            } finally {
-                if (timeoutMillis > 0) {
-                    vthread.cancelWaitTimeout();
-                }
             }
         } else {
             wait0(timeoutMillis);

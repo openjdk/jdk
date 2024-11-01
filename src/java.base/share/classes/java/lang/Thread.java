@@ -416,12 +416,6 @@ public class Thread implements Runnable {
     @IntrinsicCandidate
     native void setCurrentThread(Thread thread);
 
-    /**
-     * Sets the current thread's lock ID.
-     */
-    @IntrinsicCandidate
-    static native void setCurrentLockId(long tid);
-
     // ScopedValue support:
 
     @IntrinsicCandidate

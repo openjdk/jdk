@@ -437,6 +437,15 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
   st->print(  "RIP=" INTPTR_FORMAT, uc->Rip);
   st->print(", EFLAGS=" INTPTR_FORMAT, uc->EFlags);
+  // Add XMM registers + MXCSR. Note that C2 uses XMM to spill GPR values including pointers.
+  st->cr();
+  st->cr();
+  for (int i = 0; i < 16; ++i) {
+    const uint64_t *xmm = ((const uint64_t*)&(uc->Xmm0)) + 2 * i;
+    st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT,
+                 i, xmm[1], xmm[0]);
+  }
+  st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->MxCsr);
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->Eax);
   st->print(", EBX=" INTPTR_FORMAT, uc->Ebx);

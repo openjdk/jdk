@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,11 +215,11 @@ public interface Name
      * component are shifted up (away from 0) to accommodate the new
      * components.
      *
-     * @param n
-     *          the components to add
      * @param posn
      *          the index in this name at which to add the new
      *          components.  Must be in the range [0,size()].
+     * @param n
+     *          the components to add
      * @return  the updated name (not a new one)
      *
      * @throws  ArrayIndexOutOfBoundsException
@@ -248,11 +248,11 @@ public interface Name
      * are shifted up by one (away from index 0) to accommodate the new
      * component.
      *
-     * @param comp
-     *          the component to add
      * @param posn
      *          the index at which to add the new component.
      *          Must be in the range [0,size()].
+     * @param comp
+     *          the component to add
      * @return  the updated name (not a new one)
      *
      * @throws  ArrayIndexOutOfBoundsException

@@ -78,8 +78,7 @@ public final class Boolean implements java.io.Serializable,
      *
      * @since   1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Boolean> TYPE = (Class<Boolean>) Class.getPrimitiveClass("boolean");
+    public static final Class<Boolean> TYPE = Class.getPrimitiveClass("boolean");
 
     /**
      * The value of the Boolean.
@@ -255,8 +254,8 @@ public final class Boolean implements java.io.Serializable,
      *          same value; {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Boolean) {
-            return value == ((Boolean)obj).booleanValue();
+        if (obj instanceof Boolean b) {
+            return value == b.booleanValue();
         }
         return false;
     }

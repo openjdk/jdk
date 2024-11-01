@@ -67,7 +67,7 @@ class JvmtiUnmountBeginMark : public StackObj {
  public:
   JvmtiUnmountBeginMark(JavaThread* t) :
     _vthread(t, t->vthread()), _target(t), _preempt_result(freeze_pinned_native), _failed(false) {
-    assert(!_target->is_in_any_VTMS_transition(), "must be");
+    assert(!_target->is_in_VTMS_transition(), "must be");
 
     if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
       JvmtiVTMSTransitionDisabler::start_VTMS_transition((jthread)_vthread.raw_value(), /* is_mount */ false);
@@ -125,9 +125,8 @@ class JvmtiUnmountBeginMark : public StackObj {
 };
 
 static bool is_vthread_safe_to_preempt_for_jvmti(JavaThread* target, oop vthread) {
-  if (target->is_in_any_VTMS_transition()) {
-    // We caught target at the end of a mount transition (is_in_VTMS_transition()) or at the
-    // beginning or end of a temporary switch to carrier thread (is_in_tmp_VTMS_transition()).
+  if (target->is_in_VTMS_transition()) {
+    // We caught target at the end of a mount transition.
     return false;
   }
   return true;
@@ -135,8 +134,8 @@ static bool is_vthread_safe_to_preempt_for_jvmti(JavaThread* target, oop vthread
 #endif // INCLUDE_JVMTI
 
 static bool is_vthread_safe_to_preempt(JavaThread* target, oop vthread) {
-  if (!java_lang_VirtualThread::is_instance(vthread) ||                               // inside tmp transition
-      java_lang_VirtualThread::state(vthread) != java_lang_VirtualThread::RUNNING) {  // inside transition
+  assert(java_lang_VirtualThread::is_instance(vthread), "");
+  if (java_lang_VirtualThread::state(vthread) != java_lang_VirtualThread::RUNNING) {  // inside transition
     return false;
   }
   return JVMTI_ONLY(is_vthread_safe_to_preempt_for_jvmti(target, vthread)) NOT_JVMTI(true);
@@ -547,5 +546,5 @@ void CONT_RegisterNativeMethods(JNIEnv *env, jclass cls) {
     ThreadToNativeFromVM trans(thread);
     int status = env->RegisterNatives(cls, CONT_methods, sizeof(CONT_methods)/sizeof(JNINativeMethod));
     guarantee(status == JNI_OK, "register jdk.internal.vm.Continuation natives");
-    guarantee(!env->ExceptionOccurred(), "register jdk.internal.vm.Continuation natives");
+    guarantee(!env->ExceptionCheck(), "register jdk.internal.vm.Continuation natives");
 }
