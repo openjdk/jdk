@@ -1747,8 +1747,8 @@ static char* map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
                         bool allow_exec, MemTag mem_tag) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
-                             AlwaysPreTouch ? false : read_only, allow_exec,
-                             mem_tag);
+                             AlwaysPreTouch ? false : read_only,
+                             allow_exec, mem_tag);
   if (mem != nullptr && AlwaysPreTouch) {
     os::pretouch_memory(mem, mem + bytes);
   }
@@ -1923,8 +1923,7 @@ char* FileMapInfo::map_bitmap_region() {
   bool read_only = true, allow_exec = false;
   char* requested_addr = nullptr; // allow OS to pick any location
   char* bitmap_base = map_memory(_fd, _full_path, r->file_offset(),
-                                 requested_addr, r->used_aligned(), read_only,
-                                 allow_exec, mtClassShared);
+                                 requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
   if (bitmap_base == nullptr) {
     log_info(cds)("failed to map relocation bitmap");
     return nullptr;
