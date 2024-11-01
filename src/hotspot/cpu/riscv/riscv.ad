@@ -1238,28 +1238,18 @@ bool needs_acquiring_load_reserved(const Node *n)
 
 int MachCallStaticJavaNode::ret_addr_offset()
 {
-  if (UseTrampolines) {
-    return 1 * NativeInstruction::instruction_size; // jal
-  }
   return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset()
 {
-  if (UseTrampolines) {
-    return NativeMovConstReg::movptr2_instruction_size +  NativeInstruction::instruction_size; // movptr2, jal
-  }
   return NativeMovConstReg::movptr2_instruction_size + (3 * NativeInstruction::instruction_size); // movptr2, auipc + ld + jal
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
   // For generated stubs the call will be:
   //   auipc + ld + jalr
-  // Using trampos:
-  //   jal(addr)
-  // or with far branches
-  //   jal(trampoline_stub)
-  // for real runtime callouts it will be 9 instructions
+  // For real runtime callouts it will be 9 instructions
   // see riscv_enc_java_to_runtime
   //   la(t0, retaddr)                ->  auipc + addi
   //   addi(sp, sp, -2 * wordSize)    ->  addi
@@ -1268,9 +1258,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   jalr(t1, offset)               ->  jalr
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
   if (cb != nullptr) {
-    if (UseTrampolines) {
-      return 1 * NativeInstruction::instruction_size;
-    }
     return 3 * NativeInstruction::instruction_size;
   } else {
     return 9 * NativeInstruction::instruction_size;
@@ -2435,10 +2422,8 @@ encode %{
       // The NOP here is purely to ensure that eliding a call to
       // JVM_EnsureMaterializedForStackWalk doesn't change the code size.
       __ nop();
-      if (!UseTrampolines) {
-        __ nop();
-        __ nop();
-      }
+      __ nop();
+      __ nop();
       __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
       int method_index = resolved_method_index(masm);

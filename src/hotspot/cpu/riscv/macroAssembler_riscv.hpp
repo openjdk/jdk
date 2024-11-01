@@ -468,9 +468,8 @@ class MacroAssembler: public Assembler {
     return false;
   }
 
-  address emit_address_stub(int insts_call_instruction_offset, address target);
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
-  static int max_reloc_call_stub_size();
+  static int max_trampoline_stub_size();
 
   void emit_static_call_stub();
   static int static_call_stub_size();
@@ -626,9 +625,6 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
- private:
-  void load_link_jump(const address source, Register temp);
-  void jump_link(const address dest, Register temp);
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
@@ -1254,43 +1250,10 @@ public:
   //    To change the destination we simply atomically store the new
   //    address in the stub section.
   //
-  // - trampoline call (old reloc call / -XX:+UseTrampolines):
-  //     This is only available in C1/C2-generated code (nmethod). It is a combination
-  //     of a direct call, which is used if the destination of a call is in range,
-  //     and a register-indirect call. It has the advantages of reaching anywhere in
-  //     the RISCV address space and being patchable at runtime when the generated
-  //     code is being executed by other threads.
-  //
-  //     [Main code section]
-  //       jal trampoline
-  //     [Stub code section]
-  //     trampoline:
-  //       ld    reg, pc + 8 (auipc + ld)
-  //       jr    reg
-  //       <64-bit destination address>
-  //
-  //     If the destination is in range when the generated code is moved to the code
-  //     cache, 'jal trampoline' is replaced with 'jal destination' and the trampoline
-  //     is not used.
-  //     The optimization does not remove the trampoline from the stub section.
-  //
-  //     This is necessary because the trampoline may well be redirected later when
-  //     code is patched, and the new destination may not be reachable by a simple JAL
-  //     instruction.
-  //
-  // To patch a trampoline call when the JAL can't reach, we first modify
-  // the 64-bit destination address in the trampoline, then modify the
-  // JAL to point to the trampoline, then flush the instruction cache to
-  // broadcast the change to all executing threads. See
-  // NativeCall::set_destination_mt_safe for the details.
-  //
-  // There is a benign race in that the other thread might observe the
-  // modified JAL before it observes the modified 64-bit destination
-  // address. That does not matter because the destination method has been
-  // invalidated, so there will be a trap at its start.
-  // For this to work, the destination address in the trampoline is
-  // always updated, even if we're not using the trampoline.
-  // --
+  // There is a benign race in that the other thread might observe the old
+  // 64-bit destination address before it observes the new address. That does
+  // not matter because the destination method has been invalidated, so there
+  // will be a trap at its start.
 
   // Emit a direct call if the entry address will always be in range,
   // otherwise a reloc call.
@@ -1300,15 +1263,10 @@ public:
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
   //
-  // Return: the call PC or null if CodeCache is full.
-  address reloc_call(Address entry) {
-    return UseTrampolines ? trampoline_call(entry) : load_and_call(entry);
-  }
- private:
-  address trampoline_call(Address entry);
-  address load_and_call(Address entry);
- public:
+  // Return: the call PC or nullptr if CodeCache is full.
+  address reloc_call(Address entry, Register tmp = t1);
 
+ public:
   address ic_call(address entry, jint method_index = 0);
   static int ic_check_size();
   int ic_check(int end_alignment = MacroAssembler::instruction_size);
@@ -1644,9 +1602,8 @@ public:
     load_pc_relative_instruction_size = 2 * instruction_size // auipc, ld
   };
 
-  enum NativeShortCall {
-    trampoline_size        = 3 * instruction_size + wordSize,
-    trampoline_data_offset = 3 * instruction_size
+  enum NativeFarCall {
+    trampoline_size        = 1 * instruction_size + wordSize,
   };
 
   static bool is_load_pc_relative_at(address branch);
