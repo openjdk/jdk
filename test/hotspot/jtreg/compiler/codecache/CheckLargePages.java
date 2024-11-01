@@ -67,7 +67,7 @@ public class CheckLargePages {
             if (scanner.hasNextInt()) {
                 return scanner.nextInt();
             }
-        } catch (FileNotFoundException e);
+        } catch (FileNotFoundException e) { };
         return 0;
     }
 
