@@ -279,7 +279,8 @@ public class ClassDescTest extends SymbolicDescTest {
     public void testBadClassDescs() {
         List<String> badDescriptors = List.of("II", "I;", "Q", "L", "",
                                               "java.lang.String", "[]", "Ljava/lang/String",
-                                              "Ljava.lang.String;", "java/lang/String");
+                                              "Ljava.lang.String;", "java/lang/String", "L;",
+                                              "La//b;", "L/a;", "La/;");
 
         for (String d : badDescriptors) {
             try {
