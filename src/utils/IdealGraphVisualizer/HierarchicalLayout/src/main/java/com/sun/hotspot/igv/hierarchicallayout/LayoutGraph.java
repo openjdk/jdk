@@ -479,6 +479,17 @@ public class LayoutGraph {
         if (!layer.isDummyLayer()) return;
 
         for (LayoutNode dummyNode : layer) {
+            if (dummyNode.getSuccs().isEmpty()) {
+                dummyNode.setLayer(layerNr + 1);
+                getLayer(layerNr + 1).add(dummyNode);
+                getLayer(layerNr + 1).sortNodesByXAndSetPositions();
+                continue;
+            } else if (dummyNode.getPreds().isEmpty()) {
+                dummyNode.setLayer(layerNr - 1);
+                getLayer(layerNr - 1).add(dummyNode);
+                getLayer(layerNr - 1).sortNodesByXAndSetPositions();
+                continue;
+            }
             LayoutEdge layoutEdge = dummyNode.getPreds().get(0);
 
             // remove the layoutEdge
