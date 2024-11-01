@@ -41,6 +41,7 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
 import java.util.Scanner;
 import java.io.File;
+import java.io.FileNotFoundException;
 
 import java.util.Arrays;
 import java.util.List;
