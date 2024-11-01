@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,13 +76,16 @@ class UnixFileAttributeViews {
             boolean useFutimes = false;
             boolean useFutimens = false;
             boolean useLutimes = false;
+            boolean useUtimensat = false;
             int fd = -1;
             try {
-                if (!followLinks) {
-                    useLutimes = lutimesSupported() &&
-                        UnixFileAttributes.get(file, false).isSymbolicLink();
+                if (!followLinks &&
+                    UnixFileAttributes.get(file, false).isSymbolicLink()) {
+                    useUtimensat = utimensatSupported();
+                    if (!useUtimensat)
+                        useLutimes = lutimesSupported();
                 }
-                if (!useLutimes) {
+                if (!useUtimensat && !useLutimes) {
                     fd = file.openForAttributeAccess(followLinks);
                     if (fd != -1) {
                         haveFd = true;
@@ -117,7 +120,7 @@ class UnixFileAttributeViews {
                 }
 
                 // update times
-                TimeUnit timeUnit = useFutimens ?
+                TimeUnit timeUnit = (useFutimens || useUtimensat) ?
                     TimeUnit.NANOSECONDS : TimeUnit.MICROSECONDS;
                 long modValue = lastModifiedTime.to(timeUnit);
                 long accessValue= lastAccessTime.to(timeUnit);
@@ -130,6 +133,8 @@ class UnixFileAttributeViews {
                         futimes(fd, accessValue, modValue);
                     } else if (useLutimes) {
                         lutimes(file, accessValue, modValue);
+                    } else if (useUtimensat) {
+                        utimensat(file, accessValue, modValue);
                     } else {
                         utimes(file, accessValue, modValue);
                     }
@@ -153,6 +158,8 @@ class UnixFileAttributeViews {
                             futimes(fd, accessValue, modValue);
                         } else if (useLutimes) {
                             lutimes(file, accessValue, modValue);
+                        } else if (useUtimensat) {
+                            utimensat(file, accessValue, modValue);
                         } else {
                             utimes(file, accessValue, modValue);
                         }
