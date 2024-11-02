@@ -55,19 +55,19 @@ final class WinFromParams {
             Map<String, ? super Object> params) throws ConfigException, IOException {
         var launcherFromParams = new LauncherFromParams();
         var app = createApplicationBuilder(params, toFunction(launcherParams -> {
-            var launcher = launcherFromParams.create(params);
+            var launcher = launcherFromParams.create(launcherParams);
 
-            boolean isConsole = CONSOLE_HINT.fetchFrom(params);
+            boolean isConsole = CONSOLE_HINT.fetchFrom(launcherParams);
 
             var shortcuts = Map.of(WIN_SHORTCUT_DESKTOP, List.of(SHORTCUT_HINT,
                 WIN_SHORTCUT_HINT), WIN_SHORTCUT_START_MENU, List.of(MENU_HINT,
                         WIN_MENU_HINT)).entrySet().stream().filter(e -> {
                     var shortcutParams = e.getValue();
-                    if (params.containsKey(shortcutParams.get(0).getID())) {
+                    if (launcherParams.containsKey(shortcutParams.get(0).getID())) {
                         // This is an explicit shortcut configuration for an addition launcher
-                        return shortcutParams.get(0).fetchFrom(params);
+                        return shortcutParams.get(0).fetchFrom(launcherParams);
                     } else {
-                        return shortcutParams.get(1).fetchFrom(params);
+                        return shortcutParams.get(1).fetchFrom(launcherParams);
                     }
                 }).map(Map.Entry::getKey).collect(toSet());
 

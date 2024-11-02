@@ -49,11 +49,11 @@ final class LinuxFromParams {
             Map<String, ? super Object> params) throws ConfigException, IOException {
         var launcherFromParams = new LauncherFromParams();
         var app = createApplicationBuilder(params, toFunction(launcherParams -> {
-            var launcher = launcherFromParams.create(params);
+            var launcher = launcherFromParams.create(launcherParams);
             var shortcut = Stream.of(SHORTCUT_HINT, LINUX_SHORTCUT_HINT).filter(param -> {
-                return params.containsKey(param.getID());
+                return launcherParams.containsKey(param.getID());
             }).map(param -> {
-                return param.fetchFrom(params);
+                return param.fetchFrom(launcherParams);
             }).findFirst();
             return new LinuxLauncher.Stub(launcher, shortcut);
         }), APPLICATION_LAYOUT).create();
