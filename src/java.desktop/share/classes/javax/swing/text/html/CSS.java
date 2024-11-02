@@ -1090,7 +1090,7 @@ public class CSS implements Serializable {
      * Therefore, the value associated with each HTML.Attribute.
      * key ends up being an array of CSS.Attribute.* objects.
      */
-    private static final HashMap<HTML.Attribute, Attribute[]> htmlAttrToCssAttrMap = HashMap.newHashMap(20);
+    private static final HashMap<HTML.Attribute, CSS.Attribute[]> htmlAttrToCssAttrMap = HashMap.newHashMap(20);
 
     /**
      * The hashtable and static initialization that follows sets
