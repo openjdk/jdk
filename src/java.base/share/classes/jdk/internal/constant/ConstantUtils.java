@@ -174,6 +174,50 @@ public final class ConstantUtils {
     }
 
     /**
+     * Validates the correctness of a path-based name, which is a class or
+     * interface name or a package name.
+     * In particular checks for the presence of invalid characters,
+     * consecutive, leading, or trailing separator char,
+     * and the empty string for class or interface names.
+     *
+     * @param name the name
+     * @param usesSlash {@code true} means {@code /} is the separator char,
+     *     otherwise {@code .} is the separator char
+     * @param allowsEmpty {@code true} means the empty string is a valid name
+     * @return the name passed if valid
+     * @throws IllegalArgumentException if the name is invalid
+     * @throws NullPointerException if name is {@code null}
+     */
+    private static String validatePathBasedName(String name, boolean usesSlash, boolean allowsEmpty) {
+        int len = name.length();  // implicit null check
+        // empty name special rule
+        if (allowsEmpty && len == 0)
+            return name;
+        // state variable for detection of illegal states of
+        // empty name, consecutive, leading, or trailing separators
+        int afterSeparator = 0;
+        for (int i = 0; i < len; i++) {
+            char ch = name.charAt(i);
+            // reject ';' or '['
+            if (ch == ';' || ch == '[')
+                throw invalidClassName(name);
+            // encounter a separator
+            boolean foundSlash = ch == '/';
+            if (foundSlash || ch == '.') {
+                // reject the other separator char
+                // reject consecutive or leading separators
+                if (foundSlash != usesSlash || i == afterSeparator)
+                    throw invalidClassName(name);
+                afterSeparator = i + 1;
+            }
+        }
+        // reject empty name or trailing separators
+        if (len == afterSeparator)
+            throw invalidClassName(name);
+        return name;
+    }
+
+    /**
      * Validates the correctness of a binary class name.
      * In particular checks for the presence of invalid characters, empty
      * name, consecutive, leading, or trailing {@code .}.
@@ -184,27 +228,7 @@ public final class ConstantUtils {
      * @throws NullPointerException if class name is {@code null}
      */
     public static String validateBinaryClassName(String name) {
-        // state variable for detection of illegal states, such as:
-        // empty unqualified name, consecutive, leading, or trailing separators
-        int afterSeparator = 0;
-        int len = name.length();
-        for (int i = 0; i < len; i++) {
-            char ch = name.charAt(i);
-            // reject ';' or '[' or other form's separator
-            if (ch == ';' || ch == '[' || ch == '/')
-                throw invalidClassName(name);
-            if (ch == '.') {
-                // illegal state when received separator indicates consecutive
-                // or leading separators
-                if (i == afterSeparator)
-                    throw invalidClassName(name);
-                afterSeparator = i + 1;
-            }
-        }
-        // reject empty unqualified name or trailing separators
-        if (len == afterSeparator)
-            throw invalidClassName(name);
-        return name;
+        return validatePathBasedName(name, false, false);
     }
 
     /**
@@ -218,27 +242,7 @@ public final class ConstantUtils {
      * @throws NullPointerException if class name is {@code null}
      */
     public static String validateInternalClassName(String name) {
-        // state variable for detection of illegal states, such as:
-        // empty unqualified name, consecutive, leading, or trailing separators
-        int afterSeparator = 0;
-        int len = name.length();
-        for (int i = 0; i < len; i++) {
-            char ch = name.charAt(i);
-            // reject ';' or '[' or other form's separator
-            if (ch == ';' || ch == '[' || ch == '.')
-                throw invalidClassName(name);
-            if (ch == '/') {
-                // illegal state when received separator indicates consecutive
-                // or leading separators
-                if (i == afterSeparator)
-                    throw invalidClassName(name);
-                afterSeparator = i + 1;
-            }
-        }
-        // reject empty unqualified name or trailing separators
-        if (len == afterSeparator)
-            throw invalidClassName(name);
-        return name;
+        return validatePathBasedName(name, true, false);
     }
 
     /**
@@ -252,10 +256,7 @@ public final class ConstantUtils {
      * @throws NullPointerException if the package name is {@code null}
      */
     public static String validateBinaryPackageName(String name) {
-        // the unnamed package + null check
-        if (name.isEmpty())
-            return name;
-        return validateBinaryClassName(name);
+        return validatePathBasedName(name, false, true);
     }
 
     /**
@@ -269,10 +270,7 @@ public final class ConstantUtils {
      * @throws NullPointerException if the package name is {@code null}
      */
     public static String validateInternalPackageName(String name) {
-        // the unnamed package + null check
-        if (name.isEmpty())
-            return name;
-        return validateInternalClassName(name);
+        return validatePathBasedName(name, true, true);
     }
 
     /**
@@ -449,19 +447,19 @@ public final class ConstantUtils {
                 case JVM_SIGNATURE_DOUBLE:
                     return index - start;
                 case JVM_SIGNATURE_CLASS:
-                    // state variable for detection of illegal states, such as:
-                    // empty unqualified name, '//', leading '/', or trailing '/'
+                    // state variable for detection of illegal states of
+                    // empty name, '//', leading '/', or trailing '/'
                     int afterSeparator = index + 1; // start of internal name
                     while (index < end) {
                         ch = descriptor.charAt(index++);
                         if (ch == ';')
-                            // reject empty unqualified name or trailing '/'
+                            // reject empty name or trailing '/'
                             return index == afterSeparator ? 0 : index - start;
                         // reject '.' or '['
-                        if (ch == '[' || ch == '.')
+                        if (ch == '.' || ch == '[')
                             return 0;
                         if (ch == '/') {
-                            // illegal state when received '/' indicates '//' or leading '/'
+                            // reject '//' or leading '/'
                             if (index == afterSeparator)
                                 return 0;
                             afterSeparator = index + 1;
