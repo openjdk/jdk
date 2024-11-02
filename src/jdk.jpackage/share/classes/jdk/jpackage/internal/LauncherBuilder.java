@@ -39,7 +39,7 @@ import static jdk.internal.util.OperatingSystem.WINDOWS;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.Launcher.Impl;
+import jdk.jpackage.internal.model.Launcher.Stub;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
@@ -50,7 +50,7 @@ final class LauncherBuilder {
             validateIcon(icon);
         }
         var fa = toFunction(this::createFileAssociations).apply(faSources.stream()).toList();
-        return new Impl(name, startupInfo, fa, isService, description, icon);
+        return new Stub(name, startupInfo, fa, isService, description, icon);
     }
 
     LauncherBuilder name(String v) {
@@ -99,7 +99,7 @@ final class LauncherBuilder {
             return Optional.empty();
         }
 
-        return Optional.of(new FileAssociation.Impl(src.description(), src.icon(), mimeType, extension));
+        return Optional.of(new FileAssociation.Stub(src.description(), src.icon(), mimeType, extension));
     }
 
     static void validateIcon(Path icon) throws ConfigException {

@@ -29,13 +29,13 @@ import java.util.List;
 import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.model.LauncherJarStartupInfo;
 import jdk.jpackage.internal.model.LauncherModularStartupInfo;
-import jdk.jpackage.internal.model.LauncherStartupInfo.Impl;
+import jdk.jpackage.internal.model.LauncherStartupInfo.Stub;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 
 final class LauncherStartupInfoBuilder {
 
     LauncherStartupInfo create() {
-        return decorator.apply(new Impl(qualifiedClassName, javaOptions,
+        return decorator.apply(new Stub(qualifiedClassName, javaOptions,
                 defaultParameters, classPath));
     }
 
@@ -67,7 +67,7 @@ final class LauncherStartupInfoBuilder {
 
         @Override
         public LauncherStartupInfo apply(LauncherStartupInfo base) {
-            return new LauncherModularStartupInfo.Impl(base, moduleName, modulePath);
+            return new LauncherModularStartupInfo.Stub(base, moduleName, modulePath);
         }
     }
 
@@ -77,7 +77,7 @@ final class LauncherStartupInfoBuilder {
 
         @Override
         public LauncherStartupInfo apply(LauncherStartupInfo base) {
-            return new LauncherJarStartupInfo.Impl(base, jarPath, isClassNameFromMainJar);
+            return new LauncherJarStartupInfo.Stub(base, jarPath, isClassNameFromMainJar);
         }
     }
 

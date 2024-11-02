@@ -63,9 +63,9 @@ public interface LinuxPackage extends Package {
         return !relativeInstallDir().getFileName().equals(Path.of(packageName()));
     }
 
-    class Impl extends Package.Proxy<Package> implements LinuxPackage {
+    final class Stub extends Package.Proxy<Package> implements LinuxPackage {
 
-        public Impl(Package target, AppImageLayout packageLayout,
+        public Stub(Package target, AppImageLayout packageLayout,
                 String menuGroupName, String category,
                 String additionalDependencies, String release, String arch)
                 throws ConfigException {
@@ -123,32 +123,32 @@ public interface LinuxPackage extends Package {
         }
 
         @Override
-        public AppImageLayout packageLayout() {
+        final public AppImageLayout packageLayout() {
             return target.packageLayout();
         }
 
         @Override
-        public String menuGroupName() {
+        final public String menuGroupName() {
             return target.menuGroupName();
         }
 
         @Override
-        public String category() {
+        final public String category() {
             return target.category();
         }
 
         @Override
-        public String additionalDependencies() {
+        final public String additionalDependencies() {
             return target.additionalDependencies();
         }
 
         @Override
-        public String release() {
+        final public String release() {
             return target.release();
         }
 
         @Override
-        public String arch() {
+        final public String arch() {
             return target.arch();
         }
     }

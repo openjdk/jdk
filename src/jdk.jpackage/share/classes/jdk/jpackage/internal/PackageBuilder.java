@@ -30,7 +30,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.Package.Impl;
+import jdk.jpackage.internal.model.Package.Stub;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.StandardPackageType;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
@@ -81,7 +81,7 @@ final class PackageBuilder {
             throw new UnsupportedOperationException();
         }
 
-        return new Impl(
+        return new Stub(
                 app,
                 type,
                 effectiveName,

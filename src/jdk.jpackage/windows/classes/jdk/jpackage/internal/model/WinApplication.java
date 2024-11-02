@@ -30,8 +30,8 @@ public interface WinApplication extends Application {
         return DottedVersion.lazy(version());
     }
 
-    class Impl extends Application.Proxy<Application> implements WinApplication {
-        public Impl(Application app) {
+    final class Stub extends Application.Proxy<Application> implements WinApplication {
+        public Stub(Application app) {
             super(app);
         }
     }

@@ -118,7 +118,7 @@ public interface Application {
         return resource;
     }
 
-    record Impl(String name, String description, String version, String vendor,
+    record Stub(String name, String description, String version, String vendor,
             String copyright, Path srcDir, List<Path> contentDirs,
             AppImageLayout imageLayout, RuntimeBuilder runtimeBuilder,
             List<Launcher> launchers) implements Application {
@@ -131,52 +131,52 @@ public interface Application {
         }
 
         @Override
-        public String name() {
+        final public String name() {
             return target.name();
         }
 
         @Override
-        public String description() {
+        final public String description() {
             return target.description();
         }
 
         @Override
-        public String version() {
+        final public String version() {
             return target.version();
         }
 
         @Override
-        public String vendor() {
+        final public String vendor() {
             return target.vendor();
         }
 
         @Override
-        public String copyright() {
+        final public String copyright() {
             return target.copyright();
         }
 
         @Override
-        public Path srcDir() {
+        final public Path srcDir() {
             return target.srcDir();
         }
 
         @Override
-        public List<Path> contentDirs() {
+        final public List<Path> contentDirs() {
             return target.contentDirs();
         }
 
         @Override
-        public AppImageLayout imageLayout() {
+        final public AppImageLayout imageLayout() {
             return target.imageLayout();
         }
 
         @Override
-        public RuntimeBuilder runtimeBuilder() {
+        final public RuntimeBuilder runtimeBuilder() {
             return target.runtimeBuilder();
         }
 
         @Override
-        public List<Launcher> launchers() {
+        final public List<Launcher> launchers() {
             return target.launchers();
         }
     }

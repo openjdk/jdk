@@ -75,7 +75,7 @@ public interface Launcher {
         return null;
     }
 
-    record Impl(String name, LauncherStartupInfo startupInfo,
+    record Stub(String name, LauncherStartupInfo startupInfo,
             List<FileAssociation> fileAssociations, boolean isService,
             String description, Path icon) implements Launcher {        
     }
@@ -87,32 +87,32 @@ public interface Launcher {
         }
 
         @Override
-        public String name() {
+        final public String name() {
             return target.name();
         }
 
         @Override
-        public LauncherStartupInfo startupInfo() {
+        final public LauncherStartupInfo startupInfo() {
             return target.startupInfo();
         }
 
         @Override
-        public List<FileAssociation> fileAssociations() {
+        final public List<FileAssociation> fileAssociations() {
             return target.fileAssociations();
         }
 
         @Override
-        public boolean isService() {
+        final public boolean isService() {
             return target.isService();
         }
 
         @Override
-        public String description() {
+        final public String description() {
             return target.description();
         }
 
         @Override
-        public Path icon() {
+        final public Path icon() {
             return target.icon();
         }
     }

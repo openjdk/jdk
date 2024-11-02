@@ -25,6 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import static jdk.jpackage.internal.model.StandardPackageType.WIN_EXE;
 
 public interface WinExePackage extends Package {
 
@@ -32,21 +33,17 @@ public interface WinExePackage extends Package {
 
     Path icon();
 
-    class Impl extends Package.Proxy<WinMsiPackage> implements WinExePackage {
+    final class Stub extends Package.Proxy<Package> implements WinExePackage {
 
-        public Impl(WinMsiPackage msiPackage, Path icon) throws ConfigException {
-            super(msiPackage);
+        public Stub(WinMsiPackage msiPackage, Path icon) throws ConfigException {
+            super(createExePackage(msiPackage));
+            this.msiPackage = msiPackage;
             this.icon = icon;
         }
 
         @Override
-        public PackageType type() {
-            return StandardPackageType.WIN_EXE;
-        }
-
-        @Override
         public WinMsiPackage msiPackage() {
-            return target;
+            return msiPackage;
         }
 
         @Override
@@ -54,6 +51,20 @@ public interface WinExePackage extends Package {
             return icon;
         }
 
+        private static Package createExePackage(Package pkg) {
+            return new Package.Stub(
+                    pkg.app(),
+                    WIN_EXE,
+                    pkg.packageName(),
+                    pkg.description(),
+                    pkg.version(),
+                    pkg.aboutURL(),
+                    pkg.licenseFile(),
+                    pkg.predefinedAppImage(),
+                    pkg.relativeInstallDir());
+        }
+
+        private final WinMsiPackage msiPackage;
         private final Path icon;
     }
 }

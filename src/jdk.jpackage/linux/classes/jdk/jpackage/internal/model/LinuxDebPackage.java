@@ -49,9 +49,9 @@ public interface LinuxDebPackage extends LinuxPackage {
         }
     }
 
-    class Impl extends LinuxPackage.Proxy<LinuxPackage> implements LinuxDebPackage {
+    final class Stub extends LinuxPackage.Proxy<LinuxPackage> implements LinuxDebPackage {
 
-        public Impl(LinuxPackage target, String maintainerEmail) {
+        public Stub(LinuxPackage target, String maintainerEmail) {
             super(target);
             this.maintainerEmail = maintainerEmail;
         }

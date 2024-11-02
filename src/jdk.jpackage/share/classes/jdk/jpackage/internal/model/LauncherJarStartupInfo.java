@@ -30,16 +30,16 @@ public interface LauncherJarStartupInfo extends LauncherStartupInfo {
     /**
      * Returns path to the main jar relative to app's main source directory.
      * 
-     * @see jdk.jpackage.internal.Application#mainSrcDir() 
+     * @see jdk.jpackage.internal.model.Application#srcDir() 
      */
     Path jarPath();
 
     boolean isClassNameFromMainJar();
 
-    final class Impl extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
+    final class Stub extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
             implements LauncherJarStartupInfo {
 
-        public Impl(LauncherStartupInfo target, Path jarPath, boolean isClassNameFromMainJar) {
+        public Stub(LauncherStartupInfo target, Path jarPath, boolean isClassNameFromMainJar) {
             super(target);
             this.jarPath = jarPath;
             this.isClassNameFromMainJar = isClassNameFromMainJar;

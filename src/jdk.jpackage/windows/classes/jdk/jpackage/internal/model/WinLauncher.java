@@ -75,8 +75,8 @@ public interface WinLauncher extends Launcher {
 
     Set<WinShortcut> shortcuts();
 
-    class Impl extends Launcher.Proxy<Launcher> implements WinLauncher {
-        public Impl(Launcher launcher, boolean isConsole, Set<WinShortcut> shortcuts) {
+    final class Stub extends Launcher.Proxy<Launcher> implements WinLauncher {
+        public Stub(Launcher launcher, boolean isConsole, Set<WinShortcut> shortcuts) {
             super(launcher);
             this.isConsole = isConsole;
             this.shortcuts = shortcuts;

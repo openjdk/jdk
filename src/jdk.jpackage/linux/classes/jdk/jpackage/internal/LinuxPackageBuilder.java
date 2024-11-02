@@ -63,7 +63,7 @@ final class LinuxPackageBuilder {
 
     private LinuxPackage create(jdk.jpackage.internal.model.Package pkg,
             AppImageLayout pkgLayout) throws ConfigException {
-        return new LinuxPackage.Impl(pkg,
+        return new LinuxPackage.Stub(pkg,
                 pkgLayout,
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
                 Optional.ofNullable(category).orElseGet(DEFAULTS::category),

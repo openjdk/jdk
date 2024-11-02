@@ -52,7 +52,7 @@ public interface LauncherStartupInfo {
      */
     List<Path> classPath();
 
-    record Impl(String qualifiedClassName, List<String> javaOptions,
+    record Stub(String qualifiedClassName, List<String> javaOptions,
             List<String> defaultParameters, List<Path> classPath)
             implements LauncherStartupInfo {
 
@@ -66,22 +66,22 @@ public interface LauncherStartupInfo {
         }
 
         @Override
-        public String qualifiedClassName() {
+        final public String qualifiedClassName() {
             return target.qualifiedClassName();
         }
 
         @Override
-        public List<String> javaOptions() {
+        final public List<String> javaOptions() {
             return target.javaOptions();
         }
 
         @Override
-        public List<String> defaultParameters() {
+        final public List<String> defaultParameters() {
             return target.defaultParameters();
         }
 
         @Override
-        public List<Path> classPath() {
+        final public List<Path> classPath() {
             return target.classPath();
         }
     }

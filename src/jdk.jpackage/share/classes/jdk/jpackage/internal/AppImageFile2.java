@@ -333,7 +333,7 @@ final class AppImageFile2 {
         }
         
         Launcher asLauncher() {
-            return new Launcher.Impl(name, null, null, service, null, null);
+            return new Launcher.Stub(name, null, null, service, null, null);
         }
     }
 

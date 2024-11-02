@@ -43,9 +43,9 @@ public interface LinuxLauncher extends Launcher {
         return "JavaApp.png";
     }
 
-    class Impl extends Launcher.Proxy<Launcher> implements LinuxLauncher {
+    final class Stub extends Launcher.Proxy<Launcher> implements LinuxLauncher {
 
-        public Impl(Launcher launcher, Optional<Boolean> shortcut) {
+        public Stub(Launcher launcher, Optional<Boolean> shortcut) {
             super(launcher);
             this.shortcut = shortcut;
         }

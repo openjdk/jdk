@@ -457,21 +457,21 @@ final class DesktopIntegration extends ShellCustomAction {
 
     private static class LinuxFileAssociation extends FileAssociation.Proxy<FileAssociation> {
         LinuxFileAssociation(FileAssociation fa) {
-            super(fa);
-            var icon = fa.icon();
-            if (icon != null && Files.isReadable(icon)) {
-                iconSize = getSquareSizeOfImage(icon.toFile());
-            } else {
-                iconSize = -1;
-            }
+            this(fa, getIconSize(fa));
         }
 
-        @Override
-        public Path icon() {
-            if (iconSize < 0) {
-                return null;
+        private LinuxFileAssociation(FileAssociation fa, int iconSize) {
+            super(iconSize > 0 ? fa : new FileAssociation.Stub(fa.description(),
+                    fa.icon(), fa.mimeType(), fa.extension()));
+            this.iconSize = iconSize;
+        }
+
+        private static int getIconSize(FileAssociation fa) {
+            var icon = fa.icon();
+            if (icon != null && Files.isReadable(icon)) {
+                return getSquareSizeOfImage(icon.toFile());
             } else {
-                return super.icon();
+                return -1;
             }
         }
 

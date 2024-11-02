@@ -32,15 +32,15 @@ import java.nio.file.Path;
  */
 public interface RuntimeLayout extends AppImageLayout {
 
-    final class Impl extends AppImageLayout.Proxy<AppImageLayout> implements RuntimeLayout {
+    final class Stub extends AppImageLayout.Proxy<AppImageLayout> implements RuntimeLayout {
 
-        public Impl(AppImageLayout target) {
+        public Stub(AppImageLayout target) {
             super(target);
         }
 
         @Override
         public RuntimeLayout resolveAt(Path root) {
-            return new RuntimeLayout.Impl(target.resolveAt(root));
+            return new RuntimeLayout.Stub(target.resolveAt(root));
         }
     }
 }

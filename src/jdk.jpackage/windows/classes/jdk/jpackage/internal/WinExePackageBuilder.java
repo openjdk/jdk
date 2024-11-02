@@ -42,7 +42,7 @@ final class WinExePackageBuilder {
             LauncherBuilder.validateIcon(icon);
         }
 
-        return new WinExePackage.Impl(pkg, icon);
+        return new WinExePackage.Stub(pkg, icon);
     }
 
     WinExePackageBuilder icon(Path v) {

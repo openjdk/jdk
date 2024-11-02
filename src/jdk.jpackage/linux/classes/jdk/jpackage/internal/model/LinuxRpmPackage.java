@@ -28,9 +28,9 @@ public interface LinuxRpmPackage extends LinuxPackage {
 
     String licenseType();
 
-    class Impl extends LinuxPackage.Proxy<LinuxPackage> implements LinuxRpmPackage {
+    final class Stub extends LinuxPackage.Proxy<LinuxPackage> implements LinuxRpmPackage {
 
-        public Impl(LinuxPackage target, String licenseType) {
+        public Stub(LinuxPackage target, String licenseType) {
             super(target);
             this.licenseType = licenseType;
         }

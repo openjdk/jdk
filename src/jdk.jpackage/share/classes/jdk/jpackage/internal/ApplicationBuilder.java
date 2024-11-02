@@ -58,7 +58,7 @@ final class ApplicationBuilder {
                     .create();
         }
 
-        return new Application.Impl(
+        return new Application.Stub(
                 effectiveName,
                 Optional.ofNullable(description).orElseGet(DEFAULTS::description),
                 Optional.ofNullable(version).orElseGet(DEFAULTS::version),

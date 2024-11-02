@@ -71,9 +71,9 @@ final class WinFromParams {
                     }
                 }).map(Map.Entry::getKey).collect(toSet());
 
-            return new WinLauncher.Impl(launcher, isConsole, shortcuts);
+            return new WinLauncher.Stub(launcher, isConsole, shortcuts);
         }), APPLICATION_LAYOUT).create();
-        return new WinApplication.Impl(app);
+        return new WinApplication.Stub(app);
     }
 
     private static WinMsiPackage createWinMsiPackage(Map<String, ? super Object> params) throws ConfigException, IOException {

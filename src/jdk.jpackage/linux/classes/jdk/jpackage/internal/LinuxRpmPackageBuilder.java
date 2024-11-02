@@ -38,7 +38,7 @@ final class LinuxRpmPackageBuilder {
 
     LinuxRpmPackage create() throws ConfigException {
         var pkg = pkgBuilder.create();
-        return new LinuxRpmPackage.Impl(
+        return new LinuxRpmPackage.Stub(
                 pkg,
                 Optional.ofNullable(licenseType).orElseGet(DEFAULTS::licenseType));
     }

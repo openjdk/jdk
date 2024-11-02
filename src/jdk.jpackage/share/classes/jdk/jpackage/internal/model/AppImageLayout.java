@@ -47,11 +47,11 @@ public interface AppImageLayout {
 
     AppImageLayout resolveAt(Path root);
 
-    record Impl(Path runtimeDirectory) implements AppImageLayout {
+    record Stub(Path runtimeDirectory) implements AppImageLayout {
 
         @Override
         public AppImageLayout resolveAt(Path base) {
-            return new Impl(resolveNullablePath(base, runtimeDirectory));
+            return new Stub(resolveNullablePath(base, runtimeDirectory));
         }
     }
 
@@ -62,7 +62,7 @@ public interface AppImageLayout {
         }
 
         @Override
-        public Path runtimeDirectory() {
+        final public Path runtimeDirectory() {
             return target.runtimeDirectory();
         }
 

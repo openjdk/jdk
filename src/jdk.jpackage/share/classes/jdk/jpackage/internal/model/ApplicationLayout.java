@@ -60,9 +60,9 @@ public interface ApplicationLayout extends AppImageLayout {
     @Override
     ApplicationLayout resolveAt(Path root);
 
-    final class Impl extends AppImageLayout.Proxy<AppImageLayout> implements ApplicationLayout {
+    final class Stub extends AppImageLayout.Proxy<AppImageLayout> implements ApplicationLayout {
 
-        public Impl(AppImageLayout target, Path launchersDirectory,
+        public Stub(AppImageLayout target, Path launchersDirectory,
                 Path appDirectory, Path appModsDirectory,
                 Path destktopIntegrationDirectory, Path contentDirectory) {
             super(target);
@@ -100,7 +100,7 @@ public interface ApplicationLayout extends AppImageLayout {
 
         @Override
         public ApplicationLayout resolveAt(Path base) {
-            return new ApplicationLayout.Impl(target.resolveAt(base),
+            return new ApplicationLayout.Stub(target.resolveAt(base),
                     resolveNullablePath(base, launchersDirectory),
                     resolveNullablePath(base, appDirectory),
                     resolveNullablePath(base, appModsDirectory),
@@ -130,27 +130,27 @@ public interface ApplicationLayout extends AppImageLayout {
         }
 
         @Override
-        public Path launchersDirectory() {
+        final public Path launchersDirectory() {
             return target.launchersDirectory();
         }
 
         @Override
-        public Path appDirectory() {
+        final public Path appDirectory() {
             return target.appDirectory();
         }
 
         @Override
-        public Path appModsDirectory() {
+        final public Path appModsDirectory() {
             return target.appModsDirectory();
         }
 
         @Override
-        public Path destktopIntegrationDirectory() {
+        final public Path destktopIntegrationDirectory() {
             return target.destktopIntegrationDirectory();
         }
 
         @Override
-        public Path contentDirectory() {
+        final public Path contentDirectory() {
             return target.contentDirectory();
         }
 
@@ -174,8 +174,8 @@ public interface ApplicationLayout extends AppImageLayout {
         }
 
         public ApplicationLayout create() {
-            return new ApplicationLayout.Impl(
-                    new AppImageLayout.Impl(runtimeDirectory),
+            return new ApplicationLayout.Stub(
+                    new AppImageLayout.Stub(runtimeDirectory),
                     launchersDirectory,
                     appDirectory,
                     appModsDirectory,

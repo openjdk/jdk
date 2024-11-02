@@ -33,10 +33,10 @@ public interface LauncherModularStartupInfo extends LauncherStartupInfo {
 
     List<Path> modulePath();
 
-    final class Impl extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
+    final class Stub extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
             implements LauncherModularStartupInfo {
 
-        public Impl(LauncherStartupInfo target, String moduleName,
+        public Stub(LauncherStartupInfo target, String moduleName,
                 List<Path> modulePath) {
             super(target);
             this.moduleName = moduleName;

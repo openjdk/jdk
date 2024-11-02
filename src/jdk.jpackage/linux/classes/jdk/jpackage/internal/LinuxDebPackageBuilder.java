@@ -38,7 +38,7 @@ final class LinuxDebPackageBuilder {
 
     LinuxRpmPackage create() throws ConfigException {
         var pkg = pkgBuilder.create();
-        return new LinuxRpmPackage.Impl(
+        return new LinuxRpmPackage.Stub(
                 pkg,
                 Optional.ofNullable(maintainerEmail).orElseGet(DEFAULTS::maintainerEmail));
     }

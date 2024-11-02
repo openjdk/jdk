@@ -61,7 +61,7 @@ final class WinMsiPackageBuilder {
                     .create();
         }
 
-        return new WinMsiPackage.Impl(
+        return new WinMsiPackage.Stub(
                 pkg,
                 withInstallDirChooser,
                 withShortcutPrompt,

@@ -24,9 +24,7 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface WinMsiPackage extends Package {
@@ -53,9 +51,9 @@ public interface WinMsiPackage extends Package {
 
     Path serviceInstaller();
 
-    class Impl extends Package.Proxy<Package> implements WinMsiPackage {
+    final class Stub extends Package.Proxy<Package> implements WinMsiPackage {
 
-        public Impl(Package pkg, boolean withInstallDirChooser,
+        public Stub(Package pkg, boolean withInstallDirChooser,
                 boolean withShortcutPrompt, String helpURL, String updateURL,
                 String startMenuGroupName, boolean isSystemWideInstall,
                 UUID upgradeCode, UUID productCode, Path serviceInstaller)

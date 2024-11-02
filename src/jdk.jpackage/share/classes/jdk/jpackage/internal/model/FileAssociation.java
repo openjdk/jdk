@@ -37,36 +37,36 @@ public interface FileAssociation {
 
     String extension();
 
-    record Impl(String description, Path icon, String mimeType, String extension) implements FileAssociation {
+    record Stub(String description, Path icon, String mimeType, String extension) implements FileAssociation {
 
-        public Impl {
+        public Stub {
             Objects.requireNonNull(description);
         }
     }
 
-    static class Proxy<T extends FileAssociation> extends ProxyBase<T> implements FileAssociation {
+    class Proxy<T extends FileAssociation> extends ProxyBase<T> implements FileAssociation {
 
         protected Proxy(T target) {
             super(target);
         }
 
         @Override
-        public String description() {
+        final public String description() {
             return target.description();
         }
 
         @Override
-        public Path icon() {
+        final public Path icon() {
             return target.icon();
         }
 
         @Override
-        public String mimeType() {
+        final public String mimeType() {
             return target.mimeType();
         }
 
         @Override
-        public String extension() {
+        final public String extension() {
             return target.extension();
         }
     }

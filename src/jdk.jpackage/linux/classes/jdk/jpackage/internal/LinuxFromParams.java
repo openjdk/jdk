@@ -55,9 +55,9 @@ final class LinuxFromParams {
             }).map(param -> {
                 return param.fetchFrom(params);
             }).findFirst();
-            return new LinuxLauncher.Impl(launcher, shortcut);
+            return new LinuxLauncher.Stub(launcher, shortcut);
         }), APPLICATION_LAYOUT).create();
-        return new LinuxApplication.Impl(app);
+        return new LinuxApplication.Stub(app);
     }
 
     private static LinuxPackageBuilder createLinuxPackageBuilder(
