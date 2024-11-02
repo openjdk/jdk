@@ -283,10 +283,13 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
   // limit is being exceeded as checked below.
   *gc_overhead_limit_was_exceeded = false;
 
-  HeapWord* result = nullptr;
+  HeapWord* result = young_gen()->allocate(size);
+  if (result != nullptr) {
+    return result;
+  }
 
   uint loop_count = 0;
-  uint gc_count = -1;
+  uint gc_count = total_collections();
   uint gclocker_stalled_count = 0;
 
   while (true /*return or throw error in loop*/) {
@@ -294,59 +297,60 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       VM_CollectForAllocation::wait_at_collect_for_allocation_barrier();
     }
 
-    uint new_gc_count = total_collections();
-    if (gc_count != new_gc_count) {
-      result = young_gen()->allocate(size);
-      if (result != nullptr) {
-        return result;
+    // We don't want to have multiple collections for a single filled generation.
+    // To prevent this, each thread tracks the total_collections() value, and if
+    // the count has changed, does not do a new collection.
+    //
+    // The collection count must be read only while holding the heap lock. VM
+    // operations also hold the heap lock during collections. There is a lock
+    // contention case where thread A blocks waiting on the Heap_lock, while
+    // thread B is holding it doing a collection. When thread A gets the lock,
+    // the collection count has already changed. To prevent duplicate collections,
+    // The policy MUST attempt allocations during the same period it reads the
+    // total_collections() value!
+    {
+      MutexLocker ml(Heap_lock);
+      if (gc_count != total_collections()) {
+        result = young_gen()->allocate(size);
+        if (result != nullptr) {
+          return result;
+        }
+        gc_count = total_collections();
       }
-      gc_count = new_gc_count;
-    }
 
-    // If certain conditions hold, try allocating from the old gen.
-    if (!is_tlab &&
-        (!should_alloc_in_eden(size) || GCLocker::is_active_and_needs_gc())) {
-      {
-        // Take Heap_lock when allocate on old gen, since it is not thread-safe.
-        MutexLocker ml(Heap_lock);
-        new_gc_count = total_collections();
-        if (gc_count != new_gc_count) {
-          // Try young gen again before allocate on old gen if gc count has changed after taking lock
-          result = young_gen()->allocate(size);
-          gc_count = new_gc_count;
-        }
-        if (result == nullptr) {
-          result = mem_allocate_old_gen(size);
-        }
+      // If certain conditions hold, try allocating from the old gen.
+      if (!is_tlab && (!should_alloc_in_eden(size) || GCLocker::is_active_and_needs_gc())) {
+        result = allocate_old_gen_and_record(size);
         if (result != nullptr) {
           return result;
         }
       }
-    }
 
-    if (gclocker_stalled_count > GCLockerRetryAllocationCount) {
-      return nullptr;
-    }
-
-    // Failed to allocate without a gc.
-    if (GCLocker::is_active_and_needs_gc()) {
-      // If this thread is not in a jni critical section, we stall
-      // the requestor until the critical section has cleared and
-      // GC allowed. When the critical section clears, a GC is
-      // initiated by the last thread exiting the critical section; so
-      // we retry the allocation sequence from the beginning of the loop,
-      // rather than causing more, now probably unnecessary, GC attempts.
-      JavaThread* jthr = JavaThread::current();
-      if (!jthr->in_critical()) {
-        GCLocker::stall_until_clear();
-        gclocker_stalled_count += 1;
-        continue;
-      } else {
-        if (CheckJNICalls) {
-          fatal("Possible deadlock due to allocating while"
-                " in jni critical section");
-        }
+      if (gclocker_stalled_count > GCLockerRetryAllocationCount) {
         return nullptr;
+      }
+
+      // Failed to allocate without a gc.
+      if (GCLocker::is_active_and_needs_gc()) {
+        // If this thread is not in a jni critical section, we stall
+        // the requestor until the critical section has cleared and
+        // GC allowed. When the critical section clears, a GC is
+        // initiated by the last thread exiting the critical section; so
+        // we retry the allocation sequence from the beginning of the loop,
+        // rather than causing more, now probably unnecessary, GC attempts.
+        JavaThread* jthr = JavaThread::current();
+        if (!jthr->in_critical()) {
+          MutexUnlocker mul(Heap_lock);
+          GCLocker::stall_until_clear();
+          gclocker_stalled_count += 1;
+          continue;
+        } else {
+          if (CheckJNICalls) {
+            fatal("Possible deadlock due to allocating while"
+                  " in jni critical section");
+          }
+          return nullptr;
+        }
       }
     }
 
@@ -355,7 +359,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
     }
 
     // Generate a VM operation
-    VM_ParallelCollectForAllocation op(size, is_tlab, total_collections());
+    VM_ParallelCollectForAllocation op(size, is_tlab, gc_count);
     VMThread::execute(&op);
 
     // Did the VM operation execute? If so, return the result directly.
@@ -422,7 +426,12 @@ HeapWord* ParallelScavengeHeap::allocate_old_gen_and_record(size_t size) {
 }
 
 HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
-  return allocate_old_gen_and_record(size);;
+  if (!should_alloc_in_eden(size) || GCLocker::is_active_and_needs_gc()) {
+    // Size is too big for eden, or gc is locked out.
+    return allocate_old_gen_and_record(size);
+  }
+
+  return nullptr;
 }
 
 void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
