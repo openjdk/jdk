@@ -28,7 +28,6 @@ import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.LinuxLauncher;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.OverridableResource;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -43,11 +42,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import static jdk.jpackage.internal.AppImageBuilder.createLauncherIconResource;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
@@ -80,7 +79,7 @@ final class DesktopIntegration extends ShellCustomAction {
         //  - user explicitly requested to create a shortcut
         boolean withDesktopFile = !associations.isEmpty() || launcher.shortcut().orElse(false);
 
-        var curIconResource = pkg.app().createLauncherIconResource(launcher,
+        var curIconResource = createLauncherIconResource(pkg.app(), launcher,
                 env::createResource);
         if (curIconResource == null) {
             // This is additional launcher with explicit `no icon` configuration.
@@ -116,7 +115,7 @@ final class DesktopIntegration extends ShellCustomAction {
 
             if (curIconResource == null) {
                 // Create default icon.
-                curIconResource = pkg.app().createLauncherIconResource(pkg.app().mainLauncher(), env::createResource);
+                curIconResource = createLauncherIconResource(pkg.app(), pkg.app().mainLauncher(), env::createResource);
             }
         } else {
             desktopFile = null;

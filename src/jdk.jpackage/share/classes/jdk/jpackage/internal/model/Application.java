@@ -87,37 +87,6 @@ public interface Application {
         return Map.of();
     }
 
-    default OverridableResource createLauncherIconResource(Launcher launcher,
-            Function<String, OverridableResource> resourceSupplier) {
-        final String defaultIconName = launcher.defaultIconResourceName();
-        final String resourcePublicName = launcher.executableName() + PathUtils.getSuffix(Path.of(
-                defaultIconName));
-
-        var iconType = IconType.getLauncherIconType(launcher.icon());
-        if (iconType == IconType.NO_ICON) {
-            return null;
-        }
-
-        OverridableResource resource = resourceSupplier.apply(defaultIconName)
-                .setCategory("icon")
-                .setExternal(launcher.icon())
-                .setPublicName(resourcePublicName);
-
-        if (iconType == IconType.DEFAULT_OR_RESOURCEDIR_ICON && mainLauncher() != launcher) {
-            // No icon explicitly configured for this launcher.
-            // Dry-run resource creation to figure out its source.
-            final Path nullPath = null;
-            if (toSupplier(() -> resource.saveToFile(nullPath)).get() != OverridableResource.Source.ResourceDir) {
-                // No icon in resource dir for this launcher, inherit icon
-                // configured for the main launcher.
-                return createLauncherIconResource(mainLauncher(),
-                        resourceSupplier).setLogPublicName(resourcePublicName);
-            }
-        }
-
-        return resource;
-    }
-
     record Stub(String name, String description, String version, String vendor,
             String copyright, Path srcDir, List<Path> contentDirs,
             AppImageLayout imageLayout, RuntimeBuilder runtimeBuilder,

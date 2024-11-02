@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.io.InputStream;

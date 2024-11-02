@@ -28,7 +28,6 @@ package jdk.jpackage.internal;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.WinMsiPackage;
-import jdk.jpackage.internal.model.OverridableResource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;

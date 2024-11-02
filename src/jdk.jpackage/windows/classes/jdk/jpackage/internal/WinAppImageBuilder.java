@@ -30,6 +30,7 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.WinApplication;
 import java.io.IOException;
 import java.nio.file.Path;
+import static jdk.jpackage.internal.AppImageBuilder.createLauncherIconResource;
 import jdk.jpackage.internal.model.ApplicationLayout;
 
 final class WinAppImageBuilder {
@@ -45,7 +46,7 @@ final class WinAppImageBuilder {
         public void onLauncher(Application app,
                 AppImageBuilder.LauncherContext ctx) throws IOException, PackagerException {
             Path iconTarget = null;
-            var iconResource = app.createLauncherIconResource(ctx.launcher(),
+            var iconResource = createLauncherIconResource(app, ctx.launcher(),
                     name -> ctx.env().createResource(name));
             if (iconResource != null) {
                 var iconDir = ctx.env().buildRoot().resolve("icons");

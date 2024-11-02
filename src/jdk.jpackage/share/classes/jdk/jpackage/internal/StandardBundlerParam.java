@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 
 
 import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.OverridableResource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;

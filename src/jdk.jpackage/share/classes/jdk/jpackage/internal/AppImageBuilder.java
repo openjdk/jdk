@@ -29,7 +29,6 @@ import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.OverridableResource;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,7 +36,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.PathUtils;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 
 final class AppImageBuilder {
@@ -135,9 +137,41 @@ final class AppImageBuilder {
         }
     }
 
+    static OverridableResource createLauncherIconResource(Application app,
+            Launcher launcher,
+            Function<String, OverridableResource> resourceSupplier) {
+        final String defaultIconName = launcher.defaultIconResourceName();
+        final String resourcePublicName = launcher.executableName() + PathUtils.getSuffix(Path.of(
+                defaultIconName));
+
+        var iconType = IconType.getLauncherIconType(launcher.icon());
+        if (iconType == IconType.NO_ICON) {
+            return null;
+        }
+
+        OverridableResource resource = resourceSupplier.apply(defaultIconName)
+                .setCategory("icon")
+                .setExternal(launcher.icon())
+                .setPublicName(resourcePublicName);
+
+        if (iconType == IconType.DEFAULT_OR_RESOURCEDIR_ICON && app.mainLauncher() != launcher) {
+            // No icon explicitly configured for this launcher.
+            // Dry-run resource creation to figure out its source.
+            final Path nullPath = null;
+            if (toSupplier(() -> resource.saveToFile(nullPath)).get() != OverridableResource.Source.ResourceDir) {
+                // No icon in resource dir for this launcher, inherit icon
+                // configured for the main launcher.
+                return createLauncherIconResource(app, app.mainLauncher(),
+                        resourceSupplier).setLogPublicName(resourcePublicName);
+            }
+        }
+
+        return resource;
+    }
+
     static interface LauncherCallback {
         default public void onLauncher(Application app, LauncherContext ctx) throws IOException, PackagerException {
-            var iconResource = app.createLauncherIconResource(ctx.launcher,
+            var iconResource = createLauncherIconResource(app, ctx.launcher,
                     ctx.env::createResource);
             if (iconResource != null) {
                 onLauncher(app, ctx, iconResource);
@@ -151,6 +185,20 @@ final class AppImageBuilder {
 
     static record LauncherContext(Launcher launcher, BuildEnv env,
             ApplicationLayout resolvedAppLayout, Path launcherExecutable) {
+    }
+
+    private enum IconType {
+        DEFAULT_OR_RESOURCEDIR_ICON, CUSTOM_ICON, NO_ICON;
+
+        public static IconType getLauncherIconType(Path iconPath) {
+            if (iconPath == null) {
+                return DEFAULT_OR_RESOURCEDIR_ICON;
+            }
+            if (iconPath.toFile().getName().isEmpty()) {
+                return NO_ICON;
+            }
+            return CUSTOM_ICON;
+        }
     }
 
     private final boolean withAppImageFile;

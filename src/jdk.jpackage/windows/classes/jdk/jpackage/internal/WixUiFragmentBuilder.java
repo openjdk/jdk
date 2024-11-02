@@ -25,7 +25,6 @@
 package jdk.jpackage.internal;
 
 import jdk.jpackage.internal.model.WinMsiPackage;
-import jdk.jpackage.internal.model.OverridableResource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;

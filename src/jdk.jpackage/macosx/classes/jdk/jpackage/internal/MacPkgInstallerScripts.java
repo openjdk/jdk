@@ -24,7 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.OverridableResource;
 import java.util.function.Supplier;
 import jdk.jpackage.internal.PackageScripts.ResourceConfig;
 

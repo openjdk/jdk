@@ -29,7 +29,6 @@ import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxDebPackage;
-import jdk.jpackage.internal.model.OverridableResource;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;

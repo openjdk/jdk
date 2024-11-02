@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.Log;
 
 
 /**
@@ -69,7 +68,7 @@ import jdk.jpackage.internal.Log;
  * value was passed in #setExternal call that value will be used as a path to file
  * to copy in the destination file passed in #saveToFile function call.
  */
-public final class OverridableResource {
+final class OverridableResource {
 
     public OverridableResource() {
         defaultName = "";

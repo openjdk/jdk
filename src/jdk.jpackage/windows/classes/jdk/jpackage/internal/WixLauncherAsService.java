@@ -25,7 +25,6 @@
 package jdk.jpackage.internal;
 
 import jdk.jpackage.internal.model.WinLauncher;
-import jdk.jpackage.internal.model.OverridableResource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

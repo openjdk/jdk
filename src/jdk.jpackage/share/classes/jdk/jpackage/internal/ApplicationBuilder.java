@@ -46,6 +46,13 @@ final class ApplicationBuilder {
 
         final var launchersAsList = Optional.ofNullable(launchers).map(
                 ApplicationLaunchers::asList).orElseGet(List::of);
+
+        final var launcherCount = launchersAsList.size();
+
+        if (launcherCount != launchers.asList().stream().map(Launcher::name).distinct().count()) {
+            throw ConfigException.build().message("ERR_NoUniqueName").create();
+        }
+
         final String effectiveName;
         if (name != null) {
             effectiveName = name;
