@@ -25,11 +25,13 @@ package jdk.jpackage.internal.model;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import org.junit.Test;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import java.util.List;
+import java.util.stream.Stream;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 
 public class ApplicationLayoutTest {
@@ -37,54 +39,72 @@ public class ApplicationLayoutTest {
     @Rule
     public final TemporaryFolder tempFolder = new TemporaryFolder();
 
-    private ApplicationLayout fillAppImage() throws IOException {
-        appImage = tempFolder.newFolder("Foo").toPath();
+    public void test(boolean move) throws IOException {
+        final var srcAppImageRoot = tempFolder.newFolder("src").toPath();
 
-        Path base = appImage.getFileName();
-        
-        var layout = ApplicationLayout.build().app;
+        final var appImageCopyFiles = List.of("bin/Foo", "lib/app/Foo.cfg", "lib/app/hello.jar", "runtime/bin/java");
+        final var appImageCopyDirs = List.of("lib/app/hello");
 
-        tempFolder.newFolder(base.toString(), "bin");
-        tempFolder.newFolder(base.toString(), "lib", "app", "mods");
-        tempFolder.newFolder(base.toString(), "lib", "runtime", "bin");
-        tempFolder.newFile(base.resolve("bin/Foo").toString());
-        tempFolder.newFile(base.resolve("lib/app/Foo.cfg").toString());
-        tempFolder.newFile(base.resolve("lib/app/hello.jar").toString());
-        tempFolder.newFile(base.resolve("lib/Foo.png").toString());
-        tempFolder.newFile(base.resolve("lib/libapplauncher.so").toString());
-        tempFolder.newFile(base.resolve("lib/runtime/bin/java").toString());
+        final var appImageNoCopyFiles = List.of("lib/Foo.cfg", "Foo");
+        final var appImageNoCopyDirs = List.of("lib/hello", "a/b/c");
+
+        for (var path : Stream.concat(appImageCopyFiles.stream(), appImageNoCopyFiles.stream()).map(srcAppImageRoot::resolve).toList()) {
+            Files.createDirectories(path.getParent());
+            Files.createFile(path);
+        }
+
+        for (var path : Stream.concat(appImageCopyDirs.stream(), appImageNoCopyDirs.stream()).map(srcAppImageRoot::resolve).toList()) {
+            Files.createDirectories(path);
+        }
+
+        final var layout = ApplicationLayout.build()
+                .launchersDirectory("bin")
+                .appDirectory("lib/app")
+                .runtimeDirectory("runtime")
+                .create();
+
+        final var dstAppImageRoot = tempFolder.newFolder("dst").toPath();
+
+        final var srcPathGroup = AppImageLayout.toPathGroup(layout.resolveAt(srcAppImageRoot));
+        final var dstPathGroup = AppImageLayout.toPathGroup(layout.resolveAt(dstAppImageRoot));
+        if (move) {
+            srcPathGroup.move(dstPathGroup);
+        } else {
+            srcPathGroup.copy(dstPathGroup);
+        }
+
+        for (var path : Stream.concat(appImageNoCopyDirs.stream(), appImageNoCopyFiles.stream()).map(srcAppImageRoot::resolve).toList()) {
+            assertTrue(Files.exists(path));
+        }
+
+        for (var path : appImageCopyDirs) {
+            var srcPath = srcAppImageRoot.resolve(path);
+            if (move) {
+                assertFalse(Files.exists(srcPath));
+            } else {
+                assertTrue(Files.isDirectory(srcPath));
+            }
+            assertTrue(Files.isDirectory(dstAppImageRoot.resolve(path)));
+        }
+
+        for (var path : appImageCopyFiles) {
+            var srcPath = srcAppImageRoot.resolve(path);
+            if (move) {
+                assertFalse(Files.exists(srcPath));
+            } else {
+                assertTrue(Files.isRegularFile(srcPath));
+            }
+            assertTrue(Files.isRegularFile(dstAppImageRoot.resolve(path)));
+        }
     }
 
     @Test
-    public void test() throws IOException {
-        fillAppImage();
-        testApplicationLayout(ApplicationLayout.build().launchersDirectory(                appImage));
+    public void testMove() throws IOException {
+        test(true);
     }
 
-    private void testApplicationLayout(ApplicationLayout layout) throws IOException {
-        ApplicationLayout srcLayout = layout.resolveAt(appImage);
-        assertApplicationLayout(srcLayout);
-
-        ApplicationLayout dstLayout = layout.resolveAt(
-                appImage.getParent().resolve(
-                        "Copy" + appImage.getFileName().toString()));
-        srcLayout.move(dstLayout);
-        Files.deleteIfExists(appImage);
-        assertApplicationLayout(dstLayout);
-
-        dstLayout.copy(srcLayout);
-        assertApplicationLayout(srcLayout);
-        assertApplicationLayout(dstLayout);
+    @Test
+    public void testCopy() throws IOException {
+        test(false);
     }
-
-    private void assertApplicationLayout(ApplicationLayout layout) throws IOException {
-        assertTrue(Files.isRegularFile(layout.appDirectory().resolve("Foo.cfg")));
-        assertTrue(Files.isRegularFile(layout.appDirectory().resolve("hello.jar")));
-        assertTrue(Files.isDirectory(layout.appModsDirectory()));
-        assertTrue(Files.isRegularFile(layout.launchersDirectory().resolve("Foo")));
-        assertTrue(Files.isRegularFile(layout.destktopIntegrationDirectory().resolve("Foo.png")));
-        assertTrue(Files.isRegularFile(layout.runtimeDirectory().resolve("bin/java")));
-    }
-
-    private Path appImage;
 }
