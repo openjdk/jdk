@@ -91,8 +91,8 @@ final class StandardBundlerParam {
                     (s, p) -> Path.of(s)
             );
 
-    static final StandardBundlerParam<Path> OUTPUT_DIR =
-            new StandardBundlerParam<>(
+    static final BundlerParamInfo<Path> OUTPUT_DIR =
+            new BundlerParamInfo<>(
                     Arguments.CLIOptions.OUTPUT.getId(),
                     Path.class,
                     p -> Path.of("").toAbsolutePath(),
