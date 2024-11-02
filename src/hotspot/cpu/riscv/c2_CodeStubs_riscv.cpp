@@ -33,7 +33,7 @@
 #define __ masm.
 
 int C2SafepointPollStub::max_size() const {
-  return 13 * 4;
+  return 5 * NativeInstruction::instruction_size;
 }
 
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
@@ -45,24 +45,27 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
   InternalAddress safepoint_pc(__ pc() - __ offset() + _safepoint_offset);
   __ relocate(safepoint_pc.rspec(), [&] {
+    // emits auipc + addi for address inside code cache
     __ la(t0, safepoint_pc.target());
   });
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
+  // emits auipc + jr for address inside code cache
   __ far_jump(callback_addr);
 }
 
 int C2EntryBarrierStub::max_size() const {
   // 4 bytes for alignment
-  return 8 * 4 + 4;
+  return 3 * NativeInstruction::instruction_size + 4 + 4;
 }
 
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
-  __ rt_call(StubRoutines::method_entry_barrier());
+  // emits auipc + jalr for address inside code cache
+  __ far_call(StubRoutines::method_entry_barrier());
 
   __ j(continuation());
 
-  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on RISC-V
+  // make guard value 4-byte aligned so that it can be accessed atomically
   __ align(4);
   __ bind(guard());
   __ relocate(entry_guard_Relocation::spec());
