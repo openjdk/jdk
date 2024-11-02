@@ -78,7 +78,7 @@ public final class BasicTest {
                 .saveConsoleOutput(true)
                 .addArguments("--app-version", appVersion, "--arguments",
                     "jpackage.app-version jpackage.app-path")
-                .ignoreDefaultRuntime(true);
+                .ignoreFakeRuntime();
 
         cmd.executeAndAssertImageCreated();
         Path launcherPath = cmd.appLauncherPath();
