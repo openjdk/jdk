@@ -174,24 +174,23 @@ public final class ConstantUtils {
     }
 
     /**
-     * Validates the correctness of a path-based name, which is a class or
-     * interface name or a package name.
+     * Validates the correctness of a class or interface name or a package name.
      * In particular checks for the presence of invalid characters,
-     * consecutive, leading, or trailing separator char,
-     * and the empty string for class or interface names.
+     * consecutive, leading, or trailing separator char, for both non-internal
+     * and internal forms, and the empty string for class or interface names.
      *
      * @param name the name
-     * @param usesSlash {@code true} means {@code /} is the separator char,
-     *     otherwise {@code .} is the separator char
-     * @param allowsEmpty {@code true} means the empty string is a valid name
+     * @param slashSeparator {@code true} means {@code /} is the separator char
+     *     (internal form); otherwise {@code .} is the separator char
+     * @param allowEmpty {@code true} means the empty string is a valid name
      * @return the name passed if valid
      * @throws IllegalArgumentException if the name is invalid
      * @throws NullPointerException if name is {@code null}
      */
-    private static String validatePathBasedName(String name, boolean usesSlash, boolean allowsEmpty) {
+    private static String validateClassOrPackageName(String name, boolean slashSeparator, boolean allowEmpty) {
         int len = name.length();  // implicit null check
         // empty name special rule
-        if (allowsEmpty && len == 0)
+        if (allowEmpty && len == 0)
             return name;
         // state variable for detection of illegal states of
         // empty name, consecutive, leading, or trailing separators
@@ -206,7 +205,7 @@ public final class ConstantUtils {
             if (foundSlash || ch == '.') {
                 // reject the other separator char
                 // reject consecutive or leading separators
-                if (foundSlash != usesSlash || i == afterSeparator)
+                if (foundSlash != slashSeparator || i == afterSeparator)
                     throw invalidClassName(name);
                 afterSeparator = i + 1;
             }
@@ -228,7 +227,7 @@ public final class ConstantUtils {
      * @throws NullPointerException if class name is {@code null}
      */
     public static String validateBinaryClassName(String name) {
-        return validatePathBasedName(name, false, false);
+        return validateClassOrPackageName(name, false, false);
     }
 
     /**
@@ -242,7 +241,7 @@ public final class ConstantUtils {
      * @throws NullPointerException if class name is {@code null}
      */
     public static String validateInternalClassName(String name) {
-        return validatePathBasedName(name, true, false);
+        return validateClassOrPackageName(name, true, false);
     }
 
     /**
@@ -256,7 +255,7 @@ public final class ConstantUtils {
      * @throws NullPointerException if the package name is {@code null}
      */
     public static String validateBinaryPackageName(String name) {
-        return validatePathBasedName(name, false, true);
+        return validateClassOrPackageName(name, false, true);
     }
 
     /**
@@ -270,7 +269,7 @@ public final class ConstantUtils {
      * @throws NullPointerException if the package name is {@code null}
      */
     public static String validateInternalPackageName(String name) {
-        return validatePathBasedName(name, true, true);
+        return validateClassOrPackageName(name, true, true);
     }
 
     /**
