@@ -100,7 +100,7 @@ public interface ApplicationLayout extends AppImageLayout {
 
         @Override
         public ApplicationLayout resolveAt(Path base) {
-            return new ApplicationLayout.Impl(target,
+            return new ApplicationLayout.Impl(target.resolveAt(base),
                     resolveNullablePath(base, launchersDirectory),
                     resolveNullablePath(base, appDirectory),
                     resolveNullablePath(base, appModsDirectory),
