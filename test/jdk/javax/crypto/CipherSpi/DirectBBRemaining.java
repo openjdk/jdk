@@ -27,6 +27,8 @@
  * @summary Cipher.doFinal(ByteBuffer,ByteBuffer) fails to
  *     process when in.remaining() == 0
  * @key randomness
+ * @run main DirectBBRemaining DES 8
+ * @run main DirectBBRemaining AES 16
  */
 
 import java.nio.ByteBuffer;
@@ -53,11 +55,13 @@ public class DirectBBRemaining {
         boolean failedOnce = false;
         Exception failedReason = null;
 
-        byte[] keyBytes = new byte[8];
+        int keyInt = Integer.parseInt(args[1]);
+        byte[] keyBytes = new byte[keyInt];
         random.nextBytes(keyBytes);
-        SecretKey key = new SecretKeySpec(keyBytes, "DES");
+        String algo = args[0];
+        SecretKey key = new SecretKeySpec(keyBytes, algo);
 
-        Cipher cipher = Cipher.getInstance("DES/CBC/PKCS5Padding",
+        Cipher cipher = Cipher.getInstance(algo + "/CBC/PKCS5Padding",
                 System.getProperty("test.provider.name", "SunJCE"));
         cipher.init(Cipher.ENCRYPT_MODE, key);
 
