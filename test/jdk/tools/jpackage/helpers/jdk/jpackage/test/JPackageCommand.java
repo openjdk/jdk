@@ -819,6 +819,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 TKit.assertFileExists(cmd.appLauncherCfgPath(null));
             }
         }),
+        MAIN_JAR_FILE(cmd -> {
+            Optional.ofNullable(cmd.getArgumentValue("--main-jar", () -> null)).ifPresent(mainJar -> {
+                TKit.assertFileExists(cmd.appLayout().appDirectory().resolve(mainJar));
+            });
+        }),
         RUNTIME_DIRECTORY(cmd -> {
             TKit.assertDirectoryExists(cmd.appRuntimeDirectory());
             if (TKit.isOSX()) {
