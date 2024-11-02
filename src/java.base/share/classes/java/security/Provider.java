@@ -1311,8 +1311,7 @@ public abstract class Provider extends Properties {
     // re-use will occur e.g. as the framework traverses the provider
     // list and queries each provider with the same values until it finds
     // a matching service
-    private transient ServiceKey previousKey =
-                                            new ServiceKey("", "", false);
+    private transient ServiceKey previousKey = new ServiceKey("", "", false);
 
     /**
      * Get an unmodifiable Set of all services supported by
