@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,20 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.jpackage.internal.StandardBundlerParam.OUTPUT_DIR;
+import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.FileUtils;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
@@ -89,8 +96,21 @@ public abstract class AbstractAppImageBuilder {
             throws IOException {
         Path inputPath = SOURCE_DIR.fetchFrom(params);
         if (inputPath != null) {
-            FileUtils.copyRecursive(SOURCE_DIR.fetchFrom(params),
-                    appLayout.appDirectory());
+            inputPath = inputPath.toAbsolutePath();
+
+            List<Path> excludes = new ArrayList<>();
+
+            for (var path : List.of(TEMP_ROOT.fetchFrom(params), OUTPUT_DIR.fetchFrom(params), root)) {
+                if (Files.isDirectory(path)) {
+                    path = path.toAbsolutePath();
+                    if (path.startsWith(inputPath) && !Files.isSameFile(path, inputPath)) {
+                        excludes.add(path);
+                    }
+                }
+            }
+
+            IOUtils.copyRecursive(inputPath,
+                    appLayout.appDirectory().toAbsolutePath(), excludes);
         }
 
         AppImageFile.save(root, params);

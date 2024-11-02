@@ -122,17 +122,6 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
   }
 
-  if (UseAES || UseAESIntrinsics) {
-    if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
-      warning("AES instructions are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAES, false);
-    }
-    if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-      warning("AES intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
-    }
-  }
-
   if (UseAESCTRIntrinsics) {
     warning("AES/CTR intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
@@ -428,6 +417,23 @@ void VM_Version::c2_initialize() {
   // UseSHA
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA3Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
+  }
+
+  // AES
+  if (UseZvkn) {
+    UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);
+    UseAESIntrinsics =
+        UseAESIntrinsics || (UseAES && FLAG_IS_DEFAULT(UseAESIntrinsics));
+    if (UseAESIntrinsics && !UseAES) {
+      warning("UseAESIntrinsics enabled, but UseAES not, enabling");
+      UseAES = true;
+    }
+  } else if (UseAESIntrinsics || UseAES) {
+    if (!FLAG_IS_DEFAULT(UseAESIntrinsics) || !FLAG_IS_DEFAULT(UseAES)) {
+      warning("AES intrinsics require Zvkn extension (not available on this CPU).");
+    }
+    FLAG_SET_DEFAULT(UseAES, false);
+    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
   }
 }
 #endif // COMPILER2

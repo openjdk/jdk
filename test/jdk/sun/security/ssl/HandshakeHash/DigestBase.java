@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,13 +59,13 @@ class DigestBase extends MessageDigestSpi {
 
     public static final class SHA extends DigestBase {
         public SHA() throws Exception {
-            super("SHA", "SUN");
+            super("SHA", System.getProperty("test.provider.name", "SUN"));
         }
     }
 
     public static final class SHA256 extends DigestBase {
         public SHA256() throws Exception {
-            super("SHA-256", "SUN");
+            super("SHA-256", System.getProperty("test.provider.name", "SUN"));
         }
     }
 }

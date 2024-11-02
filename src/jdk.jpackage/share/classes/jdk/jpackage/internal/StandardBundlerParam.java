@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import static jdk.jpackage.internal.ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
@@ -86,6 +88,14 @@ final class StandardBundlerParam {
                     Arguments.CLIOptions.INPUT.getId(),
                     Path.class,
                     p -> null,
+                    (s, p) -> Path.of(s)
+            );
+
+    static final StandardBundlerParam<Path> OUTPUT_DIR =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.OUTPUT.getId(),
+                    Path.class,
+                    p -> Path.of("").toAbsolutePath(),
                     (s, p) -> Path.of(s)
             );
 
@@ -562,7 +572,7 @@ final class StandardBundlerParam {
         }
         return applicationImage;
     }
-    
+
     static OverridableResource createResource(String defaultName,
             Map<String, ? super Object> params) {
         return new OverridableResource(defaultName, ResourceLocator.class).setResourceDir(

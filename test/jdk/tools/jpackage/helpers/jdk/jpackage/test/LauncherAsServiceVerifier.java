@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import static jdk.jpackage.test.PackageType.WINDOWS;
 
 public final class LauncherAsServiceVerifier {
 
-    public final static class Builder {
+    public static final class Builder {
 
         public Builder setExpectedValue(String v) {
             expectedValue = v;
@@ -215,7 +215,7 @@ public final class LauncherAsServiceVerifier {
         if (cmd.isPackageUnpacked(msg) || cmd.isFakeRuntime(msg)) {
             return false;
         }
-        var cfgFile = CfgFile.readFromFile(cmd.appLauncherCfgPath(launcherName));
+        var cfgFile = CfgFile.load(cmd.appLauncherCfgPath(launcherName));
         if (!expectedValue.equals(cfgFile.getValueUnchecked("ArgOptions",
                 "arguments"))) {
             TKit.trace(String.format(
@@ -368,6 +368,6 @@ public final class LauncherAsServiceVerifier {
     private final Path appOutputFileName;
     private final Consumer<AdditionalLauncher> additionalLauncherCallback;
 
-    final static Set<PackageType> SUPPORTED_PACKAGES = Stream.of(LINUX, WINDOWS,
+    static final Set<PackageType> SUPPORTED_PACKAGES = Stream.of(LINUX, WINDOWS,
             Set.of(MAC_PKG)).flatMap(x -> x.stream()).collect(Collectors.toSet());
 }
