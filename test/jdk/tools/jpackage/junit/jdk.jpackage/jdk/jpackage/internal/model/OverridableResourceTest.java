@@ -23,7 +23,6 @@
 
 package jdk.jpackage.internal.model;
 
-import jdk.jpackage.internal.model.OverridableResource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +32,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.resources.ResourceLocator;
@@ -120,7 +120,7 @@ public class OverridableResourceTest {
         Path customFile = createCustomFile("foo", expectedResourceData);
 
         List<String> actualResourceData = convertToStringList(saveToFile(
-                new OverridableResource(defaultName, ResourceLocator.class)
+                createOverridableResource(defaultName)
                         .setPublicName(customFile.getFileName())
                         .setResourceDir(customFile.getParent())));
 
@@ -151,7 +151,7 @@ public class OverridableResourceTest {
                 "Bar", "Bar", "Goodbye", "JJ");
 
         final List<String> actualResourceData = convertToStringList(saveToFile(
-                new OverridableResource(defaultName, ResourceLocator.class)
+                createOverridableResource(defaultName)
                         .setPublicName(customFile.getFileName())
                         .setSubstitutionData(substitutionData)
                         .setResourceDir(customFile.getParent())));
@@ -160,7 +160,7 @@ public class OverridableResourceTest {
 
         // Don't call setPublicName()
         final Path dstFile = tempFolder.newFolder().toPath().resolve(customFile.getFileName());
-        new OverridableResource(defaultName, ResourceLocator.class)
+        createOverridableResource(defaultName)
                 .setSubstitutionData(substitutionData)
                 .setResourceDir(customFile.getParent())
                 .saveToFile(dstFile);
@@ -170,7 +170,7 @@ public class OverridableResourceTest {
 
         // Verify setSubstitutionData() stores a copy of passed in data
         Map<String, String> substitutionData2 = new HashMap(substitutionData);
-        var resource = new OverridableResource(defaultName, ResourceLocator.class)
+        var resource = createOverridableResource(defaultName)
                 .setResourceDir(customFile.getParent());
 
         resource.setSubstitutionData(substitutionData2);
@@ -225,6 +225,12 @@ public class OverridableResourceTest {
         Files.write(customFile, data);
 
         return customFile;
+    }
+    
+    private static OverridableResource createOverridableResource(String defaultName) {
+        return Optional.ofNullable(defaultName).map(name -> {
+            return new OverridableResource(defaultName, ResourceLocator.class);
+        }).orElseGet(OverridableResource::new);
     }
 
     private static List<String> convertToStringList(byte[] data) {
