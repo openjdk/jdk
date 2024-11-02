@@ -309,11 +309,7 @@ inline void clear_anchor(JavaThread* thread) {
   thread->frame_anchor()->clear();
 }
 
-static void set_anchor(JavaThread* thread, intptr_t* sp, address pc = nullptr) {
-  if (pc == nullptr) {
-    pc = ContinuationHelper::return_address_at(
-           sp - frame::sender_sp_ret_address_offset());
-  }
+static void set_anchor(JavaThread* thread, intptr_t* sp, address pc) {
   assert(pc != nullptr, "");
 
   JavaFrameAnchor* anchor = thread->frame_anchor();
@@ -323,6 +319,12 @@ static void set_anchor(JavaThread* thread, intptr_t* sp, address pc = nullptr) {
 
   assert(thread->has_last_Java_frame(), "");
   assert(thread->last_frame().cb() != nullptr, "");
+}
+
+static void set_anchor(JavaThread* thread, intptr_t* sp) {
+  address pc = ContinuationHelper::return_address_at(
+           sp - frame::sender_sp_ret_address_offset());
+  set_anchor(thread, sp, pc);
 }
 
 static void set_anchor_to_entry(JavaThread* thread, ContinuationEntry* entry) {
@@ -1839,7 +1841,6 @@ static int thaw_size(stackChunkOop chunk) {
   int size = chunk->max_thawing_size();
   size += frame::metadata_words; // For the top pc+fp in push_return_frame or top = stack_sp - frame::metadata_words in thaw_fast
   size += 2*frame::align_wiggle; // in case of alignments at the top and bottom
-  size += frame::metadata_words; // for preemption case (see possibly_adjust_frame)
   return size;
 }
 
@@ -1925,7 +1926,6 @@ protected:
   void patch_return(intptr_t* sp, bool is_last);
 
   intptr_t* handle_preempted_continuation(intptr_t* sp, Continuation::preempt_kind preempt_kind, bool fast_case);
-  inline intptr_t* possibly_adjust_frame(frame& top);
   inline intptr_t* push_cleanup_continuation();
   void throw_interrupted_exception(JavaThread* current, frame& top);
 
@@ -2481,8 +2481,6 @@ intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::pr
     // we need to adjust the current thread saved in the stub frame before restoring registers.
     JavaThread** thread_addr = frame::saved_thread_address(top);
     if (thread_addr != nullptr) *thread_addr = _thread;
-    // Some platforms require the size of the runtime frame to be adjusted.
-    sp = possibly_adjust_frame(top);
   }
   return sp;
 }
@@ -2963,29 +2961,15 @@ static void log_frames(JavaThread* thread) {
 static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp, bool preempted) {
   intptr_t* sp0 = sp;
   address pc0 = *(address*)(sp - frame::sender_sp_ret_address_offset());
-  bool use_cont_entry = false;
 
-  // Some preemption cases need to use and adjusted version of sp.
-  if (preempted) {
-    if (sp0 == cont.entrySP()) {
-      // Still preempted (monitor not acquired) so no frames were thawed.
-      assert(cont.tail()->preempted(), "");
-      use_cont_entry = true;
-    }
-#if defined (AARCH64) || defined (RISCV64)
-    else {
-      CodeBlob* cb = CodeCache::find_blob(pc0);
-      if (cb->frame_size() == 2) {
-        assert(cb->is_runtime_stub(), "");
-        // Returning to c2 runtime stub requires extra adjustment on aarch64
-        // and riscv64 (see possibly_adjust_frame()).
-        sp0 += frame::metadata_words;
-      }
-    }
-#endif
+  if (preempted && sp0 == cont.entrySP()) {
+    // Still preempted (monitor not acquired) so no frames were thawed.
+    assert(cont.tail()->preempted(), "");
+    set_anchor(thread, cont.entrySP(), cont.entryPC());
+  } else {
+    set_anchor(thread, sp0);
   }
 
-  set_anchor(thread, use_cont_entry ? cont.entrySP() : sp0, use_cont_entry ? cont.entryPC() : nullptr);
   log_frames(thread);
   if (LoomVerifyAfterThaw) {
     assert(do_verify_after_thaw(thread, cont.tail(), tty), "");

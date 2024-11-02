@@ -282,11 +282,6 @@ inline void ThawBase::patch_pd(frame& f, intptr_t* caller_sp) {
   patch_callee_link(f, fp);
 }
 
-inline intptr_t* ThawBase::possibly_adjust_frame(frame& top) {
-  // Nothing to do
-  return top.sp();
-}
-
 inline intptr_t* ThawBase::push_cleanup_continuation() {
   frame enterSpecial = new_entry_frame();
   intptr_t* sp = enterSpecial.sp();

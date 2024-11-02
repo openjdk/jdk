@@ -292,28 +292,6 @@ inline void ThawBase::patch_pd(frame& f, intptr_t* caller_sp) {
   patch_callee_link(f, fp);
 }
 
-inline intptr_t* ThawBase::possibly_adjust_frame(frame& top) {
-  intptr_t* sp = top.sp();
-  CodeBlob* cb = top.cb();
-
-  if (cb->frame_size() == 2) {
-    // C2 runtime stub case. For aarch64 the real size of the c2 runtime stub is 2 words bigger
-    // than what we think, i.e. size is 4. This is because the _last_Java_sp is not set to the
-    // sp right before making the call to the VM, but rather it is artificially set 2 words above
-    // this real sp so that we can store the return address at last_Java_sp[-1], and keep this
-    // property where we can retrieve the last_Java_pc from the last_Java_sp. But that means that
-    // once we return to the runtime stub, the code will adjust sp according to this real size.
-    // So we must adjust the frame size back here and we copy lr/rfp again.
-    sp -= 2;
-    sp[-2] = sp[0];
-    sp[-1] = sp[1];
-
-    log_develop_trace(continuations, preempt)("adjusted sp for c2 runtime stub, initial sp: " INTPTR_FORMAT " final sp: " INTPTR_FORMAT
-                                              " fp: " INTPTR_FORMAT, p2i(sp + 2), p2i(sp), sp[-2]);
-  }
-  return sp;
-}
-
 inline intptr_t* ThawBase::push_cleanup_continuation() {
   frame enterSpecial = new_entry_frame();
   intptr_t* sp = enterSpecial.sp();

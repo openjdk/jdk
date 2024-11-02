@@ -91,11 +91,6 @@ inline void ThawBase::patch_pd(frame& f, intptr_t* caller_sp) {
   Unimplemented();
 }
 
-inline intptr_t* ThawBase::possibly_adjust_frame(frame& top) {
-  Unimplemented();
-  return nullptr;
-}
-
 inline intptr_t* ThawBase::push_cleanup_continuation() {
   Unimplemented();
   return nullptr;

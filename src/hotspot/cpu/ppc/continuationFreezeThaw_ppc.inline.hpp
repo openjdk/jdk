@@ -550,11 +550,6 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
   // Keep top_frame_sp relativized.
 }
 
-inline intptr_t* ThawBase::possibly_adjust_frame(frame& top) {
-  // Nothing to do
-  return top.sp();
-}
-
 inline intptr_t* ThawBase::push_cleanup_continuation() {
   frame enterSpecial = new_entry_frame();
   frame::common_abi* enterSpecial_abi = (frame::common_abi*)enterSpecial.sp();
