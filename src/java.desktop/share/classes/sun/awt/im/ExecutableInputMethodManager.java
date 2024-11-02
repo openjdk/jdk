@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,12 @@
 package sun.awt.im;
 
 import java.awt.AWTException;
-import java.awt.CheckboxMenuItem;
 import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.EventQueue;
 import java.awt.Frame;
-import java.awt.PopupMenu;
-import java.awt.Menu;
-import java.awt.MenuItem;
 import java.awt.Toolkit;
 import sun.awt.AppContext;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InvocationEvent;
 import java.awt.im.spi.InputMethodDescriptor;
 import java.lang.reflect.InvocationTargetException;
@@ -45,12 +39,10 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.Vector;
-import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import sun.awt.InputMethodSupport;
@@ -96,7 +88,7 @@ class ExecutableInputMethodManager extends InputMethodManager
     // IM preference stuff
     private static final String preferredIMNode = "/sun/awt/im/preferredInputMethod";
     private static final String descriptorKey = "descriptor";
-    private Hashtable<String, InputMethodLocator> preferredLocatorCache = new Hashtable<>();
+    private final HashMap<String, InputMethodLocator> preferredLocatorCache = new HashMap<>();
     private Preferences userRoot;
 
     ExecutableInputMethodManager() {
@@ -561,8 +553,6 @@ class ExecutableInputMethodManager extends InputMethodManager
         writePreferredInputMethod(path, descriptor.getClass().getName());
         preferredLocatorCache.put(preferredLocale.toString().intern(),
             locator.deriveLocator(preferredLocale));
-
-        return;
     }
 
     private String createLocalePath(Locale locale) {
