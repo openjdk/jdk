@@ -41,6 +41,7 @@ import static jdk.jpackage.internal.FromParams.createPackageBundlerParam;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
+import static jdk.jpackage.internal.WinAppImageBuilder.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinLauncher;
@@ -71,7 +72,7 @@ final class WinFromParams {
                 }).map(Map.Entry::getKey).collect(toSet());
 
             return new WinLauncher.Impl(launcher, isConsole, shortcuts);
-        })).create();
+        }), APPLICATION_LAYOUT).create();
         return new WinApplication.Impl(app);
     }
 

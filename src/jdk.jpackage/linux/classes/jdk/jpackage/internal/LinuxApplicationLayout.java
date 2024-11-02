@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,29 @@
  */
 package jdk.jpackage.internal;
 
-import java.util.function.Function;
+import jdk.jpackage.internal.model.*;
+import java.nio.file.Path;
+import static jdk.jpackage.internal.util.PathUtils.resolveNullable;
 
-public final class Getter {
-    public static <T, C> T getValueOrDefault(C mainSrc, C defaultSrc, Function<C, T> getter) {
-        try {
-            return getter.apply(mainSrc);
-        } catch (UnsupportedOperationException ex) {
-            return getter.apply(defaultSrc);
-        }
+final class LinuxApplicationLayout extends ApplicationLayout.Proxy<ApplicationLayout> {
+
+    LinuxApplicationLayout(ApplicationLayout layout, Path libAppLauncher) {
+        super(layout);
+        this.libAppLauncher = libAppLauncher;
     }
+
+    @Override
+    public LinuxApplicationLayout resolveAt(Path root) {
+        return new LinuxApplicationLayout(target.resolveAt(root),
+                resolveNullable(root, libAppLauncher));
+    }
+
+    /**
+     * Path to "libapplauncher.so".
+     */
+    Path libAppLauncher() {
+        return libAppLauncher;
+    }
+
+    private final Path libAppLauncher;
 }

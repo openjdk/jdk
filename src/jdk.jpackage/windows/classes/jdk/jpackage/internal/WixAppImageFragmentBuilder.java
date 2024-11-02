@@ -63,6 +63,7 @@ import javax.xml.xpath.XPathFactory;
 import static jdk.jpackage.internal.util.CollectionUtils.toCollection;
 import jdk.jpackage.internal.model.WinLauncher.WinShortcut;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
@@ -90,19 +91,10 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         installDir = (systemWide ? PROGRAM_FILES : LOCAL_PROGRAM_FILES).resolve(
                 pkg.relativeInstallDir());
 
-        do {
-            ApplicationLayout layout = pkg.appLayout();
-            // Don't want app image info file in installed application.
-            Optional.ofNullable(AppImageFile2.getPathInAppImage(layout)).ifPresent(
-                    appImageFile -> layout.pathGroup().ghostPath(appImageFile));
-
-            // Want absolute paths to source files in generated WiX sources.
-            // This is to handle scenario if sources would be processed from
-            // different current directory.
-            appImage = layout.resolveAt(appImageRoot.toAbsolutePath().normalize());
-        } while (false);
-
-        installedAppImage = pkg.appLayout().resolveAt(INSTALLDIR);
+        // Want absolute paths to source files in generated WiX sources.
+        // This is to handle scenario if sources would be processed from
+        // different current directory.
+        initAppImageLayouts(pkg.appImageLayout(), appImageRoot.toAbsolutePath().normalize());
 
         launchers = toCollection(Optional.ofNullable(pkg.app().launchers()).orElseGet(List::of));
 
@@ -143,8 +135,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         removeFolderItems = new HashMap<>();
         defaultedMimes = new HashSet<>();
         if (packageFile != null) {
-            packageFile.save(ApplicationLayout.windowsAppImage().resolveAt(
-                    getConfigRoot()));
+            packageFile.save(ApplicationLayout.build().setAll(getConfigRoot()).create());
         }
         super.addFilesToConfigRoot();
     }
@@ -193,9 +184,28 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         associations.values().stream().flatMap(List::stream).filter(fa -> fa.icon() != null).forEach(fa -> {
             // Need to add fa icon in the image.
             Object key = new Object();
-            appImage.pathGroup().setPath(key, fa.icon());
-            installedAppImage.pathGroup().setPath(key, getInstalledFaIcoPath(fa));
+            appImagePathGroup.setPath(key, fa.icon());
+            installedAppImagePathGroup.setPath(key, getInstalledFaIcoPath(fa));
         });
+    }
+
+    private void initAppImageLayouts(AppImageLayout appImageLayout, Path appImageRoot) {
+        var srcAppImageLayout = appImageLayout.resolveAt(appImageRoot);
+
+        var installedAppImageLayout = appImageLayout.resolveAt(INSTALLDIR);
+
+        appImagePathGroup = AppImageLayout.toPathGroup(srcAppImageLayout);
+        installedAppImagePathGroup = AppImageLayout.toPathGroup(installedAppImageLayout);
+
+        if (appImageLayout instanceof ApplicationLayout appLayout) {
+            // Don't want app image info file in installed application.
+            var appImageFile = AppImageFile2.getPathInAppImage(appLayout);
+            appImagePathGroup.ghostPath(appImageFile);
+
+            installedAppImage = (ApplicationLayout)installedAppImageLayout;
+        } else {
+            installedAppImage = null;
+        }
     }
 
     private static UUID createNameUUID(String str) {
@@ -631,7 +641,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         Set<Path> allDirs = new HashSet<>();
         Set<Path> emptyDirs = new HashSet<>();
-        appImage.transform(installedAppImage, new PathGroup.TransformHandler() {
+        appImagePathGroup.transform(installedAppImagePathGroup, new PathGroup.TransformHandler() {
             @Override
             public void copyFile(Path src, Path dst) throws IOException {
                 Path dir = dst.getParent();
@@ -692,7 +702,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             throws XMLStreamException, IOException {
 
         List<Map.Entry<Path, Path>> files = new ArrayList<>();
-        appImage.transform(installedAppImage, new PathGroup.TransformHandler() {
+        appImagePathGroup.transform(installedAppImagePathGroup, new PathGroup.TransformHandler() {
             @Override
             public void copyFile(Path src, Path dst) throws IOException {
                 files.add(Map.entry(src, dst));
@@ -705,8 +715,10 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
 
         if (packageFile != null) {
-            files.add(Map.entry(PackageFile.getPathInAppImage(
-                    getConfigRoot().toAbsolutePath().normalize()),
+            files.add(Map.entry(
+                    PackageFile.getPathInAppImage(
+                            ApplicationLayout.build().setAll(
+                                    getConfigRoot().toAbsolutePath().normalize()).create()),
                     PackageFile.getPathInAppImage(installedAppImage)));
         }
 
@@ -777,12 +789,9 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     private void addIcons(XMLStreamWriter xml) throws
             XMLStreamException, IOException {
 
-        PathGroup srcPathGroup = appImage.pathGroup();
-        PathGroup dstPathGroup = installedAppImage.pathGroup();
-
         // Build list of copy operations for all .ico files in application image
         List<Map.Entry<Path, Path>> icoFiles = new ArrayList<>();
-        srcPathGroup.transform(dstPathGroup, new PathGroup.TransformHandler() {
+        appImagePathGroup.transform(installedAppImagePathGroup, new PathGroup.TransformHandler() {
             @Override
             public void copyFile(Path src, Path dst) throws IOException {
                 if (IOUtils.getFileName(src).toString().endsWith(".ico")) {
@@ -952,8 +961,10 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private InstallableFile serviceInstaller;
 
-    private ApplicationLayout appImage;
     private ApplicationLayout installedAppImage;
+
+    private PathGroup appImagePathGroup;
+    private PathGroup installedAppImagePathGroup;
 
     private Map<Path, Integer> removeFolderItems;
     private Set<String> defaultedMimes;

@@ -23,7 +23,6 @@
 
 package jdk.jpackage.internal.model;
 
-import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,10 +37,12 @@ public class ApplicationLayoutTest {
     @Rule
     public final TemporaryFolder tempFolder = new TemporaryFolder();
 
-    private void fillLinuxAppImage() throws IOException {
+    private ApplicationLayout fillAppImage() throws IOException {
         appImage = tempFolder.newFolder("Foo").toPath();
 
         Path base = appImage.getFileName();
+        
+        var layout = ApplicationLayout.build().app;
 
         tempFolder.newFolder(base.toString(), "bin");
         tempFolder.newFolder(base.toString(), "lib", "app", "mods");
@@ -55,9 +56,9 @@ public class ApplicationLayoutTest {
     }
 
     @Test
-    public void testLinux() throws IOException {
-        fillLinuxAppImage();
-        testApplicationLayout(ApplicationLayout.linuxAppImage());
+    public void test() throws IOException {
+        fillAppImage();
+        testApplicationLayout(ApplicationLayout.build().launchersDirectory(                appImage));
     }
 
     private void testApplicationLayout(ApplicationLayout layout) throws IOException {

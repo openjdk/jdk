@@ -26,9 +26,6 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.LauncherStartupInfo;
-import jdk.jpackage.internal.model.RuntimeBuilder;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -36,7 +33,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.model.RuntimeBuilder;
 import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
 import jdk.jpackage.internal.util.FileUtils;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
@@ -109,19 +109,17 @@ final class RuntimeBuilderBuilder {
                     .create();
         }
 
-        return appLayout -> {
-            final Path runtimeHome = getRuntimeHome(runtimeDir);
-
+        return appImageLayout -> {
             // copy whole runtime, need to skip jmods and src.zip
             final List<String> excludes = Arrays.asList("jmods", "src.zip");
-            FileUtils.copyRecursive(runtimeHome,
-                    appLayout.runtimeHomeDirectory(),
+            FileUtils.copyRecursive(runtimeDir,
+                    appImageLayout.runtimeDirectory(),
                     excludes,
                     LinkOption.NOFOLLOW_LINKS);
 
             // if module-path given - copy modules to appDir/mods
             List<Path> defaultModulePath = getDefaultModulePath();
-            Path dest = appLayout.appModsDirectory();
+            Path dest = ((ApplicationLayout)appImageLayout).appModsDirectory();
 
             for (Path mp : modulePath) {
                 if (!defaultModulePath.contains(mp.toAbsolutePath())) {
@@ -129,19 +127,6 @@ final class RuntimeBuilderBuilder {
                 }
             }
         };
-    }
-
-    private static Path getRuntimeHome(Path runtimeDir) {
-        if (OperatingSystem.isMacOS()) {
-            // On Mac topImage can be runtime root or runtime home.
-            Path runtimeHome = runtimeDir.resolve("Contents/Home");
-            if (Files.isDirectory(runtimeHome)) {
-                // topImage references runtime root, adjust it to pick data from
-                // runtime home
-                return runtimeHome;
-            }
-        }
-        return runtimeDir;
     }
 
     private record CopyingRuntime(RuntimeBuilderBuilder thiz, Path predefinedRuntimeImage)

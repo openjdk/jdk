@@ -50,7 +50,7 @@ final class AppImageBuilder {
         }
 
         AppImageBuilder create(Application app) {
-            return new AppImageBuilder(app, app.appLayout(), launcherCallback);
+            return new AppImageBuilder(app, app.asApplicationLayout(), launcherCallback);
         }
 
         AppImageBuilder create(Package pkg) {
@@ -72,7 +72,7 @@ final class AppImageBuilder {
     }
 
     private AppImageBuilder(Package pkg, LauncherCallback launcherCallback) {
-        this(pkg.app(), pkg.packageLayout(), launcherCallback);
+        this(pkg.app(), pkg.asPackageApplicationLayout(), launcherCallback);
     }
 
     private static void copyRecursive(Path srcDir, Path dstDir, BuildEnv env) throws IOException {
@@ -111,7 +111,7 @@ final class AppImageBuilder {
         }
 
         if (withAppImageFile) {
-            new AppImageFile2(app).save(env.appImageDir());
+            new AppImageFile2(app).save(resolvedAppLayout);
         }
 
         for (var launcher : app.launchers()) {

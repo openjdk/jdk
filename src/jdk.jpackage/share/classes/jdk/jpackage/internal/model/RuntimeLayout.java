@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,39 +22,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jpackage.internal.model;
 
-package jdk.jpackage.internal;
-
-import jdk.jpackage.internal.model.ApplicationLayout;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 
-final class PackageFile {
 
-    /**
-     * Returns path to package file.
-     * @param appLayout - application layout
-     */
-    static Path getPathInAppImage(ApplicationLayout appLayout) {
-        return appLayout.appDirectory().resolve(FILENAME);
-    }
+/**
+ * App image directory layout.
+ */
+public interface RuntimeLayout extends AppImageLayout {
 
-    PackageFile(String packageName) {
-        Objects.requireNonNull(packageName);
-        this.packageName = packageName;
-    }
+    final class Impl extends AppImageLayout.Proxy<AppImageLayout> implements RuntimeLayout {
 
-    void save(ApplicationLayout appLayout) throws IOException {
-        Path dstDir = appLayout.appDirectory();
-        if (dstDir != null) {
-            Files.createDirectories(dstDir);
-            Files.writeString(dstDir.resolve(FILENAME), packageName);
+        public Impl(AppImageLayout target) {
+            super(target);
+        }
+
+        @Override
+        public RuntimeLayout resolveAt(Path root) {
+            return new RuntimeLayout.Impl(target.resolveAt(root));
         }
     }
-
-    private final String packageName;
-
-    private static final String FILENAME = ".package";
 }

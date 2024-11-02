@@ -30,8 +30,7 @@ import java.util.List;
 
 public interface RuntimeBuilder {
 
-    public void createRuntime(ApplicationLayout appLayout) throws
-            PackagerException, IOException;
+    public void createRuntime(AppImageLayout appImageLayout) throws PackagerException, IOException;
 
     public static List<Path> getDefaultModulePath() {
         return List.of(

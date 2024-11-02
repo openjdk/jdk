@@ -24,198 +24,238 @@
  */
 package jdk.jpackage.internal.model;
 
-import jdk.jpackage.internal.util.PathGroup;
-import jdk.internal.util.OperatingSystem;
-
 import java.nio.file.Path;
-import java.util.Map;
-
+import static jdk.jpackage.internal.util.PathUtils.resolveNullable;
 
 /**
  * Application directory layout.
  */
-public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayout> {
-    public enum PathRole {
-        /**
-         * Java run-time directory.
-         */
-        RUNTIME,
-
-        /**
-         * Java run-time home directory.
-         */
-        RUNTIME_HOME,
-
-        /**
-         * Application data directory.
-         */
-        APP,
-
-        /**
-         * Directory with application launchers.
-         */
-        LAUNCHERS,
-
-        /**
-         * Directory for files for desktop integration.
-         */
-        DESKTOP,
-
-        /**
-         * Directory with application Java modules.
-         */
-        MODULES,
-
-        /**
-         * Linux app launcher shared library.
-         */
-        LINUX_APPLAUNCHER_LIB,
-
-        /**
-         * Location of additional application content
-         */
-        CONTENT
-    }
-
-    private ApplicationLayout(Map<Object, Path> paths) {
-        data = new PathGroup(paths);
-    }
-
-    private ApplicationLayout(PathGroup data) {
-        this.data = data;
-    }
-
-    @Override
-    public PathGroup pathGroup() {
-        return data;
-    }
-
-    @Override
-    public ApplicationLayout resolveAt(Path root) {
-        return new ApplicationLayout(pathGroup().resolveAt(root));
-    }
+public interface ApplicationLayout extends AppImageLayout {
 
     /**
      * Path to launchers directory.
      */
-    public Path launchersDirectory() {
-        return pathGroup().getPath(PathRole.LAUNCHERS);
-    }
+    Path launchersDirectory();
 
     /**
      * Path to application data directory.
      */
-    public Path appDirectory() {
-        return pathGroup().getPath(PathRole.APP);
-    }
-
-    /**
-     * Path to Java run-time directory.
-     */
-    public Path runtimeDirectory() {
-        return pathGroup().getPath(PathRole.RUNTIME);
-    }
-
-    /**
-     * Path to Java run-time home directory.
-     */
-    public Path runtimeHomeDirectory() {
-        return pathGroup().getPath(PathRole.RUNTIME_HOME);
-    }
+    Path appDirectory();
 
     /**
      * Path to application mods directory.
      */
-    public Path appModsDirectory() {
-        return pathGroup().getPath(PathRole.MODULES);
-    }
+    Path appModsDirectory();
 
     /**
      * Path to directory with application's desktop integration files.
      */
-    public Path destktopIntegrationDirectory() {
-        return pathGroup().getPath(PathRole.DESKTOP);
-    }
+    Path destktopIntegrationDirectory();
 
     /**
      * Path to directory with additional application content.
      */
-    public Path contentDirectory() {
-        return pathGroup().getPath(PathRole.CONTENT);
-    }
+    Path contentDirectory();
 
-    public static ApplicationLayout linuxAppImage() {
-        return new ApplicationLayout(Map.of(
-                PathRole.LAUNCHERS, Path.of("bin"),
-                PathRole.APP, Path.of("lib/app"),
-                PathRole.RUNTIME, Path.of("lib/runtime"),
-                PathRole.RUNTIME_HOME, Path.of("lib/runtime"),
-                PathRole.DESKTOP, Path.of("lib"),
-                PathRole.MODULES, Path.of("lib/app/mods"),
-                PathRole.LINUX_APPLAUNCHER_LIB, Path.of("lib/libapplauncher.so"),
-                PathRole.CONTENT, Path.of("lib")
-        ));
-    }
+    @Override
+    ApplicationLayout resolveAt(Path root);
 
-    public static ApplicationLayout windowsAppImage() {
-        return new ApplicationLayout(Map.of(
-                PathRole.LAUNCHERS, Path.of(""),
-                PathRole.APP, Path.of("app"),
-                PathRole.RUNTIME, Path.of("runtime"),
-                PathRole.RUNTIME_HOME, Path.of("runtime"),
-                PathRole.DESKTOP, Path.of(""),
-                PathRole.MODULES, Path.of("app/mods"),
-                PathRole.CONTENT, Path.of("")
-        ));
-    }
+    final class Impl extends AppImageLayout.Proxy<AppImageLayout> implements ApplicationLayout {
 
-    public static ApplicationLayout macAppImage() {
-        return new ApplicationLayout(Map.of(
-                PathRole.LAUNCHERS, Path.of("Contents/MacOS"),
-                PathRole.APP, Path.of("Contents/app"),
-                PathRole.RUNTIME, Path.of("Contents/runtime"),
-                PathRole.RUNTIME_HOME, Path.of("Contents/runtime/Contents/Home"),
-                PathRole.DESKTOP, Path.of("Contents/Resources"),
-                PathRole.MODULES, Path.of("Contents/app/mods"),
-                PathRole.CONTENT, Path.of("Contents")
-        ));
-    }
-
-    public static ApplicationLayout platformAppImage() {
-        if (OperatingSystem.isWindows()) {
-            return windowsAppImage();
+        public Impl(AppImageLayout target, Path launchersDirectory,
+                Path appDirectory, Path appModsDirectory,
+                Path destktopIntegrationDirectory, Path contentDirectory) {
+            super(target);
+            this.launchersDirectory = launchersDirectory;
+            this.appDirectory = appDirectory;
+            this.appModsDirectory = appModsDirectory;
+            this.destktopIntegrationDirectory = destktopIntegrationDirectory;
+            this.contentDirectory = contentDirectory;
         }
 
-        if (OperatingSystem.isLinux()) {
-            return linuxAppImage();
+        @Override
+        public Path launchersDirectory() {
+            return launchersDirectory;
         }
 
-        if (OperatingSystem.isMacOS()) {
-            return macAppImage();
+        @Override
+        public Path appDirectory() {
+            return appDirectory;
         }
 
-        throw new IllegalArgumentException("Unknown platform: " + OperatingSystem.current());
+        @Override
+        public Path appModsDirectory() {
+            return appModsDirectory;
+        }
+
+        @Override
+        public Path destktopIntegrationDirectory() {
+            return destktopIntegrationDirectory;
+        }
+
+        @Override
+        public Path contentDirectory() {
+            return contentDirectory;
+        }
+
+        @Override
+        public ApplicationLayout resolveAt(Path base) {
+            return new ApplicationLayout.Impl(target,
+                    resolveNullable(base, launchersDirectory),
+                    resolveNullable(base, appDirectory),
+                    resolveNullable(base, appModsDirectory),
+                    resolveNullable(base, destktopIntegrationDirectory),
+                    resolveNullable(base, contentDirectory));
+        }
+
+        private final Path launchersDirectory;
+        private final Path appDirectory;
+        private final Path appModsDirectory;
+        private final Path destktopIntegrationDirectory;
+        private final Path contentDirectory;
     }
 
-    public static ApplicationLayout javaRuntime() {
-        return new ApplicationLayout(Map.of(PathRole.RUNTIME, Path.of("")));
+    public static Builder build() {
+        return new Builder();
     }
 
-    public static ApplicationLayout linuxUsrTreePackageImage(Path prefix,
-            String packageName) {
-        final Path lib = prefix.resolve(Path.of("lib", packageName));
-        return new ApplicationLayout(Map.of(
-                PathRole.LAUNCHERS, prefix.resolve("bin"),
-                PathRole.APP, lib.resolve("app"),
-                PathRole.RUNTIME, lib.resolve("runtime"),
-                PathRole.RUNTIME_HOME, lib.resolve("runtime"),
-                PathRole.DESKTOP, lib,
-                PathRole.MODULES, lib.resolve("app/mods"),
-                PathRole.LINUX_APPLAUNCHER_LIB, lib.resolve(
-                        "lib/libapplauncher.so"),
-                PathRole.CONTENT, lib
-        ));
+    public static Builder buildFrom(ApplicationLayout appLayout) {
+        return new Builder(appLayout);
     }
 
-    private final PathGroup data;
+    class Proxy<T extends ApplicationLayout> extends AppImageLayout.Proxy<T> implements ApplicationLayout {
+
+        public Proxy(T target) {
+            super(target);
+        }
+
+        @Override
+        public Path launchersDirectory() {
+            return target.launchersDirectory();
+        }
+
+        @Override
+        public Path appDirectory() {
+            return target.appDirectory();
+        }
+
+        @Override
+        public Path appModsDirectory() {
+            return target.appModsDirectory();
+        }
+
+        @Override
+        public Path destktopIntegrationDirectory() {
+            return target.destktopIntegrationDirectory();
+        }
+
+        @Override
+        public Path contentDirectory() {
+            return target.contentDirectory();
+        }
+
+        @Override
+        public ApplicationLayout resolveAt(Path root) {
+            return target.resolveAt(root);
+        }
+    }
+
+    final class Builder {
+        private Builder() {
+        }
+
+        private Builder(ApplicationLayout appLayout) {
+            launchersDirectory = appLayout.launchersDirectory();
+            appDirectory = appLayout.appDirectory();
+            runtimeDirectory = appLayout.runtimeDirectory();
+            appModsDirectory = appLayout.appModsDirectory();
+            destktopIntegrationDirectory = appLayout.destktopIntegrationDirectory();
+            contentDirectory = appLayout.contentDirectory();
+        }
+
+        public ApplicationLayout create() {
+            return new ApplicationLayout.Impl(
+                    new AppImageLayout.Impl(runtimeDirectory),
+                    launchersDirectory,
+                    appDirectory,
+                    appModsDirectory,
+                    destktopIntegrationDirectory,
+                    contentDirectory);
+        }
+
+        public Builder setAll(String path) {
+            return setAll(Path.of(path));
+        }
+
+        public Builder setAll(Path path) {
+            launchersDirectory(path);
+            appDirectory(path);
+            runtimeDirectory(path);
+            appModsDirectory(path);
+            destktopIntegrationDirectory(path);
+            contentDirectory(path);
+            return this;
+        }
+
+        public Builder launchersDirectory(String v) {
+            return launchersDirectory(Path.of(v));
+        }
+
+        public Builder launchersDirectory(Path v) {
+            launchersDirectory = v;
+            return this;
+        }
+
+        public Builder appDirectory(String v) {
+            return appDirectory(Path.of(v));
+        }
+
+        public Builder appDirectory(Path v) {
+            appDirectory = v;
+            return this;
+        }
+
+        public Builder runtimeDirectory(String v) {
+            return runtimeDirectory(Path.of(v));
+        }
+
+        public Builder runtimeDirectory(Path v) {
+            runtimeDirectory = v;
+            return this;
+        }
+
+        public Builder appModsDirectory(String v) {
+            return appModsDirectory(Path.of(v));
+        }
+
+        public Builder appModsDirectory(Path v) {
+            appModsDirectory = v;
+            return this;
+        }
+
+        public Builder destktopIntegrationDirectory(String v) {
+            return destktopIntegrationDirectory(Path.of(v));
+        }
+
+        public Builder destktopIntegrationDirectory(Path v) {
+            destktopIntegrationDirectory = v;
+            return this;
+        }
+
+        public Builder contentDirectory(String v) {
+            return contentDirectory(Path.of(v));
+        }
+
+        public Builder contentDirectory(Path v) {
+            contentDirectory = v;
+            return this;
+        }
+
+        private Path launchersDirectory;
+        private Path appDirectory;
+        private Path runtimeDirectory;
+        private Path appModsDirectory;
+        private Path destktopIntegrationDirectory;
+        private Path contentDirectory;
+    }
 }

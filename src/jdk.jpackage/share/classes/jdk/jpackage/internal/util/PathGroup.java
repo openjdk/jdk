@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.IOUtils;
 
 
 /**
@@ -130,37 +129,6 @@ public final class PathGroup {
 
     public void transform(PathGroup dst, TransformHandler handler) throws IOException {
         copy(this, dst, handler, false);
-    }
-
-    public static interface Facade<T> {
-        PathGroup pathGroup();
-
-        default Collection<Path> paths() {
-            return pathGroup().paths();
-        }
-
-        default List<Path> roots() {
-            return pathGroup().roots();
-        }
-
-        default long sizeInBytes() throws IOException {
-            return pathGroup().sizeInBytes();
-        }
-
-        T resolveAt(Path root);
-
-        default void copy(Facade<T> dst) throws IOException {
-            pathGroup().copy(dst.pathGroup());
-        }
-
-        default void move(Facade<T> dst) throws IOException {
-            pathGroup().move(dst.pathGroup());
-        }
-
-        default void transform(Facade<T> dst, TransformHandler handler) throws
-                IOException {
-            pathGroup().transform(dst.pathGroup(), handler);
-        }
     }
 
     public static interface TransformHandler {

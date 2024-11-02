@@ -28,9 +28,11 @@ import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import jdk.jpackage.internal.AppImageFile2.LauncherInfo;
+import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ConfigException;
@@ -40,6 +42,8 @@ import jdk.jpackage.internal.model.RuntimeBuilder;
 final class ApplicationBuilder {
 
     Application create() throws ConfigException {
+        Objects.requireNonNull(appImageLayout);
+
         final var launchersAsList = Optional.ofNullable(launchers).map(
                 ApplicationLaunchers::asList).orElseGet(List::of);
         final String effectiveName;
@@ -60,7 +64,7 @@ final class ApplicationBuilder {
                 Optional.ofNullable(version).orElseGet(DEFAULTS::version),
                 Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor),
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
-                srcDir, contentDirs, runtimeBuilder, launchersAsList);
+                srcDir, contentDirs, appImageLayout, runtimeBuilder, launchersAsList);
     }
 
     ApplicationBuilder runtimeBuilder(RuntimeBuilder v) {
@@ -89,6 +93,11 @@ final class ApplicationBuilder {
 
     ApplicationBuilder launchers(ApplicationLaunchers v) {
         launchers = v;
+        return this;
+    }
+
+    ApplicationBuilder appImageLayout(AppImageLayout v) {
+        appImageLayout = v;
         return this;
     }
 
@@ -137,9 +146,10 @@ final class ApplicationBuilder {
     private String copyright;
     private Path srcDir;
     private List<Path> contentDirs;
+    private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;
     private ApplicationLaunchers launchers;
-    
+
     private static final Defaults DEFAULTS = new Defaults(
             I18N.getString("param.description.default"),
             "1.0",

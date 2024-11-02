@@ -62,29 +62,33 @@ public interface Package {
     /**
      * Returns source app image layout.
      */
-    default ApplicationLayout appLayout() {
-        return app().appLayout();
+    default AppImageLayout appImageLayout() {
+        return app().imageLayout();
+    }
+
+    default ApplicationLayout asApplicationLayout() {
+        return app().asApplicationLayout();
     }
 
     /**
      * Returns app image layout inside of the package.
      */
-    default ApplicationLayout packageLayout() {
-        var layout = appLayout();
-        var pathGroup = layout.pathGroup();
-        var baseDir = relativeInstallDir();
+    default AppImageLayout packageLayout() {
+        return appImageLayout().resolveAt(relativeInstallDir());
+    }
 
-        for (var key : pathGroup.keys()) {
-            pathGroup.setPath(key, baseDir.resolve(pathGroup.getPath(key)));
+    default ApplicationLayout asPackageApplicationLayout() {
+        if (packageLayout() instanceof ApplicationLayout layout) {
+            return layout;
+        } else {
+            throw new UnsupportedOperationException();
         }
-
-        return layout;
     }
 
     /**
      * Returns app image layout of the installed package.
      */
-    default ApplicationLayout installedPackageLayout() {
+    default AppImageLayout installedPackageLayout() {
         Path root = relativeInstallDir();
         if (type() instanceof StandardPackageType type) {
             switch (type) {
@@ -93,7 +97,15 @@ public interface Package {
                 }
             }
         }
-        return appLayout().resolveAt(root);
+        return appImageLayout().resolveAt(root);
+    }
+
+    default ApplicationLayout asInstalledPackageApplicationLayout() {
+        if (installedPackageLayout() instanceof ApplicationLayout layout) {
+            return layout;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**

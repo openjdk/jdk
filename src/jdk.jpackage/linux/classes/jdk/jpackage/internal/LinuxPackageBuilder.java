@@ -24,9 +24,12 @@
  */
 package jdk.jpackage.internal;
 
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.StandardPackageType;
@@ -50,7 +53,18 @@ final class LinuxPackageBuilder {
 
         validatePackageName(pkg.packageName(), pkg.asStandardPackageType());
 
+        var reply = create(pkg, pkg.packageLayout());
+        if (reply.isInstallDirInUsrTree()) {
+            reply = create(pkg, usrTreePackageLayout(pkg.relativeInstallDir(), pkg.packageName()));
+        }
+
+        return reply;
+    }
+
+    private LinuxPackage create(jdk.jpackage.internal.model.Package pkg,
+            AppImageLayout pkgLayout) throws ConfigException {
         return new LinuxPackage.Impl(pkg,
+                pkgLayout,
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
                 Optional.ofNullable(category).orElseGet(DEFAULTS::category),
                 additionalDependencies,
@@ -76,6 +90,20 @@ final class LinuxPackageBuilder {
     LinuxPackageBuilder release(String v) {
         release = v;
         return this;
+    }
+
+    private static LinuxApplicationLayout usrTreePackageLayout(Path prefix, String packageName) {
+        final var lib = prefix.resolve(Path.of("lib", packageName));
+        return new LinuxApplicationLayout(
+                ApplicationLayout.build()
+                        .launchersDirectory(prefix.resolve("bin"))
+                        .appDirectory(lib.resolve("app"))
+                        .runtimeDirectory(lib.resolve("runtime"))
+                        .destktopIntegrationDirectory(lib)
+                        .appModsDirectory(lib.resolve("app/mods"))
+                        .contentDirectory(lib)
+                        .create(),
+                lib.resolve("lib/libapplauncher.so"));
     }
 
     private static void validatePackageName(String packageName,
@@ -132,5 +160,5 @@ final class LinuxPackageBuilder {
 
     private static final Defaults DEFAULTS = new Defaults("1", I18N.getString(
             "param.menu-group.default"), "misc");
-    
+
 }

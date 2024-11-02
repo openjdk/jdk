@@ -28,7 +28,6 @@ import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.LauncherModularStartupInfo;
-import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.RuntimeBuilder;
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +53,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.module.ModulePath;
+import jdk.jpackage.internal.model.AppImageLayout;
 
 final class JLinkRuntimeBuilder implements RuntimeBuilder {
 
@@ -62,10 +62,10 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     @Override
-    public void createRuntime(ApplicationLayout appLayout) throws PackagerException, IOException {
+    public void createRuntime(AppImageLayout appImageLayout) throws PackagerException, IOException {
         var args = new ArrayList<String>();
         args.add("--output");
-        args.add(appLayout.runtimeHomeDirectory().toString());
+        args.add(appImageLayout.runtimeDirectory().toString());
         args.addAll(jlinkCmdLine);
 
         StringWriter writer = new StringWriter();

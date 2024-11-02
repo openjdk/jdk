@@ -236,7 +236,7 @@ final class DesktopIntegration extends ShellCustomAction {
                 f -> f.installPath().toString()).orElse(null));
         data.put("DEPLOY_BUNDLE_CATEGORY", pkg.category());
         data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(
-                pkg.installedPackageLayout().launchersDirectory().resolve(
+                pkg.asInstalledPackageApplicationLayout().launchersDirectory().resolve(
                         launcher.executableNameWithSuffix()).toString()));
 
         return data;
@@ -337,9 +337,9 @@ final class DesktopIntegration extends ShellCustomAction {
      *  - installPath(): path where it should be installed by package manager;
      */
     private InstallableFile createDesktopFile(String fileName) {
-        var srcPath = pkg.packageLayout().resolveAt(env.appImageDir()).destktopIntegrationDirectory().resolve(
+        var srcPath = pkg.asPackageApplicationLayout().resolveAt(env.appImageDir()).destktopIntegrationDirectory().resolve(
                 fileName);
-        var installPath = pkg.installedPackageLayout().destktopIntegrationDirectory().resolve(
+        var installPath = pkg.asInstalledPackageApplicationLayout().destktopIntegrationDirectory().resolve(
                 fileName);
         return new InstallableFile(srcPath, installPath);
     }

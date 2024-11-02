@@ -124,12 +124,14 @@ final class CfgFile {
     }
 
     private ApplicationLayout createAppCfgLayout(ApplicationLayout appLayout) {
-        ApplicationLayout appCfgLayout = appLayout.resolveAt(Path.of("$ROOTDIR"));
-        appCfgLayout.pathGroup().setPath(ApplicationLayout.PathRole.APP,
-                Path.of("$APPDIR"));
-        appCfgLayout.pathGroup().setPath(ApplicationLayout.PathRole.MODULES,
-                appCfgLayout.appDirectory().resolve(appCfgLayout.appModsDirectory().getFileName()));
-        return appCfgLayout;
+        return ApplicationLayout
+                .buildFrom(appLayout.resolveAt(Path.of("$ROOTDIR")))
+                .appDirectory("$APPDIR")
+                .appModsDirectory(
+                        Path.of("$APPDIR").resolve(
+                                appLayout.appModsDirectory().relativize(
+                                        appLayout.appDirectory())))
+                .create();
     }
 
     private final LauncherStartupInfo startupInfo;

@@ -39,13 +39,7 @@ public interface LinuxPackage extends Package {
     String arch();
 
     @Override
-    default ApplicationLayout packageLayout() {
-        if (isInstallDirInUsrTree()) {
-            return ApplicationLayout.linuxUsrTreePackageImage(relativeInstallDir(), packageName());
-        } else {
-            return Package.super.packageLayout();
-        }
-    }
+    AppImageLayout packageLayout();
 
     @Override
     default String packageFileName() {
@@ -71,14 +65,22 @@ public interface LinuxPackage extends Package {
 
     class Impl extends Package.Proxy<Package> implements LinuxPackage {
 
-        public Impl(Package target, String menuGroupName, String category,
-                String additionalDependencies, String release, String arch) throws ConfigException {
+        public Impl(Package target, AppImageLayout packageLayout,
+                String menuGroupName, String category,
+                String additionalDependencies, String release, String arch)
+                throws ConfigException {
             super(target);
+            this.packageLayout = packageLayout;
             this.menuGroupName = menuGroupName;
             this.category = category;
             this.release = release;
             this.additionalDependencies = additionalDependencies;
             this.arch = arch;
+        }
+
+        @Override
+        public AppImageLayout packageLayout() {
+            return packageLayout;
         }
 
         @Override
@@ -106,6 +108,7 @@ public interface LinuxPackage extends Package {
             return arch;
         }
 
+        private final AppImageLayout packageLayout;
         private final String menuGroupName;
         private final String category;
         private final String additionalDependencies;
@@ -117,6 +120,11 @@ public interface LinuxPackage extends Package {
 
         public Proxy(T target) {
             super(target);
+        }
+
+        @Override
+        public AppImageLayout packageLayout() {
+            return target.packageLayout();
         }
 
         @Override

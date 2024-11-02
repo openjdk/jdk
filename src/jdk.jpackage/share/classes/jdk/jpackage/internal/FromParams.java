@@ -55,15 +55,17 @@ import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
+import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 
 final class FromParams {
 
     static ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
-            Function<Map<String, ? super Object>, Launcher> launcherMapper)
+            Function<Map<String, ? super Object>, Launcher> launcherMapper, AppImageLayout appLayout)
             throws ConfigException, IOException {
 
         var appBuilder = new ApplicationBuilder()
@@ -73,12 +75,14 @@ final class FromParams {
                 .vendor(VENDOR.fetchFrom(params))
                 .copyright(COPYRIGHT.fetchFrom(params))
                 .srcDir(SOURCE_DIR.fetchFrom(params))
+                .appImageLayout(appLayout)
                 .contentDirs(APP_CONTENT.fetchFrom(params));
 
         var predefinedAppImage = getPredefinedAppImage(params);
 
         if (predefinedAppImage != null) {
-            var appIMafeFile = AppImageFile2.load(predefinedAppImage);
+            var appIMafeFile = AppImageFile2.load(
+                    (ApplicationLayout) appLayout.resolveAt(predefinedAppImage));
             appBuilder.initFromAppImage(appIMafeFile, launcherInfo -> {
                 var launcherParams = mapLauncherInfo(launcherInfo);
                 return launcherMapper.apply(mergeParams(params, launcherParams));

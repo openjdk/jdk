@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.NoSuchFileException;
-import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,11 +116,9 @@ final class AppImageFile2 {
     /**
      * Saves file with application image info in application image using values
      * from this instance.
-     * @param appImageDir - path to application image
-     * @throws IOException
      */
-    void save(Path appImageDir) throws IOException {
-        XmlUtils.createXml(getPathInAppImage(appImageDir), xml -> {
+    void save(ApplicationLayout appLayout) throws IOException {
+        XmlUtils.createXml(getPathInAppImage(appLayout), xml -> {
             xml.writeStartElement("jpackage-state");
             xml.writeAttribute("version", creatorVersion);
             xml.writeAttribute("platform", creatorPlatform);
@@ -160,32 +157,20 @@ final class AppImageFile2 {
 
     /**
      * Returns path to application image info file.
-     * @param appImageDir - path to application image
-     */
-    static Path getPathInAppImage(Path appImageDir) {
-        return getPathInAppImage(ApplicationLayout.platformAppImage().resolveAt(
-                appImageDir));
-    }
-
-    /**
-     * Returns path to application image info file.
      * @param appLayout - application layout
      */
     static Path getPathInAppImage(ApplicationLayout appLayout) {
-        return Optional.ofNullable(appLayout.appDirectory()).map(
-                path -> path.resolve(FILENAME)).orElse(null);
+        return appLayout.appDirectory().resolve(FILENAME);
     }
 
     /**
      * Loads application image info from application image.
-     * @param appImageDir - path to application image
-     * @return valid info about application image or null
-     * @throws IOException
+     * @param appLayout - application layout
      */
-    static AppImageFile2 load(Path appImageDir) throws ConfigException, IOException {
+    static AppImageFile2 load(ApplicationLayout appLayout) throws ConfigException, IOException {
+        var srcFilePath = getPathInAppImage(appLayout);
         try {
-            Document doc = XmlUtils.initDocumentBuilder().parse(
-                    Files.newInputStream(getPathInAppImage(appImageDir)));
+            Document doc = XmlUtils.initDocumentBuilder().parse(Files.newInputStream(srcFilePath));
 
             XPath xPath = XPathFactory.newInstance().newXPath();
 
@@ -263,12 +248,14 @@ final class AppImageFile2 {
             // Exception reading input XML (probably malformed XML)
             throw new IOException(ex);
         } catch (NoSuchFileException ex) {
-            throw new ConfigException(MessageFormat.format(I18N.getString(
-                    "error.foreign-app-image"), appImageDir), null);
+            throw ConfigException.build()
+                    .message(I18N.format("error.foreign-app-image", FILENAME))
+                    .create();
         } catch (InavlidAppImageFileException ex) {
             // Invalid input XML
-            throw new ConfigException(MessageFormat.format(I18N.getString(
-                    "error.invalid-app-image"), appImageDir), null);
+            throw ConfigException.build()
+                    .message(I18N.format("error.invalid-app-image-file", FILENAME))
+                    .create();
         }
     }
 

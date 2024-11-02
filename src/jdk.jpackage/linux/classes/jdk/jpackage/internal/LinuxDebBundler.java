@@ -52,6 +52,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.AppImageLayout;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 
@@ -347,7 +348,9 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         data.put("APPLICATION_COPYRIGHT", pkg.app().copyright());
         data.put("APPLICATION_LICENSE_TEXT", licenseText);
         data.put("APPLICATION_ARCH", pkg.arch());
-        data.put("APPLICATION_INSTALLED_SIZE", Long.toString(pkg.packageLayout().resolveAt(env.appImageDir()).sizeInBytes() >> 10));
+        data.put("APPLICATION_INSTALLED_SIZE", Long.toString(
+                AppImageLayout.toPathGroup(pkg.packageLayout().resolveAt(
+                        env.appImageDir())).sizeInBytes() >> 10));
         data.put("APPLICATION_HOMEPAGE", Optional.ofNullable(pkg.aboutURL()).map(
                 value -> "Homepage: " + value).orElse(""));
         data.put("APPLICATION_VERSION_WITH_RELEASE", ((LinuxDebPackage) pkg).versionWithRelease());

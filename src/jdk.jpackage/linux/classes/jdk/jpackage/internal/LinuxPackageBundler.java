@@ -39,6 +39,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.ApplicationLayout;
 
 abstract class LinuxPackageBundler extends AbstractBundler {
 
@@ -125,12 +127,16 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                     }
                 }
 
-                // Copy app layout omitting application image info file.
-                var srcLayout = pkg.appLayout().resolveAt(srcAppImageDir);
-                Optional.ofNullable(AppImageFile2.getPathInAppImage(srcLayout)).ifPresent(
-                        appImageFile -> srcLayout.pathGroup().ghostPath(
-                                appImageFile));
-                srcLayout.copy(pkg.packageLayout().resolveAt(pkgEnv.appImageDir()));
+                var srcLayout = pkg.appImageLayout().resolveAt(srcAppImageDir);
+                var srcLayoutPathGroup = AppImageLayout.toPathGroup(srcLayout);
+
+                if (srcLayout instanceof ApplicationLayout appLayout) {
+                    // Copy app layout omitting application image info file.
+                    srcLayoutPathGroup.ghostPath(AppImageFile2.getPathInAppImage(appLayout));
+                }
+
+                srcLayoutPathGroup.copy(AppImageLayout.toPathGroup(
+                        pkg.packageLayout().resolveAt(pkgEnv.appImageDir())));
             }
 
             for (var ca : customActions) {

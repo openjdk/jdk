@@ -79,8 +79,11 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
 
             unitFilename = getServiceUnitFileName(pkg.packageName(), launcher.executableName());
 
-            getResource().setPublicName(unitFilename).addSubstitutionDataEntry("APPLICATION_LAUNCHER",
-                    Enquoter.forPropertyValues().applyTo(pkg.installedPackageLayout().resolveAt(env.appImageDir()).launchersDirectory().resolve(
+            getResource().setPublicName(unitFilename).addSubstitutionDataEntry(
+                    "APPLICATION_LAUNCHER",
+                    Enquoter.forPropertyValues().applyTo(
+                            pkg.asInstalledPackageApplicationLayout().resolveAt(
+                                    env.appImageDir()).launchersDirectory().resolve(
                                     getName()).toString()));
         }
 

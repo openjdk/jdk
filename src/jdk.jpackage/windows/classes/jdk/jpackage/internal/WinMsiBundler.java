@@ -29,7 +29,6 @@ import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.WinMsiPackage;
 import jdk.jpackage.internal.model.OverridableResource;
-import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
@@ -55,6 +54,9 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.RuntimeLayout;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -207,13 +209,13 @@ public class WinMsiBundler  extends AbstractBundler {
     private void prepareProto(WinMsiPackage pkg, BuildEnv env) throws
             PackagerException, IOException {
 
-        ApplicationLayout appLayout;
+        AppImageLayout appImageLayout;
 
         // We either have an application image or need to build one.
         if (pkg.app().runtimeBuilder() != null) {
             // Runtime builder is present, build app image.
             WinAppImageBuilder.build().create(pkg.app()).execute(env);
-            appLayout = pkg.appLayout().resolveAt(env.appImageDir());
+            appImageLayout = pkg.appImageLayout().resolveAt(env.appImageDir());
         } else {
             Path srcAppImageDir = pkg.predefinedAppImage();
             if (srcAppImageDir == null) {
@@ -227,17 +229,17 @@ public class WinMsiBundler  extends AbstractBundler {
                 }
             }
 
-            appLayout = pkg.appLayout().resolveAt(srcAppImageDir);
+            appImageLayout = pkg.appImageLayout().resolveAt(srcAppImageDir);
         }
 
         // Configure installer icon
-        if (pkg.isRuntimeInstaller()) {
+        if (appImageLayout instanceof RuntimeLayout runtimeLayout) {
             // Use icon from java launcher.
             // Assume java.exe exists in Java Runtime being packed.
             // Ignore custom icon if any as we don't want to copy anything in
             // Java Runtime image.
-            installerIcon = appLayout.runtimeDirectory().resolve(Path.of("bin", "java.exe"));
-        } else {
+            installerIcon = runtimeLayout.runtimeDirectory().resolve(Path.of("bin", "java.exe"));
+        } else if (appImageLayout instanceof ApplicationLayout appLayout) {
             installerIcon = appLayout.launchersDirectory().resolve(
                     pkg.app().mainLauncher().executableNameWithSuffix());
         }
@@ -323,8 +325,8 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpAboutURL", value);
         });
 
-        data.put("JpAppSizeKb", Long.toString(pkg.packageLayout().resolveAt(
-                env.appImageDir()).sizeInBytes() >> 10));
+        data.put("JpAppSizeKb", Long.toString(AppImageLayout.toPathGroup(
+                pkg.packageLayout().resolveAt(env.appImageDir())).sizeInBytes() >> 10));
 
         data.put("JpConfigDir", env.configDir().toAbsolutePath().toString());
 

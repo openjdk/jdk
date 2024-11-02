@@ -30,6 +30,7 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.WinApplication;
 import java.io.IOException;
 import java.nio.file.Path;
+import jdk.jpackage.internal.model.ApplicationLayout;
 
 final class WinAppImageBuilder {
 
@@ -61,4 +62,11 @@ final class WinAppImageBuilder {
                     ctx.env(), ctx.launcherExecutable(), iconTarget);
         }
     }
+
+    final static ApplicationLayout APPLICATION_LAYOUT = ApplicationLayout.build()
+            .setAll("")
+            .appDirectory("app")
+            .runtimeDirectory("runtime")
+            .appModsDirectory(Path.of("app", "mods"))
+            .create();
 }

@@ -48,6 +48,16 @@ public interface Application {
 
     List<Path> contentDirs();
 
+    AppImageLayout imageLayout();
+
+    default ApplicationLayout asApplicationLayout() {
+        if (imageLayout() instanceof ApplicationLayout layout) {
+            return layout;
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     RuntimeBuilder runtimeBuilder();
 
     default Path appImageDirName() {
@@ -71,14 +81,6 @@ public interface Application {
     default boolean isService() {
         return Optional.ofNullable(launchers()).orElseGet(List::of).stream().filter(
                 Launcher::isService).findAny().isPresent();
-    }
-
-    default ApplicationLayout appLayout() {
-        if (isRuntime()) {
-            return ApplicationLayout.javaRuntime();
-        } else {
-            return ApplicationLayout.platformAppImage();
-        }
     }
 
     default Map<String, String> extraAppImageFileData() {
@@ -116,9 +118,10 @@ public interface Application {
         return resource;
     }
 
-    record Impl(String name, String description, String version,
-            String vendor, String copyright, Path srcDir, List<Path> contentDirs,
-            RuntimeBuilder runtimeBuilder, List<Launcher> launchers) implements Application {        
+    record Impl(String name, String description, String version, String vendor,
+            String copyright, Path srcDir, List<Path> contentDirs,
+            AppImageLayout imageLayout, RuntimeBuilder runtimeBuilder,
+            List<Launcher> launchers) implements Application {
     }
 
     class Proxy<T extends Application> extends ProxyBase<T> implements Application {
@@ -160,6 +163,11 @@ public interface Application {
         @Override
         public List<Path> contentDirs() {
             return target.contentDirs();
+        }
+
+        @Override
+        public AppImageLayout imageLayout() {
+            return target.imageLayout();
         }
 
         @Override
@@ -207,6 +215,11 @@ public interface Application {
 
         @Override
         public List<Path> contentDirs() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public AppImageLayout imageLayout() {
             throw new UnsupportedOperationException();
         }
 
