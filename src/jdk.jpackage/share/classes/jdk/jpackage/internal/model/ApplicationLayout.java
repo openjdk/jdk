@@ -25,7 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import static jdk.jpackage.internal.util.PathUtils.resolveNullable;
+import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 /**
  * Application directory layout.
@@ -101,11 +101,11 @@ public interface ApplicationLayout extends AppImageLayout {
         @Override
         public ApplicationLayout resolveAt(Path base) {
             return new ApplicationLayout.Impl(target,
-                    resolveNullable(base, launchersDirectory),
-                    resolveNullable(base, appDirectory),
-                    resolveNullable(base, appModsDirectory),
-                    resolveNullable(base, destktopIntegrationDirectory),
-                    resolveNullable(base, contentDirectory));
+                    resolveNullablePath(base, launchersDirectory),
+                    resolveNullablePath(base, appDirectory),
+                    resolveNullablePath(base, appModsDirectory),
+                    resolveNullablePath(base, destktopIntegrationDirectory),
+                    resolveNullablePath(base, contentDirectory));
         }
 
         private final Path launchersDirectory;

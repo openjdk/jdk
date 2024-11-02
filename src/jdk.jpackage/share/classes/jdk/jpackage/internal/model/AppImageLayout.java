@@ -31,8 +31,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PathGroup;
-import static jdk.jpackage.internal.util.PathUtils.resolveNullable;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 
 /**
@@ -51,7 +51,7 @@ public interface AppImageLayout {
 
         @Override
         public AppImageLayout resolveAt(Path base) {
-            return new Impl(resolveNullable(base, runtimeDirectory));
+            return new Impl(resolveNullablePath(base, runtimeDirectory));
         }
     }
 
