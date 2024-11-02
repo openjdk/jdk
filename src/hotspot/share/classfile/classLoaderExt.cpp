@@ -90,7 +90,7 @@ void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
   os::free(app_class_path);
 }
 
-int ClassLoaderExt::compare_module_path_by_name(const char** p1, const char** p2) {
+int ClassLoaderExt::compare_module_names(const char** p1, const char** p2) {
   return strcmp(*p1, *p2);
 }
 
@@ -121,7 +121,7 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
 
   // Sort the module paths before storing into CDS archive for simpler
   // checking at runtime.
-  module_paths->sort(compare_module_path_by_name);
+  module_paths->sort(compare_module_names);
 
   for (int i = 0; i < module_paths->length(); i++) {
     ClassLoader::setup_module_search_path(current, module_paths->at(i));
