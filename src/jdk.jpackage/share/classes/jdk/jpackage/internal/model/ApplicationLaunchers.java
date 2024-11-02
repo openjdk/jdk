@@ -56,7 +56,7 @@ public record ApplicationLaunchers(Launcher mainLauncher,
             return new ApplicationLaunchers();
         } else {
             return new ApplicationLaunchers(launchers.getFirst(),
-                    launchers.subList(1, launchers.size() - 1));
+                    launchers.subList(1, launchers.size()));
         }
     }
 }
