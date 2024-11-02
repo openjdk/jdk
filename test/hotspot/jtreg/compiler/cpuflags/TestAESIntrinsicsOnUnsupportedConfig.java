@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,11 @@ import static jdk.test.lib.cli.CommandLineOptionTest.*;
 
 public class TestAESIntrinsicsOnUnsupportedConfig extends AESIntrinsicsBase {
 
+    // RISC-V: warning: AES intrinsics require Zvkn extension (not available on this CPU).
     private static final String INTRINSICS_NOT_AVAILABLE_MSG = "warning: AES "
-            + "intrinsics are not available on this CPU";
+            + "intrinsics .*not available on this CPU";
     private static final String AES_NOT_AVAILABLE_MSG = "warning: AES "
-            + "instructions are not available on this CPU";
+            + "(intrinsics|instructions) .*not available on this CPU";
 
     protected void runTestCases() throws Throwable {
         testUseAES();
