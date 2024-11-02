@@ -261,7 +261,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         this.resourcesDir = appLayout.destktopIntegrationDirectory();
         this.macOSDir = appLayout.launchersDirectory();
         this.runtimeDir = appLayout.runtimeDirectory();
-        this.runtimeRoot = appLayout.runtimeHomeDirectory();
+        this.runtimeRoot = this.runtimeDir.resolve("Contents/Home");
     }
 
     private void writeEntry(InputStream in, Path dstFile) throws IOException {
@@ -341,7 +341,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
         if (withPackageFile) {
             new PackageFile(APP_NAME.fetchFrom(params)).save(
-                    ApplicationLayout.macAppImage().resolveAt(root));
+                    ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT.resolveAt(root));
         }
 
         /*********** Take care of "config" files *******/

@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+import static jdk.jpackage.internal.ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
@@ -106,9 +107,9 @@ final class StandardBundlerParam {
                         if (isRuntimeInstaller(params)) {
                             return null;
                         } else if (hasPredefinedAppImage(params)) {
-                            return ThrowingFunction.toFunction(
-                                    AppImageFile2::load).apply(
-                                            getPredefinedAppImage(params)).getMainClass();
+                            var appImage = getPredefinedAppImage(params);
+                            var appLayout = PLATFORM_APPLICATION_LAYOUT.resolveAt(appImage);
+                            return ThrowingFunction.toFunction(AppImageFile2::load).apply(appLayout).getMainClass();
                         }
                         return LAUNCHER_DATA.fetchFrom(params).qualifiedClassName();
                     },
@@ -149,8 +150,9 @@ final class StandardBundlerParam {
                         Path appImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
                         String appName = NAME.fetchFrom(params);
                         if (appImage != null) {
+                            var appLayout = PLATFORM_APPLICATION_LAYOUT.resolveAt(appImage);
                             String name = ThrowingFunction.toFunction(
-                                    AppImageFile2::load).apply(appImage).getLauncherName();
+                                    AppImageFile2::load).apply(appLayout).getLauncherName();
                             appName  = (name != null) ? name : appName;
                         } else if (appName == null) {
                             String s = MAIN_CLASS.fetchFrom(params);

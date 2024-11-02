@@ -55,7 +55,7 @@ public abstract class AbstractAppImageBuilder {
 
     public AbstractAppImageBuilder(Path root) {
         this.root = root;
-        appLayout = ApplicationLayout.platformAppImage().resolveAt(root);
+        appLayout = ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT.resolveAt(root);
     }
 
     public InputStream getResourceAsStream(String name) {
@@ -82,7 +82,7 @@ public abstract class AbstractAppImageBuilder {
             public String name() {
                 return APP_NAME.fetchFrom(params);
             }
-        }).create(ApplicationLayout.platformAppImage(), appLayout);
+        }).create(ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, appLayout);
     }
 
     protected void copyApplication(Map<String, ? super Object> params)

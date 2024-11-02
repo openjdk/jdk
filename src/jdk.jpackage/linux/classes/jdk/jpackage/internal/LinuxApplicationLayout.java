@@ -26,7 +26,7 @@ package jdk.jpackage.internal;
 
 import jdk.jpackage.internal.model.*;
 import java.nio.file.Path;
-import static jdk.jpackage.internal.util.PathUtils.resolveNullable;
+import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 final class LinuxApplicationLayout extends ApplicationLayout.Proxy<ApplicationLayout> {
 
@@ -38,7 +38,7 @@ final class LinuxApplicationLayout extends ApplicationLayout.Proxy<ApplicationLa
     @Override
     public LinuxApplicationLayout resolveAt(Path root) {
         return new LinuxApplicationLayout(target.resolveAt(root),
-                resolveNullable(root, libAppLauncher));
+                resolveNullablePath(root, libAppLauncher));
     }
 
     /**

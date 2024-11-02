@@ -157,11 +157,12 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                             "message.app-image-requires-app-name.advice"));
             }
             if (AppImageFile.load(applicationImage).isSigned()) {
+                var appLayout = ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT.resolveAt(applicationImage);
                 if (!Files.exists(
-                        PackageFile.getPathInAppImage(applicationImage))) {
+                        PackageFile.getPathInAppImage(appLayout))) {
                     Log.info(MessageFormat.format(I18N.getString(
                             "warning.per.user.app.image.signed"),
-                            PackageFile.getPathInAppImage(applicationImage)));
+                            PackageFile.getPathInAppImage(appLayout)));
                 }
             } else {
                 if (Optional.ofNullable(
@@ -192,7 +193,7 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             if (!StandardBundlerParam.isRuntimeInstaller(params) &&
                     !AppImageFile.load(predefinedImage).isSigned()) {
                 new PackageFile(APP_NAME.fetchFrom(params)).save(
-                        ApplicationLayout.macAppImage().resolveAt(appDir));
+                        ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT.resolveAt(appDir));
                 // We need to re-sign app image after adding ".package" to it.
                 // We only do this if app image was not signed which means it is
                 // signed with ad-hoc signature. App bundles with ad-hoc

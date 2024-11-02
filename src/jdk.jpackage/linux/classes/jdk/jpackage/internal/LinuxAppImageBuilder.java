@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.OverridableResource;
-import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,13 +64,5 @@ final class LinuxAppImageBuilder {
     }
 
     final static LinuxApplicationLayout APPLICATION_LAYOUT = new LinuxApplicationLayout(
-            ApplicationLayout.build()
-                    .launchersDirectory("bin")
-                    .appDirectory("lib/app")
-                    .runtimeDirectory("lib/runtime")
-                    .destktopIntegrationDirectory("lib")
-                    .appModsDirectory("lib/app/mods")
-                    .contentDirectory("lib")
-                    .create(),
-            Path.of("lib/libapplauncher.so"));
+            ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, Path.of("lib/libapplauncher.so"));
 }

@@ -63,10 +63,5 @@ final class WinAppImageBuilder {
         }
     }
 
-    final static ApplicationLayout APPLICATION_LAYOUT = ApplicationLayout.build()
-            .setAll("")
-            .appDirectory("app")
-            .runtimeDirectory("runtime")
-            .appModsDirectory(Path.of("app", "mods"))
-            .create();
+    final static ApplicationLayout APPLICATION_LAYOUT = ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
 }

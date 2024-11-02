@@ -182,7 +182,7 @@ final class AppImageFile {
      * @param appImageDir - path to application image
      */
     static Path getPathInAppImage(Path appImageDir) {
-        return ApplicationLayout.platformAppImage()
+        return ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT
                 .resolveAt(appImageDir)
                 .appDirectory()
                 .resolve(FILENAME);
