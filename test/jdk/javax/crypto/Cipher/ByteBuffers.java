@@ -27,6 +27,8 @@
  * @summary Test the Cipher.update/doFinal(ByteBuffer, ByteBuffer) methods
  * @author Andreas Sterbenz
  * @key randomness
+ * @run main ByteBuffers DES 8
+ * @run main ByteBuffers AES 16
  */
 
 import java.util.*;
@@ -47,11 +49,13 @@ public class ByteBuffers {
         byte[] t = new byte[n];
         random.nextBytes(t);
 
-        byte[] keyBytes = new byte[8];
+        int keyInt = Integer.parseInt(args[1]);
+        byte[] keyBytes = new byte[keyInt];
         random.nextBytes(keyBytes);
-        SecretKey key = new SecretKeySpec(keyBytes, "DES");
+        String algo = args[0];
+        SecretKey key = new SecretKeySpec(keyBytes, algo);
 
-        Cipher cipher = Cipher.getInstance("DES/ECB/NoPadding");
+        Cipher cipher = Cipher.getInstance(algo + "/ECB/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
 
         byte[] outBytes = cipher.doFinal(t);
