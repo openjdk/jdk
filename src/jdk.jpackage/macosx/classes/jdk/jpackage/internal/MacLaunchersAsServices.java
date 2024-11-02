@@ -81,7 +81,7 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
                     .setPublicName(plistFilename)
                     .addSubstitutionDataEntry("LABEL", label)
                     .addSubstitutionDataEntry("APPLICATION_LAUNCHER",
-                            pkg.installedPackageLayout().launchersDirectory().resolve(
+                            pkg.asInstalledPackageApplicationLayout().launchersDirectory().resolve(
                                     getName()).toString());
         }
 
