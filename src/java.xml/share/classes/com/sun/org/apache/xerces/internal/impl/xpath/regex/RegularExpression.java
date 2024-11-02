@@ -2029,7 +2029,7 @@ public class RegularExpression implements java.io.Serializable {
 
         private void resetCommon(int nofclosures) {
             assert (inuse == true);
-            
+
             this.length = this.limit-this.start;
             this.match = null;
             if (this.closureContexts == null || this.closureContexts.length != nofclosures) {
