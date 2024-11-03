@@ -78,7 +78,7 @@ final class WinFromParams {
 
     private static WinMsiPackage createWinMsiPackage(Map<String, ? super Object> params) throws ConfigException, IOException {
 
-        var app = createWinApplication(params);
+        var app = APPLICATION.fetchFrom(params);
 
         var pkgBuilder = createPackageBuilder(params, app, WIN_MSI);
 

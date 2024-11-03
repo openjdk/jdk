@@ -63,7 +63,7 @@ final class LinuxFromParams {
     private static LinuxPackageBuilder createLinuxPackageBuilder(
             Map<String, ? super Object> params, StandardPackageType type) throws ConfigException, IOException {
 
-        var app = createLinuxApplication(params);
+        var app = APPLICATION.fetchFrom(params);
 
         var pkgBuilder = createPackageBuilder(params, app, type)
                 .name(LINUX_PACKAGE_NAME.fetchFrom(params));
