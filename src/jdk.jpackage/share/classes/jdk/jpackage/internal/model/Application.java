@@ -28,9 +28,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import jdk.jpackage.internal.util.PathUtils;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 public interface Application {
 
@@ -75,7 +72,7 @@ public interface Application {
     }
 
     default boolean isRuntime() {
-        return mainLauncher() == null;
+        return imageLayout() instanceof RuntimeLayout;
     }
 
     default boolean isService() {
