@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <windows.h>
 
+#include "CfgFile.h"
 #include "AppLauncher.h"
 #include "JvmLauncher.h"
 #include "Log.h"
@@ -226,6 +227,35 @@ private:
 };
 
 
+bool needRestartLauncher(AppLauncher& appLauncher, CfgFile& cfgFile) {
+    if (appLauncher.libEnvVariableContainsAppDir()) {
+        return false;
+    }
+
+    std::unique_ptr<CfgFile>(appLauncher.createCfgFile())->swap(cfgFile);
+
+    const CfgFile::Properties& appOptions = cfgFile.getProperties(
+            SectionName::Application);
+
+    const CfgFile::Properties::const_iterator winNorestart = appOptions.find(
+                PropertyName::winNorestart);
+
+    bool result;
+    if (winNorestart != appOptions.end()) {
+        const bool norestart = CfgFile::asBoolean(*winNorestart);
+        LOG_TRACE(tstrings::any() << PropertyName::winNorestart.name() << "="
+                << (norestart ? "true" : "false") << " from config file");
+        result = !norestart;
+    } else {
+        result = true;
+    }
+
+    appLauncher.setCfgFile(&cfgFile);
+
+    return result;
+}
+
+
 void launchApp() {
     // [RT-31061] otherwise UI can be left in back of other windows.
     ::AllowSetForegroundWindow(ASFW_ANY);
@@ -248,7 +278,8 @@ void launchApp() {
         addCfgFileLookupDirForEnvVariable(pkgFile, appLauncher, _T("APPDATA"));
     }
 
-    const bool restart = !appLauncher.libEnvVariableContainsAppDir();
+    CfgFile dummyCfgFile;
+    const bool restart = needRestartLauncher(appLauncher, dummyCfgFile);
 
     std::unique_ptr<Jvm> jvm(appLauncher.createJvmLauncher());
 
