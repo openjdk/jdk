@@ -56,23 +56,24 @@ final class PackageBuilder {
         if (installDir != null) {
             var normalizedInstallDir = mapInstallDir(installDir, type);
             if (type instanceof StandardPackageType stdType) {
-                do {
-                    switch (stdType) {
-                        case LINUX_DEB, LINUX_RPM -> {
-                            switch (normalizedInstallDir.toString()) {
-                                case "/usr", "/usr/local" -> {
-                                    break;
-                                }
+                boolean addPackageName = true;
+                switch (stdType) {
+                    case LINUX_DEB, LINUX_RPM -> {
+                        switch (normalizedInstallDir.toString()) {
+                            case "/usr", "/usr/local" -> {
+                                addPackageName = false;
                             }
                         }
-                        case WIN_EXE, WIN_MSI -> {
-                            break;
-                        }
-                        case MAC_DMG,MAC_PKG -> {
-                        }
                     }
+                    case WIN_EXE, WIN_MSI -> {
+                        addPackageName = false;
+                    }
+                    case MAC_DMG,MAC_PKG -> {
+                    }
+                }
+                if (addPackageName) {
                     normalizedInstallDir = normalizedInstallDir.resolve(effectiveName);
-                } while(false);
+                }
             }
             relativeInstallDir = normalizedInstallDir;
         } else if (type instanceof StandardPackageType stdType) {
@@ -207,7 +208,7 @@ final class PackageBuilder {
     private Path licenseFile;
     private Path predefinedAppImage;
     private Path installDir;
-    
+
     final private PackageType type;
     final private Application app;
 }
