@@ -111,7 +111,7 @@ final class RuntimeBuilderBuilder {
 
         return appImageLayout -> {
             // copy whole runtime, need to skip jmods and src.zip
-            final List<String> excludes = Arrays.asList("jmods", "src.zip");
+            final List<Path> excludes = List.of(Path.of("jmods"), Path.of("src.zip"));
             FileUtils.copyRecursive(runtimeDir,
                     appImageLayout.runtimeDirectory(),
                     excludes,
