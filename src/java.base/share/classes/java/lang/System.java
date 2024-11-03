@@ -1359,12 +1359,6 @@ public final class System {
      * should not attempt to configure loggers by themselves, as that
      * would make them dependent from a specific implementation of the
      * {@code LoggerFinder} service.
-     * <br>
-     * It is the responsibility of the provider of
-     * the concrete {@code LoggerFinder} implementation to ensure that
-     * these loggers are not configured by untrusted code without proper
-     * permission checks, as configuration performed on such loggers usually
-     * affects all applications in the same Java Runtime.
      * <p>
      * <b>Message Levels and Mapping to backend levels</b>
      * <p>
