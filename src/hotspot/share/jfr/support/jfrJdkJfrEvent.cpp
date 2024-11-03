@@ -136,7 +136,9 @@ jobject JdkJfrEvent::get_all_klasses(TRAPS) {
   transform_klasses_to_local_jni_handles(event_subklasses, THREAD);
 
   Handle h_array_list(THREAD, new_java_util_arraylist(THREAD));
-  assert(h_array_list.not_null(), "invariant");
+  if (h_array_list.is_null()) {
+    return empty_java_util_arraylist;
+  }
 
   static const char add_method_name[] = "add";
   static const char add_method_signature[] = "(Ljava/lang/Object;)Z";

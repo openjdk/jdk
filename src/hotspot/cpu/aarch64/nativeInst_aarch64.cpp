@@ -78,7 +78,7 @@ address NativeCall::destination() const {
 //
 // Used in the runtime linkage of calls; see class CompiledIC.
 void NativeCall::set_destination_mt_safe(address dest) {
-  assert((Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+  assert((CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
@@ -228,7 +228,7 @@ address NativeJump::jump_destination() const          {
   // load
 
   // return -1 if jump to self or to 0
-  if ((dest == (address)this) || dest == 0) {
+  if ((dest == (address)this) || dest == nullptr) {
     dest = (address) -1;
   }
   return dest;
@@ -256,7 +256,7 @@ address NativeGeneralJump::jump_destination() const {
   // a general jump
 
   // return -1 if jump to self or to 0
-  if ((dest == (address)this) || dest == 0) {
+  if ((dest == (address)this) || dest == nullptr) {
     dest = (address) -1;
   }
   return dest;

@@ -32,7 +32,7 @@
 #include "runtime/javaThread.hpp"
 
 inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
-  shenandoah_assert_in_heap(nullptr, obj);
+  shenandoah_assert_in_heap_bounds(nullptr, obj);
   return get_forwardee_raw_unchecked(obj);
 }
 

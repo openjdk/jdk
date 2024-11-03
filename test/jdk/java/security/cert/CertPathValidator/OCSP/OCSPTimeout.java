@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,17 +36,17 @@
  *          java.base/sun.security.util
  * @library ../../../../../java/security/testlibrary
  * @build CertificateBuilder SimpleOCSPServer
- * @run main/othervm OCSPTimeout 1000 true
- * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=5
- *      OCSPTimeout 1000 true
- * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=1
- *      OCSPTimeout 5000 false
- * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=1s
- *      OCSPTimeout 5000 false
- * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=1500ms
- *      OCSPTimeout 5000 false
- * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=4500ms
- *      OCSPTimeout 1000 true
+ * @run main/othervm -Djava.security.debug=certpath OCSPTimeout 1000 true
+ * @run main/othervm -Djava.security.debug=certpath
+ *      -Dcom.sun.security.ocsp.readtimeout=5 OCSPTimeout 1000 true
+ * @run main/othervm -Djava.security.debug=certpath
+ *      -Dcom.sun.security.ocsp.readtimeout=1 OCSPTimeout 5000 false
+ * @run main/othervm -Djava.security.debug=certpath
+ *      -Dcom.sun.security.ocsp.readtimeout=1s OCSPTimeout 5000 false
+ * @run main/othervm -Djava.security.debug=certpath
+ *      -Dcom.sun.security.ocsp.readtimeout=1500ms OCSPTimeout 5000 false
+ * @run main/othervm -Djava.security.debug=certpath
+ *      -Dcom.sun.security.ocsp.readtimeout=4500ms OCSPTimeout 1000 true
  */
 
 import java.io.*;
@@ -82,62 +82,72 @@ public class OCSPTimeout {
     static SimpleOCSPServer rootOcsp;       // Root CA OCSP Responder
     static int rootOcspPort;                // Port number for root OCSP
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         int ocspTimeout = 15000;
         boolean expected = false;
 
         createPKI();
 
-        if (args[0] != null) {
-            ocspTimeout = Integer.parseInt(args[0]);
-        }
-        rootOcsp.setDelay(ocspTimeout);
-
-        expected = (args[1] != null && Boolean.parseBoolean(args[1]));
-        log("Test case expects to " + (expected ? "pass" : "fail"));
-
-        // validate chain
-        CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
-        PKIXRevocationChecker prc =
-                (PKIXRevocationChecker) cpv.getRevocationChecker();
-        prc.setOptions(EnumSet.of(NO_FALLBACK, SOFT_FAIL));
-        PKIXParameters params =
-                new PKIXParameters(Set.of(new TrustAnchor(rootCert, null)));
-        params.addCertPathChecker(prc);
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        CertPath cp = cf.generateCertPath(List.of(eeCert));
-        cpv.validate(cp, params);
-
-        // unwrap soft fail exceptions and check for SocketTimeoutException
-        List<CertPathValidatorException> softExc = prc.getSoftFailExceptions();
-        if (expected) {
-            if (softExc.size() > 0) {
-                throw new RuntimeException("Expected to pass, found " +
-                        softExc.size() + " soft fail exceptions");
+        try {
+            if (args[0] != null) {
+                ocspTimeout = Integer.parseInt(args[0]);
             }
-        } else {
-            // If we expect to fail the validation then there should be a
-            // SocketTimeoutException
-            boolean found = false;
-            for (CertPathValidatorException softFail : softExc) {
-                log("CPVE: " + softFail);
-                Throwable cause = softFail.getCause();
-                log("Cause: " + cause);
-                while (cause != null) {
-                    if (cause instanceof SocketTimeoutException) {
-                        found = true;
+            rootOcsp.setDelay(ocspTimeout);
+
+            expected = (args[1] != null && Boolean.parseBoolean(args[1]));
+            log("Test case expects to " + (expected ? "pass" : "fail"));
+
+            // validate chain
+            CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
+            PKIXRevocationChecker prc =
+                    (PKIXRevocationChecker) cpv.getRevocationChecker();
+            prc.setOptions(EnumSet.of(NO_FALLBACK, SOFT_FAIL));
+            PKIXParameters params =
+                    new PKIXParameters(Set.of(new TrustAnchor(rootCert, null)));
+            params.addCertPathChecker(prc);
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            CertPath cp = cf.generateCertPath(List.of(eeCert));
+            cpv.validate(cp, params);
+
+            // unwrap soft fail exceptions and check for SocketTimeoutException
+            List<CertPathValidatorException> softExc = prc.getSoftFailExceptions();
+            if (expected) {
+                if (!softExc.isEmpty()) {
+                    log("Expected to pass, found " + softExc.size() +
+                            " soft fail exceptions");
+                    for (CertPathValidatorException cpve : softExc) {
+                        log("Exception: " + cpve);
+                    }
+                    throw new RuntimeException("Expected to pass, found " +
+                            softExc.size() + " soft fail exceptions");
+                }
+            } else {
+                // If we expect to fail the validation then there should be a
+                // SocketTimeoutException
+                boolean found = false;
+                for (CertPathValidatorException softFail : softExc) {
+                    log("CPVE: " + softFail);
+                    Throwable cause = softFail.getCause();
+                    log("Cause: " + cause);
+                    while (cause != null) {
+                        if (cause instanceof SocketTimeoutException) {
+                            found = true;
+                            break;
+                        }
+                        cause = cause.getCause();
+                    }
+                    if (found) {
                         break;
                     }
-                    cause = cause.getCause();
                 }
-                if (found) {
-                    break;
-                }
-            }
 
-            if (!found) {
-                throw new RuntimeException("SocketTimeoutException not thrown");
+                if (!found) {
+                    throw new RuntimeException("SocketTimeoutException not thrown");
+                }
             }
+        } finally {
+            rootOcsp.stop();
+            rootOcsp.shutdownNow();
         }
     }
 

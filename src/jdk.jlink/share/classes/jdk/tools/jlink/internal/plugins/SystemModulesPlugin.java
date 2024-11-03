@@ -1562,7 +1562,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 cob.aload(BUILDER_VAR)
                    .loadConstant(name)
                    .loadConstant(hash.length)
-                   .newarray(TypeKind.ByteType);
+                   .newarray(TypeKind.BYTE);
                 for (int i = 0; i < hash.length; i++) {
                     cob.dup()              // arrayref
                        .loadConstant(i)

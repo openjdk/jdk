@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ bool os::win32::register_code_area(char *low, char *high) {
   MacroAssembler* masm = new MacroAssembler(&cb);
   pDCD = (pDynamicCodeData) masm->pc();
 
-  masm->jump(ExternalAddress((address)&HandleExceptionFromCodeCache), rscratch1);
+  masm->jump(RuntimeAddress((address)&HandleExceptionFromCodeCache), rscratch1);
   masm->flush();
 
   // Create an Unwind Structure specifying no unwind info
@@ -437,6 +437,15 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
   st->print(  "RIP=" INTPTR_FORMAT, uc->Rip);
   st->print(", EFLAGS=" INTPTR_FORMAT, uc->EFlags);
+  // Add XMM registers + MXCSR. Note that C2 uses XMM to spill GPR values including pointers.
+  st->cr();
+  st->cr();
+  for (int i = 0; i < 16; ++i) {
+    const uint64_t *xmm = ((const uint64_t*)&(uc->Xmm0)) + 2 * i;
+    st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT,
+                 i, xmm[1], xmm[0]);
+  }
+  st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->MxCsr);
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->Eax);
   st->print(", EBX=" INTPTR_FORMAT, uc->Ebx);

@@ -572,11 +572,6 @@ HeapWord* DefNewGeneration::block_start(const void* p) const {
   return block_start_const(to(), p);
 }
 
-HeapWord* DefNewGeneration::expand_and_allocate(size_t size, bool is_tlab) {
-  // We don't attempt to expand the young generation (but perhaps we should.)
-  return allocate(size, is_tlab);
-}
-
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
   // Set the desired survivor size to half the real survivor space
   size_t const survivor_capacity = to()->capacity() / HeapWordSize;
@@ -833,7 +828,6 @@ void DefNewGeneration::gc_epilogue(bool full) {
   assert(!GCLocker::is_active(), "We should not be executing here");
   // update the generation and space performance counters
   update_counters();
-  SerialHeap::heap()->counters()->update_counters();
 }
 
 void DefNewGeneration::update_counters() {
@@ -852,7 +846,15 @@ void DefNewGeneration::verify() {
 }
 
 void DefNewGeneration::print_on(outputStream* st) const {
-  Generation::print_on(st);
+  st->print(" %-10s", name());
+
+  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
+            capacity()/K, used()/K);
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               p2i(_virtual_space.low_boundary()),
+               p2i(_virtual_space.high()),
+               p2i(_virtual_space.high_boundary()));
+
   st->print("  eden");
   eden()->print_on(st);
   st->print("  from");
@@ -861,12 +863,7 @@ void DefNewGeneration::print_on(outputStream* st) const {
   to()->print_on(st);
 }
 
-
-const char* DefNewGeneration::name() const {
-  return "def new generation";
-}
-
-HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
+HeapWord* DefNewGeneration::allocate(size_t word_size) {
   // This is the slow-path allocation for the DefNewGeneration.
   // Most allocations are fast-path in compiled code.
   // We try to allocate from the eden.  If that works, we are happy.
@@ -876,8 +873,7 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   return result;
 }
 
-HeapWord* DefNewGeneration::par_allocate(size_t word_size,
-                                         bool is_tlab) {
+HeapWord* DefNewGeneration::par_allocate(size_t word_size) {
   return eden()->par_allocate(word_size);
 }
 

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,10 @@ static const char* get_java_thread_name(const JavaThread* jt, int& length, oop v
   }
   assert(thread_obj != nullptr, "invariant");
   const oop name = java_lang_Thread::name(thread_obj);
-  return name != nullptr ? java_lang_String::as_utf8_string(name, length) : nullptr;
+  size_t utf8_len;
+  const char* ret = name != nullptr ? java_lang_String::as_utf8_string(name, utf8_len) : nullptr;
+  length = checked_cast<int>(utf8_len); // Thread names should be short
+  return ret;
 }
 
 const char* JfrThreadName::name(const Thread* t, int& length, oop vthread) {

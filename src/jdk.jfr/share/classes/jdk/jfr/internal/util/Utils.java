@@ -48,6 +48,7 @@ import jdk.internal.module.Checks;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.RecordingState;
+import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
@@ -429,5 +430,22 @@ public final class Utils {
         // type.getClassLoader() == ClassLoader.getPlatformClassLoader();
         // but only if it is safe and there is a mechanism to register event
         // classes in other modules besides jdk.jfr and java.base.
+    }
+
+    public static long multiplyOverflow(long a, long b, long defaultValue) {
+        try {
+            return Math.multiplyExact(a, b);
+        } catch (ArithmeticException ae) {
+            return defaultValue;
+        }
+    }
+
+    public static ValueDescriptor findField(List<ValueDescriptor> fields, String name) {
+        for (ValueDescriptor v : fields) {
+            if (v.getName().equals(name)) {
+                return v;
+            }
+        }
+        return null;
     }
 }

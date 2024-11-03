@@ -359,7 +359,7 @@ class MacroAssembler: public Assembler {
   address call_c(Register function_entry);
   // For tail calls: only branch, don't link, so callee returns to caller of this function.
   address call_c_and_return_to_caller(Register function_entry);
-  address call_c(address function_entry, relocInfo::relocType rt);
+  address call_c(address function_entry, relocInfo::relocType rt = relocInfo::none);
 #else
   // Call a C function via a function descriptor and use full C
   // calling conventions. Updates and returns _last_calls_return_pc.
@@ -367,6 +367,9 @@ class MacroAssembler: public Assembler {
   // For tail calls: only branch, don't link, so callee returns to caller of this function.
   address call_c_and_return_to_caller(Register function_descriptor);
   address call_c(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt);
+  address call_c(address function_entry, relocInfo::relocType rt = relocInfo::none) {
+    return call_c((const FunctionDescriptor*)function_entry, rt);
+  }
   address call_c_using_toc(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt,
                            Register toc);
 #endif
@@ -482,13 +485,14 @@ class MacroAssembler: public Assembler {
                                      Register addr_base, Register tmp1, Register tmp2, Register tmp3,
                                      bool cmpxchgx_hint, bool is_add, int size);
   void cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
-                         Register compare_value, Register exchange_value,
+                         RegisterOrConstant compare_value, Register exchange_value,
                          Register addr_base, Register tmp1, Register tmp2,
                          Label &retry, Label &failed, bool cmpxchgx_hint, int size);
-  void cmpxchg_generic(ConditionRegister flag,
-                       Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                       Register tmp1, Register tmp2,
-                       int semantics, bool cmpxchgx_hint, Register int_flag_success, bool contention_hint, bool weak, int size);
+  void cmpxchg_generic(ConditionRegister flag, Register dest_current_value,
+                       RegisterOrConstant compare_value, Register exchange_value,
+                       Register addr_base, Register tmp1, Register tmp2,
+                       int semantics, bool cmpxchgx_hint, Register int_flag_success,
+                       Label* failed_ext, bool contention_hint, bool weak, int size);
  public:
   // Temps and addr_base are killed if processor does not support Power 8 instructions.
   // Result will be sign extended.
@@ -528,33 +532,37 @@ class MacroAssembler: public Assembler {
                   Register tmp, bool cmpxchgx_hint);
   // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
-  void cmpxchgb(ConditionRegister flag,
-                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                Register tmp1, Register tmp2, int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+  void cmpxchgb(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base, Register tmp1, Register tmp2,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
     cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
-                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 1);
+                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 1);
   }
   // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
-  void cmpxchgh(ConditionRegister flag,
-                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                Register tmp1, Register tmp2, int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+  void cmpxchgh(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base, Register tmp1, Register tmp2,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
     cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
-                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 2);
+                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 2);
   }
-  void cmpxchgw(ConditionRegister flag,
-                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+  void cmpxchgw(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
     cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, noreg, noreg,
-                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 4);
+                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 4);
   }
-  void cmpxchgd(ConditionRegister flag,
-                Register dest_current_value, RegisterOrConstant compare_value, Register exchange_value,
-                Register addr_base, int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, Label* failed = nullptr, bool contention_hint = false, bool weak = false);
+  void cmpxchgd(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -646,7 +654,7 @@ class MacroAssembler: public Assembler {
   void inc_held_monitor_count(Register tmp);
   void dec_held_monitor_count(Register tmp);
   void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
-  void lightweight_lock(Register obj, Register t1, Register t2, Label& slow);
+  void lightweight_lock(Register box, Register obj, Register t1, Register t2, Label& slow);
   void lightweight_unlock(Register obj, Register t1, Label& slow);
 
   // allocation (for C1)
@@ -667,11 +675,11 @@ class MacroAssembler: public Assembler {
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
                                    Register tmp1, Register tmp2, Register tmp3);
 
-  void compiler_fast_lock_lightweight_object(ConditionRegister flag, Register oop, Register tmp1,
-                                             Register tmp2, Register tmp3);
+  void compiler_fast_lock_lightweight_object(ConditionRegister flag, Register oop, Register box,
+                                             Register tmp1, Register tmp2, Register tmp3);
 
-  void compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register oop, Register tmp1,
-                                               Register tmp2, Register tmp3);
+  void compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register oop, Register box,
+                                               Register tmp1, Register tmp2, Register tmp3);
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);
@@ -950,25 +958,6 @@ class MacroAssembler: public Assembler {
   void should_not_reach_here(const char* msg = nullptr) { stop(stop_shouldnotreachhere, msg); }
 
   void zap_from_to(Register low, int before, Register high, int after, Register val, Register addr) PRODUCT_RETURN;
-};
-
-// class SkipIfEqualZero:
-//
-// Instantiating this class will result in assembly code being output that will
-// jump around any code emitted between the creation of the instance and it's
-// automatic destruction at the end of a scope block, depending on the value of
-// the flag passed to the constructor, which will be checked at run-time.
-class SkipIfEqualZero : public StackObj {
- private:
-  MacroAssembler* _masm;
-  Label _label;
-
- public:
-   // 'Temp' is a temp register that this object can use (and trash).
-   explicit SkipIfEqualZero(MacroAssembler*, Register temp, const bool* flag_addr);
-   static void skip_to_label_if_equal_zero(MacroAssembler*, Register temp,
-                                           const bool* flag_addr, Label& label);
-   ~SkipIfEqualZero();
 };
 
 #endif // CPU_PPC_MACROASSEMBLER_PPC_HPP

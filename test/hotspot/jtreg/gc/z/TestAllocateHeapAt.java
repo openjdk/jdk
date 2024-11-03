@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@ package gc.z;
 
 /*
  * @test TestAllocateHeapAt
- * @requires vm.gc.ZGenerational & os.family == "linux"
+ * @requires vm.gc.Z & os.family == "linux"
+ * @requires !vm.opt.final.UseLargePages
  * @summary Test ZGC with -XX:AllocateHeapAt
  * @library /test/lib
  * @run main/othervm gc.z.TestAllocateHeapAt . true
@@ -41,9 +42,8 @@ public class TestAllocateHeapAt {
         final String heapBackingFile = "Heap Backing File: " + directory;
         final String failedToCreateFile = "Failed to create file " + directory;
 
-        ProcessTools.executeLimitedTestJava(
+        ProcessTools.executeTestJava(
             "-XX:+UseZGC",
-            "-XX:+ZGenerational",
             "-Xlog:gc*",
             "-Xms32M",
             "-Xmx32M",

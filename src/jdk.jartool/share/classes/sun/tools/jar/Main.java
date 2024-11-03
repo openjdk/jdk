@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,10 +155,14 @@ public class Main {
      * nflag: Perform jar normalization at the end
      * pflag: preserve/don't strip leading slash and .. component from file name
      * dflag: print module descriptor
+     * kflag: keep existing file
      */
-    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, pflag, dflag, validate;
+    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, pflag, dflag, kflag, validate;
 
     boolean suppressDeprecateMsg = false;
+
+    // destination directory for extraction
+    String xdestDir = null;
 
     /* To support additional GNU Style informational options */
     Consumer<PrintWriter> info;
@@ -251,7 +255,7 @@ public class Main {
      * Starts main program with the specified arguments.
      */
     @SuppressWarnings({"removal"})
-    public synchronized boolean run(String args[]) {
+    public synchronized boolean run(String[] args) {
         ok = true;
         if (!parseArgs(args)) {
             return false;
@@ -366,14 +370,21 @@ public class Main {
                 if (fname != null) {
                     list(fname, files);
                 } else {
-                    InputStream in = new FileInputStream(FileDescriptor.in);
-                    try {
-                        list(new BufferedInputStream(in), files);
-                    } finally {
-                        in.close();
+                    try (InputStream in = new FileInputStream(FileDescriptor.in);
+                         BufferedInputStream bis = new BufferedInputStream(in)) {
+                        list(bis, files);
                     }
                 }
             } else if (xflag) {
+                if (xdestDir != null) {
+                    final Path destPath = Paths.get(xdestDir);
+                    try {
+                        Files.createDirectories(destPath);
+                    } catch (IOException ioe) {
+                        throw new IOException(formatMsg("error.create.dir",
+                                destPath.toString()), ioe);
+                    }
+                }
                 replaceFSC(filesMap);
                 // For the extract action, when extracting all the entries,
                 // access using the ZipInputStream class is most efficient,
@@ -386,18 +397,12 @@ public class Main {
                 // latter can handle it.
 
                 String[] files = filesMapToFiles(filesMap);
-                if (fname != null && files != null) {
+                if (fname != null) {
                     extract(fname, files);
                 } else {
-                    InputStream in = (fname == null)
-                        ? new FileInputStream(FileDescriptor.in)
-                        : new FileInputStream(fname);
-                    try {
-                        if (!extract(new BufferedInputStream(in), files) && fname != null) {
-                            extract(fname, files);
-                        }
-                    } finally {
-                        in.close();
+                    try (InputStream in = new FileInputStream(FileDescriptor.in);
+                         BufferedInputStream bis = new BufferedInputStream(in)) {
+                        extract(bis, files);
                     }
                 }
             } else if (iflag) {
@@ -503,7 +508,7 @@ public class Main {
     /**
      * Parses command line arguments.
      */
-    boolean parseArgs(String args[]) {
+    boolean parseArgs(String[] args) {
         /* Preprocess and expand @file arguments */
         try {
             args = CommandLine.parse(args);
@@ -590,6 +595,9 @@ public class Main {
                         case '0':
                             flag0 = true;
                             break;
+                        case 'k':
+                            kflag = true;
+                            break;
                         case 'i':
                             if (cflag || uflag || xflag || tflag) {
                                 usageError(getMsg("error.multiple.main.operations"));
@@ -620,6 +628,9 @@ public class Main {
             usageError(getMsg("error.bad.option"));
             return false;
         }
+        if (kflag && !xflag) {
+            warn(formatMsg("warn.option.is.ignored", "--keep-old-files/-k/k"));
+        }
 
         /* parse file arguments */
         int n = args.length - count;
@@ -639,6 +650,11 @@ public class Main {
                         }
                         /* change the directory */
                         String dir = args[++i];
+                        if (xflag && xdestDir != null) {
+                            // extract option doesn't allow more than one destination directory
+                            usageError(getMsg("error.extract.multiple.dest.dir"));
+                            return false;
+                        }
                         dir = (dir.endsWith(File.separator) ?
                                dir : (dir + File.separator));
                         dir = dir.replace(File.separatorChar, '/');
@@ -650,8 +666,12 @@ public class Main {
                         if (hasUNC) { // Restore Windows UNC path.
                             dir = "/" + dir;
                         }
-                        pathsMap.get(version).add(dir);
-                        nameBuf[k++] = dir + args[++i];
+                        if (xflag) {
+                            xdestDir = dir;
+                        } else {
+                            pathsMap.get(version).add(dir);
+                            nameBuf[k++] = dir + args[++i];
+                        }
                     } else if (args[i].startsWith("--release")) {
                         int v = BASE_VERSION;
                         try {
@@ -709,6 +729,10 @@ public class Main {
                 usageError(getMsg("error.bad.uflag"));
                 return false;
             }
+        }
+        if (xflag && pflag && xdestDir != null) {
+            usageError(getMsg("error.extract.pflag.not.allowed"));
+            return false;
         }
         return true;
     }
@@ -935,118 +959,116 @@ public class Main {
                    Map<String, ModuleInfoEntry> moduleInfos,
                    JarIndex jarIndex) throws IOException
     {
-        ZipInputStream zis = new ZipInputStream(in);
-        ZipOutputStream zos = new JarOutputStream(out);
-        ZipEntry e = null;
-        boolean foundManifest = false;
         boolean updateOk = true;
+        try (ZipInputStream zis = new ZipInputStream(in);
+            ZipOutputStream zos = new JarOutputStream(out)) {
 
-        // All actual entries added/updated/existing, in the jar file (excl manifest
-        // and module-info.class ).
-        Set<String> jentries = new HashSet<>();
+            if (jarIndex != null) {
+                addIndex(jarIndex, zos);
+            }
+            ZipEntry e = null;
+            boolean foundManifest = false;
+            // All actual entries added/updated/existing, in the jar file (excl manifest
+            // and module-info.class ).
+            Set<String> jentries = new HashSet<>();
 
-        if (jarIndex != null) {
-            addIndex(jarIndex, zos);
-        }
+            // put the old entries first, replace if necessary
+            while ((e = zis.getNextEntry()) != null) {
+                String name = e.getName();
 
-        // put the old entries first, replace if necessary
-        while ((e = zis.getNextEntry()) != null) {
-            String name = e.getName();
+                boolean isManifestEntry = equalsIgnoreCase(name, MANIFEST_NAME);
+                boolean isModuleInfoEntry = isModuleInfoEntry(name);
 
-            boolean isManifestEntry = equalsIgnoreCase(name, MANIFEST_NAME);
-            boolean isModuleInfoEntry = isModuleInfoEntry(name);
-
-            if ((jarIndex != null && equalsIgnoreCase(name, INDEX_NAME))
-                || (Mflag && isManifestEntry)) {
-                continue;
-            } else if (isManifestEntry && ((newManifest != null) ||
+                if ((jarIndex != null && equalsIgnoreCase(name, INDEX_NAME))
+                        || (Mflag && isManifestEntry)) {
+                    continue;
+                } else if (isManifestEntry && ((newManifest != null) ||
                         (ename != null) || isMultiRelease)) {
-                foundManifest = true;
-                if (newManifest != null) {
-                    // Don't read from the newManifest InputStream, as we
-                    // might need it below, and we can't re-read the same data
-                    // twice.
-                    try (FileInputStream fis = new FileInputStream(mname)) {
-                        if (isAmbiguousMainClass(new Manifest(fis))) {
-                            return false;
+                    foundManifest = true;
+                    if (newManifest != null) {
+                        // Don't read from the newManifest InputStream, as we
+                        // might need it below, and we can't re-read the same data
+                        // twice.
+                        try (FileInputStream fis = new FileInputStream(mname)) {
+                            if (isAmbiguousMainClass(new Manifest(fis))) {
+                                return false;
+                            }
                         }
                     }
-                }
-                // Update the manifest.
-                Manifest old = new Manifest(zis);
-                if (newManifest != null) {
-                    old.read(newManifest);
-                }
-                if (!updateManifest(old, zos)) {
-                    return false;
-                }
-            } else if (moduleInfos != null && isModuleInfoEntry) {
-                moduleInfos.putIfAbsent(name, new StreamedModuleInfoEntry(name, zis.readAllBytes(), e.getLastModifiedTime()));
-            } else {
-                boolean isDir = e.isDirectory();
-                if (!entryMap.containsKey(name)) { // copy the old stuff
-                    // do our own compression
-                    ZipEntry e2 = new ZipEntry(name);
-                    e2.setMethod(e.getMethod());
-                    setZipEntryTime(e2, e.getTime());
-                    e2.setComment(e.getComment());
-                    e2.setExtra(e.getExtra());
-                    if (e.getMethod() == ZipEntry.STORED) {
-                        e2.setSize(e.getSize());
-                        e2.setCrc(e.getCrc());
+                    // Update the manifest.
+                    Manifest old = new Manifest(zis);
+                    if (newManifest != null) {
+                        old.read(newManifest);
                     }
-                    zos.putNextEntry(e2);
-                    copy(zis, zos);
-                } else { // replace with the new files
-                    Entry ent = entryMap.get(name);
-                    addFile(zos, ent);
-                    entryMap.remove(name);
-                    entries.remove(ent);
-                    isDir = ent.isDir;
-                }
-                if (!isDir) {
-                    jentries.add(name);
+                    if (!updateManifest(old, zos)) {
+                        return false;
+                    }
+                } else if (moduleInfos != null && isModuleInfoEntry) {
+                    moduleInfos.putIfAbsent(name, new StreamedModuleInfoEntry(name, zis.readAllBytes(), e.getLastModifiedTime()));
+                } else {
+                    boolean isDir = e.isDirectory();
+                    if (!entryMap.containsKey(name)) { // copy the old stuff
+                        // do our own compression
+                        ZipEntry e2 = new ZipEntry(name);
+                        e2.setMethod(e.getMethod());
+                        setZipEntryTime(e2, e.getTime());
+                        e2.setComment(e.getComment());
+                        e2.setExtra(e.getExtra());
+                        if (e.getMethod() == ZipEntry.STORED) {
+                            e2.setSize(e.getSize());
+                            e2.setCrc(e.getCrc());
+                        }
+                        zos.putNextEntry(e2);
+                        copy(zis, zos);
+                    } else { // replace with the new files
+                        Entry ent = entryMap.get(name);
+                        addFile(zos, ent);
+                        entryMap.remove(name);
+                        entries.remove(ent);
+                        isDir = ent.isDir;
+                    }
+                    if (!isDir) {
+                        jentries.add(name);
+                    }
                 }
             }
-        }
 
-        // add the remaining new files
-        for (Entry entry : entries) {
-            addFile(zos, entry);
-            if (!entry.isDir) {
-                jentries.add(entry.name);
+            // add the remaining new files
+            for (Entry entry : entries) {
+                addFile(zos, entry);
+                if (!entry.isDir) {
+                    jentries.add(entry.name);
+                }
             }
-        }
-        if (!foundManifest) {
-            if (newManifest != null) {
-                Manifest m = new Manifest(newManifest);
-                updateOk = !isAmbiguousMainClass(m);
-                if (updateOk) {
-                    if (!updateManifest(m, zos)) {
+            if (!foundManifest) {
+                if (newManifest != null) {
+                    Manifest m = new Manifest(newManifest);
+                    updateOk = !isAmbiguousMainClass(m);
+                    if (updateOk) {
+                        if (!updateManifest(m, zos)) {
+                            updateOk = false;
+                        }
+                    }
+                } else if (ename != null) {
+                    if (!updateManifest(new Manifest(), zos)) {
                         updateOk = false;
                     }
                 }
-            } else if (ename != null) {
-                if (!updateManifest(new Manifest(), zos)) {
+            }
+            if (updateOk) {
+                if (moduleInfos != null && !moduleInfos.isEmpty()) {
+                    Set<String> pkgs = new HashSet<>();
+                    jentries.forEach(je -> addPackageIfNamed(pkgs, je));
+                    addExtendedModuleAttributes(moduleInfos, pkgs);
+                    updateOk = checkModuleInfo(moduleInfos.get(MODULE_INFO), jentries);
+                    updateModuleInfo(moduleInfos, zos);
+                    // TODO: check manifest main classes, etc
+                } else if (moduleVersion != null || modulesToHash != null) {
+                    error(getMsg("error.module.options.without.info"));
                     updateOk = false;
                 }
             }
         }
-        if (updateOk) {
-            if (moduleInfos != null && !moduleInfos.isEmpty()) {
-                Set<String> pkgs = new HashSet<>();
-                jentries.forEach( je -> addPackageIfNamed(pkgs, je));
-                addExtendedModuleAttributes(moduleInfos, pkgs);
-                updateOk = checkModuleInfo(moduleInfos.get(MODULE_INFO), jentries);
-                updateModuleInfo(moduleInfos, zos);
-                // TODO: check manifest main classes, etc
-            } else if (moduleVersion != null || modulesToHash != null) {
-                error(getMsg("error.module.options.without.info"));
-                updateOk = false;
-            }
-        }
-        zis.close();
-        zos.close();
         return updateOk;
     }
 
@@ -1365,7 +1387,7 @@ public class Main {
             if (lastModified != -1) {
                 String name = safeName(ze.getName().replace(File.separatorChar, '/'));
                 if (name.length() != 0) {
-                    File f = new File(name.replace('/', File.separatorChar));
+                    File f = new File(xdestDir, name.replace('/', File.separatorChar));
                     f.setLastModified(lastModified);
                 }
             }
@@ -1374,19 +1396,16 @@ public class Main {
 
     /**
      * Extracts specified entries from JAR file.
-     *
-     * @return whether entries were found and successfully extracted
-     * (indicating this was a zip file without "leading garbage")
      */
-    boolean extract(InputStream in, String files[]) throws IOException {
+    void extract(InputStream in, String[] files) throws IOException {
+        if (vflag) {
+            output(formatMsg("out.extract.dir", Path.of(xdestDir == null ? "." : xdestDir).normalize()
+                    .toAbsolutePath().toString()));
+        }
         ZipInputStream zis = new ZipInputStream(in);
         ZipEntry e;
-        // Set of all directory entries specified in archive.  Disallows
-        // null entries.  Disallows all entries if using pre-6.0 behavior.
-        boolean entriesFound = false;
         Set<ZipEntry> dirs = newDirSet();
         while ((e = zis.getNextEntry()) != null) {
-            entriesFound = true;
             if (files == null) {
                 dirs.add(extractFile(zis, e));
             } else {
@@ -1405,32 +1424,35 @@ public class Main {
         // instead of during, because creating a file in a directory changes
         // that directory's timestamp.
         updateLastModifiedTime(dirs);
-
-        return entriesFound;
     }
 
     /**
      * Extracts specified entries from JAR file, via ZipFile.
      */
-    void extract(String fname, String files[]) throws IOException {
-        ZipFile zf = new ZipFile(fname);
-        Set<ZipEntry> dirs = newDirSet();
-        Enumeration<? extends ZipEntry> zes = zf.entries();
-        while (zes.hasMoreElements()) {
-            ZipEntry e = zes.nextElement();
-            if (files == null) {
-                dirs.add(extractFile(zf.getInputStream(e), e));
-            } else {
-                String name = e.getName();
-                for (String file : files) {
-                    if (name.startsWith(file)) {
-                        dirs.add(extractFile(zf.getInputStream(e), e));
-                        break;
+    void extract(String fname, String[] files) throws IOException {
+        if (vflag) {
+            output(formatMsg("out.extract.dir", Path.of(xdestDir == null ? "." : xdestDir).normalize()
+                    .toAbsolutePath().toString()));
+        }
+        final Set<ZipEntry> dirs;
+        try (ZipFile zf = new ZipFile(fname)) {
+            dirs = newDirSet();
+            Enumeration<? extends ZipEntry> zes = zf.entries();
+            while (zes.hasMoreElements()) {
+                ZipEntry e = zes.nextElement();
+                if (files == null) {
+                    dirs.add(extractFile(zf.getInputStream(e), e));
+                } else {
+                    String name = e.getName();
+                    for (String file : files) {
+                        if (name.startsWith(file)) {
+                            dirs.add(extractFile(zf.getInputStream(e), e));
+                            break;
+                        }
                     }
                 }
             }
         }
-        zf.close();
         updateLastModifiedTime(dirs);
     }
 
@@ -1441,16 +1463,24 @@ public class Main {
      */
     ZipEntry extractFile(InputStream is, ZipEntry e) throws IOException {
         ZipEntry rc = null;
-        // The spec requres all slashes MUST be forward '/', it is possible
+        // The spec requires all slashes MUST be forward '/', it is possible
         // an offending zip/jar entry may uses the backwards slash in its
         // name. It might cause problem on Windows platform as it skips
-        // our "safe" check for leading slahs and dot-dot. So replace them
+        // our "safe" check for leading slash and dot-dot. So replace them
         // with '/'.
         String name = safeName(e.getName().replace(File.separatorChar, '/'));
         if (name.length() == 0) {
             return rc;    // leading '/' or 'dot-dot' only path
         }
-        File f = new File(name.replace('/', File.separatorChar));
+        // the xdestDir points to the user specified location where the jar needs to
+        // be extracted. By default xdestDir is null and represents current working
+        // directory.
+        // jar extraction using -P option is only allowed when the destination
+        // directory isn't specified (and hence defaults to current working directory).
+        // In such cases using this java.io.File constructor which accepts a null parent path
+        // allows us to extract entries that may have leading slashes and hence may need
+        // to be extracted outside of the current directory.
+        File f = new File(xdestDir, name.replace('/', File.separatorChar));
         if (e.isDirectory()) {
             if (f.exists()) {
                 if (!f.isDirectory()) {
@@ -1470,6 +1500,12 @@ public class Main {
                 output(formatMsg("out.create", name));
             }
         } else {
+            if (f.exists() && kflag) {
+                if (vflag) {
+                    output(formatMsg("out.kept", name));
+                }
+                return rc;
+            }
             if (f.getParent() != null) {
                 File d = new File(f.getParent());
                 if (!d.exists() && !d.mkdirs() || !d.isDirectory()) {
@@ -1505,7 +1541,7 @@ public class Main {
     /**
      * Lists contents of JAR file.
      */
-    void list(InputStream in, String files[]) throws IOException {
+    void list(InputStream in, String[] files) throws IOException {
         ZipInputStream zis = new ZipInputStream(in);
         ZipEntry e;
         while ((e = zis.getNextEntry()) != null) {
@@ -1523,13 +1559,13 @@ public class Main {
     /**
      * Lists contents of JAR file, via ZipFile.
      */
-    void list(String fname, String files[]) throws IOException {
-        ZipFile zf = new ZipFile(fname);
-        Enumeration<? extends ZipEntry> zes = zf.entries();
-        while (zes.hasMoreElements()) {
-            printEntry(zes.nextElement(), files);
+    void list(String fname, String[] files) throws IOException {
+        try (ZipFile zf = new ZipFile(fname)) {
+            Enumeration<? extends ZipEntry> zes = zf.entries();
+            while (zes.hasMoreElements()) {
+                printEntry(zes.nextElement(), files);
+            }
         }
-        zf.close();
     }
 
     /**
@@ -1572,10 +1608,8 @@ public class Main {
         // class path attribute will give us jar file name with
         // '/' as separators, so we need to change them to the
         // appropriate one before we open the jar file.
-        JarFile rf = new JarFile(jar.replace('/', File.separatorChar));
-
-        if (rf != null) {
-            Manifest man = rf.getManifest();
+        try (JarFile jarFile = new JarFile(jar.replace('/', File.separatorChar))) {
+            Manifest man = jarFile.getManifest();
             if (man != null) {
                 Attributes attr = man.getMainAttributes();
                 if (attr != null) {
@@ -1596,7 +1630,6 @@ public class Main {
                 }
             }
         }
-        rf.close();
         return files;
     }
 
@@ -1703,7 +1736,7 @@ public class Main {
     /**
      * Main routine to start program.
      */
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         Main jartool = new Main(System.out, System.err, "jar");
         System.exit(jartool.run(args) ? 0 : 1);
     }
