@@ -35,8 +35,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathUtils;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
@@ -51,14 +53,25 @@ final class AppImageBuilder {
             return this;
         }
 
+        Builder excludeDirFromCopying(Path path) {
+            Objects.requireNonNull(path);
+
+            if (excludeCopyDirs == null) {
+                excludeCopyDirs = new ArrayList<>();
+            }
+            excludeCopyDirs.add(path);
+            return this;
+        }
+
         AppImageBuilder create(Application app) {
-            return new AppImageBuilder(app, app.asApplicationLayout(), launcherCallback);
+            return new AppImageBuilder(app, app.asApplicationLayout(), excludeCopyDirs, launcherCallback);
         }
 
         AppImageBuilder create(Package pkg) {
-            return new AppImageBuilder(pkg, launcherCallback);
+            return new AppImageBuilder(pkg, excludeCopyDirs, launcherCallback);
         }
 
+        private List<Path> excludeCopyDirs;
         private LauncherCallback launcherCallback;
     }
 
@@ -66,32 +79,38 @@ final class AppImageBuilder {
         return new Builder();
     }
 
-    private AppImageBuilder(Application app, ApplicationLayout appLayout, LauncherCallback launcherCallback) {
+    private AppImageBuilder(Application app, ApplicationLayout appLayout,
+            List<Path> excludeCopyDirs, LauncherCallback launcherCallback) {
+        Objects.requireNonNull(app);
+        Objects.requireNonNull(appLayout);
+
         this.app = app;
         this.appLayout = appLayout;
         this.withAppImageFile = true;
         this.launcherCallback = launcherCallback;
+        this.excludeCopyDirs = Optional.ofNullable(excludeCopyDirs).orElseGet(List::of);
     }
 
-    private AppImageBuilder(Package pkg, LauncherCallback launcherCallback) {
-        this(pkg.app(), pkg.asPackageApplicationLayout(), launcherCallback);
+    private AppImageBuilder(Package pkg, List<Path> excludeCopyDirs,
+            LauncherCallback launcherCallback) {
+        this(pkg.app(), pkg.asPackageApplicationLayout(), excludeCopyDirs,
+                launcherCallback);
     }
 
-    private static void copyRecursive(Path srcDir, Path dstDir, BuildEnv env) throws IOException {
+    private static void copyRecursive(Path srcDir, Path dstDir, List<Path> excludeDirs) throws IOException {
         srcDir = srcDir.toAbsolutePath();
 
         List<Path> excludes = new ArrayList<>();
 
-        for (var path : List.of(env.buildRoot(), env.appImageDir())) {
+        for (var path : excludeDirs) {
             if (Files.isDirectory(path)) {
-                path = path.toAbsolutePath();
                 if (path.startsWith(srcDir) && !Files.isSameFile(path, srcDir)) {
                     excludes.add(path);
                 }
             }
         }
 
-        FileUtils.copyRecursive(srcDir, dstDir.toAbsolutePath() /*, excludes */);
+        FileUtils.copyRecursive(srcDir, dstDir.toAbsolutePath(), excludes);
     }
 
     void execute(BuildEnv env) throws IOException, PackagerException {
@@ -102,14 +121,19 @@ final class AppImageBuilder {
             return;
         }
 
+        var excludeCandidates = Stream.concat(
+                excludeCopyDirs.stream(),
+                Stream.of(env.buildRoot(), env.appImageDir())
+        ).map(Path::toAbsolutePath).toList();
+
         if (app.srcDir() != null) {
-            copyRecursive(app.srcDir(), resolvedAppLayout.appDirectory(), env);
+            copyRecursive(app.srcDir(), resolvedAppLayout.appDirectory(), excludeCandidates);
         }
 
         for (var srcDir : Optional.ofNullable(app.contentDirs()).orElseGet(List::of)) {
             copyRecursive(srcDir,
                     resolvedAppLayout.contentDirectory().resolve(srcDir.getFileName()),
-                    env);
+                    excludeCandidates);
         }
 
         if (withAppImageFile) {
@@ -204,5 +228,6 @@ final class AppImageBuilder {
     private final boolean withAppImageFile;
     private final Application app;
     private final ApplicationLayout appLayout;
+    private final List<Path> excludeCopyDirs;
     private final LauncherCallback launcherCallback;
 }

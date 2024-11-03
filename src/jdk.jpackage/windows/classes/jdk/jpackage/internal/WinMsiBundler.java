@@ -205,7 +205,7 @@ public class WinMsiBundler  extends AbstractBundler {
         }
     }
 
-    private void prepareProto(WinMsiPackage pkg, BuildEnv env) throws
+    private void prepareProto(WinMsiPackage pkg, BuildEnv env, Path msiOutputDir) throws
             PackagerException, IOException {
 
         AppImageLayout appImageLayout;
@@ -213,7 +213,9 @@ public class WinMsiBundler  extends AbstractBundler {
         // We either have an application image or need to build one.
         if (pkg.app().runtimeBuilder() != null) {
             // Runtime builder is present, build app image.
-            WinAppImageBuilder.build().create(pkg.app()).execute(env);
+            WinAppImageBuilder.build()
+                    .excludeDirFromCopying(msiOutputDir)
+                    .create(pkg.app()).execute(env);
             appImageLayout = pkg.appImageLayout().resolveAt(env.appImageDir());
         } else {
             Path srcAppImageDir = pkg.predefinedAppImage();
@@ -268,7 +270,7 @@ public class WinMsiBundler  extends AbstractBundler {
 
         Path imageDir = env.appImageDir();
         try {
-            prepareProto(pkg, env);
+            prepareProto(pkg, env, outputParentDir);
             for (var wixFragment : wixFragments) {
                 wixFragment.initFromParams(env, pkg);
                 wixFragment.addFilesToConfigRoot();

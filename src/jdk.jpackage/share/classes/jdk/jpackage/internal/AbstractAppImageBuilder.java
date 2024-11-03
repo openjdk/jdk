@@ -106,7 +106,7 @@ public abstract class AbstractAppImageBuilder {
                 }
             }
 
-            IOUtils.copyRecursive(inputPath,
+            FileUtils.copyRecursive(inputPath,
                     appLayout.appDirectory().toAbsolutePath(), excludes);
         }
 
