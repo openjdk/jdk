@@ -181,10 +181,10 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 Launcher::executableNameWithSuffix,
                 WinLauncher::fileAssociations));
 
-        associations.values().stream().flatMap(List::stream).filter(fa -> fa.icon() != null).forEach(fa -> {
+        associations.values().stream().flatMap(List::stream).filter(FileAssociation::hasIcon).forEach(fa -> {
             // Need to add fa icon in the image.
             Object key = new Object();
-            appImagePathGroup.setPath(key, fa.icon());
+            appImagePathGroup.setPath(key, fa.icon().toAbsolutePath().normalize());
             installedAppImagePathGroup.setPath(key, getInstalledFaIcoPath(fa));
         });
     }
@@ -523,12 +523,11 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         Path path = INSTALLDIR.resolve(String.format("%s_%s", fa.extension(), launcherExe));
         return addComponent(xml, path, Component.ProgId, unused -> {
-            final String description = fa.description();
-            if (description != null && !description.isEmpty()) {
-                xml.writeAttribute("Description", description);
+            if (fa.hasNonEmptyDescription()) {
+                xml.writeAttribute("Description", fa.description());
             }
 
-            if (fa.icon() != null) {
+            if (fa.hasIcon()) {
                 xml.writeAttribute("Icon", Id.File.of(getInstalledFaIcoPath(fa)));
                 xml.writeAttribute("IconIndex", "0");
             }

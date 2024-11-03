@@ -25,12 +25,23 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 public interface FileAssociation {
 
     String description();
 
     Path icon();
+    
+    default boolean hasIcon() {
+        return Objects.nonNull(icon());
+    }
+    
+    default boolean hasNonEmptyDescription() {
+        return Optional.ofNullable(description()).filter(Predicate.not(String::isEmpty)).isPresent();
+    }
 
     String mimeType();
 

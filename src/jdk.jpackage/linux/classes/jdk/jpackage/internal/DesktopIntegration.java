@@ -349,10 +349,9 @@ final class DesktopIntegration extends ShellCustomAction {
             xml.writeStartElement("mime-type");
             xml.writeAttribute("type", fa.mimeType());
 
-            final String description = fa.description();
-            if (description != null && !description.isEmpty()) {
+            if (fa.hasNonEmptyDescription()) {
                 xml.writeStartElement("comment");
-                xml.writeCharacters(description);
+                xml.writeCharacters(fa.description());
                 xml.writeEndElement();
             }
 
@@ -381,7 +380,7 @@ final class DesktopIntegration extends ShellCustomAction {
             throws IOException {
         Set<String> processedMimeTypes = new HashSet<>();
         for (var fa : associations) {
-            if (fa.icon() == null) {
+            if (!fa.hasIcon()) {
                 // No icon.
                 continue;
             }
@@ -418,9 +417,9 @@ final class DesktopIntegration extends ShellCustomAction {
         return associations.stream().map(FileAssociation::mimeType).toList();
     }
 
-    private static int getSquareSizeOfImage(File f) {
+    private static int getSquareSizeOfImage(Path path) {
         try {
-            BufferedImage bi = ImageIO.read(f);
+            BufferedImage bi = ImageIO.read(path.toFile());
             return Math.max(bi.getWidth(), bi.getHeight());
         } catch (IOException e) {
             Log.verbose(e);
@@ -466,12 +465,11 @@ final class DesktopIntegration extends ShellCustomAction {
         }
 
         private static int getIconSize(FileAssociation fa) {
-            var icon = fa.icon();
-            if (icon != null && Files.isReadable(icon)) {
-                return getSquareSizeOfImage(icon.toFile());
-            } else {
-                return -1;
-            }
+            return Optional.of(fa)
+                    .filter(FileAssociation::hasIcon)
+                    .map(FileAssociation::icon)
+                    .map(DesktopIntegration::getSquareSizeOfImage)
+                    .orElse(-1);
         }
 
         private final int iconSize;
