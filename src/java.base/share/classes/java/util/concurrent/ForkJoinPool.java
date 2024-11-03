@@ -1034,6 +1034,7 @@ public class ForkJoinPool extends AbstractExecutorService {
 
     // others
     static final int DROPPED          = 1 << 16;  // removed from ctl counts
+    static final int DROPPING         = DROPPED | INVALID_ID;
     static final int UNCOMPENSATE     = 1 << 16;  // tryCompensate return
     static final int IDLE             = 1 << 16;  // phase seqlock/version count
 
@@ -1830,13 +1831,13 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) {
         if ((runState & STOP) != 0L)       // ensure released
-            dropWaiters();
+            releaseAll();
         WorkQueue w = null;
         int src = 0, phase = 0;
         boolean replaceable = false;
         if (wt != null && (w = wt.workQueue) != null) {
             phase = w.phase;
-            if ((src = w.source) != DROPPED) {
+            if (((src = w.source) & DROPPED) == 0) {
                 w.source = DROPPED;        // else already dropped
                 if (phase != 0) {          // else failed to start
                     replaceable = true;
@@ -1914,22 +1915,27 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Releases and drops all waiting workers. Called only during shutdown.
+     * Releases all waiting workers. Called only during shutdown.
+     *
+     * @return current ctl
      */
-    private void dropWaiters() {
-        for (long c = ctl;;) {
+    private long releaseAll() {
+        long c = ctl;
+        for (;;) {
             WorkQueue[] qs; WorkQueue v; int sp, i;
             if ((sp = (int)c) == 0 || (qs = queues) == null ||
                 qs.length <= (i = sp & SMASK) || (v = qs[i]) == null)
                 break;
             if (c == (c = compareAndExchangeCtl(
-                          c, (v.stackPred & LMASK) | (UMASK & (c - TC_UNIT))))) {
-                v.source = DROPPED;
+                          c, ((UMASK & (c + RC_UNIT)) | (c & TC_MASK) |
+                              (v.stackPred & LMASK))))) {
+                v.source = DROPPING; // avoid unnecessary shutdown overhead
                 v.phase = sp;
                 if (v.parking != 0)
                     U.unpark(v.owner);
             }
         }
+        return c;
     }
 
     /**
@@ -2605,7 +2611,6 @@ public class ForkJoinPool extends AbstractExecutorService {
             else
                 return q;
         }
-        tryTerminate(false, false);
         throw new RejectedExecutionException();
     }
 
@@ -2758,15 +2763,17 @@ public class ForkJoinPool extends AbstractExecutorService {
                     startTerminating = true;
             }
             if (startTerminating) {
-                dropWaiters();
+                releaseAll();
                 if (now)
                     interruptAll();
             }
             e = runState;
         }
-        if ((e & (STOP | TERMINATED)) == STOP) {
-            helpTerminate();
-            if (((e = runState) & (STOP | TERMINATED)) == STOP && ctl == 0L) {
+        while ((e & (STOP | TERMINATED)) == STOP) {
+            boolean clean = helpTerminate();
+            if (((e = runState) & TERMINATED) != 0L || ctl != 0L)
+                break;
+            if (clean) {
                 e |= TERMINATED;
                 if ((getAndBitwiseOrRunState(TERMINATED) & TERMINATED) == 0L) {
                     CountDownLatch done; SharedThreadContainer ctr;
@@ -2775,6 +2782,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     if ((ctr = container) != null)
                         ctr.close();
                 }
+                break;
             }
         }
         return e;
@@ -2784,8 +2792,11 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Scans queues in a psuedorandom order based on thread id,
      * cancelling tasks until empty or interference (in which case one
      * or more other threads will finish cancellation).
+     *
+     * @return true if all undropped queues are now known to be empty
      */
-    private void helpTerminate() {
+    private boolean helpTerminate() {
+        boolean clean = true;
         int r = (int)Thread.currentThread().threadId();
         r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
         int step = (r >>> 16) | 1;                // randomize traversals
@@ -2793,7 +2804,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         int n = (qs == null) ? 0 : qs.length;
         for (int l = n; l > 0; --l, r += step) {
             WorkQueue q;
-            if ((q = qs[r & (n - 1)]) != null) {
+            if ((q = qs[r & (n - 1)]) != null && (q.source & DROPPED) == 0) {
                 for (;;) {
                     ForkJoinTask<?> t; int cap, b; long k; ForkJoinTask<?>[] a;
                     if ((a = q.array) == null || (cap = a.length) <= 0)
@@ -2802,11 +2813,12 @@ public class ForkJoinPool extends AbstractExecutorService {
                         a, k = slotOffset((cap - 1) & (b = q.base)));
                     if (q.base != b)               // inconsistent
                         ;
-                    else if (t == null)
-                        break;                     // apparently empty
-                    else if (!U.compareAndSetReference(a, k, t, null))
-                        break;                     // contended
-                    else {
+                    else if (t == null) {
+                        if (clean && q.top - b > 0)
+                            clean = false;
+                        break;
+                    }
+                    else if (U.compareAndSetReference(a, k, t, null)) {
                         q.updateBase(b + 1);
                         try {
                             t.cancel(false);
@@ -2816,6 +2828,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
             }
         }
+        return clean;
     }
 
     /**
@@ -2828,7 +2841,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         for (int i = 1; i < n; i += 2) {
             WorkQueue q; Thread o;
             if ((q = qs[i]) != null && (o = q.owner) != null && o != current &&
-                q.source != DROPPED) {
+                (q.source & DROPPED) == 0) {
                 try {
                     o.interrupt();
                 } catch (Throwable ignore) {
