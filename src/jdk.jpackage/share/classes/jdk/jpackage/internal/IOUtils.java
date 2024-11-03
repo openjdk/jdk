@@ -31,17 +31,11 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.file.CopyOption;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import jdk.internal.util.OperatingSystem;
 
 /**
  * IOUtils
@@ -49,107 +43,6 @@ import jdk.internal.util.OperatingSystem;
  * A collection of static utility methods.
  */
 public class IOUtils {
-
-    public static void deleteRecursive(Path directory) throws IOException {
-        final AtomicReference<IOException> exception = new AtomicReference<>();
-
-        if (!Files.exists(directory)) {
-            return;
-        }
-
-        Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file,
-                            BasicFileAttributes attr) throws IOException {
-                if (OperatingSystem.isWindows()) {
-                    Files.setAttribute(file, "dos:readonly", false);
-                }
-                try {
-                    Files.delete(file);
-                } catch (IOException ex) {
-                    exception.compareAndSet(null, ex);
-                }
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir,
-                            BasicFileAttributes attr) throws IOException {
-                if (OperatingSystem.isWindows()) {
-                    Files.setAttribute(dir, "dos:readonly", false);
-                }
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException e)
-                            throws IOException {
-                try {
-                    Files.delete(dir);
-                } catch (IOException ex) {
-                    exception.compareAndSet(null, ex);
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
-        if (exception.get() != null) {
-            throw exception.get();
-        }
-    }
-
-    public static void copyRecursive(Path src, Path dest, CopyOption... options)
-            throws IOException {
-        copyRecursive(src, dest, List.of(), options);
-    }
-
-    public static void copyRecursive(Path src, Path dest,
-            final List<Path> excludes, CopyOption... options)
-            throws IOException {
-
-        List<CopyAction> copyActions = new ArrayList<>();
-
-        Files.walkFileTree(src, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult preVisitDirectory(final Path dir,
-                    final BasicFileAttributes attrs) {
-                if (isPathMatch(dir, excludes)) {
-                    return FileVisitResult.SKIP_SUBTREE;
-                } else {
-                    copyActions.add(new CopyAction(null, dest.resolve(src.
-                            relativize(dir))));
-                    return FileVisitResult.CONTINUE;
-                }
-            }
-
-            @Override
-            public FileVisitResult visitFile(final Path file,
-                    final BasicFileAttributes attrs) {
-                if (!isPathMatch(file, excludes)) {
-                    copyActions.add(new CopyAction(file, dest.resolve(src.
-                            relativize(file))));
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
-
-        for (var copyAction : copyActions) {
-            copyAction.apply(options);
-        }
-    }
-
-    private static record CopyAction(Path src, Path dest) {
-        void apply(CopyOption... options) throws IOException {
-            if (src == null) {
-                Files.createDirectories(dest);
-            } else {
-                Files.copy(src, dest, options);
-            }
-        }
-    }
-
-    private static boolean isPathMatch(Path what, List<Path> paths) {
-        return paths.stream().anyMatch(what::endsWith);
-    }
 
     public static void copyFile(Path sourceFile, Path destFile)
             throws IOException {
