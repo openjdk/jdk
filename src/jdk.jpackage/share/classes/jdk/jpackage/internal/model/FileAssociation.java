@@ -25,7 +25,6 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import java.util.Objects;
 
 public interface FileAssociation {
 
@@ -38,10 +37,6 @@ public interface FileAssociation {
     String extension();
 
     record Stub(String description, Path icon, String mimeType, String extension) implements FileAssociation {
-
-        public Stub {
-            Objects.requireNonNull(description);
-        }
     }
 
     class Proxy<T extends FileAssociation> extends ProxyBase<T> implements FileAssociation {
