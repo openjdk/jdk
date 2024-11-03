@@ -249,12 +249,12 @@ final class AppImageFile2 {
             throw new IOException(ex);
         } catch (NoSuchFileException ex) {
             throw ConfigException.build()
-                    .message(I18N.format("error.foreign-app-image", FILENAME))
+                    .message("error.foreign-app-image", FILENAME)
                     .create();
         } catch (InavlidAppImageFileException ex) {
             // Invalid input XML
             throw ConfigException.build()
-                    .message(I18N.format("error.invalid-app-image-file", FILENAME))
+                    .message("error.invalid-app-image-file", FILENAME)
                     .create();
         }
     }

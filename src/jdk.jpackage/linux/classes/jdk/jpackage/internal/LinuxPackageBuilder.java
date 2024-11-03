@@ -122,8 +122,8 @@ final class LinuxPackageBuilder {
                 var regexp = Pattern.compile("^[a-z][a-z\\d\\+\\-\\.]+");
                 if (!regexp.matcher(packageName).matches()) {
                     throw ConfigException.build()
-                            .message(I18N.format("error.deb-invalid-value-for-package-name", packageName))
-                            .advice(I18N.getString("error.deb-invalid-value-for-package-name.advice"))
+                            .message("error.deb-invalid-value-for-package-name", packageName)
+                            .advice("error.deb-invalid-value-for-package-name.advice")
                             .create();
                 }
             }
@@ -140,8 +140,8 @@ final class LinuxPackageBuilder {
                 var regexp = Pattern.compile("[a-z\\d\\+\\-\\.\\_]+", Pattern.CASE_INSENSITIVE);
                 if (!regexp.matcher(packageName).matches()) {
                     throw ConfigException.build()
-                            .message(I18N.format("error.rpm-invalid-value-for-package-name", packageName))
-                            .advice(I18N.getString("error.rpm-invalid-value-for-package-name.advice"))
+                            .message("error.rpm-invalid-value-for-package-name", packageName)
+                            .advice("error.rpm-invalid-value-for-package-name.advice")
                             .create();
                 }
             }
