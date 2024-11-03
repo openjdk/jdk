@@ -1697,9 +1697,8 @@ public class Types {
                         } else if (isym.isSealed()) {
                             return areDisjoint(csym, isym.getPermittedSubclasses());
                         }
-                    }
-                } else if (!ts.isInterface() &&              // case II: both are classes
-                        !ss.isInterface()) {
+                    } // now both are classes or both are interfaces
+                } else if (!ts.isInterface()) {              // case II: both are classes
                     return !isSubtype(erasure(ss.type), erasure(ts.type)) && !isSubtype(erasure(ts.type), erasure(ss.type));
                 } else {                                     // case III: both are interfaces
                     if (!isSubtype(erasure(ts.type), erasure(ss.type)) && !isSubtype(erasure(ss.type), erasure(ts.type))) {
