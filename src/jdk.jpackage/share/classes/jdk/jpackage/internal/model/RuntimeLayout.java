@@ -32,5 +32,5 @@ import java.nio.file.Path;
  */
 public interface RuntimeLayout extends AppImageLayout {
 
-    static final RuntimeLayout INSTANCE = new RuntimeLayoutStub(new AppImageLayout.Stub(Path.of("")));
+    static final RuntimeLayout DEFAULT = new RuntimeLayoutStub(new AppImageLayout.Stub(Path.of("")));
 }

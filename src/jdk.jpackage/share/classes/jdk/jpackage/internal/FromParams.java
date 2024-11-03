@@ -81,7 +81,7 @@ final class FromParams {
         var isRuntimeInstaller = isRuntimeInstaller(params);
 
         if (isRuntimeInstaller) {
-            appBuilder.appImageLayout(RuntimeLayout.INSTANCE);
+            appBuilder.appImageLayout(RuntimeLayout.DEFAULT);
         } else {
             appBuilder.appImageLayout(appLayout);
         }
