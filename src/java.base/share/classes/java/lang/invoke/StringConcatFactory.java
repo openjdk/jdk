@@ -29,6 +29,7 @@ package java.lang.invoke;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ConstantUtils;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.misc.VM;
@@ -1092,10 +1093,10 @@ public final class StringConcatFactory {
 
         static final ClassDesc
                 CD_CONCAT             = ConstantUtils.binaryNameToDesc(CLASS_NAME),
-                CD_StringConcatHelper = ReferenceClassDescImpl.ofValidated("Ljava/lang/StringConcatHelper;"),
-                CD_StringConcatBase   = ReferenceClassDescImpl.ofValidated("Ljava/lang/StringConcatHelper$StringConcatBase;"),
-                CD_Array_byte         = ReferenceClassDescImpl.ofValidated("[B"),
-                CD_Array_String       = ReferenceClassDescImpl.ofValidated("[Ljava/lang/String;");
+                CD_StringConcatHelper = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/StringConcatHelper;"),
+                CD_StringConcatBase   = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/StringConcatHelper$StringConcatBase;"),
+                CD_Array_byte         = CD_byte.arrayType(),
+                CD_Array_String       = CD_String.arrayType();
 
         static final MethodTypeDesc
                 MTD_byte_char       = MethodTypeDescImpl.ofValidated(CD_byte, CD_char),

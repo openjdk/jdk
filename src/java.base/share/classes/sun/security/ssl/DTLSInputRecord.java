@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,21 @@ import sun.security.ssl.SSLCipher.SSLReadCipher;
 final class DTLSInputRecord extends InputRecord implements DTLSRecord {
     private DTLSReassembler reassembler = null;
     private int             readEpoch;
+    private SSLContextImpl  sslContext;
 
     DTLSInputRecord(HandshakeHash handshakeHash) {
         super(handshakeHash, SSLReadCipher.nullDTlsReadCipher());
         this.readEpoch = 0;
+    }
+
+    // Method to set TransportContext
+    public void setTransportContext(TransportContext tc) {
+        this.tc = tc;
+    }
+
+    // Method to set SSLContext
+    public void setSSLContext(SSLContextImpl sslContext) {
+        this.sslContext = sslContext;
     }
 
     @Override
@@ -537,6 +548,27 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         }
     }
 
+    /**
+     * Turn a sufficiently-large initial ClientHello fragment into one that
+     * stops immediately after the compression methods.  This is only used
+     * for the initial CH message fragment at offset 0.
+     *
+     * @param srcFrag the fragment actually received by the DTLSReassembler
+     * @param limit the size of the new, cloned/truncated handshake fragment
+     *
+     * @return a truncated handshake fragment that is sized to look like a
+     * complete message, but actually contains only up to the compression
+     * methods (no extensions)
+     */
+    private static HandshakeFragment truncateChFragment(HandshakeFragment srcFrag,
+            int limit) {
+        return new HandshakeFragment(Arrays.copyOf(srcFrag.fragment, limit),
+                srcFrag.contentType, srcFrag.majorVersion,
+                srcFrag.minorVersion, srcFrag.recordEnS, srcFrag.recordEpoch,
+                srcFrag.recordSeq, srcFrag.handshakeType, limit,
+                srcFrag.messageSeq, srcFrag.fragmentOffset, limit);
+    }
+
     private static final class HoleDescriptor {
         int offset;             // fragment_offset
         int limit;              // fragment_offset + fragment_length
@@ -640,8 +672,15 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         // Queue up a handshake message.
         void queueUpHandshake(HandshakeFragment hsf) throws SSLProtocolException {
             if (!isDesirable(hsf)) {
-                // Not a dedired record, discard it.
+                // Not a desired record, discard it.
                 return;
+            }
+
+            if (hsf.handshakeType == SSLHandshake.CLIENT_HELLO.id) {
+                // validate the first or subsequent ClientHello message
+                if ((hsf = valHello(hsf, hsf.messageSeq == 0)) == null) {
+                    return;
+                }
             }
 
             // Clean up the retransmission messages if necessary.
@@ -766,6 +805,100 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 bufferedFragments.add(hsf);
             } else {
                 bufferFragment(hsf);
+            }
+        }
+
+        private HandshakeFragment valHello(HandshakeFragment hsf,
+                boolean firstHello) {
+            ServerHandshakeContext shc =
+                    (ServerHandshakeContext) tc.handshakeContext;
+            // Drop any fragment that is not a zero offset until we've received
+            // a second (or possibly later) CH message that passes the cookie
+            // check.
+            if (shc == null || !shc.acceptCliHelloFragments) {
+                if (hsf.fragmentOffset != 0) {
+                    return null;
+                }
+            } else {
+                // Let this fragment through to the DTLSReassembler as-is
+                return hsf;
+            }
+
+            try {
+                ByteBuffer fragmentData = ByteBuffer.wrap(hsf.fragment);
+
+                ProtocolVersion pv = ProtocolVersion.valueOf(
+                        Record.getInt16(fragmentData));
+                if (!pv.isDTLS) {
+                    return null;
+                }
+                // Read the random (32 bytes)
+                if (fragmentData.remaining() < 32) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+                        SSLLogger.fine("Rejected client hello fragment (bad random len) " +
+                                "fo=" + hsf.fragmentOffset + " fl=" + hsf.fragmentLength);
+                    }
+                    return null;
+                }
+                fragmentData.position(fragmentData.position() + 32);
+
+                // SessionID
+                byte[] sessId = Record.getBytes8(fragmentData);
+                if (sessId.length > 0  &&
+                        !SSLConfiguration.enableDtlsResumeCookie) {
+                    // If we are in a resumption it is possible that the cookie
+                    // exchange will be skipped.  This is a server-side setting
+                    // and it is NOT the default.  If enableDtlsResumeCookie is
+                    // false though, then we will buffer fragments since there
+                    // is no cookie exchange to execute prior to performing
+                    // reassembly.
+                    return hsf;
+                }
+
+                // Cookie
+                byte[] cookie = Record.getBytes8(fragmentData);
+                if (firstHello && cookie.length != 0) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+                        SSLLogger.fine("Rejected initial client hello fragment (bad cookie len) " +
+                                "fo=" + hsf.fragmentOffset + " fl=" + hsf.fragmentLength);
+                    }
+                    return null;
+                }
+                // CipherSuites
+                Record.getBytes16(fragmentData);
+                // Compression methods
+                Record.getBytes8(fragmentData);
+
+                // If it's the first fragment, we'll truncate it and push it
+                // through the reassembler.
+                if (firstHello) {
+                    return truncateChFragment(hsf, fragmentData.position());
+                } else {
+                    HelloCookieManager hcMgr = sslContext.
+                            getHelloCookieManager(ProtocolVersion.DTLS10);
+                    ByteBuffer msgFragBuf = ByteBuffer.wrap(hsf.fragment, 0,
+                            fragmentData.position());
+                    ClientHello.ClientHelloMessage chMsg =
+                            new ClientHello.ClientHelloMessage(shc, msgFragBuf, null);
+                    if (!hcMgr.isCookieValid(shc, chMsg, cookie)) {
+                        // Bad cookie check, truncate it and let the ClientHello
+                        // consumer recheck, fail and take the appropriate action.
+                        return truncateChFragment(hsf, fragmentData.position());
+                    } else {
+                        // It's a good cookie, return the original handshake
+                        // fragment and let it go into the DTLSReassembler like
+                        // any other fragment so we can wait for the rest of
+                        // the CH message.
+                        shc.acceptCliHelloFragments = true;
+                        return hsf;
+                    }
+                }
+            } catch (IOException ioe) {
+                if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+                    SSLLogger.fine("Rejected client hello fragment " +
+                            "fo=" + hsf.fragmentOffset + " fl=" + hsf.fragmentLength);
+                }
+                return null;
             }
         }
 
