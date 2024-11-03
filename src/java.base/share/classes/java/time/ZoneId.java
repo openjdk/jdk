@@ -424,7 +424,8 @@ public abstract sealed class ZoneId implements Serializable permits ZoneOffset, 
         if (zoneId.length() == prefixLength) {
             return ofOffset(prefix, ZoneOffset.UTC);
         }
-        if (zoneId.charAt(prefixLength) != '+' && zoneId.charAt(prefixLength) != '-') {
+        char sign = zoneId.charAt(prefixLength);
+        if (sign != '+' && sign != '-') {
             return ZoneRegion.ofId(zoneId, checkAvailable);  // drop through to ZoneRulesProvider
         }
         try {
