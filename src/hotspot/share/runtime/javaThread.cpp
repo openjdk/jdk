@@ -446,7 +446,6 @@ JavaThread::JavaThread(MemTag mem_tag) :
 #if INCLUDE_JVMTI
   _carrier_thread_suspended(false),
   _is_in_VTMS_transition(false),
-  _is_in_tmp_VTMS_transition(false),
   _is_disable_suspend(false),
   _VTMS_transition_mark(false),
 #ifdef ASSERT
@@ -487,6 +486,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _cont_fastpath_thread_state(1),
   _held_monitor_count(0),
   _jni_monitor_count(0),
+  _unlocked_inflated_monitor(nullptr),
 
   _handshake(this),
 

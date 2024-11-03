@@ -1826,14 +1826,6 @@ JVM_ENTRY(jobjectArray, JVM_GetRecordComponents(JNIEnv* env, jclass ofClass))
 }
 JVM_END
 
-static bool select_method(const methodHandle& method, bool want_constructor) {
-  if (want_constructor) {
-    return (method->is_initializer() && !method->is_static());
-  } else {
-    return  (!method->is_initializer() && !method->is_overpass());
-  }
-}
-
 static jobjectArray get_class_declared_methods_helper(
                                   JNIEnv *env,
                                   jclass ofClass, jboolean publicOnly,
@@ -1866,14 +1858,22 @@ static jobjectArray get_class_declared_methods_helper(
   GrowableArray<int>* idnums = new GrowableArray<int>(methods_length);
   int num_methods = 0;
 
+  // Select methods matching the criteria.
   for (int i = 0; i < methods_length; i++) {
-    methodHandle method(THREAD, methods->at(i));
-    if (select_method(method, want_constructor)) {
-      if (!publicOnly || method->is_public()) {
-        idnums->push(method->method_idnum());
-        ++num_methods;
-      }
+    Method* method = methods->at(i);
+    if (want_constructor && !method->is_object_initializer()) {
+      continue;
     }
+    if (!want_constructor &&
+        (method->is_object_initializer() || method->is_static_initializer() ||
+         method->is_overpass())) {
+      continue;
+    }
+    if (publicOnly && !method->is_public()) {
+      continue;
+    }
+    idnums->push(method->method_idnum());
+    ++num_methods;
   }
 
   // Allocate result
@@ -2175,10 +2175,11 @@ static jobject get_method_at_helper(const constantPoolHandle& cp, jint index, bo
     THROW_MSG_NULL(vmSymbols::java_lang_RuntimeException(), "Unable to look up method in target class");
   }
   oop method;
-  if (!m->is_initializer() || m->is_static()) {
-    method = Reflection::new_method(m, true, CHECK_NULL);
-  } else {
+  if (m->is_object_initializer()) {
     method = Reflection::new_constructor(m, CHECK_NULL);
+  } else {
+    // new_method accepts <clinit> as Method here
+    method = Reflection::new_method(m, true, CHECK_NULL);
   }
   return JNIHandles::make_local(THREAD, method);
 }
@@ -2947,9 +2948,10 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
   // We must release the Threads_lock before we can post a jvmti event
   // in Thread::start.
   {
+    ConditionalMutexLocker throttle_ml(ThreadsLockThrottle_lock, UseThreadsLockThrottleLock);
     // Ensure that the C++ Thread and OSThread structures aren't freed before
     // we operate.
-    MutexLocker mu(Threads_lock);
+    MutexLocker ml(Threads_lock);
 
     // Since JDK 5 the java.lang.Thread threadStatus is used to prevent
     // re-starting an already started thread, so we should usually find
@@ -3276,10 +3278,7 @@ JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
     InstanceKlass* ik = vfst.method()->method_holder();
     oop loader = ik->class_loader();
     if (loader != nullptr && !SystemDictionary::is_platform_class_loader(loader)) {
-      // Skip reflection related frames
-      if (!ik->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
-        return JNIHandles::make_local(THREAD, loader);
-      }
+      return JNIHandles::make_local(THREAD, loader);
     }
   }
   return nullptr;
@@ -3939,19 +3938,6 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean 
     // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
     JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, hide);
   }
-#endif
-JVM_END
-
-// Always update the temporary VTMS transition bit.
-JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jclass clazz, jboolean hide))
-#if INCLUDE_JVMTI
-  if (!DoJVMTIVirtualThreadTransitions) {
-    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
-    return;
-  }
-  assert(!thread->is_in_VTMS_transition(), "sanity check");
-  assert(thread->is_in_tmp_VTMS_transition() != (bool)hide, "sanity check");
-  thread->toggle_is_in_tmp_VTMS_transition();
 #endif
 JVM_END
 

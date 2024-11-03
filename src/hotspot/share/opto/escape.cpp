@@ -574,9 +574,8 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         // CmpP/N used by the If controlling the cast.
         if (use->in(0)->is_IfTrue() || use->in(0)->is_IfFalse()) {
           Node* iff = use->in(0)->in(0);
-          // We may have Opaque4 node between If and Bool nodes.
-          // Bail out in such case - we need to preserve Opaque4 for correct
-          // processing predicates after loop opts.
+          // We may have an OpaqueNotNull node between If and Bool nodes. But we could also have a sub class of IfNode,
+          // for example, an OuterStripMinedLoopEnd or a Parse Predicate. Bail out in all these cases.
           bool can_reduce = (iff->Opcode() == Op_If) && iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp();
           if (can_reduce) {
             Node* iff_cmp = iff->in(1)->in(1);
@@ -4009,10 +4008,6 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phi
       --i;
 #ifdef ASSERT
     } else if (use->is_Mem()) {
-      if (use->Opcode() == Op_StoreCM && use->in(MemNode::OopStore) == n) {
-        // Don't move related cardmark.
-        continue;
-      }
       // Memory nodes should have new memory input.
       tp = igvn->type(use->in(MemNode::Address))->isa_ptr();
       assert(tp != nullptr, "ptr type");
@@ -4564,7 +4559,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.append_if_missing(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||
-              op == Op_CastP2X || op == Op_StoreCM ||
+              op == Op_CastP2X ||
               op == Op_FastLock || op == Op_AryEq ||
               op == Op_StrComp || op == Op_CountPositives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
@@ -4703,9 +4698,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       if (use->is_Phi() || use->is_ClearArray()) {
         memnode_worklist.append_if_missing(use);
       } else if (use->is_Mem() && use->in(MemNode::Memory) == n) {
-        if (use->Opcode() == Op_StoreCM) { // Ignore cardmark stores
-          continue;
-        }
         memnode_worklist.append_if_missing(use);
       } else if (use->is_MemBar() || use->is_CallLeaf()) {
         if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge

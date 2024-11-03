@@ -273,7 +273,7 @@ public class GDIWindowSurfaceData extends SurfaceData {
         scaleX = gd.getDefaultScaleX();
         scaleY = gd.getDefaultScaleY();
         initOps(peer, depth, rMask, gMask, bMask, gd.getScreen());
-        setBlitProxyKey(graphicsConfig.getProxyKey());
+        setBlitProxyCache(graphicsConfig.getSurfaceDataProxyCache());
     }
 
     @Override

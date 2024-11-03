@@ -223,6 +223,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
                             MIN_GC_REGION_ALIGNMENT,
                             max_elem_count);
 
+  int root_index = 0;
   for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
     int size_elems = segments.size_in_elems(seg_idx);
     size_t size_bytes = segments.size_in_bytes(seg_idx);
@@ -235,7 +236,6 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
            "Roots segment " SIZE_FORMAT " start is not aligned: " SIZE_FORMAT,
            segments.count(), oop_offset);
 
-    int root_index = 0;
     objArrayOop seg_oop = allocate_root_segment(oop_offset, size_elems);
     for (int i = 0; i < size_elems; i++) {
       root_segment_at_put(seg_oop, i, roots->at(root_index++));
@@ -245,14 +245,21 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
                         size_elems, size_bytes, p2i(seg_oop));
   }
 
+  assert(root_index == roots->length(), "Post-condition: All roots are handled");
+
   _heap_root_segments = segments;
 }
 
+// The goal is to sort the objects in increasing order of:
+// - objects that have only oop pointers
+// - objects that have both native and oop pointers
+// - objects that have only native pointers
+// - objects that have no pointers
 static int oop_sorting_rank(oop o) {
   bool has_oop_ptr, has_native_ptr;
   HeapShared::get_pointer_info(o, has_oop_ptr, has_native_ptr);
 
-  if (!has_oop_ptr) {
+  if (has_oop_ptr) {
     if (!has_native_ptr) {
       return 0;
     } else {
@@ -267,11 +274,6 @@ static int oop_sorting_rank(oop o) {
   }
 }
 
-// The goal is to sort the objects in increasing order of:
-// - objects that have no pointers
-// - objects that have only native pointers
-// - objects that have both native and oop pointers
-// - objects that have only oop pointers
 int ArchiveHeapWriter::compare_objs_by_oop_fields(HeapObjOrder* a, HeapObjOrder* b) {
   int rank_a = a->_rank;
   int rank_b = b->_rank;
