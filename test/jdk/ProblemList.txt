@@ -834,7 +834,6 @@ java/awt/Robot/InfiniteLoopException.java 8342638 windows-all
 
 # :tier2_part2
 tools/launcher/MainClassCantBeLoadedTest.java 8338411 generic-all
-tools/launcher/modules/basic/LauncherErrors.java 8338411 generic-all
 
 # :tier3
 
