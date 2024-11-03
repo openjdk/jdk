@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
+#include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
@@ -36,7 +37,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 
-#define __ _masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -120,7 +121,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ ldr(rscratch1,Address(method, entry_offset));
   __ br(rscratch1);
   __ bind(L_no_such_method);
-  __ far_jump(RuntimeAddress(StubRoutines::throw_AbstractMethodError_entry()));
+  __ far_jump(RuntimeAddress(SharedRuntime::throw_AbstractMethodError_entry()));
 }
 
 void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
@@ -451,7 +452,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     jump_from_method_handle(_masm, rmethod, temp1, for_compiler_entry);
     if (iid == vmIntrinsics::_linkToInterface) {
       __ bind(L_incompatible_class_change_error);
-      __ far_jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
+      __ far_jump(RuntimeAddress(SharedRuntime::throw_IncompatibleClassChangeError_entry()));
     }
   }
 }

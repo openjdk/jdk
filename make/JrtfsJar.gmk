@@ -67,7 +67,8 @@ $(eval $(call SetupJavaCompilation, BUILD_JRTFS, \
 $(eval $(call SetupCopyFiles, COPY_JIMAGE_SERVICE_PROVIDER, \
     SRC := $(TOPDIR)/src/java.base/share/classes, \
     DEST := $(SUPPORT_OUTPUTDIR)/jrtfs_classes, \
-    FILES := META-INF/services/java.nio.file.spi.FileSystemProvider))
+    FILES := META-INF/services/java.nio.file.spi.FileSystemProvider, \
+))
 
 $(eval $(call SetupJarArchive, BUILD_JRTFS_JAR, \
     DEPENDENCIES := $(BUILD_JRTFS) $(COPY_JIMAGE_SERVICE_PROVIDER), \

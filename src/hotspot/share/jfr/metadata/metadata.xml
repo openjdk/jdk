@@ -735,7 +735,7 @@
   </Event>
 
   <Event name="NativeMemoryUsage" category="Java Virtual Machine, Memory" label="Native Memory Usage Per Type"
-    description="Native memory usage for a given memory type in the JVM" period="everyChunk">
+    description="Native memory usage for a given memory tag in the JVM" period="everyChunk">
     <Field type="NMTType" name="type" label="Memory Type" description="Type used for the native memory allocation" />
     <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes for this type" />
     <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes for this type" />

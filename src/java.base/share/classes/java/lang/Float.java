@@ -36,10 +36,10 @@ import jdk.internal.math.FloatToDecimal;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
- * The {@code Float} class wraps a value of primitive type
- * {@code float} in an object. An object of type
- * {@code Float} contains a single field whose type is
- * {@code float}.
+ * The {@code Float} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code float}. An object of type {@code Float} contains a
+ * single field whose type is {@code float}.
  *
  * <p>In addition, this class provides several methods for converting a
  * {@code float} to a {@code String} and a
@@ -175,8 +175,7 @@ public final class Float extends Number
      *
      * @since 1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Float> TYPE = (Class<Float>) Class.getPrimitiveClass("float");
+    public static final Class<Float> TYPE = Class.getPrimitiveClass("float");
 
     /**
      * Returns a string representation of the {@code float}
@@ -889,8 +888,8 @@ public final class Float extends Number
      * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public boolean equals(Object obj) {
-        return (obj instanceof Float)
-               && (floatToIntBits(((Float)obj).value) == floatToIntBits(value));
+        return (obj instanceof Float f) &&
+            (floatToIntBits(f.value) == floatToIntBits(value));
     }
 
     /**

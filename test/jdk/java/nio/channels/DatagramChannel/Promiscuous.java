@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,11 @@ public class Promiscuous {
             dc.setOption(StandardSocketOptions.IP_MULTICAST_IF, nif);
             byte[] msg = Integer.toString(id).getBytes("UTF-8");
             ByteBuffer buf = ByteBuffer.wrap(msg);
-            System.out.format("Send message -> group %s (id=0x%x)\n",
-                    group.getHostAddress(), id);
+            System.out.format("Send message -> group [%s]:%d (id=0x%x) nif:%s[%s]%n",
+                    group.getHostAddress(), port, id, nif.getDisplayName(), nif.getIndex());
+            System.out.format("bound address before send: %s%n", dc.getLocalAddress());
             dc.send(buf, new InetSocketAddress(group, port));
+            System.out.format("bound address after send: %s%n", dc.getLocalAddress());
         }
         return id;
     }
@@ -97,15 +99,26 @@ public class Promiscuous {
         ByteBuffer buf = ByteBuffer.allocateDirect(100);
 
         try {
+            long elapsed = 0;
             for (;;) {
                 System.out.println("Waiting to receive message");
+                long start = System.nanoTime();
                 sel.select(5*1000);
+                long waited = (System.nanoTime() - start) / 1000_000;
+                elapsed += waited;
+                buf.clear();
                 SocketAddress sa = dc.receive(buf);
 
                 // no datagram received
                 if (sa == null) {
                     if (datagramExpected) {
-                        throw new RuntimeException("Expected message not received");
+                        if (elapsed > 4800) {
+                            throw new RuntimeException("Expected message not received");
+                        } else {
+                            sel.selectedKeys().clear();
+                            // We haven't waited long enough,
+                            continue;
+                        }
                     }
                     System.out.println("No message received (correct)");
                     return;
@@ -121,8 +134,8 @@ public class Promiscuous {
                 int receivedId = -1;
                 try {
                     receivedId = Integer.parseInt(s);
-                    System.out.format("Received message from %s (id=0x%x)\n",
-                            sender, receivedId);
+                    System.out.format("Received message from %s (id=0x%x, length=%s)\n",
+                            sender, receivedId, bytes.length);
                 } catch (NumberFormatException x) {
                     System.out.format("Received message from %s (msg=%s)\n", sender, s);
                 }
@@ -140,7 +153,6 @@ public class Promiscuous {
                 }
 
                 sel.selectedKeys().clear();
-                buf.rewind();
             }
         } finally {
             sel.close();
@@ -155,13 +167,14 @@ public class Promiscuous {
     {
 
         System.out.format("%nTest family=%s%n", family.name());
+        System.out.format("With interface=%s[%s]%n\twith bound addresses:%n\t%s%n",
+                nif.getDisplayName(), nif.getIndex(), nif.inetAddresses().toList());
 
-        DatagramChannel dc1 = (family == UNSPEC) ?
-            DatagramChannel.open() : DatagramChannel.open(family);
-        DatagramChannel dc2 = (family == UNSPEC) ?
-            DatagramChannel.open() : DatagramChannel.open(family);
+        try (DatagramChannel dc1 = (family == UNSPEC) ?
+                DatagramChannel.open() : DatagramChannel.open(family);
+            DatagramChannel dc2 = (family == UNSPEC) ?
+                DatagramChannel.open() : DatagramChannel.open(family)) {
 
-        try {
             dc1.setOption(StandardSocketOptions.SO_REUSEADDR, true);
             dc2.setOption(StandardSocketOptions.SO_REUSEADDR, true);
 
@@ -184,12 +197,8 @@ public class Promiscuous {
 
             id = sendDatagram(nif, group2, port);
 
-            receiveDatagram(dc1, "dc1", false, id);
             receiveDatagram(dc2, "dc2", true, id);
-
-        } finally {
-            dc1.close();
-            dc2.close();
+            receiveDatagram(dc1, "dc1", false, id);
         }
     }
 

@@ -967,6 +967,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
       _merged[G1GCPhaseTimes::MergeRSCards] += increment;
     }
 
+    void dec_remset_cards(size_t decrement) {
+      _merged[G1GCPhaseTimes::MergeRSCards] -= decrement;
+    }
+
     size_t merged(uint i) const { return _merged[i]; }
   };
 
@@ -1091,6 +1095,11 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
     G1MergeCardSetStats stats() {
       _merge_card_set_cache.flush();
+      // Compensation for the dummy cards that were initially pushed into the
+      // card cache.
+      // We do not need to compensate for the other counters because the dummy
+      // card mark will never update another counter because it is initally "dirty".
+      _stats.dec_remset_cards(G1MergeCardSetCache::CacheSize);
       return _stats;
     }
   };
@@ -1230,11 +1239,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
       _cards_skipped(0)
     {}
 
-    void do_card_ptr(CardValue* card_ptr, uint worker_id) {
+    void do_card_ptr(CardValue* card_ptr) override {
       // The only time we care about recording cards that
       // contain references that point into the collection set
       // is during RSet updating within an evacuation pause.
-      // In this case worker_id should be the id of a GC worker thread.
       assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
 
       uint const region_idx = _ct->region_idx_for(card_ptr);
@@ -1342,6 +1350,7 @@ public:
       FREE_C_HEAP_ARRAY(Stack, _dirty_card_buffers);
     }
   }
+
   virtual void work(uint worker_id) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1GCPhaseTimes* p = g1h->phase_times();
@@ -1378,6 +1387,10 @@ public:
         G1MergeCardSetClosure merge(_scan_state);
         G1ClearBitmapClosure clear(g1h);
         G1CombinedClosure combined(&merge, &clear);
+
+        if (_initial_evacuation) {
+          G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
+        }
 
         g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
         G1MergeCardSetStats stats = merge.stats();

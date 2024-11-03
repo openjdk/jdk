@@ -322,7 +322,7 @@ void Method::mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* m
 }
 
 int Method::bci_from(address bcp) const {
-  if (is_native() && bcp == 0) {
+  if (is_native() && bcp == nullptr) {
     return 0;
   }
   // Do not have a ResourceMark here because AsyncGetCallTrace stack walking code
@@ -345,7 +345,7 @@ int Method::validate_bci(int bci) const {
 int Method::validate_bci_from_bcp(address bcp) const {
   // keep bci as -1 if not a valid bci
   int bci = -1;
-  if (bcp == 0 || bcp == code_base()) {
+  if (bcp == nullptr || bcp == code_base()) {
     // code_size() may return 0 and we allow 0 here
     // the method may be native
     bci = 0;
@@ -844,10 +844,6 @@ bool Method::is_constant_getter() const {
           Bytecodes::is_const(java_code_at(0)) &&
           Bytecodes::length_for(java_code_at(0)) == last_index &&
           Bytecodes::is_return(java_code_at(last_index)));
-}
-
-bool Method::is_initializer() const {
-  return is_object_initializer() || is_static_initializer();
 }
 
 bool Method::has_valid_initializer_flags() const {

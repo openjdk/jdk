@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -223,7 +223,7 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
     __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, nullptr);
 
     PUSH(src, dst);
-    __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+    __ far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
     POP(src, dst);
     __ bnez(dst, cont);
 

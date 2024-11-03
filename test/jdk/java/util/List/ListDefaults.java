@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.util.function.Predicate;
 /**
  * @test
  * @summary Unit tests for extension methods on List
- * @bug 8023367 8037106
+ * @bug 8023367 8037106 8325679
  * @library ../Collection/testlibrary
  * @build CollectionAsserts CollectionSupplier ExtendsAbstractList
  * @run testng ListDefaults

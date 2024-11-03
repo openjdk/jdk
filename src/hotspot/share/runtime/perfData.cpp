@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,7 +361,7 @@ PerfStringConstant* PerfDataManager::create_string_constant(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
   add_item(p, false);
@@ -379,7 +379,7 @@ PerfLongConstant* PerfDataManager::create_long_constant(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
   add_item(p, false);
@@ -402,7 +402,7 @@ PerfStringVariable* PerfDataManager::create_string_variable(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
   add_item(p, false);
@@ -420,7 +420,7 @@ PerfLongVariable* PerfDataManager::create_long_variable(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
   add_item(p, false);
@@ -442,7 +442,7 @@ PerfLongVariable* PerfDataManager::create_long_variable(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
   add_item(p, true);
@@ -460,7 +460,7 @@ PerfLongCounter* PerfDataManager::create_long_counter(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
   add_item(p, false);
@@ -482,7 +482,7 @@ PerfLongCounter* PerfDataManager::create_long_counter(CounterNS ns,
   if (!p->is_valid()) {
     // allocation of native resources failed.
     delete p;
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_NULL(vmSymbols::java_lang_OutOfMemoryError());
   }
 
   add_item(p, true);

@@ -26,13 +26,15 @@ package java.lang.classfile;
 
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
+
 import jdk.internal.classfile.impl.SignaturesImpl;
-import static java.util.Objects.requireNonNull;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
+import static java.util.Objects.requireNonNull;
+
 /**
- * Models the generic signature of a method, as defined by {@jvms 4.7.9}.
+ * Models the generic signature of a method, as defined by JVMS {@jvms 4.7.9}.
  *
  * @since 22
  */

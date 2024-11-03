@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,8 +373,7 @@ public abstract class HttpURLConnection extends URLConnection {
 
     /**
      * Sets whether HTTP redirects  (requests with response code 3xx) should
-     * be automatically followed by this class.  True by default.  Applets
-     * cannot change this variable.
+     * be automatically followed by this class.  True by default.
      * <p>
      * If there is a security manager, this method first calls
      * the security manager's {@code checkSetFactory} method

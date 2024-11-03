@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+@SuppressWarnings("restricted")
 public class AttachProviderImpl extends HotSpotAttachProvider {
 
     public AttachProviderImpl() {

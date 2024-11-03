@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javax.tools.JavaFileObject.Kind;
  * additional fields and methods.
  *
  * <p>Unless stated otherwise, references in this class to "<em>this file manager</em>"
- * should be interpreted as referring indirectly to the {@link #fileManager delegate file manager}.
+ * should be interpreted as referring indirectly to the {@linkplain #fileManager delegate file manager}.
  *
  * @param <M> the kind of file manager forwarded to by this object
  * @since 1.6
