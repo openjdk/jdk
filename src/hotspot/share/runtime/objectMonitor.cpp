@@ -132,23 +132,34 @@ static void post_virtual_thread_pinned_event(JavaThread* current, const char* re
 // Theory of operations -- Monitors lists, thread residency, etc:
 //
 // * A thread acquires ownership of a monitor by successfully
-//   CAS()ing the _owner field from null to non-null.
+//   CAS()ing the _owner field from NO_OWNER/DEFLATER_MARKER to
+//   its tid (return value from owner_from()).
 //
 // * Invariant: A thread appears on at most one monitor list --
 //   cxq, EntryList or WaitSet -- at any one time.
 //
 // * Contending threads "push" themselves onto the cxq with CAS
 //   and then spin/park.
+//   If the thread is a virtual thread it will first attempt to
+//   unmount itself. The virtual thread will first try to freeze
+//   all frames in the heap. If the operation fails it will just
+//   follow the regular path for platform threads. If the operation
+//   succeeds, it will push itself onto the cxq with CAS and then
+//   return back to Java to continue the unmount logic.
 //
 // * After a contending thread eventually acquires the lock it must
 //   dequeue itself from either the EntryList or the cxq.
 //
 // * The exiting thread identifies and unparks an "heir presumptive"
-//   tentative successor thread on the EntryList.  Critically, the
-//   exiting thread doesn't unlink the successor thread from the EntryList.
-//   After having been unparked, the wakee will recontend for ownership of
-//   the monitor.   The successor (wakee) will either acquire the lock or
-//   re-park itself.
+//   tentative successor thread on the EntryList. In case the successor
+//   is an unmounted virtual thread, the exiting thread will first try
+//   to add it to the list of vthreads waiting to be unblocked, and on
+//   success it will unpark the special unblocker thread instead, which
+//   will be in charge of submitting the vthread back to the scheduler
+//   queue. Critically, the exiting thread doesn't unlink the successor
+//   thread from the EntryList. After having been unparked/re-scheduled,
+//   the wakee will recontend for ownership of the monitor. The successor
+//   (wakee) will either acquire the lock or re-park/unmount itself.
 //
 //   Succession is provided for by a policy of competitive handoff.
 //   The exiting thread does _not_ grant or pass ownership to the
@@ -210,20 +221,18 @@ static void post_virtual_thread_pinned_event(JavaThread* current, const char* re
 //
 // * The monitor synchronization subsystem avoids the use of native
 //   synchronization primitives except for the narrow platform-specific
-//   park-unpark abstraction.  See the comments in os_solaris.cpp regarding
+//   park-unpark abstraction.  See the comments in os_posix.cpp regarding
 //   the semantics of park-unpark.  Put another way, this monitor implementation
-//   depends only on atomic operations and park-unpark.  The monitor subsystem
-//   manages all RUNNING->BLOCKED and BLOCKED->READY transitions while the
-//   underlying OS manages the READY<->RUN transitions.
+//   depends only on atomic operations and park-unpark.
 //
 // * Waiting threads reside on the WaitSet list -- wait() puts
 //   the caller onto the WaitSet.
 //
 // * notify() or notifyAll() simply transfers threads from the WaitSet to
 //   either the EntryList or cxq.  Subsequent exit() operations will
-//   unpark the notifyee.  Unparking a notifee in notify() is inefficient -
-//   it's likely the notifyee would simply impale itself on the lock held
-//   by the notifier.
+//   unpark/re-schedule the notifyee. Unparking/re-scheduling a notifyee in
+//   notify() is inefficient - it's likely the notifyee would simply impale
+//   itself on the lock held by the notifier.
 
 // Check that object() and set_object() are called from the right context:
 static void check_object_context() {
