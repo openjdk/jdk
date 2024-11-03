@@ -129,8 +129,8 @@ final class CfgFile {
                 .appDirectory("$APPDIR")
                 .appModsDirectory(
                         Path.of("$APPDIR").resolve(
-                                appLayout.appModsDirectory().relativize(
-                                        appLayout.appDirectory())))
+                                appLayout.appDirectory().relativize(
+                                        appLayout.appModsDirectory())))
                 .create();
     }
 
