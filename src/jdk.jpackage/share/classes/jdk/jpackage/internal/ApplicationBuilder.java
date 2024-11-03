@@ -49,7 +49,7 @@ final class ApplicationBuilder {
 
         final var launcherCount = launchersAsList.size();
 
-        if (launcherCount != launchers.asList().stream().map(Launcher::name).distinct().count()) {
+        if (launcherCount != launchersAsList.stream().map(Launcher::name).distinct().count()) {
             throw ConfigException.build().message("ERR_NoUniqueName").create();
         }
 

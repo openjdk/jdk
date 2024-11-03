@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,14 @@ package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
 
+final class RuntimeLayoutStub extends AppImageLayout.Proxy<AppImageLayout> implements RuntimeLayout {
+    
+    RuntimeLayoutStub(AppImageLayout target) {
+        super(target);
+    }
 
-/**
- * App image directory layout.
- */
-public interface RuntimeLayout extends AppImageLayout {
-
-    static final RuntimeLayout INSTANCE = new RuntimeLayoutStub(new AppImageLayout.Stub(Path.of("")));
+    @Override
+    public RuntimeLayout resolveAt(Path root) {
+        return new RuntimeLayoutStub(target.resolveAt(root));
+    }    
 }
