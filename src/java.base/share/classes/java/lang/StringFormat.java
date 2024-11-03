@@ -29,6 +29,7 @@ import java.text.DecimalFormatSymbols;
 import java.util.Formatter;
 import java.util.Locale;
 
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.util.HexDigits;
 
 /**
@@ -176,7 +177,7 @@ final class StringFormat {
             long longValue = ((Number) arg).longValue();
             if (conv == DECIMAL_INTEGER) {
                 if (defaultLocaleDecimalSupport()) {
-                    size = Long.stringSize(longValue);
+                    size = DecimalDigits.stringSize(longValue);
                 }
             } else if (conv == HEXADECIMAL_INTEGER || conv == HEXADECIMAL_INTEGER_UPPER) {
                 size = HexDigits.stringSize(longValue);
