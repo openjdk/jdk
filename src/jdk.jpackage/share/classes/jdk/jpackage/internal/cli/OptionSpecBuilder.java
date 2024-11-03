@@ -65,6 +65,10 @@ final class OptionSpecBuilder {
         return ofString().valueValidator(StandardValueValidator::validateUrl);
     }
 
+    OptionSpecBuilder noValue() {
+        return valueValidator(null);
+    }
+
     OptionSpecBuilder name(String v) {
         name = v;
         return this;

@@ -55,8 +55,8 @@ enum PackageTypeGroup {
     }),
     ALL_PACKAGE_TYPES(name -> {
         return Stream.of(
-                APP_IMAGE.forForOptionName(name), 
-                NATIVE_PACKAGE.forForOptionName(name)
+                APP_IMAGE.forOptionName(name), 
+                NATIVE_PACKAGE.forOptionName(name)
         ).flatMap(Set::stream).collect(toSet());
     });
 
@@ -64,7 +64,7 @@ enum PackageTypeGroup {
         this.conv = conv;
     }
 
-    Set<PackageType> forForOptionName(String name) {
+    Set<PackageType> forOptionName(String name) {
         return conv.apply(name);
     }
 

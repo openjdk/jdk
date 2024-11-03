@@ -44,7 +44,7 @@ import static jdk.jpackage.internal.cli.PackageTypeGroup.APP_IMAGE;
 import static jdk.jpackage.internal.cli.PackageTypeGroup.NATIVE_PACKAGE;
 
 public enum StandardOption implements Option {
-    TYPE(build().name("type").shortName("t").valueConverter(new ValueConverter<PackageType>() {
+    TYPE(build("type").shortName("t").valueConverter(new ValueConverter<PackageType>() {
         @Override
         public PackageType convert(String value) {
             if ("app-image".equals(value)) {
@@ -60,13 +60,13 @@ public enum StandardOption implements Option {
         }
 
     })),
-    INPUT(build().name("input").shortName("i").ofDirectory(), APP_IMAGE),
-    DEST(build().name("dest").shortName("d").ofDirectory()),
+    INPUT(build("input").shortName("i").ofDirectory(), APP_IMAGE),
+    DEST(build("dest").shortName("d").ofDirectory()),
     DESCRIPTION("description"),
     VENDOR("vendor"),
     APPCLASS("main-class"),
-    NAME(build().name("input").shortName("i").ofString()),
-    VERBOSE(build().name("verbose").valueConverter(null)),
+    NAME(build("input").shortName("i").ofString()),
+    VERBOSE(build("verbose").noValue()),
     RESOURCE_DIR("resource-dir", OptionSpecBuilder::ofDirectory),
     ARGUMENTS("arguments", OptionSpecBuilder::ofStringArray),
     JLINK_OPTIONS("arguments", OptionSpecBuilder::ofStringArray),
@@ -78,21 +78,19 @@ public enum StandardOption implements Option {
     JAVA_OPTIONS("java-options", OptionSpecBuilder::ofStringArray),
     APP_CONTENT("app-content", OptionSpecBuilder::ofPathArray),
     FILE_ASSOCIATIONS("file-associations", OptionSpecBuilder::ofPath),
-    ADD_LAUNCHER(build().name("add-launcher").valueConverter(new ValueConverter<AdditionalLauncher>() {
+    ADD_LAUNCHER(build("add-launcher").valueConverter(new ValueConverter<AdditionalLauncher>() {
         @Override
-        public jdk.jpackage.internal.cli.AdditionalLauncher convert(String value) {
+        public AdditionalLauncher convert(String value) {
             var components = value.split("=", 2);
             if (components.length == 1) {
-                return new AdditionalLauncher(null,
-                        StandardValueConverter.PATH_CONV.convert(components[0]));
-            } else {
-                return new AdditionalLauncher(components[0],
-                        StandardValueConverter.PATH_CONV.convert(components[1]));
+                components = new String[] { null, components[0] };
             }
+            return new AdditionalLauncher(components[0],
+                    StandardValueConverter.PATH_CONV.convert(components[1]));
         }
 
         @Override
-        public Class<? extends jdk.jpackage.internal.cli.AdditionalLauncher> valueType() {
+        public Class<? extends AdditionalLauncher> valueType() {
             return AdditionalLauncher.class;
         }
     })),
@@ -101,10 +99,10 @@ public enum StandardOption implements Option {
     PREDEFINED_APP_IMAGE("app-image", OptionSpecBuilder::ofDirectory, NATIVE_PACKAGE),
     PREDEFINED_RUNTIME_IMAGE("runtime-image", OptionSpecBuilder::ofDirectory),
     MAIN_JAR("main-jar", OptionSpecBuilder::ofPath),
-    MODULE(build().name("module").shortName("m").ofString()),
+    MODULE(build("module").shortName("m").ofString()),
     ADD_MODULES("add-modules", OptionSpecBuilder::ofStringArray),
-    MODULE_PATH(build().name("module-path").shortName("p").ofDirectoryArray()),
-    LAUNCHER_AS_SERVICE(build().name("launcher-as-service").valueConverter(null)),
+    MODULE_PATH(build("module-path").shortName("p").ofDirectoryArray()),
+    LAUNCHER_AS_SERVICE(build("launcher-as-service").noValue()),
     // Linux-specific
     LINUX_RELEASE("linux-app-release", NATIVE_PACKAGE),
     LINUX_BUNDLE_NAME("linux-package-name", NATIVE_PACKAGE),
@@ -112,12 +110,12 @@ public enum StandardOption implements Option {
     LINUX_CATEGORY("linux-app-category", NATIVE_PACKAGE),
     LINUX_RPM_LICENSE_TYPE("linux-rpm-license-type", NATIVE_PACKAGE),
     LINUX_PACKAGE_DEPENDENCIES("linux-package-deps", NATIVE_PACKAGE),
-    LINUX_SHORTCUT_HINT(build().name("linux-shortcut").valueConverter(null), NATIVE_PACKAGE),
+    LINUX_SHORTCUT_HINT(build("linux-shortcut").noValue(), NATIVE_PACKAGE),
     LINUX_MENU_GROUP("linux-package-deps", NATIVE_PACKAGE),
     // MacOS-specific
-    DMG_CONTENT(build().name("mac-dmg-content").ofPathArray()),
-    MAC_SIGN(build().name("mac-sign").shortName("s").valueConverter(null)),
-    MAC_APP_STORE(build().name("mac-app-store").shortName("s").valueConverter(null), NATIVE_PACKAGE),
+    DMG_CONTENT(build("mac-dmg-content").ofPathArray()),
+    MAC_SIGN(build("mac-sign").shortName("s").noValue()),
+    MAC_APP_STORE(build("mac-app-store").shortName("s").noValue(), NATIVE_PACKAGE),
     MAC_CATEGORY("mac-app-category"),
     MAC_BUNDLE_NAME("mac-package-name"),
     MAC_BUNDLE_IDENTIFIER("mac-package-identifier"),
@@ -130,14 +128,14 @@ public enum StandardOption implements Option {
     // Windows-specific
     WIN_HELP_URL("win-help-url", OptionSpecBuilder::ofUrl, NATIVE_PACKAGE),
     WIN_UPDATE_URL("win-update-url", OptionSpecBuilder::ofUrl, NATIVE_PACKAGE),
-    WIN_MENU_HINT(build().name("win-menu").valueConverter(null), NATIVE_PACKAGE),
+    WIN_MENU_HINT(build("win-menu").noValue(), NATIVE_PACKAGE),
     WIN_MENU_GROUP("win-menu-group", NATIVE_PACKAGE),
-    WIN_SHORTCUT_HINT(build().name("win-shortcut").valueConverter(null), NATIVE_PACKAGE),
+    WIN_SHORTCUT_HINT(build("win-shortcut").noValue(), NATIVE_PACKAGE),
     WIN_SHORTCUT_PROMPT("win-shortcut-prompt", NATIVE_PACKAGE),
-    WIN_PER_USER_INSTALLATION(build().name("win-per-user-install").valueConverter(null), NATIVE_PACKAGE),
-    WIN_DIR_CHOOSER(build().name("win-dir-chooser").valueConverter(null), NATIVE_PACKAGE),
+    WIN_PER_USER_INSTALLATION(build("win-per-user-install").noValue(), NATIVE_PACKAGE),
+    WIN_DIR_CHOOSER(build("win-dir-chooser").noValue(), NATIVE_PACKAGE),
     WIN_UPGRADE_UUID("win-upgrade-uuid", NATIVE_PACKAGE),
-    WIN_CONSOLE_HINT(build().name("win-console").valueConverter(null)),
+    WIN_CONSOLE_HINT(build("win-console").noValue()),
     ;
 
     StandardOption(OptionSpecBuilder builder) {
@@ -153,7 +151,7 @@ public enum StandardOption implements Option {
     }
 
     StandardOption(String name, PackageTypeGroup packageTypeGroup) {
-        this(name, OptionSpecBuilder::ofString, ALL_PACKAGE_TYPES);
+        this(name, OptionSpecBuilder::ofString, packageTypeGroup);
     }
 
     StandardOption(String name, UnaryOperator<OptionSpecBuilder> conv) {
@@ -162,7 +160,7 @@ public enum StandardOption implements Option {
 
     StandardOption(String name, UnaryOperator<OptionSpecBuilder> conv,
             PackageTypeGroup packageTypeGroup) {
-        this(conv.apply(build()).name(name));
+        this(conv.apply(build(name)), packageTypeGroup);
     }
 
     @Override
@@ -177,8 +175,8 @@ public enum StandardOption implements Option {
         }).toList();
     }
 
-    private static OptionSpecBuilder build() {
-        return new OptionSpecBuilder();
+    private static OptionSpecBuilder build(String name) {
+        return new OptionSpecBuilder().name(name);
     }
 
     private static OptionSpec createOptionSpec(OptionSpecBuilder builder,
@@ -200,7 +198,7 @@ public enum StandardOption implements Option {
             } else if (name.startsWith("mac-pkg")) {
                 builder.supportedPackageTypes(MAC_PKG);
             } else {
-                builder.supportedPackageTypes(packageTypeGroup.forForOptionName(name));
+                builder.supportedPackageTypes(packageTypeGroup.forOptionName(name));
             }
         }
         return builder.create();

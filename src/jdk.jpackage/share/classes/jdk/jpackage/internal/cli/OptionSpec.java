@@ -38,4 +38,8 @@ public record OptionSpec(String name, ValueConverter<?> valueConverter, String s
             throw new IllegalArgumentException("At least one package type must be set");
         }
     }
+
+    public boolean withValue() {
+        return valueConverter != null;
+    }
 }
