@@ -2041,7 +2041,7 @@ public class MessageFormat extends Format {
 
         // Check the correctness of arguments and offsets
         if (isValid) {
-            int lastOffset = patt.length() + 1;
+            int lastOffset = patt.length();
             for (int i = maxOff; i >= 0; --i) {
                 if (argNums[i] < 0 || argNums[i] >= MAX_ARGUMENT_INDEX
                         || offs[i] < 0 || offs[i] > lastOffset) {

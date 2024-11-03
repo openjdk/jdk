@@ -37,15 +37,40 @@
  * @run driver TestParallelGCWithCDS
  */
 
+// Below is exactly the same as above, except:
+// - requires vm.bits == "64"
+// - extra argument "false"
+
+ /*
+ * @test Loading CDS archived heap objects into ParallelGC
+ * @bug 8274788 8341371
+ * @requires vm.cds
+ * @requires vm.gc.Parallel
+ * @requires vm.gc.G1
+ * @requires vm.bits == "64"
+ *
+ * @comment don't run this test if any -XX::+Use???GC options are specified, since they will
+ *          interfere with the test.
+ * @requires vm.gc == null
+ *
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @compile test-classes/Hello.java
+ * @run driver TestParallelGCWithCDS false
+ */
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestParallelGCWithCDS {
     public final static String HELLO = "Hello World";
     static String helloJar;
+    static boolean useCompressedOops = true;
 
     public static void main(String... args) throws Exception {
         helloJar = JarBuilder.build("hello", "Hello");
+
+        if (args.length > 0 && args[0].equals("false")) {
+            useCompressedOops = false;
+        }
 
         // Check if we can use ParallelGC during dump time, or run time, or both.
         test(false, true);
@@ -69,6 +94,8 @@ public class TestParallelGCWithCDS {
         String execGC = execWithParallel ? Parallel : G1;
         String small1 = useSmallRegions ? "-Xmx256m" : "-showversion";
         String small2 = useSmallRegions ? "-XX:ObjectAlignmentInBytes=64" : "-showversion";
+        String errMsg = "Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops";
+        String coops = useCompressedOops ? "-XX:+UseCompressedOops" : "-XX:-UseCompressedOops";
         OutputAnalyzer out;
 
         System.out.println("0. Dump with " + dumpGC);
@@ -77,6 +104,7 @@ public class TestParallelGCWithCDS {
                               dumpGC,
                               small1,
                               small2,
+                              coops,
                               "-Xlog:cds");
         out.shouldContain("Dumping shared data to file:");
         out.shouldHaveExitValue(0);
@@ -86,9 +114,11 @@ public class TestParallelGCWithCDS {
                               execGC,
                               small1,
                               small2,
+                              coops,
                               "-Xlog:cds",
                               "Hello");
         out.shouldContain(HELLO);
+        out.shouldNotContain(errMsg);
         out.shouldHaveExitValue(0);
 
         int n = 2;
@@ -109,10 +139,12 @@ public class TestParallelGCWithCDS {
                                       small1,
                                       small2,
                                       xmx,
+                                      coops,
                                       "-Xlog:cds",
                                       "Hello");
                 if (out.getExitValue() == 0) {
                     out.shouldContain(HELLO);
+                    out.shouldNotContain(errMsg);
                 } else {
                     String pattern = "((Too small maximum heap)" +
                                      "|(GC triggered before VM initialization completed)" +
