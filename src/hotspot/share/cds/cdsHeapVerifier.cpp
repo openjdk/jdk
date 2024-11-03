@@ -73,8 +73,8 @@
 // [2] CDSHeapVerifier::do_entry() checks all the archived objects. None of them
 //     should be in [1]
 //
-// However, it's legal for *some* static fields to be references. This leads to the
-// table of ADD_EXCL below.
+// However, it's legal for *some* static fields to be referenced. The reasons are explained
+// in the table of ADD_EXCL below.
 //
 // [A] In most of the cases, the module bootstrap code will update the static field
 //     to point to part of the archived module graph. E.g.,
@@ -130,6 +130,7 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
   if (CDSConfig::is_dumping_invokedynamic()) {
     ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator", "MEMBERNAME_FACTORY",    // D
+                                                          "CD_Object_array",       // E same as <...>ConstantUtils.CD_Object_array::CD_Object
                                                           "INVOKER_SUPER_DESC");   // E same as java.lang.constant.ConstantDescs::CD_Object
   }
 
@@ -162,6 +163,11 @@ public:
       return;
     }
 
+    if (fd->signature()->equals("Ljdk/internal/access/JavaLangAccess;")) {
+      // A few classes have static fields that point to SharedSecrets.getJavaLangAccess().
+      // This object carries no state and we can create a new one in the production run.
+      return;
+    }
     oop static_obj_field = _ik->java_mirror()->obj_field(fd->offset());
     if (static_obj_field != nullptr) {
       Klass* field_type = static_obj_field->klass();

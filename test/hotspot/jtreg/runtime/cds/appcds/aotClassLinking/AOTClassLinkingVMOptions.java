@@ -109,6 +109,24 @@ public class AOTClassLinkingVMOptions {
                        "--module-path", goodModulePath + "/bad",
                        "-m", CDSModulePathUtils.MAIN_MODULE)
             .assertAbnormalExit("CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
+
+        testCase("Cannot use mis-matched --add-modules");
+        TestCommon.testDump(null, CDSModulePathUtils.getAppClasses(),
+                            "--module-path", goodModulePath,
+                            "-XX:+AOTClassLinking",
+                            "--add-modules", CDSModulePathUtils.MAIN_MODULE);
+        TestCommon.run("-Xlog:cds",
+                       "--module-path", goodModulePath,
+                       "--add-modules", CDSModulePathUtils.MAIN_MODULE,
+                       CDSModulePathUtils.MAIN_CLASS)
+            .assertNormalExit("Using AOT-linked classes: true");
+
+        TestCommon.run("-Xlog:cds",
+                       "--module-path", goodModulePath + "/bad",
+                       "--add-modules", CDSModulePathUtils.TEST_MODULE,
+                       CDSModulePathUtils.MAIN_CLASS)
+            .assertAbnormalExit("Mismatched --add-modules module name(s)",
+                                "CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
     }
 }
 
@@ -123,8 +141,8 @@ class CDSModulePathUtils {
     public static String MAIN_MODULE = "com.bars";
     public static String TEST_MODULE = "com.foos";
 
-    private static String MAIN_CLASS = "com.bars.Main";
-    private static String TEST_CLASS = "com.foos.Test";
+    public static String MAIN_CLASS = "com.bars.Main";
+    public static String TEST_CLASS = "com.foos.Test";
     private static String appClasses[] = {MAIN_CLASS, TEST_CLASS};
 
     private static Path modulesDir;

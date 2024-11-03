@@ -309,6 +309,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       {"java/lang/invoke/SimpleMethodHandle"},
       {"java/util/Collections"},
       {"java/util/stream/Collectors"},
+      {"jdk/internal/constant/ConstantUtils"},
       {"jdk/internal/constant/PrimitiveClassDescImpl"},
       {"jdk/internal/constant/ReferenceClassDescImpl"},
 
