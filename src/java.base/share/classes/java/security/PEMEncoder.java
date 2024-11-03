@@ -71,10 +71,10 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @apiNote
  * Here is an example of encoding a PrivateKey object:
- * <pre>
+ * {@snippet lang = java:
  *     PEMEncoder pe = PEMEncoder.of();
  *     byte[] pemData = pe.encode(privKey);
- * </pre>
+ * }
  *
  * @since 24
  */
@@ -237,13 +237,11 @@ public final class PEMEncoder {
      * {@link #encode(DEREncodable)}.
      *
      * @param password sets the encryption password.  The array is cloned and
-     *                stored in the new instance.
+     *                stored in the new instance. {@null} is a valid entry.
      * @return a new PEMEncoder
-     * @throws NullPointerException if password is null.
      */
     public PEMEncoder withEncryption(char[] password) {
         // PBEKeySpec clones the password
-        Objects.requireNonNull(password);
         return new PEMEncoder(new PBEKeySpec(password));
     }
 

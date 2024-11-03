@@ -38,13 +38,21 @@ import java.security.DEREncodable;
  *   version Version,
  *   privateKeyAlgorithm PrivateKeyAlgorithmIdentifier,
  *   privateKey PrivateKey,
- *   attributes [0] IMPLICIT Attributes OPTIONAL }
+ *   attributes       [0] IMPLICIT Attributes OPTIONAL,
+ *   ...,
+ *   [[2: publicKey  [1] PublicKey OPTIONAL ]],
+ *   ...
+ * }
  *
- * Version ::= INTEGER
+ * PrivateKeyInfo ::= OneAsymmetricKey
+ *
+ * Version ::= INTEGER { v1(0), v2(1) }
  *
  * PrivateKeyAlgorithmIdentifier ::= AlgorithmIdentifier
  *
  * PrivateKey ::= OCTET STRING
+ *
+ * PublicKey ::= BIT STRING
  *
  * Attributes ::= SET OF Attribute
  * </pre>

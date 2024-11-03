@@ -53,8 +53,10 @@ public class PEMEncoderTest {
     public static void main(String[] args) throws Exception {
         PEMEncoder encoder = PEMEncoder.of();
 
-        PEMCerts.entryList.remove(PEMCerts.getEntry("rsaOpenSSL"));
-        keymap = generateObjKeyMap(PEMCerts.entryList);
+        //System.out.println("first");
+        //PEMEncoder.of().encode(PEMData.getEntry("ecsecp384"));
+        PEMData.entryList.remove(PEMData.getEntry("rsaOpenSSL"));
+        keymap = generateObjKeyMap(PEMData.entryList);
         System.out.println("Same instance Encoder test:");
         keymap.keySet().stream().forEach(key -> test(key, encoder));
         System.out.println("New instance Encoder test:");
@@ -64,7 +66,7 @@ public class PEMEncoderTest {
         System.out.println("New instance Encoder testToString:");
         keymap.keySet().stream().forEach(key -> testToString(key, PEMEncoder.of()));
 
-        keymap = generateObjKeyMap(PEMCerts.encryptedList);
+        keymap = generateObjKeyMap(PEMData.encryptedList);
         System.out.println("Same instance Encoder match test:");
         keymap.keySet().stream().forEach(key -> testEncryptedMatch(key, encoder));
         System.out.println("Same instance Encoder new withEnc test:");
@@ -83,10 +85,10 @@ public class PEMEncoderTest {
         }
     }
 
-    static Map generateObjKeyMap(List<PEMCerts.Entry> list) {
+    static Map generateObjKeyMap(List<PEMData.Entry> list) {
         Map<String, DEREncodable> keymap = new HashMap<>();
         PEMDecoder pemd = PEMDecoder.of();
-        for (PEMCerts.Entry entry : list) {
+        for (PEMData.Entry entry : list) {
             try {
                 if (entry.password() != null) {
                     keymap.put(entry.name(), pemd.withDecryption(
@@ -105,7 +107,7 @@ public class PEMEncoderTest {
 
     static void test(String key, PEMEncoder encoder) {
         byte[] result;
-        PEMCerts.Entry entry = PEMCerts.getEntry(key);
+        PEMData.Entry entry = PEMData.getEntry(key);
         try {
             result = encoder.encode(keymap.get(key));
         } catch (RuntimeException e) {
@@ -119,7 +121,7 @@ public class PEMEncoderTest {
 
     static void testToString(String key, PEMEncoder encoder) {
         String result;
-        PEMCerts.Entry entry = PEMCerts.getEntry(key);
+        PEMData.Entry entry = PEMData.getEntry(key);
         try {
             result = encoder.encodeToString(keymap.get(key));
         } catch (RuntimeException e) {
@@ -136,7 +138,7 @@ public class PEMEncoderTest {
      public access to the AlgoritmID.params and PBES2Parameters.
      */
     static void testEncrypted(String key, PEMEncoder encoder) {
-        PEMCerts.Entry entry = PEMCerts.getEntry(key);
+        PEMData.Entry entry = PEMData.getEntry(key);
         try {
             encoder.withEncryption(
                     (entry.password() != null ? entry.password() :
@@ -155,7 +157,7 @@ public class PEMEncoderTest {
      public access to the AlgoritmID.params and PBES2Parameters.
      */
     static void testSameEncryptor(String key, PEMEncoder encoder) {
-        PEMCerts.Entry entry = PEMCerts.getEntry(key);
+        PEMData.Entry entry = PEMData.getEntry(key);
         try {
             encoder.encodeToString(keymap.get(key));
         } catch (RuntimeException e) {
@@ -168,7 +170,7 @@ public class PEMEncoderTest {
 
     static void testEncryptedMatch(String key, PEMEncoder encoder) {
         String result;
-        PEMCerts.Entry entry = PEMCerts.getEntry(key);
+        PEMData.Entry entry = PEMData.getEntry(key);
         try {
             PrivateKey pkey = (PrivateKey) keymap.get(key);
             EncryptedPrivateKeyInfo ekpi = PEMDecoder.of().decode(entry.pem(),
@@ -189,7 +191,7 @@ public class PEMEncoderTest {
         System.out.println("PASS: " + entry.name());
     }
 
-    static void checkResults(PEMCerts.Entry entry, String result) {
+    static void checkResults(PEMData.Entry entry, String result) {
         String pem = new String(entry.pem());
         // The below matches the \r\n generated PEM with the PEM passed
         // into the test.

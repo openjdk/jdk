@@ -191,6 +191,11 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      */
     public static PrivateKey parseKey(byte[] encoded)
         throws InvalidKeyException {
+        return parseKey(encoded, null);
+    }
+
+    public static PrivateKey parseKey(byte[] encoded, Provider provider)
+        throws InvalidKeyException {
         try {
             PKCS8Key rawKey = new PKCS8Key(encoded);
             byte[] internal = rawKey.generateEncoding();
@@ -198,8 +203,13 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
                 new PKCS8EncodedKeySpec(internal);
             PrivateKey result = null;
             try {
-                result = KeyFactory.getInstance(rawKey.algid.getName())
+                if (provider == null) {
+                    result = KeyFactory.getInstance(rawKey.algid.getName())
                         .generatePrivate(pkcs8KeySpec);
+                } else {
+                    result = KeyFactory.getInstance(rawKey.algid.getName(),
+                        provider).generatePrivate(pkcs8KeySpec);
+                }
             } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
                 // Ignore and return raw key
                 result = rawKey;

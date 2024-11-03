@@ -33,6 +33,7 @@ import sun.security.util.PEMRecord;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
 import java.security.cert.*;
 import java.security.spec.*;
@@ -82,7 +83,7 @@ import java.util.Objects;
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEMDecoder {
     private final Provider factory;
-    private final char[] password;
+    private final PBEKeySpec password;
 
     // Singleton instance for PEMDecoder
     private final static PEMDecoder PEM_DECODER = new PEMDecoder(null, null);
@@ -94,8 +95,8 @@ public final class PEMDecoder {
      * @param withPassword char[] password for EncryptedPrivateKeyInfo
      *                    decryption
      */
-    private PEMDecoder(Provider withFactory, char[] withPassword) {
-        password = withPassword != null ? withPassword.clone() : null;
+    private PEMDecoder(Provider withFactory, PBEKeySpec withPassword) {
+        password = withPassword;
         factory = withFactory;
     }
 
@@ -114,7 +115,7 @@ public final class PEMDecoder {
      * header and footer and proceed with decoding the base64 for the
      * appropriate type.
      */
-    private DEREncodable decode(PEMRecord pem) throws IOException {
+    private DEREncodable decode(PEMRecord pem) {
         Base64.Decoder decoder = Base64.getMimeDecoder();
 
         try {
@@ -147,7 +148,7 @@ public final class PEMDecoder {
                         yield new EncryptedPrivateKeyInfo(decoder.decode(pem.pem()));
                     }
                     yield new EncryptedPrivateKeyInfo(decoder.decode(pem.pem())).
-                        getKey(password);
+                        getKey(password.getPassword());
                 }
                 case PEMRecord.CERTIFICATE,
                     PEMRecord.X509_CERTIFICATE -> {
@@ -169,7 +170,7 @@ public final class PEMDecoder {
                     throw new IllegalArgumentException("Unsupported type or " +
                         "not properly formatted PEM");
             };
-        } catch (GeneralSecurityException e) {
+        } catch (GeneralSecurityException | IOException e) {
             throw new IllegalArgumentException(e);
         }
     }
@@ -227,8 +228,7 @@ public final class PEMDecoder {
      * {@code ECPublicKey}, or a {@code X509EncodedKeySpec}.  {@code PublicKey}
      * is useful for algorithm-agnostic methods, {@code ECPublicKey} for
      * algorithm-specific operations, or {@code X509EncodedKeySpec} if the
-     * X.509 binary encoding is desired instead of a Key object.  An IOException
-     * will be thrown if the class is incorrect for the given PEM data.
+     * X.509 binary encoding is desired instead of a Key object.
      *
      * @param <S> Class type parameter that extends {@link DEREncodable}
      * @param string the String containing PEM data.
@@ -312,10 +312,10 @@ public final class PEMDecoder {
                 // unchecked suppressed as we know tClass comes from KeySpec
                 // KeyType not relevant here.  We just want KeyFactory
                 if ((PKCS8EncodedKeySpec.class).isAssignableFrom(tClass)) {
-                    getKeyFactory(key.getAlgorithm()).
+                    so = getKeyFactory(key.getAlgorithm()).
                         getKeySpec(key, PKCS8EncodedKeySpec.class);
                 } else if ((X509EncodedKeySpec.class).isAssignableFrom(tClass)) {
-                    getKeyFactory(key.getAlgorithm())
+                    so = getKeyFactory(key.getAlgorithm())
                         .getKeySpec(key, X509EncodedKeySpec.class);
                 } else {
                     throw new IllegalArgumentException("Invalid KeySpec.");
@@ -329,7 +329,6 @@ public final class PEMDecoder {
 
         return tClass.cast(so);
     }
-
 
     private KeyFactory getKeyFactory(String algorithm) {
         try {
@@ -356,9 +355,9 @@ public final class PEMDecoder {
 
     /**
      * Configures and returns a new {@code PEMDecoder} instance from the
-     * current instance that will use Factory classes from the specified
-     * {@link Provider}.  Any errors using the {@code provider} will occur
-     * during decoding.
+     * current instance that will use KeyFactory and CertificateFactory classes
+     * from the specified {@link Provider}.  Any errors using the
+     * {@code provider} will occur during decoding.
      *
      * <p>If {@code params} is {@code null}, a new instance is returned with
      * the default provider configuration.
@@ -377,11 +376,10 @@ public final class PEMDecoder {
      *
      * @param password the password to decrypt encrypted PEM data.  This array
      *                 is cloned and stored in the new instance.
-     * @return the decoder
+     * @return a new PEM decoder instance.
      * @throws NullPointerException if password is null.
      */
     public PEMDecoder withDecryption(char[] password) {
-        char[] pwd = password.clone();
-        return new PEMDecoder(factory, pwd);
+        return new PEMDecoder(factory, new PBEKeySpec(password));
     }
 }

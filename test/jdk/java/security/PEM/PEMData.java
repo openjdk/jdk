@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 /**
  * Library class for PEMEncoderTest and PEMDecoderTest
  */
-class PEMCerts {
+class PEMData {
     public static final Entry ecprivpem = new Entry("ecprivpem",
         """
         -----BEGIN PRIVATE KEY-----
@@ -269,6 +269,16 @@ class PEMCerts {
         -----END CERTIFICATE-----
         """;
 
+    private static final Entry ecsecp384 = new Entry("ecsecp384",
+        """
+        -----BEGIN PRIVATE KEY-----
+        MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDBVS52ZSKZ0oES7twD2
+        GGwRIVu3uHlGIwlu0xzFe7sgIPntca2bHfYMhgGxrlCm0q+hZANiAAQNWgwWfLX8
+        8pYVjvwbfvDF9f+Oa9w6JjrfpWwFAUI6b1OPgrNUh+yXtUXnQNXnfUcIu0Os53bM
+        8fTqPkQl6RyWEDHeXqJK8zTBHMeBq9nLfDPSbzQgLDyC64Orn0D8exM=
+        -----END PRIVATE KEY-----
+        """, ECPrivateKey.class);
+
     public record Entry(String name, String pem, Class clazz, char[] password) {
 
         Entry(String name, String pem, Class clazz) {
@@ -333,6 +343,7 @@ class PEMCerts {
         privList.add(privpem);
         privList.add(privpembc);
         privList.add(ecprivpem);
+        privList.add(ecsecp384);
         privList.add(privec25519pem);
         privList.add(encEdECKeyEKPI);  // The non-EKPI version needs decryption
         privList.add(rsaOpenSSL);
