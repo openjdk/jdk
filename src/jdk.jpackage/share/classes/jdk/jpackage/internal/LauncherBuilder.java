@@ -46,9 +46,7 @@ import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 final class LauncherBuilder {
 
     Launcher create() throws ConfigException {
-        if (icon != null) {
-            validateIcon(icon);
-        }
+        validateIcon(icon);
         var fa = toFunction(this::createFileAssociations).apply(faSources.stream()).toList();
         return new Stub(name, startupInfo, fa, isService, description, icon);
     }
@@ -103,6 +101,10 @@ final class LauncherBuilder {
     }
 
     static void validateIcon(Path icon) throws ConfigException {
+        if (icon == null || icon.toString().isEmpty()) {
+            return;
+        }
+
         switch (OperatingSystem.current()) {
             case WINDOWS -> {
                 if (!icon.getFileName().toString().toLowerCase().endsWith(".ico")) {

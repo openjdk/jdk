@@ -38,10 +38,7 @@ final class WinExePackageBuilder {
     }
 
     WinExePackage create() throws ConfigException {
-        if (icon != null) {
-            LauncherBuilder.validateIcon(icon);
-        }
-
+        LauncherBuilder.validateIcon(icon);        
         return new WinExePackage.Stub(pkg, icon);
     }
 
