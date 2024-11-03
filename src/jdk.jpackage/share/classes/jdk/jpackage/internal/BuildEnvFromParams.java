@@ -25,31 +25,29 @@
 package jdk.jpackage.internal;
 
 import jdk.jpackage.internal.model.ConfigException;
-import java.nio.file.Path;
 import java.util.Map;
-import jdk.jpackage.internal.BuildEnv.Impl;
-import static jdk.jpackage.internal.BuildEnv.withAppImageDir;
-import jdk.jpackage.internal.resources.ResourceLocator;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
+import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 
 final class BuildEnvFromParams {
 
     static BuildEnv create(Map<String, ? super Object> params) throws ConfigException {
-        var root = StandardBundlerParam.TEMP_ROOT.fetchFrom(params);
-        var resourceDir = StandardBundlerParam.RESOURCE_DIR.fetchFrom(params);
 
-        var defaultEnv = new Impl(root, resourceDir, ResourceLocator.class);
+        var builder = new BuildEnvBuilder(TEMP_ROOT.fetchFrom(params))
+                .resourceDir(RESOURCE_DIR.fetchFrom(params));
 
-        Path appImageDir;
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            appImageDir = StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
+        var app = FromParams.APPLICATION.fetchFrom(params);
+
+        if (app.isRuntime()) {
+            builder.appImageDir(PREDEFINED_RUNTIME_IMAGE.fetchFrom(params));
         } else if (StandardBundlerParam.hasPredefinedAppImage(params)) {
-            appImageDir = StandardBundlerParam.getPredefinedAppImage(params);
+            builder.appImageDir(StandardBundlerParam.getPredefinedAppImage(params));
         } else {
-            Path dir = FromParams.APPLICATION.fetchFrom(params).appImageDirName();
-            appImageDir = defaultEnv.buildRoot().resolve("image").resolve(dir);
+            builder.appImageDirFor(app);
         }
 
-        return withAppImageDir(defaultEnv, appImageDir);
+        return builder.create();
     }
 
     static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam(

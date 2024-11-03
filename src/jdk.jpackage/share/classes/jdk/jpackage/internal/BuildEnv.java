@@ -25,9 +25,8 @@
 package jdk.jpackage.internal;
 
 import java.nio.file.Path;
-import java.util.Optional;
 
-public interface BuildEnv {
+interface BuildEnv {
 
     Path buildRoot();
 
@@ -49,7 +48,7 @@ public interface BuildEnv {
 
     OverridableResource createResource(String defaultName);
 
-    public static BuildEnv withAppImageDir(BuildEnv env, Path appImageDir) {
+    static BuildEnv withAppImageDir(BuildEnv env, Path appImageDir) {
         return new Proxy(env) {
             @Override
             public Path appImageDir() {
@@ -58,15 +57,29 @@ public interface BuildEnv {
         };
     }
 
-    public static record Impl(Path buildRoot, Path resourceDir, Class<?> resourceLocator) implements BuildEnv {
-        @Override
-        public OverridableResource createResource(String defaultName) {
-            if (defaultName != null) {
-                return new OverridableResource(defaultName, resourceLocator);
-            } else {
-                return new OverridableResource();
+    static BuildEnv create(Path buildRoot, Path resourceDir, Class<?> resourceLocator) {
+        return new BuildEnv() {
+            @Override
+            public Path buildRoot() {
+                return buildRoot;
             }
-        }
+
+            @Override
+            public Path resourceDir() {
+                return resourceDir;
+            }
+
+            @Override
+            public OverridableResource createResource(String defaultName) {
+                final OverridableResource resource;
+                if (defaultName != null) {
+                    resource = new OverridableResource(defaultName, resourceLocator);
+                } else {
+                    resource = new OverridableResource();
+                }
+                return resource.setResourceDir(resourceDir);
+            }
+        };
     }
 
     static class Proxy implements BuildEnv {
@@ -76,17 +89,17 @@ public interface BuildEnv {
         }
 
         @Override
-        public Path buildRoot() {
+        final public Path buildRoot() {
             return target.buildRoot();
         }
 
         @Override
-        public Path resourceDir() {
+        final public Path resourceDir() {
             return target.resourceDir();
         }
 
         @Override
-        public OverridableResource createResource(String defaultName) {
+        final public OverridableResource createResource(String defaultName) {
             return target.createResource(defaultName);
         }
 
