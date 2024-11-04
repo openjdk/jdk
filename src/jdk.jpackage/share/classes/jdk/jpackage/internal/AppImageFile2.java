@@ -248,14 +248,10 @@ final class AppImageFile2 {
             // Exception reading input XML (probably malformed XML)
             throw new IOException(ex);
         } catch (NoSuchFileException ex) {
-            throw ConfigException.build()
-                    .message("error.foreign-app-image", FILENAME)
-                    .create();
+            throw ConfigException.build("error.foreign-app-image", FILENAME).create();
         } catch (InavlidAppImageFileException ex) {
             // Invalid input XML
-            throw ConfigException.build()
-                    .message("error.invalid-app-image-file", FILENAME)
-                    .create();
+            throw ConfigException.build("error.invalid-app-image-file", FILENAME).create();
         }
     }
 

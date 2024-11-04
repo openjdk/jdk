@@ -50,7 +50,7 @@ final class ApplicationBuilder {
         final var launcherCount = launchersAsList.size();
 
         if (launcherCount != launchersAsList.stream().map(Launcher::name).distinct().count()) {
-            throw ConfigException.build().message("ERR_NoUniqueName").create();
+            throw ConfigException.build("ERR_NoUniqueName").create();
         }
 
         final String effectiveName;

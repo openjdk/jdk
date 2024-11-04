@@ -42,7 +42,7 @@ final class BuildEnvBuilder {
     BuildEnv create() throws ConfigException {
         Objects.requireNonNull(appImageDir);
 
-        var exceptionBuilder = ConfigException.build().message("ERR_BuildRootInvalid", root);
+        var exceptionBuilder = ConfigException.build("ERR_BuildRootInvalid", root);
         if (!Files.exists(root)) {
         } else if (!Files.isDirectory(root)) {
             throw exceptionBuilder.create();

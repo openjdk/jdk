@@ -104,17 +104,17 @@ final class LauncherBuilder {
         switch (OperatingSystem.current()) {
             case WINDOWS -> {
                 if (!icon.getFileName().toString().toLowerCase().endsWith(".ico")) {
-                    throw ConfigException.build().message("message.icon-not-ico", icon).create();
+                    throw ConfigException.build("message.icon-not-ico", icon).create();
                 }
             }
             case LINUX -> {
                 if (!icon.getFileName().toString().endsWith(".png")) {
-                    throw ConfigException.build().message("message.icon-not-png", icon).create();
+                    throw ConfigException.build("message.icon-not-png", icon).create();
                 }
             }
             case MACOS -> {
                 if (!icon.getFileName().toString().endsWith(".icns")) {
-                    throw ConfigException.build().message("message.icon-not-icns", icon).create();
+                    throw ConfigException.build("message.icon-not-icns", icon).create();
                 }
             }
         }

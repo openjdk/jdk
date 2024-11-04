@@ -48,8 +48,7 @@ final class WinMsiPackageBuilder {
         try {
             MsiVersion.of(pkg.version());
         } catch (IllegalArgumentException ex) {
-            throw ConfigException.build()
-                    .causeAndMessage(ex)
+            throw ConfigException.build(ex)
                     .advice("error.version-string-wrong-format.advice")
                     .create();
         }

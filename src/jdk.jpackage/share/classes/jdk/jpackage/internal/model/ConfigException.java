@@ -39,7 +39,7 @@ public class ConfigException extends Exception {
         this.advice = advice;
     }
 
-    public ConfigException(Exception cause) {
+    public ConfigException(Throwable cause) {
         super(cause);
         this.advice = null;
     }
@@ -51,8 +51,19 @@ public class ConfigException extends Exception {
     public static Builder build() {
         return new Builder();
     }
+    
+    public static Builder build(String msgId, Object ... args) {
+        return build().message(msgId, args);
+    }
+    
+    public static Builder build(Throwable t) {
+        return build().causeAndMessage(t);
+    }
 
     public static final class Builder {
+
+        private Builder() {
+        }
 
         public ConfigException create() {
             return new ConfigException(msg, advice, cause);
@@ -82,8 +93,9 @@ public class ConfigException extends Exception {
             return this;
         }
 
-        public Builder causeAndMessage(Exception ex) {
-            return message(ex.getLocalizedMessage()).cause(ex);
+        public Builder causeAndMessage(Throwable t) {
+            var oldNoFormat = noFormat;
+            return noformat().message(t.getMessage()).cause(t).format(oldNoFormat);
         }
 
         private String formatString(String keyId, Object ... args) {

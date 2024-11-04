@@ -140,8 +140,7 @@ final class PackageBuilder {
 
     private static Path mapInstallDir(Path installDir, PackageType pkgType)
             throws ConfigException {
-        var ex = ConfigException.build().message("error.invalid-install-dir",
-                installDir).create();
+        var ex = ConfigException.build("error.invalid-install-dir", installDir).create();
 
         if (installDir.getNameCount() == 0) {
             throw ex;
