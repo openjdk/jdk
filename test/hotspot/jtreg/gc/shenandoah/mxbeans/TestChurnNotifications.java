@@ -27,7 +27,7 @@
  * @test id=passive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
@@ -44,7 +44,7 @@
  * @test id=aggressive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
@@ -56,7 +56,7 @@
  * @test id=adaptive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
@@ -68,7 +68,7 @@
  * @test id=static
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
@@ -80,7 +80,7 @@
  * @test id=compact
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact

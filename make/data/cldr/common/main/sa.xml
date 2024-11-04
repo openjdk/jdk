@@ -271,15 +271,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">शुक्र</day>
 							<day type="sat">शनि</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">Sun</day>
-							<day type="mon">Mon</day>
-							<day type="tue">Tue</day>
-							<day type="wed">Wed</day>
-							<day type="thu">Thu</day>
-							<day type="fri">Fri</day>
-							<day type="sat">Sat</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">रविवासरः</day>
 							<day type="mon">सोमवासरः</day>
@@ -616,7 +607,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern>¤ #,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="BRL">

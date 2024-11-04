@@ -30,7 +30,6 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -49,14 +48,6 @@ void ShenandoahMark::end_mark() {
     CodeCache::on_gc_marking_cycle_finish();
   }
 }
-
-ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,  ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q) :
-  MetadataVisitingOopIterateClosure(rp),
-  _queue(q),
-  _old_queue(old_q),
-  _mark_context(ShenandoahHeap::heap()->marking_context()),
-  _weak(false)
-{ }
 
 ShenandoahMark::ShenandoahMark(ShenandoahGeneration* generation) :
   _generation(generation),

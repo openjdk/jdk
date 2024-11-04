@@ -33,7 +33,6 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
@@ -75,7 +74,8 @@ void ShenandoahSTWMark::mark() {
   ShenandoahCodeRoots::arm_nmethods_for_mark();
 
   // Weak reference processing
-  ShenandoahReferenceProcessor* rp = heap->gc_generation()->ref_processor();
+  assert(ShenandoahHeap::heap()->gc_generation() == _generation, "Marking unexpected generation");
+  ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   shenandoah_assert_generations_reconciled();
   rp->reset_thread_locals();
   rp->set_soft_reference_policy(heap->soft_ref_policy()->should_clear_all_soft_refs());
@@ -118,21 +118,22 @@ void ShenandoahSTWMark::mark() {
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
+  assert(ShenandoahHeap::heap()->gc_generation() == _generation, "Marking unexpected generation");
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
-  ShenandoahObjToScanQueue* mark_queue = task_queues()->queue(worker_id);
+  auto queue = task_queues()->queue(worker_id);
   switch (_generation->type()) {
     case NON_GEN: {
-      ShenandoahMarkRefsClosure<NON_GEN> init_mark(mark_queue, rp, nullptr);
+      ShenandoahMarkRefsClosure<NON_GEN> init_mark(queue, rp, nullptr);
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }
     case GLOBAL: {
-      ShenandoahMarkRefsClosure<GLOBAL> init_mark(mark_queue, rp, nullptr);
+      ShenandoahMarkRefsClosure<GLOBAL> init_mark(queue, rp, nullptr);
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }
     case YOUNG: {
-      ShenandoahMarkRefsClosure<YOUNG> init_mark(mark_queue, rp, nullptr);
+      ShenandoahMarkRefsClosure<YOUNG> init_mark(queue, rp, nullptr);
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }
@@ -143,9 +144,10 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 }
 
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
+  assert(ShenandoahHeap::heap()->gc_generation() == _generation, "Marking unexpected generation");
   ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::ParallelMark, worker_id);
-  ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->gc_generation()->ref_processor();
+  ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   shenandoah_assert_generations_reconciled();
   StringDedup::Requests requests;
 

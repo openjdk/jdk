@@ -557,12 +557,12 @@
           "Log cumulative card stats every so many remembered set or "      \
           "update refs scans")                                              \
                                                                             \
-  product(uintx, ShenandoahMinimumOldMarkTimeMs, 100, EXPERIMENTAL,         \
-         "Minimum amount of time in milliseconds to run old marking "       \
+  product(uintx, ShenandoahMinimumOldTimeMs, 100, EXPERIMENTAL,             \
+         "Minimum amount of time in milliseconds to run old collections "   \
          "before a young collection is allowed to run. This is intended "   \
          "to prevent starvation of the old collector. Setting this to "     \
          "0 will allow back to back young collections to run during old "   \
-         "marking.")                                                        \
+         "collections.")                                                    \
   // end of GC_SHENANDOAH_FLAGS
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP

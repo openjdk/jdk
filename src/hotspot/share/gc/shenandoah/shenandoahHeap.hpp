@@ -600,6 +600,7 @@ public:
   // Use is_in_reserved to check if object is within heap bounds.
   bool is_in(const void* p) const override;
 
+  // Returns true if the given oop belongs to a generation that is actively being collected.
   inline bool is_in_active_generation(oop obj) const;
   inline bool is_in_young(const void* p) const;
   inline bool is_in_old(const void* p) const;
@@ -660,7 +661,7 @@ public:
 
 // ---------- CDS archive support
 
-  bool can_load_archived_objects() const override { return UseCompressedOops && !ShenandoahCardBarrier; }
+  bool can_load_archived_objects() const override { return !ShenandoahCardBarrier; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
   void complete_loaded_archive_space(MemRegion archive_space) override;
 

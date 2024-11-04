@@ -39,7 +39,7 @@
 #include "gc/shenandoah/shenandoahMarkClosures.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -315,6 +315,9 @@ size_t ShenandoahOldGeneration::usage_trigger_threshold() const {
   return result;
 }
 
+bool ShenandoahOldGeneration::contains(ShenandoahAffiliation affiliation) const {
+  return affiliation == OLD_GENERATION;
+}
 bool ShenandoahOldGeneration::contains(ShenandoahHeapRegion* region) const {
   return region->is_old();
 }
@@ -496,6 +499,7 @@ const char* ShenandoahOldGeneration::state_name(State state) {
 void ShenandoahOldGeneration::transition_to(State new_state) {
   if (_state != new_state) {
     log_info(gc)("Old generation transition from %s to %s", state_name(_state), state_name(new_state));
+    EventMark event("Old was %s, now is %s", state_name(_state), state_name(new_state));
     validate_transition(new_state);
     _state = new_state;
   }
@@ -772,6 +776,7 @@ void ShenandoahOldGeneration::abandon_mixed_evacuations() {
       transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
       break;
     default:
+      log_warning(gc)("Abandon mixed evacuations in unexpected state: %s", state_name(state()));
       ShouldNotReachHere();
       break;
   }

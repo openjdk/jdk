@@ -369,14 +369,14 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
 
   switch (_affiliations[index]) {
   case ShenandoahAffiliation::FREE:
-    // Free regions are in Old, Young, Global
+    // Free regions are in old, young, and global collections
     return true;
   case ShenandoahAffiliation::YOUNG_GENERATION:
-    // Young regions are in young_generation and global_generation, not in old_generation
+    // Young regions are in young and global collections, not in old collections
     return !gen->is_old();
   case ShenandoahAffiliation::OLD_GENERATION:
-    // Old regions are in old_generation and no others
-    return gen->is_old();
+    // Old regions are in old and global collections, not in young collections
+    return !gen->is_young();
   default:
     assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, _affiliations[index], index);
     return false;

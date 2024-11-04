@@ -48,6 +48,10 @@ void ShenandoahYoungGeneration::set_concurrent_mark_in_progress(bool in_progress
   }
 }
 
+bool ShenandoahYoungGeneration::contains(ShenandoahAffiliation affiliation) const {
+  return affiliation == YOUNG_GENERATION;
+}
+
 bool ShenandoahYoungGeneration::contains(ShenandoahHeapRegion* region) const {
   return region->is_young();
 }

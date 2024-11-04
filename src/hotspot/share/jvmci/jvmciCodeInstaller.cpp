@@ -343,6 +343,7 @@ narrowKlass CodeInstaller::record_narrow_metadata_reference(CodeSection* section
   int index = _oop_recorder->find_index(klass);
   section->relocate(dest, metadata_Relocation::spec(index));
   JVMCI_event_3("narrowKlass[%d of %d] = %s", index, _oop_recorder->metadata_count(), klass->name()->as_C_string());
+  guarantee(CompressedKlassPointers::is_encodable(klass), "klass cannot be compressed: %s", klass->external_name());
   return CompressedKlassPointers::encode(klass);
 }
 #endif

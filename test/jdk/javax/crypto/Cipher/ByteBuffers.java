@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary Test the Cipher.update/doFinal(ByteBuffer, ByteBuffer) methods
  * @author Andreas Sterbenz
  * @key randomness
+ * @run main ByteBuffers DES 8
+ * @run main ByteBuffers AES 16
  */
 
 import java.util.*;
@@ -40,17 +42,20 @@ import javax.crypto.spec.*;
 public class ByteBuffers {
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(
+                        System.getProperty("test.provider.name", "SunJCE"));
         Random random = new Random();
         int n = 10 * 1024;
         byte[] t = new byte[n];
         random.nextBytes(t);
 
-        byte[] keyBytes = new byte[8];
+        int keyInt = Integer.parseInt(args[1]);
+        byte[] keyBytes = new byte[keyInt];
         random.nextBytes(keyBytes);
-        SecretKey key = new SecretKeySpec(keyBytes, "DES");
+        String algo = args[0];
+        SecretKey key = new SecretKeySpec(keyBytes, algo);
 
-        Cipher cipher = Cipher.getInstance("DES/ECB/NoPadding");
+        Cipher cipher = Cipher.getInstance(algo + "/ECB/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
 
         byte[] outBytes = cipher.doFinal(t);

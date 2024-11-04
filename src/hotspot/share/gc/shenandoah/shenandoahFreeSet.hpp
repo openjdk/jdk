@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.

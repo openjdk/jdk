@@ -197,6 +197,7 @@ public:
 
   void heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 
+  bool contains(ShenandoahAffiliation affiliation) const override;
   bool contains(ShenandoahHeapRegion* region) const override;
   bool contains(oop obj) const override;
 

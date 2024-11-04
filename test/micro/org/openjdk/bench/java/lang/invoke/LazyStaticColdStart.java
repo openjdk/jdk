@@ -52,7 +52,7 @@ import static java.lang.classfile.ClassFile.ACC_STATIC;
 @BenchmarkMode(Mode.SingleShotTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
-@Fork(value = 10, warmups = 5, jvmArgsAppend = {
+@Fork(value = 10, warmups = 5, jvmArgs = {
         "--enable-preview"
 })
 public class LazyStaticColdStart {
