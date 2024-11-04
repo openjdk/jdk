@@ -1271,7 +1271,6 @@ public:
   // Return: the call PC or nullptr if CodeCache is full.
   address reloc_call(Address entry, Register tmp = t1);
 
- public:
   address ic_call(address entry, jint method_index = 0);
   static int ic_check_size();
   int ic_check(int end_alignment = MacroAssembler::instruction_size);
