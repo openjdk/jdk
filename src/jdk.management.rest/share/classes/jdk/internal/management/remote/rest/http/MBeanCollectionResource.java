@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,17 +50,76 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * A RestResource which contains the MBeans of an MBeanServer.
+ */
 public class MBeanCollectionResource implements RestResource, NotificationListener {
 
-    private List<ObjectName> allowedMBeans;
     private final MBeanServer mBeanServer;
-    private final Map<ObjectName, MBeanResource> mBeanResourceMap = new ConcurrentHashMap<>();
-    private static final int pageSize = 50;
+    private volatile List<ObjectName> mBeans;
+    private volatile Map<ObjectName, MBeanResource> mBeanResourceMap;
+
+    private volatile long timestamp;
+    private static long throttle = 1000 * 30;
+
+    private static final int pageSize = 50; // Avoids client needing to page through results, except in extreme cases.
     private static final String pathPrefix = "^/?jmx/servers/[a-zA-Z0-9\\-\\.]+/mbeans";
+    public MBeanCollectionResource(MBeanServer mBeanServer) {
+        this.mBeanServer = mBeanServer;
+        timestamp = 0;
+        populateMBeans();
+    }
+
+    private List<ObjectName> getMBeans() {
+        return mBeans;
+    }
+
+    private synchronized void populateMBeans() {
+        // Populate, or re-populate, the MBean list.
+        // Create a REST handler (MBeanResource) for each MBean.
+
+        // Normally a low number of MBeans, e.g. PlatformMBeanServer may have < 30.
+        // A test like ListenerScaleTest may create 20,000.
+
+        // Rate-limit:
+        long now = System.currentTimeMillis();
+        if (now - timestamp < throttle) {
+            return;
+        }
+
+        List<ObjectName> allowedMBeans = introspectMBeanTypes(mBeanServer);
+
+        Map<ObjectName, MBeanResource> mBeanResourceMap = new ConcurrentHashMap<>();
+        allowedMBeans.forEach(objectName -> mBeanResourceMap.put(objectName,
+                new MBeanResource(mBeanServer, objectName)));
+
+        mBeans = allowedMBeans;
+        this.mBeanResourceMap = mBeanResourceMap;
+
+        System.err.println("ZZZZ MBeanCollectionResource.populateMBeans time = " + (now - timestamp) + " count = " + mBeanServer.getMBeanCount()
+                           + " allowed size = " + allowedMBeans.size()
+                           + " mBeanResourceMap: " + mBeanResourceMap.size());
+        timestamp = now;
+    }
+
+    final List<ObjectName> allowedMBeans = new ArrayList<>();
+
+    private synchronized List<ObjectName> introspectMBeanTypes(MBeanServer server) {
+//        if (allowedMBeans.isEmpty()) {
+            Set<ObjectInstance> allMBeans = server.queryMBeans(null, null); // get all Mbeans
+            allowedMBeans.clear();
+
+            allMBeans.stream().filter((objIns) -> (isMBeanAllowed(objIns.getObjectName())))
+                    .forEachOrdered(objIns -> allowedMBeans.add(objIns.getObjectName()));
+//        }
+        return new CopyOnWriteArrayList<>(allowedMBeans);
+    }
 
     // Only MXBean or any other MBean that uses types
     // that have a valid mapper functions
     private boolean isMBeanAllowed(ObjectName objName) {
+//        System.err.println("isMBeanAllowed: " + objName);
+        if (true) return true;
         try {
             MBeanInfo mInfo = mBeanServer.getMBeanInfo(objName);
 
@@ -99,16 +158,6 @@ public class MBeanCollectionResource implements RestResource, NotificationListen
             return false;
         }
     }
-
-    private void introspectMBeanTypes(MBeanServer server) {
-//        if (allowedMBeans.isEmpty()) {
-            Set<ObjectInstance> allMBeans = server.queryMBeans(null, null); // get all Mbeans
-            allMBeans.stream().filter((objIns) -> (isMBeanAllowed(objIns.getObjectName())))
-                    .forEachOrdered(objIns -> allowedMBeans.add(objIns.getObjectName()));
-//        }
-        System.err.println("ZZZZ MBeanCollectionResource.introspect size = " + allowedMBeans.size());
-    }
-
     @Override
     public void handleNotification(Notification notification, Object handback) {
         try {
@@ -116,30 +165,19 @@ public class MBeanCollectionResource implements RestResource, NotificationListen
             if (MBeanServerNotification.REGISTRATION_NOTIFICATION.equals(mbs.getType())) {
                 ObjectName mBeanName = mbs.getMBeanName();
                 if (isMBeanAllowed(mBeanName)) {
-                    allowedMBeans.add(mBeanName);
+                    getMBeans().add(mBeanName);
                 }
             } else if (MBeanServerNotification.UNREGISTRATION_NOTIFICATION.equals(mbs.getType())) {
-                if (allowedMBeans.contains(mbs.getMBeanName())) {
-                    allowedMBeans.remove(mbs.getMBeanName());
+                if (getMBeans().contains(mbs.getMBeanName())) {
+                    getMBeans().remove(mbs.getMBeanName());
                 }
             }
         } catch (Exception e) {
         }
     }
-
-    public MBeanCollectionResource(MBeanServer mBeanServer) {
-        this.mBeanServer = mBeanServer;
-        allowedMBeans = new ArrayList<>();
-        introspectMBeanTypes(mBeanServer);
-        allowedMBeans = new CopyOnWriteArrayList<>(allowedMBeans);
-
-        // Create a REST handler for each MBean
-        allowedMBeans.forEach(objectName -> mBeanResourceMap.put(objectName,
-                new MBeanResource(mBeanServer, objectName)));
-    }
-
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        populateMBeans();
         String path = URLDecoder.decode(exchange.getRequestURI().getPath(), StandardCharsets.UTF_8.name());
 
         if (path.matches(pathPrefix + "/?$")) {
@@ -157,8 +195,14 @@ public class MBeanCollectionResource implements RestResource, NotificationListen
                     mBeanName = ss.substring(0, ss.indexOf('/'));
                 }
                 try {
+                    // Looup MBean.  Rescan and retry on failure:
                     MBeanResource mBeanResource = mBeanResourceMap.get(new ObjectName(mBeanName));
                     if (mBeanResource == null) {
+                        populateMBeans();
+                        mBeanResource = mBeanResourceMap.get(new ObjectName(mBeanName));
+                    }
+                    if (mBeanResource == null) {
+                        System.err.println("XXXXX MBeanCollectionResource: no MBeanResource for '" + mBeanName + "'");
                         HttpUtil.sendResponse(exchange, HttpResponse.REQUEST_NOT_FOUND);
                         return;
                     }
@@ -173,11 +217,12 @@ public class MBeanCollectionResource implements RestResource, NotificationListen
 
     @Override
     public HttpResponse doGet(HttpExchange exchange) {
+
         try {
-            final String path = PlatformRestAdapter.getDomain()
+            final String path = PlatformRestAdapter.getDomain() /* gets domain from http server */
                     + URLDecoder.decode(exchange.getRequestURI().getPath(), StandardCharsets.UTF_8.displayName())
                     .replaceAll("/$", "");
-            List<ObjectName> filteredMBeans = allowedMBeans;
+            List<ObjectName> filteredMBeans = getMBeans();
             Map<String, String> queryMap = HttpUtil.getGetRequestQueryMap(exchange);
             String query = exchange.getRequestURI().getQuery();
             if (query != null && queryMap.isEmpty()) {
@@ -195,7 +240,7 @@ public class MBeanCollectionResource implements RestResource, NotificationListen
             if (queryMap.containsKey("objectname")) {        // Filter based on ObjectName query
                 Set<ObjectName> queryMBeans = mBeanServer
                         .queryNames(new ObjectName(queryMap.get("objectname")), null);
-                queryMBeans.retainAll(allowedMBeans);   // Intersection of two lists
+                queryMBeans.retainAll(getMBeans());   // Intersection of two lists
                 filteredMBeans = new ArrayList<>(queryMBeans);
             }
 
@@ -316,7 +361,7 @@ public class MBeanCollectionResource implements RestResource, NotificationListen
                     for (String pattern : objectNamePatterns) {
                         Set<ObjectName> queryMBeans = mBeanServer
                                 .queryNames(new ObjectName(pattern.substring(1)), null);
-                        queryMBeans.retainAll(allowedMBeans);
+                        queryMBeans.retainAll(getMBeans());
                         JSONElement patternNode = jsonObject.get(pattern);
                         jsonObject.remove(pattern);
                         for (ObjectName queryMBean : queryMBeans) {
