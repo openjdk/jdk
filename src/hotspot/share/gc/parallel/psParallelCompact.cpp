@@ -1912,18 +1912,14 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
   size_t cur_region;
   for (cur_region = beg_region; cur_region < new_top_region; ++cur_region) {
     const RegionData* const c = sd.region(cur_region);
-    if (!c->completed()) {
-      fatal("region %zu not filled: destination_count=%u",
-             cur_region, c->destination_count());
-    }
+    assert(c->completed(), "region %zu not filled: destination_count=%u",
+           cur_region, c->destination_count());
   }
 
   for (cur_region = new_top_region; cur_region < old_top_region; ++cur_region) {
     const RegionData* const c = sd.region(cur_region);
-    if (!c->available()) {
-      fatal("region %zu not empty: destination_count=%u",
-             cur_region, c->destination_count());
-    }
+    assert(c->available(), "region %zu not empty: destination_count=%u",
+           cur_region, c->destination_count());
   }
 }
 #endif  // #ifdef ASSERT
