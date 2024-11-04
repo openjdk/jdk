@@ -25,9 +25,13 @@ package jdk.jpackage.tests;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.TKit;
 
 /*
@@ -56,7 +60,6 @@ import jdk.jpackage.test.TKit;
 
 public final class ErrorTest {
 
-    private final String expectedError;
     private final JPackageCommand cmd;
 
     @Parameters
@@ -66,71 +69,80 @@ public final class ErrorTest {
             {"Hello",
                     new String[]{"--no-such-argument"},
                     null,
-                    "Invalid Option: [--no-such-argument]"},
+                    JPackageStringBundle.MAIN.getFormattedString("ERR_InvalidOption", "--no-such-argument")},
             // no main jar
             {"Hello",
                     null,
                     new String[]{"--main-jar"},
-                    "--main-jar or --module"},
+                    JPackageStringBundle.MAIN.getFormattedString("ERR_NoEntryPoint")},
             // no main-class
             {"Hello",
                     null,
                     new String[]{"--main-class"},
-                    "main class was not specified"},
+                    JPackageStringBundle.MAIN.getFormattedString("error.no-main-class-with-main-jar", "hello.jar"),
+                    JPackageStringBundle.MAIN.getFormattedString("error.no-main-class-with-main-jar.advice", "hello.jar")},
             // non-existent main jar
             {"Hello",
                     new String[]{"--main-jar", "non-existent.jar"},
                     null,
-                    "main jar does not exist"},
+                    JPackageStringBundle.MAIN.getFormattedString("error.main-jar-does-not-exist", "non-existent.jar")},
             // non-existent runtime
             {"Hello",
                     new String[]{"--runtime-image", "non-existent.runtime"},
                     null,
-                    "does not exist"},
+                    JPackageStringBundle.MAIN.getFormattedString("message.runtime-image-dir-does-not-exist", "runtime-image", "non-existent.runtime")},
             // non-existent resource-dir
             {"Hello",
                     new String[]{"--resource-dir", "non-existent.dir"},
                     null,
-                    "does not exist"},
+                    JPackageStringBundle.MAIN.getFormattedString("message.resource-dir-does-not-exist", "resource-dir", "non-existent.dir")},
             // invalid type
             {"Hello",
                     new String[]{"--type", "invalid-type"},
                     null,
-                    "Invalid or unsupported type: [invalid-type]"},
+                    JPackageStringBundle.MAIN.getFormattedString("ERR_InvalidInstallerType", "invalid-type")},
             // no --input
             {"Hello",
                     null,
                     new String[]{"--input"},
-                    "Missing argument: --input"},
+                    JPackageStringBundle.MAIN.getFormattedString("ERR_MissingArgument", "--input")},
             // no --module-path
             {"com.other/com.other.Hello",
                     null,
                     new String[]{"--module-path"},
-                    "Missing argument: --runtime-image or --module-path"},
+                    JPackageStringBundle.MAIN.getFormattedString("ERR_MissingArgument", "--runtime-image or --module-path")},
         });
     }
 
     public ErrorTest(String javaAppDesc, String[] jpackageArgs,
-                String[] removeArgs,
-                String expectedError) {
-        this.expectedError = expectedError;
+            String[] removeArgs, String ... expectedErrors) {
 
+        // Init default jpackage test command line.
         cmd = JPackageCommand.helloAppImage(javaAppDesc)
-                .saveConsoleOutput(true).dumpOutput(true);
-        if (jpackageArgs != null) {
-            cmd.addArguments(jpackageArgs);
-        } if (removeArgs != null) {
-            for (String arg : removeArgs) {
-                cmd.removeArgumentWithValue(arg);
-            }
-        }
+                // Disable default logic adding `--verbose` option
+                // to jpackage command line.
+                // It will affect jpackage error messages if the command line is malformed.
+                .ignoreDefaultVerbose(true)
+                // Ignore external runtime as it will interfer
+                // with jpackage arguments in this test.
+                .ignoreDefaultRuntime(true);
+
+        // Add arguments if requested.
+        Optional.ofNullable(jpackageArgs).ifPresent(cmd::addArguments);
+
+        // Remove arguments if requested.
+        Optional.ofNullable(removeArgs).map(List::of).ifPresent(
+                args -> args.forEach(cmd::removeArgumentWithValue));
+
+        // Configure jpackage output verifier to look up the list of provided
+        // errors in the order they specified.
+        cmd.verifyOutput(Stream.of(expectedErrors)
+                .map(TKit::assertTextStream)
+                .reduce(TKit.TextStreamVerifier::andThen).get());
     }
 
     @Test
     public void test() {
-        List<String> output = cmd.execute(1).getOutput();
-        TKit.assertNotNull(output, "output is null");
-        TKit.assertTextStream(expectedError).apply(output.stream());
+        cmd.execute(1);
     }
-
 }

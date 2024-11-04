@@ -78,6 +78,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
         appLayoutAsserts = cmd.appLayoutAsserts;
+        outputVerifier = cmd.outputVerifier;
         executeInDirectory = cmd.executeInDirectory;
     }
 
@@ -739,6 +740,24 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand verifyOutput(TKit.TextStreamVerifier verifier) {
+        return verifyOutput(verifier::apply);
+    }
+
+    public JPackageCommand verifyOutput(Consumer<Stream<String>> verifier) {
+        if (verifier != null) {
+            saveConsoleOutput(true);
+            outputVerifier = verifier;
+        } else {
+            outputVerifier = null;
+        }
+        return this;
+    }
+
+    public JPackageCommand verifyOutput(String key, Object ... args) {
+        return verifyOutput(JPackageStringBundle.MAIN.assertTextStream(key, args));
+    }
+
     public boolean isWithToolProvider() {
         return Optional.ofNullable(withToolProvider).orElse(
                 defaultWithToolProvider);
@@ -816,6 +835,10 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .adjustArgumentsBeforeExecution()
                 .createExecutor()
                 .execute(expectedExitCode);
+
+        if (outputVerifier != null) {
+            outputVerifier.accept(result.getOutput().stream());
+        }
 
         if (result.exitCode == 0) {
             executeVerifyActions();
@@ -1186,6 +1209,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private final Actions verifyActions;
     private Path executeInDirectory;
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
+    private Consumer<Stream<String>> outputVerifier;
     private static boolean defaultWithToolProvider;
 
     private static final Map<String, PackageType> PACKAGE_TYPES = Functional.identity(
