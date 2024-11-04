@@ -70,13 +70,13 @@ import java.util.stream.Stream;
  */
 final class OverridableResource {
 
-    public OverridableResource() {
+    OverridableResource() {
         defaultName = "";
         defaultResourceSupplier = null;
         setSourceOrder(Source.External, Source.ResourceDir);
     }
 
-    public OverridableResource(String defaultName,
+    OverridableResource(String defaultName,
             Supplier<InputStream> defaultResourceSupplier) {
         Objects.requireNonNull(defaultName);
         Objects.requireNonNull(defaultResourceSupplier);
@@ -85,29 +85,29 @@ final class OverridableResource {
         setSourceOrder(Source.values());
     }
 
-    public OverridableResource(String defaultName, Class<?> resourceLocator) {
+    OverridableResource(String defaultName, Class<?> resourceLocator) {
         this(defaultName, () -> {
             return resourceLocator.getResourceAsStream(defaultName);
         });
     }
 
-    public Path getResourceDir() {
+    Path getResourceDir() {
         return resourceDir;
     }
 
-    public String getDefaultName() {
+    String getDefaultName() {
         return defaultName;
     }
 
-    public Path getPublicName() {
+    Path getPublicName() {
         return publicName;
     }
 
-    public Path getExternalPath() {
+    Path getExternalPath() {
         return externalPath;
     }
 
-    public OverridableResource setSubstitutionData(Map<String, String> v) {
+    OverridableResource setSubstitutionData(Map<String, String> v) {
         if (v != null) {
             // Disconnect `v`
             substitutionData = new HashMap<>(v);
@@ -117,30 +117,30 @@ final class OverridableResource {
         return this;
     }
 
-    public OverridableResource addSubstitutionDataEntry(String key, String value) {
+    OverridableResource addSubstitutionDataEntry(String key, String value) {
         var entry = Map.of(key, value);
         Optional.ofNullable(substitutionData).ifPresentOrElse(v -> v.putAll(
                 entry), () -> setSubstitutionData(entry));
         return this;
     }
 
-    public OverridableResource setCategory(String v) {
+    OverridableResource setCategory(String v) {
         category = v;
         return this;
     }
 
-    public OverridableResource setResourceDir(Path v) {
+    OverridableResource setResourceDir(Path v) {
         resourceDir = v;
         return this;
     }
 
-    public OverridableResource setResourceDir(File v) {
+    OverridableResource setResourceDir(File v) {
         return setResourceDir(toPath(v));
     }
 
-    public enum Source { External, ResourceDir, DefaultResource };
+    enum Source { External, ResourceDir, DefaultResource };
 
-    public OverridableResource setSourceOrder(Source... v) {
+    OverridableResource setSourceOrder(Source... v) {
         sources = Stream.of(v)
                 .map(source -> Map.entry(source, getHandler(source)))
                 .toList();
@@ -152,12 +152,12 @@ final class OverridableResource {
      *
      * @return this
      */
-    public OverridableResource setPublicName(Path v) {
+    OverridableResource setPublicName(Path v) {
         publicName = v;
         return this;
     }
 
-    public OverridableResource setPublicName(String v) {
+    OverridableResource setPublicName(String v) {
         return setPublicName(Path.of(v));
     }
 
@@ -166,25 +166,25 @@ final class OverridableResource {
      *
      * @return this
      */
-    public OverridableResource setLogPublicName(Path v) {
+    OverridableResource setLogPublicName(Path v) {
         logPublicName = v;
         return this;
     }
 
-    public OverridableResource setLogPublicName(String v) {
+    OverridableResource setLogPublicName(String v) {
         return setLogPublicName(Path.of(v));
     }
 
-    public OverridableResource setExternal(Path v) {
+    OverridableResource setExternal(Path v) {
         externalPath = v;
         return this;
     }
 
-    public OverridableResource setExternal(File v) {
+    OverridableResource setExternal(File v) {
         return setExternal(toPath(v));
     }
 
-    public Source saveToStream(OutputStream dest) throws IOException {
+    Source saveToStream(OutputStream dest) throws IOException {
         if (dest == null) {
             return sendToConsumer(null);
         }
@@ -201,11 +201,11 @@ final class OverridableResource {
         });
     }
 
-    public Source saveInFolder(Path folderPath) throws IOException {
+    Source saveInFolder(Path folderPath) throws IOException {
         return saveToFile(folderPath.resolve(getPublicName()));
     }
 
-    public Source saveToFile(Path dest) throws IOException {
+    Source saveToFile(Path dest) throws IOException {
         if (dest == null) {
             return sendToConsumer(null);
         }
@@ -223,7 +223,7 @@ final class OverridableResource {
         });
     }
 
-    public Source saveToFile(File dest) throws IOException {
+    Source saveToFile(File dest) throws IOException {
         return saveToFile(toPath(dest));
     }
 
@@ -393,11 +393,11 @@ final class OverridableResource {
 
     @FunctionalInterface
     private static interface SourceHandler {
-        public boolean apply(ResourceConsumer dest) throws IOException;
+        boolean apply(ResourceConsumer dest) throws IOException;
     }
 
     private static interface ResourceConsumer {
-        public Path publicName();
-        public void consume(InputStream in) throws IOException;
+        Path publicName();
+        void consume(InputStream in) throws IOException;
     }
 }
