@@ -585,6 +585,7 @@ class Assembler : public AbstractAssembler  {
     VEX_OPCODE_0F_38 = 0x2,
     VEX_OPCODE_0F_3A = 0x3,
     VEX_OPCODE_0F_3C = 0x4,
+    VEX_OPCODE_MAP4  = 0x4,
     VEX_OPCODE_MASK  = 0x1F
   };
 
