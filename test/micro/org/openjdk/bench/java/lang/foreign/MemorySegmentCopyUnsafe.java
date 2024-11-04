@@ -45,7 +45,7 @@ import static java.lang.foreign.ValueLayout.*;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = {"--enable-native-access=ALL-UNNAMED"})
+@Fork(value = 3, jvmArgs = {"--enable-native-access=ALL-UNNAMED"})
 public class MemorySegmentCopyUnsafe {
 
     static final Unsafe UNSAFE = Utils.unsafe;

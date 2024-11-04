@@ -536,6 +536,19 @@ public abstract class LongVector extends AbstractVector<Long> {
         return r;
     }
 
+    static LongVector selectFromTwoVectorHelper(Vector<Long> indexes, Vector<Long> src1, Vector<Long> src2) {
+        int vlen = indexes.length();
+        long[] res = new long[vlen];
+        long[] vecPayload1 = ((LongVector)indexes).vec();
+        long[] vecPayload2 = ((LongVector)src1).vec();
+        long[] vecPayload3 = ((LongVector)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return ((LongVector)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -829,6 +842,18 @@ public abstract class LongVector extends AbstractVector<Long> {
                     v0.bOp(v1, vm, (i, a, n) -> rotateLeft(a, (int)n));
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateRight(a, (int)n));
+            case VECTOR_OP_UMAX: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (long)VectorMath.maxUnsigned(a, b));
+            case VECTOR_OP_UMIN: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (long)VectorMath.minUnsigned(a, b));
+            case VECTOR_OP_SADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (long)(VectorMath.addSaturating(a, b)));
+            case VECTOR_OP_SSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (long)(VectorMath.subSaturating(a, b)));
+            case VECTOR_OP_SUADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (long)(VectorMath.addSaturatingUnsigned(a, b)));
+            case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (long)(VectorMath.subSaturatingUnsigned(a, b)));
             case VECTOR_OP_COMPRESS_BITS: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> Long.compress(a, n));
             case VECTOR_OP_EXPAND_BITS: return (v0, v1, vm) ->
@@ -2424,6 +2449,22 @@ public abstract class LongVector extends AbstractVector<Long> {
                                                         length(), this, v, m,
                                                         (v1, v2, _m) ->
                                                          v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    LongVector selectFrom(Vector<Long> v1, Vector<Long> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final LongVector selectFromTemplate(LongVector v1, LongVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), long.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations

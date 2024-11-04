@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,8 @@ public class XMLStreamException extends Exception {
   /**
    * Construct an exception with the associated message and exception
    *
-   * @param th a nested exception
    * @param msg the message to report
+   * @param th a nested exception
    */
   public XMLStreamException(String msg, Throwable th) {
     super(msg, th);
@@ -88,9 +88,9 @@ public class XMLStreamException extends Exception {
   /**
    * Construct an exception with the associated message, exception and location.
    *
-   * @param th a nested exception
    * @param msg the message to report
    * @param location the location of the error
+   * @param th a nested exception
    */
   public XMLStreamException(String msg, Location location, Throwable th) {
     super("ParseError at [row,col]:["+location.getLineNumber()+","+

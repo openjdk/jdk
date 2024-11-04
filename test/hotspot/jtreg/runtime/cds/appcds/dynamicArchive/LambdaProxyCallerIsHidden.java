@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,8 @@
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper$1
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper
- *                 jdk/test/lib/compiler/InMemoryJavaCompiler$MemoryJavaFileObject
+ *                 jdk/test/lib/compiler/InMemoryJavaCompiler$SourceFile
+ *                 jdk/test/lib/compiler/InMemoryJavaCompiler$ClassFile
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaProxyCallerIsHidden
  */
