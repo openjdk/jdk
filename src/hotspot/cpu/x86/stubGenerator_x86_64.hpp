@@ -497,6 +497,10 @@ class StubGenerator: public StubCodeGenerator {
   address generate_intpoly_montgomeryMult_P256();
   address generate_intpoly_assign();
 
+  // SHA3 stubs
+  void generate_sha3_stubs();
+  address generate_sha3_implCompress(bool multiBlock, const char *name);
+
   // BASE64 stubs
 
   address base64_shuffle_addr();
@@ -620,6 +624,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // shared exception handler for FFM upcall stubs
   address generate_upcall_stub_exception_handler();
+  address generate_upcall_stub_load_target();
 
   // Specialized stub implementations for UseSecondarySupersTable.
   address generate_lookup_secondary_supers_table_stub(u1 super_klass_index);
