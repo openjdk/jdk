@@ -59,7 +59,6 @@ public class PrintDlgPageable implements Printable {
 
         if (arg == 0) {
             INSTRUCTIONS += "\n Confirm that page range is disabled.";
-
         } else if (arg == 2) {
             INSTRUCTIONS += "\n Confirm ToPage is populated with pagerange 2";
         }
@@ -73,16 +72,12 @@ public class PrintDlgPageable implements Printable {
             .title("Instructions")
             .instructions(INSTRUCTIONS)
             .columns(35)
-            .logArea()
             .build();
 
         if (pj.printDialog()) {
             try {
-                PassFailJFrame.log("About to print the data ...");
                 pj.print();
-                PassFailJFrame.log("Printed");
-            }
-            catch (PrinterException pe) {
+            } catch (PrinterException pe) {
                 pe.printStackTrace();
             }
         }
@@ -98,7 +93,6 @@ public class PrintDlgPageable implements Printable {
         g2.translate(pf.getImageableX(), pf.getImageableY());
         g2.drawRect(1, 1, 200, 300);
         g2.drawRect(1, 1, 25, 25);
-        PassFailJFrame.log("print method called " + pi + " Orientation " + pf.getOrientation());
         return Printable.PAGE_EXISTS;
     }
 }
@@ -116,27 +110,13 @@ class PageableHandler implements Pageable {
     }
 
     public PageFormat getPageFormat(int pageIndex) {
-        System.out.println("getPageFormat called " + pageIndex);
         if (pageIndex == 0) {
             pf.setOrientation(PageFormat.PORTRAIT);
-            PassFailJFrame.log("Orientation returned from Pageable " + findOrientation(pf.getOrientation()));
             return pf;
         } else {
             pf.setOrientation(PageFormat.LANDSCAPE);
-            PassFailJFrame.log("Orientation returned from Pageable " + findOrientation(pf.getOrientation()));
             return pf;
         }
     }
 
-    public String findOrientation(int orient) {
-        if (orient == PageFormat.LANDSCAPE) {
-            return "LANDSCAPE";
-        } else if (orient == PageFormat.PORTRAIT) {
-            return "PORTRAIT";
-        } else if (orient == PageFormat.REVERSE_LANDSCAPE) {
-            return "REVERSE LANDSCAPE";
-        } else {
-            return null;
-        }
-    }
 }

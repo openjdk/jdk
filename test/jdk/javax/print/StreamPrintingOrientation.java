@@ -57,10 +57,9 @@ public class StreamPrintingOrientation implements Printable {
         PrintService service = null;
 
         FileOutputStream fos = null;
-        File fl = null, fp = null;
         String mType = "application/postscript";
 
-        fl = new File("stream_landscape.ps");
+        File fl = new File("stream_landscape.ps");
         fl.deleteOnExit();
         fos = new FileOutputStream(fl);
         StreamPrintServiceFactory[] factories = PrinterJob.lookupStreamPrintServices(mType);
@@ -93,7 +92,7 @@ public class StreamPrintingOrientation implements Printable {
             System.out.println("TEST: Printed");
         }
 
-        fp = new File("stream_portrait.ps");
+        File fp = new File("stream_portrait.ps");
         fp.deleteOnExit();
         fos = new FileOutputStream(fp);
         if (factories.length > 0) {
@@ -122,7 +121,7 @@ public class StreamPrintingOrientation implements Printable {
             return Printable.NO_SUCH_PAGE;
         }
         // Simply draw two rectangles
-        Graphics2D g2 = (Graphics2D)g;
+        Graphics2D g2 = (Graphics2D) g;
         g2.setColor(Color.black);
         g2.translate(pf.getImageableX(), pf.getImageableY());
         System.out.println("StreamPrinting Test Width " + pf.getWidth() + " Height " + pf.getHeight());
