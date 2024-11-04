@@ -72,7 +72,7 @@ void generateError(JNIEnv *env) {
 }
 
 #ifdef _WIN32
-unsigned __stdcall
+unsigned
 #else
 void *
 #endif
