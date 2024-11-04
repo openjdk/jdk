@@ -761,6 +761,5 @@ public class VectorLogicalOpIdentityTest {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:-TieredCompilation");
     }
 }
