@@ -27,6 +27,8 @@
  * @summary Test the Signature.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @key randomness
+ * @run main ByteBuffers DSA 512
+ * @run main ByteBuffers SHA256withDSA 2048
  */
 
 import java.util.*;
@@ -44,11 +46,14 @@ public class ByteBuffers {
         byte[] t = new byte[n];
         random.nextBytes(t);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", p);
-        kpg.initialize(512);
+        String kpgAlgorithm = "DSA";
+        int keySize = Integer.parseInt(args[1]);
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
+        kpg.initialize(keySize);
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("DSA", p);
+        String signAlgo = args[0];
+        Signature sig = Signature.getInstance(signAlgo, p);
         sig.initSign(kp.getPrivate());
         sig.update(t);
         byte[] signature = sig.sign();

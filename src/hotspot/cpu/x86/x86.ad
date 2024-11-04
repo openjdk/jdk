@@ -2138,10 +2138,13 @@ bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType
     case Op_StoreVectorScatterMasked:
       return true;
 
-    case Op_MaxV:
-    case Op_MinV:
     case Op_UMinV:
     case Op_UMaxV:
+      if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
+        return false;
+      } // fallthrough
+    case Op_MaxV:
+    case Op_MinV:
       if (is_subword_type(bt) && !VM_Version::supports_avx512bw()) {
         return false; // Implementation limitation
       }

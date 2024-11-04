@@ -81,8 +81,6 @@ define_pd_global(intx, InlineSmallCode,          1000);
                    range,                                                        \
                    constraint)                                                   \
                                                                                  \
-  product(bool, NearCpool, true,                                                 \
-         "constant pool is close to instructions")                               \
   product(bool, UseBlockZeroing, false,                                          \
           "Use Zicboz for block zeroing")                                        \
   product(intx, BlockZeroingLowLimit, 256,                                       \
