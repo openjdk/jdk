@@ -1377,17 +1377,17 @@ void os::print_reg(outputStream *st, const char* reg, intptr_t val) {
 #endif
 
   if (val == pat) {
-    st->print_cr("%s" INTPTR_FORMAT " / %ld  <= unused storage marker found", reg, val, val);
+    st->print_cr("%s" INTPTR_FORMAT " <= unused storage marker found", reg, val);
   } else {
 #ifdef _LP64
     if (val1 == db1 || val2 == db2) {
 #else
     if (val == db1) {
 #endif
-      st->print_cr("%s" INTPTR_FORMAT " / %ld  <= bad value marker found", reg, val, val);
+      st->print_cr("%s" INTPTR_FORMAT " <= bad value marker found", reg, val);
     } else {
 #endif // PRODUCT
-      st->print_cr("%s" INTPTR_FORMAT " / %ld", reg, val, val);
+      st->print_cr("%s" INTPTR_FORMAT, reg, val);
 #ifndef PRODUCT
     }
   }
