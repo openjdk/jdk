@@ -55,9 +55,9 @@ int UnsetEnv(char *name);
 char *FindExecName(char *program);
 const char *SetExecname(char **argv);
 const char *GetExecName();
-static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
+static jboolean GetJVMPath(const char *jdkroot, const char *jvmtype,
                            char *jvmpath, jint jvmpathsize);
-static jboolean GetJREPath(char *path, jint pathsize, jboolean speculative);
+static jboolean GetJDKInstallRoot(char *path, jint pathsize, jboolean speculative);
 
 #if defined(_AIX)
 jboolean GetApplicationHomeFromLibpath(char *buf, jint bufsize);

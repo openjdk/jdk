@@ -33,23 +33,13 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
 /**
- * @test id=ZSinglegen
- * @requires vm.hasJFRLeakProf & vm.gc.ZSinglegen
+ * @test
+ * @requires vm.hasJFRLeakProf & vm.gc.Z
  * @key jfr
  * @summary Test leak profiler with ZGC
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
- * @run main/othervm  -XX:TLABSize=2k -XX:+UseZGC -XX:-ZGenerational jdk.jfr.event.oldobject.TestZ
- */
-
-/**
- * @test id=ZGenerational
- * @requires vm.hasJFRLeakProf & vm.gc.ZGenerational
- * @key jfr
- * @summary Test leak profiler with ZGC
- * @library /test/lib /test/jdk
- * @modules jdk.jfr/jdk.jfr.internal.test
- * @run main/othervm  -XX:TLABSize=2k -XX:+UseZGC -XX:+ZGenerational jdk.jfr.event.oldobject.TestZ
+ * @run main/othervm  -XX:TLABSize=2k -XX:+UseZGC jdk.jfr.event.oldobject.TestZ
  */
 
 public class TestZ {

@@ -50,7 +50,7 @@ import static jdk.internal.foreign.StringSupport.*;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = {"--add-exports=java.base/jdk.internal.foreign=ALL-UNNAMED", "--enable-native-access=ALL-UNNAMED", "--enable-preview"})
+@Fork(value = 3, jvmArgs = {"--add-exports=java.base/jdk.internal.foreign=ALL-UNNAMED", "--enable-native-access=ALL-UNNAMED", "--enable-preview"})
 public class InternalStrLen {
 
     private MemorySegment singleByteSegment;

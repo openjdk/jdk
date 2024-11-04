@@ -168,9 +168,9 @@ void LIR_Assembler::osr_entry() {
               mo = frame_map()->address_for_monitor_object(i);
       assert(ml.index() == noreg && mo.index() == noreg, "sanity");
       __ ld(R0, slot_offset + 0, OSR_buf);
-      __ std(R0, ml.disp(), ml.base());
+      __ std(R0, ml);
       __ ld(R0, slot_offset + 1*BytesPerWord, OSR_buf);
-      __ std(R0, mo.disp(), mo.base());
+      __ std(R0, mo);
     }
 
     if (use_OSR_bias) {
@@ -601,7 +601,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       __ fcmpu(CCR0, rsrc, rsrc);
       if (dst_in_memory) {
         __ li(R0, 0); // 0 in case of NAN
-        __ std(R0, addr.disp(), addr.base());
+        __ std(R0, addr);
       } else {
         __ li(dst->as_register(), 0);
       }
@@ -625,7 +625,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       __ fcmpu(CCR0, rsrc, rsrc);
       if (dst_in_memory) {
         __ li(R0, 0); // 0 in case of NAN
-        __ std(R0, addr.disp(), addr.base());
+        __ std(R0, addr);
       } else {
         __ li(dst->as_register_lo(), 0);
       }
@@ -893,20 +893,20 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
       int value = c->as_jint_bits();
       __ load_const_optimized(src_reg, value);
       Address addr = frame_map()->address_for_slot(dest->single_stack_ix());
-      __ stw(src_reg, addr.disp(), addr.base());
+      __ stw(src_reg, addr);
       break;
     }
     case T_ADDRESS: {
       int value = c->as_jint_bits();
       __ load_const_optimized(src_reg, value);
       Address addr = frame_map()->address_for_slot(dest->single_stack_ix());
-      __ std(src_reg, addr.disp(), addr.base());
+      __ std(src_reg, addr);
       break;
     }
     case T_OBJECT: {
       jobject2reg(c->as_jobject(), src_reg);
       Address addr = frame_map()->address_for_slot(dest->single_stack_ix());
-      __ std(src_reg, addr.disp(), addr.base());
+      __ std(src_reg, addr);
       break;
     }
     case T_LONG:
@@ -914,7 +914,7 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
       int value = c->as_jlong_bits();
       __ load_const_optimized(src_reg, value);
       Address addr = frame_map()->address_for_double_slot(dest->double_stack_ix());
-      __ std(src_reg, addr.disp(), addr.base());
+      __ std(src_reg, addr);
       break;
     }
     default:
@@ -1090,24 +1090,24 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
     case T_FLOAT: {
       Address from = frame_map()->address_for_slot(src->single_stack_ix());
       Address to   = frame_map()->address_for_slot(dest->single_stack_ix());
-      __ lwz(tmp, from.disp(), from.base());
-      __ stw(tmp, to.disp(), to.base());
+      __ lwz(tmp, from);
+      __ stw(tmp, to);
       break;
     }
     case T_ADDRESS:
     case T_OBJECT: {
       Address from = frame_map()->address_for_slot(src->single_stack_ix());
       Address to   = frame_map()->address_for_slot(dest->single_stack_ix());
-      __ ld(tmp, from.disp(), from.base());
-      __ std(tmp, to.disp(), to.base());
+      __ ld(tmp, from);
+      __ std(tmp, to);
       break;
     }
     case T_LONG:
     case T_DOUBLE: {
       Address from = frame_map()->address_for_double_slot(src->double_stack_ix());
       Address to   = frame_map()->address_for_double_slot(dest->double_stack_ix());
-      __ ld(tmp, from.disp(), from.base());
-      __ std(tmp, to.disp(), to.base());
+      __ ld(tmp, from);
+      __ std(tmp, to);
       break;
     }
 
