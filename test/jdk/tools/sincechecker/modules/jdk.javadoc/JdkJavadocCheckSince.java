@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8341399
- * @summary Test for `@since` for jdk.javadoc module
+ * @summary Test for `@since` in jdk.javadoc module
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker jdk.javadoc
  */
