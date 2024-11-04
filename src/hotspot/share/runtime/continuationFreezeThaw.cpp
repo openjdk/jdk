@@ -202,7 +202,7 @@ static void verify_continuation(oop continuation) { }
 #endif
 
 static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoint);
-template<typename ConfigT, bool preempt> static inline int freeze_internal(JavaThread* current, intptr_t* const sp);
+template<typename ConfigT, bool preempt> static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const sp);
 
 static inline int prepare_thaw_internal(JavaThread* thread, bool return_barrier);
 template<typename ConfigT> static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::thaw_kind kind);
@@ -218,7 +218,7 @@ static JRT_BLOCK_ENTRY(int, freeze(JavaThread* current, intptr_t* sp))
     current->set_cont_fastpath(nullptr);
   }
 
-  return ConfigT::freeze(current, sp);
+  return checked_cast<int>(ConfigT::freeze(current, sp));
 JRT_END
 
 JRT_LEAF(int, Continuation::prepare_thaw(JavaThread* thread, bool return_barrier))
@@ -255,11 +255,11 @@ public:
   typedef Config<oops, BarrierSetT> SelfT;
   using OopT = std::conditional_t<oops == oop_kind::NARROW, narrowOop, oop>;
 
-  static int freeze(JavaThread* thread, intptr_t* const sp) {
+  static freeze_result freeze(JavaThread* thread, intptr_t* const sp) {
     return freeze_internal<SelfT, false>(thread, sp);
   }
 
-  static int freeze_preempt(JavaThread* thread, intptr_t* const sp) {
+  static freeze_result freeze_preempt(JavaThread* thread, intptr_t* const sp) {
     return freeze_internal<SelfT, true>(thread, sp);
   }
 
@@ -1666,15 +1666,15 @@ bool FreezeBase::check_valid_fast_path() {
 }
 #endif // ASSERT
 
-static inline int freeze_epilog(ContinuationWrapper& cont) {
+static inline freeze_result freeze_epilog(ContinuationWrapper& cont) {
   verify_continuation(cont.continuation());
   assert(!cont.is_empty(), "");
 
   log_develop_debug(continuations)("=== End of freeze cont ### #" INTPTR_FORMAT, cont.hash());
-  return 0;
+  return freeze_ok;
 }
 
-static int freeze_epilog(JavaThread* thread, ContinuationWrapper& cont, freeze_result res) {
+static freeze_result freeze_epilog(JavaThread* thread, ContinuationWrapper& cont, freeze_result res) {
   if (UNLIKELY(res != freeze_ok)) {
     verify_continuation(cont.continuation());
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
@@ -1685,7 +1685,7 @@ static int freeze_epilog(JavaThread* thread, ContinuationWrapper& cont, freeze_r
   return freeze_epilog(cont);
 }
 
-static int preempt_epilog(ContinuationWrapper& cont, freeze_result res, frame& old_last_frame) {
+static freeze_result preempt_epilog(ContinuationWrapper& cont, freeze_result res, frame& old_last_frame) {
   if (UNLIKELY(res != freeze_ok)) {
     verify_continuation(cont.continuation());
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
@@ -1699,7 +1699,7 @@ static int preempt_epilog(ContinuationWrapper& cont, freeze_result res, frame& o
 }
 
 template<typename ConfigT, bool preempt>
-static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
+static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const sp) {
   assert(!current->has_pending_exception(), "");
 
 #ifdef ASSERT

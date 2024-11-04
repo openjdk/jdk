@@ -90,7 +90,7 @@ public:
   static int prepare_thaw(JavaThread* thread, bool return_barrier);
   static address thaw_entry();
 
-  static int try_preempt(JavaThread* target, oop continuation);
+  static freeze_result try_preempt(JavaThread* target, oop continuation);
 
   static ContinuationEntry* get_continuation_entry_for_continuation(JavaThread* thread, oop continuation);
   static ContinuationEntry* get_continuation_entry_for_sp(JavaThread* thread, intptr_t* const sp);

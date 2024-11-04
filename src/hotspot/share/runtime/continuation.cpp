@@ -61,12 +61,12 @@ JVM_END
 class JvmtiUnmountBeginMark : public StackObj {
   Handle _vthread;
   JavaThread* _target;
-  int _preempt_result;
+  freeze_result _result;
   bool _failed;
 
  public:
   JvmtiUnmountBeginMark(JavaThread* t) :
-    _vthread(t, t->vthread()), _target(t), _preempt_result(freeze_pinned_native), _failed(false) {
+    _vthread(t, t->vthread()), _target(t), _result(freeze_pinned_native), _failed(false) {
     assert(!_target->is_in_VTMS_transition(), "must be");
 
     if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
@@ -101,7 +101,7 @@ class JvmtiUnmountBeginMark : public StackObj {
     // been set while blocked in the allocation path during freeze.
     bool jvmti_present = JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events();
 
-    if (_preempt_result != freeze_ok) {
+    if (_result != freeze_ok) {
       // Undo transition
       if (jvmti_present) {
         JvmtiVTMSTransitionDisabler::finish_VTMS_transition((jthread)_vthread.raw_value(), false);
@@ -120,7 +120,7 @@ class JvmtiUnmountBeginMark : public StackObj {
       }
     }
   }
-  void set_preempt_result(int res) { _preempt_result = res; }
+  void set_result(freeze_result res) { _result = res; }
   bool failed() { return _failed; }
 };
 
@@ -141,7 +141,7 @@ static bool is_vthread_safe_to_preempt(JavaThread* target, oop vthread) {
   return JVMTI_ONLY(is_vthread_safe_to_preempt_for_jvmti(target, vthread)) NOT_JVMTI(true);
 }
 
-typedef int (*FreezeContFnT)(JavaThread*, intptr_t*);
+typedef freeze_result (*FreezeContFnT)(JavaThread*, intptr_t*);
 
 static void verify_preempt_preconditions(JavaThread* target, oop continuation) {
   assert(target == JavaThread::current(), "no support for external preemption");
@@ -153,7 +153,7 @@ static void verify_preempt_preconditions(JavaThread* target, oop continuation) {
   assert(!target->has_pending_exception(), "");
 }
 
-int Continuation::try_preempt(JavaThread* target, oop continuation) {
+freeze_result Continuation::try_preempt(JavaThread* target, oop continuation) {
   verify_preempt_preconditions(target, continuation);
 
   if (LockingMode == LM_LEGACY) {
@@ -166,9 +166,9 @@ int Continuation::try_preempt(JavaThread* target, oop continuation) {
 
   JVMTI_ONLY(JvmtiUnmountBeginMark jubm(target);)
   JVMTI_ONLY(if (jubm.failed()) return freeze_pinned_native;)
-  int res = CAST_TO_FN_PTR(FreezeContFnT, freeze_preempt_entry())(target, target->last_Java_sp());
+  freeze_result res = CAST_TO_FN_PTR(FreezeContFnT, freeze_preempt_entry())(target, target->last_Java_sp());
   log_trace(continuations, preempt)("try_preempt: %d", res);
-  JVMTI_ONLY(jubm.set_preempt_result(res);)
+  JVMTI_ONLY(jubm.set_result(res);)
   return res;
 }
 

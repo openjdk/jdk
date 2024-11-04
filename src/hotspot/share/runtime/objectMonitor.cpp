@@ -517,7 +517,7 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
 
     ContinuationEntry* ce = current->last_continuation();
     if (ce != nullptr && ce->is_virtual_thread()) {
-      int result = Continuation::try_preempt(current, ce->cont_oop(current));
+      freeze_result result = Continuation::try_preempt(current, ce->cont_oop(current));
       if (result == freeze_ok) {
         bool acquired = VThreadMonitorEnter(current);
         if (acquired) {
@@ -1691,7 +1691,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
   ContinuationEntry* ce = current->last_continuation();
   if (ce != nullptr && ce->is_virtual_thread()) {
-    int result = Continuation::try_preempt(current, ce->cont_oop(current));
+    freeze_result result = Continuation::try_preempt(current, ce->cont_oop(current));
     if (result == freeze_ok) {
       VThreadWait(current, millis);
       current->set_current_waiting_monitor(nullptr);
