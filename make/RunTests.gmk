@@ -856,6 +856,11 @@ define SetupRunJtregTestBody
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-zgc.txt
   endif
 
+  ifneq ($$(DEBUG_LEVEL), release)
+    JTREG_AUTO_PROBLEM_LISTS += ProblemList-debug.txt
+    JTREG_AUTO_TIMEOUT_FACTOR := 10
+  endif
+
   ifneq ($$(JTREG_EXTRA_PROBLEM_LISTS), )
     # Accept both absolute paths as well as relative to the current test root.
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
