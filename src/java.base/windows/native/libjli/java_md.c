@@ -45,9 +45,9 @@
 /*
  * Prototypes.
  */
-static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
+static jboolean GetJVMPath(const char *jdkroot, const char *jvmtype,
                            char *jvmpath, jint jvmpathsize);
-static jboolean GetJREPath(char *path, jint pathsize);
+static jboolean GetJDKInstallRoot(char *path, jint pathsize);
 
 /* We supports warmup for UI stack that is performed in parallel
  * to VM initialization.
@@ -152,7 +152,7 @@ IsJavaw()
  */
 void
 CreateExecutionEnvironment(int *pargc, char ***pargv,
-                           char *jrepath, jint so_jrepath,
+                           char *jdkroot, jint so_jdkroot,
                            char *jvmpath, jint so_jvmpath,
                            char *jvmcfg,  jint so_jvmcfg) {
 
@@ -160,14 +160,14 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     int i = 0;
     char** argv = *pargv;
 
-    /* Find out where the JRE is that we will be using. */
-    if (!GetJREPath(jrepath, so_jrepath)) {
-        JLI_ReportErrorMessage(JRE_ERROR1);
+    /* Find out where the JDK is that we will be using. */
+    if (!GetJDKInstallRoot(jdkroot, so_jdkroot)) {
+        JLI_ReportErrorMessage(LAUNCHER_ERROR1);
         exit(2);
     }
 
     JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
-        jrepath, FILESEP, FILESEP);
+        jdkroot, FILESEP, FILESEP);
 
     /* Find the specified JVM type */
     if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
@@ -182,7 +182,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     }
 
     jvmpath[0] = '\0';
-    if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
+    if (!GetJVMPath(jdkroot, jvmtype, jvmpath, so_jvmpath)) {
         JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
         exit(4);
     }
@@ -223,18 +223,18 @@ LoadMSVCRT()
 
     if (!loaded) {
         /*
-         * The Microsoft C Runtime Library needs to be loaded first.  A copy is
-         * assumed to be present in the "JRE path" directory.  If it is not found
-         * there (or "JRE path" fails to resolve), skip the explicit load and let
-         * nature take its course, which is likely to be a failure to execute.
-         * The makefiles will provide the correct lib contained in quotes in the
-         * macro MSVCR_DLL_NAME.
+         * The Microsoft C Runtime Library needs to be loaded first. A copy is
+         * assumed to be present in the "bin" directory of the JDK installation root.
+         * If it is not found there (or the JDK installation root fails to resolve),
+         * skip the explicit load and let nature take its course, which is likely to
+         * be a failure to execute. The makefiles will provide the correct lib contained
+         * in quotes in the macro MSVCR_DLL_NAME.
          */
 #ifdef MSVCR_DLL_NAME
-        if (GetJREPath(crtpath, MAXPATHLEN)) {
+        if (GetJDKInstallRoot(crtpath, MAXPATHLEN)) {
             if (JLI_StrLen(crtpath) + JLI_StrLen("\\bin\\") +
                     JLI_StrLen(MSVCR_DLL_NAME) >= MAXPATHLEN) {
-                JLI_ReportErrorMessage(JRE_ERROR11);
+                JLI_ReportErrorMessage(LAUNCHER_ERROR3);
                 return JNI_FALSE;
             }
             (void)JLI_StrCat(crtpath, "\\bin\\" MSVCR_DLL_NAME);   /* Add crt dll */
@@ -248,10 +248,10 @@ LoadMSVCRT()
         }
 #endif /* MSVCR_DLL_NAME */
 #ifdef VCRUNTIME_1_DLL_NAME
-        if (GetJREPath(crtpath, MAXPATHLEN)) {
+        if (GetJDKInstallRoot(crtpath, MAXPATHLEN)) {
             if (JLI_StrLen(crtpath) + JLI_StrLen("\\bin\\") +
                     JLI_StrLen(VCRUNTIME_1_DLL_NAME) >= MAXPATHLEN) {
-                JLI_ReportErrorMessage(JRE_ERROR11);
+                JLI_ReportErrorMessage(LAUNCHER_ERROR3);
                 return JNI_FALSE;
             }
             (void)JLI_StrCat(crtpath, "\\bin\\" VCRUNTIME_1_DLL_NAME);   /* Add crt dll */
@@ -265,10 +265,10 @@ LoadMSVCRT()
         }
 #endif /* VCRUNTIME_1_DLL_NAME */
 #ifdef MSVCP_DLL_NAME
-        if (GetJREPath(crtpath, MAXPATHLEN)) {
+        if (GetJDKInstallRoot(crtpath, MAXPATHLEN)) {
             if (JLI_StrLen(crtpath) + JLI_StrLen("\\bin\\") +
                     JLI_StrLen(MSVCP_DLL_NAME) >= MAXPATHLEN) {
-                JLI_ReportErrorMessage(JRE_ERROR11);
+                JLI_ReportErrorMessage(LAUNCHER_ERROR3);
                 return JNI_FALSE;
             }
             (void)JLI_StrCat(crtpath, "\\bin\\" MSVCP_DLL_NAME);   /* Add prt dll */
@@ -288,47 +288,47 @@ LoadMSVCRT()
 
 
 /*
- * Find path to JRE based on .exe's location or registry settings.
+ * Find path to JDK installation root based on .exe's location
  */
 jboolean
-GetJREPath(char *path, jint pathsize)
+GetJDKInstallRoot(char *path, jint pathsize)
 {
     char javadll[MAXPATHLEN];
     struct stat s;
 
-    JLI_TraceLauncher("Attempt to get JRE path from launcher executable path\n");
+    JLI_TraceLauncher("Attempt to get JDK installation root path from launcher executable path\n");
 
     if (GetApplicationHome(path, pathsize)) {
-        /* Is JRE co-located with the application? */
+        /* Is the JDK co-located with the application? */
         JLI_Snprintf(javadll, sizeof(javadll), "%s\\bin\\" JAVA_DLL, path);
         if (stat(javadll, &s) == 0) {
-            JLI_TraceLauncher("JRE path is %s\n", path);
+            JLI_TraceLauncher("JDK installation root path is %s\n", path);
             return JNI_TRUE;
         }
     }
 
-    JLI_TraceLauncher("Attempt to get JRE path from shared lib of the image\n");
+    JLI_TraceLauncher("Attempt to get JDK installation root path from shared lib of the image\n");
 
-    /* Try getting path to JRE from path to JLI.DLL */
+    /* Try getting path to JDK from path to JLI.DLL */
     if (GetApplicationHomeFromDll(path, pathsize)) {
         JLI_Snprintf(javadll, sizeof(javadll), "%s\\bin\\" JAVA_DLL, path);
         if (stat(javadll, &s) == 0) {
-            JLI_TraceLauncher("JRE path is %s\n", path);
+            JLI_TraceLauncher("JDK installation root path is %s\n", path);
             return JNI_TRUE;
         }
     }
 
-    JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
+    JLI_ReportErrorMessage(LAUNCHER_ERROR2 JAVA_DLL);
     return JNI_FALSE;
 }
 
 /*
- * Given a JRE location and a JVM type, construct what the name the
+ * Given a JDK installation location and a JVM type, construct what the name the
  * JVM shared library will be.  Return true, if such a library
  * exists, false otherwise.
  */
 static jboolean
-GetJVMPath(const char *jrepath, const char *jvmtype,
+GetJVMPath(const char *jdkroot, const char *jvmtype,
            char *jvmpath, jint jvmpathsize)
 {
     struct stat s;
@@ -336,7 +336,7 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
         JLI_Snprintf(jvmpath, jvmpathsize, "%s\\" JVM_DLL, jvmtype);
     } else {
         JLI_Snprintf(jvmpath, jvmpathsize, "%s\\bin\\%s\\" JVM_DLL,
-                     jrepath, jvmtype);
+                     jdkroot, jvmtype);
     }
     if (stat(jvmpath, &s) == 0) {
         return JNI_TRUE;
@@ -356,10 +356,11 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);
 
     /*
-     * The Microsoft C Runtime Library needs to be loaded first.  A copy is
-     * assumed to be present in the "JRE path" directory.  If it is not found
-     * there (or "JRE path" fails to resolve), skip the explicit load and let
-     * nature take its course, which is likely to be a failure to execute.
+     * The Microsoft C Runtime Library needs to be loaded first. A copy is
+     * assumed to be present within the JDK. If it is not found there
+     * (or the JDK installation root fails to resolve), skip the explicit
+     * load and let nature take its course, which is likely to be a failure
+     * to execute.
      *
      */
     LoadMSVCRT();
@@ -403,7 +404,7 @@ TruncatePath(char *buf)
 }
 
 /*
- * Retrieves the path to the JRE home by locating the executable file
+ * Retrieves the path to the JDK home by locating the executable file
  * of the current process and then truncating the path to the executable
  */
 jboolean
@@ -414,7 +415,7 @@ GetApplicationHome(char *buf, jint bufsize)
 }
 
 /*
- * Retrieves the path to the JRE home by locating JLI.DLL and
+ * Retrieves the path to the JDK home by locating JLI.DLL and
  * then truncating the path to JLI.DLL
  */
 jboolean
@@ -424,7 +425,7 @@ GetApplicationHomeFromDll(char *buf, jint bufsize)
     DWORD flags = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
                   GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
 
-    if (GetModuleHandleEx(flags, (LPCSTR)&GetJREPath, &module) != 0) {
+    if (GetModuleHandleEx(flags, (LPCSTR)&GetJDKInstallRoot, &module) != 0) {
         if (GetModuleFileName(module, buf, bufsize) != 0) {
             return TruncatePath(buf);
         }
@@ -659,7 +660,7 @@ static HMODULE hSplashLib = NULL;
 void* SplashProcAddress(const char* name) {
     char libraryPath[MAXPATHLEN]; /* some extra space for JLI_StrCat'ing SPLASHSCREEN_SO */
 
-    if (!GetJREPath(libraryPath, MAXPATHLEN)) {
+    if (!GetJDKInstallRoot(libraryPath, MAXPATHLEN)) {
         return NULL;
     }
     if (JLI_StrLen(libraryPath)+JLI_StrLen(SPLASHSCREEN_SO) >= MAXPATHLEN) {
@@ -830,7 +831,7 @@ int AWTPreload(const char *funcName)
     if (hPreloadAwt == NULL) {
         /* awt.dll is not loaded yet */
         char libraryPath[MAXPATHLEN];
-        size_t jrePathLen = 0;
+        size_t jdkRootPathLen = 0;
         HMODULE hJava = NULL;
         HMODULE hVerify = NULL;
 
@@ -839,18 +840,18 @@ int AWTPreload(const char *funcName)
              * jvm.dll is already loaded, so we need only java.dll;
              * java.dll depends on MSVCRT lib & verify.dll.
              */
-            if (!GetJREPath(libraryPath, MAXPATHLEN)) {
+            if (!GetJDKInstallRoot(libraryPath, MAXPATHLEN)) {
                 break;
             }
 
             /* save path length */
-            jrePathLen = JLI_StrLen(libraryPath);
+            jdkRootPathLen = JLI_StrLen(libraryPath);
 
-            if (jrePathLen + JLI_StrLen("\\bin\\verify.dll") >= MAXPATHLEN) {
-              /* jre path is too long, the library path will not fit there;
+            if (jdkRootPathLen + JLI_StrLen("\\bin\\verify.dll") >= MAXPATHLEN) {
+              /* path is too long, the library path will not fit there;
                * report and abort preloading
                */
-              JLI_ReportErrorMessage(JRE_ERROR11);
+              JLI_ReportErrorMessage(LAUNCHER_ERROR3);
               break;
             }
 
@@ -864,8 +865,8 @@ int AWTPreload(const char *funcName)
                 break;
             }
 
-            /* restore jrePath */
-            libraryPath[jrePathLen] = 0;
+            /* restore libraryPath */
+            libraryPath[jdkRootPathLen] = 0;
             /* load java.dll */
             JLI_StrCat(libraryPath, "\\bin\\" JAVA_DLL);
             hJava = LoadLibrary(libraryPath);
@@ -873,8 +874,8 @@ int AWTPreload(const char *funcName)
                 break;
             }
 
-            /* restore jrePath */
-            libraryPath[jrePathLen] = 0;
+            /* restore libraryPath */
+            libraryPath[jdkRootPathLen] = 0;
             /* load awt.dll */
             JLI_StrCat(libraryPath, "\\bin\\awt.dll");
             hPreloadAwt = LoadLibrary(libraryPath);

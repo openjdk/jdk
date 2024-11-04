@@ -57,7 +57,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="awa">Awadhi</language>
 			<language type="ay">Aymareg</language>
 			<language type="az">Aserbaijaneg</language>
-			<language type="az" alt="short">Aseri</language>
 			<language type="az_Arab">Aserbaijaneg Deheuol</language>
 			<language type="ba">Bashcorteg</language>
 			<language type="bal">Balwtsi</language>
@@ -78,6 +77,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bin">Bini</language>
 			<language type="bkm">Comeg</language>
 			<language type="bla">Siksika</language>
+			<language type="blo">Anii</language>
 			<language type="bm">Bambareg</language>
 			<language type="bn">Bengaleg</language>
 			<language type="bo">Tibeteg</language>
@@ -290,6 +290,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">Comi</language>
 			<language type="kw">Cernyweg</language>
 			<language type="kwk">Kwakʼwala</language>
+			<language type="kxv">Kuvi</language>
 			<language type="ky">Cirgiseg</language>
 			<language type="la">Lladin</language>
 			<language type="lad">Iddew-Sbaeneg</language>
@@ -300,6 +301,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">Lezgheg</language>
 			<language type="lg">Ganda</language>
 			<language type="li">Limbwrgeg</language>
+			<language type="lij">Ligwreg</language>
 			<language type="lil">Lillooet</language>
 			<language type="lkt">Lakota</language>
 			<language type="lmo">Lombardeg</language>
@@ -561,6 +563,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="vep">Feps</language>
 			<language type="vi">Fietnameg</language>
 			<language type="vls">Fflemeg Gorllewinol</language>
+			<language type="vmw">Macua</language>
 			<language type="vo">Folapük</language>
 			<language type="vot">Foteg</language>
 			<language type="vun">Funjo</language>
@@ -574,6 +577,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">Wu Tsieineaidd</language>
 			<language type="xal">Calmyceg</language>
 			<language type="xh">Xhosa</language>
+			<language type="xnr">Kangri</language>
 			<language type="xog">Soga</language>
 			<language type="yav">Iangben</language>
 			<language type="ybb">Iembaeg</language>
@@ -582,6 +586,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">Nheengatu</language>
 			<language type="yue">Cantoneeg</language>
 			<language type="yue" alt="menu">Tsieinëeg, Cantoneg</language>
+			<language type="za">Zhuang</language>
 			<language type="zap">Zapoteceg</language>
 			<language type="zbl">Blisssymbols</language>
 			<language type="zea">Zêlandeg</language>
@@ -625,7 +630,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hebr">Hebreig</script>
 			<script type="Hira">Hiragana</script>
 			<script type="Hrkt">Syllwyddor Japaneaidd</script>
-			<script type="Jamo">Jamo</script>
 			<script type="Jpan">Japaneaidd</script>
 			<script type="Kana">Catacana</script>
 			<script type="Khmr">Chmeraidd</script>
@@ -1178,6 +1182,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
@@ -1698,7 +1703,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">eleni</relative>
 				<relative type="1">blwyddyn nesaf</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="zero">ymhen {0} mlynedd</relativeTimePattern>
+					<relativeTimePattern count="zero">ymhen {0} o flynyddoedd</relativeTimePattern>
 					<relativeTimePattern count="one">ymhen blwyddyn</relativeTimePattern>
 					<relativeTimePattern count="two">ymhen {0} flynedd</relativeTimePattern>
 					<relativeTimePattern count="few">ymhen {0} blynedd</relativeTimePattern>
@@ -1709,20 +1714,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="zero">{0} o flynyddoedd yn ôl</relativeTimePattern>
 					<relativeTimePattern count="one">blwyddyn yn ôl</relativeTimePattern>
 					<relativeTimePattern count="two">{0} flynedd yn ôl</relativeTimePattern>
-					<relativeTimePattern count="few">{0} blynedd yn ôl</relativeTimePattern>
-					<relativeTimePattern count="many">{0} blynedd yn ôl</relativeTimePattern>
+					<relativeTimePattern count="few">{0} o flynyddoedd yn ôl</relativeTimePattern>
+					<relativeTimePattern count="many">{0} o flynyddoedd yn ôl</relativeTimePattern>
 					<relativeTimePattern count="other">{0} o flynyddoedd yn ôl</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-short">
 				<displayName>bl.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="zero">ymhen {0} o flynyddoedd</relativeTimePattern>
+					<relativeTimePattern count="one">ymhen blwyddyn</relativeTimePattern>
+					<relativeTimePattern count="two">ymhen {0} flynedd</relativeTimePattern>
+					<relativeTimePattern count="few">ymhen {0} blynedd</relativeTimePattern>
+					<relativeTimePattern count="many">ymhen {0} blynedd</relativeTimePattern>
+					<relativeTimePattern count="other">ymhen {0} o flynyddoedd</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="zero">{0} o flynyddoedd yn ôl</relativeTimePattern>
 					<relativeTimePattern count="one">{0} bl. yn ôl</relativeTimePattern>
 					<relativeTimePattern count="two">{0} flynedd yn ôl</relativeTimePattern>
-					<relativeTimePattern count="few">{0} blynedd yn ôl</relativeTimePattern>
-					<relativeTimePattern count="many">{0} blynedd yn ôl</relativeTimePattern>
-					<relativeTimePattern count="other">{0} bl. yn ôl</relativeTimePattern>
+					<relativeTimePattern count="few">{0} o flynyddoedd yn ôl</relativeTimePattern>
+					<relativeTimePattern count="many">{0} o flynyddoedd yn ôl</relativeTimePattern>
+					<relativeTimePattern count="other">{0} o flynyddoedd yn ôl</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-narrow">
@@ -1730,20 +1743,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">eleni</relative>
 				<relative type="1">bl. nesaf</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="zero">ymhen {0} mlynedd</relativeTimePattern>
+					<relativeTimePattern count="zero">ymhen {0} o flynyddoedd</relativeTimePattern>
 					<relativeTimePattern count="one">ymhen bl.</relativeTimePattern>
 					<relativeTimePattern count="two">ymhen {0} flynedd</relativeTimePattern>
 					<relativeTimePattern count="few">ymhen {0} blynedd</relativeTimePattern>
 					<relativeTimePattern count="many">ymhen {0} blynedd</relativeTimePattern>
-					<relativeTimePattern count="other">ymhen {0} mlynedd</relativeTimePattern>
+					<relativeTimePattern count="other">ymhen {0} o flynyddoedd</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="zero">{0} o flynyddoedd yn ôl</relativeTimePattern>
 					<relativeTimePattern count="one">blwyddyn yn ôl</relativeTimePattern>
 					<relativeTimePattern count="two">{0} flynedd yn ôl</relativeTimePattern>
-					<relativeTimePattern count="few">{0} blynedd yn ôl</relativeTimePattern>
-					<relativeTimePattern count="many">{0} blynedd yn ôl</relativeTimePattern>
-					<relativeTimePattern count="other">{0} bl. yn ôl</relativeTimePattern>
+					<relativeTimePattern count="few">{0} o flynyddoedd yn ôl</relativeTimePattern>
+					<relativeTimePattern count="many">{0} o flynyddoedd yn ôl</relativeTimePattern>
+					<relativeTimePattern count="other">{0} o flynyddoedd yn ôl</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter">
@@ -2493,6 +2506,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Amser {0}</regionFormat>
 			<regionFormat type="daylight">Amser Haf {0}</regionFormat>
 			<regionFormat type="standard">Amser Safonol {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Amser Cyffredniol Cydlynol</standard>
@@ -2509,9 +2525,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Brussels">
 				<exemplarCity>Brwsel</exemplarCity>
-			</zone>
-			<zone type="America/St_Barthelemy">
-				<exemplarCity>St. Barthélemy</exemplarCity>
 			</zone>
 			<zone type="America/Eirunepe">
 				<exemplarCity>Eirunepé</exemplarCity>
@@ -2530,9 +2543,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Bogota">
 				<exemplarCity>Bogotá</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Ynys y Nadolig</exemplarCity>
@@ -2609,26 +2619,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Gaza">
 				<exemplarCity>Gasa</exemplarCity>
 			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
-			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>Bwcarést</exemplarCity>
-			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
 			</zone>
 			<zone type="Europe/Istanbul">
 				<exemplarCity>Caergystennin</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beulah, Gogledd Dakota</exemplarCity>
@@ -2864,13 +2862,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Amser Tsieina</generic>
 					<standard>Amser Safonol Tsieina</standard>
 					<daylight>Amser Haf Tsieina</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Amser Choibalsan</generic>
-					<standard>Amser Safonol Choibalsan</standard>
-					<daylight>Amser Haf Choibalsan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -3127,6 +3118,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Amser Japan</generic>
 					<standard>Amser Safonol Japan</standard>
 					<daylight>Amser Haf Japan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Amser Kazakhstan</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3765,12 +3761,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="zero">{0} {1}</unitPattern>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="two">{0} {1}</unitPattern>
-			<unitPattern count="few">{0} {1}</unitPattern>
-			<unitPattern count="many">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -7656,6 +7646,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<displayName>chwart Imp</displayName>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>golau</displayName>
+				<unitPattern count="zero">golau</unitPattern>
+				<unitPattern count="one">golau</unitPattern>
+				<unitPattern count="two">golau</unitPattern>
+				<unitPattern count="few">golau</unitPattern>
+				<unitPattern count="many">golau</unitPattern>
+				<unitPattern count="other">{0} golau</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>rhannau fesul biliwn</displayName>
+				<unitPattern count="zero">ppb</unitPattern>
+				<unitPattern count="one">{0} rhan fesul biliwn</unitPattern>
+				<unitPattern count="two">{0} rhan fesul biliwn</unitPattern>
+				<unitPattern count="few">{0} rhan fesul biliwn</unitPattern>
+				<unitPattern count="many">{0} rhan fesul biliwn</unitPattern>
+				<unitPattern count="other">{0} rhan fesul biliwn</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nosau</displayName>
+				<unitPattern count="zero">{0} noson</unitPattern>
+				<unitPattern count="one">{0} noson</unitPattern>
+				<unitPattern count="two">{0} noson</unitPattern>
+				<unitPattern count="few">{0} noson</unitPattern>
+				<unitPattern count="many">{0} noson</unitPattern>
+				<unitPattern count="other">{0} noson</unitPattern>
+				<perUnitPattern>{0}/noson</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>cyfeiriad cardinal</displayName>
 				<coordinateUnitPattern type="east">{0} i’r dwyrain</coordinateUnitPattern>
@@ -8347,6 +8365,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} cht Imp.</unitPattern>
 				<unitPattern count="many">{0} cht Imp.</unitPattern>
 				<unitPattern count="other">{0} cht Imp.</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>golau</displayName>
+				<unitPattern count="zero">golau</unitPattern>
+				<unitPattern count="one">{0} golau</unitPattern>
+				<unitPattern count="two">{0} golau</unitPattern>
+				<unitPattern count="few">{0} golau</unitPattern>
+				<unitPattern count="many">{0} golau</unitPattern>
+				<unitPattern count="other">{0} golau</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>rhannau/biliwn</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nosau</displayName>
+				<unitPattern count="zero">{0} noson</unitPattern>
+				<unitPattern count="one">{0} noson</unitPattern>
+				<unitPattern count="two">{0} noson</unitPattern>
+				<unitPattern count="few">{0} noson</unitPattern>
+				<unitPattern count="many">{0} noson</unitPattern>
+				<unitPattern count="other">{0} noson</unitPattern>
+				<perUnitPattern>{0}/noson</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>cyfeiriad</displayName>
@@ -9443,6 +9483,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} qt Imp.</unitPattern>
 				<unitPattern count="many">{0} qt Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>golau</displayName>
+				<unitPattern count="zero">{0} golau</unitPattern>
+				<unitPattern count="one">{0} golau</unitPattern>
+				<unitPattern count="two">{0} golau</unitPattern>
+				<unitPattern count="few">{0} golau</unitPattern>
+				<unitPattern count="many">{0} golau</unitPattern>
+				<unitPattern count="other">{0} golau</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="zero">{0} ppb</unitPattern>
+				<unitPattern count="one">{0}ppb</unitPattern>
+				<unitPattern count="two">{0} ppb</unitPattern>
+				<unitPattern count="few">{0} ppb</unitPattern>
+				<unitPattern count="many">{0} ppb</unitPattern>
+				<unitPattern count="other">{0}ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nosau</displayName>
+				<unitPattern count="zero">{0} noson</unitPattern>
+				<unitPattern count="one">{0}noson</unitPattern>
+				<unitPattern count="two">{0}noson</unitPattern>
+				<unitPattern count="few">{0}noson</unitPattern>
+				<unitPattern count="many">{0}noson</unitPattern>
+				<unitPattern count="other">{0}noson</unitPattern>
+				<perUnitPattern>{0}/noson</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}dn</coordinateUnitPattern>
