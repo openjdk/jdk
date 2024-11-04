@@ -34,7 +34,7 @@ public class ConfigException extends Exception {
         this.advice = advice;
     }
 
-    public ConfigException(String msg, String advice, Exception cause) {
+    public ConfigException(String msg, String advice, Throwable cause) {
         super(msg, cause);
         this.advice = advice;
     }
@@ -58,27 +58,55 @@ public class ConfigException extends Exception {
             return new ConfigException(msg, advice, cause);
         }
 
+        public Builder format(boolean v) {
+            noFormat = !v;
+            return this;
+        }
+
+        public Builder noformat() {
+            return format(false);
+        }
+
         public Builder message(String msgId, Object ... args) {
-            msg = I18N.format(msgId, args);
+            msg = formatString(msgId, args);
             return this;
         }
 
         public Builder advice(String adviceId, Object ... args) {
-            advice = I18N.format(adviceId, args);
+            advice = formatString(adviceId, args);
             return this;
         }
 
-        public Builder cause(Exception v) {
+        public Builder cause(Throwable v) {
             cause = v;
             return this;
         }
-        
+
         public Builder causeAndMessage(Exception ex) {
             return message(ex.getLocalizedMessage()).cause(ex);
         }
 
+        private String formatString(String keyId, Object ... args) {
+            if (!noFormat) {
+                return I18N.format(keyId, args);
+            } if (args.length == 0) {
+                return keyId;
+            } else {
+                throw new IllegalArgumentException("Formatting arguments not allowed in no format mode");
+            }
+        }
+
+        private boolean noFormat;
         private String msg;
         private String advice;
-        private Exception cause;
+        private Throwable cause;
+    }
+
+    public static RuntimeException rethrowConfigException(RuntimeException ex) throws ConfigException {
+        if (ex.getCause() instanceof ConfigException configEx) {
+            throw configEx;
+        } else {
+            throw ex;
+        }
     }
 }
