@@ -179,7 +179,6 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
     }
 
     public String getConnectionId() throws IOException {
-        //new Exception("ZZZZZZZZZZZZZZZ").printStackTrace(System.err);
         return connectionId;
     }
 

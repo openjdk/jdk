@@ -106,7 +106,7 @@ public class MBeanResource implements RestResource {
 
         try {
             path = URLDecoder.decode(path, StandardCharsets.UTF_8.displayName());
-            if (path.endsWith("info")) {
+            if (path.endsWith("/info")) {
                 return doMBeanInfo();
             }
 
@@ -835,10 +835,12 @@ public class MBeanResource implements RestResource {
     private JSONElement doPollNotifications(String path, JSONObject body) {
         JSONArray result = new JSONArray();
         // Extract queue ID from path.
+        int count = 0;
         synchronized(notifLock) {
             List<Notification> list = notifLists.get(path);
-            //System.err.println("XXX doPollNotifications " + path + " = " + list); 
-
+            if (list == null) {
+                return result;
+            }
             // Respond and drain queued Notifications.
             // get any notifs from that list,
             // send them in the reponse
@@ -876,10 +878,12 @@ public class MBeanResource implements RestResource {
                     }
 //                    System.err.println("XXX MBeanResource.doPollNotifications: " + json.toJsonString());
                     result.add(json);
+                    count++;
                 }
             }
             list.clear();
         }
+        System.err.println("XXX MBeanResource.doPollNotifications: count: " + count + " length: " + result.size());
         return result;
     }    
 
