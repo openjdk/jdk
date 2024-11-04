@@ -119,7 +119,7 @@ template <> void DCmdArgument<jlong>::parse_value(const char* str,
                        "Integer parsing error in command argument '%.*s'. Could not parse: %.*s%s.\n",
                        maxprint,
                        _name,
-                       maxprint,
+                       maxprint > len ? (int)len : maxprint,
                        (str == nullptr ? "<null>" : str),
                        (len > maxprint ? "..." : ""));
   }
