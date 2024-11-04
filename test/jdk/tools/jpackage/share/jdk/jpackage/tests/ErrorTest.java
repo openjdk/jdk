@@ -116,7 +116,7 @@ public final class ErrorTest {
         this.expectedError = expectedError;
 
         cmd = JPackageCommand.helloAppImage(javaAppDesc)
-                .saveConsoleOutput(true).dumpOutput(true);
+                .saveConsoleOutput(true).dumpOutput(true).ignoreDefaultRuntime(true);
         if (jpackageArgs != null) {
             cmd.addArguments(jpackageArgs);
         } if (removeArgs != null) {
