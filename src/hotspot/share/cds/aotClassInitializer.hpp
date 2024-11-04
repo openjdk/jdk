@@ -40,7 +40,7 @@ public:
   static bool can_archive_initialized_mirror(InstanceKlass* src_ik);
 
   static bool is_runtime_setup_required(InstanceKlass* ik);
-  static void call_runtime_setup(InstanceKlass* ik, TRAPS);
+  static void call_runtime_setup(JavaThread* current, InstanceKlass* ik);
 };
 
 #endif // SHARE_CDS_AOTCLASSINITIALIZER_HPP

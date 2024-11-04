@@ -338,7 +338,7 @@ bool AOTClassInitializer::is_runtime_setup_required(InstanceKlass* ik) {
          ik == vmClasses::ConcurrentHashMap_klass();
 }
 
-void AOTClassInitializer::call_runtime_setup(InstanceKlass* ik, TRAPS) {
+void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass* ik) {
   assert(ik->has_aot_initialized_mirror(), "sanity");
   if (ik->is_runtime_setup_required()) {
     if (log_is_enabled(Info, cds, init)) {
@@ -348,7 +348,12 @@ void AOTClassInitializer::call_runtime_setup(InstanceKlass* ik, TRAPS) {
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result, ik,
                            vmSymbols::runtimeSetup(),
-                           vmSymbols::void_method_signature(), CHECK);
+                           vmSymbols::void_method_signature(), current);
+    if (current->has_pending_exception()) {
+      // We cannot continue, as we might have cached instances of ik in the heap, but propagating the
+      // exception would cause ik to be in an error state.
+      AOTLinkedClassBulkLoader::exit_on_exception(current);
+    }
   }
 }
 

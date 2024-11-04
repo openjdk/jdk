@@ -61,6 +61,7 @@ public:
   static void load_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void load_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void finish_loading_javabase_classes(TRAPS) NOT_CDS_RETURN;
+  static void exit_on_exception(JavaThread* current);
 
   static bool is_pending_aot_linked_class(Klass* k) NOT_CDS_RETURN_(false);
 };

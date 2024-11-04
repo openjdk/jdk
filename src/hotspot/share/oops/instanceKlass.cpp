@@ -856,8 +856,8 @@ void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
 #endif
 
   set_init_thread(THREAD);
+  AOTClassInitializer::call_runtime_setup(THREAD, this);
   set_initialization_state_and_notify(fully_initialized, CHECK);
-  AOTClassInitializer::call_runtime_setup(this, CHECK);
 }
 #endif
 
@@ -1657,7 +1657,7 @@ void InstanceKlass::call_class_initializer(TRAPS) {
 #if INCLUDE_CDS
   // This is needed to ensure the consistency of the archived heap objects.
   if (has_aot_initialized_mirror() && CDSConfig::is_loading_heap()) {
-    AOTClassInitializer::call_runtime_setup(this, CHECK);
+    AOTClassInitializer::call_runtime_setup(THREAD, this);
     return;
   } else if (has_archived_enum_objs()) {
     assert(is_shared(), "must be");

@@ -78,18 +78,23 @@ void AOTLinkedClassBulkLoader::load_non_javabase_classes(JavaThread* current) {
 void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop) {
   load_classes_in_loader_impl(class_category, class_loader_oop, current);
   if (current->has_pending_exception()) {
-    ResourceMark rm(current);
     // We cannot continue, as we might have loaded some of the aot-linked classes, which
     // may have dangling C++ pointers to other aot-linked classes that we have failed to load.
-    if (current->pending_exception()->is_a(vmClasses::OutOfMemoryError_klass())) {
-      log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
-                     SIZE_FORMAT "M", MaxHeapSize/M);
-    } else {
-      log_error(cds)("%s: %s", current->pending_exception()->klass()->external_name(),
-                     java_lang_String::as_utf8_string(java_lang_Throwable::message(current->pending_exception())));
-    }
-    vm_exit_during_initialization("Unexpected exception when loading aot-linked classes.");
+    exit_on_exception(current);
   }
+}
+
+void AOTLinkedClassBulkLoader::exit_on_exception(JavaThread* current) {
+  assert(current->has_pending_exception(), "precondition");
+  ResourceMark rm(current);
+  if (current->pending_exception()->is_a(vmClasses::OutOfMemoryError_klass())) {
+    log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
+                   SIZE_FORMAT "M", MaxHeapSize/M);
+  } else {
+    log_error(cds)("%s: %s", current->pending_exception()->klass()->external_name(),
+                   java_lang_String::as_utf8_string(java_lang_Throwable::message(current->pending_exception())));
+  }
+  vm_exit_during_initialization("Unexpected exception when loading aot-linked classes.");
 }
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(AOTLinkedClassCategory class_category, oop class_loader_oop, TRAPS) {
