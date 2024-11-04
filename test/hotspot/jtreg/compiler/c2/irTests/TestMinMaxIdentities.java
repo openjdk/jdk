@@ -114,28 +114,28 @@ public class TestMinMaxIdentities {
 
     // As Math.min/max(LL) is not intrinsified, it first needs to be transformed into CMoveL and then MinL/MaxL before
     // the identity can be matched. However, the outer min/max is not transformed into CMove because of the CMove cost model.
-    // As JDK-8307513 adds intrinsics for the methods, the Long tests are disabled until then.
+    // As JDK-8307513 adds intrinsics for the methods, the tests will be updated then.
 
     @Test
-//     @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MIN_L, "1" })
+    @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MIN_L, "1" })
     public long longMinMin(long a, long b) {
         return Math.min(a, Math.min(a, b));
     }
 
     @Test
-//     @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.MIN_L, IRNode.MAX_L })
+    @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MIN_L, "1" })
     public long longMinMax(long a, long b) {
         return Math.min(a, Math.max(a, b));
     }
 
     @Test
-//     @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.MIN_L, IRNode.MAX_L })
+    @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MAX_L, "1" })
     public long longMaxMin(long a, long b) {
         return Math.max(a, Math.min(a, b));
     }
 
     @Test
-//     @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MAX_L, "1" })
+    @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MAX_L, "1" })
     public long longMaxMax(long a, long b) {
         return Math.max(a, Math.max(a, b));
     }
