@@ -761,8 +761,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * arena: that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
      * the returned segment can only be accessed by the arena's owner thread, regardless
      * of the confinement restrictions associated with this segment. In other words, this
-     * method returns a segment that behaves as if it had been allocated using the
-     * provided arena.
+     * method returns a segment that can be used as any other segment allocated using the
+     * provided arena. However, The returned segment is backed by the same memory region
+     * as that of the original segment. As such, the region of memory backing the
+     * returned segment is deallocated only when this segment's arena is closed.
+     * This might lead to <em>use-after-free</em> issues, as the returned segment can be
+     * accessed <em>after</em> its region of memory has been deallocated via this
+     * segment's arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
      * provided scope becomes invalid. This cleanup action receives a fresh memory
@@ -811,9 +816,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * compatibly with the confinement restrictions associated with the provided arena:
      * that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
      * the returned segment can only be accessed by the arena's owner thread, regardless
-     * of the confinement restrictions associated with this segment. In other words,
-     * this method returns a segment that behaves as if it had been allocated using the
-     * provided arena.
+     * of the confinement restrictions associated with this segment. In other words, this
+     * method returns a segment that can be used as any other segment allocated using the
+     * provided arena. However, The returned segment is backed by the same memory region
+     * as that of the original segment. As such, the region of memory backing the
+     * returned segment is deallocated only when this segment's arena is closed.
+     * This might lead to <em>use-after-free</em> issues, as the returned segment can be
+     * accessed <em>after</em> its region of memory has been deallocated via this
+     * segment's arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
      * provided scope becomes invalid. This cleanup action receives a fresh memory

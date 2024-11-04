@@ -26,6 +26,8 @@
  * @bug 4898428
  * @summary test that the new getInstance() implementation works correctly
  * @author Andreas Sterbenz
+ * @run main TestGetInstance hmacmd5
+ * @run main TestGetInstance hmacsha256
  */
 
 import java.security.*;
@@ -47,11 +49,12 @@ public class TestGetInstance {
 
         Mac mac;
 
-        mac = Mac.getInstance("hmacmd5");
+        String algo = args[0];
+        mac = Mac.getInstance(algo);
         System.out.println("Default: " + mac.getProvider().getName());
-        mac = Mac.getInstance("hmacmd5", System.getProperty("test.provider.name", "SunJCE"));
+        mac = Mac.getInstance(algo, System.getProperty("test.provider.name", "SunJCE"));
         same(p, mac.getProvider());
-        mac = Mac.getInstance("hmacmd5", p);
+        mac = Mac.getInstance(algo, p);
         same(p, mac.getProvider());
 
         try {
