@@ -51,15 +51,6 @@ void* getProcessHandle() {
     return procHandle;
 }
 
-void buildJniFunctionName(const char *sym, const char *cname,
-                          char *jniEntryName) {
-    strcpy(jniEntryName, sym);
-    if (cname != NULL) {
-        strcat(jniEntryName, "_");
-        strcat(jniEntryName, cname);
-    }
-}
-
 jstring
 getLastErrorString(JNIEnv *env)
 {

@@ -58,6 +58,14 @@ static jboolean initIDs(JNIEnv *env)
     return JNI_TRUE;
 }
 
+static void buildJniFunctionName(const char *sym, const char *cname,
+                                 char *jniEntryName) {
+    strcpy(jniEntryName, sym);
+    if (cname != NULL) {
+        strcat(jniEntryName, "_");
+        strcat(jniEntryName, cname);
+    }
+}
 
 /*
  * Support for finding JNI_On(Un)Load_<lib_name> if it exists.
