@@ -32,7 +32,7 @@ import java.nio.ByteOrder;
 
 /**
  * @test
- * @bug 8325520 8302459
+ * @bug 8325520
  * @library /test/lib /
  * @summary Don't allow folding of Load/Store vectors when using incompatible indices or masks
  * @modules jdk.incubator.vector
