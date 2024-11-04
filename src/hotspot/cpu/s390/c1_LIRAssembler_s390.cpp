@@ -131,9 +131,19 @@ void LIR_Assembler::osr_entry() {
   // copied into place by code emitted in the IR.
 
   Register OSR_buf = osrBufferPointer()->as_register();
-  { assert(frame::interpreter_frame_monitor_size() == BasicObjectLock::size(), "adjust code below");
-    int monitor_offset = BytesPerWord * method()->max_locals() +
-      (2 * BytesPerWord) * (number_of_locks - 1);
+  {
+    assert(frame::interpreter_frame_monitor_size() == BasicObjectLock::size(), "adjust code below");
+
+    const int locals_space = BytesPerWord * method() -> max_locals();
+    int monitor_offset = locals_space + (2 * BytesPerWord) * (number_of_locks - 1);
+    bool large_offset = !Immediate::is_simm20(monitor_offset + BytesPerWord) && number_of_locks > 0;
+
+    if (large_offset) {
+      // z_lg can only handle displacement upto 20bit signed binary integer
+      __ z_algfi(OSR_buf, locals_space);
+      monitor_offset -= locals_space;
+    }
+
     // SharedRuntime::OSR_migration_begin() packs BasicObjectLocks in
     // the OSR buffer using 2 word entries: first the lock and then
     // the oop.
@@ -146,6 +156,10 @@ void LIR_Assembler::osr_entry() {
       __ z_stg(Z_R1_scratch, frame_map()->address_for_monitor_lock(i));
       __ z_lg(Z_R1_scratch, slot_offset + 1*BytesPerWord, OSR_buf);
       __ z_stg(Z_R1_scratch, frame_map()->address_for_monitor_object(i));
+    }
+
+    if (large_offset) {
+      __ z_slgfi(OSR_buf, locals_space);
     }
   }
 }
