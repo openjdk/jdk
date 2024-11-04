@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,44 +21,113 @@
  * questions.
  */
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.TKit;
 
 /**
- * Tests generation of app image with input folder containing empty folders.
+ * Tests generation of packages and app image with input folder containing empty folders.
  */
 
 /*
  * @test
- * @summary jpackage with input containing empty folders
+ * @summary jpackage for package with input containing empty folders
  * @library ../helpers
  * @library /test/lib
- * @build EmptyFolderBase
+ * @key jpackagePlatformPackage
+ * @build jdk.jpackage.test.*
+ * @build EmptyFolderTest
+ * @modules jdk.jpackage/jdk.jpackage.internal
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=EmptyFolderTest.testPackage
+ */
+
+/*
+ * @test
+ * @summary jpackage for app image with input containing empty folders
+ * @library ../helpers
+ * @library /test/lib
  * @build jdk.jpackage.test.*
  * @build EmptyFolderTest
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=EmptyFolderTest
+ *  --jpt-run=EmptyFolderTest.testAppImage
  */
+
 public class EmptyFolderTest {
 
     @Test
-    public static void test() throws Exception {
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
+    public static void testPackage() {
+        new PackageTest()
+                .configureHelloApp()
+                .addInitializer(EmptyFolderTest::createDirTree)
+                .addInitializer(cmd -> {
+                    cmd.setArgumentValue("--name", "EmptyFolderPackageTest");
+                })
+                .addInstallVerifier(EmptyFolderTest::validateDirTree)
+                .run();
+    }
+
+    @Test
+    public static void testAppImage() throws IOException {
+        var cmd = JPackageCommand.helloAppImage();
 
         // Add more files into input folder
-        Path input = cmd.inputDir();
-        EmptyFolderBase.createDirStrcture(input);
+        createDirTree(cmd);
 
         // Create app image
         cmd.executeAndAssertHelloAppImageCreated();
 
-        // Verify directory strcture
-        ApplicationLayout appLayout = cmd.appLayout();
-        Path appDir = appLayout.appDirectory();
-        EmptyFolderBase.validateDirStrcture(appDir);
+        // Verify directory structure
+        validateDirTree(cmd);
     }
 
+    private static void createDirTree(JPackageCommand cmd) throws IOException {
+        var baseDir = cmd.inputDir();
+        for (var path : DIR_STRUCT) {
+            path = baseDir.resolve(path);
+            if (isFile(path)) {
+                Files.createDirectories(path.getParent());
+                Files.write(path, new byte[0]);
+            } else {
+                Files.createDirectories(path);
+            }
+        }
+    }
+
+    private static void validateDirTree(JPackageCommand cmd) {
+        var outputBaseDir = cmd.appLayout().appDirectory();
+        var inputBaseDir = cmd.inputDir();
+        for (var path : DIR_STRUCT) {
+            Path outputPath = outputBaseDir.resolve(path);
+            if (isFile(outputPath)) {
+                TKit.assertFileExists(outputPath);
+            } else if (!PackageType.WINDOWS.contains(cmd.packageType())) {
+                TKit.assertDirectoryExists(outputPath);
+            } else if (inputBaseDir.resolve(path).toFile().list().length == 0) {
+                // MSI packages don't support empty folders
+                TKit.assertPathExists(outputPath, false);
+            } else {
+                TKit.assertDirectoryNotEmpty(outputPath);
+            }
+        }
+    }
+
+    private static boolean isFile(Path path) {
+        return path.getFileName().toString().endsWith(".txt");
+    }
+
+    // Note: To specify file use ".txt" extension.
+    private static final Path [] DIR_STRUCT = {
+        Path.of("folder-empty"),
+        Path.of("folder-not-empty"),
+        Path.of("folder-not-empty", "folder-empty"),
+        Path.of("folder-not-empty", "another-folder-empty"),
+        Path.of("folder-not-empty", "folder-non-empty2", "file.txt")
+    };
 }

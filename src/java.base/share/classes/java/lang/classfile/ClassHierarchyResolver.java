@@ -37,11 +37,10 @@ import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.ClassHierarchyImpl.ClassLoadingClassHierarchyResolver;
 import jdk.internal.classfile.impl.ClassHierarchyImpl.StaticClassHierarchyResolver;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.javac.PreviewFeature;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.util.Objects.requireNonNull;
-
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Provides class hierarchy information for generating correct stack maps
