@@ -27,6 +27,7 @@
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "opto/addnode.hpp"
 #include "opto/block.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
@@ -1634,12 +1635,17 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
-  // If changed AddP inputs, check Stores for loop invariant
-  if( use_op == Op_AddP ) {
+  // If changed AddP inputs:
+  // - check Stores for loop invariant, and
+  // - check constant-offset AddP users for address expression flattening.
+  if (use_op == Op_AddP) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
       if (u->is_Mem())
         worklist.push(u);
+      if (UseNewCode && u->is_AddP() && u->in(AddPNode::Offset)->is_Con()) {
+        worklist.push(u);
+      }
     }
   }
   // If changed initialization activity, check dependent Stores
