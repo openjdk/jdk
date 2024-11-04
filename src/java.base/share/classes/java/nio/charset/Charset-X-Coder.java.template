@@ -228,7 +228,6 @@ public abstract class Charset$Coder$ {
      * @throws  IllegalArgumentException
      *          If the preconditions on the parameters do not hold
      */
-    @SuppressWarnings("this-escape")
     protected Charset$Coder$(Charset cs,
                              float average$ItypesPerOtype$,
                              float max$ItypesPerOtype$)
