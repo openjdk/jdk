@@ -27,12 +27,12 @@ package jdk.jpackage.internal;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
@@ -101,7 +101,7 @@ final class RuntimeBuilderBuilder {
     private static RuntimeBuilder createCopyingRuntimeBuilder(Path runtimeDir,
             Path... modulePath) throws ConfigException {
         if (!Files.exists(runtimeDir)) {
-            throw ConfigException.build()
+            throw buildConfigException()
                     .message("message.runtime-image-dir-does-not-exist",
                             "--runtime-image", runtimeDir)
                     .advice("message.runtime-image-dir-does-not-exist.advice",

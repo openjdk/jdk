@@ -36,6 +36,7 @@ import jdk.internal.util.OperatingSystem;
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
+import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
@@ -104,17 +105,20 @@ final class LauncherBuilder {
         switch (OperatingSystem.current()) {
             case WINDOWS -> {
                 if (!icon.getFileName().toString().toLowerCase().endsWith(".ico")) {
-                    throw ConfigException.build("message.icon-not-ico", icon).create();
+                    throw buildConfigException()
+                            .message("message.icon-not-ico", icon).create();
                 }
             }
             case LINUX -> {
                 if (!icon.getFileName().toString().endsWith(".png")) {
-                    throw ConfigException.build("message.icon-not-png", icon).create();
+                    throw buildConfigException()
+                            .message("message.icon-not-png", icon).create();
                 }
             }
             case MACOS -> {
                 if (!icon.getFileName().toString().endsWith(".icns")) {
-                    throw ConfigException.build("message.icon-not-icns", icon).create();
+                    throw buildConfigException()
+                            .message("message.icon-not-icns", icon).create();
                 }
             }
         }
@@ -137,7 +141,7 @@ final class LauncherBuilder {
                 }
             } catch (ExceptionWrapper ex) {
                 if (ex.getCause() instanceof ConfigException cfgException) {
-                    throw rethrowUnchecked(ConfigException.build()
+                    throw rethrowUnchecked(buildConfigException()
                             .cause(cfgException.getCause())
                             .message(cfgException.getMessage(), entry.getKey())
                             .advice(cfgException.getAdvice(), entry.getKey())
@@ -149,7 +153,7 @@ final class LauncherBuilder {
         }).filter(Objects::nonNull).peek(entry -> {
             var faGroup = entry.getValue();
             if (faGroup.items().size() != faGroup.items().stream().map(FileAssociation::extension).distinct().count()) {
-                throw rethrowUnchecked(ConfigException.build()
+                throw rethrowUnchecked(buildConfigException()
                         .message("error.too-many-content-types-for-file-association", entry.getKey())
                         .advice("error.too-many-content-types-for-file-association.advice", entry.getKey())
                         .create());
@@ -167,7 +171,7 @@ final class LauncherBuilder {
 
     static void verifyFileAssociation(FileAssociation src) throws ConfigException {
         if (Optional.ofNullable(src.mimeType()).isEmpty()) {
-            throw ConfigException.build()
+            throw buildConfigException()
                     .noformat()
                     .message("error.no-content-types-for-file-association")
                     .advice("error.no-content-types-for-file-association.advice")

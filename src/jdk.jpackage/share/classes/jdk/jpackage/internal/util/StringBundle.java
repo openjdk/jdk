@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,38 +22,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal.util;
 
-public class PackagerException extends Exception {
+import java.text.MessageFormat;
+import java.util.ResourceBundle;
 
-    private static final long serialVersionUID = 1L;
 
-    public PackagerException(Throwable cause) {
-        super(cause);
-    }
+@FunctionalInterface
+public interface StringBundle {
+    String getString(String key);
 
-    public PackagerException(String key, Throwable cause) {
-        super(I18N.getString(key), cause);
-    }
-
-    public PackagerException(String key) {
-        super(I18N.getString(key));
-    }
-
-    public PackagerException(String key, Object... arguments) {
-        super(I18N.format(key, arguments));
-    }
-
-    public PackagerException(Throwable cause, String key, Object... arguments) {
-        super(I18N.format(key, arguments), cause);
-    }
-
-    public static RuntimeException rethrowPackagerException(RuntimeException ex) throws PackagerException {
-        if (ex.getCause() instanceof PackagerException pkgEx) {
-            throw pkgEx;
+    default String format(String key, Object ... args) {
+        var str = getString(key);
+        if (args.length != 0) {
+            return MessageFormat.format(str, args);
         } else {
-            throw ex;
+            return str;
         }
     }
-
+    
+    public static StringBundle fromResourceBundle(ResourceBundle bundle) {
+        return bundle::getString;
+    }
 }

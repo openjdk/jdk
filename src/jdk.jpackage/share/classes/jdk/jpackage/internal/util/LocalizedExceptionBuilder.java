@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,38 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal.util;
 
-public class PackagerException extends Exception {
+public class LocalizedExceptionBuilder extends LocalizedExceptionBuilderBase<LocalizedExceptionBuilder> {
 
-    private static final long serialVersionUID = 1L;
-
-    public PackagerException(Throwable cause) {
-        super(cause);
+    public static LocalizedExceptionBuilder buildLocalizedException(StringBundle l18n) {
+        return new LocalizedExceptionBuilder(l18n);
     }
 
-    public PackagerException(String key, Throwable cause) {
-        super(I18N.getString(key), cause);
+    private LocalizedExceptionBuilder(StringBundle l18n) {
+        super(l18n);
     }
 
-    public PackagerException(String key) {
-        super(I18N.getString(key));
+    @Override
+    protected LocalizedExceptionBuilder thiz() {
+        return this;
     }
-
-    public PackagerException(String key, Object... arguments) {
-        super(I18N.format(key, arguments));
-    }
-
-    public PackagerException(Throwable cause, String key, Object... arguments) {
-        super(I18N.format(key, arguments), cause);
-    }
-
-    public static RuntimeException rethrowPackagerException(RuntimeException ex) throws PackagerException {
-        if (ex.getCause() instanceof PackagerException pkgEx) {
-            throw pkgEx;
-        } else {
-            throw ex;
-        }
-    }
-
 }

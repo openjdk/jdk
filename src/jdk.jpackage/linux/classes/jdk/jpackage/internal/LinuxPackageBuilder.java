@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
@@ -121,7 +122,7 @@ final class LinuxPackageBuilder {
                 //
                 var regexp = Pattern.compile("^[a-z][a-z\\d\\+\\-\\.]+");
                 if (!regexp.matcher(packageName).matches()) {
-                    throw ConfigException.build()
+                    throw buildConfigException()
                             .message("error.deb-invalid-value-for-package-name", packageName)
                             .advice("error.deb-invalid-value-for-package-name.advice")
                             .create();
@@ -139,7 +140,7 @@ final class LinuxPackageBuilder {
                 //
                 var regexp = Pattern.compile("[a-z\\d\\+\\-\\.\\_]+", Pattern.CASE_INSENSITIVE);
                 if (!regexp.matcher(packageName).matches()) {
-                    throw ConfigException.build()
+                    throw buildConfigException()
                             .message("error.rpm-invalid-value-for-package-name", packageName)
                             .advice("error.rpm-invalid-value-for-package-name.advice")
                             .create();

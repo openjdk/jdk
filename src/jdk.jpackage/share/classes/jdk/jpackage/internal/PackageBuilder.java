@@ -29,6 +29,7 @@ import jdk.jpackage.internal.model.Application;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Package.Stub;
 import jdk.jpackage.internal.model.PackageType;
@@ -140,7 +141,7 @@ final class PackageBuilder {
 
     private static Path mapInstallDir(Path installDir, PackageType pkgType)
             throws ConfigException {
-        var ex = ConfigException.build("error.invalid-install-dir", installDir).create();
+        var ex = buildConfigException("error.invalid-install-dir", installDir).create();
 
         if (installDir.getNameCount() == 0) {
             throw ex;

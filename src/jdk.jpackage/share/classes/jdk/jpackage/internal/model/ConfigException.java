@@ -25,6 +25,9 @@
 
 package jdk.jpackage.internal.model;
 
+import jdk.jpackage.internal.util.LocalizedExceptionBuilderBase;
+import jdk.jpackage.internal.util.StringBundle;
+
 public class ConfigException extends Exception {
     private static final long serialVersionUID = 1L;
     final String advice;
@@ -48,70 +51,43 @@ public class ConfigException extends Exception {
         return advice;
     }
 
-    public static Builder build() {
-        return new Builder();
-    }
-    
-    public static Builder build(String msgId, Object ... args) {
-        return build().message(msgId, args);
-    }
-    
-    public static Builder build(Throwable t) {
-        return build().causeAndMessage(t);
+    public static Builder build(StringBundle i18n) {
+        return new Builder(i18n);
     }
 
-    public static final class Builder {
+    public static Builder build(StringBundle i18n, String msgId, Object ... args) {
+        return build(i18n).message(msgId, args);
+    }
 
-        private Builder() {
-        }
+    public static Builder build(StringBundle i18n, Throwable t) {
+        return build(i18n).causeAndMessage(t);
+    }
 
-        public ConfigException create() {
-            return new ConfigException(msg, advice, cause);
-        }
-
-        public Builder format(boolean v) {
-            noFormat = !v;
-            return this;
-        }
-
-        public Builder noformat() {
-            return format(false);
-        }
-
-        public Builder message(String msgId, Object ... args) {
-            msg = formatString(msgId, args);
-            return this;
-        }
+    public static class Builder extends LocalizedExceptionBuilderBase<Builder> {
 
         public Builder advice(String adviceId, Object ... args) {
             advice = formatString(adviceId, args);
             return this;
         }
 
-        public Builder cause(Throwable v) {
-            cause = v;
+        private Builder(StringBundle i18n) {
+            super(i18n);
+        }
+
+        public ConfigException create() {
+            return create(this::create);
+        }
+
+        @Override
+        protected Builder thiz() {
             return this;
         }
-
-        public Builder causeAndMessage(Throwable t) {
-            var oldNoFormat = noFormat;
-            return noformat().message(t.getMessage()).cause(t).format(oldNoFormat);
+        
+        private ConfigException create(String msg, Throwable cause) {
+            return new ConfigException(msg, advice, cause);
         }
 
-        private String formatString(String keyId, Object ... args) {
-            if (!noFormat) {
-                return I18N.format(keyId, args);
-            } if (args.length == 0) {
-                return keyId;
-            } else {
-                throw new IllegalArgumentException("Formatting arguments not allowed in no format mode");
-            }
-        }
-
-        private boolean noFormat;
-        private String msg;
         private String advice;
-        private Throwable cause;
     }
 
     public static RuntimeException rethrowConfigException(RuntimeException ex) throws ConfigException {

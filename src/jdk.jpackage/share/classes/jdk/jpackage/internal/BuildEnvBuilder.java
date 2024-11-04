@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import jdk.jpackage.internal.model.ConfigException;
 import java.nio.file.Path;
 import java.util.Objects;
+import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
@@ -42,7 +43,7 @@ final class BuildEnvBuilder {
     BuildEnv create() throws ConfigException {
         Objects.requireNonNull(appImageDir);
 
-        var exceptionBuilder = ConfigException.build("ERR_BuildRootInvalid", root);
+        var exceptionBuilder = buildConfigException("ERR_BuildRootInvalid", root);
         if (!Files.exists(root)) {
         } else if (!Files.isDirectory(root)) {
             throw exceptionBuilder.create();

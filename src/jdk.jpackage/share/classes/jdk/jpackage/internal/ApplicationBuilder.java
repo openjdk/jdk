@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.AppImageFile2.LauncherInfo;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
@@ -50,7 +51,7 @@ final class ApplicationBuilder {
         final var launcherCount = launchersAsList.size();
 
         if (launcherCount != launchersAsList.stream().map(Launcher::name).distinct().count()) {
-            throw ConfigException.build("ERR_NoUniqueName").create();
+            throw buildConfigException("ERR_NoUniqueName").create();
         }
 
         final String effectiveName;
@@ -59,7 +60,7 @@ final class ApplicationBuilder {
         } else if (!launchersAsList.isEmpty()) {
             effectiveName = launchers.mainLauncher().name();
         } else {
-            throw ConfigException.build()
+            throw buildConfigException()
                     .message("error.no.name")
                     .advice("error.no.name.advice")
                     .create();

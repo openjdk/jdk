@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MsiVersion;
@@ -48,13 +49,13 @@ final class WinMsiPackageBuilder {
         try {
             MsiVersion.of(pkg.version());
         } catch (IllegalArgumentException ex) {
-            throw ConfigException.build(ex)
+            throw buildConfigException(ex)
                     .advice("error.version-string-wrong-format.advice")
                     .create();
         }
 
         if (pkg.app().isService() && (serviceInstaller == null || !Files.exists(serviceInstaller))) {
-            throw ConfigException.build()
+            throw buildConfigException()
                     .message("error.missing-service-installer")
                     .advice("error.missing-service-installer.advice")
                     .create();

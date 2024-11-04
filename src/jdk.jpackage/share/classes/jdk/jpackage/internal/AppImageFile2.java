@@ -47,6 +47,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import jdk.internal.util.OperatingSystem;
+import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -248,10 +249,10 @@ final class AppImageFile2 {
             // Exception reading input XML (probably malformed XML)
             throw new IOException(ex);
         } catch (NoSuchFileException ex) {
-            throw ConfigException.build("error.foreign-app-image", FILENAME).create();
+            throw buildConfigException("error.foreign-app-image", FILENAME).create();
         } catch (InavlidAppImageFileException ex) {
             // Invalid input XML
-            throw ConfigException.build("error.invalid-app-image-file", FILENAME).create();
+            throw buildConfigException("error.invalid-app-image-file", FILENAME).create();
         }
     }
 
