@@ -22,32 +22,87 @@
  */
 
 package compiler.lib.test_generator;
-public class CodeSegment {
+import java.util.Objects;
+
+/**
+ * Represents a segment of code, including static declarations, method calls, methods, and import statements.
+ */
+public final class CodeSegment {
     private final String statics;
     private final StringBuilder calls;
     private final StringBuilder methods;
     private final String imports;
+
+    /**
+     * Constructs a CodeSegment with specified components.
+     *
+     * @param statics  Static declarations.
+     * @param calls    Initial method calls.
+     * @param methods  Initial methods.
+     * @param imports  Import statements.
+     * @throws NullPointerException if statics or imports are null.
+     */
     public CodeSegment(String statics, String calls, String methods, String imports) {
-        this.statics = statics;
-        this.calls = new StringBuilder(calls);
-        this.methods = new StringBuilder(methods);
-        this.imports = imports;
+        this.statics = Objects.requireNonNull(statics, "statics cannot be null");
+        this.calls = new StringBuilder(calls != null ? calls : "");
+        this.methods = new StringBuilder(methods != null ? methods : "");
+        this.imports = Objects.requireNonNull(imports, "imports cannot be null");
     }
+
+    /**
+     * Retrieves the static declarations.
+     *
+     * @return Static declarations as a String.
+     */
     public String getStatics() {
         return statics;
     }
-    public void appendCalls(String calls) {
-        this.calls.append(calls);
+
+    /**
+     * Appends additional method calls.
+     *
+     * @param additionalCalls Method calls to append.
+     */
+    public void appendCalls(String additionalCalls) {
+        if (additionalCalls != null && !additionalCalls.isEmpty()) {
+            this.calls.append(additionalCalls);
+        }
     }
+
+    /**
+     * Retrieves the current method calls.
+     *
+     * @return Method calls as a String.
+     */
     public String getCalls() {
         return calls.toString();
     }
-    public void appendMethods(String method) {
-        this.methods.append(method);
+
+    /**
+     * Appends an additional method.
+     *
+     * @param additionalMethod Method to append.
+     */
+    public void appendMethods(String additionalMethod) {
+        if (additionalMethod != null && !additionalMethod.isEmpty()) {
+            this.methods.append(additionalMethod);
+        }
     }
+
+    /**
+     * Retrieves the current methods.
+     *
+     * @return Methods as a String.
+     */
     public String getMethods() {
         return methods.toString();
     }
+
+    /**
+     * Retrieves the import statements.
+     *
+     * @return Import statements as a String.
+     */
     public String getImports() {
         return imports;
     }
