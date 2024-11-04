@@ -76,8 +76,7 @@ typedef struct {
    GetModuleHandleFunc _GetModuleHandle;
    GetProcAddressFunc _GetProcAddress;
    char jvmLib[MAX_LIBNAME_LENGTH];         /* "jvm.dll" */
-   char func1[MAX_FUNC_LENGTH];
-   char func2[MAX_FUNC_LENGTH];
+   char func[MAX_FUNC_LENGTH];
    char func_v2[MAX_FUNC_LENGTH];
    char cmd[MAX_CMD_LENGTH + 1];            /* "load", "dump", ...      */
    char arg[MAX_ARGS][MAX_ARG_LENGTH + 1];  /* arguments to command     */
@@ -113,10 +112,7 @@ DWORD WINAPI jvm_attach_thread_func(DataBlock *pData)
     }
 
     if (pData->version == 1) {
-        EnqueueOperationFunc addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func1));
-        if (addr == NULL) {
-            addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func2));
-        }
+        EnqueueOperationFunc addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func));
         if (addr == NULL) {
             return ERR_GET_ENQUEUE_FUNC_FAIL;
         }
@@ -444,8 +440,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
     data._GetProcAddress = _GetProcAddress;
 
     strcpy(data.jvmLib, "jvm");
-    strcpy(data.func1, "JVM_EnqueueOperation");
-    strcpy(data.func2, "_JVM_EnqueueOperation@20");
+    strcpy(data.func, "JVM_EnqueueOperation");
     strcpy(data.func_v2, "JVM_EnqueueOperation_v2");
 
     /*
