@@ -51,9 +51,9 @@ oop BlockLocationPrinter<CollectedHeapT>::base_oop_or_null(void* addr) {
 
 template <typename CollectedHeapT>
 bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void* addr) {
-  bool in_heap = false;
   // Check if addr points into Java heap.
-  if (CollectedHeapT::heap()->is_in(addr)) {
+  bool in_heap = CollectedHeapT::heap()->is_in(addr);
+  if (in_heap) {
     // base_oop_or_null() might be unimplemented and return NULL for some GCs/generations
     oop o = base_oop_or_null(addr);
     if (o != nullptr) {
@@ -65,7 +65,6 @@ bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void
       o->print_on(st);
       return true;
     }
-    in_heap = true; // We at least know by now, that addr points into the heap
   } else if (CollectedHeapT::heap()->is_in_reserved(addr)) {
     st->print_cr(PTR_FORMAT " is an unallocated location in the heap", p2i(addr));
     return true;
