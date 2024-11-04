@@ -40,19 +40,23 @@ public abstract class Template {
      * with a unique number, ensuring that variable names remain distinct and do not clash within the processed string.
      *
      * @param template The template string containing placeholders to be processed.
-     * @return A new string with all placeholders replaced by their corresponding variable names appended with a unique identifier.
+     * @return The processed string with unique identifiers appended to variable names.
      */
-    public static String avoidConflict(String template){
+    public static String avoidConflict(String template) {
+        int uniqueId = uniqueCounter.getAndIncrement();
         StringBuilder result = new StringBuilder();
-        Matcher mat = PLACEHOLDER_PATTERN.matcher(template);
-        while(mat.find()){
-            String replacement = mat.group(1) + uniqueCounter.get();
-            mat.appendReplacement(result, replacement);
+        Matcher matcher = PLACEHOLDER_PATTERN.matcher(template);
+
+        while (matcher.find()) {
+            String variableName = matcher.group(1);
+            String replacement = variableName + uniqueId;
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
-        mat.appendTail(result);
-        uniqueCounter.incrementAndGet();
+        matcher.appendTail(result);
+
         return result.toString();
     }
+
 
     /**
      * Abstract method to retrieve the template string for a given variable.
