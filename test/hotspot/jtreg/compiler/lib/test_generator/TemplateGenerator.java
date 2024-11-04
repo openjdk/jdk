@@ -123,10 +123,8 @@ public class TemplateGenerator {
             try {
                 // Load the input template from the specified file
                 InputTemplate inputTemplate = loadInputTemplate(filePath);
-                if (inputTemplate != null) {
-                    // Generate and run tests based on the loaded template
-                    runTestGeneration(inputTemplate, threadPool);
-                }
+                // Generate and run tests based on the loaded template
+                runTestGeneration(inputTemplate, threadPool);
             } catch (Exception e) {
                 // Print stack trace if an exception occurs during processing
                 e.printStackTrace();
