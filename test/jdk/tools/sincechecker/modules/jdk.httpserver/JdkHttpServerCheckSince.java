@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8343442
- * @summary Test for `@since` for jdk.httpserver module
+ * @summary Test for `@since` in jdk.httpserver module
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker jdk.httpserver
  */

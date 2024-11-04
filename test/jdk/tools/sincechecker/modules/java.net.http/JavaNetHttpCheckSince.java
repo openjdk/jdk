@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8331051
- * @summary Test for `@since` for jdk.net module
+ * @bug 8343442
+ * @summary Test for `@since` in java.net.http module
  * @library /test/lib /test/jdk/tools/sincechecker
- * @run main SinceChecker jdk.net
+ * @run main SinceChecker java.net.http
  */
