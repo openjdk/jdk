@@ -227,6 +227,7 @@ public class SimpleTemplateExample {
 
         // Object ret = XYZ.test(5);
         Object ret = comp.invoke("GeneratedTest42", "test_1", new Object[] {});
+        Object ret2 = comp.invoke("GeneratedTest42", "test_3", new Object[] {});
 
         // Extract return value of invocation, verify its value.
         int i = (int) ret;
