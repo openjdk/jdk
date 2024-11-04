@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -70,7 +71,7 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
             case 2: return REMOVED;
             case 3: return MODIFIED;
             }
-            throw new IllegalStateException("Must not reach here!");
+            throw new AssertionError("Must not reach here!");
         }
     }
 
@@ -129,8 +130,7 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
         }
         public ResourceDiff build() {
             if (kind == null || name == null) {
-                // should this be RuntimeImageLinkException?   output needs cleanup?
-                throw new IllegalStateException("kind and name must be set");
+                throw new AssertionError("kind and name must be set");
             }
             switch (kind) {
             case ADDED:
@@ -141,8 +141,7 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
             case REMOVED:
                 {
                     if (resourceBytes == null) {
-                        // should this be RuntimeImageLinkException?  output needs cleanup?
-                        throw new IllegalStateException("Original bytes needed for MODIFIED, REMOVED!");
+                        throw new AssertionError("Original bytes needed for MODIFIED, REMOVED!");
                     }
                     break;
                 }
@@ -225,14 +224,13 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
         /*
          * See write() for the details how this is being written
          */
-        List<ResourceDiff> diffs;
+        List<ResourceDiff> diffs = new ArrayList<>();
         try (DataInputStream din = new DataInputStream(in)) {
             int magic = din.readInt();
             if (magic != MAGIC) {
                 throw new IllegalArgumentException("Not a ResourceDiff data stream!");
             }
             int numItems = din.readInt();
-            diffs = new ArrayList<>(numItems);  // why not initialized above?  optimized size?
             for (int i = 0; i < numItems; i++) {
                 Kind k = Kind.fromShort(din.readShort());
                 int numBytes = din.readInt();
@@ -252,7 +250,7 @@ public class ResourceDiff implements Comparable<ResourceDiff> {
                 diffs.add(builder.build());
             }
         }
-        return diffs;
+        return Collections.unmodifiableList(diffs);
     }
 
     private static byte[] readBytesFromStream(DataInputStream din, int numBytes) throws IOException {

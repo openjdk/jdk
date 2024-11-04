@@ -26,6 +26,8 @@
 package jdk.tools.jlink.internal;
 
 import static jdk.tools.jlink.internal.LinkableRuntimeImage.RESPATH_PATTERN;
+import static jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException.Reason.MODIFIED_FILE;
+import static jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException.Reason.PATCH_MODULE;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -77,6 +79,7 @@ public class JRTArchive implements Archive {
     // modules for that resource (if any)
     private final Map<String, ResourceDiff> resDiff;
     private final boolean errorOnModifiedFile;
+    private final TaskHelper taskHelper;
 
     /**
      * JRTArchive constructor
@@ -85,12 +88,14 @@ public class JRTArchive implements Archive {
      * @param path The JRT filesystem path.
      * @param errorOnModifiedFile Whether or not modified files of the JDK
      *        install aborts the link.
-     * @param perModDiff The lib/modules (a.k.a jimage) diff for this module
+     * @param perModDiff The lib/modules (a.k.a jimage) diff for this module,
+     *                   possibly an empty list if there are no differences.
      */
     JRTArchive(String module,
                Path path,
                boolean errorOnModifiedFile,
-               List<ResourceDiff> perModDiff) {
+               List<ResourceDiff> perModDiff,
+               TaskHelper taskHelper) {
         this.module = module;
         this.path = path;
         this.ref = ModuleFinder.ofSystem()
@@ -103,6 +108,7 @@ public class JRTArchive implements Archive {
         this.otherRes = readModuleResourceFile(module);
         this.resDiff = Objects.requireNonNull(perModDiff).stream()
                             .collect(Collectors.toMap(ResourceDiff::getName, Function.identity()));
+        this.taskHelper = taskHelper;
     }
 
     @Override
@@ -190,9 +196,7 @@ public class JRTArchive implements Archive {
                                          .filter(rd -> rd.getKind() == ResourceDiff.Kind.REMOVED)
                                          .map(s -> {
                                                  int secondSlash = s.getName().indexOf("/", 1);
-                                                 if (secondSlash == -1) {
-                                                     throw new AssertionError();
-                                                 }
+                                                 assert secondSlash != -1;
                                                  String pathWithoutModule = s.getName().substring(secondSlash + 1);
                                                  return new JRTArchiveFile(JRTArchive.this,
                                                          pathWithoutModule,
@@ -221,13 +225,10 @@ public class JRTArchive implements Archive {
                         // Read from the base JDK image.
                         Path path = BASE.resolve(m.resPath);
                         if (shaSumMismatch(path, m.hashOrTarget, m.symlink)) {
-                            String msg = String.format(MISMATCH_FORMAT,
-                                                       path.toString());
                             if (errorOnModifiedFile) {
-                                throw new RuntimeImageLinkException(msg);
+                                throw new RuntimeImageLinkException(path.toString(), MODIFIED_FILE);
                             } else {
-                                // System.err vs taskHelper.warning?
-                                System.err.printf("WARNING: %s", msg);
+                                taskHelper.warning("err.runtime.link.modified.file", path.toString());
                             }
                         }
 
@@ -333,7 +334,7 @@ public class JRTArchive implements Archive {
                 throw new AssertionError(e); // must not happen
             }
             if (symlinkNum < 0 || symlinkNum > 1) {
-                throw new IllegalStateException(
+                throw new AssertionError(
                         "Symlink designator out of range [0,1] got: " +
                         symlinkNum);
             }
@@ -418,7 +419,6 @@ public class JRTArchive implements Archive {
     }
 
     private static final Path BASE = Paths.get(System.getProperty("java.home"));
-    private static final String MISMATCH_FORMAT = "%s has been modified%n";
 
     interface JRTFile {
         Entry toEntry();
@@ -471,10 +471,7 @@ public class JRTArchive implements Archive {
                                 // the class using the system module finder. Therefore,
                                 // we have a patched module. Mention that module patching
                                 // is not supported.
-                                String msgFormat = "File %s not found in the modules image.\n" +
-                                                   "--patch-module is not supported when linking from the run-time image";
-                                String msg = String.format(msgFormat, file.getFile());
-                                throw new RuntimeImageLinkException(msg);
+                                throw new RuntimeImageLinkException(file.getFile(), PATCH_MODULE);
                             }
                         }
                     } catch (IOException e) {
@@ -524,8 +521,8 @@ public class JRTArchive implements Archive {
                 }
             }
         } catch (IOException e) {
-            throw new AssertionError("Failed to process resources from the run-time image" +
-                                    " for module " + modName);
+            throw new UncheckedIOException("Failed to process resources from the " +
+                                           "run-time image for module " + modName, e);
         }
     }
 }

@@ -52,7 +52,7 @@ public class LinkableRuntimeImage {
      *         run-time image.
      */
     public static boolean isLinkableRuntime() {
-        try (InputStream in = getDiffInputStream()) {
+        try (InputStream in = getDiffInputStream("java.base")) {
             return in != null;
         } catch (IOException e) {
             // fall-through
@@ -60,24 +60,16 @@ public class LinkableRuntimeImage {
         return false;
     }
 
-    private static InputStream getDiffInputStream() {
-        return getDiffInputStream("java.base");
+    private static InputStream getDiffInputStream(String module) throws IOException {
+        String resourceName = String.format(DIFF_PATTERN, module);
+        return LinkableRuntimeImage.class.getModule().getResourceAsStream(resourceName);
     }
 
-    private static InputStream getDiffInputStream(String module) {
-        try {
-            String resourceName = String.format(DIFF_PATTERN, module);
-            return LinkableRuntimeImage.class.getModule().getResourceAsStream(resourceName);
-        } catch (IOException e) {
-            if (JlinkTask.DEBUG) {
-                System.err.println("Failed to get diff pattern resource");
-                e.printStackTrace();
-            }
-            return null;
-        }
-    }
-
-    public static Archive newArchive(String module, Path path, boolean ignoreModifiedRuntime) {
+    public static Archive newArchive(String module,
+                                     Path path,
+                                     boolean ignoreModifiedRuntime,
+                                     TaskHelper taskHelper) {
+        assert isLinkableRuntime();
         // Here we retrieve the per module difference file, which is
         // potentially empty, from the modules image and pass that on to
         // JRTArchive for further processing. When streaming resources from
@@ -89,7 +81,7 @@ public class LinkableRuntimeImage {
             throw new AssertionError("Failure to retrieve resource diff for " +
                                      "module " + module, e);
         }
-        return new JRTArchive(module, path, !ignoreModifiedRuntime, perModuleDiff);
+        return new JRTArchive(module, path, !ignoreModifiedRuntime, perModuleDiff, taskHelper);
     }
 
 

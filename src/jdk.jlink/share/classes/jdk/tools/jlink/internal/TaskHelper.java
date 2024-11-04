@@ -581,7 +581,7 @@ public final class TaskHelper {
             return null;
         }
 
-        public void showHelp(String progName, boolean runtimeCap) {
+        public void showHelp(String progName, boolean linkableRuntimeEnabled) {
             log.println(bundleHelper.getMessage("main.usage", progName));
             Stream.concat(options.stream(), pluginOptions.mainOptions.stream())
                 .filter(option -> !option.isHidden())
@@ -593,8 +593,8 @@ public final class TaskHelper {
             log.println(bundleHelper.getMessage("main.command.files"));
             // If the JDK build has the run-time image capability show it
             // in the help output
-            log.println(bundleHelper.getMessage("main.capability.runtime",
-                                                runtimeCap ? "+" : "-"));
+            log.println(bundleHelper.getMessage("main.runtime.image.linking.capability",
+                                                linkableRuntimeEnabled ? "+" : "-"));
         }
 
         public void listPlugins() {

@@ -434,8 +434,8 @@ public class JlinkTask {
      * {@code runtimeImageFinder} that first looks-up modules in the
      * {@code runtimeImageFinder} and if not present in {@code finder}.
      *
-     * @param finder A module finder based on packaged modules.
      * @param runtimeImageFinder A system modules finder.
+     * @param finder A module finder based on packaged modules.
      * @param limitMods The set of limited modules for the resulting
      *                  finder (if any).
      * @param roots All module roots.
@@ -695,7 +695,8 @@ public class JlinkTask {
                                      e.getValue(),
                                      version,
                                      ignoreSigning,
-                                     config))
+                                     config,
+                                     log))
                 .collect(Collectors.toSet());
 
         return new ImageHelper(archives,
@@ -708,7 +709,8 @@ public class JlinkTask {
                                       Path path,
                                       Runtime.Version version,
                                       boolean ignoreSigning,
-                                      JlinkConfiguration config) {
+                                      JlinkConfiguration config,
+                                      PrintWriter log) {
         if (path.toString().endsWith(".jmod")) {
             return new JmodArchive(module, path);
         } else if (path.toString().endsWith(".jar")) {
@@ -748,7 +750,7 @@ public class JlinkTask {
                         taskHelper.getMessage("err.not.a.module.directory", path));
             }
         } else if (config.linkFromRuntimeImage()) {
-            return LinkableRuntimeImage.newArchive(module, path, config.ignoreModifiedRuntime());
+            return LinkableRuntimeImage.newArchive(module, path, config.ignoreModifiedRuntime(), taskHelper);
         } else {
             throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));
@@ -1037,7 +1039,7 @@ public class JlinkTask {
         @Override
         public ExecutableImage retrieve(ImagePluginStack stack) throws IOException {
             ExecutableImage image = ImageFileCreator.create(archives,
-                    targetPlatform.arch().byteOrder(), stack, generateRuntimeImage);
+                    targetPlatform.arch().byteOrder(), stack, generateRuntimeImage, taskHelper);
             if (packagedModulesPath != null) {
                 // copy the packaged modules to the given path
                 Files.createDirectories(packagedModulesPath);

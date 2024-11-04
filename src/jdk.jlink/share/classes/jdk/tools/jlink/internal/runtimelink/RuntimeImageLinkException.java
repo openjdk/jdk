@@ -32,7 +32,29 @@ public class RuntimeImageLinkException extends RuntimeException {
 
     private static final long serialVersionUID = -1848914673073119403L;
 
-    public RuntimeImageLinkException(String msg) {
-        super(msg);
+    public static enum Reason {
+        PATCH_MODULE,  /* link exception due to patched module */
+        MODIFIED_FILE, /* link exception due to modified file  */
+    }
+
+    private final String file;
+    private final Reason reason;
+
+    public RuntimeImageLinkException(String file, Reason reason) {
+        this.file = file;
+        this.reason = reason;
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public Reason getReason() {
+        return reason;
+    }
+
+    @Override
+    public String getMessage() {
+        return reason + ", file: " + file;
     }
 }

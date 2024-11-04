@@ -91,9 +91,14 @@ public final class ImageFileCreator {
     private final Map<String, List<Entry>> entriesForModule = new HashMap<>();
     private final ImagePluginStack plugins;
     private final boolean generateRuntimeImage;
-    private ImageFileCreator(ImagePluginStack plugins, boolean generateRuntimeImage) {
+    private final TaskHelper helper;
+
+    private ImageFileCreator(ImagePluginStack plugins,
+                             boolean generateRuntimeImage,
+                             TaskHelper taskHelper) {
         this.plugins = Objects.requireNonNull(plugins);
         this.generateRuntimeImage = generateRuntimeImage;
+        this.helper = taskHelper;
     }
 
     /**
@@ -113,14 +118,24 @@ public final class ImageFileCreator {
     public static ExecutableImage create(Set<Archive> archives,
             ByteOrder byteOrder,
             ImagePluginStack plugins,
-            boolean generateRuntimeImage)
+            boolean generateRuntimeImage,
+            TaskHelper taskHelper)
             throws IOException
     {
-        ImageFileCreator image = new ImageFileCreator(plugins, generateRuntimeImage);
+        ImageFileCreator image = new ImageFileCreator(plugins,
+                                                      generateRuntimeImage,
+                                                      taskHelper);
         try {
             image.readAllEntries(archives);
             // write to modular image
             image.writeImage(archives, byteOrder);
+        } catch (RuntimeImageLinkException e) {
+            // readAllEntries() might throw this exception.
+            // Propagate as IOException with appropriate message for
+            // jlink runs from the run-time image. This handles better
+            // error messages for the case of modified files in the run-time
+            // image.
+            throw image.newIOException(e);
         } finally {
             // Close all archives
             for (Archive a : archives) {
@@ -148,7 +163,8 @@ public final class ImageFileCreator {
 
     public static void recreateJimage(Path jimageFile,
             Set<Archive> archives,
-            ImagePluginStack pluginSupport, boolean generateRuntimeImage)
+            ImagePluginStack pluginSupport,
+            boolean generateRuntimeImage)
             throws IOException {
         try {
             Map<String, List<Entry>> entriesForModule
@@ -185,14 +201,15 @@ public final class ImageFileCreator {
         try (DataOutputStream out = plugins.getJImageFileOutputStream()) {
             result = generateJImage(allContent, writer, plugins, out, generateRuntimeImage);
         } catch (RuntimeImageLinkException e) {
-            throwRuntimeLinkFailure(e);
+            // Propagate as IOException with appropriate message for
+            // jlink runs from the run-time image. This handles better
+            // error messages for the case of --patch-module.
+            throw newIOException(e);
         }
 
         //Handle files.
         try {
             plugins.storeFiles(allContent.resourcePool(), result, writer);
-        } catch (RuntimeImageLinkException e) {
-            throwRuntimeLinkFailure(e);
         } catch (Exception ex) {
             if (JlinkTask.DEBUG) {
                 ex.printStackTrace();
@@ -201,13 +218,16 @@ public final class ImageFileCreator {
         }
     }
 
-    private static void throwRuntimeLinkFailure(RuntimeImageLinkException e) throws IOException {
+    private IOException newIOException(RuntimeImageLinkException e) throws IOException {
         if (JlinkTask.DEBUG) {
             e.printStackTrace();
         }
-        // Propagate as IOException with appropriate message for
-        // jlink runs from the run-time image
-        throw new IOException(e.getMessage());
+        String message = switch (e.getReason()) {
+            case PATCH_MODULE -> helper.getMessage("err.runtime.link.patched.module", e.getFile());
+            case MODIFIED_FILE -> helper.getMessage("err.runtime.link.modified.file", e.getFile());
+            default -> throw new AssertionError("Unexpected value: " + e.getReason());
+        };
+        throw new IOException(message);
     }
 
     /**
@@ -250,13 +270,6 @@ public final class ImageFileCreator {
                 pe.printStackTrace();
             }
             throw pe;
-        } catch (RuntimeImageLinkException re) {
-            // Might be thrown when linking from the current run-time image.
-            // Populate the actual reason.
-            if (JlinkTask.DEBUG) {
-                re.printStackTrace();
-            }
-            throw re;
         } catch (Exception ex) {
             if (JlinkTask.DEBUG) {
                 ex.printStackTrace();
@@ -335,7 +348,8 @@ public final class ImageFileCreator {
      */
     @SuppressWarnings("try")
     private static ResourcePool addResourceDiffFiles(ResourcePool jmodContent,
-                                                     ResourcePool resultContent, BasicImageWriter writer) {
+                                                     ResourcePool resultContent,
+                                                     BasicImageWriter writer) {
         JimageDiffGenerator generator = new JimageDiffGenerator();
         List<ResourceDiff> diff;
         try (ImageResource jmods = new ResourcePoolReader(jmodContent);
@@ -396,21 +410,16 @@ public final class ImageFileCreator {
         modules.stream().sorted().forEach(module -> {
             String mResource = String.format(DIFF_PATH, module);
             List<ResourceDiff> diff = perModDiffs.get(module);
-            if (diff == null) {
-                // We create empty resource files for modules in the resource
-                // pool view that don't themselves have a diff to packaged
-                // modules
-                out.add(ResourcePoolEntry.create(mResource, EMPTY_RESOURCE_BYTES));
-            } else {
-                ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                try {
-                    ResourceDiff.write(diff, bout);
-                } catch (IOException e) {
-                    throw new AssertionError("Failed to write resource diff file" +
-                                             " for module " + module, e);
-                }
-                out.add(ResourcePoolEntry.create(mResource, bout.toByteArray()));
+            // Note that for modules without diff to the packaged modules view
+            // we create resource diff files with just the header and no content.
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            try {
+                ResourceDiff.write(diff, bout);
+            } catch (IOException e) {
+                throw new AssertionError("Failed to write resource diff file" +
+                                         " for module " + module, e);
             }
+            out.add(ResourcePoolEntry.create(mResource, bout.toByteArray()));
         });
         return out.build();
     }
@@ -431,8 +440,7 @@ public final class ImageFileCreator {
      */
     private static ResourcePool addNonClassResourcesTrackFiles(ResourcePool resultResources,
                                                                BasicImageWriter writer) {
-        // Only add resources if we have the jdk.jlink module part of the
-        // target modules view
+        // Only add resources if jdk.jlink module is present in the target image
         Optional<ResourcePoolModule> jdkJlink = resultResources.moduleView()
                                                                .findModule(JLINK_MOD_NAME);
         if (jdkJlink.isPresent()) {
@@ -496,8 +504,8 @@ public final class ImageFileCreator {
      *         part of the modules image (jimage) as values.
      */
     private static Map<String, List<String>> recordAndFilterEntries(ResourcePool resultResources) {
-        final Map<String, List<String>> nonClassResEntries = new HashMap<>();
-        final Platform platform = getTargetPlatform(resultResources);
+        Map<String, List<String>> nonClassResEntries = new HashMap<>();
+        Platform platform = getTargetPlatform(resultResources);
         resultResources.entries().forEach(entry -> {
             // Note that the fs_$module_files file is a resource file itself, so
             // we cannot add fs_$module_files themselves due to the
@@ -539,8 +547,8 @@ public final class ImageFileCreator {
         return resources;
     }
 
-    private static ResourcePoolManager createBasicResourcePoolManager(
-            ByteOrder byteOrder, BasicImageWriter writer) {
+    private static ResourcePoolManager createBasicResourcePoolManager(ByteOrder byteOrder,
+                                                                      BasicImageWriter writer) {
         return new ResourcePoolManager(byteOrder, new StringTable() {
 
             @Override
@@ -563,8 +571,8 @@ public final class ImageFileCreator {
      * @param writer The basic image writer.
      * @return An appendable ResourcePoolManager.
      */
-    private static ResourcePoolManager createPoolManager(
-            ResourcePool resultResources, BasicImageWriter writer) {
+    private static ResourcePoolManager createPoolManager(ResourcePool resultResources,
+                                                         BasicImageWriter writer) {
         ResourcePoolManager resources = createBasicResourcePoolManager(resultResources.byteOrder(),
                                                                        writer);
         // Note that resources are already sorted in the correct order.

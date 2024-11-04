@@ -68,8 +68,8 @@ public class ModifiedFilesWarningTest extends ModifiedFilesTest {
                                 .build(), handler);
         OutputAnalyzer out = handler.analyzer();
         // verify we get the warning message
-        out.stderrShouldMatch("WARNING: .* has been modified");
-        out.stderrShouldNotContain("java.lang.IllegalArgumentException");
-        out.stderrShouldNotContain("jdk.tools.jlink.internal.RunImageLinkException");
+        out.stdoutShouldMatch("Warning: .* has been modified");
+        out.stdoutShouldNotContain("java.lang.IllegalArgumentException");
+        out.stdoutShouldNotContain("jdk.tools.jlink.internal.RunImageLinkException");
     }
 }
