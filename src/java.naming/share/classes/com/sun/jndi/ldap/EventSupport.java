@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
 
 package com.sun.jndi.ldap;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.EventObject;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.*;
@@ -124,8 +123,8 @@ final class EventSupport {
     /**
      * NamingEventNotifiers; hashed by search arguments;
      */
-    private Hashtable<NotifierArgs, NamingEventNotifier> notifiers =
-            new Hashtable<>(11);
+    private HashMap<NotifierArgs, NamingEventNotifier> notifiers =
+            new HashMap<>(11);
 
     /**
      * List of unsolicited notification listeners.
