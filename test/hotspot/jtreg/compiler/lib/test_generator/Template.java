@@ -23,28 +23,42 @@
 package compiler.lib.test_generator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class Template {
-    public Template() {}
-    static int variableNumber = 1;
-    /*
-     * This method processes a given template string to avoid variable name conflicts by appending a unique identifier.
-     * It searches for placeholders within the string, identified by a '$' followed by a word (variable name),
-     * and replaces each placeholder with the variable name concatenated with a unique number.
+    // Atomic counter to ensure thread-safe unique number generation
+    private static final AtomicInteger uniqueCounter = new AtomicInteger(1);
+
+    // Pattern to identify placeholders in the format $variableName
+    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\$(\\w+)");
+
+    /**
+     * Processes a template string to prevent variable name conflicts by appending a unique identifier.
+     *
+     * <p>This method scans the input template for placeholders, which are denoted by a '$' followed by a word
+     * representing the variable name. Each detected placeholder is replaced with the variable name concatenated
+     * with a unique number, ensuring that variable names remain distinct and do not clash within the processed string.
+     *
+     * @param template The template string containing placeholders to be processed.
+     * @return A new string with all placeholders replaced by their corresponding variable names appended with a unique identifier.
      */
-    public static String avoidConflict(String temp){
+    public static String avoidConflict(String template){
         StringBuilder result = new StringBuilder();
-        String regex="\\$(\\w+)";
-        Pattern pat = Pattern.compile(regex);
-        Matcher mat = pat.matcher(temp);
+        Matcher mat = PLACEHOLDER_PATTERN.matcher(template);
         while(mat.find()){
-            String replacement = mat.group(1)+variableNumber;
+            String replacement = mat.group(1) + uniqueCounter.get();
             mat.appendReplacement(result, replacement);
         }
         mat.appendTail(result);
-        variableNumber++;
+        uniqueCounter.incrementAndGet();
         return result.toString();
     }
 
+    /**
+     * Abstract method to retrieve the template string for a given variable.
+     *
+     * @param variable The name of the variable whose template is to be retrieved.
+     * @return The template string associated with the specified variable.
+     */
     public abstract String getTemplate(String variable);
 }
