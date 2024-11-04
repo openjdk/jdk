@@ -34,6 +34,8 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
@@ -90,10 +92,10 @@ public class TemplateGenerator {
     };
 
     // Counter for assigning unique IDs to tests
-    private static long testId = 0L;
+    private static final AtomicLong testId = new AtomicLong(0L);
 
     // Counter for generating unique identifiers within replacements
-    private static int nextUniqueId = 0;
+    private static final AtomicInteger nextUniqueId = new AtomicInteger(0);
 
     // Directory where generated tests will be stored
     private static String outputFolder;
@@ -208,7 +210,7 @@ public class TemplateGenerator {
         // Loop to generate replacements for each test method
         for (int j = 0; j < inputTemplate.getNumberOfTestMethods(); j++) {
             // Retrieve a random set of replacements and increment the unique ID
-            replacements.add(inputTemplate.getRandomReplacements(nextUniqueId++));
+            replacements.add(inputTemplate.getRandomReplacements(nextUniqueId.getAndIncrement()));
         }
         return replacements;
     }
@@ -241,7 +243,7 @@ public class TemplateGenerator {
      * @return The next unique test ID
      */
     private static long getNextTestId() {
-        return testId++;
+        return testId.getAndIncrement();
     }
 
     /**
