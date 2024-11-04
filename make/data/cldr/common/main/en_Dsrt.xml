@@ -691,6 +691,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<gmtFormat>𐐘𐐣𐐓 {0}</gmtFormat>
 			<gmtZeroFormat>𐐘𐐣𐐓</gmtZeroFormat>
 			<regionFormat>{0} 𐐓𐐴𐑋</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>𐐐𐐪𐑌𐐲𐑊𐐭𐑊𐐭</exemplarCity>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>𐐊𐑌𐑌𐐬𐑌</exemplarCity>
 			</zone>
@@ -705,9 +708,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>𐐤𐐬𐑋</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>𐐐𐐪𐑌𐐲𐑊𐐭𐑊𐐭</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>𐐁𐑍𐐿𐐲𐑉𐐮𐐾</exemplarCity>
