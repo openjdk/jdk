@@ -1341,14 +1341,15 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     for (address p = addr; p < align_up(addr + 1, sizeof(intptr_t)); ++p) {
       st->print(" %02x", *(u1*)p);
     }
-    // corruption or uninit. access pattern; 0xbabababababababa seems to be also important
+#ifndef PRODUCT
+    // corruption or uninitialized access pattern
     const intptr_t pat = 0xabababababababab;
-    // const intptr_t pat = 0x0000000000000002;
     if (is_aligned(addr, sizeof(intptr_t))) {
       if (pat ==  *(intptr_t*)addr) {
         st->print(" <= unused storage marker found");
       }
     }
+#endif // PRODUCT
     st->cr();
     return;
   }
@@ -1358,7 +1359,8 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 }
 
 void os::print_reg(outputStream *st, const char* reg, intptr_t val) {
-  // corruption or uninitialized access pattern ; maybe check also 0xbabababababababa
+#ifndef PRODUCT
+  // corruption or uninitialized access pattern
 #ifdef _LP64
   const intptr_t pat = 0xabababababababab;
 #else
@@ -1384,9 +1386,12 @@ void os::print_reg(outputStream *st, const char* reg, intptr_t val) {
 #endif
       st->print_cr("%s" INTPTR_FORMAT " / %ld  <= bad value marker found", reg, val, val);
     } else {
+#endif // PRODUCT
       st->print_cr("%s" INTPTR_FORMAT " / %ld", reg, val, val);
+#ifndef PRODUCT
     }
   }
+#endif
 }
 
 static bool is_pointer_bad(intptr_t* ptr) {
