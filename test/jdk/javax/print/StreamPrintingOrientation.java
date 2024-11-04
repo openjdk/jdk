@@ -64,11 +64,12 @@ public class StreamPrintingOrientation implements Printable {
         fl.deleteOnExit();
         fos = new FileOutputStream(fl);
         StreamPrintServiceFactory[] factories = PrinterJob.lookupStreamPrintServices(mType);
-        if (factories.length > 0)
+        if (factories.length > 0) {
             service = factories[0].getPrintService(fos);
+        }
 
         if (service != null) {
-            System.out.println("Stream Print Service "+service);
+            System.out.println("Stream Print Service " + service);
             pj.setPrintService(service);
         } else {
             throw new RuntimeException("No stream Print Service available.");
@@ -82,8 +83,8 @@ public class StreamPrintingOrientation implements Printable {
 
         System.out.println("\nValues in attr set passed to print method");
         Attribute attr[] = prSet.toArray();
-        for (int x = 0; x < attr.length; x ++) {
-            System.out.println("Name "+attr[x].getName()+"  "+attr[x]);
+        for (int x = 0; x < attr.length; x++) {
+            System.out.println("Name " + attr[x].getName() + "  " + attr[x]);
         }
         System.out.println("About to print the data ...");
         if (service != null) {
@@ -95,8 +96,9 @@ public class StreamPrintingOrientation implements Printable {
         fp = new File("stream_portrait.ps");
         fp.deleteOnExit();
         fos = new FileOutputStream(fp);
-        if (factories.length > 0)
+        if (factories.length > 0) {
             service = factories[0].getPrintService(fos);
+        }
 
         pj.setPrintService(service);
         pj.setPrintable(pd);
@@ -108,7 +110,8 @@ public class StreamPrintingOrientation implements Printable {
         }
 
         if (Files.mismatch(fl.toPath(), fp.toPath()) == -1) {
-            throw new RuntimeException("Printing stream orientation is same for both PORTRAIT and LANDSCAPE");
+            throw new RuntimeException("Printing stream orientation is same " +
+                                       "for both PORTRAIT and LANDSCAPE");
         }
     }
 
@@ -122,9 +125,9 @@ public class StreamPrintingOrientation implements Printable {
         Graphics2D g2 = (Graphics2D)g;
         g2.setColor(Color.black);
         g2.translate(pf.getImageableX(), pf.getImageableY());
-        System.out.println("StreamPrinting Test Width "+pf.getWidth()+" Height "+pf.getHeight());
-        g2.drawRect(1,1,200,300);
-        g2.drawRect(1,1,25,25);
+        System.out.println("StreamPrinting Test Width " + pf.getWidth() + " Height " + pf.getHeight());
+        g2.drawRect(1, 1, 200, 300);
+        g2.drawRect(1, 1, 25, 25);
         return Printable.PAGE_EXISTS;
     }
 }

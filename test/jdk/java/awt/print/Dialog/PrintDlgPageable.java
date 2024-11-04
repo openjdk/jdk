@@ -25,7 +25,7 @@
  * @test
  * @bug 4869502 4869539
  * @key printer
- * @summary Confirm that ToPage is populated for argument =2. Range is disabled for argument = 0.
+ * @summary Confirm that ToPage is populated for argument = 2. Range is disabled for argument = 0.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PrintDlgPageable 0
@@ -41,9 +41,7 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
 import java.awt.print.PrinterException;
 
-
 public class PrintDlgPageable implements Printable {
-
 
     public static int arg;
     public PrintDlgPageable() {
@@ -74,16 +72,15 @@ public class PrintDlgPageable implements Printable {
         PassFailJFrame passFailJFrame = PassFailJFrame.builder()
             .title("Instructions")
             .instructions(INSTRUCTIONS)
-            .rows((int) INSTRUCTIONS.lines().count() + 2)
             .columns(35)
+            .logArea()
             .build();
 
-        System.out.println("open PrintDialog..");
         if (pj.printDialog()) {
             try {
-                System.out.println("About to print the data ...");
+                PassFailJFrame.log("About to print the data ...");
                 pj.print();
-                System.out.println("Printed");
+                PassFailJFrame.log("Printed");
             }
             catch (PrinterException pe) {
                 pe.printStackTrace();
@@ -96,12 +93,12 @@ public class PrintDlgPageable implements Printable {
     public int print(Graphics g, PageFormat pf, int pi) throws PrinterException {
 
         // Simply draw two rectangles
-        Graphics2D g2 = (Graphics2D)g;
+        Graphics2D g2 = (Graphics2D) g;
         g2.setColor(Color.black);
         g2.translate(pf.getImageableX(), pf.getImageableY());
-        g2.drawRect(1,1,200,300);
-        g2.drawRect(1,1,25,25);
-        System.out.println("print method called "+pi + " Orientation "+pf.getOrientation());
+        g2.drawRect(1, 1, 200, 300);
+        g2.drawRect(1, 1, 25, 25);
+        PassFailJFrame.log("print method called " + pi + " Orientation " + pf.getOrientation());
         return Printable.PAGE_EXISTS;
     }
 }
@@ -119,14 +116,14 @@ class PageableHandler implements Pageable {
     }
 
     public PageFormat getPageFormat(int pageIndex) {
-        System.out.println("getPageFormat called "+pageIndex);
+        System.out.println("getPageFormat called " + pageIndex);
         if (pageIndex == 0) {
             pf.setOrientation(PageFormat.PORTRAIT);
-            System.out.println("Orientation returned from Pageable "+findOrientation(pf.getOrientation()));
+            PassFailJFrame.log("Orientation returned from Pageable " + findOrientation(pf.getOrientation()));
             return pf;
         } else {
             pf.setOrientation(PageFormat.LANDSCAPE);
-            System.out.println("Orientation returned from Pageable "+findOrientation(pf.getOrientation()));
+            PassFailJFrame.log("Orientation returned from Pageable " + findOrientation(pf.getOrientation()));
             return pf;
         }
     }
