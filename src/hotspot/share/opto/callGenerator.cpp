@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -731,7 +731,7 @@ void CallGenerator::do_late_inline_helper() {
       C->env()->notice_inlined_method(inline_cg()->method());
     }
     C->set_inlining_progress(true);
-    C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
+    C->set_do_cleanup(kit.stopped() || result->Opcode() == Op_VectorBox); // path is dead or vector box; needs cleanup
     kit.replace_call(call, result, true, do_asserts);
   }
 }
