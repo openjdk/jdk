@@ -26,12 +26,16 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 
 public class TemplateGenerator {
     /*
@@ -84,7 +88,7 @@ public class TemplateGenerator {
         setOutputFolder(OUTPUT_FOLDER);
         for (String filePath : TEMPLATE_FILES) {
             try {
-                Class<?> inputTemplateClass = DynamicClassLoader.compileAndLoadClass(filePath);
+                Class<?> inputTemplateClass = compileAndLoadClass(filePath);
                 InputTemplate inputTemplate = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
                 runTestGen(inputTemplate, threadPool);
             } catch (Exception e) {
@@ -178,5 +182,45 @@ public class TemplateGenerator {
         builder.redirectErrorStream(true);
         builder.directory(workingDir);
         return builder;
+    }
+
+    public static Class<?> compileAndLoadClass(String filePath) throws Exception {
+        String className = computeClassName(filePath);
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        int compilationResult = compiler.run(null, null, null, filePath);
+        if (compilationResult != 0) {
+            throw new RuntimeException("Compilation failed");
+        }
+        DynamicClassLoader loader = new DynamicClassLoader();
+        return loader.loadClass(className);
+    }
+    private static String computeClassName(String filePath) {
+        Path path = Paths.get(filePath);
+        String fileName = path.getFileName().toString();
+        String className = fileName.substring(0, fileName.lastIndexOf('.'));
+        String packageName = "";
+        Path parent = path.getParent();
+        if (parent != null) {
+            packageName = parent.toString().replace(File.separator, ".");
+        }
+        if (!packageName.isEmpty()) {
+            className = packageName + "." + className;
+        }
+        return className;
+    }
+    private static class DynamicClassLoader extends ClassLoader {
+        @Override
+        public Class<?> findClass(String name) throws ClassNotFoundException {
+            File file = new File(name + ".class");
+            if (file.exists()) {
+                try {
+                    byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
+                    return defineClass(null, bytes, 0, bytes.length);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            return super.findClass(name);
+        }
     }
 }
