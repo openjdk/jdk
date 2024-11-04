@@ -24,13 +24,12 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
 import java.util.List;
 import jdk.jpackage.internal.model.Launcher;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.ARGUMENTS;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
@@ -46,14 +45,14 @@ import static jdk.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
 
-record LauncherFromParams(Function<FileAssociation, Optional<FileAssociation>> faMapper) {
+record LauncherFromParams(Predicate<FileAssociation> faPredicate) {
 
     LauncherFromParams {
-        Objects.requireNonNull(faMapper);
+        Objects.requireNonNull(faPredicate);
     }
 
     LauncherFromParams() {
-        this(LauncherBuilder::mapFileAssociation);
+        this(LauncherBuilder::isFileAssociationValid);
     }
 
     Launcher create(Map<String, ? super Object> params) throws ConfigException {
@@ -62,7 +61,7 @@ record LauncherFromParams(Function<FileAssociation, Optional<FileAssociation>> f
                 .icon(ICON.fetchFrom(params))
                 .isService(LAUNCHER_AS_SERVICE.fetchFrom(params))
                 .name(APP_NAME.fetchFrom(params))
-                .faMapper(faMapper);
+                .faPrediacate(faPredicate);
 
         if (PREDEFINED_APP_IMAGE.fetchFrom(params) == null) {
             builder.startupInfo(new LauncherStartupInfoBuilder()
@@ -74,37 +73,13 @@ record LauncherFromParams(Function<FileAssociation, Optional<FileAssociation>> f
 
         var faSources = Optional.ofNullable(
                 FILE_ASSOCIATIONS.fetchFrom(params)).orElseGet(List::of).stream().map(faParams -> {
-            var faDesc = FA_DESCRIPTION.fetchFrom(faParams);
-            var faIcon = FA_ICON.fetchFrom(faParams);
-            var faExtensions = FA_EXTENSIONS.fetchFrom(faParams);
-            var faMimeTypes = FA_CONTENT_TYPE.fetchFrom(faParams);
-
-            return faExtensions.stream().map(faExtension -> {
-                return faMimeTypes.stream().map(faMimeType -> {
-                    return (FileAssociation)new FileAssociation() {
-                        @Override
-                        public String description() {
-                            return faDesc;
-                        }
-
-                        @Override
-                        public Path icon() {
-                            return faIcon;
-                        }
-
-                        @Override
-                        public String mimeType() {
-                            return faMimeType;
-                        }
-
-                        @Override
-                        public String extension() {
-                            return faExtension;
-                        }
-                    };
-                });
-            }).flatMap(x -> x);
-        }).flatMap(x -> x).toList();
+            return FileAssociationGroup.build()
+                    .description(FA_DESCRIPTION.fetchFrom(faParams))
+                    .icon(FA_ICON.fetchFrom(faParams))
+                    .extensions(FA_EXTENSIONS.fetchFrom(faParams))
+                    .mimeTypes(FA_CONTENT_TYPE.fetchFrom(faParams))
+                    .create();
+        }).toList();
 
         return builder.faSources(faSources).create();
     }

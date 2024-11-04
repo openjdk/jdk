@@ -26,11 +26,11 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import static jdk.internal.util.OperatingSystem.LINUX;
@@ -41,7 +41,11 @@ import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.Launcher.Stub;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.util.function.ExceptionWrapper;
+import static jdk.jpackage.internal.util.function.ExceptionWrapper.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.model.ConfigException.rethrowConfigException;
 
 final class LauncherBuilder {
 
@@ -61,13 +65,13 @@ final class LauncherBuilder {
         return this;
     }
 
-    LauncherBuilder faSources(List<FileAssociation> v) {
+    LauncherBuilder faSources(List<FileAssociationGroup> v) {
         faSources = v;
         return this;
     }
 
-    LauncherBuilder faMapper(Function<FileAssociation, Optional<FileAssociation>> v) {
-        faMapper = v;
+    LauncherBuilder faPrediacate(Predicate<FileAssociation> v) {
+        faPrediacate = v;
         return this;
     }
 
@@ -86,18 +90,10 @@ final class LauncherBuilder {
         return this;
     }
 
-    static Optional<FileAssociation> mapFileAssociation(FileAssociation src) {
-        var mimeType = src.mimeType();
-        if (mimeType == null) {
-            return Optional.empty();
-        }
+    static boolean isFileAssociationValid(FileAssociation src) {
+        toConsumer(LauncherBuilder::verifyFileAssociation).accept(src);
 
-        var extension = src.extension();
-        if (extension == null) {
-            return Optional.empty();
-        }
-
-        return Optional.of(new FileAssociation.Stub(src.description(), src.icon(), mimeType, extension));
+        return Optional.ofNullable(src.extension()).isPresent();
     }
 
     static void validateIcon(Path icon) throws ConfigException {
@@ -125,28 +121,64 @@ final class LauncherBuilder {
     }
 
     private Stream<FileAssociation> createFileAssociations(
-            Stream<FileAssociation> sources) throws ConfigException {
-        var fas = sources.map(faMapper).filter(Optional::isPresent).map(Optional::get).toList();
+            Stream<FileAssociationGroup> sources) throws ConfigException {
 
-        // Check extension to mime type relationship is 1:1
-        var mimeTypeToExtension = fas.stream().collect(groupingBy(
-                FileAssociation::extension, mapping(FileAssociation::mimeType,
-                        toList())));
-        for (var entry : mimeTypeToExtension.entrySet()) {
-            if (entry.getValue().size() != 1) {
-                var extension = entry.getKey();
-                throw ConfigException.build().message(
-                        "error.fa-extension-with-multiple-mime-types", extension).create();
+        var sourcesAsArray = sources.toArray(FileAssociationGroup[]::new);
+
+        var stream = IntStream.range(0, sourcesAsArray.length).mapToObj(idx -> {
+            return Map.entry(idx + 1, sourcesAsArray[idx]);
+        }).map(entry -> {
+            try {
+                var faGroup = FileAssociationGroup.filter(faPrediacate).apply(entry.getValue());
+                if (faGroup.isEmpty()) {
+                    return null;
+                } else {
+                    return Map.entry(entry.getKey(), faGroup);
+                }
+            } catch (ExceptionWrapper ex) {
+                if (ex.getCause() instanceof ConfigException cfgException) {
+                    throw rethrowUnchecked(ConfigException.build()
+                            .cause(cfgException.getCause())
+                            .message(cfgException.getMessage(), entry.getKey())
+                            .advice(cfgException.getAdvice(), entry.getKey())
+                            .create());
+                } else {
+                    throw ex;
+                }
             }
-        }
+        }).filter(Objects::nonNull).peek(entry -> {
+            var faGroup = entry.getValue();
+            if (faGroup.items().size() != faGroup.items().stream().map(FileAssociation::extension).distinct().count()) {
+                throw rethrowUnchecked(ConfigException.build()
+                        .message("error.too-many-content-types-for-file-association", entry.getKey())
+                        .advice("error.too-many-content-types-for-file-association.advice", entry.getKey())
+                        .create());
+            }
+        }).map(entry -> {
+            return entry.getValue().items().stream();
+        }).flatMap(x -> x);
 
-        return fas.stream();
+        try {
+            return stream.toList().stream();
+        } catch (RuntimeException ex) {
+            throw rethrowConfigException(ex);
+        }
+    }
+
+    static void verifyFileAssociation(FileAssociation src) throws ConfigException {
+        if (Optional.ofNullable(src.mimeType()).isEmpty()) {
+            throw ConfigException.build()
+                    .noformat()
+                    .message("error.no-content-types-for-file-association")
+                    .advice("error.no-content-types-for-file-association.advice")
+                    .create();
+        }
     }
 
     private String name;
     private LauncherStartupInfo startupInfo;
-    private List<FileAssociation> faSources;
-    private Function<FileAssociation, Optional<FileAssociation>> faMapper = LauncherBuilder::mapFileAssociation;
+    private List<FileAssociationGroup> faSources;
+    private Predicate<FileAssociation> faPrediacate = LauncherBuilder::isFileAssociationValid;
     private boolean isService;
     private String description;
     private Path icon;
