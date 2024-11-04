@@ -712,6 +712,8 @@ public:
   // Version of lower_node implemented by backends, called by lower_node.
   Node* lower_node_platform(Node* in);
 
+  bool should_lower();
+
   // Main function to lower all nodes in the graph.
   void lower();
 };
