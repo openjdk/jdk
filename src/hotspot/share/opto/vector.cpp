@@ -40,7 +40,6 @@ static bool is_vector_shuffle(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
 }
 
-
 void PhaseVector::optimize_vector_boxes() {
   Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
 

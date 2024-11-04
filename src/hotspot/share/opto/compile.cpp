@@ -2546,6 +2546,7 @@ bool Compile::has_vbox_nodes() {
   return false;
 }
 
+
 //---------------------------- Bitwise operation packing optimization ---------------------------
 
 static bool is_vector_unary_bitwise_op(Node* n) {
