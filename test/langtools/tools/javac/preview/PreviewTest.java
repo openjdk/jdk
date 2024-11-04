@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8282823
+ * @bug 8282823 8343540
  * @library /tools/lib
  * @enablePreview
  * @modules
@@ -463,7 +463,7 @@ public class PreviewTest extends TestRunner {
         }
     }
 
-    @Test
+    @Test //JDK-8343540:
     public void nonPreviewImplementsPreview(Path base) throws Exception {
         Path apiSrc = base.resolve("api-src");
         tb.writeJavaFiles(apiSrc,
