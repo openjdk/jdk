@@ -28,7 +28,7 @@ import jdk.test.lib.Asserts;
 /*
  * @test
  * @bug 8343067
- * @requires os.simpleArch == "x64"
+ * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @requires vm.debug == true
  * @requires vm.compiler2.enabled
  * @summary Test that chains of AddP nodes with constant offsets are idealized
@@ -43,7 +43,11 @@ public class TestCombineAddPWithConstantOffsets {
     }
 
     @Test
-    @IR(failOn = IRNode.ADD_P_MACH,
+    @IR(applyIfPlatform = {"x64", "true"},
+        failOn = {IRNode.ADD_P_OF, ".*"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfPlatform = {"aarch64", "true"},
+        failOn = {IRNode.ADD_P_OF, "reg_imm"},
         phase = CompilePhase.FINAL_CODE)
     static void testCombineAddPWithConstantOffsets(int[] arr) {
         for (long i = 6; i < 14; i++) {
