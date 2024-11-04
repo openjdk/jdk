@@ -1861,7 +1861,7 @@ enum SSLCipher {
                 if (bb.remaining() <= tagSize) {
                     // Check for unexpected plaintext alert.
                     if (contentType == ContentType.ALERT.id
-                        && bb.remaining() == 2) {
+                            && bb.remaining() == 2) {
                         throw new GeneralSecurityException(String.format(
                             "Unexpected plaintext alert received: " +
                             "Level: %s; Alert: %s",
