@@ -4206,7 +4206,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
   address target = entry.target();
 
   if (!in_scratch_emit_size()) {
-    address stub = emit_trampoline_stub(offset(), target);
+    address stub = emit_reloc_call_address_stub(offset(), target);
     if (stub == nullptr) {
       postcond(pc() == badAddress);
       return nullptr; // CodeCache is full
@@ -4281,7 +4281,7 @@ int MacroAssembler::ic_check(int end_alignment) {
   return uep_offset;
 }
 
-// Emit a trampoline stub for a call to a target which is too far away.
+// Emit an address stub for a call to a target which is too far away.
 // Note that we only put the target address in the trampoline stub.
 //
 // code sequences:
@@ -4290,12 +4290,12 @@ int MacroAssembler::ic_check(int end_alignment) {
 //   load target address from stub
 //   jump-and-link target address
 //
-// Related stub for this call site in the stub section:
+// Related address stub for this call site in the stub section:
 //   alignment nop
 //   target address
 
-address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset, address dest) {
-  address stub = start_a_stub(max_trampoline_stub_size());
+address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_offset, address dest) {
+  address stub = start_a_stub(max_reloc_call_address_stub_size());
   if (stub == nullptr) {
     return nullptr;  // CodeBuffer::expand failed
   }
@@ -4322,7 +4322,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset, 
   return stub_start_addr;
 }
 
-int MacroAssembler::max_trampoline_stub_size() {
+int MacroAssembler::max_reloc_call_address_stub_size() {
   // Max stub size: alignment nop, target address.
   return instruction_size + wordSize;
 }

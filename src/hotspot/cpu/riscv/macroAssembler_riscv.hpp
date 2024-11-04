@@ -468,8 +468,8 @@ class MacroAssembler: public Assembler {
     return false;
   }
 
-  address emit_trampoline_stub(int insts_call_instruction_offset, address target);
-  static int max_trampoline_stub_size();
+  address emit_reloc_call_address_stub(int insts_call_instruction_offset, address target);
+  static int max_reloc_call_address_stub_size();
 
   void emit_static_call_stub();
   static int static_call_stub_size();
