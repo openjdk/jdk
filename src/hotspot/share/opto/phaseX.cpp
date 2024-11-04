@@ -1637,13 +1637,15 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
   // If changed AddP inputs:
   // - check Stores for loop invariant, and
-  // - check constant-offset AddP users for address expression flattening.
+  // - if the changed input is the offset, check constant-offset AddP users for
+  //   address expression flattening.
   if (use_op == Op_AddP) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
       if (u->is_Mem()) {
         worklist.push(u);
-      } else if (u->is_AddP() && u->in(AddPNode::Offset)->is_Con()) {
+      } else if (n == use->in(AddPNode::Offset) &&
+                 u->is_AddP() && u->in(AddPNode::Offset)->is_Con()) {
         worklist.push(u);
       }
     }
