@@ -40,7 +40,9 @@
 /*
  * Declare jimage library specific JNI_Onload entry for static build.
  */
-extern "C" DEF_STATIC_JNI_OnLoad
+extern "C" {
+DEF_STATIC_JNI_OnLoad
+}
 
 /*
  * JImageOpen - Given the supplied full path file name, open an image file. This
