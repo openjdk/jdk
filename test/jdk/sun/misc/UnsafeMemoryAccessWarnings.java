@@ -48,8 +48,7 @@ class UnsafeMemoryAccessWarnings {
     @ParameterizedTest
     @ValueSource(strings = {
             "allocateMemory+freeMemory",
-            "objectFieldOffset+putLong+getLong",
-            "invokeCleaner"
+            "objectFieldOffset+putLong+getLong"
     })
     void testDefault(String input) throws Exception {
         testOneWarning(input);
@@ -78,8 +77,7 @@ class UnsafeMemoryAccessWarnings {
     @ParameterizedTest
     @ValueSource(strings = {
             "allocateMemory+freeMemory",
-            "objectFieldOffset+putLong+getLong",
-            "invokeCleaner"
+            "objectFieldOffset+putLong+getLong"
     })
     void testWarn(String input) throws Exception {
         testOneWarning(input, "--sun-misc-unsafe-memory-access=warn");
@@ -105,6 +103,7 @@ class UnsafeMemoryAccessWarnings {
         int index = 1;
         while (index < methodNames.length) {
             String methodName = methodNames[index++];
+            assertNotEquals(firstMethodName, methodName);
             output.shouldNotContain("WARNING: sun.misc.Unsafe::" + methodName);
         }
     }
