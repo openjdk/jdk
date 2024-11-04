@@ -30,6 +30,7 @@
 #include "memory/allStatic.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
