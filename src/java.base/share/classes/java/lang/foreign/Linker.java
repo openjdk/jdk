@@ -267,17 +267,15 @@ import java.util.stream.Stream;
  * </ol>
  * </li>
  * </ul>
- *
- * Linker implementations may optionally impose additional platform-specific constraints
- * on functional descriptors despite being <em>well-formed</em>.
  * <p>
- * Linker implementations may optionally support additional layouts, such as
- * <em>packed</em> struct layouts. A packed struct is a struct in which there is
- * at least one member layout {@code L} that has an alignment constraint less strict
- * than its natural alignment. This allows to avoid padding between member layouts,
- * as well as avoiding padding at the end of the struct layout. For example:
-
- * {@snippet lang = java:
+ * Well-formed layouts in function descriptions consumed by a native linker constitutes
+ * a necessary, but not sufficient, requirement for acceptance. For example, some
+ * native linkers may reject <em>packed</em> struct layouts. A packed struct is a struct
+ * in which there is at least one member layout {@code L} that has an alignment constraint
+ * less strict than its natural alignment. This allows to avoid padding between
+ * member layouts, as well as avoiding padding at the end of the struct layout.
+ * For example:
+  * {@snippet lang = java:
  * // No padding between the 2 element layouts:
  * MemoryLayout noFieldPadding = MemoryLayout.structLayout(
  *         ValueLayout.JAVA_INT,
