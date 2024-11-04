@@ -196,7 +196,7 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, cons
   return true;
 #else
 
-  switch(opc) {
+  switch (opc) {
     // These operations are always safe to decompose, i.e. (SAFE1):
     case Op_ConI:
     case Op_ConL:
@@ -259,7 +259,7 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, cons
     //    scale * ConvI2L(a * con)   =  scale * con * ConvI2L(a)                 +  scale * y * 2^32
     //    scale * ConvI2L(a << con)  =  scale * (1 << con) * ConvI2L(a)          +  scale * y * 2^32
     //    \_______________________/     \_____________________________________/     \______________/
-    //      before decomposition               after decomposition                 overflow correction
+    //      before decomposition          after decomposition ("new_summands")     overflow correction
     //
     //  Thus, for AddI and SubI, we get:
     //    summand = new_summand1 + new_summand2 + scale * y * 2^32
@@ -280,7 +280,7 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, cons
     //  implies that there is some integer z, such that:
     //    z * array_element_size_in_bytes = scale
     //
-    //  And hence, with "x = y * z":
+    //  And hence, with "x = y * z", the decomposition is (SAFE2) under the assumed condition:
     //    mp_i = mp_{i+1} + scale                           * y * 2^32
     //         = mp_{i+1} + z * array_element_size_in_bytes * y * 2^32
     //         = mp_{i+1} + x * array_element_size_in_bytes     * 2^32
@@ -315,7 +315,7 @@ MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerD
   }
 #endif
 
-  // "MemPointer Lemma" condition S2: check if all summands are the same:
+  // "MemPointer Lemma" condition (S2): check if all summands are the same:
   for (uint i = 0; i < SUMMANDS_SIZE; i++) {
     const MemPointerSummand s1 = summands_at(i);
     const MemPointerSummand s2 = other.summands_at(i);
@@ -329,7 +329,7 @@ MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerD
     }
   }
 
-  // "MemPointer Lemma" condition S3: check that the constants do not differ too much:
+  // "MemPointer Lemma" condition (S3): check that the constants do not differ too much:
   const NoOverflowInt distance = other.con() - con();
   // We must check that: abs(distance) < 2^32
   // However, this is only false if: distance = min_jint
@@ -344,7 +344,7 @@ MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerD
     return MemPointerAliasing::make_unknown();
   }
 
-  // "MemPointer Lemma" condition S1:
+  // "MemPointer Lemma" condition (S1):
   //   Given that all summands are the same, we know that both pointers point into the
   //   same memory object. With the Pre-Condition, we know that both pointers are in
   //   bounds of that same memory object.
@@ -379,4 +379,3 @@ bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
 
   return is_adjacent;
 }
-

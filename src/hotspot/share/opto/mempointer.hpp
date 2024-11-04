@@ -43,7 +43,7 @@
 //   The con and scale_i are compile-time constants (NoOverflowInt), and the variable_i are
 //   compile-time variables (C2 nodes).
 //
-//   For the MemPointer, we do not explicitly track base address. For Java heap pointers, the
+//   For the MemPointer, we do not explicitly track the base address. For Java heap pointers, the
 //   base address is just a variable in a summand with scale == 1. For native memory (C heap)
 //   pointers, the base address is null, and is hence implicitly a zero constant.
 //
@@ -229,7 +229,7 @@
 //   Non-trivial decomposition:
 //     We decompose summand in:
 //       mp_i     = con + summand                     + SUM(other_summands)
-//     Resulting in:      +-------------------------+
+//     resulting in:      +-------------------------+
 //       mp_{i+1} = con + dec_con + SUM(dec_summands) + SUM(other_summands)
 //                = new_con + SUM(new_summands)
 //   where mp_i means that the original pointer p was decomposed i times.
@@ -255,7 +255,7 @@
 //      (S2) The constants do not differ too much: abs(mp1.con - mp2.con) < 2^31.
 //      (S3) All summands of mp1 and mp2 are identical (i.e. only the constants are possibly different).
 //
-//    Then the pointer difference between p1 and p2 is identical to the difference between
+//    then the pointer difference between p1 and p2 is identical to the difference between
 //    mp1 and mp2:
 //      p1 - p2 = mp1 - mp2
 //
@@ -329,9 +329,9 @@
 //                     >= abs(x * array_element_size_in_bytes * 2^32) - abs(mp1 - mp2)
 //                            -- apply x != 0 --
 //                     >= array_element_size_in_bytes * 2^32          - abs(mp1 - mp2)
-//                                                                    -- apply (S3)  --
+//                                                                    -- apply (S3) --
 //                     =  array_element_size_in_bytes * 2^32          - abs(mp1.con - mp2.con)
-//                                                                        -- apply (S2)  --
+//                                                                        -- apply (S2) --
 //                     >  array_element_size_in_bytes * 2^32          - 2^31
 //                        -- apply array_element_size_in_bytes > 0 --
 //                     >= array_element_size_in_bytes * 2^31
