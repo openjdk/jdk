@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * ===========================================================================
@@ -289,6 +289,7 @@ public final class DOMXMLSignature extends DOMStructure
         }
 
         // validate all References
+        @SuppressWarnings("unchecked")
         List<Reference> refs = this.si.getReferences();
         boolean validateRefs = true;
         for (int i = 0, size = refs.size(); validateRefs && i < size; i++) {
@@ -311,6 +312,7 @@ public final class DOMXMLSignature extends DOMStructure
         {
             for (int i=0, size=objects.size(); validateMans && i < size; i++) {
                 XMLObject xo = objects.get(i);
+                @SuppressWarnings("unchecked")
                 List<XMLStructure> content = xo.getContent();
                 int csize = content.size();
                 for (int j = 0; validateMans && j < csize; j++) {
@@ -318,6 +320,7 @@ public final class DOMXMLSignature extends DOMStructure
                     if (xs instanceof Manifest) {
                         LOG.debug("validating manifest");
                         Manifest man = (Manifest)xs;
+                        @SuppressWarnings("unchecked")
                         List<Reference> manRefs = man.getReferences();
                         int rsize = manRefs.size();
                         for (int k = 0; validateMans && k < rsize; k++) {
@@ -357,17 +360,20 @@ public final class DOMXMLSignature extends DOMStructure
         signatureIdMap = new HashMap<>();
         signatureIdMap.put(id, this);
         signatureIdMap.put(si.getId(), si);
+        @SuppressWarnings("unchecked")
         List<Reference> refs = si.getReferences();
         for (Reference ref : refs) {
             signatureIdMap.put(ref.getId(), ref);
         }
         for (XMLObject obj : objects) {
             signatureIdMap.put(obj.getId(), obj);
+            @SuppressWarnings("unchecked")
             List<XMLStructure> content = obj.getContent();
             for (XMLStructure xs : content) {
                 if (xs instanceof Manifest) {
                     Manifest man = (Manifest)xs;
                     signatureIdMap.put(man.getId(), man);
+                    @SuppressWarnings("unchecked")
                     List<Reference> manRefs = man.getReferences();
                     for (Reference ref : manRefs) {
                         allReferences.add(ref);

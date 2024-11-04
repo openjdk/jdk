@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -96,6 +96,7 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
         this.params = new ExcC14NParameterSpec(prefixList);
     }
 
+    @SuppressWarnings("unchecked")
     public List<String> getParameterSpecPrefixList(ExcC14NParameterSpec paramSpec) {
         return paramSpec.getPrefixList();
     }

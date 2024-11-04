@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -102,6 +102,7 @@ public final class DOMXPathTransform extends ApacheTransform {
         xpathElem.appendChild(ownerDoc.createTextNode(xp.getXPath()));
 
         // add namespace attributes, if necessary
+        @SuppressWarnings("unchecked")
         Set<Map.Entry<String, String>> entries =
             xp.getNamespaceMap().entrySet();
         for (Map.Entry<String, String> entry : entries) {

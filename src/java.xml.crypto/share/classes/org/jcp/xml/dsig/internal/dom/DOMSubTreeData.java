@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -132,6 +132,7 @@ public class DOMSubTreeData implements NodeSetData<Node> {
          * @param nodeSet the set of nodes traversed so far
          * @param prevSibling the previous sibling node
          */
+        @SuppressWarnings("fallthrough")
         private void nodeSetMinusCommentNodes(Node node, List<Node> nodeSet,
                                               Node prevSibling)
         {

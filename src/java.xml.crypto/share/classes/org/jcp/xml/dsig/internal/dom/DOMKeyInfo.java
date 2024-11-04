@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -57,6 +57,7 @@ public final class DOMKeyInfo extends DOMStructure implements KeyInfo {
      * @param ki
      * @return the content of a KeyInfo Object
      */
+    @SuppressWarnings("unchecked")
     public static List<XMLStructure> getContent(KeyInfo ki) {
         return ki.getContent();
     }

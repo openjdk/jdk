@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -323,6 +323,7 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
                 references.equals(osi.getReferences()) && idEqual;
     }
 
+    @SuppressWarnings("unchecked")
     public static List<Reference> getSignedInfoReferences(SignedInfo si) {
         return si.getReferences();
     }

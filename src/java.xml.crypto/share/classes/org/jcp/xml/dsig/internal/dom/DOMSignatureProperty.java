@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -171,6 +171,7 @@ public final class DOMSignatureProperty extends DOMStructure
         boolean idsEqual = id == null ? osp.getId() == null
                                        : id.equals(osp.getId());
 
+        @SuppressWarnings("unchecked")
         List<XMLStructure> ospContent = osp.getContent();
         return equalsContent(content, ospContent) &&
                 target.equals(osp.getTarget()) && idsEqual;

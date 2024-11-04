@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -369,7 +369,9 @@ public final class DOMUtils {
     private static boolean paramsEqual(XPathFilter2ParameterSpec spec1,
                                        XPathFilter2ParameterSpec spec2)
     {
+        @SuppressWarnings("unchecked")
         List<XPathType> types = spec1.getXPathList();
+        @SuppressWarnings("unchecked")
         List<XPathType> otypes = spec2.getXPathList();
         int size = types.size();
         if (size != otypes.size()) {
