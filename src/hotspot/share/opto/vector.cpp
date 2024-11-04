@@ -41,7 +41,7 @@ static bool is_vector_shuffle(ciKlass* klass) {
 }
 
 
-void PhaseVector::optimize_vector_boxes(PhaseIterGVN &igvn) {
+void PhaseVector::optimize_vector_boxes() {
   Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
 
   // Signal GraphKit it's post-parse phase.

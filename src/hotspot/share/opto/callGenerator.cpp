@@ -731,7 +731,7 @@ void CallGenerator::do_late_inline_helper() {
       C->env()->notice_inlined_method(inline_cg()->method());
     }
     C->set_inlining_progress(true);
-    C->set_do_cleanup(kit.stopped() || is_vector_late_inline()); // path is dead or vector inlining; needs cleanup
+    C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
     kit.replace_call(call, result, true, do_asserts);
   }
 }
@@ -821,26 +821,6 @@ class LateInlineVectorReboxingCallGenerator : public LateInlineCallGenerator {
 //   static CallGenerator* for_vector_reboxing_late_inline(ciMethod* m, CallGenerator* inline_cg);
 CallGenerator* CallGenerator::for_vector_reboxing_late_inline(ciMethod* method, CallGenerator* inline_cg) {
   return new LateInlineVectorReboxingCallGenerator(method, inline_cg);
-}
-
-class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
-
- public:
-  LateInlineVectorCallGenerator(ciMethod* method, CallGenerator* inline_cg) :
-    LateInlineCallGenerator(method, inline_cg) {}
-
-  virtual bool is_vector_late_inline() const { return true; }
-
-  virtual CallGenerator* with_call_node(CallNode* call) {
-    LateInlineVectorCallGenerator* cg = new LateInlineVectorCallGenerator(method(), _inline_cg);
-    cg->set_call_node(call->as_CallStaticJava());
-    return cg;
-  }
-};
-
-//   static CallGenerator* for_vector_late_inline(ciMethod* m, CallGenerator* inline_cg);
-CallGenerator* CallGenerator::for_vector_late_inline(ciMethod* method, CallGenerator* inline_cg) {
-  return new LateInlineVectorCallGenerator(method, inline_cg);
 }
 
 //------------------------PredictedCallGenerator------------------------------
