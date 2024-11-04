@@ -141,8 +141,8 @@ typedef struct EVENT_STRUCT
 
 
 #include <process.h>
-#define THREAD_PROC unsigned int __stdcall
-typedef unsigned int (__stdcall *THREAD_ROUTINE)(LPVOID lpThreadParameter);
+#define THREAD_PROC unsigned int
+typedef unsigned int (*THREAD_ROUTINE)(LPVOID lpThreadParameter);
 
 static HANDLE BeginThread(THREAD_ROUTINE thread_func,DWORD *id,DWORD param)
 {

@@ -83,7 +83,7 @@ void launchApp() {
 } // namespace
 
 
-int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR lpCmdLine, int nShowCmd) {
+int WinMain(HINSTANCE, HINSTANCE, LPSTR lpCmdLine, int nShowCmd) {
     app::wlaunch(std::nothrow, launchApp);
     return exitCode;
 }

@@ -507,7 +507,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 // Thread start routine for all newly created threads.
 // Called with the associated Thread* as the argument.
-static unsigned __stdcall thread_native_entry(void* t) {
+static unsigned thread_native_entry(void* t) {
   Thread* thread = static_cast<Thread*>(t);
 
   thread->record_stack_base_and_size();

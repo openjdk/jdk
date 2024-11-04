@@ -95,7 +95,7 @@ AwtDropTarget::~AwtDropTarget() {
  * QueryInterface
  */
 
-HRESULT __stdcall AwtDropTarget::QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject) {
+HRESULT AwtDropTarget::QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject) {
     if ( IID_IUnknown == riid ||
          IID_IDropTarget == riid )
     {
@@ -111,7 +111,7 @@ HRESULT __stdcall AwtDropTarget::QueryInterface(REFIID riid, void __RPC_FAR *__R
  * AddRef
  */
 
-ULONG __stdcall AwtDropTarget::AddRef() {
+ULONG AwtDropTarget::AddRef() {
     return (ULONG)++m_refs;
 }
 
@@ -119,7 +119,7 @@ ULONG __stdcall AwtDropTarget::AddRef() {
  * Release
  */
 
-ULONG __stdcall AwtDropTarget::Release() {
+ULONG AwtDropTarget::Release() {
     int refs;
 
     if ((refs = --m_refs) == 0) delete this;
@@ -141,7 +141,7 @@ static void ScaleDown(POINT &cp, HWND m_window) {
  * DragEnter
  */
 
-HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
+HRESULT AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
     TRY;
     AwtToolkit::GetInstance().isDnDTargetActive = TRUE;
     if (NULL != m_pIDropTargetHelper) {
@@ -225,7 +225,7 @@ HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWOR
  * DragOver
  */
 
-HRESULT __stdcall AwtDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
+HRESULT AwtDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
     TRY;
     if (NULL != m_pIDropTargetHelper) {
         m_pIDropTargetHelper->DragOver(
@@ -282,7 +282,7 @@ HRESULT __stdcall AwtDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD __
  * DragLeave
  */
 
-HRESULT __stdcall AwtDropTarget::DragLeave() {
+HRESULT AwtDropTarget::DragLeave() {
     TRY_NO_VERIFY;
     if (NULL != m_pIDropTargetHelper) {
         m_pIDropTargetHelper->DragLeave();
@@ -323,7 +323,7 @@ HRESULT __stdcall AwtDropTarget::DragLeave() {
  * Drop
  */
 
-HRESULT __stdcall AwtDropTarget::Drop(IDataObject __RPC_FAR *pDataObj, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
+HRESULT AwtDropTarget::Drop(IDataObject __RPC_FAR *pDataObj, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
     TRY;
     if (NULL != m_pIDropTargetHelper) {
         m_pIDropTargetHelper->Drop(

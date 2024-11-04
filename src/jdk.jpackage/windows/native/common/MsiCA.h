@@ -267,7 +267,7 @@ private:
 //
 #define JP_CA_BASE(name, ca_type) \
     static void name ## Body(ca_type&); \
-    extern "C" UINT __stdcall name(MSIHANDLE hInstall) { \
+    extern "C" UINT name(MSIHANDLE hInstall) { \
         __pragma(comment(linker, "/EXPORT:" __FUNCTION__ "=" __FUNCDNAME__)); \
         const msi::MsiLogTrigger logTrigger(hInstall); \
         JP_DEBUG_BREAK(JP_CA_DEBUG_BREAK, name); \
@@ -286,7 +286,7 @@ private:
 #define JP_DEFERRED_CA(name) JP_CA_BASE(name, msi::DeferredCA)
 
 #define JP_CA_DECLARE(name) \
-    extern "C" UINT __stdcall name(MSIHANDLE); \
+    extern "C" UINT name(MSIHANDLE); \
     __pragma(comment(linker, "/INCLUDE:" JP_CA_MANGLED_NAME(name)))
 
 #define JP_CA_MANGLED_NAME(name) #name

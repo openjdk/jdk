@@ -469,7 +469,7 @@ protected:
     } static data;
 
     /* StartThread function */
-    static DWORD WINAPI __stdcall ThreadProc(void *param);
+    static DWORD WINAPI ThreadProc(void *param);
 };
 
 /* StartBufferHelper class implementation
@@ -499,7 +499,7 @@ DS_StartBufferHelper::Data::~Data() {
     // - Windows will do during process shutdown
 }
 
-DWORD WINAPI __stdcall DS_StartBufferHelper::ThreadProc(void *param)
+DWORD WINAPI DS_StartBufferHelper::ThreadProc(void *param)
 {
     ::CoInitialize(NULL);
     while (1) {

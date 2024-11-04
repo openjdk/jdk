@@ -314,7 +314,7 @@ int __cdecl  wmain() {
 
 #else
 
-int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
+int wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
     return app::wlaunch(std::nothrow, launchApp);
 }
 
