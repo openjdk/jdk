@@ -3221,17 +3221,17 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     }
     // factory method for KeySpliterator
     final KeySpliterator<K,V> keySpliterator() {
-        Index<K,V> h; Node<K,V> n; long est;
+        Index<K,V> h; Node<K,V> hn, n; long est;
         VarHandle.acquireFence();
-        if ((h = head) == null) {
+        if ((h = head) == null || (hn = h.node) == null) {
             n = null;
             est = 0L;
         }
         else {
-            n = h.node;
+            n = hn.next;
             est = getAdderCount();
         }
-        return new KeySpliterator<K,V>(comparator, h, n.next, null, est);
+        return new KeySpliterator<K,V>(comparator, h, n, null, est);
     }
 
     static final class ValueSpliterator<K,V> extends CSLMSpliterator<K,V>
@@ -3307,17 +3307,17 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
 
     // Almost the same as keySpliterator()
     final ValueSpliterator<K,V> valueSpliterator() {
-        Index<K,V> h; Node<K,V> n; long est;
+        Index<K,V> h; Node<K,V> hn, n; long est;
         VarHandle.acquireFence();
-        if ((h = head) == null) {
+        if ((h = head) == null || (hn = h.node) == null) {
             n = null;
             est = 0L;
         }
         else {
-            n = h.node;
+            n = hn.next;
             est = getAdderCount();
         }
-        return new ValueSpliterator<K,V>(comparator, h, n.next, null, est);
+        return new ValueSpliterator<K,V>(comparator, h, n, null, est);
     }
 
     static final class EntrySpliterator<K,V> extends CSLMSpliterator<K,V>
@@ -3411,17 +3411,17 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
 
     // Almost the same as keySpliterator()
     final EntrySpliterator<K,V> entrySpliterator() {
-        Index<K,V> h; Node<K,V> n; long est;
+        Index<K,V> h; Node<K,V> hn, n; long est;
         VarHandle.acquireFence();
-        if ((h = head) == null) {
+        if ((h = head) == null || (hn = h.node) == null) {
             n = null;
             est = 0L;
         }
         else {
-            n = h.node;
+            n = hn.next;
             est = getAdderCount();
         }
-        return new EntrySpliterator<K,V>(comparator, h, n.next, null, est);
+        return new EntrySpliterator<K,V>(comparator, h, n, null, est);
     }
 
     // VarHandle mechanics
