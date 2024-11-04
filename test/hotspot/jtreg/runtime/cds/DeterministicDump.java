@@ -65,6 +65,7 @@ public class DeterministicDump {
         }
 
         String baseArchive = dump(baseArgs);
+
         // (1) Dump with the same args. Should produce the same archive.
         String baseArchive2 = dump(baseArgs);
         compare(baseArchive, baseArchive2);
