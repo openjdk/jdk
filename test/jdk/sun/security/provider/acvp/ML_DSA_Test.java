@@ -22,12 +22,13 @@
  */
 import jdk.test.lib.Asserts;
 import jdk.test.lib.json.JSONValue;
+import jdk.test.lib.security.FixedSecureRandom;
 
-import java.io.ByteArrayOutputStream;
 import java.security.*;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.NamedParameterSpec;
-import java.util.HexFormat;
+
+import static jdk.test.lib.Utils.toByteArray;
 
 // JSON spec at https://pages.nist.gov/ACVP/draft-celi-acvp-ml-dsa.html
 public class ML_DSA_Test {
@@ -54,12 +55,12 @@ public class ML_DSA_Test {
             System.out.println(">> " + pname);
             for (var c : t.get("tests").asArray()) {
                 System.out.print(c.get("tcId").asString() + " ");
-                g.initialize(np, new RandomSource(xeh(c.get("seed").asString())));
+                g.initialize(np, new FixedSecureRandom(toByteArray(c.get("seed").asString())));
                 var kp = g.generateKeyPair();
                 var pk = f.getKeySpec(kp.getPublic(), EncodedKeySpec.class).getEncoded();
                 var sk = f.getKeySpec(kp.getPrivate(), EncodedKeySpec.class).getEncoded();
-                Asserts.assertEqualsByteArray(pk, xeh(c.get("pk").asString()));
-                Asserts.assertEqualsByteArray(sk, xeh(c.get("sk").asString()));
+                Asserts.assertEqualsByteArray(pk, toByteArray(c.get("pk").asString()));
+                Asserts.assertEqualsByteArray(sk, toByteArray(c.get("sk").asString()));
             }
             System.out.println();
         }
@@ -78,13 +79,13 @@ public class ML_DSA_Test {
                 var sk = new PrivateKey() {
                     public String getAlgorithm() { return pname; }
                     public String getFormat() { return "RAW"; }
-                    public byte[] getEncoded() { return xeh(c.get("sk").asString()); }
+                    public byte[] getEncoded() { return toByteArray(c.get("sk").asString()); }
                 };
-                var sr = new RandomSource(det ? new byte[32] : xeh(c.get("rnd").asString()));
+                var sr = new FixedSecureRandom(det ? new byte[32] : toByteArray(c.get("rnd").asString()));
                 s.initSign(sk, sr);
-                s.update(xeh(c.get("message").asString()));
+                s.update(toByteArray(c.get("message").asString()));
                 var sig = s.sign();
-                Asserts.assertEqualsByteArray(sig, xeh(c.get("signature").asString()));
+                Asserts.assertEqualsByteArray(sig, toByteArray(c.get("signature").asString()));
             }
             System.out.println();
         }
@@ -99,46 +100,18 @@ public class ML_DSA_Test {
             var pk = new PublicKey() {
                 public String getAlgorithm() { return pname; }
                 public String getFormat() { return "RAW"; }
-                public byte[] getEncoded() { return xeh(t.get("pk").asString()); }
+                public byte[] getEncoded() { return toByteArray(t.get("pk").asString()); }
             };
             System.out.println(">> " + pname + " verify");
             for (var c : t.get("tests").asArray()) {
                 System.out.print(c.get("tcId").asString() + " ");
                 s.initVerify(pk);
-                s.update(xeh(c.get("message").asString()));
-                var out = s.verify(xeh(c.get("signature").asString()))
+                s.update(toByteArray(c.get("message").asString()));
+                var out = s.verify(toByteArray(c.get("signature").asString()))
                         == Boolean.parseBoolean(c.get("testPassed").asString());
                 Asserts.assertTrue(out);
             }
             System.out.println();
-        }
-    }
-
-    /////////////
-
-    static byte[] xeh(String s) {
-        return HexFormat.of().parseHex(s);
-    }
-
-    static class RandomSource extends SecureRandom {
-        private byte[] buffer;
-        private int offset;
-        public RandomSource(byte[]... data) {
-            var os = new ByteArrayOutputStream();
-            for (byte[] b : data) {
-                os.writeBytes(b);
-            }
-            buffer = os.toByteArray();
-            offset = 0;
-        }
-
-        @Override
-        public void nextBytes(byte[] bytes) {
-            if (bytes.length > buffer.length - offset) {
-                throw new IllegalStateException("Not enough bytes");
-            }
-            System.arraycopy(buffer, offset, bytes, 0, bytes.length);
-            offset += bytes.length;
         }
     }
 }

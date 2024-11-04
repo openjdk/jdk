@@ -32,6 +32,36 @@ import java.security.Security;
  * @bug 8342442
  * @library /test/lib
  */
+
+/// This test runs on `internalProjection.json`-style files generated
+/// by NIST's ACVP Server. See [https://github.com/usnistgov/ACVP-Server].
+///
+/// The files are either put into the `data` directory or another
+/// directory specified by the `test.acvp.data` test property.
+/// The test walks through the directory recursively and looks for
+/// file names equals to or ending with `internalProjection.json` and
+/// runs test on them.
+///
+/// Set the `test.acvp.alg` test property to only test this algorithm.
+///
+/// Sample files can be downloaded from
+/// [https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files].
+///
+/// By default, the test uses system-preferred implementations.
+/// If you want to test on a specific provider, set the
+/// `test.acvp.provider` test property. The provider must be
+/// registered.
+///
+/// Tests for each algorithm must be compliant to its specification linked from
+/// [https://github.com/usnistgov/ACVP?tab=readme-ov-file#supported-algorithms].
+///
+/// Example:
+/// ```
+/// jtreg -Dtest.acvp.provider=SunJCE \
+///       -Dtest.acvp.alg=ML-KEM \
+///       -Dtest.acvp.data=/path/to/json-files/ \
+///       -jdk:/path/to/jdk Launcher.java
+/// ```
 public class Launcher {
 
     private static final String ONLY_ALG
@@ -41,41 +71,19 @@ public class Launcher {
 
     static {
         var provProp = System.getProperty("test.acvp.provider");
-        PROVIDER = provProp != null
-                ? Security.getProvider(provProp)
-                : null;
+        if (provProp != null) {
+            var p = Security.getProvider(provProp);
+            if (p == null) {
+                System.err.println(provProp + " is not a registered provider name");
+                throw new RuntimeException("Cannot run test");
+            }
+            PROVIDER = p;
+        } else {
+            PROVIDER = null;
+        }
     }
 
     public static void main(String[] args) throws Exception {
-
-        // This test runs on "internalProjection.json"-style files generated
-        // by NIST's ACVP Server. See https://github.com/usnistgov/ACVP-Server.
-        //
-        // The files are either put into the "data" directory or another
-        // directory specified by the "test.acvp.data" test property.
-        // The test walks through the directory recursively and looks for
-        // file names equals to or ending with "internalProjection.json" and
-        // runs test on them.
-        //
-        // Set the "test.acvp.alg" test property to only test this algorithm.
-        //
-        // Sample files can be downloaded from
-        // https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files.
-        //
-        // By default, the test uses system-preferred implementations.
-        // If you want to test on a specific provider, set the
-        // "test.acvp.provider" test property. The provider must be
-        // registered.
-        //
-        // Tests for each algorithm must be compliant to its specification linked from
-        // https://github.com/usnistgov/ACVP?tab=readme-ov-file#supported-algorithms.
-        //
-        // Example:
-        //
-        // jtreg -Dtest.acvp.provider=SunJCE \
-        //       -Dtest.acvp.alg=ML-KEM \
-        //       -Dtest.acvp.data=/path/to/json-files/ \
-        //       -jdk:/path/to/jdk Launcher.java
 
         var testDataProp = System.getProperty("test.acvp.data");
         Path dataPath = testDataProp != null

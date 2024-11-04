@@ -22,13 +22,14 @@
  */
 import jdk.test.lib.Asserts;
 import jdk.test.lib.json.JSONValue;
+import jdk.test.lib.security.FixedSecureRandom;
 
 import javax.crypto.KEM;
-import java.io.ByteArrayOutputStream;
 import java.security.*;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.NamedParameterSpec;
-import java.util.HexFormat;
+
+import static jdk.test.lib.Utils.toByteArray;
 
 // JSON spec at https://pages.nist.gov/ACVP/draft-celi-acvp-ml-kem.html
 public class ML_KEM_Test {
@@ -54,13 +55,13 @@ public class ML_KEM_Test {
             System.out.println(">> " + pname);
             for (var c : t.get("tests").asArray()) {
                 System.out.print(c.get("tcId").asString() + " ");
-                g.initialize(np, new RandomSource(
-                        xeh(c.get("d").asString()), xeh(c.get("z").asString())));
+                g.initialize(np, new FixedSecureRandom(
+                        toByteArray(c.get("d").asString()), toByteArray(c.get("z").asString())));
                 var kp = g.generateKeyPair();
                 var pk = f.getKeySpec(kp.getPublic(), EncodedKeySpec.class).getEncoded();
                 var sk = f.getKeySpec(kp.getPrivate(), EncodedKeySpec.class).getEncoded();
-                Asserts.assertEqualsByteArray(pk, xeh(c.get("ek").asString()));
-                Asserts.assertEqualsByteArray(sk, xeh(c.get("dk").asString()));
+                Asserts.assertEqualsByteArray(pk, toByteArray(c.get("ek").asString()));
+                Asserts.assertEqualsByteArray(sk, toByteArray(c.get("dk").asString()));
             }
             System.out.println();
         }
@@ -80,58 +81,30 @@ public class ML_KEM_Test {
                     var ek = new PublicKey() {
                         public String getAlgorithm() { return pname; }
                         public String getFormat() { return "RAW"; }
-                        public byte[] getEncoded() { return xeh(c.get("ek").asString()); }
+                        public byte[] getEncoded() { return toByteArray(c.get("ek").asString()); }
                     };
                     var e = g.newEncapsulator(
-                            ek, new RandomSource(xeh(c.get("m").asString())));
+                            ek, new FixedSecureRandom(toByteArray(c.get("m").asString())));
                     var enc = e.encapsulate();
-                    Asserts.assertEqualsByteArray(enc.encapsulation(), xeh(c.get("c").asString()));
+                    Asserts.assertEqualsByteArray(enc.encapsulation(), toByteArray(c.get("c").asString()));
                     Asserts.assertEqualsByteArray(
-                            enc.key().getEncoded(), xeh(c.get("k").asString()));
+                            enc.key().getEncoded(), toByteArray(c.get("k").asString()));
                 }
                 System.out.println();
             } else if (function.equals("decapsulation")) {
                 var dk = new PrivateKey() {
                     public String getAlgorithm() { return pname; }
                     public String getFormat() { return "RAW"; }
-                    public byte[] getEncoded() { return xeh(t.get("dk").asString()); }
+                    public byte[] getEncoded() { return toByteArray(t.get("dk").asString()); }
                 };
                 for (var c : t.get("tests").asArray()) {
                     System.out.print(c.get("tcId").asString() + " ");
                     var d = g.newDecapsulator(dk);
-                    var k = d.decapsulate(xeh(c.get("c").asString()));
-                    Asserts.assertEqualsByteArray(k.getEncoded(), xeh(c.get("k").asString()));
+                    var k = d.decapsulate(toByteArray(c.get("c").asString()));
+                    Asserts.assertEqualsByteArray(k.getEncoded(), toByteArray(c.get("k").asString()));
                 }
                 System.out.println();
             }
-        }
-    }
-
-    /////////////
-
-    static byte[] xeh(String s) {
-        return HexFormat.of().parseHex(s);
-    }
-
-    static class RandomSource extends SecureRandom {
-        private byte[] buffer;
-        private int offset;
-        public RandomSource(byte[]... data) {
-            var os = new ByteArrayOutputStream();
-            for (byte[] b : data) {
-                os.writeBytes(b);
-            }
-            buffer = os.toByteArray();
-            offset = 0;
-        }
-
-        @Override
-        public void nextBytes(byte[] bytes) {
-            if (bytes.length > buffer.length - offset) {
-                throw new IllegalStateException("Not enough bytes");
-            }
-            System.arraycopy(buffer, offset, bytes, 0, bytes.length);
-            offset += bytes.length;
         }
     }
 }

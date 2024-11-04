@@ -25,7 +25,8 @@ import jdk.test.lib.json.JSONValue;
 
 import java.security.*;
 import java.util.Arrays;
-import java.util.HexFormat;
+
+import static jdk.test.lib.Utils.toByteArray;
 
 // JSON spec at https://pages.nist.gov/ACVP/draft-celi-acvp-sha.html
 // and https://pages.nist.gov/ACVP/draft-celi-acvp-sha3.html
@@ -41,11 +42,11 @@ public class SHA_Test {
                 case "AFT" -> {
                     for (var c : t.get("tests").asArray()) {
                         System.out.print(c.get("tcId").asString() + " ");
-                        var msg = xeh(c.get("msg").asString());
+                        var msg = toByteArray(c.get("msg").asString());
                         var len = Integer.parseInt(c.get("len").asString());
                         if (msg.length * 8 == len) {
                             Asserts.assertEqualsByteArray(md.digest(msg),
-                                    xeh(c.get("md").asString()));
+                                    toByteArray(c.get("md").asString()));
                         } else {
                             System.out.print("bits ");
                         }
@@ -56,7 +57,7 @@ public class SHA_Test {
                     var trunc = mctVersion.equals("alternate");
                     for (var c : t.get("tests").asArray()) {
                         System.out.print(c.get("tcId").asString() + " ");
-                        var SEED = xeh(c.get("msg").asString());
+                        var SEED = toByteArray(c.get("msg").asString());
                         var INITIAL_SEED_LENGTH = Integer.parseInt(c.get("len").asString());
                         if (SEED.length * 8 == INITIAL_SEED_LENGTH) {
                             for (var r : c.get("resultsArray").asArray()) {
@@ -69,7 +70,7 @@ public class SHA_Test {
                                         MD = md.digest(MD);
                                     }
                                     Asserts.assertEqualsByteArray(MD,
-                                            xeh(r.get("md").asString()));
+                                            toByteArray(r.get("md").asString()));
                                     SEED = MD;
                                 } else {
                                     var A = SEED;
@@ -87,7 +88,7 @@ public class SHA_Test {
                                         C = MD;
                                     }
                                     Asserts.assertEqualsByteArray(MD,
-                                            xeh(r.get("md").asString()));
+                                            toByteArray(r.get("md").asString()));
                                     SEED = MD;
                                 }
                             }
@@ -100,7 +101,7 @@ public class SHA_Test {
                     for (var c : t.get("tests").asArray()) {
                         System.out.print(c.get("tcId").asString() + " ");
                         var lm = c.get("largeMsg");
-                        var ct = xeh(lm.get("content").asString());
+                        var ct = toByteArray(lm.get("content").asString());
                         var flen = Long.parseLong(lm.get("fullLength").asString());
                         var clen = Long.parseLong(lm.get("contentLength").asString());
                         var cc = 0L;
@@ -109,7 +110,7 @@ public class SHA_Test {
                             cc += clen;
                         }
                         Asserts.assertEqualsByteArray(md.digest(),
-                                xeh(c.get("md").asString()));
+                                toByteArray(c.get("md").asString()));
                     }
                 }
                 default -> throw new UnsupportedOperationException("Unknown testType");
@@ -132,9 +133,5 @@ public class SHA_Test {
             sum += i.length;
         }
         return out;
-    }
-
-    static byte[] xeh(String s) {
-        return HexFormat.of().parseHex(s);
     }
 }
