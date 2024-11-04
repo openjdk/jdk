@@ -53,10 +53,7 @@ public class DeterministicDump {
         // Try to reduce indeterminism of GC heap sizing and evacuation.
         baseArgs.add("-Xmx128M");
         baseArgs.add("-Xms128M");
-        baseArgs.add("-Xmn128M");
-        baseArgs.add("-XX:ParallelGCThreads=1");
-        baseArgs.add("-XX:-ResizeTLAB");
-        baseArgs.add("-XX:-ResizePLAB");
+        baseArgs.add("-Xmn120M");
 
         if (Platform.is64bit()) {
             // This option is available only on 64-bit.
