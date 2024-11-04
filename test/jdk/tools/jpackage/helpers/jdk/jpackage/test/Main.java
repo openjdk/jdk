@@ -23,11 +23,17 @@
 
 package jdk.jpackage.test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toCollection;
+import java.util.stream.Stream;
 import static jdk.jpackage.test.TestBuilder.CMDLINE_ARG_PREFIX;
 
 
@@ -36,11 +42,23 @@ public final class Main {
         boolean listTests = false;
         List<TestInstance> tests = new ArrayList<>();
         try (TestBuilder testBuilder = new TestBuilder(tests::add)) {
-            for (var arg : args) {
+            Deque<String> argsAsList = new ArrayDeque<>(List.of(args));
+            while (!argsAsList.isEmpty()) {
+                var arg = argsAsList.pop();
                 TestBuilder.trace(String.format("Parsing [%s]...", arg));
 
                 if ((CMDLINE_ARG_PREFIX + "list").equals(arg)) {
                     listTests = true;
+                    continue;
+                }
+
+                if (arg.startsWith("@")) {
+                    // Command file
+                    var newArgs = Files.readAllLines(Path.of(arg.substring(1))).stream().map(line -> {
+                        return Stream.of(line.split("\\s+"));
+                    }).flatMap(x -> x).collect(toCollection(ArrayDeque::new));
+                    newArgs.addAll(argsAsList);
+                    argsAsList = newArgs;
                     continue;
                 }
 
