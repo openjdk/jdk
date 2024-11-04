@@ -463,6 +463,7 @@ private:
   GrowableArray<CallGenerator*> _boxing_late_inlines; // same but for boxing operations
 
   GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
+  GrowableArray<CallGenerator*> _vector_late_inlines; // same but for other vector operations
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
@@ -1088,6 +1089,10 @@ private:
 
   void              add_vector_reboxing_late_inline(CallGenerator* cg) {
     _vector_reboxing_late_inlines.push(cg);
+  }
+
+  void              add_vector_late_inline(CallGenerator* cg) {
+    _vector_late_inlines.insert_before(0, cg);
   }
 
   template<typename N, ENABLE_IF(std::is_base_of<Node, N>::value)>
