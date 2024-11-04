@@ -816,7 +816,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * compatibly with the confinement restrictions associated with the provided arena:
      * that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
      * the returned segment can only be accessed by the arena's owner thread, regardless
-     * of the confinement restrictions associated with this segment.In other words, this
+     * of the confinement restrictions associated with this segment. In other words, this
      * method returns a segment that can be used as any other segment allocated using the
      * provided arena. However, The returned segment is backed by the same memory region
      * as that of the original segment. As such, the region of memory backing the
