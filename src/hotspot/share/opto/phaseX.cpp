@@ -1641,9 +1641,9 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_AddP) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->is_Mem())
+      if (u->is_Mem()) {
         worklist.push(u);
-      if (UseNewCode && u->is_AddP() && u->in(AddPNode::Offset)->is_Con()) {
+      } else if (UseNewCode && u->is_AddP() && u->in(AddPNode::Offset)->is_Con()) {
         worklist.push(u);
       }
     }
