@@ -137,6 +137,8 @@ public final class ML_KEM_Provider {
                     new ML_KEM.ML_KEM_EncapsulationKey(encapsulationKey), randomBytes);
             } catch (NoSuchAlgorithmException | InvalidKeyException e) {
                 throw new RuntimeException(e); // should not happen
+            } finally {
+                Arrays.fill(randomBytes, (byte) 0);
             }
 
             return new byte[][] {

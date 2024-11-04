@@ -502,7 +502,6 @@ public final class ML_KEM {
         var randomCoins = Arrays.copyOfRange(kHatAndRandomCoins, 32, 64);
         var cipherText = kPkeEncrypt(new K_PKE_EncryptionKey(encapsulationKey.keyBytes),
             randomMessage, randomCoins);
-        Arrays.fill(randomMessage, (byte) 0);
         Arrays.fill(randomCoins, (byte) 0);
         byte[] sharedSecret = Arrays.copyOfRange(kHatAndRandomCoins, 0, 32);
         Arrays.fill(kHatAndRandomCoins, (byte) 0);
