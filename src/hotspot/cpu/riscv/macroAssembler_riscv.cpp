@@ -4291,6 +4291,7 @@ int MacroAssembler::ic_check(int end_alignment) {
 //   jump-and-link target address
 //
 // Related stub for this call site in the stub section:
+//   alignment nop
 //   target address
 
 address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset, address dest) {
