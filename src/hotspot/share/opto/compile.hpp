@@ -1127,6 +1127,7 @@ private:
   void remove_root_to_sfpts_edges(PhaseIterGVN& igvn);
 
   void inline_vector_reboxing_calls();
+  void inline_vector_calls(PhaseIterGVN& igvn);
   bool has_vbox_nodes();
 
   void process_late_inline_calls_no_inline(PhaseIterGVN& igvn);
