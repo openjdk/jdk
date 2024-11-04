@@ -697,6 +697,7 @@ void Reflection::check_for_inner_class(const InstanceKlass* outer, const Instanc
 
   // 'inner' not declared as an inner klass in outer
   ResourceMark rm(THREAD);
+  // Names are all known to be < 64k so we know this formatted message is not excessively large.
   Exceptions::fthrow(
     THREAD_AND_LOCATION,
     vmSymbols::java_lang_IncompatibleClassChangeError(),

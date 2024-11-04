@@ -323,6 +323,9 @@ void LinkResolver::check_klass_accessibility(Klass* ref_klass, Klass* sel_klass,
     char* msg = Reflection::verify_class_access_msg(ref_klass,
                                                     InstanceKlass::cast(base_klass),
                                                     vca_result);
+
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
+
     bool same_module = (base_klass->module() == ref_klass->module());
     if (msg == nullptr) {
       Exceptions::fthrow(
@@ -616,6 +619,7 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
       print_nest_host_error_on(&ss, ref_klass, sel_klass);
     }
 
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(THREAD_AND_LOCATION,
                        vmSymbols::java_lang_IllegalAccessError(),
                        "%s",
@@ -969,6 +973,7 @@ void LinkResolver::check_field_accessability(Klass* ref_klass,
     if (fd.is_private()) {
       print_nest_host_error_on(&ss, ref_klass, sel_klass);
     }
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(THREAD_AND_LOCATION,
                        vmSymbols::java_lang_IllegalAccessError(),
                        "%s",
@@ -1188,6 +1193,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
     ss.print(" %s(", resolved_method->name()->as_C_string());
     resolved_method->signature()->print_as_signature_external_parameters(&ss);
     ss.print(")' not found");
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_NoSuchMethodError(),
