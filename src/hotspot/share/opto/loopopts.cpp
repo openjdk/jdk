@@ -331,8 +331,7 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
       pop = Op_IfTrue;
   }
   // 'con' is set to true or false to kill the dominated test.
-  Node *con = _igvn.makecon(pop == Op_IfTrue ? TypeInt::ONE : TypeInt::ZERO);
-  set_ctrl(con, C->root()); // Constant gets a new use
+  Node *con = makecon(pop == Op_IfTrue ? TypeInt::ONE : TypeInt::ZERO);
   // Hack the dominated test
   _igvn.replace_input_of(iff, 1, con);
 
@@ -472,8 +471,7 @@ Node* PhaseIdealLoop::remix_address_expressions_add_left_shift(Node* n, IdealLoo
     if (add->Opcode() == Op_Sub(bt) &&
         _igvn.type(add->in(1)) != TypeInteger::zero(bt)) {
       assert(add->Opcode() == Op_SubI || add->Opcode() == Op_SubL, "");
-      Node* zero = _igvn.integercon(0, bt);
-      set_ctrl(zero, C->root());
+      Node* zero = integercon(0, bt);
       Node* neg = SubNode::make(zero, add->in(2), bt);
       register_new_node_with_ctrl_of(neg, add->in(2));
       add = AddNode::make(add->in(1), neg, bt);
@@ -2906,8 +2904,7 @@ Node* PhaseIdealLoop::short_circuit_if(IfNode* iff, ProjNode* live_proj) {
   guarantee(live_proj != nullptr, "null projection");
   int proj_con = live_proj->_con;
   assert(proj_con == 0 || proj_con == 1, "false or true projection");
-  Node *con = _igvn.intcon(proj_con);
-  set_ctrl(con, C->root());
+  Node *con = intcon(proj_con);
   if (iff) {
     iff->set_req(1, con);
   }
@@ -3216,8 +3213,7 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree* lo
   if (stride > 0) {
     rhs_cmpi = limit; // For i >= limit
   } else {
-    rhs_cmpi = _igvn.makecon(TypeInt::ZERO); // For i < 0
-    set_ctrl(rhs_cmpi, C->root());
+    rhs_cmpi = makecon(TypeInt::ZERO); // For i < 0
   }
   // Create a new region on the exit path
   RegionNode* reg = insert_region_before_proj(lp_exit);
@@ -3246,8 +3242,7 @@ void PhaseIdealLoop::remove_cmpi_loop_exit(IfNode* if_cmp, IdealLoopTree *loop) 
   assert(if_cmp->in(1)->in(1)->Opcode() == Op_CmpI &&
          stay_in_loop(lp_proj, loop)->is_If() &&
          stay_in_loop(lp_proj, loop)->in(1)->in(1)->Opcode() == Op_CmpU, "inserted cmpi before cmpu");
-  Node *con = _igvn.makecon(lp_proj->is_IfTrue() ? TypeInt::ONE : TypeInt::ZERO);
-  set_ctrl(con, C->root());
+  Node *con = makecon(lp_proj->is_IfTrue() ? TypeInt::ONE : TypeInt::ZERO);
   if_cmp->set_req(1, con);
 }
 

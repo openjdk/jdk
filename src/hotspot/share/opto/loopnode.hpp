@@ -1801,6 +1801,12 @@ public:
   ConINode* intcon(jint i);
 
   ConLNode* longcon(jlong i);
+
+  ConNode* makecon(const Type* t);
+
+  ConNode* integercon(jlong l, BasicType bt);
+
+  ConNode* zerocon(BasicType bt);
 };
 
 
