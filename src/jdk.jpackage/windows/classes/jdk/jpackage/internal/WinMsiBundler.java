@@ -59,6 +59,7 @@ import jdk.jpackage.internal.model.RuntimeLayout;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import static jdk.jpackage.internal.model.ConfigException.rethrowConfigException;
 
 /**
  * WinMsiBundler
@@ -197,11 +198,7 @@ public class WinMsiBundler  extends AbstractBundler {
 
             return true;
         } catch (RuntimeException re) {
-            if (re.getCause() instanceof ConfigException) {
-                throw (ConfigException) re.getCause();
-            } else {
-                throw new ConfigException(re);
-            }
+            throw rethrowConfigException(re);
         }
     }
 
