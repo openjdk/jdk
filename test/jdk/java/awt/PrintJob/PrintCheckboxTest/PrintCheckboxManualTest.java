@@ -19,6 +19,7 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ * @requires (os.family == "linux")
  */
 
 /*
@@ -47,6 +48,7 @@ import java.awt.event.ActionListener;
 public class PrintCheckboxManualTest extends Panel {
 
     private static final String INSTRUCTIONS = """
+            This test is for Linux with XToolkit ONLY!,
             1. Click the 'Print' button on the frame
             2. Select a printer in the print dialog and proceed
             3. If the frame with checkbox and button on it is printed successfully test PASSED else FAILED.
@@ -56,7 +58,6 @@ public class PrintCheckboxManualTest extends Panel {
         PassFailJFrame.builder()
                 .title("Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
                 .testUI(PrintCheckboxManualTest::createTestUI)
                 .build()
