@@ -119,15 +119,6 @@ OopStorage* ObjectMonitor::_oop_storage = nullptr;
 OopHandle ObjectMonitor::_vthread_cxq_head;
 ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 
-static void post_virtual_thread_pinned_event(JavaThread* current, const char* reason) {
-  EventVirtualThreadPinned e;
-  if (e.should_commit()) {
-    e.set_pinnedReason(reason);
-    e.set_carrierThread(JFR_JVM_THREAD_ID(current));
-    e.commit();
-  }
-}
-
 // -----------------------------------------------------------------------------
 // Theory of operations -- Monitors lists, thread residency, etc:
 //
@@ -489,14 +480,17 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
   assert(!is_being_async_deflated(), "must be");
 
   JFR_ONLY(JfrConditionalFlush<EventJavaMonitorEnter> flush(current);)
-  EventJavaMonitorEnter event;
-  if (event.is_started()) {
-    event.set_monitorClass(object()->klass());
+  EventJavaMonitorEnter enter_event;
+  if (enter_event.is_started()) {
+    enter_event.set_monitorClass(object()->klass());
     // Set an address that is 'unique enough', such that events close in
     // time and with the same address are likely (but not guaranteed) to
     // belong to the same object.
-    event.set_address((uintptr_t)this);
+    enter_event.set_address((uintptr_t)this);
   }
+  EventVirtualThreadPinned vthread_pinned_event;
+
+  freeze_result result;
 
   { // Change java thread status to indicate blocked on monitor enter.
     JavaThreadBlockedOnMonitorEnterState jtbmes(current, this);
@@ -517,7 +511,7 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
 
     ContinuationEntry* ce = current->last_continuation();
     if (ce != nullptr && ce->is_virtual_thread()) {
-      freeze_result result = Continuation::try_preempt(current, ce->cont_oop(current));
+      result = Continuation::try_preempt(current, ce->cont_oop(current));
       if (result == freeze_ok) {
         bool acquired = VThreadMonitorEnter(current);
         if (acquired) {
@@ -536,11 +530,6 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
         assert((acquired && current->preemption_cancelled() && state == java_lang_VirtualThread::RUNNING) ||
                (!acquired && !current->preemption_cancelled() && state == java_lang_VirtualThread::BLOCKING), "invariant");
         return;
-      }
-      if (result == freeze_pinned_native) {
-        post_virtual_thread_pinned_event(current, "Native frame or <clinit> on stack");
-      } else if (result == freeze_unsupported) {
-        post_virtual_thread_pinned_event(current, "Native frame or <clinit> or monitors on stack");
       }
     }
 
@@ -603,10 +592,17 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
     // event handler consumed an unpark() issued by the thread that
     // just exited the monitor.
   }
-  if (event.should_commit()) {
-    event.set_previousOwner(_previous_owner_tid);
-    event.commit();
+  if (enter_event.should_commit()) {
+    enter_event.set_previousOwner(_previous_owner_tid);
+    enter_event.commit();
   }
+
+  ContinuationEntry* ce = current->last_continuation();
+  if (ce != nullptr && ce->is_virtual_thread()) {
+    assert(result != freeze_ok, "sanity check");
+    current->post_vthread_pinned_event(&vthread_pinned_event, "Contended monitor enter", result);
+  }
+
   OM_PERFDATA_OP(ContendedLockAttempts, inc());
 }
 
@@ -1662,7 +1658,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
   CHECK_OWNER();  // Throws IMSE if not owner.
 
-  EventJavaMonitorWait event;
+  EventJavaMonitorWait wait_event;
+  EventVirtualThreadPinned vthread_pinned_event;
 
   // check for a pending interrupt
   if (interruptible && current->is_interrupted(true) && !HAS_PENDING_EXCEPTION) {
@@ -1680,8 +1677,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       // consume an unpark() meant for the ParkEvent associated with
       // this ObjectMonitor.
     }
-    if (event.should_commit()) {
-      post_monitor_wait_event(&event, this, 0, millis, false);
+    if (wait_event.should_commit()) {
+      post_monitor_wait_event(&wait_event, this, 0, millis, false);
     }
     THROW(vmSymbols::java_lang_InterruptedException());
     return;
@@ -1689,23 +1686,14 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
   current->set_current_waiting_monitor(this);
 
+  freeze_result result;
   ContinuationEntry* ce = current->last_continuation();
   if (ce != nullptr && ce->is_virtual_thread()) {
-    freeze_result result = Continuation::try_preempt(current, ce->cont_oop(current));
+    result = Continuation::try_preempt(current, ce->cont_oop(current));
     if (result == freeze_ok) {
       VThreadWait(current, millis);
       current->set_current_waiting_monitor(nullptr);
       return;
-    }
-    if (result == freeze_pinned_native || result == freeze_unsupported) {
-      const Klass* monitor_klass = object()->klass();
-      if (!is_excluded(monitor_klass)) {
-        if (result == freeze_pinned_native) {
-          post_virtual_thread_pinned_event(current,"Native frame or <clinit> on stack");
-        } else if (result == freeze_unsupported) {
-          post_virtual_thread_pinned_event(current, "Native frame or <clinit> or monitors on stack");
-        }
-      }
     }
   }
 
@@ -1832,8 +1820,13 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       }
     }
 
-    if (event.should_commit()) {
-      post_monitor_wait_event(&event, this, node._notifier_tid, millis, ret == OS_TIMEOUT);
+    if (wait_event.should_commit()) {
+      post_monitor_wait_event(&wait_event, this, node._notifier_tid, millis, ret == OS_TIMEOUT);
+    }
+
+    if (ce != nullptr && ce->is_virtual_thread()) {
+      assert(result != freeze_ok, "sanity check");
+      current->post_vthread_pinned_event(&vthread_pinned_event, "Object.wait", result);
     }
 
     OrderAccess::fence();
@@ -2065,9 +2058,9 @@ bool ObjectMonitor::VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, 
   node->_interrupted = !was_notified && current->is_interrupted(false);
 
   // Post JFR and JVMTI events.
-  EventJavaMonitorWait event;
-  if (event.should_commit() || JvmtiExport::should_post_monitor_waited()) {
-    vthread_monitor_waited_event(current, node, cont, &event, !was_notified && !node->_interrupted);
+  EventJavaMonitorWait wait_event;
+  if (wait_event.should_commit() || JvmtiExport::should_post_monitor_waited()) {
+    vthread_monitor_waited_event(current, node, cont, &wait_event, !was_notified && !node->_interrupted);
   }
 
   // Mark that we are at reenter so that we don't call this method again.

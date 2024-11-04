@@ -242,8 +242,6 @@ final class VirtualThread extends BaseVirtualThread {
         }
         @Override
         protected void onPinned(Continuation.Pinned reason) {
-            // emit JFR event
-            virtualThreadPinnedEvent(reason.reasonCode(), reason.reasonString());
         }
         private static Runnable wrap(VirtualThread vthread, Runnable task) {
             return new Runnable() {
@@ -260,13 +258,6 @@ final class VirtualThread extends BaseVirtualThread {
             };
         }
     }
-
-    /**
-     * jdk.VirtualThreadPinned is emitted by HotSpot VM when pinned. Call into VM to
-     * emit event to avoid having a JFR event in Java with the same name (but different ID)
-     * to events emitted by the VM.
-     */
-    private static native void virtualThreadPinnedEvent(int reason, String reasonString);
 
     /**
      * Runs or continues execution on the current thread. The virtual thread is mounted
@@ -833,7 +824,18 @@ final class VirtualThread extends BaseVirtualThread {
 
         // consume parking permit
         setParkPermit(false);
+
+        // JFR jdk.VirtualThreadPinned event
+        postPinnedEvent("LockSupport.park");
     }
+
+    /**
+     * Call into VM when pinned to record a JFR jdk.VirtualThreadPinned event.
+     * Recording the event in the VM avoids having JFR event recorded in Java
+     * with the same name, but different ID, to events recorded by the VM.
+     */
+    @Hidden
+    private static native void postPinnedEvent(String op);
 
     /**
      * Re-enables this virtual thread for scheduling. If this virtual thread is parked

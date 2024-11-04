@@ -28,7 +28,7 @@
 #include "jvm.h"
 #include "java_lang_VirtualThread.h"
 
-#define THREAD "Ljava/lang/Thread;"
+#define STR  "Ljava/lang/String;"
 #define VIRTUAL_THREAD  "Ljava/lang/VirtualThread;"
 
 static JNINativeMethod methods[] = {
@@ -37,17 +37,11 @@ static JNINativeMethod methods[] = {
     { "notifyJvmtiMount",          "(Z)V", (void *)&JVM_VirtualThreadMount },
     { "notifyJvmtiUnmount",        "(Z)V", (void *)&JVM_VirtualThreadUnmount },
     { "notifyJvmtiDisableSuspend", "(Z)V", (void *)&JVM_VirtualThreadDisableSuspend },
+    { "postPinnedEvent",           "(" STR ")V", (void *)&JVM_VirtualThreadPinnedEvent },
     { "takeVirtualThreadListToUnblock", "()" VIRTUAL_THREAD, (void *)&JVM_TakeVirtualThreadListToUnblock},
 };
 
 JNIEXPORT void JNICALL
 Java_java_lang_VirtualThread_registerNatives(JNIEnv *env, jclass clazz) {
     (*env)->RegisterNatives(env, clazz, methods, (sizeof(methods)/sizeof(methods[0])));
-}
-
-JNIEXPORT void JNICALL
-Java_java_lang_VirtualThread_virtualThreadPinnedEvent(JNIEnv *env, jclass ignored,
-                                                      jint reasonCode, jstring reasonString)
-{
-    JVM_VirtualThreadPinnedEvent(reasonCode, reasonString);
 }

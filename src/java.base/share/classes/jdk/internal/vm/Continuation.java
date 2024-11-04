@@ -57,22 +57,10 @@ public class Continuation {
 
     /** Reason for pinning */
     public enum Pinned {
-        NATIVE(2, "Native frame or <clinit> on stack"),
-        MONITOR(3, "Monitor held"),
-        CRITICAL_SECTION(4, "In critical section");
-
-        private final int reasonCode;
-        private final String reasonString;
-        Pinned(int reasonCode, String reasonString) {
-            this.reasonCode = reasonCode;
-            this.reasonString = reasonString;
-        }
-        public int reasonCode() {
-            return reasonCode;
-        }
-        public String reasonString() {
-            return reasonString;
-        }
+        /** Native frame on stack */ NATIVE,
+        /** Monitor held */          MONITOR,
+        /** In critical section */   CRITICAL_SECTION,
+        /** Exception (OOME/SOE) */  EXCEPTION
     }
 
     /** Preemption attempt result */
@@ -99,6 +87,7 @@ public class Continuation {
             case 2 -> Pinned.CRITICAL_SECTION;
             case 3 -> Pinned.NATIVE;
             case 4 -> Pinned.MONITOR;
+            case 5 -> Pinned.EXCEPTION;
             default -> throw new AssertionError("Unknown pinned reason: " + reason);
         };
     }

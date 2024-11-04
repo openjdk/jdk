@@ -515,6 +515,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _parker(),
 
   _class_to_be_initialized(nullptr),
+  _class_being_initialized(nullptr),
 
   _SleepEvent(ParkEvent::Allocate(this)),
 
@@ -2327,3 +2328,38 @@ void JavaThread::add_oop_handles_for_release() {
   _oop_handle_list = new_head;
   Service_lock->notify_all();
 }
+
+#if INCLUDE_JFR
+void JavaThread::set_last_freeze_fail_result(freeze_result result) {
+  assert(result != freeze_ok, "sanity check");
+  _last_freeze_fail_result = result;
+  _last_freeze_fail_time = Ticks::now();
+}
+
+// Post jdk.VirtualThreadPinned event
+void JavaThread::post_vthread_pinned_event(EventVirtualThreadPinned* event, const char* op, freeze_result result) {
+  assert(result != freeze_ok, "sanity check");
+  if (event->should_commit()) {
+    char reason[256];
+    if (class_to_be_initialized() != nullptr) {
+      ResourceMark rm(this);
+      jio_snprintf(reason, sizeof reason, "Waited for initialization of %s by another thread",
+                   class_to_be_initialized()->external_name());
+      event->set_pinnedReason(reason);
+    } else if (class_being_initialized() != nullptr) {
+      ResourceMark rm(this);
+      jio_snprintf(reason, sizeof(reason), "VM call to %s.<clinit> on stack",
+                   class_being_initialized()->external_name());
+      event->set_pinnedReason(reason);
+    } else if (result == freeze_pinned_native) {
+      event->set_pinnedReason("Native or VM frame on stack");
+    } else {
+      jio_snprintf(reason, sizeof(reason), "Freeze or preempt failed (%d)", result);
+      event->set_pinnedReason(reason);
+    }
+    event->set_blockingOperation(op);
+    event->set_carrierThread(JFR_JVM_THREAD_ID(this));
+    event->commit();
+  }
+}
+#endif
