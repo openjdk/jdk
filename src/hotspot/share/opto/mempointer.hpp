@@ -488,13 +488,14 @@ private:
 public:
   // Empty
   MemPointerDecomposedForm() : _pointer(nullptr), _con(NoOverflowInt::make_NaN()) {}
+
+private:
   // Default / trivial: pointer = 0 + 1 * pointer
   MemPointerDecomposedForm(Node* pointer) : _pointer(pointer), _con(NoOverflowInt(0)) {
     assert(pointer != nullptr, "pointer must be non-null");
     _summands[0] = MemPointerSummand(pointer, NoOverflowInt(1));
   }
 
-private:
   MemPointerDecomposedForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt& con)
     : _pointer(pointer), _con(con) {
     assert(!_con.is_NaN(), "non-NaN constant");
@@ -508,11 +509,15 @@ private:
   }
 
 public:
+  static MemPointerDecomposedForm make_trivial(Node* pointer) {
+    return MemPointerDecomposedForm(pointer);
+  }
+
   static MemPointerDecomposedForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt& con) {
     if (summands.length() <= SUMMANDS_SIZE) {
       return MemPointerDecomposedForm(pointer, summands, con);
     } else {
-      return MemPointerDecomposedForm(pointer);
+      return MemPointerDecomposedForm::make_trivial(pointer);
     }
   }
 

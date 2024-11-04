@@ -42,12 +42,12 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form()
   int traversal_count = 0;
   while (_worklist.is_nonempty()) {
     // Bail out if the graph is too complex.
-    if (traversal_count++ > 1000) { return MemPointerDecomposedForm(pointer); }
+    if (traversal_count++ > 1000) { return MemPointerDecomposedForm::make_trivial(pointer); }
     parse_sub_expression(_worklist.pop());
   }
 
   // Bail out if there is a constant overflow.
-  if (_con.is_NaN()) { return MemPointerDecomposedForm(pointer); }
+  if (_con.is_NaN()) { return MemPointerDecomposedForm::make_trivial(pointer); }
 
   // Sorting by variable idx means that all summands with the same variable are consecutive.
   // This simplifies the combining of summands with the same variable below.
@@ -67,7 +67,7 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form()
     }
     // Bail out if scale is NaN.
     if (scale.is_NaN()) {
-      return MemPointerDecomposedForm(pointer);
+      return MemPointerDecomposedForm::make_trivial(pointer);
     }
     // Keep summands with non-zero scale.
     if (!scale.is_zero()) {
@@ -299,7 +299,9 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, cons
 }
 
 // Compute the aliasing between two MemPointerDecomposedForm. We use the "MemPointer Lemma" to
-// prove that the computed aliasing also applies for the underlying pointers.
+// prove that the computed aliasing also applies for the underlying pointers. Note that the
+// condition (S0) is already given, because the MemPointerDecomposedForm is always constructed
+// using only safe decompositions.
 //
 // Pre-Condition:
 //   We assume that both pointers are in-bounds of their respective memory object. If this does
@@ -349,7 +351,7 @@ MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerD
   //   same memory object. With the Pre-Condition, we know that both pointers are in
   //   bounds of that same memory object.
 
-  // Hence, all 3 conditions of the "MemoryPointer Lemma" are established, and hence
+  // Hence, all 4 conditions of the "MemoryPointer Lemma" are established, and hence
   // we know that the distance between the underlying pointers is equal to the distance
   // we computed for the MemPointers:
   //   p_other - p_this = distance = other.con - this.con
