@@ -472,8 +472,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * indices, not references. Operations on queues obtained from
      * these indices remain valid (with at most some unnecessary extra
      * work) even if an underlying worker failed and was replaced by
-     * another at the same index. During termination, worker queue
-     * array updates are disabled.
+     * another at the same index.
      *
      * Queuing Idle Workers. Unlike HPC work-stealing frameworks, we
      * cannot let workers spin indefinitely scanning for tasks when
@@ -1830,48 +1829,50 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param ex the exception causing failure, or null if none
      */
     final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) {
-        if ((runState & STOP) != 0L)       // ensure released
+        if ((runState & STOP) != 0L)     // ensure released
             releaseAll();
         WorkQueue w = null;
         int src = 0, phase = 0;
         boolean replaceable = false;
-        if (wt != null && (w = wt.workQueue) != null) {
-            phase = w.phase;
+        if (wt != null && (w = wt.workQueue) != null &&
+            (phase = w.phase) != 0) {    // else failed to start
             if (((src = w.source) & DROPPED) == 0) {
-                w.source = DROPPED;        // else already dropped
-                if (phase != 0) {          // else failed to start
-                    replaceable = true;
-                    ForkJoinTask<?> t;     // cancel remaining tasks
-                    while ((t = w.nextLocalTask(0)) != null) {
-                        try {
-                            t.cancel(false);
-                        } catch (Throwable ignore) {
-                        }
+                w.source = DROPPED;      // else already dropped
+                replaceable = true;
+                ForkJoinTask<?> t;       // cancel remaining tasks
+                while ((t = w.nextLocalTask(0)) != null) {
+                    try {
+                        t.cancel(false);
+                    } catch (Throwable ignore) {
                     }
                 }
             }
+            boolean locked = false;      // OK to skip on contention if stopping
+            long ns = w.nsteals & 0xffffffffL, s;
+            if (((s = runState) & RS_LOCK) == 0L && casRunState(s, s + RS_LOCK))
+                locked = true;
+            else if ((s & STOP) == 0L) {
+                spinLockRunState();
+                locked = true;
+            }
+            if (locked) {
+                WorkQueue[] qs; int n, i;
+                stealCount += ns;         // accumulate steals
+                if ((qs = queues) != null && (n = qs.length) > 0 &&
+                    qs[i = phase & SMASK & (n - 1)] == w)
+                    qs[i] = null;         // remove index
+                unlockRunState();
+            }
         }
-        if (src != DROPPED) {             // decrement counts
+        if (src != DROPPED) {            // decrement counts
             long c = ctl;
             do {} while (c != (c = compareAndExchangeCtl(
                                    c, ((RC_MASK & (c - RC_UNIT)) |
                                        (TC_MASK & (c - TC_UNIT)) |
                                        (LMASK & c)))));
         }
-        if ((tryTerminate(false, false) & STOP) == 0L && w != null) {
-            WorkQueue[] qs; int n, i;     // remove index unless terminating
-            long ns = w.nsteals & 0xffffffffL;
-            if ((lockRunState() & STOP) != 0L)
-                replaceable = false;
-            else if ((qs = queues) != null && (n = qs.length) > 0 &&
-                     qs[i = phase & SMASK & (n - 1)] == w) {
-                qs[i] = null;
-                stealCount += ns;         // accumulate steals
-            }
-            unlockRunState();
-            if (replaceable)
-                signalWork();
-        }
+        if ((tryTerminate(false, false) & STOP) == 0L && replaceable)
+            signalWork();
         if (ex != null)
             ForkJoinTask.rethrow(ex);
     }
@@ -2790,45 +2791,41 @@ public class ForkJoinPool extends AbstractExecutorService {
 
     /**
      * Scans queues in a psuedorandom order based on thread id,
-     * cancelling tasks until empty or interference (in which case one
-     * or more other threads will finish cancellation).
+     * cancelling tasks until empty, or returning early upon
+     * interference (in which case others will finish cancellation).
      *
-     * @return true if all undropped queues are now known to be empty
+     * @return true if all queues are empty
      */
     private boolean helpTerminate() {
-        boolean clean = true;
         int r = (int)Thread.currentThread().threadId();
         r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
         int step = (r >>> 16) | 1;                // randomize traversals
         WorkQueue[] qs = queues;
         int n = (qs == null) ? 0 : qs.length;
         for (int l = n; l > 0; --l, r += step) {
-            WorkQueue q;
-            if ((q = qs[r & (n - 1)]) != null && (q.source & DROPPED) == 0) {
+            WorkQueue q;  ForkJoinTask<?>[] a; int cap;
+            if ((q = qs[r & (n - 1)]) != null &&
+                (a = q.array) != null && (cap = a.length) > 0) {
                 for (;;) {
-                    ForkJoinTask<?> t; int cap, b; long k; ForkJoinTask<?>[] a;
-                    if ((a = q.array) == null || (cap = a.length) <= 0)
-                        break;
+                    ForkJoinTask<?> t; int b; long k;
                     t = (ForkJoinTask<?>)U.getReferenceAcquire(
                         a, k = slotOffset((cap - 1) & (b = q.base)));
-                    if (q.base != b)               // inconsistent
-                        ;
-                    else if (t == null) {
-                        if (clean && q.top - b > 0)
-                            clean = false;
-                        break;
-                    }
-                    else if (U.compareAndSetReference(a, k, t, null)) {
+                    if (q.base == b && t != null &&
+                        U.compareAndSetReference(a, k, t, null)) {
                         q.updateBase(b + 1);
                         try {
                             t.cancel(false);
                         } catch (Throwable ignore) {
                         }
                     }
+                    else if (q.top - q.base > 0)
+                        return false;             // interference
+                    else
+                        break;
                 }
             }
         }
-        return clean;
+        return true;
     }
 
     /**
