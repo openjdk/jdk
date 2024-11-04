@@ -26,6 +26,7 @@
 package sun.security.pkcs12;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -1965,10 +1966,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
         if (debug != null) {
             keystorePath = SharedSecrets
-                    .getJavaIOInputStreamAccess()
+                    .getJavaIOFileInputStreamAccess()
                     .getPath(stream);
             if (keystorePath != null) {
-                debug.println("PKCS12KeyStore: Loading \"" + keystorePath.substring(
+                debug.println("PKCS12KeyStore: loading \"" + keystorePath.substring(
                     keystorePath.lastIndexOf(File.separator) + 1)
                     + "\" keystore");
             }
@@ -2234,16 +2235,14 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         if (debug != null) {
-            if (keystorePath != null) {
-                    debug.println("PKCS12KeyStore: Loaded \"" + keystorePath.substring(
-                        keystorePath.lastIndexOf(File.separator) + 1)
-                        + "\" keystore");
-            }
-            debug.println("PKCS12KeyStore load: private key count: " +
-                    privateKeyCount + ". secret key count: " + secretKeyCount +
+            String storeName = (keystorePath != null)
+                    ? Paths.get(keystorePath).getFileName().toString()
+                    : null;
+            debug.println("PKCS12KeyStore loaded: \"" + storeName +
+                    "\" keystore with private key count: " + privateKeyCount +
+                    ". secret key count: " + secretKeyCount +
                     ". certificate count: " + certificateCount);
         }
-
         certEntries.clear();
         allCerts.clear();
         keyList.clear();

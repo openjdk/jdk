@@ -283,7 +283,7 @@ public class TrustManagerFactory {
                     .getJavaSecurityKeyStoreAccess()
                     .getPath(ks);
             if (keystorePath != null) {
-                SSLLogger.fine(provider.getName() + ": Loaded \"" + keystorePath
+                SSLLogger.fine(provider.getName() + ": using \"" + keystorePath
                         .substring(keystorePath
                                 .lastIndexOf(File.separator) + 1)
                         + "\" keystore in " + ks.getType() + " format");

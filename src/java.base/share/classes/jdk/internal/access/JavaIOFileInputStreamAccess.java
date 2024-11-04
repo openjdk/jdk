@@ -24,8 +24,8 @@
  */
 package jdk.internal.access;
 
-import java.io.FileInputStream;
+import java.io.InputStream;
 
 public interface JavaIOFileInputStreamAccess {
-    public String getPath(FileInputStream fis);
+    public String getPath(InputStream fis);
 }

@@ -39,7 +39,6 @@ import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.FilePermission;
 import java.io.ObjectInputStream;
 import java.io.PrintStream;
@@ -72,7 +71,6 @@ public class SharedSecrets {
     private static JavaIOPrintWriterAccess javaIOPrintWriterAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
     private static JavaIOFileInputStreamAccess javaIOFileInputStreamAccess;
-    private static JavaIOInputStreamAccess javaIOInputStreamAccess;
     private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
     private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
@@ -327,18 +325,6 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(FileInputStream.class);
             access = javaIOFileInputStreamAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaIOInputStreamAccess(JavaIOInputStreamAccess jiois) {
-        javaIOInputStreamAccess = jiois;
-    }
-    public static JavaIOInputStreamAccess getJavaIOInputStreamAccess() {
-        var access = javaIOInputStreamAccess;
-        if (access == null) {
-            ensureClassInitialized(InputStream.class);
-            access = javaIOInputStreamAccess;
         }
         return access;
     }

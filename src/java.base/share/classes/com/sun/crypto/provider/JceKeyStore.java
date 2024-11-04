@@ -29,7 +29,7 @@ import sun.security.util.Debug;
 import sun.security.util.IOUtils;
 
 import java.io.*;
-import java.util.*;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.DigestInputStream;
 import java.security.DigestOutputStream;
@@ -44,6 +44,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
+import java.util.*;
 import javax.crypto.SealedObject;
 
 import jdk.internal.access.SharedSecrets;
@@ -703,10 +704,10 @@ public final class JceKeyStore extends KeyStoreSpi {
 
             if (debug != null) {
                 keystorePath = SharedSecrets
-                                .getJavaIOInputStreamAccess()
+                                .getJavaIOFileInputStreamAccess()
                                 .getPath(stream);
                 if (keystorePath != null) {
-                    debug.println("JceKeyStore: Loading \"" + keystorePath.substring(
+                    debug.println("JceKeyStore: loading \"" + keystorePath.substring(
                         keystorePath.lastIndexOf(File.separator) + 1)
                         + "\" keystore");
                 }
@@ -878,12 +879,11 @@ public final class JceKeyStore extends KeyStoreSpi {
                 }
 
                 if (debug != null) {
-                    if (keystorePath != null) {
-                        debug.println("JceKeyStore: Loaded \"" + keystorePath.substring(
-                            keystorePath.lastIndexOf(File.separator) + 1)
-                            + "\" keystore");
-                    }
-                    debug.println("JceKeyStore load: private key count: " +
+                    String storeName = (keystorePath != null)
+                            ? Paths.get(keystorePath).getFileName().toString()
+                            : null;
+                    debug.println("JceKeyStore loaded: \"" + storeName +
+                        "\" keystore with private key count: " +
                         privateKeyCount + ". trusted key count: " +
                         trustedKeyCount + ". secret key count: " +
                         secretKeyCount);

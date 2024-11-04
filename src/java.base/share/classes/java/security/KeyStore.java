@@ -214,7 +214,7 @@ public class KeyStore {
     private static final String KEYSTORE_TYPE = "keystore.type";
 
     //The keystore full path
-    private static String keystorePath;
+    private static String keystorePath = null;
 
     // The keystore type
     private final String type;
@@ -1512,9 +1512,11 @@ public class KeyStore {
     public final void load(InputStream stream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        keystorePath = SharedSecrets
-                .getJavaIOInputStreamAccess()
-                .getPath(stream);
+        if (kdebug != null) {
+            keystorePath = SharedSecrets
+                    .getJavaIOFileInputStreamAccess()
+                    .getPath(stream);
+        }
         keyStoreSpi.engineLoad(stream, password);
         initialized = true;
     }

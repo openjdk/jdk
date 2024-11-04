@@ -26,6 +26,7 @@
 package sun.security.provider;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -673,10 +674,10 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
 
             if (debug != null) {
                 keystorePath = SharedSecrets
-                                .getJavaIOInputStreamAccess()
+                                .getJavaIOFileInputStreamAccess()
                                 .getPath(stream);
                 if (keystorePath != null) {
-                    debug.println("JavaKeyStore: Loading \"" + keystorePath.substring(
+                    debug.println("JavaKeyStore: loading \"" + keystorePath.substring(
                         keystorePath.lastIndexOf(File.separator) + 1)
                         + "\" keystore");
                 }
@@ -798,13 +799,12 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             }
 
             if (debug != null) {
-                if (keystorePath != null) {
-                        debug.println("JavaKeyStore: Loaded \"" + keystorePath.substring(
-                            keystorePath.lastIndexOf(File.separator) + 1)
-                            + "\" keystore");
-                }
-                debug.println("JavaKeyStore load: private key count: " +
-                    privateKeyCount + ". trusted key count: " + trustedKeyCount);
+                String storeName = (keystorePath != null)
+                        ? Paths.get(keystorePath).getFileName().toString()
+                        : null;
+                debug.println("JavaKeyStore loaded: \"" + storeName +
+                    "\" keystore with private key count: " + privateKeyCount +
+                    ". trusted key count: " + trustedKeyCount);
             }
 
             /*

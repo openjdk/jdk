@@ -27,8 +27,7 @@
  * @library /test/lib
  * @summary Validates the customized keystore/ truststore paths
  * in the debug logs
- * @run main/othervm LogKeyStorePathVerifier
-
+ * @run main/othervm LogKeyStorePathVerifier launch
  */
 
 import javax.net.ssl.KeyManagerFactory;
@@ -37,6 +36,10 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -48,66 +51,62 @@ public class LogKeyStorePathVerifier {
     static String pathToStores = "../../../javax/net/ssl/etc/";
     static String keyStoreFile = "keystore";
     static String passwd = "passphrase";
+    static String fisKeyStoreName = "FileInputStreamKeyStore";
+    static String bisKeyStoreName = "BufferedInputStreamKeyStore";
+    static Path keyStorePath = Path.of (System.getProperty("test.src", "."),
+            pathToStores, keyStoreFile);
 
-    static void initContextWithFIS() throws Exception {
-        String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        FileInputStream fis = new FileInputStream(keyFilename);
-        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        ks.load(fis, passwd.toCharArray());
-        KeyManagerFactory kmf =
-                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(ks, passwd.toCharArray());
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(ks);
+    static void initContext() throws Exception {
+        Files.copy(keyStorePath, Path.of(fisKeyStoreName),
+                            StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(keyStorePath, Path.of(bisKeyStoreName),
+                            StandardCopyOption.REPLACE_EXISTING);
+        try (FileInputStream fis = new FileInputStream(fisKeyStoreName);
+             BufferedInputStream bis = new BufferedInputStream(
+             new FileInputStream(bisKeyStoreName));
+             BufferedInputStream bbis = new BufferedInputStream(bis)) {
+            loadAndTestKeyStore(fis);
+            loadAndTestKeyStore(bis);
+            // Test nested wrappers on FileInputStream with BufferedInputStream
+            loadAndTestKeyStore(bbis);
+        }
     }
 
-    static void initContextWithBIS() throws Exception {
-        String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        FileInputStream fis = new FileInputStream(keyFilename);
+    static void loadAndTestKeyStore(InputStream is) throws Exception {
+        System.err.println("Testing with InputStream: " +
+                                        is.getClass().getName());
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        InputStream bufferedStream = new BufferedInputStream(fis);
-        ks.load(bufferedStream, passwd.toCharArray());
-        KeyManagerFactory kmf =
-                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        ks.load(is, passwd.toCharArray());
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(
+                KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, passwd.toCharArray());
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(
+                TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ks);
     }
 
     public static void main(String args[]) throws Exception {
-        System.setProperty("test.java.opts",
-                    "-Dtest.src=" + System.getProperty("test.src") +
-                            " -Djavax.net.debug=trustmanager");
-
-        System.out.println("test.java.opts: " +
-                System.getProperty("test.java.opts"));
-        try {
-            //initialize the KeyStore with FIS
-            initContextWithFIS();
-
-            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                    Utils.addTestJavaOpts("LogKeyStorePathVerifier"));
-            OutputAnalyzer output = ProcessTools.executeProcess(pb);
-            // Check for the presence of new message and verify the
-            // keystore name in debug logs
-            output.shouldContain("Loaded \"keystore\" keystore in pkcs12 format");
-
-            //initialize the KeyStore with BIS
-            initContextWithBIS();
-
-            ProcessBuilder pb1 = ProcessTools.createTestJavaProcessBuilder(
-                    Utils.addTestJavaOpts("LogKeyStorePathVerifier"));
-            OutputAnalyzer output1 = ProcessTools.executeProcess(pb1);
-            // Check for the presence of new message and verify the
-            // keystore name in debug logs
-            output1.shouldContain("Loaded \"keystore\" keystore in pkcs12 format");
-        } catch (Exception e) {
-            throw e;
+        if (args.length == 0) {
+            // Being run via ProcessBuilder, call method to
+            // generated debug output
+            initContext();
+        } else {
+            var output = ProcessTools.executeTestJava(
+                    "-Djavax.net.debug=trustmanager",
+                    "-Djava.security.debug=keystore,pkcs12",
+                    "-Dtest.src=" + System.getProperty("test.src", "."),
+                    "LogKeyStorePathVerifier");
+            // Check for the presence of new message and verify
+            // the keystore name in debug logs
+            output.shouldContain("PKCS12KeyStore: loading " +
+                                    "\"FileInputStreamKeyStore\" keystore")
+                .shouldContain("SunJSSE: using \"FileInputStreamKeyStore\" " +
+                                    "keystore in pkcs12 format")
+                .shouldContain("PKCS12KeyStore: loading " +
+                                    "\"BufferedInputStreamKeyStore\" keystore")
+                .shouldContain("SunJSSE: using \"BufferedInputStreamKeyStore\" " +
+                                    "keystore in pkcs12 format");
         }
-        return;
     }
 }

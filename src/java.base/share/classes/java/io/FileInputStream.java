@@ -27,12 +27,13 @@ package java.io;
 
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
-import jdk.internal.util.ArraysSupport;
-import jdk.internal.event.FileReadEvent;
-import sun.nio.ch.FileChannelImpl;
 
 import jdk.internal.access.JavaIOFileInputStreamAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.FileReadEvent;
+import jdk.internal.util.ArraysSupport;
+import sun.nio.ch.FileChannelImpl;
+
 /**
  * A {@code FileInputStream} obtains input bytes
  * from a file in a file system. What files
@@ -83,16 +84,30 @@ public class FileInputStream extends InputStream
 
     private volatile boolean closed;
 
-    // Set up JavaIOFileInputStreamAccess in SharedSecrets
     static {
         SharedSecrets.setJavaIOFileInputStreamAccess(
-                new JavaIOFileInputStreamAccess() {
-                    public String getPath(FileInputStream fis) {
-                        return fis.path;
+            new JavaIOFileInputStreamAccess() {
+                public String getPath(InputStream is) {
+                    if (is == null) {
+                        return null; // Handle null InputStream
                     }
+                    return switch (is) {
+                        case FileInputStream fis -> fis.path;
+                        case FilterInputStream filter -> {
+                            InputStream inner = filter.in;
+                            if (inner instanceof FileInputStream fis) {
+                                yield fis.path;
+                            } else {
+                                yield getPath(inner);
+                            }
+                        }
+                        default -> null;
+                    };
                 }
+            }
         );
     }
+
 
     /**
      * Creates a {@code FileInputStream} by
