@@ -37,7 +37,7 @@ oop BlockLocationPrinter<CollectedHeapT>::base_oop_or_null(void* addr) {
     return cast_to_oop(addr);
   }
 
-  // Try to find addr using block_start.
+  // Try to find addr using block_start (not implemented for all GCs/generations).
   HeapWord* p = CollectedHeapT::heap()->block_start(addr);
   if (p != nullptr && CollectedHeapT::heap()->block_is_obj(p)) {
     if (!is_valid_obj(p)) {
@@ -51,8 +51,10 @@ oop BlockLocationPrinter<CollectedHeapT>::base_oop_or_null(void* addr) {
 
 template <typename CollectedHeapT>
 bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void* addr) {
+  bool in_heap = false;
   // Check if addr points into Java heap.
   if (CollectedHeapT::heap()->is_in(addr)) {
+    // base_oop_or_null() might be unimplemented and return NULL for some GCs/generations
     oop o = base_oop_or_null(addr);
     if (o != nullptr) {
       if ((void*)o == addr) {
@@ -63,6 +65,7 @@ bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void
       o->print_on(st);
       return true;
     }
+    in_heap = true; // We at least know by now, that addr points into the heap
   } else if (CollectedHeapT::heap()->is_in_reserved(addr)) {
     st->print_cr(PTR_FORMAT " is an unallocated location in the heap", p2i(addr));
     return true;
@@ -83,6 +86,10 @@ bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void
   }
 #endif
 
+  if (in_heap) {
+    st->print_cr(PTR_FORMAT " is an unknown heap location", p2i(addr));
+    return true;
+  }
   return false;
 }
 
