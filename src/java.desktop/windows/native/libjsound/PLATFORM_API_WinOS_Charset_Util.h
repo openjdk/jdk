@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 // NOTE: It's a caller responbility to free the allocated memory using delete[], just like in UnicodeToUTF8AndCopy function
-LPSTR _cdecl UnicodeToUTF8(const LPCWSTR lpAnsiStr);
+LPSTR UnicodeToUTF8(const LPCWSTR lpAnsiStr);
 
-void _cdecl UnicodeToUTF8AndCopy(LPSTR dest, LPCWSTR src, SIZE_T maxLength);
+void UnicodeToUTF8AndCopy(LPSTR dest, LPCWSTR src, SIZE_T maxLength);
 
 #ifdef __cplusplus
 }

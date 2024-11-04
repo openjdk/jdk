@@ -124,7 +124,7 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
         void LoadCache(jlongArray formats);
         void UnloadCache();
 
-        static int __cdecl _compar(const void *, const void *);
+        static int _compar(const void *, const void *);
 
         static void call_dSCenter(JNIEnv* env, jobject self, jint targetActions,
                                   jint modifiers, POINT pt);

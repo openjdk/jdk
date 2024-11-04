@@ -308,7 +308,7 @@ void launchApp() {
 
 #ifndef JP_LAUNCHERW
 
-int __cdecl  wmain() {
+int wmain() {
     return app::launch(std::nothrow, launchApp);
 }
 

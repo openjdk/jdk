@@ -849,16 +849,6 @@ PCPathDone(PathConsumerVec *consumer)
     return oom;
 }
 
-/*
- * REMIND: CDECL needed for WIN32 "qsort"
- */
-
-#ifdef _WIN32
-#define CDECL __cdecl
-#else
-#define CDECL
-#endif
-
 #define SUBDIVIDE_MAX   10
 #define MAX_FLAT_SQ     (1.0 * 1.0)
 #define GROW_SIZE       20
@@ -1171,7 +1161,7 @@ subdivideCubic(pathData *pd, int level,
     return appendSegment(pd, x0, y0, x3, y3);
 }
 
-static int CDECL
+static int
 sortSegmentsByLeadingY(const void *elem1, const void *elem2)
 {
     segmentData *seg1 = *(segmentData **)elem1;

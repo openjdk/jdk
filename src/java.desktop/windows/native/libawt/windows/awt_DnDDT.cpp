@@ -42,9 +42,9 @@
 // forwards
 
 extern "C" {
-    DWORD __cdecl convertActionsToDROPEFFECT(jint actions);
-    jint  __cdecl convertDROPEFFECTToActions(DWORD effects);
-    DWORD __cdecl mapModsToDROPEFFECT(DWORD, DWORD);
+    DWORD convertActionsToDROPEFFECT(jint actions);
+    jint  convertDROPEFFECTToActions(DWORD effects);
+    DWORD mapModsToDROPEFFECT(DWORD, DWORD);
 } // extern "C"
 
 
@@ -1003,7 +1003,7 @@ jobject AwtDropTarget::GetData(jlong fmt)
  *
  */
 
-int __cdecl AwtDropTarget::_compar(const void* first, const void* second) {
+int AwtDropTarget::_compar(const void* first, const void* second) {
     FORMATETC *fp = (FORMATETC *)first;
     FORMATETC *sp = (FORMATETC *)second;
 

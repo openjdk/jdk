@@ -186,7 +186,7 @@ class AwtDropTarget : virtual public IDropTarget {
 
         static const unsigned int CACHE_INCR;
 
-        static int __cdecl _compar(const void *, const void *);
+        static int _compar(const void *, const void *);
 };
 
 

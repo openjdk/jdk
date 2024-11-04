@@ -71,8 +71,8 @@ typedef std::map<FORMATETC, STGMEDIUM> CDataMap;
                           java_awt_event_InputEvent_BUTTON3_DOWN_MASK)
 
 extern "C" {
-DWORD __cdecl convertActionsToDROPEFFECT(jint actions);
-jint  __cdecl convertDROPEFFECTToActions(DWORD effects);
+DWORD convertActionsToDROPEFFECT(jint actions);
+jint  convertDROPEFFECTToActions(DWORD effects);
 }
 
 class PictureDragHelper
