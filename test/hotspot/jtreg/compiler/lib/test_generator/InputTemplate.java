@@ -22,11 +22,9 @@
  */
 package compiler.lib.test_generator;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 /**
  * Abstract class representing an input template for test generation.
@@ -141,101 +139,6 @@ public abstract class InputTemplate {
             integers.add(number);
         }
         return integers.toArray(new Integer[0]);
-    }
-
-    /**
-     * Generates Java code based on the provided template and replacements.
-     *
-     * @param inputTemplate      The code segment template.
-     * @param inputReplacements  A list of maps containing replacements for each test.
-     * @param testNumber         The unique number for the generated test class.
-     * @return A string containing the generated Java code.
-     */
-    public static String generateJavaCode(CodeSegment inputTemplate,
-                                          ArrayList<Map<String, String>> inputReplacements,
-                                          long testNumber) {
-        String template = """
-                import java.util.Objects;
-                \\{imports}
-                public class GeneratedTest\\{num} {
-                    \\{statics}
-                    public static void main(String args[]) throws Exception {
-                        \\{calls}
-                        System.out.println("Passed");
-                    }
-                    \\{methods}
-                }
-                """;
-
-        if (inputReplacements == null || inputReplacements.isEmpty()) {
-            throw new IllegalArgumentException("Input replacements must not be null or empty.");
-        }
-
-        CodeSegment aggregatedCodeSegment = fillTemplate(inputTemplate, inputReplacements.get(0));
-
-        for (int i = 1; i < inputReplacements.size(); i++) {
-            CodeSegment currentSegment = fillTemplate(inputTemplate, inputReplacements.get(i));
-            aggregatedCodeSegment.appendCalls(currentSegment.getCalls());
-            aggregatedCodeSegment.appendMethods(currentSegment.getMethods());
-            // Assuming imports are common and handled separately
-        }
-
-        Map<String, String> replacements = Map.of(
-                "num", String.valueOf(testNumber),
-                "statics", aggregatedCodeSegment.getStatics(),
-                "calls", aggregatedCodeSegment.getCalls(),
-                "methods", aggregatedCodeSegment.getMethods(),
-                "imports", aggregatedCodeSegment.getImports()
-        );
-
-        return performReplacements(template, replacements);
-    }
-
-    /**
-     * Fills the template with the provided replacements.
-     *
-     * @param codeSegment  The original code segment template.
-     * @param replacements A map containing replacement values.
-     * @return A new CodeSegment with replacements applied.
-     */
-    private static CodeSegment fillTemplate(CodeSegment codeSegment, Map<String, String> replacements) {
-        String statics = performReplacements(codeSegment.getStatics(), replacements);
-        String calls = performReplacements(codeSegment.getCalls(), replacements);
-        String methods = performReplacements(codeSegment.getMethods(), replacements);
-        String imports = performReplacements(codeSegment.getImports(), replacements);
-        return new CodeSegment(statics, calls, methods, imports);
-    }
-
-    /**
-     * Performs placeholder replacements in the template string based on the provided map.
-     * It preserves the indentation of the placeholders.
-     *
-     * @param template     The template string containing placeholders.
-     * @param replacements A map of placeholder keys and their replacement values.
-     * @return The template string with all placeholders replaced.
-     */
-    public static String performReplacements(String template, Map<String, String> replacements) {
-        if (template == null || replacements == null) {
-            throw new IllegalArgumentException("Template and replacements must not be null.");
-        }
-
-        for (Map.Entry<String, String> entry : replacements.entrySet()) {
-            String pattern = "\\{%s}".formatted(entry.getKey());
-            String replacement = entry.getValue();
-
-            // Find the pattern in the template and determine its indentation level
-            int index = template.indexOf(pattern);
-            if (index != -1) {
-                int lineStart = template.lastIndexOf('\n', index);
-                String indentation = template.substring(lineStart + 1, index).replaceAll("\\S", "");
-
-                // Add indentation to all lines of the replacement (except the first one)
-                String indentedReplacement = replacement.lines()
-                        .collect(Collectors.joining("\n%s".formatted(indentation)));
-                template = template.replace(pattern, indentedReplacement);
-            }
-        }
-        return template;
     }
 
     /**

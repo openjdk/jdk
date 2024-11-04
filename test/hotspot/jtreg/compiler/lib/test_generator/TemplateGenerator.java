@@ -36,6 +36,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
@@ -226,7 +229,7 @@ public class TemplateGenerator {
     private static void generateAndRunTest(CodeSegment template, ArrayList<Map<String, String>> replacements, String[] compileFlags, long id) {
         try {
             // Generate the complete Java code by applying replacements to the template
-            String javaCode = InputTemplate.generateJavaCode(template, replacements, id);
+            String javaCode = generateJavaCode(template, replacements, id);
             // Write the generated Java code to a file and retrieve the filename
             String fileName = writeJavaCodeToFile(javaCode, id);
             // Execute the generated Java file with the specified compile flags
@@ -235,6 +238,102 @@ public class TemplateGenerator {
             // Wrap and rethrow any exceptions as a runtime exception
             throw new RuntimeException("Test generation error", e);
         }
+    }
+
+    /**
+     * Generates Java code based on the provided template and replacements.
+     *
+     * @param inputTemplate      The code segment template.
+     * @param inputReplacements  A list of maps containing replacements for each test.
+     * @param testNumber         The unique number for the generated test class.
+     * @return A string containing the generated Java code.
+     */
+    public static String generateJavaCode(CodeSegment inputTemplate,
+                                          ArrayList<Map<String, String>> inputReplacements,
+                                          long testNumber) {
+        String template = """
+                import java.util.Objects;
+                \\{imports}
+                public class GeneratedTest\\{num} {
+                    \\{statics}
+                    public static void main(String args[]) throws Exception {
+                        \\{calls}
+                        System.out.println("Passed");
+                    }
+                    \\{methods}
+                }
+                """;
+
+        if (inputReplacements == null || inputReplacements.isEmpty()) {
+            throw new IllegalArgumentException("Input replacements must not be null or empty.");
+        }
+
+        CodeSegment aggregatedCodeSegment = fillTemplate(inputTemplate, inputReplacements.get(0));
+
+        for (int i = 1; i < inputReplacements.size(); i++) {
+            CodeSegment currentSegment = fillTemplate(inputTemplate, inputReplacements.get(i));
+            aggregatedCodeSegment.appendCalls(currentSegment.getCalls());
+            aggregatedCodeSegment.appendMethods(currentSegment.getMethods());
+            // Assuming imports are common and handled separately
+        }
+
+        Map<String, String> replacements = Map.of(
+                "num", String.valueOf(testNumber),
+                "statics", aggregatedCodeSegment.getStatics(),
+                "calls", aggregatedCodeSegment.getCalls(),
+                "methods", aggregatedCodeSegment.getMethods(),
+                "imports", aggregatedCodeSegment.getImports()
+        );
+
+        return performReplacements(template, replacements);
+    }
+
+
+    /**
+     * Performs placeholder replacements in the template string based on the provided map.
+     * It preserves the indentation of the placeholders.
+     *
+     * @param template     The template string containing placeholders.
+     * @param replacements A map of placeholder keys and their replacement values.
+     * @return The template string with all placeholders replaced.
+     */
+    public static String performReplacements(String template, Map<String, String> replacements) {
+        if (template == null || replacements == null) {
+            throw new IllegalArgumentException("Template and replacements must not be null.");
+        }
+
+        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+            String pattern = "\\{%s}".formatted(entry.getKey());
+            String replacement = entry.getValue();
+
+            // Find the pattern in the template and determine its indentation level
+            int index = template.indexOf(pattern);
+            if (index != -1) {
+                int lineStart = template.lastIndexOf('\n', index);
+                String indentation = template.substring(lineStart + 1, index).replaceAll("\\S", "");
+
+                // Add indentation to all lines of the replacement (except the first one)
+                String indentedReplacement = replacement.lines()
+                        .collect(Collectors.joining("\n%s".formatted(indentation)));
+                template = template.replace(pattern, indentedReplacement);
+            }
+        }
+        return template;
+    }
+
+    /**
+     * Fills the template with the provided replacements.
+     *
+     * @param codeSegment  The original code segment template.
+     * @param replacements A map containing replacement values.
+     * @return A new CodeSegment with replacements applied.
+     */
+    private static CodeSegment fillTemplate(CodeSegment codeSegment, Map<String, String> replacements) {
+        String statics = performReplacements(codeSegment.getStatics(), replacements);
+        String calls = performReplacements(codeSegment.getCalls(), replacements);
+        String methods = performReplacements(codeSegment.getMethods(), replacements);
+        String imports = performReplacements(codeSegment.getImports(), replacements);
+        return new CodeSegment(statics, calls, methods, imports);
     }
 
     /**
@@ -396,5 +495,122 @@ public class TemplateGenerator {
             // Delegate to the parent ClassLoader if the class file does not exist
             return super.findClass(name);
         }
+    }
+
+    private static final Random RANDOM = new Random(32);
+
+    // Integer test values including edge cases
+    public static final Integer[] INTEGER_VALUES = {
+            -2, -1, 0, 1, 2,
+            Integer.MIN_VALUE, Integer.MAX_VALUE
+    };
+
+    // Positive integer test values including edge cases
+    public static final Integer[] POSITIVE_INTEGER_VALUES = {
+            1, 2, Integer.MAX_VALUE
+    };
+
+    // Array sizes for testing
+    public static final Integer[] ARRAY_SIZES = {
+            1, 10, 100, 1_000, 10_000, 100_000, 200_000, 500_000, 1_000_000
+    };
+
+    // Non-zero integer values
+    public static final Integer[] INTEGER_VALUES_NON_ZERO = {
+            -2, -1, 1, 2,
+            Integer.MIN_VALUE, Integer.MAX_VALUE
+    };
+
+    // Long test values including edge cases
+    public static final Long[] LONG_VALUES = {
+            -2L, -1L, 0L, 1L, 2L,
+            (long) Integer.MIN_VALUE, (long) Integer.MAX_VALUE,
+            Long.MIN_VALUE, Long.MAX_VALUE
+    };
+
+    // Non-zero long values
+    public static final Long[] LONG_VALUES_NON_ZERO = {
+            -2L, -1L, 1L, 2L,
+            (long) Integer.MIN_VALUE, (long) Integer.MAX_VALUE,
+            Long.MIN_VALUE, Long.MAX_VALUE
+    };
+
+    // Short test values including edge cases
+    public static final Short[] SHORT_VALUES = {
+            -2, -1, 0, 1, 2,
+            Short.MIN_VALUE, Short.MAX_VALUE
+    };
+
+    // Non-zero short values
+    public static final Short[] SHORT_VALUES_NON_ZERO = {
+            -2, -1, 1, 2,
+            Short.MIN_VALUE, Short.MAX_VALUE
+    };
+
+
+    /**
+     * Retrieves a random value from the provided array.
+     *
+     * @param array Array of values to choose from.
+     * @param <T>   Type of the array elements.
+     * @return A randomly selected element from the array.
+     */
+    public static <T> T getRandomValue(T[] array) {
+        if (array == null || array.length == 0) {
+            throw new IllegalArgumentException("Array must not be null or empty.");
+        }
+        return array[RANDOM.nextInt(array.length)];
+    }
+
+    /**
+     * Retrieves a random value from the provided array and converts it to a string.
+     *
+     * @param array Array of values to choose from.
+     * @param <T>   Type of the array elements.
+     * @return A string representation of a randomly selected element from the array.
+     */
+    public static <T> String getRandomValueAsString(T[] array) {
+        T value = getRandomValue(array);
+        return String.valueOf(value);
+    }
+
+    /**
+     * Generates a unique identifier based on the current system time in nanoseconds.
+     *
+     * @return A unique identifier as a string.
+     */
+    public static String getUniqueId() {
+        return String.valueOf(System.nanoTime());
+    }
+
+    // Atomic counter to ensure thread-safe unique number generation
+    private static final AtomicInteger uniqueCounter = new AtomicInteger(1);
+
+    // Pattern to identify placeholders in the format $variableName
+    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\$(\\w+)");
+
+    /**
+     * Processes a template string to prevent variable name conflicts by appending a unique identifier.
+     *
+     * <p>This method scans the input template for placeholders, which are denoted by a '$' followed by a word
+     * representing the variable name. Each detected placeholder is replaced with the variable name concatenated
+     * with a unique number, ensuring that variable names remain distinct and do not clash within the processed string.
+     *
+     * @param template The template string containing placeholders to be processed.
+     * @return The processed string with unique identifiers appended to variable names.
+     */
+    public static String avoidConflict(String template) {
+        int uniqueId = uniqueCounter.getAndIncrement();
+        StringBuilder result = new StringBuilder();
+        Matcher matcher = PLACEHOLDER_PATTERN.matcher(template);
+
+        while (matcher.find()) {
+            String variableName = matcher.group(1);
+            String replacement = variableName + uniqueId;
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(result);
+
+        return result.toString();
     }
 }

@@ -1,4 +1,5 @@
 package compiler.lib.test_generator;
+import static compiler.lib.test_generator.TemplateGenerator.performReplacements;
 import java.util.HashMap;
 import java.util.Map;
 import static compiler.lib.test_generator.InputTemplate.*;
