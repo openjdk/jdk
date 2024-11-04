@@ -23,7 +23,6 @@
 
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
-import javax.swing.UIManager;
 
 /*
  * @test
@@ -50,7 +49,6 @@ public class JComboBoxScrollFocusTest {
             """;
 
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
         PassFailJFrame
                 .builder()
                 .title("JComboBoxScrollFocusTest Test Instructions")
@@ -69,7 +67,6 @@ public class JComboBoxScrollFocusTest {
             combobox.addItem(String.valueOf(i));
         }
         frame.add(combobox);
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setSize(400, 200);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);

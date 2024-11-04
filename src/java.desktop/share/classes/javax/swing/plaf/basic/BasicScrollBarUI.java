@@ -1230,41 +1230,21 @@ public class BasicScrollBarUI
         @Override
         public void propertyChange(PropertyChangeEvent e) {
             String propertyName = e.getPropertyName();
-//            System.out.println("PROPERTYNAME: " + propertyName);
 
             if ("focusOwner" == propertyName) {
-                System.out.println("FOCUSOWNER: " + e);
                 // Stop scrolling if no longer focus owner
-//                if (e.getNewValue() == null && scrollTimer.isRunning()) {
-//                    scrollTimer.stop();
-//                    if (buttonListener.handledEvent) {
-//                        buttonListener.handledEvent = false;
-//                    }
-//                    scrollbar.setValueIsAdjusting(false);
-
-//                    scrollTimer.stop();
-                if (scrollTimer != null) {
-//                    System.out.println("SCROLLTIMER: " + scrollTimer.isRunning());
+                if (e.getNewValue() == null && scrollTimer.isRunning()) {
+                    scrollTimer.stop();
+                    buttonListener.handledEvent = false;
+                    scrollbar.setValueIsAdjusting(false);
+                    if (incrButton.isFocusPainted()) {
+                        incrButton.doClick();
+                    } else if (decrButton.isFocusPainted()) {
+                        decrButton.doClick();
+                    }
                 }
-//                    buttonListener.handledEvent = false;
-//                    System.out.println("HANDLEDEVENT: " + buttonListener.handledEvent);
-//                    scrollbar.setValueIsAdjusting(false);
-//                    System.out.println("ADJUSTING: " + scrollbar.getValueIsAdjusting());
-//                }
-            } else if ("permanentFocusOwner" == propertyName) {
-                System.out.println("PERMANENTFOCUSOWNER: " + e);
             }
         }
-
-//        public void mousePressed(MouseEvent e) {
-//
-//        }
-//
-//        public void mouseReleased(MouseEvent e) {
-//            scrollTimer.stop();
-//            buttonListener.handledEvent = false;
-//            scrollbar.setValueIsAdjusting(false);
-//        }
     }
 
     /**
@@ -1694,15 +1674,15 @@ public class BasicScrollBarUI
                     }
                 }
             } while (parent != null);
-            if(useBlockIncrement)       {
+            if (useBlockIncrement)       {
                 scrollByBlock(direction);
                 // Stop scrolling if the thumb catches up with the mouse
-                if(scrollbar.getOrientation() == JScrollBar.VERTICAL)   {
-                    if(direction > 0)   {
-                        if(getThumbBounds().y + getThumbBounds().height
+                if (scrollbar.getOrientation() == JScrollBar.VERTICAL)   {
+                    if (direction > 0)   {
+                        if (getThumbBounds().y + getThumbBounds().height
                                 >= trackListener.currentMouseY)
                                     ((Timer)e.getSource()).stop();
-                    } else if(getThumbBounds().y <= trackListener.currentMouseY)        {
+                    } else if (getThumbBounds().y <= trackListener.currentMouseY)        {
                         ((Timer)e.getSource()).stop();
                     }
                 } else {
@@ -1716,11 +1696,11 @@ public class BasicScrollBarUI
                 scrollByUnit(direction);
             }
 
-            if(direction > 0
+            if (direction > 0
                 && scrollbar.getValue()+scrollbar.getVisibleAmount()
                         >= scrollbar.getMaximum())
                 ((Timer)e.getSource()).stop();
-            else if(direction < 0
+            else if (direction < 0
                 && scrollbar.getValue() <= scrollbar.getMinimum())
                 ((Timer)e.getSource()).stop();
         }
