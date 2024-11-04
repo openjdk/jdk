@@ -193,7 +193,7 @@ class TestMergeStoresMemorySegmentImpl {
     // List of tests
     Map<String, TestFunction> tests = new HashMap<>();
 
-    // List of gold, the results from the first run before compilation
+    // List of golden values, the results from the first run before compilation
     Map<String, Object[]> golds = new HashMap<>();
 
     public TestMergeStoresMemorySegmentImpl () {
