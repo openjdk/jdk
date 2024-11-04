@@ -25,7 +25,7 @@ package gc.z;
 
 /*
  * @test TestAllocateHeapAt
- * @requires vm.gc.ZGenerational & os.family == "linux"
+ * @requires vm.gc.Z & os.family == "linux"
  * @requires !vm.opt.final.UseLargePages
  * @requires !vm.opt.final.UseTransparentHugePages
  * @summary Test ZGC with -XX:AllocateHeapAt
@@ -55,7 +55,6 @@ public class TestAllocateHeapAt {
 
         ProcessTools.executeTestJava(
             "-XX:+UseZGC",
-            "-XX:+ZGenerational",
             "-Xlog:gc*",
             "-Xms32M",
             "-Xmx32M",

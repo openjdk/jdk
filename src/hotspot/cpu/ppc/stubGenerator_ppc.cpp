@@ -49,7 +49,6 @@
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 #if INCLUDE_ZGC
-#include "gc/x/xBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #endif
 
@@ -1976,7 +1975,7 @@ class StubGenerator: public StubCodeGenerator {
       generate_conjoint_int_copy_core(aligned);
     } else {
 #if INCLUDE_ZGC
-      if (UseZGC && ZGenerational) {
+      if (UseZGC) {
         ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
         zbs->generate_conjoint_oop_copy(_masm, dest_uninitialized);
       } else
@@ -2019,7 +2018,7 @@ class StubGenerator: public StubCodeGenerator {
       generate_disjoint_int_copy_core(aligned);
     } else {
 #if INCLUDE_ZGC
-      if (UseZGC && ZGenerational) {
+      if (UseZGC) {
         ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
         zbs->generate_disjoint_oop_copy(_masm, dest_uninitialized);
       } else
@@ -2137,7 +2136,7 @@ class StubGenerator: public StubCodeGenerator {
     } else {
       __ bind(store_null);
 #if INCLUDE_ZGC
-      if (UseZGC && ZGenerational) {
+      if (UseZGC) {
         __ store_heap_oop(R10_oop, R8_offset, R4_to, R11_scratch1, R12_tmp, noreg,
                           MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS,
                           dest_uninitialized ? IS_DEST_UNINITIALIZED : 0);
@@ -2153,7 +2152,7 @@ class StubGenerator: public StubCodeGenerator {
     // ======== loop entry is here ========
     __ bind(load_element);
 #if INCLUDE_ZGC
-    if (UseZGC && ZGenerational) {
+    if (UseZGC) {
       __ load_heap_oop(R10_oop, R8_offset, R3_from,
                        R11_scratch1, R12_tmp,
                        MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS,
@@ -4587,6 +4586,30 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     return start;
   }
 
+  // load Method* target of MethodHandle
+  // R3_ARG1 = jobject receiver
+  // R19_method = result Method*
+  address generate_upcall_stub_load_target() {
+
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(R3_ARG1, R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS);
+    // Load target method from receiver
+    __ load_heap_oop(R19_method, java_lang_invoke_MethodHandle::form_offset(), R3_ARG1,
+                     R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
+    __ load_heap_oop(R19_method, java_lang_invoke_LambdaForm::vmentry_offset(), R19_method,
+                     R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
+    __ load_heap_oop(R19_method, java_lang_invoke_MemberName::method_offset(), R19_method,
+                     R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
+    __ ld(R19_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset(), R19_method);
+    __ std(R19_method, in_bytes(JavaThread::callee_target_offset()), R16_thread); // just in case callee is deoptimized
+
+    __ blr();
+
+    return start;
+  }
+
   // Initialization
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points
@@ -4651,6 +4674,7 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
   }
 
   void generate_compiler_stubs() {

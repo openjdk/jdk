@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,12 +103,12 @@ import sun.util.logging.PlatformLogger;
  * and/or minor unit are encountered, those entries are ignored and the remainder
  * of entries in file are processed.
  *
- * <p>
- * It is recommended to use {@link java.math.BigDecimal} class while dealing
+ * @apiNote
+ * It is recommended to use the {@link java.math.BigDecimal} class while dealing
  * with {@code Currency} or monetary values as it provides better handling of floating
  * point numbers and their operations.
  *
- * @spec http://www.iso.org/iso/home/standards/currency_codes.htm ISO - ISO 4217 - Currency codes
+ * @spec https://www.iso.org/iso-4217-currency-codes.html ISO - ISO 4217 - Currency codes
  * @see java.math.BigDecimal
  * @since 1.4
  */
@@ -521,7 +521,8 @@ public final class Currency implements Serializable {
      * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the symbol returned from this method reflects
      * the value specified with that extension.
-     * <p>
+     *
+     * @implSpec
      * This is equivalent to calling
      * {@link #getSymbol(Locale)
      *     getSymbol(Locale.getDefault(Locale.Category.DISPLAY))}.
@@ -621,7 +622,8 @@ public final class Currency implements Serializable {
      * the default {@link Locale.Category#DISPLAY DISPLAY} locale.
      * If there is no suitable display name found
      * for the default locale, the ISO 4217 currency code is returned.
-     * <p>
+     *
+     * @implSpec
      * This is equivalent to calling
      * {@link #getDisplayName(Locale)
      *     getDisplayName(Locale.getDefault(Locale.Category.DISPLAY))}.

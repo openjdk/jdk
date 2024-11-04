@@ -48,8 +48,6 @@
 # define MB (1024UL * KB)
 # define GB (1024UL * MB)
 
-#define CURRENT_DATA_MODEL (CHAR_BIT * sizeof(void*))
-
 /*
  * Older versions of java launcher used to support JRE version selection - specifically,
  * the java launcher in JDK 1.8 can be used to launch a java application using a different
@@ -103,30 +101,25 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
 jboolean
 LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn);
 
-void
-GetXUsagePath(char *buf, jint bufsize);
-
 jboolean
 GetApplicationHome(char *buf, jint bufsize);
 
 jboolean
 GetApplicationHomeFromDll(char *buf, jint bufsize);
 
-#define GetArch() GetArchPath(CURRENT_DATA_MODEL)
-
 /*
  * Different platforms will implement this, here
  * pargc is a pointer to the original argc,
  * pargv is a pointer to the original argv,
- * jrepath is an accessible path to the jre as determined by the call
- * so_jrepath is the length of the buffer jrepath
+ * jdkroot is an accessible path to the JDK installation root as determined by the call
+ * so_jdkroot is the length of the buffer jdkroot
  * jvmpath is an accessible path to the jvm as determined by the call
  * so_jvmpath is the length of the buffer jvmpath
  */
 void CreateExecutionEnvironment(int *argc, char ***argv,
-                                char *jrepath, jint so_jrepath,
+                                char *jdkroot, jint so_jdkroot,
                                 char *jvmpath, jint so_jvmpath,
-                                char *jvmcfg,  jint so_jvmcfg);
+                                char *jvmcfg, jint so_jvmcfg);
 
 /* Reports an error message to stderr or a window as appropriate. */
 JNIEXPORT void JNICALL
@@ -149,7 +142,6 @@ void JLI_ShowMessage(const char * message, ...);
  */
 JNIEXPORT void JNICALL
 JLI_ReportExceptionDescription(JNIEnv * env);
-void PrintMachineDependentOptions();
 
 /*
  * Block current thread and continue execution in new thread.
@@ -254,14 +246,14 @@ typedef struct {
 
 #define CHECK_EXCEPTION_RETURN_VALUE(CER_value) \
     do { \
-        if ((*env)->ExceptionOccurred(env)) { \
+        if ((*env)->ExceptionCheck(env)) { \
             return CER_value; \
         } \
     } while (JNI_FALSE)
 
 #define CHECK_EXCEPTION_RETURN() \
     do { \
-        if ((*env)->ExceptionOccurred(env)) { \
+        if ((*env)->ExceptionCheck(env)) { \
             return; \
         } \
     } while (JNI_FALSE)

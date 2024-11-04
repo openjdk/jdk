@@ -118,7 +118,6 @@ static jclass GetApplicationClass(JNIEnv *env);
 
 static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***pargv);
 static jboolean AddApplicationOptions(int cpathc, const char **cpathv);
-static void SetApplicationClassPath(const char**);
 
 static void PrintJavaVersion(JNIEnv *env);
 static void PrintUsage(JNIEnv* env, jboolean doXUsage);
@@ -126,9 +125,6 @@ static void ShowSettings(JNIEnv* env, char *optString);
 static void ShowResolvedModules(JNIEnv* env);
 static void ListModules(JNIEnv* env);
 static void DescribeModule(JNIEnv* env, char* optString);
-static jboolean ValidateModules(JNIEnv* env);
-
-static void SetPaths(int argc, char **argv);
 
 static void DumpState();
 
@@ -240,7 +236,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     InvocationFunctions ifn;
     jlong start = 0, end = 0;
     char jvmpath[MAXPATHLEN];
-    char jrepath[MAXPATHLEN];
+    char jdkroot[MAXPATHLEN];
     char jvmcfg[MAXPATHLEN];
 
     _fVersion = fullversion;
@@ -269,9 +265,9 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     }
 
     CreateExecutionEnvironment(&argc, &argv,
-                               jrepath, sizeof(jrepath),
+                               jdkroot, sizeof(jdkroot),
                                jvmpath, sizeof(jvmpath),
-                               jvmcfg,  sizeof(jvmcfg));
+                               jvmcfg, sizeof(jvmcfg));
 
     ifn.CreateJavaVM = 0;
     ifn.GetDefaultJavaVMInitArgs = 0;
@@ -355,7 +351,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
 #define CHECK_EXCEPTION_NULL_LEAVE(CENL_exception) \
     do { \
-        if ((*env)->ExceptionOccurred(env)) { \
+        if ((*env)->ExceptionCheck(env)) { \
             JLI_ReportExceptionDescription(env); \
             LEAVE(); \
         } \
@@ -367,7 +363,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
 #define CHECK_EXCEPTION_LEAVE(CEL_return_value) \
     do { \
-        if ((*env)->ExceptionOccurred(env)) { \
+        if ((*env)->ExceptionCheck(env)) { \
             JLI_ReportExceptionDescription(env); \
             ret = (CEL_return_value); \
             LEAVE(); \
@@ -1526,7 +1522,7 @@ NewPlatformString(JNIEnv *env, char *s)
     if (ary != 0) {
         jstring str = 0;
         (*env)->SetByteArrayRegion(env, ary, 0, len, (jbyte *)s);
-        if (!(*env)->ExceptionOccurred(env)) {
+        if (!(*env)->ExceptionCheck(env)) {
             if (makePlatformStringMID == NULL) {
                 NULL_CHECK0(makePlatformStringMID = (*env)->GetStaticMethodID(env,
                         cls, "makePlatformString", "(Z[B)Ljava/lang/String;"));
@@ -2027,7 +2023,7 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
  * JVM on the command line.
  *
  * The intent of the jvm.cfg file is to allow several JVM libraries to
- * be installed in different subdirectories of a single JRE installation,
+ * be installed in different subdirectories of a single JDK installation,
  * for space-savings and convenience in testing.
  * The intent is explicitly not to provide a full aliasing or predicate
  * mechanism.

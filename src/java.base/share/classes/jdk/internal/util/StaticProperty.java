@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,19 +98,33 @@ public final class StaticProperty {
         USER_LANGUAGE = getProperty(props, "user.language", "en");
         USER_LANGUAGE_DISPLAY = getProperty(props, "user.language.display", USER_LANGUAGE);
         USER_LANGUAGE_FORMAT = getProperty(props, "user.language.format", USER_LANGUAGE);
-        USER_SCRIPT = getProperty(props, "user.script", "");
+        // for compatibility, check for old user.region property
+        USER_REGION = getProperty(props, "user.region", "");
+        if (!USER_REGION.isEmpty()) {
+            // region can be of form country, country_variant, or _variant
+            int i = USER_REGION.indexOf('_');
+            if (i >= 0) {
+                USER_COUNTRY = USER_REGION.substring(0, i);
+                USER_VARIANT = USER_REGION.substring(i + 1);
+            } else {
+                USER_COUNTRY = USER_REGION;
+                USER_VARIANT = "";
+            }
+            USER_SCRIPT = "";
+        } else {
+            USER_SCRIPT = getProperty(props, "user.script", "");
+            USER_COUNTRY = getProperty(props, "user.country", "");
+            USER_VARIANT = getProperty(props, "user.variant", "");
+        }
         USER_SCRIPT_DISPLAY = getProperty(props, "user.script.display", USER_SCRIPT);
         USER_SCRIPT_FORMAT = getProperty(props, "user.script.format", USER_SCRIPT);
-        USER_COUNTRY = getProperty(props, "user.country", "");
         USER_COUNTRY_DISPLAY = getProperty(props, "user.country.display", USER_COUNTRY);
         USER_COUNTRY_FORMAT = getProperty(props, "user.country.format", USER_COUNTRY);
-        USER_VARIANT = getProperty(props, "user.variant", "");
         USER_VARIANT_DISPLAY = getProperty(props, "user.variant.display", USER_VARIANT);
         USER_VARIANT_FORMAT = getProperty(props, "user.variant.format", USER_VARIANT);
         USER_EXTENSIONS = getProperty(props, "user.extensions", "");
         USER_EXTENSIONS_DISPLAY = getProperty(props, "user.extensions.display", USER_EXTENSIONS);
         USER_EXTENSIONS_FORMAT = getProperty(props, "user.extensions.format", USER_EXTENSIONS);
-        USER_REGION = getProperty(props, "user.region", "");
     }
 
     private static String getProperty(Properties props, String key) {
