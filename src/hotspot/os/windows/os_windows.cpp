@@ -5817,9 +5817,9 @@ void* os::get_default_process_handle() {
   return (void*)GetModuleHandle(nullptr);
 }
 
+// FIXME
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
 // which is used to find statically linked in agents.
-// Additionally for windows, takes into account __stdcall names.
 // Parameters:
 //            sym_name: Symbol in library we are looking for
 //            lib_name: Name of library to look in, null for shared libs.
@@ -5860,24 +5860,11 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   if (agent_entry_name == nullptr) {
     return nullptr;
   }
+
+  strcpy(agent_entry_name, sym_name);
   if (lib_name != nullptr) {
-    const char *p = strrchr(sym_name, '@');
-    if (p != nullptr && p != sym_name) {
-      // sym_name == _Agent_OnLoad@XX
-      strncpy(agent_entry_name, sym_name, (p - sym_name));
-      agent_entry_name[(p-sym_name)] = '\0';
-      // agent_entry_name == _Agent_OnLoad
-      strcat(agent_entry_name, "_");
-      strncat(agent_entry_name, lib_name, name_len);
-      strcat(agent_entry_name, p);
-      // agent_entry_name == _Agent_OnLoad_lib_name@XX
-    } else {
-      strcpy(agent_entry_name, sym_name);
-      strcat(agent_entry_name, "_");
-      strncat(agent_entry_name, lib_name, name_len);
-    }
-  } else {
-    strcpy(agent_entry_name, sym_name);
+    strcat(agent_entry_name, "_");
+    strncat(agent_entry_name, lib_name, name_len);
   }
   return agent_entry_name;
 }
