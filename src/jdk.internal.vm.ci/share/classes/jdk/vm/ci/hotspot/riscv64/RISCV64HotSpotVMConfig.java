@@ -45,7 +45,6 @@ class RISCV64HotSpotVMConfig extends HotSpotVMConfigAccess {
      */
     final boolean useConservativeFence = getFlag("UseConservativeFence", Boolean.class);
     final boolean avoidUnalignedAccesses = getFlag("AvoidUnalignedAccesses", Boolean.class);
-    final boolean nearCpool = getFlag("NearCpool", Boolean.class);
     final boolean traceTraps = getFlag("TraceTraps", Boolean.class);
     final boolean useRVV = getFlag("UseRVV", Boolean.class);
     final boolean useRVC = getFlag("UseRVC", Boolean.class);

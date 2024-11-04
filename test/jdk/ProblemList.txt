@@ -531,6 +531,7 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
+java/io/IO/IO.java                                              8337935 linux-ppc64le
 
 ############################################################################
 
@@ -722,9 +723,6 @@ javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.ja
 ############################################################################
 
 # core_tools
-
-tools/jar/ExtractFilesTest.java 8342930 generic-all
-tools/jar/MultipleManifestTest.java 8342930 generic-all
 
 
 ############################################################################

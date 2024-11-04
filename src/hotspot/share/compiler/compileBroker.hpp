@@ -87,7 +87,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   CompileTask* _first_stale;
 
-  int _size;
+  volatile int _size;
   int _peak_size;
   uint _total_added;
   uint _total_removed;
