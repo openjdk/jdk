@@ -43,10 +43,10 @@ public class InputTemplate6 extends InputTemplate {
         Template template1 = new Template2();
         String template_nes1= template1.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
-        String size = getRandomValueAsString(arraySizes);
-        String Val1 = getRandomValueAsString(integerValues);
-        String Val2 = getRandomValueAsString(shortValues);
-        String init = getRandomValueAsString(integerValues);
+        String size = getRandomValueAsString(ARRAY_SIZES);
+        String Val1 = getRandomValueAsString(INTEGER_VALUES);
+        String Val2 = getRandomValueAsString(SHORT_VALUES);
+        String init = getRandomValueAsString(INTEGER_VALUES);
         String uniqueId = String.valueOf(numTest);
         replacements.put("size", size);
         replacements.put("Val1", Val1);

@@ -24,14 +24,14 @@ public class Template3 extends Template {
         String template_com= avoidConflict(template);
 
         Map<String, String> replacements = new HashMap<>();
-        String val1 = getRandomValueAsString(integerValues);
-        String val = getRandomValueAsString(integerValues);
-        String limit = getRandomValueAsString(positiveIntegerValues);
+        String val1 = getRandomValueAsString(INTEGER_VALUES);
+        String val = getRandomValueAsString(INTEGER_VALUES);
+        String limit = getRandomValueAsString(POSITIVE_INTEGER_VALUES);
         replacements.put("val1", val1);
         replacements.put("val", val);
         replacements.put("var", variable);
         replacements.put("limit", limit);
 
-        return doReplacements(template_com,replacements);
+        return performReplacements(template_com,replacements);
     }
 }

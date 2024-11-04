@@ -29,11 +29,11 @@ public class Template12 extends Template {
         String template=statics+method;
         String template_com= avoidConflict(template);
         Map<String, String> replacements = new HashMap<>();
-        String val1 = getRandomValueAsString(integerValues);
-        String val2 = getRandomValueAsString(integerValues);
-        String max_val1 = getRandomValueAsString(integerValues);
-        String max_val2 = getRandomValueAsString(integerValues);
-        String max_val3 = getRandomValueAsString(integerValues);
+        String val1 = getRandomValueAsString(INTEGER_VALUES);
+        String val2 = getRandomValueAsString(INTEGER_VALUES);
+        String max_val1 = getRandomValueAsString(INTEGER_VALUES);
+        String max_val2 = getRandomValueAsString(INTEGER_VALUES);
+        String max_val3 = getRandomValueAsString(INTEGER_VALUES);
         String bool = getRandomValue(new String[]{"true", "false"});
         replacements.put("val1", val1);
         replacements.put("val2", val2);
@@ -42,6 +42,6 @@ public class Template12 extends Template {
         replacements.put("max_val2", max_val2);
         replacements.put("max_val3", max_val3);
         replacements.put("var", variable);
-        return doReplacements(template_com,replacements);
+        return performReplacements(template_com,replacements);
     }
 }

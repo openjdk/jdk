@@ -226,7 +226,7 @@ public class TemplateGenerator {
     private static void generateAndRunTest(CodeSegment template, ArrayList<Map<String, String>> replacements, String[] compileFlags, long id) {
         try {
             // Generate the complete Java code by applying replacements to the template
-            String javaCode = InputTemplate.getJavaCode(template, replacements, id);
+            String javaCode = InputTemplate.generateJavaCode(template, replacements, id);
             // Write the generated Java code to a file and retrieve the filename
             String fileName = writeJavaCodeToFile(javaCode, id);
             // Execute the generated Java file with the specified compile flags

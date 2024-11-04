@@ -36,12 +36,12 @@ public class Template8 extends Template{
 
         String template_com= avoidConflict(template);
         Map<String, String> replacements = new HashMap<>();
-        String val1 = getRandomValueAsString(integerValues);
-        String val2 = getRandomValueAsString(integerValues);
-        String val3 = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(positiveIntegerValues);
-        String limit2 = getRandomValueAsString(positiveIntegerValues);
-        String stride = getRandomValueAsString(integerValuesNonZero);
+        String val1 = getRandomValueAsString(INTEGER_VALUES);
+        String val2 = getRandomValueAsString(INTEGER_VALUES);
+        String val3 = getRandomValueAsString(INTEGER_VALUES);
+        String limit1 = getRandomValueAsString(POSITIVE_INTEGER_VALUES);
+        String limit2 = getRandomValueAsString(POSITIVE_INTEGER_VALUES);
+        String stride = getRandomValueAsString(INTEGER_VALUES_NON_ZERO);
         String arithm = getRandomValue(new String[]{"+", "-"});
         String bool = getRandomValue(new String[]{"false", "true"});
         replacements.put("val1", val1);
@@ -53,6 +53,6 @@ public class Template8 extends Template{
         replacements.put("limit1", limit1);
         replacements.put("limit2", limit2);
         replacements.put("var", variable);
-        return doReplacements(template_com,replacements);
+        return performReplacements(template_com,replacements);
     }
 }

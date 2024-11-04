@@ -36,7 +36,7 @@ public class CodeSegment {
     public String getStatics() {
         return statics;
     }
-    public void appendCall(String calls) {
+    public void appendCalls(String calls) {
         this.calls.append(calls);
     }
     public String getCalls() {

@@ -51,12 +51,12 @@ public class InputTemplate2 extends InputTemplate {
         String template_nes1= template1.getTemplate("i");
         String template_nes2= template2.getTemplate("j");
         Map<String, String> replacements = new HashMap<>();
-        String init1 = getRandomValueAsString(integerValues);
-        String init2 = getRandomValueAsString(integerValues);
-        String init3 = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(positiveIntegerValues);
-        String limit2 = getRandomValueAsString(positiveIntegerValues);
-        String limit3 = getRandomValueAsString(positiveIntegerValues);
+        String init1 = getRandomValueAsString(INTEGER_VALUES);
+        String init2 = getRandomValueAsString(INTEGER_VALUES);
+        String init3 = getRandomValueAsString(INTEGER_VALUES);
+        String limit1 = getRandomValueAsString(POSITIVE_INTEGER_VALUES);
+        String limit2 = getRandomValueAsString(POSITIVE_INTEGER_VALUES);
+        String limit3 = getRandomValueAsString(POSITIVE_INTEGER_VALUES);
         String uniqueId = String.valueOf(numTest);
         replacements.put("init1", init1);
         replacements.put("init2", init2);

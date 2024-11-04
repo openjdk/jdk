@@ -48,7 +48,7 @@ public class InputTemplate17 extends InputTemplate {
         String template_nes1= template1.getTemplate("i");
         String template_nes2= template2.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
-        String val1 = getRandomValueAsString(integerValues);
+        String val1 = getRandomValueAsString(INTEGER_VALUES);
         String bool = getRandomValue(new String[]{"true", "false"});
         String uniqueId = String.valueOf(numTest);
         replacements.put("val", val1);

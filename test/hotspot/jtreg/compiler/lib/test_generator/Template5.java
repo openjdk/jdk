@@ -29,13 +29,13 @@ public class Template5 extends Template {
         String template=statics+method;
         String template_com= avoidConflict(template);
         Map<String, String> replacements = new HashMap<>();
-        String val1 = getRandomValueAsString(integerValues);
-        String val2 = getRandomValueAsString(integerValues);
-        String val3 = getRandomValueAsString(integerValues);
+        String val1 = getRandomValueAsString(INTEGER_VALUES);
+        String val2 = getRandomValueAsString(INTEGER_VALUES);
+        String val3 = getRandomValueAsString(INTEGER_VALUES);
         replacements.put("val1", val1);
         replacements.put("val2", val2);
         replacements.put("val3", val3);
         replacements.put("var", variable);
-        return doReplacements(template_com,replacements);
+        return performReplacements(template_com,replacements);
     }
 }

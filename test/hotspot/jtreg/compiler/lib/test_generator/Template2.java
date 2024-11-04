@@ -29,6 +29,6 @@ public class Template2 extends Template {
         String val = getRandomValue(new String[]{"true", "false"});
         replacements.put("val", val);
 
-        return doReplacements(template_com,replacements);
+        return performReplacements(template_com,replacements);
     }
 }

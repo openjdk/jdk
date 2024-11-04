@@ -29,10 +29,10 @@ public class Template4 extends Template{
         String template=statics+method;
         String template_com= avoidConflict(template);
         Map<String, String> replacements = new HashMap<>();
-        String val1 = getRandomValueAsString(integerValues);
-        String val2 = getRandomValueAsString(integerValues);
-        String val3 = getRandomValueAsString(integerValues);
-        String val4 = getRandomValueAsString(integerValues);
+        String val1 = getRandomValueAsString(INTEGER_VALUES);
+        String val2 = getRandomValueAsString(INTEGER_VALUES);
+        String val3 = getRandomValueAsString(INTEGER_VALUES);
+        String val4 = getRandomValueAsString(INTEGER_VALUES);
         String bool = getRandomValue(new String[]{"false", "true"});
         replacements.put("val1", val1);
         replacements.put("val2", val2);
@@ -42,6 +42,6 @@ public class Template4 extends Template{
 
 
 
-        return doReplacements(template_com,replacements);
+        return performReplacements(template_com,replacements);
     }
 }

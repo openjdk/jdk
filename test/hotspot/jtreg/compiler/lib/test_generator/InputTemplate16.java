@@ -45,12 +45,12 @@ public class InputTemplate16 extends InputTemplate {
         String template_nes1= template1.getTemplate("j");
         Map<String, String> replacements = new HashMap<>();
 
-        String init = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String val = getRandomValueAsString(integerValues);
-        String val1 = getRandomValueAsString(integerValues);
-        String limit = getRandomValueAsString(positiveIntegerValues);
-        String stride = getRandomValueAsString(integerValuesNonZero);
+        String init = getRandomValueAsString(INTEGER_VALUES);
+        String limit1 = getRandomValueAsString(INTEGER_VALUES);
+        String val = getRandomValueAsString(INTEGER_VALUES);
+        String val1 = getRandomValueAsString(INTEGER_VALUES);
+        String limit = getRandomValueAsString(POSITIVE_INTEGER_VALUES);
+        String stride = getRandomValueAsString(INTEGER_VALUES_NON_ZERO);
         String arithm = getRandomValue(new String[]{"*", "/"});
        String uniqueId = String.valueOf(numTest);
         replacements.put("init", init);

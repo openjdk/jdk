@@ -17,9 +17,9 @@ public class Template1 extends Template {
         String template=statics+method;
         String template_com= avoidConflict(template);
         Map<String, String> replacements = new HashMap<>();
-        String val = getRandomValueAsString(integerValues);
+        String val = getRandomValueAsString(INTEGER_VALUES);
         replacements.put("val", val);
         replacements.put("var", variable);
-        return doReplacements(template_com,replacements);
+        return performReplacements(template_com,replacements);
     }
 }
