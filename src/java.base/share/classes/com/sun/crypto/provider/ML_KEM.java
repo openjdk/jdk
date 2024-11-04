@@ -24,9 +24,6 @@ public final class ML_KEM {
     private final int mlKem_du;
     private final int mlKem_dv;
     public final int encapsulationSize;
-    private ML_KEM_EncapsulationKey encapsulationKey = null;
-    private ML_KEM_DecapsulationKey decapsulationKey = null;
-    private SecureRandom secureRandom = null;
 
     public static final int secretSize = 32;
 
@@ -398,14 +395,9 @@ public final class ML_KEM {
     /*
     Classes for the internal K_PKE scheme
      */
-    public record K_PKE_EncryptionKey(byte[] keyBytes) {
-    }
+    public record K_PKE_EncryptionKey(byte[] keyBytes) {}
 
-    public record K_PKE_DecryptionKey(byte[] keyBytes) {
-        static K_PKE_DecryptionKey from(ML_KEM_DecapsulationKey key) {
-            return new K_PKE_DecryptionKey(key.keyBytes);
-        }
-    }
+    public record K_PKE_DecryptionKey(byte[] keyBytes) {}
 
     public record K_PKE_KeyPair(
             K_PKE_DecryptionKey privateKey, K_PKE_EncryptionKey publicKey) {
@@ -630,11 +622,10 @@ public final class ML_KEM {
         System.arraycopy(rho, 0,
                 pkEncoded, (mlKem_k * mlKem_n * 12) / 8, rho.length);
 
-        var kPkekp = new K_PKE_KeyPair(
-                new K_PKE_DecryptionKey(skEncoded),
-                new K_PKE_EncryptionKey(pkEncoded));
 
-        return kPkekp;
+        return new K_PKE_KeyPair(
+            new K_PKE_DecryptionKey(skEncoded),
+            new K_PKE_EncryptionKey(pkEncoded));
     }
 
     private K_PKE_CipherText kPkeEncrypt(
@@ -735,7 +726,7 @@ public final class ML_KEM {
         int[] ofs = new int[nrPar];
         Arrays.fill(ofs, 0);
         short[][] aij = new short[nrPar][];
-        Shake128Parallel parXof = new Shake128Parallel(xofBufArr);;
+        Shake128Parallel parXof = new Shake128Parallel(xofBufArr);
 
         for (int i = 0; i < mlKem_k; i++) {
             for (int j = 0; j < mlKem_k; j++) {
@@ -1076,7 +1067,7 @@ public final class ML_KEM {
     // Adds the vector of polynomials b to a in place, i.e. a will hold
     // the result. It also returns (the modified) a so that it can be used
     // in an expression.
-    // The coefficiens in all polynomials of both vectors are supposed to be
+    // The coefficients in all polynomials of both vectors are supposed to be
     // greater than -mlKem_q and less than mlKem_q.
     // The coefficients in the result are nonnegative and less than mlKem_q.
     private short[][] mlKemAddVec(short[][] a, short[][] b) {
@@ -1323,7 +1314,6 @@ public final class ML_KEM {
     // The recovered coefficients will be in the range 0 <= coeff < 2^l .
     private short[] decodePoly(int l, byte[] input, int index) {
         short[] poly = new short[mlKem_n];
-        short[] poly1 = new short[mlKem_n];
         if (l == 12) {
             twelve2Sixteen(input, index, poly, mlKem_n);
         } else if (l == 4) {

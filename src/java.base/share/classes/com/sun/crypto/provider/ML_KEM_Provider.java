@@ -151,7 +151,7 @@ public final class ML_KEM_Provider {
             ML_KEM mlKem = new ML_KEM(name2int(name));
             var kpkeCipherText = new ML_KEM.K_PKE_CipherText(cipherText);
 
-            byte[] decapsulateResult = null;
+            byte[] decapsulateResult;
             try {
                 decapsulateResult = mlKem.decapsulate(
                     new ML_KEM.ML_KEM_DecapsulationKey(decapsulationKey), kpkeCipherText);
