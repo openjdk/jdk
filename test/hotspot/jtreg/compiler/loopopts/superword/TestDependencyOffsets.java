@@ -763,23 +763,42 @@ public class TestDependencyOffsets {
                                    " to avoid cyclic dependency.\n");
                 }
 
-                // In a store-forward case at iteration distances below a certain threshold, and not a
-                // power of 2, we avoid vectorization to avoid the latency penalties of store-to-load
-                // forwarding failure. We only detect these failures in single-array cases.
                 ExpectVectorization expectVectorization = ExpectVectorization.ALWAYS;
-                if (isSingleArray && 0 < offset && offset != floorPow2Offset) {
-                    // It is a little tricky to know the exact threshold. On all platforms and in all
-                    // unrolling cases, it is between 8 and 64. Hence, we have these 3 cases:
-                    if (offset <= 8) {
-                        // We always detect store-to-load-forwarding failures -> never vectorize.
-                        expectVectorization = ExpectVectorization.NEVER;
-                    } else if (offset <= 64) {
-                        // We don't know what happens -> disable IR rule, unless we later prove that
-                        //                               we can never vectorize.
+                if (isSingleArray && 0 < offset) {
+                    // In a store-forward case at iteration distances below a certain threshold, and not there
+                    // is some partial overlap between the expected vector store and some vector load in a later
+                    // iteration, we avoid vectorization to avoid the latency penalties of store-to-load
+                    // forwarding failure. We only detect these failures in single-array cases.
+                    //
+                    // The condition for partial overlap:
+                    //   offset % #elements != 0
+                    //
+                    // But we do not know #elements exactly, only a range from min/maxVectorWidth.
+
+                    int maxElements = maxVectorWidth / type.size;
+                    int minElements = minVectorWidth / type.size;
+                    boolean sometimesPartialOverlap = offset % maxElements != 0;
+                    // If offset % minElements != 0, then it does also not hold for any larger vector.
+                    boolean alwaysPartialOverlap = offset % minElements != 0;
+
+		    if (alwaysPartialOverlap) {
+                        // It is a little tricky to know the exact threshold. On all platforms and in all
+                        // unrolling cases, it is between 8 and 64. Hence, we have these 3 cases:
+                        if (offset <= 8) {
+                            builder.append("    // We always detect store-to-load-forwarding failures -> never vectorize.\n");
+                            expectVectorization = ExpectVectorization.NEVER;
+                        } else if (offset <= 64) {
+                            builder.append("    // Unknown if detect store-to-load-forwarding failures -> maybe disable IR rules.\n");
+                            expectVectorization = ExpectVectorization.UNKNOWN;
+                        } else {
+                            builder.append("    // Offset is large -> expect no store-to-load-failure detection -> should vectoirze.\n");
+                            expectVectorization = ExpectVectorization.ALWAYS;
+                        }
+		    } else if (sometimesPartialOverlap && !alwaysPartialOverlap) {
+                        builder.append("    // Partial overlap condition true: sometimes but not always -> maybe disable IR rules.\n");
                         expectVectorization = ExpectVectorization.UNKNOWN;
                     } else {
-                        // We generally expect vectorization, unless there is another prohibiting
-                        // cause.
+                        builder.append("    // Partial overlap never happens -> expect vectorization.\n");
                         expectVectorization = ExpectVectorization.ALWAYS;
                     }
                 }
