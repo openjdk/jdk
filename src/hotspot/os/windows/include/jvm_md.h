@@ -39,13 +39,6 @@
 
 typedef int socklen_t;
 
-#define JNI_ONLOAD_SYMBOLS   {"_JNI_OnLoad@8", "JNI_OnLoad"}
-#define JNI_ONUNLOAD_SYMBOLS {"_JNI_OnUnload@8", "JNI_OnUnload"}
-#define JVM_ONLOAD_SYMBOLS      {"_JVM_OnLoad@12", "JVM_OnLoad"}
-#define AGENT_ONLOAD_SYMBOLS    {"_Agent_OnLoad@12", "Agent_OnLoad"}
-#define AGENT_ONUNLOAD_SYMBOLS  {"_Agent_OnUnload@4", "Agent_OnUnload"}
-#define AGENT_ONATTACH_SYMBOLS  {"_Agent_OnAttach@12", "Agent_OnAttach"}
-
 #define JNI_LIB_PREFIX ""
 #define JNI_LIB_SUFFIX ".dll"
 
