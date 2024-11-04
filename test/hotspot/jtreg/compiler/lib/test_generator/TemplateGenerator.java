@@ -29,19 +29,18 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
 /**
- * TemplateGenerator is responsible for generating, compiling, and executing Java test cases
- * based on predefined templates. It supports multithreading to efficiently handle multiple
- * test generation tasks concurrently.
+ * The TemplateGenerator class is responsible for generating and executing test cases
+ * based on predefined input templates. It compiles the generated Java code and runs
+ * the tests concurrently using a thread pool.
  */
 public class TemplateGenerator {
     /*
@@ -65,371 +64,336 @@ public class TemplateGenerator {
      */
 
     // Path to the Java home directory
-    static final String JAVA_HOME = System.getProperty("java.home");
+    private static final String JAVA_HOME = System.getProperty("java.home");
 
-    // Compilation flags to control JVM behavior during test execution
-    static final String[] FLAGS = {
+    // JVM flags for compiling the generated tests
+    private static final String[] FLAGS = {
             "-XX:CompileCommand=compileonly,GeneratedTest::test*",
             "-XX:-TieredCompilation"
     };
 
-    // Timeout for test execution in seconds
-    static final int TIMEOUT = 120;
+    // Timeout for each test execution in seconds
+    private static final int TIMEOUT = 120;
 
-    // Number of threads based on available processors
-    static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
+    // Number of threads in the thread pool, based on available processors
+    private static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
 
     // Maximum number of tasks that can be queued in the thread pool
-    static final int MAX_TASKS_IN_QUEUE = NUM_THREADS * 330;
+    private static final int MAX_TASKS_IN_QUEUE = NUM_THREADS * 330;
 
-    // List of Java template files to be used for test generation
-    static String[] TEMPLATE_FILES = {
-            "InputTemplate1.java",
-            "InputTemplate2.java",
-            "InputTemplate3.java",
-            "InputTemplate4.java",
-            "InputTemplate5.java",
-            "InputTemplate6.java",
-            "InputTemplate7.java",
-            "InputTemplate8.java",
-            "InputTemplate9.java",
+    // List of template files to be used for generating tests
+    private static final String[] TEMPLATE_FILES = {
+            "InputTemplate1.java", "InputTemplate2.java", "InputTemplate3.java",
+            "InputTemplate4.java", "InputTemplate5.java", "InputTemplate6.java",
+            "InputTemplate7.java", "InputTemplate8.java", "InputTemplate9.java",
             "InputTemplate10.java"
     };
 
-    // Atomic counter for generating unique test IDs
+    // Counter for assigning unique IDs to tests
     private static long testId = 0L;
 
-    /**
-     * Generates and returns a unique test ID.
-     *
-     * @return unique test ID
-     */
-    public static long getID() {
-        return testId++;
+    // Counter for generating unique identifiers within replacements
+    private static int nextUniqueId = 0;
+
+    // Directory where generated tests will be stored
+    private static String outputFolder;
+
+    // Static block to initialize the output folder with a timestamped directory
+    static {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        outputFolder = System.getProperty("user.dir") + File.separator + timeStamp;
+        new File(outputFolder).mkdirs(); // Create the directory if it doesn't exist
     }
 
     /**
-     * The main entry point of the TemplateGenerator. It initializes the thread pool,
-     * sets the output directory, compiles and loads each input template, and starts
-     * the test generation process.
+     * The main method initializes the thread pool, sets up the output folder,
+     * loads each input template, and initiates test generation for each template.
      *
-     * @param args command-line arguments (not used)
+     * @param args Command-line arguments (not used)
      */
     public static void main(String[] args) {
-        // Initialize a thread pool executor with fixed number of threads and a bounded queue
-        ThreadPoolExecutor threadPool = new ThreadPoolExecutor(
-                NUM_THREADS,
-                NUM_THREADS,
-                0L,
-                TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(MAX_TASKS_IN_QUEUE)
-        );
+        // Create a thread pool executor for concurrent test generation
+        ThreadPoolExecutor threadPool = createThreadPool();
 
-        // Set the output folder where generated tests will be stored
-        setOutputFolder(OUTPUT_FOLDER);
+        // Set up the output folder where generated tests will be saved
+        setupOutputFolder(outputFolder);
 
-        // Iterate over each template file to compile, load, and generate tests
-        for (String filePath : TEMPLATE_FILES) {
+        // Iterate over each template file and process it
+        Arrays.stream(TEMPLATE_FILES).forEach(filePath -> {
             try {
-                // Compile and load the template class
-                Class<?> inputTemplateClass = compileAndLoadClass(filePath);
-
-                // Instantiate the InputTemplate
-                InputTemplate inputTemplate = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
-
-                // Start generating tests based on the template
-                runTestGen(inputTemplate, threadPool);
+                // Load the input template from the specified file
+                InputTemplate inputTemplate = loadInputTemplate(filePath);
+                if (inputTemplate != null) {
+                    // Generate and run tests based on the loaded template
+                    runTestGeneration(inputTemplate, threadPool);
+                }
             } catch (Exception e) {
+                // Print stack trace if an exception occurs during processing
                 e.printStackTrace();
             }
-        }
+        });
 
-        // Shutdown the thread pool after all tasks are submitted
+        // Shutdown the thread pool after all tasks have been submitted
         threadPool.shutdown();
     }
 
-    // Counter to ensure unique replacements across test methods
-    static int nextUniqueId = 0;
+    /**
+     * Creates a ThreadPoolExecutor with a fixed number of threads and a bounded queue.
+     *
+     * @return A configured ThreadPoolExecutor instance
+     */
+    private static ThreadPoolExecutor createThreadPool() {
+        return new ThreadPoolExecutor(
+                NUM_THREADS, // Core pool size
+                NUM_THREADS, // Maximum pool size
+                0L, // Keep-alive time for idle threads
+                TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<>(MAX_TASKS_IN_QUEUE) // Task queue with fixed capacity
+        );
+    }
 
     /**
-     * Generates tests based on the provided InputTemplate and submits them to the thread pool.
+     * Sets up the output folder for storing generated tests.
      *
-     * @param inputTemplate the template defining how tests should be generated
-     * @param threadPool    the thread pool executor to handle test generation tasks
+     * @param folder The path to the output folder
      */
-    public static void runTestGen(InputTemplate inputTemplate, ThreadPoolExecutor threadPool) {
-        // Retrieve compilation flags specific to the input template
+    private static void setupOutputFolder(String folder) {
+        outputFolder = folder;
+    }
+
+    /**
+     * Loads an input template by compiling and loading the specified Java file.
+     *
+     * @param filePath The path to the input template Java file
+     * @return An instance of InputTemplate loaded from the compiled class
+     * @throws Exception If there is an error during compilation or loading
+     */
+    private static InputTemplate loadInputTemplate(String filePath) throws Exception {
+        // Compile the Java file and load the resulting class
+        Class<?> templateClass = compileAndLoadClass(filePath);
+        // Instantiate the InputTemplate from the loaded class
+        return (InputTemplate) templateClass.getDeclaredConstructor().newInstance();
+    }
+
+    /**
+     * Initiates the generation of tests based on the provided input template.
+     *
+     * @param inputTemplate The input template defining test parameters
+     * @param threadPool    The thread pool executor for concurrent test generation
+     */
+    private static void runTestGeneration(InputTemplate inputTemplate, ThreadPoolExecutor threadPool) {
+        // Retrieve compile flags specific to the input template
         String[] compileFlags = inputTemplate.getCompileFlags();
 
-        // Get the code segment template from the input template
+        // Retrieve the code segment template from the input template
         CodeSegment template = inputTemplate.getTemplate();
 
         // Loop to generate the specified number of tests
         for (int i = 0; i < inputTemplate.getNumberOfTests(); i++) {
-            // List to hold replacement maps for each test method
-            ArrayList<Map<String, String>> replacements = new ArrayList<>();
-
-            // Generate replacements for each test method within the test
-            for (int j = 0; j < inputTemplate.getNumberOfTestMethods(); j++) {
-                // Generate a random replacement map using a unique ID
-                Map<String, String> replacement = inputTemplate.getRandomReplacements(nextUniqueId);
-                replacements.add(replacement);
-                nextUniqueId++;
-            }
-
-            // Get a unique ID for the current test
-            long id = getID();
-
-            // Submit the test generation task to the thread pool
-            threadPool.submit(() -> doWork(template, replacements, compileFlags, id));
+            // Generate replacement mappings for the test methods
+            ArrayList<Map<String, String>> replacements = generateReplacements(inputTemplate);
+            // Assign a unique ID to the test
+            long id = getNextTestId();
+            // Submit a task to the thread pool to generate and execute the test
+            threadPool.submit(() -> generateAndRunTest(template, replacements, compileFlags, id));
         }
     }
 
     /**
-     * Performs the actual work of generating, writing, compiling, and executing a test.
+     * Generates a list of replacement mappings for test methods based on the input template.
      *
-     * @param template     the code segment template
-     * @param replacements the list of replacement maps for the template
-     * @param compileFlags the compilation flags to use
-     * @param num          the unique test ID
+     * @param inputTemplate The input template defining replacement rules
+     * @return A list of maps containing replacement key-value pairs for each test method
      */
-    public static void doWork(CodeSegment template, ArrayList<Map<String, String>> replacements, String[] compileFlags, long num) {
+    private static ArrayList<Map<String, String>> generateReplacements(InputTemplate inputTemplate) {
+        ArrayList<Map<String, String>> replacements = new ArrayList<>();
+        // Loop to generate replacements for each test method
+        for (int j = 0; j < inputTemplate.getNumberOfTestMethods(); j++) {
+            // Retrieve a random set of replacements and increment the unique ID
+            replacements.add(inputTemplate.getRandomReplacements(nextUniqueId++));
+        }
+        return replacements;
+    }
+
+    /**
+     * Generates the Java code for a test, writes it to a file, and executes the test.
+     *
+     * @param template     The code segment template to be used for generating the test
+     * @param replacements The list of replacement mappings for the test methods
+     * @param compileFlags The compile flags to be used during test execution
+     * @param id           The unique identifier for the test
+     */
+    private static void generateAndRunTest(CodeSegment template, ArrayList<Map<String, String>> replacements, String[] compileFlags, long id) {
         try {
-            // Generate the Java code by applying replacements to the template
-            String javaCode = InputTemplate.getJavaCode(template, replacements, num);
-
-            // Write the generated Java code to a file
-            String fileName = writeJavaCodeToFile(javaCode, num);
-
-            // Compile and execute the generated Java file
-            boolean success = executeJavaFile(fileName, compileFlags);
+            // Generate the complete Java code by applying replacements to the template
+            String javaCode = InputTemplate.getJavaCode(template, replacements, id);
+            // Write the generated Java code to a file and retrieve the filename
+            String fileName = writeJavaCodeToFile(javaCode, id);
+            // Execute the generated Java file with the specified compile flags
+            executeJavaFile(fileName, compileFlags);
         } catch (Exception e) {
-            // Wrap and rethrow any exceptions encountered during test generation
-            throw new RuntimeException("Couldn't find test method: ", e);
+            // Wrap and rethrow any exceptions as a runtime exception
+            throw new RuntimeException("Test generation error", e);
         }
     }
 
-    // Directory where generated test files will be stored
-    public static String OUTPUT_FOLDER;
-
-    // Static block to initialize the output folder with a timestamp
-    static {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        OUTPUT_FOLDER = System.getProperty("user.dir") + File.separator + timeStamp;
-        new File(OUTPUT_FOLDER).mkdirs();
+    /**
+     * Retrieves the next unique test ID in a thread-safe manner.
+     *
+     * @return The next unique test ID
+     */
+    private static long getNextTestId() {
+        return testId++;
     }
 
     /**
-     * Sets the output folder for generated test files.
+     * Writes the generated Java code to a file in the output folder.
      *
-     * @param outputFolder the path to the output folder
+     * @param javaCode The Java source code to be written
+     * @param id       The unique identifier for the test, used in the filename
+     * @return The name of the file to which the Java code was written
+     * @throws IOException If an error occurs during file writing
      */
-    public static void setOutputFolder(String outputFolder) {
-        OUTPUT_FOLDER = outputFolder;
-    }
-
-    /**
-     * Writes the generated Java code to a file within the output directory.
-     *
-     * @param javaCode the Java source code to write
-     * @param num      the unique test ID used to name the file
-     * @return the name of the generated Java file
-     * @throws IOException if an I/O error occurs
-     */
-    private static String writeJavaCodeToFile(String javaCode, long num) throws IOException {
-        // Generate a unique file name based on the test ID
-        String fileName = String.format("GeneratedTest%d.java", num);
-
-        // Ensure the output directory exists
-        File OutputFolder = new File(OUTPUT_FOLDER);
-        if (!OutputFolder.exists()) {
-            OutputFolder.mkdirs();
-        }
-
-        // Create the new Java file
-        File file = new File(OUTPUT_FOLDER, fileName);
+    private static String writeJavaCodeToFile(String javaCode, long id) throws IOException {
+        // Construct the filename using the unique test ID
+        String fileName = String.format("GeneratedTest%d.java", id);
+        File file = new File(outputFolder, fileName);
+        // Use BufferedWriter to write the Java code to the file
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            // Write the Java code to the file
             writer.write(javaCode);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-
         return fileName;
     }
 
     /**
-     * Executes the generated Java file by running it as a separate process.
+     * Executes the generated Java file using the specified compile flags.
      *
-     * @param fileName     the name of the Java file to execute
-     * @param compileFlags additional compilation flags to use
-     * @return true if the test passed successfully, false otherwise
-     * @throws Exception if an error occurs during execution
+     * @param fileName     The name of the Java file to execute
+     * @param compileFlags The compile flags to be used during execution
+     * @throws Exception If an error occurs during process execution or if the test fails
      */
-    private static boolean executeJavaFile(String fileName, String[] compileFlags) throws Exception {
-        // Build the process command to execute the Java file
-        ProcessBuilder builder = getProcessBuilder(fileName, compileFlags);
-
-        // Start the process
-        Process process = builder.start();
+    private static void executeJavaFile(String fileName, String[] compileFlags) throws Exception {
+        // Create a ProcessBuilder configured to execute the Java file with the given flags
+        ProcessBuilder builder = createProcessBuilder(fileName, compileFlags);
+        Process process = builder.start(); // Start the process
 
         // Wait for the process to complete within the specified timeout
-        boolean exited = process.waitFor(TIMEOUT, TimeUnit.SECONDS);
-
-        if (!exited) {
-            // If the process times out, forcibly terminate it
-            process.destroyForcibly();
+        if (!process.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
+            process.destroyForcibly(); // Forcefully terminate the process if it times out
             throw new RuntimeException("Process timeout: execution took too long.");
         }
 
         // Read the output from the process
         String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        int exitCode = process.exitValue(); // Get the exit code of the process
 
-        // Get the exit code of the process
-        int exitCode = process.exitValue();
-
-        // Determine if the test passed based on the exit code and output content
-        if (exitCode == 0 && Objects.requireNonNull(output).contains("Passed")) {
-            System.out.printf("Test passed successfully %s%n", fileName);
-            return true;
+        // Check if the test passed based on exit code and output content
+        if (exitCode == 0 && output.contains("Passed")) {
+            System.out.printf("Test passed: %s%n", fileName);
         } else {
-            // If the test failed, print the error output
-            System.err.println("Test failed with exit code :");
+            // Print error messages if the test failed
+            System.err.println("Test failed with exit code: " + exitCode);
             System.err.println(output);
-            return false;
         }
     }
 
     /**
-     * Constructs a ProcessBuilder to execute the Java file with the specified flags.
+     * Creates a ProcessBuilder configured to execute the specified Java file with given compile flags.
      *
-     * @param fileName     the name of the Java file to execute
-     * @param compileFlags additional compilation flags to use
-     * @return a configured ProcessBuilder instance
+     * @param fileName     The name of the Java file to execute
+     * @param compileFlags The compile flags to be used during execution
+     * @return A configured ProcessBuilder instance
      */
-    private static ProcessBuilder getProcessBuilder(String fileName, String[] compileFlags) {
-        List<String> command = new ArrayList<>();
+    private static ProcessBuilder createProcessBuilder(String fileName, String[] compileFlags) {
+        // Initialize the command list with the Java executable and classpath
+        List<String> command = new ArrayList<>(Arrays.asList(
+                String.format("%s/bin/java", JAVA_HOME),
+                "-cp", "."
+        ));
 
-        // Add the path to the Java executable
-        command.add("%s/bin/java".formatted(JAVA_HOME));
-
-        // Add general JVM flags
+        // Add predefined JVM flags
         command.addAll(Arrays.asList(FLAGS));
 
-        // Add any template-specific compilation flags
-        if (compileFlags != null) {
-            command.addAll(Arrays.asList(compileFlags));
-        }
+        // Add any additional compile flags from the input template
+        if (compileFlags != null) command.addAll(Arrays.asList(compileFlags));
 
-        // Set the classpath to the current directory
-        command.add("-cp");
-        command.add(".");
-
-        // Add the name of the Java file to execute
+        // Add the name of the Java file to be executed
         command.add(fileName);
 
-        // Set the working directory to the output folder
-        File workingDir = new File(OUTPUT_FOLDER);
-
-        // Initialize the ProcessBuilder with the command
-        ProcessBuilder builder = new ProcessBuilder(command);
-
-        // Redirect error stream to the standard output
-        builder.redirectErrorStream(true);
-
-        // Set the working directory for the process
-        builder.directory(workingDir);
-
-        return builder;
+        // Configure the ProcessBuilder with the command and set the working directory
+        return new ProcessBuilder(command)
+                .directory(new File(outputFolder)) // Set the working directory to the output folder
+                .redirectErrorStream(true); // Redirect error stream to the standard output
     }
 
     /**
-     * Compiles a Java source file and loads the resulting class.
+     * Compiles the specified Java file and loads the resulting class dynamically.
      *
-     * @param filePath the path to the Java source file
-     * @return the compiled Class object
-     * @throws Exception if compilation or class loading fails
+     * @param filePath The path to the Java file to compile
+     * @return The Class object representing the compiled class
+     * @throws Exception If compilation fails or the class cannot be loaded
      */
-    public static Class<?> compileAndLoadClass(String filePath) throws Exception {
-        // Compute the fully qualified class name from the file path
+    private static Class<?> compileAndLoadClass(String filePath) throws Exception {
+        // Compute the fully qualified class name based on the file path
         String className = computeClassName(filePath);
 
         // Obtain the system Java compiler
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-
-        // Compile the Java source file
-        int compilationResult = compiler.run(null, null, null, filePath);
-
-        // Check if the compilation was successful
-        if (compilationResult != 0) {
-            throw new RuntimeException("Compilation failed");
+        if (compiler.run(null, null, null, filePath) != 0) {
+            // Throw an exception if the compilation fails
+            throw new RuntimeException("Compilation failed for " + filePath);
         }
 
-        // Create a new instance of the custom class loader
-        DynamicClassLoader loader = new DynamicClassLoader();
-
-        // Load and return the compiled class
-        return loader.loadClass(className);
+        // Use the custom class loader to load the compiled class
+        return new DynamicClassLoader().loadClass(className);
     }
 
     /**
-     * Computes the fully qualified class name from a given file path.
+     * Computes the fully qualified class name from the given file path.
      *
-     * @param filePath the path to the Java source file
-     * @return the fully qualified class name
+     * @param filePath The path to the Java file
+     * @return The fully qualified class name
      */
     private static String computeClassName(String filePath) {
         Path path = Paths.get(filePath);
         String fileName = path.getFileName().toString();
-
         // Extract the class name by removing the file extension
         String className = fileName.substring(0, fileName.lastIndexOf('.'));
 
-        String packageName = "";
-
-        // Determine the package name based on the parent directories
+        // Determine the package name based on the parent directory structure
         Path parent = path.getParent();
-        if (parent != null) {
-            packageName = parent.toString().replace(File.separator, ".");
-        }
+        String packageName = (parent != null) ? parent.toString().replace(File.separator, ".") : "";
 
-        // Combine package name and class name if package exists
-        if (!packageName.isEmpty()) {
-            className = packageName + "." + className;
-        }
-
-        return className;
+        // Combine package name and class name if a package exists
+        return packageName.isEmpty() ? className : packageName + "." + className;
     }
 
     /**
-     * Custom class loader to load classes from compiled .class files.
+     * A custom ClassLoader for dynamically loading compiled classes from the file system.
      */
     private static class DynamicClassLoader extends ClassLoader {
         /**
-         * Finds and loads the class with the specified name.
+         * Attempts to find and load the class with the specified name.
          *
-         * @param name the fully qualified name of the class
-         * @return the resulting Class object
-         * @throws ClassNotFoundException if the class cannot be found
+         * @param name The fully qualified name of the class
+         * @return The Class object representing the loaded class
+         * @throws ClassNotFoundException If the class cannot be found or loaded
          */
         @Override
         public Class<?> findClass(String name) throws ClassNotFoundException {
-            // Construct the path to the .class file
+            // Construct the expected class file path
             File file = new File(name + ".class");
-
             if (file.exists()) {
                 try {
-                    // Read all bytes from the .class file
+                    // Read the class file bytes
                     byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
-
-                    // Define the class from the byte array
+                    // Define the class using the read bytes
                     return defineClass(null, bytes, 0, bytes.length);
-                } catch (Exception e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-
-            // Delegate to the parent class loader if the class file is not found
+            // Delegate to the parent ClassLoader if the class file does not exist
             return super.findClass(name);
         }
     }
