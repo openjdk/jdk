@@ -9314,6 +9314,30 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
   bind(done);
 }
 
+void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, XMMRegister src, bool merge, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+    case T_BOOLEAN:
+      evmovdqub(dst, kmask, src, merge, vector_len);
+      break;
+    case T_CHAR:
+    case T_SHORT:
+      evmovdquw(dst, kmask, src, merge, vector_len);
+      break;
+    case T_INT:
+    case T_FLOAT:
+      evmovdqul(dst, kmask, src, merge, vector_len);
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      evmovdquq(dst, kmask, src, merge, vector_len);
+      break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type));
+      break;
+  }
+}
+
 
 void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, bool merge, int vector_len) {
   switch(type) {
@@ -9500,6 +9524,66 @@ void MacroAssembler::evperm(BasicType type, XMMRegister dst, KRegister mask, XMM
     case T_LONG:
     case T_DOUBLE:
       evpermq(dst, mask, nds, src, merge, vector_len); break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type)); break;
+  }
+}
+
+void MacroAssembler::evpminu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+      evpminub(dst, mask, nds, src, merge, vector_len); break;
+    case T_SHORT:
+      evpminuw(dst, mask, nds, src, merge, vector_len); break;
+    case T_INT:
+      evpminud(dst, mask, nds, src, merge, vector_len); break;
+    case T_LONG:
+      evpminuq(dst, mask, nds, src, merge, vector_len); break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type)); break;
+  }
+}
+
+void MacroAssembler::evpmaxu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+      evpmaxub(dst, mask, nds, src, merge, vector_len); break;
+    case T_SHORT:
+      evpmaxuw(dst, mask, nds, src, merge, vector_len); break;
+    case T_INT:
+      evpmaxud(dst, mask, nds, src, merge, vector_len); break;
+    case T_LONG:
+      evpmaxuq(dst, mask, nds, src, merge, vector_len); break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type)); break;
+  }
+}
+
+void MacroAssembler::evpminu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+      evpminub(dst, mask, nds, src, merge, vector_len); break;
+    case T_SHORT:
+      evpminuw(dst, mask, nds, src, merge, vector_len); break;
+    case T_INT:
+      evpminud(dst, mask, nds, src, merge, vector_len); break;
+    case T_LONG:
+      evpminuq(dst, mask, nds, src, merge, vector_len); break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type)); break;
+  }
+}
+
+void MacroAssembler::evpmaxu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len) {
+  switch(type) {
+    case T_BYTE:
+      evpmaxub(dst, mask, nds, src, merge, vector_len); break;
+    case T_SHORT:
+      evpmaxuw(dst, mask, nds, src, merge, vector_len); break;
+    case T_INT:
+      evpmaxud(dst, mask, nds, src, merge, vector_len); break;
+    case T_LONG:
+      evpmaxuq(dst, mask, nds, src, merge, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
   }
@@ -10211,17 +10295,6 @@ Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond)
     case Assembler::noParity:     return Assembler::parity;
   }
   ShouldNotReachHere(); return Assembler::overflow;
-}
-
-SkipIfEqual::SkipIfEqual(
-    MacroAssembler* masm, const bool* flag_addr, bool value, Register rscratch) {
-  _masm = masm;
-  _masm->cmp8(ExternalAddress((address)flag_addr), value, rscratch);
-  _masm->jcc(Assembler::equal, _label);
-}
-
-SkipIfEqual::~SkipIfEqual() {
-  _masm->bind(_label);
 }
 
 // 32-bit Windows has its own fast-path implementation
