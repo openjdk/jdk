@@ -801,15 +801,15 @@ public class Infer {
         /**
          * Helper function: perform subtyping through incorporation cache.
          */
-        boolean isSubtype(Type s, Type t, Warner warn) {
-            return doIncorporationOp(IncorporationBinaryOpKind.IS_SUBTYPE, s, t, warn);
+        boolean isSubtype(Type s, Type t, Warner warn, InferenceContext ic) {
+            return doIncorporationOp(IncorporationBinaryOpKind.IS_SUBTYPE, s, t, warn, ic);
         }
 
         /**
          * Helper function: perform type-equivalence through incorporation cache.
          */
-        boolean isSameType(Type s, Type t) {
-            return doIncorporationOp(IncorporationBinaryOpKind.IS_SAME_TYPE, s, t, null);
+        boolean isSameType(Type s, Type t, InferenceContext ic) {
+            return doIncorporationOp(IncorporationBinaryOpKind.IS_SAME_TYPE, s, t, null, ic);
         }
 
         @Override
@@ -853,7 +853,7 @@ public class Infer {
                 for (Type b : uv.getBounds(to)) {
                     b = typeFunc.apply(inferenceContext, b);
                     if (optFilter != null && optFilter.test(inferenceContext, b)) continue;
-                    boolean success = checkBound(t, b, from, to, warn);
+                    boolean success = checkBound(t, b, from, to, warn, inferenceContext);
                     if (!success) {
                         report(from, to);
                     }
@@ -873,13 +873,13 @@ public class Infer {
         /**
          * Is source type 's' compatible with target type 't' given source and target bound kinds?
          */
-        boolean checkBound(Type s, Type t, InferenceBound ib_s, InferenceBound ib_t, Warner warn) {
+        boolean checkBound(Type s, Type t, InferenceBound ib_s, InferenceBound ib_t, Warner warn, InferenceContext ic) {
             if (ib_s.lessThan(ib_t)) {
-                return isSubtype(s, t, warn);
+                return isSubtype(s, t, warn, ic);
             } else if (ib_t.lessThan(ib_s)) {
-                return isSubtype(t, s, warn);
+                return isSubtype(t, s, warn, ic);
             } else {
-                return isSameType(s, t);
+                return isSameType(s, t, ic);
             }
         }
 
@@ -1010,7 +1010,7 @@ public class Infer {
                             if (!allParamsSuperBound1.head.hasTag(WILDCARD) &&
                                     !allParamsSuperBound2.head.hasTag(WILDCARD)) {
                                 if (!isSameType(inferenceContext.asUndetVar(allParamsSuperBound1.head),
-                                        inferenceContext.asUndetVar(allParamsSuperBound2.head))) {
+                                        inferenceContext.asUndetVar(allParamsSuperBound2.head), inferenceContext)) {
                                     reportBoundError(uv, InferenceBound.UPPER);
                                 }
                             }
@@ -1194,11 +1194,11 @@ public class Infer {
                     types.asSuper(t, sup.tsym);
         }
 
-    boolean doIncorporationOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, Warner warn) {
-            IncorporationBinaryOp newOp = new IncorporationBinaryOp(opKind, op1, op2);
+    boolean doIncorporationOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, Warner warn, InferenceContext ic) {
+            IncorporationBinaryOpKey newOp = new IncorporationBinaryOpKey(opKind, ic.asTypeVar(op1), ic.asTypeVar(op2), types);
             Boolean res = incorporationCache.get(newOp);
             if (res == null) {
-                incorporationCache.put(newOp, res = newOp.apply(warn));
+                incorporationCache.put(newOp, res = opKind.apply(op1, op2, warn, types));
             }
             return res;
         }
@@ -1232,26 +1232,14 @@ public class Infer {
      * are not executed unnecessarily (which would potentially lead to adding
      * same bounds over and over).
      */
-    class IncorporationBinaryOp {
-
-        IncorporationBinaryOpKind opKind;
-        Type op1;
-        Type op2;
-
-        IncorporationBinaryOp(IncorporationBinaryOpKind opKind, Type op1, Type op2) {
-            this.opKind = opKind;
-            this.op1 = op1;
-            this.op2 = op2;
-        }
-
+    record IncorporationBinaryOpKey(IncorporationBinaryOpKind opKind, Type op1, Type op2, Types types) {
         @Override
         public boolean equals(Object o) {
-            return (o instanceof IncorporationBinaryOp incorporationBinaryOp)
-                    && opKind == incorporationBinaryOp.opKind
-                    && types.isSameType(op1, incorporationBinaryOp.op1)
-                    && types.isSameType(op2, incorporationBinaryOp.op2);
+            return (o instanceof IncorporationBinaryOpKey anotherKey)
+                    && opKind == anotherKey.opKind
+                    && types.isSameType(op1, anotherKey.op1)
+                    && types.isSameType(op2, anotherKey.op2);
         }
-
         @Override
         public int hashCode() {
             int result = opKind.hashCode();
@@ -1261,14 +1249,10 @@ public class Infer {
             result += types.hashCode(op2);
             return result;
         }
-
-        boolean apply(Warner warn) {
-            return opKind.apply(op1, op2, warn, types);
-        }
     }
 
     /** an incorporation cache keeps track of all executed incorporation-related operations */
-    Map<IncorporationBinaryOp, Boolean> incorporationCache = new LinkedHashMap<>();
+    Map<IncorporationBinaryOpKey, Boolean> incorporationCache = new LinkedHashMap<>();
 
     protected static class BoundFilter implements Predicate<Type> {
 

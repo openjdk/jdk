@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -564,9 +564,9 @@ public abstract class Graphics2D extends Graphics {
      * img1 = op.filter(img, null);
      * drawImage(img1, new AffineTransform(1f,0f,0f,1f,x,y), null);
      * </pre>
-     * @param op the filter to be applied to the image before rendering
      * @param img the specified {@code BufferedImage} to be rendered.
      *            This method does nothing if {@code img} is null.
+     * @param op the filter to be applied to the image before rendering
      * @param x the x coordinate of the location in user space where
      * the upper left corner of the image is rendered
      * @param y the y coordinate of the location in user space where

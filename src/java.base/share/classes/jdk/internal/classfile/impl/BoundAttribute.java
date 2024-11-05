@@ -27,15 +27,7 @@ package jdk.internal.classfile.impl;
 
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ConstantPool;
-import java.lang.classfile.constantpool.ConstantValueEntry;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.ModuleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.classfile.constantpool.PackageEntry;
-import java.lang.classfile.constantpool.PoolEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

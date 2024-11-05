@@ -698,9 +698,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     return false;
   }
 
-  // Set the correct thread state.
-  osthread->set_thread_type(thr_type);
-
   // Initial state is ALLOCATED but not INITIALIZED
   osthread->set_state(ALLOCATED);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ import javax.crypto.interfaces.*;
 
 public class TestLeadingZeroes {
 
-    private static final String SUNJCE = "SunJCE";
+    private static final String PROVIDER_NAME =
+                            System.getProperty("test.provider.name", "SunJCE");
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX_FORMATTER = HexFormat.ofDelimiter(":").withUpperCase();
 
@@ -73,7 +74,7 @@ public class TestLeadingZeroes {
             kfac.generatePrivate(new PKCS8EncodedKeySpec(bobPrivKeyEnc));
 
         // generate normal shared secret
-        KeyAgreement aliceKeyAgree = KeyAgreement.getInstance("DH", SUNJCE);
+        KeyAgreement aliceKeyAgree = KeyAgreement.getInstance("DH", PROVIDER_NAME);
         aliceKeyAgree.init(alicePrivKey);
         aliceKeyAgree.doPhase(bobPubKey, true);
         byte[] sharedSecret = aliceKeyAgree.generateSecret();

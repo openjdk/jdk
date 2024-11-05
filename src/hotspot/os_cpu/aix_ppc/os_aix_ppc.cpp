@@ -462,12 +462,6 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   address pc = os::Posix::ucontext_get_pc(uc);
   print_instructions(st, pc);
   st->cr();
-
-  // Try to decode the instructions.
-  st->print_cr("Decoded instructions: (pc=" PTR_FORMAT ")", p2i(pc));
-  st->print("<TODO: PPC port - print_context>");
-  // TODO: PPC port Disassembler::decode(pc, 16, 16, st);
-  st->cr();
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {

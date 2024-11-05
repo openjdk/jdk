@@ -108,7 +108,7 @@ inline void ShenandoahHeap::leave_evacuation(Thread* t) {
 }
 
 template <class T>
-inline void ShenandoahHeap::update_with_forwarded(T* p) {
+inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);

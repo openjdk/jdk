@@ -393,7 +393,7 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->is_expensive()) {
     remove_expensive_node(dead);
   }
-  if (dead->Opcode() == Op_Opaque4) {
+  if (dead->is_OpaqueTemplateAssertionPredicate()) {
     remove_template_assertion_predicate_opaq(dead);
   }
   if (dead->is_ParsePredicate()) {

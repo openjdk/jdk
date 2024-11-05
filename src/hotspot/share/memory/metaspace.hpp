@@ -56,7 +56,6 @@ public:
     StandardMetaspaceType = ZeroMetaspaceType,
     BootMetaspaceType = StandardMetaspaceType + 1,
     ClassMirrorHolderMetaspaceType = BootMetaspaceType + 1,
-    ReflectionMetaspaceType = ClassMirrorHolderMetaspaceType + 1,
     MetaspaceTypeCount
   };
 
