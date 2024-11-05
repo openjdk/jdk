@@ -256,7 +256,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
-    static void assertIsAlignedBy(GroupLayout gl, long index, PaddingLayout padding, MemoryLayout element) {
+    private static void assertIsAlignedBy(GroupLayout gl, long index, PaddingLayout padding, MemoryLayout element) {
         if (padding.byteSize() > element.byteAlignment()) {
             throw new IllegalArgumentException("The padding layout " + padding +
                     " is not of minimum size to align " + element +
