@@ -69,3 +69,6 @@ java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
 java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
 javax/management/ImplementationVersion/ImplVersionTest.java 0000000 generic-all
 javax/management/remote/mandatory/version/ImplVersionTest.java 0000000 generic-all
+
+# Direct buffer memory allocated before test launch
+java/nio/Buffer/LimitDirectMemory.java 8342849 generic-all

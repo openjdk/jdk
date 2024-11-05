@@ -3825,7 +3825,8 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
     if (err != nullptr) {
       log_warning(os)("bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
 #ifdef ASSERT
-      os::print_memory_mappings((char*)start, bytes, tty);
+      fileStream fs(stdout);
+      os::print_memory_mappings((char*)start, bytes, &fs);
       assert(false, "bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
 #endif
       return false;
@@ -5753,7 +5754,15 @@ void PlatformEvent::park() {
   // TODO: consider a brief spin here, gated on the success of recent
   // spin attempts by this thread.
   while (_Event < 0) {
+    // The following code is only here to maintain the
+    // characteristics/performance from when an ObjectMonitor
+    // "responsible" thread used to issue timed parks.
+    HighResolutionInterval *phri = nullptr;
+    if (!ForceTimeHighResolution) {
+      phri = new HighResolutionInterval((jlong)1);
+    }
     DWORD rv = ::WaitForSingleObject(_ParkHandle, INFINITE);
+    delete phri; // if it is null, harmless
     assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
     assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", rv);
   }
