@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import static java.util.stream.Collectors.toMap;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
@@ -110,7 +111,7 @@ class MethodCall implements ThrowingConsumer {
                 Constructor::isVarArgs).findFirst().orElse(null);
     }
 
-    private Constructor findRequiredConstructor(Class type, Object... ctorArgs)
+    private static Constructor findRequiredConstructor(Class type, Object... ctorArgs)
             throws NoSuchMethodException {
 
         var ctors = filterMatchingExecutablesForParameterValues(Stream.of(
@@ -131,7 +132,7 @@ class MethodCall implements ThrowingConsumer {
         method.invoke(thiz, methodArgs);
     }
 
-    private <T extends Executable> Stream<T> filterMatchingExecutablesForParameterValues(
+    private static <T extends Executable> Stream<T> filterMatchingExecutablesForParameterValues(
             Stream<T> executables, Object... args) {
         return filterMatchingExecutablesForParameterTypes(
                 executables,
@@ -140,17 +141,23 @@ class MethodCall implements ThrowingConsumer {
                         .toArray(Class[]::new));
     }
 
-    private <T extends Executable> Stream<T> filterMatchingExecutablesForParameterTypes(
+    private static <T extends Executable> Stream<T> filterMatchingExecutablesForParameterTypes(
             Stream<T> executables, Class<?>... argTypes) {
         return executables.filter(executable -> {
             var parameterTypes = executable.getParameterTypes();
 
-            if (argTypes.length < parameterTypes.length) {
-                // Number of argument types is less than the number of parameters of the executable.
+            final int checkArgTypeCount;
+            if (parameterTypes.length <= argTypes.length) {
+                checkArgTypeCount = parameterTypes.length;
+            } else if (parameterTypes.length - argTypes.length == 1 && executable.isVarArgs()) {
+                // Empty optional arguments.
+                checkArgTypeCount = argTypes.length;
+            } else {
+                // Not enough mandatory arguments.
                 return false;
             }
 
-            var unmatched = IntStream.range(0, parameterTypes.length).dropWhile(idx -> {
+            var unmatched = IntStream.range(0, checkArgTypeCount).dropWhile(idx -> {
                 return new ParameterTypeMatcher(parameterTypes[idx]).test(argTypes[idx]);
             }).toArray();
 
@@ -174,7 +181,7 @@ class MethodCall implements ThrowingConsumer {
     private final static class ParameterTypeMatcher implements Predicate<Class<?>> {
         ParameterTypeMatcher(Class<?> parameterType) {
             Objects.requireNonNull(parameterType);
-            this.parameterType = parameterType;
+            this.parameterType = NORM_TYPES.getOrDefault(parameterType, parameterType);
         }
 
         @Override
