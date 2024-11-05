@@ -28,7 +28,8 @@
 #include "memory/allocation.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/thread.hpp"
+
+class Thread;
 
 // Mutexes used in the VM.
 
