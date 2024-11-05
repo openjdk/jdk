@@ -79,22 +79,25 @@ class MethodCall implements ThrowingConsumer {
         return ctor.newInstance(mapVarArgs(ctor, ctorArgs));
     }
 
-    static Object[] mapVarArgs(Executable executable, Object ... args) {
+    static Object[] mapVarArgs(Executable executable, final Object ... args) {
         if (executable.isVarArgs()) {
             var paramTypes = executable.getParameterTypes();
             Class varArgParamType = paramTypes[paramTypes.length - 1];
 
+            Object[] newArgs;
             if (paramTypes.length - args.length == 1) {
                 // Empty var args
-                args = Arrays.copyOf(args, args.length + 1);
-                args[args.length - 1] = Array.newInstance(varArgParamType.componentType(), 0);
+                newArgs = Arrays.copyOf(args, args.length + 1);
+                newArgs[newArgs.length - 1] = Array.newInstance(varArgParamType.componentType(), 0);
             } else {
                 var varArgs = Arrays.copyOfRange(args, paramTypes.length - 1,
                         args.length, varArgParamType);
 
-                args = Arrays.copyOfRange(args, 0, paramTypes.length);
-                args[args.length - 1] = varArgs;
+                // "args" can be of type String[] if the "executable" is "foo(String ... str)"
+                newArgs = Arrays.copyOfRange(args, 0, paramTypes.length, Object[].class);
+                newArgs[newArgs.length - 1] = varArgs;
             }
+            return newArgs;
         }
 
         return args;
