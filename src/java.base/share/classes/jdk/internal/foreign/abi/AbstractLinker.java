@@ -221,7 +221,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     // check elements are not all padding layouts and for trailing padding
-    static private void checkGroup(GroupLayout gl, long maxUnpaddedOffset) {
+    private static void checkGroup(GroupLayout gl, long maxUnpaddedOffset) {
         PaddingLayout preceedingPadding = null;
         List<MemoryLayout> memberLayouts = gl.memberLayouts();
         for (int i = 0; i < memberLayouts.size(); i++) {
