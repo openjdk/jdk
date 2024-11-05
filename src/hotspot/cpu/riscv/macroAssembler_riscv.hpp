@@ -1223,7 +1223,8 @@ public:
   void get_polling_page(Register dest, relocInfo::relocType rtype);
   void read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 
-  // RISCV64 OpenJDK uses four different types of calls:
+  // RISCV64 OpenJDK uses three different types of calls:
+  //
   //   - far call: auipc reg, pc_relative_offset; jalr ra, reg, offset
   //     The offset has the range [-(2G + 2K), 2G - 2K). Addresses out of the
   //     range in the code cache requires indirect call.
