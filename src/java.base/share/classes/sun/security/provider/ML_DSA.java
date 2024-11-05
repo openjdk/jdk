@@ -34,7 +34,7 @@ import java.util.Arrays;
 
 public class ML_DSA {
     // Constants from FIPS 204 that do not depend on security level
-    private static final int ML_DSA_D = 13;
+    public static final int ML_DSA_D = 13;
     private static final int ML_DSA_Q = 8380417;
     private static final int ML_DSA_N = 256;
     private static final int SHAKE256_BLOCK_SIZE = 136; // the block length for SHAKE256
@@ -408,9 +408,9 @@ public class ML_DSA {
     private final int lambda;
     private final int gamma1;
     private final int gamma2;
-    private final int mlDsa_k;
-    private final int mlDsa_l;
-    private final int eta;
+    public final int mlDsa_k;
+    public final int mlDsa_l;
+    public final int eta;
     private final int beta;
     private final int omega;
 
