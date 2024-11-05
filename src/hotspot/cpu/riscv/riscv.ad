@@ -1259,21 +1259,20 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   jal(addr)
   // or with far branches
   //   jal(trampoline_stub)
-  // for real runtime callouts it will be 11 instructions
+  // for real runtime callouts it will be 9 instructions
   // see riscv_enc_java_to_runtime
-  //   la(t1, retaddr)                ->  auipc + addi
-  //   la(t0, RuntimeAddress(addr))   ->  lui + addi + slli + addi + slli + addi
+  //   la(t0, retaddr)                ->  auipc + addi
   //   addi(sp, sp, -2 * wordSize)    ->  addi
-  //   sd(t1, Address(sp, wordSize))  ->  sd
-  //   jalr(t0)                       ->  jalr
-  CodeBlob *cb = CodeCache::find_blob(_entry_point);
-  if (cb != nullptr) {
+  //   sd(t0, Address(sp, wordSize))  ->  sd
+  //   movptr(t1, addr, offset, t0)   ->  lui + lui + slli + add
+  //   jalr(t1, offset)               ->  jalr
+  if (CodeCache::contains(_entry_point)) {
     if (UseTrampolines) {
       return 1 * NativeInstruction::instruction_size;
     }
     return 3 * NativeInstruction::instruction_size;
   } else {
-    return 11 * NativeInstruction::instruction_size;
+    return 9 * NativeInstruction::instruction_size;
   }
 }
 
@@ -1822,13 +1821,13 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
   assert_cond(st != nullptr);
   st->print_cr("# MachUEPNode");
   if (UseCompressedClassPointers) {
-    st->print_cr("\tlwu t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tlwu t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
+    st->print_cr("\tlwu t1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tlwu t2, [t0      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   } else {
-    st->print_cr("\tld t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tld t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
+    st->print_cr("\tld t1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tld t2, [t0      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   }
-  st->print_cr("\tbeq t0, t2, ic_hit");
+  st->print_cr("\tbeq t1, t2, ic_hit");
   st->print_cr("\tj, SharedRuntime::_ic_miss_stub\t # Inline cache check");
   st->print_cr("\tic_hit:");
 }
@@ -1857,8 +1856,8 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 // Emit exception handler code.
 int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm)
 {
-  // auipc t0, #exception_blob_entry_point
-  // jr (offset)t0
+  // auipc t1, #exception_blob_entry_point
+  // jr (offset)t1
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
   address base = __ start_a_stub(size_exception_handler());
@@ -2494,8 +2493,7 @@ encode %{
     // will be in a reachable segment) otherwise we have to use a jalr
     // which loads the absolute address into a register.
     address entry = (address)$meth$$method;
-    CodeBlob *cb = CodeCache::find_blob(entry);
-    if (cb != nullptr) {
+    if (CodeCache::contains(entry)) {
       address call = __ reloc_call(Address(entry, relocInfo::runtime_call_type));
       if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
@@ -2504,12 +2502,14 @@ encode %{
       __ post_call_nop();
     } else {
       Label retaddr;
-      __ la(t1, retaddr);
-      __ la(t0, RuntimeAddress(entry));
+      __ la(t0, retaddr);
       // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
       __ addi(sp, sp, -2 * wordSize);
-      __ sd(t1, Address(sp, wordSize));
-      __ jalr(t0);
+      __ sd(t0, Address(sp, wordSize));
+      int32_t offset = 0;
+      // No relocation needed
+      __ movptr(t1, entry, offset, t0); // lui + lui + slli + add
+      __ jalr(t1, offset);
       __ bind(retaddr);
       __ post_call_nop();
       __ addi(sp, sp, 2 * wordSize);
@@ -9989,11 +9989,11 @@ instruct CallStaticJavaDirect(method meth)
 // Call Java Dynamic Instruction
 // Note: If this code changes, the corresponding ret_addr_offset() and
 //       compute_padding() functions will have to be adjusted.
-instruct CallDynamicJavaDirect(method meth, rFlagsReg cr)
+instruct CallDynamicJavaDirect(method meth)
 %{
   match(CallDynamicJava);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST + ALU_COST * 5);
 
@@ -10008,11 +10008,11 @@ instruct CallDynamicJavaDirect(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction
 
-instruct CallRuntimeDirect(method meth, rFlagsReg cr)
+instruct CallRuntimeDirect(method meth)
 %{
   match(CallRuntime);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10025,11 +10025,11 @@ instruct CallRuntimeDirect(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction
 
-instruct CallLeafDirect(method meth, rFlagsReg cr)
+instruct CallLeafDirect(method meth)
 %{
   match(CallLeaf);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10042,11 +10042,11 @@ instruct CallLeafDirect(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction without safepoint and with vector arguments
 
-instruct CallLeafDirectVector(method meth, rFlagsReg cr)
+instruct CallLeafDirectVector(method meth)
 %{
   match(CallLeafVector);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10059,11 +10059,11 @@ instruct CallLeafDirectVector(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction
 
-instruct CallLeafNoFPDirect(method meth, rFlagsReg cr)
+instruct CallLeafNoFPDirect(method meth)
 %{
   match(CallLeafNoFP);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10098,11 +10098,11 @@ instruct partialSubtypeCheck(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, i
 %}
 
 instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP super_con, iRegP_R15 result,
-                                       iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13, iRegP_R16 tmpR16)
+                                       iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13, iRegP_R16 tmpR16, rFlagsReg cr)
 %{
   predicate(UseSecondarySupersTable);
   match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
-  effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16);
+  effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16, KILL cr);
 
   ins_cost(7 * DEFAULT_COST); // needs to be less than competing nodes
   format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
@@ -10379,12 +10379,12 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 
 // clearing of an array
 instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegP_R30 tmp1,
-                            iRegP_R31 tmp2, Universe dummy)
+                            iRegP_R31 tmp2, rFlagsReg cr, Universe dummy)
 %{
   // temp registers must match the one used in StubGenerator::generate_zero_blocks()
   predicate(UseBlockZeroing || !UseRVV);
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2, KILL cr);
 
   ins_cost(4 * DEFAULT_COST);
   format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg" %}

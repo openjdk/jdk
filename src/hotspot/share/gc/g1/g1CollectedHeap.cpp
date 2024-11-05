@@ -2595,8 +2595,9 @@ void G1CollectedHeap::set_young_gen_card_set_stats(const G1MonotonicArenaMemoryS
 }
 
 void G1CollectedHeap::record_obj_copy_mem_stats() {
+  size_t total_old_allocated = _old_evac_stats.allocated() + _old_evac_stats.direct_allocated();
   policy()->old_gen_alloc_tracker()->
-    add_allocated_bytes_since_last_gc(_old_evac_stats.allocated() * HeapWordSize);
+    add_allocated_bytes_since_last_gc(total_old_allocated * HeapWordSize);
 
   _gc_tracer_stw->report_evacuation_statistics(create_g1_evac_summary(&_survivor_evac_stats),
                                                create_g1_evac_summary(&_old_evac_stats));

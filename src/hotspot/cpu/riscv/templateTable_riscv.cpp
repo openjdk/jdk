@@ -705,7 +705,7 @@ void TemplateTable::wide_aload() {
 }
 
 void TemplateTable::index_check(Register array, Register index) {
-  // destroys x11, t0
+  // destroys x11, t0, t1
   // sign extend index for use by indexed load
   // check index
   const Register length = t0;
@@ -718,8 +718,8 @@ void TemplateTable::index_check(Register array, Register index) {
   __ sign_extend(index, index, 32);
   __ bltu(index, length, ok);
   __ mv(x13, array);
-  __ mv(t0, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
+  __ jr(t1);
   __ bind(ok);
 }
 
@@ -1085,7 +1085,7 @@ void TemplateTable::aastore() {
 
   // Come here on failure
   // object is at TOS
-  __ j(Interpreter::_throw_ArrayStoreException_entry);
+  __ j(RuntimeAddress(Interpreter::_throw_ArrayStoreException_entry));
 
   // Come here on success
   __ bind(ok_is_subtype);
@@ -1313,8 +1313,8 @@ void TemplateTable::idiv() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 idiv x10
@@ -1326,8 +1326,8 @@ void TemplateTable::irem() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 irem x10
@@ -1345,8 +1345,8 @@ void TemplateTable::ldiv() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 ldiv x10
@@ -1358,8 +1358,8 @@ void TemplateTable::lrem() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 lrem x10
@@ -1768,8 +1768,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ andi(sp, esp, -16);
 
     // and begin the OSR nmethod
-    __ ld(t0, Address(x9, nmethod::osr_entry_point_offset()));
-    __ jr(t0);
+    __ ld(t1, Address(x9, nmethod::osr_entry_point_offset()));
+    __ jr(t1);
   }
 }
 
@@ -2171,7 +2171,7 @@ void TemplateTable::_return(TosState state) {
 void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
                                                        Register Rcache,
                                                        Register index) {
-  const Register temp = x9;
+  const Register temp = x9; // s1
   assert_different_registers(Rcache, index, temp);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
@@ -2465,13 +2465,7 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     // take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(x10, Address(t0, offset));
-    });
-
+    __ lwu(x10, ExternalAddress(JvmtiExport::get_field_access_count_addr()));
     __ beqz(x10, L1);
 
     __ load_field_entry(c_rarg2, index);
@@ -2676,12 +2670,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     // we take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(x10, Address(t0, offset));
-    });
+    __ lwu(x10, ExternalAddress(JvmtiExport::get_field_modification_count_addr()));
     __ beqz(x10, L1);
 
     __ mv(c_rarg2, cache);
@@ -2969,13 +2958,9 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     // Check to see if a field modification watch has been set before
     // we take the time to call into the VM.
     Label L2;
-    ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(c_rarg3, Address(t0, offset));
-    });
+    __ lwu(c_rarg3, ExternalAddress(JvmtiExport::get_field_modification_count_addr()));
     __ beqz(c_rarg3, L2);
+
     __ pop_ptr(x9);                  // copy the object pointer from tos
     __ verify_oop(x9);
     __ push_ptr(x9);                 // put the object pointer back on tos
@@ -3101,13 +3086,9 @@ void TemplateTable::fast_accessfield(TosState state) {
     // Check to see if a field access watch has been set before we
     // take the time to call into the VM.
     Label L1;
-    ExternalAddress target((address)JvmtiExport::get_field_access_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(x12, Address(t0, offset));
-    });
+    __ lwu(x12, ExternalAddress(JvmtiExport::get_field_access_count_addr()));
     __ beqz(x12, L1);
+
     // access constant pool cache entry
     __ load_field_entry(c_rarg2, t1);
     __ verify_oop(x10);
@@ -3672,7 +3653,7 @@ void TemplateTable::checkcast() {
   // Come here on failure
   __ push_reg(x13);
   // object is at TOS
-  __ j(Interpreter::_throw_ClassCastException_entry);
+  __ j(RuntimeAddress(Interpreter::_throw_ClassCastException_entry));
 
   // Come here on success
   __ bind(ok_is_subtype);
@@ -3779,7 +3760,7 @@ void TemplateTable::_breakpoint() {
 void TemplateTable::athrow() {
   transition(atos, vtos);
   __ null_check(x10);
-  __ j(Interpreter::throw_exception_entry());
+  __ j(RuntimeAddress(Interpreter::throw_exception_entry()));
 }
 
 //-----------------------------------------------------------------------------
@@ -3962,8 +3943,8 @@ void TemplateTable::wide() {
   __ load_unsigned_byte(x9, at_bcp(1));
   __ mv(t0, (address)Interpreter::_wentry_point);
   __ shadd(t0, x9, t0, t1, 3);
-  __ ld(t0, Address(t0));
-  __ jr(t0);
+  __ ld(t1, Address(t0));
+  __ jr(t1);
 }
 
 // Multi arrays
