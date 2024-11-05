@@ -95,24 +95,24 @@ public class PrintTextTest {
         JTabbedPane pane = new JTabbedPane();
 
         int page = 1;
-        Font font = new Font("Dialog", Font.PLAIN, 18);
+        Font font = new Font(Font.DIALOG, Font.PLAIN, 18);
         String name = "Page " + page++;
         PrintText pt = new PrintText(name, font, null, false, preferredSize);
-        pane.add(name, pt);
+        pane.addTab(name, pt);
         book.append(pt, portrait);
         book.append(pt, landscape);
 
-        font = new Font("Dialog", Font.PLAIN, 18);
+        font = new Font(Font.DIALOG, Font.PLAIN, 18);
         name = "Page " + page++;
         pt = new PrintText(name, font, null, true, preferredSize);
-        pane.add(name, pt);
+        pane.addTab(name, pt);
         book.append(pt, portrait);
         book.append(pt, landscape);
 
         font = getPhysicalFont();
         name = "Page " + page++;
         pt = new PrintText(name, font, null, false, preferredSize);
-        pane.add(name, pt);
+        pane.addTab(name, pt);
         book.append(pt, portrait);
         book.append(pt, landscape);
 
@@ -121,65 +121,61 @@ public class PrintTextTest {
         rotTx.translate(60,0);
         name = "Page " + page++;
         pt = new PrintText(name, font, rotTx, false, preferredSize);
-        pane.add(name, pt);
+        pane.addTab(name, pt);
         book.append(pt, portrait);
         book.append(pt, landscape);
 
-        font = new Font("Dialog", Font.PLAIN, 18);
+        font = new Font(Font.DIALOG, Font.PLAIN, 18);
         AffineTransform scaleTx = AffineTransform.getScaleInstance(1.25, 1.25);
         name = "Page " + page++;
         pt = new PrintText(name, font, scaleTx, false, preferredSize);
-        pane.add(name, pt);
+        pane.addTab(name, pt);
         book.append(pt, portrait);
         book.append(pt, landscape);
 
-        font = new Font("Dialog", Font.PLAIN, 18);
+        font = new Font(Font.DIALOG, Font.PLAIN, 18);
         scaleTx = AffineTransform.getScaleInstance(-1.25, 1.25);
         scaleTx.translate(-preferredSize/1.25, 0);
         name = "Page " + page++;
         pt = new PrintText(name, font, scaleTx, false, preferredSize);
-        pane.add(name, pt);
+        pane.addTab(name, pt);
         book.append(pt, portrait);
         book.append(pt, landscape);
 
-        font = new Font("Dialog", Font.PLAIN, 18);
+        font = new Font(Font.DIALOG, Font.PLAIN, 18);
         scaleTx = AffineTransform.getScaleInstance(1.25, -1.25);
         scaleTx.translate(0, -preferredSize/1.25);
         name = "Page " + page++;
         pt = new PrintText(name, font, scaleTx, false, preferredSize);
-        pane.add(name, pt);
+        pane.addTab(name, pt);
         book.append(pt, portrait);
         book.append(pt, landscape);
 
         font = font.deriveFont(rotTx);
         name = "Page " + page++;
         pt = new PrintText(name, font, null, false, preferredSize);
-        pane.add(pt, BorderLayout.CENTER);
-        pane.add(name, pt);
+        pane.addTab(name, pt);
         book.append(pt, portrait);
         book.append(pt, landscape);
 
-        font = new Font("Monospaced", Font.PLAIN, 12);
+        font = new Font(Font.MONOSPACED, Font.PLAIN, 12);
         name = "Page " + page++;
         pt = new PrintText(name, font, null, false, preferredSize);
-        pane.add(pt, BorderLayout.CENTER);
-        pane.add(name, pt);
+        pane.addTab(name, pt);
         book.append(pt, portrait);
         book.append(pt, landscape);
 
         Font xfont = font.deriveFont(AffineTransform.getScaleInstance(1.5, 1));
         name = "Page " + page++;
         pt = new PrintText(name, xfont, null, false, preferredSize);
-        pane.add(pt, BorderLayout.CENTER);
-        pane.add(name, pt);
+        pane.addTab(name, pt);
         book.append(pt, portrait);
         book.append(pt, landscape);
 
         Font yfont = font.deriveFont(AffineTransform.getScaleInstance(1, 1.5));
         name = "Page " + page++;
         pt = new PrintText(name, yfont, null, false, preferredSize);
-        pane.add(pt, BorderLayout.CENTER);
-        pane.add(name, pt);
+        pane.addTab(name, pt);
         book.append(pt, portrait);
         book.append(pt, landscape);
 
@@ -187,8 +183,7 @@ public class PrintTextTest {
             font = new Font("MS Gothic", Font.PLAIN, 12);
             name = "Page " + page++;
             pt = new PrintJapaneseText(name, font, null, true, preferredSize);
-            pane.add(pt, BorderLayout.CENTER);
-            pane.add(name, pt);
+            pane.addTab(name, pt);
             book.append(pt, portrait);
             book.append(pt, landscape);
 
@@ -196,8 +191,7 @@ public class PrintTextTest {
             name = "Page " + page++;
             rotTx = AffineTransform.getRotateInstance(0.15);
             pt = new PrintJapaneseText(name, font, rotTx, true, preferredSize);
-            pane.add(pt, BorderLayout.CENTER);
-            pane.add(name, pt);
+            pane.addTab(name, pt);
             book.append(pt, portrait);
             book.append(pt, landscape);
         }
@@ -211,7 +205,7 @@ public class PrintTextTest {
                     pjob.print();
                 }
             } catch (PrinterException e) {
-                throw new RuntimeException(e.getMessage());
+                throw new RuntimeException(e.getMessage(), e);
             }
         });
 
@@ -261,11 +255,11 @@ public class PrintTextTest {
 
     private static class PrintText extends Component implements Printable {
 
-        protected Font textFont;
-        protected AffineTransform gxTx;
-        protected String page;
-        protected boolean useFM;
-        protected int preferredSize;
+        protected final Font textFont;
+        protected final AffineTransform gxTx;
+        protected final String page;
+        protected final boolean useFM;
+        protected final int preferredSize;
 
         public PrintText(String page, Font font, AffineTransform gxTx, boolean fm, int size) {
             this.page = page;
@@ -276,11 +270,11 @@ public class PrintTextTest {
             setBackground(Color.WHITE);
         }
 
-        public static AttributedCharacterIterator getIterator(String s) {
+        private static AttributedCharacterIterator getIterator(String s) {
             return new AttributedString(s).getIterator();
         }
 
-        static String orient(PageFormat pf) {
+        private static String orient(PageFormat pf) {
             if (pf.getOrientation() == PageFormat.PORTRAIT) {
                 return "Portrait";
             } else {
@@ -288,6 +282,7 @@ public class PrintTextTest {
             }
         }
 
+        @Override
         public int print(Graphics g, PageFormat pf, int pageIndex) {
             Graphics2D g2d = (Graphics2D)g;
             g2d.translate(pf.getImageableX(),  pf.getImageableY());
@@ -297,14 +292,17 @@ public class PrintTextTest {
             return PAGE_EXISTS;
         }
 
+        @Override
         public Dimension getMinimumSize() {
             return getPreferredSize();
         }
 
+        @Override
         public Dimension getPreferredSize() {
             return new Dimension(preferredSize, preferredSize);
         }
 
+        @Override
         public void paint(Graphics g) {
 
             g.setColor(Color.WHITE);
@@ -428,6 +426,7 @@ public class PrintTextTest {
             "\u3042\u3044\u3046\u3048\u304a\u30a4\u30ed\u30cf" +
             "\u30cb\u30db\u30d8\u30c8\u4e00\u4e01\u4e02\u4e05\uff08";
 
+        @Override
         public void paint(Graphics g) {
 
             g.setColor(Color.WHITE);
