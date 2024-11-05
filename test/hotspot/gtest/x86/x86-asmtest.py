@@ -403,6 +403,9 @@ class RegRegRegNddInstruction(NFInstruction):
         self.reg3 = Register().generate(reg3, width)
         self.generate_operands(self.reg1, self.reg2, self.reg3)
 
+    def astr(self):
+        return f'{{load}}' + super().astr()
+
 class RegRegRegImmNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, reg3, imm):
         super().__init__(name, aname, no_flag)
