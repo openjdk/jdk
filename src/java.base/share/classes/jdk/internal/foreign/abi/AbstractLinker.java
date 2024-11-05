@@ -279,7 +279,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
     // checks both that there is no excess padding between 'memberLayout' and
     // the previous layout
-    static private void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
+    private static void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
                                           long lastUnpaddedOffset, long offset) {
         long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.byteAlignment());
         if (expectedOffset != offset) {
