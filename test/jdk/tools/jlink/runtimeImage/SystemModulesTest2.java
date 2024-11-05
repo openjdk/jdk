@@ -81,6 +81,9 @@ public class SystemModulesTest2 extends AbstractLinkableRuntimeTest {
                 .validatingModule("java.base")
                 .addExtraOption("--disable-plugin")
                 .addExtraOption("system-modules");
+        if (isLinkableRuntime) {
+            builder.setLinkableRuntime();
+        }
         Path runtimeImageLinkTarget = createJavaImageRuntimeLink(builder.build());
         JImageValidator.validate(runtimeImageLinkTarget.resolve("lib").resolve("modules"),
                                     Collections.emptyList(),
