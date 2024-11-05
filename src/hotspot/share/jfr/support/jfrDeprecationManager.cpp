@@ -223,11 +223,14 @@ static inline bool is_invoke_bytecode(const Method* sender, int bci) {
   const Bytecodes::Code bc = (Bytecodes::Code)*sender->bcp_from(bci);
   switch (bc) {
     case Bytecodes::_invokevirtual:
-    case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
     case Bytecodes::_invokeinterface:
+    case Bytecodes::_invokespecial:
     case Bytecodes::_invokedynamic: {
       return true;
+    }
+    default: {
+      return false;
     }
   }
   return false;
