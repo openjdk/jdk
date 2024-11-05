@@ -784,7 +784,7 @@ public class TestDependencyOffsets {
                     // If offset % minElements != 0, then it does also not hold for any larger vector.
                     boolean alwaysPartialOverlap = offset % minElements != 0;
 
-		    if (alwaysPartialOverlap) {
+                    if (alwaysPartialOverlap) {
                         // It is a little tricky to know the exact threshold. On all platforms and in all
                         // unrolling cases, it is between 8 and 64. Hence, we have these 3 cases:
                         if (offset <= 8) {
@@ -797,7 +797,7 @@ public class TestDependencyOffsets {
                             // offset > 64  -> offset too large, expect no store-to-load-failure detection
                             throw new RuntimeException("impossible");
                         }
-		    } else if (sometimesPartialOverlap && !alwaysPartialOverlap) {
+                    } else if (sometimesPartialOverlap && !alwaysPartialOverlap) {
                         builder.append("    // Partial overlap condition true: sometimes but not always -> maybe disable IR rules.\n");
                         expectVectorization = ExpectVectorization.UNKNOWN;
                     } else {
