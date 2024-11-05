@@ -270,7 +270,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
-    static String inMessage(GroupLayout gl) {
+    private static String inMessage(GroupLayout gl) {
         return gl != null
                 ? " in " + gl
                 : "";
