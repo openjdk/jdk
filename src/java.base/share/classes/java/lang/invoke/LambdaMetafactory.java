@@ -217,7 +217,8 @@ import java.util.Objects;
  * caller of these methods, because these objects are logically a part of the
  * caller class or interface.  These methods do not have to consider the scenario
  * where the caller is {@linkplain MethodHandles.Lookup#defineHiddenClass not
- * strongly reachable} from its defining class loader.
+ * strongly reachable} from its defining class loader, and such use cases may
+ * lead to resource leaks.
  *
  * <p>The argument list of the implementation method and the argument list of
  * the interface method(s) may differ in several ways.  The implementation
