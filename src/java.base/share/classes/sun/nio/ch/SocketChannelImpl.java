@@ -954,7 +954,7 @@ class SocketChannelImpl
     @Override
     public boolean connect(SocketAddress remote) throws IOException {
         boolean connected = false;
-        IOException thrown = null;
+        IOException connectEx = null;
         long start = SocketConnectEvent.timestamp();
         SocketAddress sa = checkRemote(remote);
         try {
@@ -998,11 +998,11 @@ class SocketChannelImpl
         } catch (IOException ioe) {
             // connect failed, close the channel
             close();
-            thrown = SocketExceptions.of(ioe, sa);
-            throw thrown;
+            connectEx = SocketExceptions.of(ioe, sa);
+            throw connectEx;
         } finally {
-            if (SocketConnectEvent.enabled() && (connected || thrown != null)) {
-                SocketConnectEvent.offer(start, sa, thrown);
+            if (SocketConnectEvent.enabled() && (connected || connectEx != null)) {
+                SocketConnectEvent.offer(start, sa, connectEx);
             }
         }
     }
@@ -1058,7 +1058,7 @@ class SocketChannelImpl
     @Override
     public boolean finishConnect() throws IOException {
         boolean connected = false;
-        IOException thrown = null;
+        IOException connectEx = null;
         long start = 0;
         try {
             readLock.lock();
@@ -1098,11 +1098,11 @@ class SocketChannelImpl
         } catch (IOException ioe) {
             // connect failed, close the channel
             close();
-            thrown = SocketExceptions.of(ioe, remoteAddress);
-            throw thrown;
+            connectEx = SocketExceptions.of(ioe, remoteAddress);
+            throw connectEx;
         } finally {
-            if (SocketConnectEvent.enabled() && (connected || thrown != null)) {
-                SocketConnectEvent.offer(start, remoteAddress, thrown);
+            if (SocketConnectEvent.enabled() && (connected || connectEx != null)) {
+                SocketConnectEvent.offer(start, remoteAddress, connectEx);
             }
         }
     }

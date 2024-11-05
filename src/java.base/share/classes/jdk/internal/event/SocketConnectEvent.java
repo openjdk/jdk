@@ -25,6 +25,7 @@
 package jdk.internal.event;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
@@ -34,7 +35,7 @@ import java.net.UnixDomainSocketAddress;
  * {@code jdk.jfr.events.SocketConnectEvent } where the metadata for the event is
  * provided with annotations.  Some of the methods are replaced by generated
  * methods when jfr is enabled.  Note that the order of the arguments of the
- * {@link #commit(long, long, String, String, int, boolean)} method
+ * {@link #commit(long, long, String, String, int, String)} method
  * must be the same as the order of the fields.
  */
 public class SocketConnectEvent extends Event {
@@ -145,10 +146,10 @@ public class SocketConnectEvent extends Event {
      * @param port      remote port of the connection
      * @param thrown  the exception thrown or null if succeeded
      */
-    public static void offer(long start, String host, String address, int port, IOException thrown) {
+    public static void offer(long start, String host, InetAddress address, int port, IOException thrown) {
         long duration = timestamp() - start;
         if (shouldCommit(duration)) {
-            commit(start, duration, host, address, port, exceptionToMessage(thrown));
+            commit(start, duration, host, address.getHostAddress(), port, exceptionToMessage(thrown));
         }
     }
 

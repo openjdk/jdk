@@ -573,13 +573,13 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             address = InetAddress.getLocalHost();
         int port = isa.getPort();
 
-        ReentrantLock connectLock = readLock;
-        boolean connected = false;
         long start = SocketConnectEvent.timestamp();
-        IOException thrown = null;
+        IOException connectEx = null;
+        ReentrantLock connectLock = readLock;
         try {
             connectLock.lock();
             try {
+                boolean connected = false;
                 FileDescriptor fd = beginConnect(address, port);
                 try {
                     configureNonBlockingIfNeeded(fd, millis > 0);
@@ -611,17 +611,17 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             }
         } catch (IOException ioe) {
             close();
-            thrown = ioe;
             if (ioe instanceof InterruptedIOException) {
-                throw ioe;
+                connectEx = ioe;
             } else {
-                thrown = SocketExceptions.of(ioe, isa);
-                throw thrown;
+                connectEx = SocketExceptions.of(ioe, isa);
             }
-        } finally {
-            if (SocketConnectEvent.enabled()) {
-                    SocketConnectEvent.offer(start, isa.getHostString(), address.getHostAddress(), port, thrown);
-            }
+        }
+        if (SocketConnectEvent.enabled()) {
+            SocketConnectEvent.offer(start, isa.getHostString(), address, port, connectEx);
+        }
+        if (connectEx != null) {
+            throw connectEx;
         }
     }
 
