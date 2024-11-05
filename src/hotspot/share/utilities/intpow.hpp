@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
-import jdk.jpackage.test.JPackageCommand;
+#ifndef SHARE_UTILITIES_INTPOW_HPP
+#define SHARE_UTILITIES_INTPOW_HPP
 
-/*
- * @test
- * @summary jpackage with values of --dest parameter breaking jpackage launcher
- * @requires (os.family == "linux")
- * @bug 8268974
- * @library /test/jdk/tools/jpackage/helpers
- * @build jdk.jpackage.test.*
- * @compile LinuxWeirdOutputDirTest.java
- * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=LinuxWeirdOutputDirTest
- */
-public class LinuxWeirdOutputDirTest {
+#include "metaprogramming/enableIf.hpp"
+#include <limits>
+#include <type_traits>
 
-    @Test
-    @Parameter("bin")
-    @Parameter("lib")
-    public void test(String outputPath) {
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
-        cmd.setArgumentValue("--dest", cmd.outputDir().resolve(outputPath));
-        cmd.executeAndAssertHelloAppImageCreated();
-    }
+// Raise v to the power p mod 2**N, where N is the width of the type T.
+template <typename T, ENABLE_IF(std::is_integral<T>::value && std::is_unsigned<T>::value)>
+static constexpr T intpow(T v, unsigned p) {
+  if (p == 0) {
+    return 1;
+  }
+
+  // We use exponentiation by squaring to calculate the required power.
+  T a = intpow(v, p / 2);
+  T b = (p % 2) ? v : 1;
+
+  return a * a * b;
 }
+
+#endif // SHARE_UTILITIES_INTPOW_HPP
