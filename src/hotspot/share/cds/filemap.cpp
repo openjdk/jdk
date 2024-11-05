@@ -1743,34 +1743,17 @@ void FileMapInfo::close() {
   _archive_workers.shutdown();
 }
 
-class ArchiveRegionPretouchTask : public ArchiveWorkerTask {
-private:
-  char* const _from;
-  size_t const _bytes;
-
-public:
-  ArchiveRegionPretouchTask(char* from, size_t bytes) :
-    ArchiveWorkerTask("Archive Regions Pretouch"), _from(from), _bytes(bytes) {}
-
-  void work(int chunk, int max_chunks) override {
-    char* start = _from + MIN2(_bytes, _bytes * chunk / max_chunks);
-    char* end   = _from + MIN2(_bytes, _bytes * (chunk + 1) / max_chunks);
-    os::pretouch_memory(start, end);
-  }
-};
-
 /*
- * Same as os::map_memory() but also pretouches memory unconditionally,
- * as we are very likely to start writing into that memory during archive load.
+ * Same as os::map_memory() but also pretouches if AlwaysPreTouch is enabled.
  */
-char* FileMapInfo::map_memory(int fd, const char* file_name, size_t file_offset,
-                              char *addr, size_t bytes, bool read_only, bool allow_exec) {
+static char* map_memory(int fd, const char* file_name, size_t file_offset,
+                        char *addr, size_t bytes, bool read_only,
+                        bool allow_exec, MemTag mem_tag = mtNone) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
-                             (ArchivePreTouch || AlwaysPreTouch) ? false : read_only,
-                             allow_exec, mtClassShared);
-  if (mem != nullptr && (ArchivePreTouch || AlwaysPreTouch)) {
-    ArchiveRegionPretouchTask pretouch(mem, bytes);
-    _archive_workers.run_task(&pretouch);
+                             AlwaysPreTouch ? false : read_only,
+                             allow_exec, mem_tag);
+  if (mem != nullptr && AlwaysPreTouch) {
+    os::pretouch_memory(mem, mem + bytes);
   }
   return mem;
 }
@@ -1915,7 +1898,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     // space (Posix). See also comment in MetaspaceShared::map_archives().
     char* base = map_memory(_fd, _full_path, r->file_offset(),
                             requested_addr, size, r->read_only(),
-                            r->allow_exec());
+                            r->allow_exec(), mtClassShared);
     if (base != requested_addr) {
       log_info(cds)("Unable to map %s shared space at " INTPTR_FORMAT,
                     shared_region_name[i], p2i(requested_addr));
@@ -1943,7 +1926,7 @@ char* FileMapInfo::map_bitmap_region() {
   bool read_only = true, allow_exec = false;
   char* requested_addr = nullptr; // allow OS to pick any location
   char* bitmap_base = map_memory(_fd, _full_path, r->file_offset(),
-                                 requested_addr, r->used_aligned(), read_only, allow_exec);
+                                 requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
   if (bitmap_base == nullptr) {
     log_info(cds)("failed to map relocation bitmap");
     return nullptr;

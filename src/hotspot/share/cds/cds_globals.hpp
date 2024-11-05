@@ -95,9 +95,6 @@
            "do not map the archive")                                        \
            range(0, 2)                                                      \
                                                                             \
-  product(bool, ArchivePreTouch, true, DIAGNOSTIC,                          \
-          "Pre-touch archive regions, regardless of AlwaysPreTouch mode.")  \
-                                                                            \
   product(bool, ArchiveParallelRelocation, true, DIAGNOSTIC,                \
           "Use parallel relocation code to speed up startup.")              \
                                                                             \
