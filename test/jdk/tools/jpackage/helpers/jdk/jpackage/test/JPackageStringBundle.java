@@ -46,20 +46,20 @@ public enum JPackageStringBundle {
     /**
      * Gets a string for the given key from jpackage resources.
      */
-    public String getString(String key) {
+    private String getString(String key) {
         try {
             return (String)i18nClass_getString.invoke(i18nClass, key);
         } catch (IllegalAccessException|InvocationTargetException ex) {
             throw Functional.rethrowUnchecked(ex);
         }
     }
-    
-    public String getFormattedString(String key, Object ... args) {
+
+    private String getFormattedString(String key, Object[] args) {
         return MessageFormat.format(getString(key), args);
     }
-    
-    public TKit.TextStreamVerifier assertTextStream(String key, Object ... args) {
-        return TKit.assertTextStream(getFormattedString(key, args));
+
+    public CannedFormattedString cannedFormattedString(String key, String ... args) {
+        return new CannedFormattedString(this::getFormattedString, key, args);
     }
 
     private final Class<?> i18nClass;

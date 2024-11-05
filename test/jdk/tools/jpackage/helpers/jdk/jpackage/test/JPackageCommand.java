@@ -754,8 +754,8 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
-    public JPackageCommand verifyOutput(String key, Object ... args) {
-        return verifyOutput(JPackageStringBundle.MAIN.assertTextStream(key, args));
+    public JPackageCommand verifyOutput(CannedFormattedString str) {
+        return verifyOutput(TKit.assertTextStream(str.getValue()));
     }
 
     public boolean isWithToolProvider() {
