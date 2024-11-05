@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         ${TESTSRC}${FS}MultipleLogins.java \
         ${TESTSRC}${FS}..${FS}PKCS11Test.java
 
-TEST_ARGS="${TESTVMOPTS} -classpath ${TESTCLASSPATH} \
+TEST_ARGS="${TESTVMOPTS} ${TESTJAVAOPTS} -classpath ${TESTCLASSPATH} \
         --add-modules jdk.crypto.cryptoki \
         --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED \
         -DCUSTOM_DB_DIR=${TESTCLASSES} \

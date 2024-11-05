@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ rm -rf com edu
 # This is the only thing we really care about as far as
 # test status goes.
 #
-${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} \
+${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} ${TESTJAVAOPTS} \
     -Dtest.src=${TESTSRC} \
     -classpath "com.jar${PATHSEP}edu.jar" \
     -Djava.security.manager \
