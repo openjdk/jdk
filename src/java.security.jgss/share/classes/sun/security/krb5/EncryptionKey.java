@@ -37,7 +37,6 @@ import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.ProviderException;
 import java.util.Arrays;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.krb5.internal.ccache.CCacheOutputStream;
@@ -265,7 +264,7 @@ public class EncryptionKey
                         EType.toString(keyType) + " not supported");
             }
 
-        } catch (ProviderException | GeneralSecurityException e) {
+        } catch (GeneralSecurityException e) {
             KrbCryptoException ke = new KrbCryptoException(e.getMessage());
             ke.initCause(e);
             throw ke;

@@ -78,13 +78,8 @@ public final class MD4 extends DigestBase {
         });
     }
 
-    public static MessageDigest getInstance() {
-        try {
-            return MessageDigest.getInstance("MD4", md4Provider);
-        } catch (NoSuchAlgorithmException e) {
-            // should never occur
-            throw new ProviderException(e);
-        }
+    public static MessageDigest getInstance() throws NoSuchAlgorithmException {
+        return MessageDigest.getInstance("MD4", md4Provider);
     }
 
     // Standard constructor, creates a new MD4 instance.
