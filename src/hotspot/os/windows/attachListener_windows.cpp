@@ -84,7 +84,8 @@ public:
                           0,              // default attributes
                           nullptr);       // no template file
     if (_hPipe == INVALID_HANDLE_VALUE) {
-      log_error(attach)("could not open (%d) pipe %s", GetLastError(), pipe);
+      log_error(attach)("could not open %s (%d) pipe %s",
+                        (write_only ? "write-only" : "read-write"), GetLastError(), pipe);
       return false;
     }
     return true;
@@ -138,12 +139,12 @@ private:
 
 public:
   // for v1 pipe must be write-only
-  void open_pipe(const char* pipe_name, bool write_only) {
-    _pipe.open(pipe_name, write_only);
+  bool open_pipe(const char* pipe_name, bool write_only) {
+    return _pipe.open(pipe_name, write_only);
   }
 
   bool read_request() {
-      return AttachOperation::read_request(&_pipe);
+    return AttachOperation::read_request(&_pipe);
   }
 
 public:
@@ -390,13 +391,17 @@ Win32AttachOperation* Win32AttachListener::dequeue() {
         for (int i = 0; i < AttachOperation::arg_count_max; i++) {
           op->append_arg(request->arg(i));
         }
-        op->open_pipe(request->pipe(), true/*write-only*/);
+        if (!op->open_pipe(request->pipe(), true/*write-only*/)) {
+          log_error(attach)("AttachListener::dequeue(v1), open pipe error");
+          delete op;
+          op = nullptr;
+        }
         break;
       case ATTACH_API_V2:
         op = new Win32AttachOperation();
-        op->open_pipe(request->pipe(), false/*write-only*/);
-        if (!op->read_request()) {
-          log_error(attach)("AttachListener::dequeue, reading request ERROR");
+        if (!op->open_pipe(request->pipe(), false/*write-only*/)
+            || !op->read_request()) {
+          log_error(attach)("AttachListener::dequeue(v2), reading request ERROR");
           delete op;
           op = nullptr;
         }
