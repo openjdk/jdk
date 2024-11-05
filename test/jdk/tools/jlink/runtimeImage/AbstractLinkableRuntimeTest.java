@@ -259,7 +259,7 @@ public abstract class AbstractLinkableRuntimeTest {
             Path tempRuntimeImage = Path.of(finalName + "-tmp");
             JLinkTask task = JImageGenerator.getJLinkTask();
             task.output(tempRuntimeImage)
-                .addMods("jdk.jlink") // that modules is always needed for the test
+                .addMods("jdk.jlink") // jdk.jlink module is always needed for the test
                 .option("--generate-linkable-runtime");
             if (baseJDKhasPackagedModules()) {
                 Path jmodsPath = tempRuntimeImage.resolve("jmods");
