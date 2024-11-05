@@ -73,11 +73,20 @@ public final class InOutPathTest {
             data.addAll(additionalContentInput(packageTypes, "--app-content"));
         }
 
-        data.addAll(List.of(new Object[][]{
-            {PackageType.IMAGE.toString(), wrap(cmd -> {
-                additionalContent(cmd, "--app-content", cmd.outputBundle());
-            }, "--app-content same as output bundle")},
-        }));
+        if (!TKit.isOSX()) {
+            data.addAll(List.of(new Object[][]{
+                {PackageType.IMAGE.toString(), wrap(cmd -> {
+                    additionalContent(cmd, "--app-content", cmd.outputBundle());
+                }, "--app-content same as output bundle")},
+            }));
+        } else {
+            var contentsFolder = "Contents";
+            data.addAll(List.of(new Object[][]{
+                {PackageType.IMAGE.toString(), wrap(cmd -> {
+                    additionalContent(cmd, "--app-content", cmd.outputBundle().resolve(contentsFolder));
+                }, String.format("--app-content same as the \"%s\" folder in the output bundle", contentsFolder))},
+            }));
+        }
 
         if (TKit.isOSX()) {
             data.addAll(additionalContentInput(PackageType.MAC_DMG.toString(),
