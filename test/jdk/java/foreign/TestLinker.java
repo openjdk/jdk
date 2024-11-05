@@ -180,7 +180,12 @@ public class TestLinker extends NativeTestHelper {
         var struct = MemoryLayout.structLayout(JAVA_BYTE, padding1, padding2, JAVA_INT);
 
         var fd = FunctionDescriptor.of(struct, struct, struct);
-        assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        try {
+          linker.downcallHandle(fd);
+        } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(),
+                    "The padding layout x2 was preceded by another padding layout x1 in [b1x1x2i4]");
+        }
     }
 
     @Test
@@ -196,7 +201,12 @@ public class TestLinker extends NativeTestHelper {
         var union = MemoryLayout.unionLayout(struct32, padding32);
         var struct = MemoryLayout.structLayout(JAVA_BYTE, padding1, padding2, padding4, padding8, padding16, union);
         var fd = FunctionDescriptor.of(struct, struct, struct);
-        assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        try {
+            linker.downcallHandle(fd);
+        } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(),
+                    "The padding layout x2 was preceded by another padding layout x1 in [b1x1x2x4x8x16[[[4:j8]]|x32]]");
+        }
     }
 
     @Test
