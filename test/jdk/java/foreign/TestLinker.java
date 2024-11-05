@@ -180,7 +180,7 @@ public class TestLinker extends NativeTestHelper {
         var struct = MemoryLayout.structLayout(JAVA_BYTE, padding1, padding2, JAVA_INT);
 
         var fd = FunctionDescriptor.of(struct, struct, struct);
-        assertThrows(IllegalArgumentException.class, () ->linker.downcallHandle(fd));
+        assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
     }
 
     @Test
