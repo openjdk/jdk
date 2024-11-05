@@ -429,7 +429,7 @@ void ArchiveWorkers::start_worker_if_needed() {
     if (cur >= _num_workers) {
       return;
     }
-    if (Atomic::cmpxchg(&_started_workers, cur, cur + 1) == cur) {
+    if (Atomic::cmpxchg(&_started_workers, cur, cur + 1, memory_order_relaxed) == cur) {
       break;
     }
   }
@@ -503,7 +503,7 @@ bool ArchiveWorkers::run_as_worker() {
   task->run();
 
   // Signal the pool the tasks are complete, if this is the last worker.
-  if (Atomic::sub(&_running_workers, 1) == 0) {
+  if (Atomic::sub(&_running_workers, 1, memory_order_relaxed) == 0) {
     _end_semaphore.signal();
   }
 
