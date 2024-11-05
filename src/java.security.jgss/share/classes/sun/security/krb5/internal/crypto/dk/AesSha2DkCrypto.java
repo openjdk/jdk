@@ -111,8 +111,6 @@ public class AesSha2DkCrypto extends DkCrypto {
         try {
             saltUtf8 = salt.getBytes(UTF_8);
             return stringToKey(password, saltUtf8, s2kparams);
-        } catch (Exception e) {
-            return null;
         } finally {
             if (saltUtf8 != null) {
                 Arrays.fill(saltUtf8, (byte)0);
