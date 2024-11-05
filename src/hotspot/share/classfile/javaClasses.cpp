@@ -2103,11 +2103,11 @@ void java_lang_VirtualThread::set_notified(oop vthread, jboolean value) {
   vthread->bool_field_put_volatile(_notified_offset, value);
 }
 
-jlong java_lang_VirtualThread::waitTimeout(oop vthread) {
+jlong java_lang_VirtualThread::timeout(oop vthread) {
   return vthread->long_field(_timeout_offset);
 }
 
-void java_lang_VirtualThread::set_waitTimeout(oop vthread, jlong value) {
+void java_lang_VirtualThread::set_timeout(oop vthread, jlong value) {
   vthread->long_field_put(_timeout_offset, value);
 }
 

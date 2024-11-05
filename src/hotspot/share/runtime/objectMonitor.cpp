@@ -1631,7 +1631,7 @@ static void vthread_monitor_waited_event(JavaThread *current, ObjectWaiter* node
 
   JRT_BLOCK
     if (event->should_commit()) {
-      long timeout = java_lang_VirtualThread::waitTimeout(current->vthread());
+      long timeout = java_lang_VirtualThread::timeout(current->vthread());
       post_monitor_wait_event(event, node->_monitor, node->_notifier_tid, timeout, timed_out);
     }
     if (JvmtiExport::should_post_monitor_waited()) {
@@ -2028,7 +2028,7 @@ void ObjectMonitor::VThreadWait(JavaThread* current, jlong millis) {
 
   assert(java_lang_VirtualThread::state(vthread) == java_lang_VirtualThread::RUNNING, "wrong state for vthread");
   java_lang_VirtualThread::set_state(vthread, millis == 0 ? java_lang_VirtualThread::WAITING : java_lang_VirtualThread::TIMED_WAITING);
-  java_lang_VirtualThread::set_waitTimeout(vthread, millis);
+  java_lang_VirtualThread::set_timeout(vthread, millis);
 
   // Save the ObjectWaiter* in the chunk since we will need it when resuming execution.
   oop cont = java_lang_VirtualThread::continuation(vthread);
