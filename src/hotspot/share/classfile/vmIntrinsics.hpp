@@ -149,6 +149,8 @@ class methodHandle;
   do_name(copySign_name, "copySign")                                                                                    \
   do_name(signum_name,"signum")                                                                                         \
   do_name(expand_name,"expand")                                                                                         \
+  do_name(add_name,"add")                                                                                               \
+  do_name(mul_name,"mul")                                                                                               \
                                                                                                                         \
   do_intrinsic(_dabs,                     java_lang_Math,         abs_name,   double_double_signature,           F_S)   \
   do_intrinsic(_fabs,                     java_lang_Math,         abs_name,   float_float_signature,             F_S)   \
@@ -231,6 +233,12 @@ class methodHandle;
   do_intrinsic(_floatToFloat16,           java_lang_Float,        floatToFloat16_name,      float_f16_signature, F_S)   \
    do_name(     floatToFloat16_name,                             "floatToFloat16")                                      \
    do_signature(float_f16_signature,                             "(F)S")                                                \
+                                                                                                                        \
+  do_class(jdk_internal_math_RelaxedMath, "jdk/internal/math/RelaxedMath")                                              \
+  do_intrinsic(_RelaxedMath_float_add,    jdk_internal_math_RelaxedMath, add_name,  float2_float_signature,  F_S)       \
+  do_intrinsic(_RelaxedMath_float_mul,    jdk_internal_math_RelaxedMath, mul_name,  float2_float_signature,  F_S)       \
+  do_intrinsic(_RelaxedMath_double_add,   jdk_internal_math_RelaxedMath, add_name,  double2_double_signature, F_S)      \
+  do_intrinsic(_RelaxedMath_double_mul,   jdk_internal_math_RelaxedMath, mul_name,  double2_double_signature, F_S)      \
                                                                                                                         \
   do_intrinsic(_compareUnsigned_i,        java_lang_Integer,      compareUnsigned_name,     int2_int_signature,  F_S)   \
   do_intrinsic(_compareUnsigned_l,        java_lang_Long,         compareUnsigned_name,     long2_int_signature, F_S)   \

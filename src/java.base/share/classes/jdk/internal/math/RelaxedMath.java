@@ -25,6 +25,8 @@
 
 package jdk.internal.math;
 
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+
 /**
  * This class exposes float and doulbe operations with relaxed semantics that
  * allow more optimizations than their regular (strict) counterparts. For example
@@ -43,8 +45,15 @@ public class RelaxedMath {
     private RelaxedMath() {}
 
     // TODO description?
+    @IntrinsicCandidate
     public static float add(float a, float b) { return a + b; }
+
+    @IntrinsicCandidate
     public static float mul(float a, float b) { return a * b; }
+
+    @IntrinsicCandidate
     public static double add(double a, double b) { return a + b; }
+
+    @IntrinsicCandidate
     public static double mul(double a, double b) { return a * b; }
 }

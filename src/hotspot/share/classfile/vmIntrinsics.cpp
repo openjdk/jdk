@@ -298,6 +298,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_datan2:
   case vmIntrinsics::_floatToIntBits:
   case vmIntrinsics::_doubleToLongBits:
+  // TODO add here or somewhere else?
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:
   case vmIntrinsics::_maxF:
