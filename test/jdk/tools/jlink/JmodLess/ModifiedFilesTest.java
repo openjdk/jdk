@@ -36,13 +36,16 @@ public abstract class ModifiedFilesTest extends AbstractLinkableRuntimeTest {
     abstract void testAndAssert(Path modifiedFile, Helper helper, Path initialImage) throws Exception;
 
     @Override
-    void runTest(Helper helper) throws Exception {
-        Path initialImage = createRuntimeLinkImage(new BaseJlinkSpecBuilder()
+    void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
+        BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder()
                 .name(initialImageName())
                 .addModule("java.base")
                 .validatingModule("java.base")
-                .helper(helper)
-                .build());
+                .helper(helper);
+        if (isLinkableRuntime) {
+            builder.setLinkableRuntime();
+        }
+        Path initialImage = createRuntimeLinkImage(builder.build());
 
         Path netPropertiesFile = modifyFileInImage(initialImage);
 

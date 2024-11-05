@@ -29,7 +29,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import tests.Helper;
 
 /*
- * @test
+ * @test id=linkable_runtime
  * @summary Test --add-options jlink plugin when linking from the run-time image
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
@@ -40,25 +40,47 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g AddOptionsTest
+ * @run main/othervm -Xmx1g AddOptionsTest true
+ */
+
+/*
+ * @test id=default_build
+ * @summary Test --add-options jlink plugin when linking from the run-time image
+ * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @library ../../lib /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
+ *          jdk.jlink/jdk.tools.jimage
+ * @build tests.* jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.process.ProcessTools
+ * @run main/othervm -Xmx1g AddOptionsTest false
  */
 public class AddOptionsTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Wrong number of passed arguments");
+        }
+        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         AddOptionsTest test = new AddOptionsTest();
-        test.run();
+        test.run(isLinkableRuntime);
     }
 
     @Override
-    void runTest(Helper helper) throws Exception {
-        Path finalImage = createJavaImageRuntimeLink(new BaseJlinkSpecBuilder()
+    void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
+        BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder()
                 .addExtraOption("--add-options")
                 .addExtraOption("-Xlog:gc=info:stderr -XX:+UseParallelGC")
                 .name("java-base-with-opts")
                 .addModule("java.base")
                 .validatingModule("java.base")
-                .helper(helper)
-                .build());
+                .helper(helper);
+        if (isLinkableRuntime) {
+            builder.setLinkableRuntime();
+        }
+        Path finalImage = createJavaImageRuntimeLink(builder.build());
         verifyListModules(finalImage, List.of("java.base"));
         verifyParallelGCInUse(finalImage);
     }

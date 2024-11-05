@@ -28,7 +28,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import tests.Helper;
 
 /*
- * @test
+ * @test id=linkable_runtime
  * @summary Verify that a jlink using the run-time image cannot include jdk.jlink
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
@@ -39,13 +39,28 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g MultiHopTest
+ * @run main/othervm -Xmx1g MultiHopTest true
+ */
+
+/*
+ * @test id=default_build
+ * @summary Verify that a jlink using the run-time image cannot include jdk.jlink
+ * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @library ../../lib /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
+ *          jdk.jlink/jdk.tools.jimage
+ * @build tests.* jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.process.ProcessTools
+ * @run main/othervm -Xmx1g MultiHopTest false
  */
 public class MultiHopTest extends AbstractLinkableRuntimeTest {
 
     @Override
-    void runTest(Helper helper) throws Exception {
-        Path jdkJlinkJmodless = createJDKJlinkJmodLess(helper, "jdk.jlink-multi-hop1");
+    void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
+        Path jdkJlinkJmodless = createJDKJlinkJmodLess(helper, "jdk.jlink-multi-hop1", isLinkableRuntime);
         CapturingHandler handler = new CapturingHandler();
         Predicate<OutputAnalyzer> exitFailPred = new Predicate<>() {
 
@@ -72,18 +87,25 @@ public class MultiHopTest extends AbstractLinkableRuntimeTest {
         analyzer.stdoutShouldNotContain("Exception"); // ensure error message is sane
     }
 
-    private Path createJDKJlinkJmodLess(Helper helper, String name) throws Exception {
+    private Path createJDKJlinkJmodLess(Helper helper, String name, boolean isLinkableRuntime) throws Exception {
         BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder();
         builder.helper(helper)
                .name(name)
                .addModule("jdk.jlink")
                .validatingModule("java.base");
+        if (isLinkableRuntime) {
+            builder.setLinkableRuntime();
+        }
         return createRuntimeLinkImage(builder.build());
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Wrong number of passed arguments");
+        }
+        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         MultiHopTest test = new MultiHopTest();
-        test.run();
+        test.run(isLinkableRuntime);
     }
 
 }

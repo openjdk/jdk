@@ -29,7 +29,7 @@ import tests.Helper;
 import tests.JImageValidator;
 
 /*
- * @test
+ * @test id=linkable_runtime
  * @summary Test disabled SystemModulesPlugin in run-time image link mode. Expect
  *          generated classes to not be there.
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
@@ -41,28 +41,48 @@ import tests.JImageValidator;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g SystemModulesTest2
+ * @run main/othervm -Xmx1g SystemModulesTest2 true
+ */
+
+/*
+ * @test id=default_build
+ * @summary Test disabled SystemModulesPlugin in run-time image link mode. Expect
+ *          generated classes to not be there.
+ * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @library ../../lib /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
+ *          jdk.jlink/jdk.tools.jimage
+ * @build tests.* jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.process.ProcessTools
+ * @run main/othervm -Xmx1g SystemModulesTest2 false
  */
 public class SystemModulesTest2 extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Wrong number of passed arguments");
+        }
+        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         SystemModulesTest2 test = new SystemModulesTest2();
-        test.run();
+        test.run(isLinkableRuntime);
     }
 
     @Override
-    void runTest(Helper helper) throws Exception {
+    void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
         // See SystemModulesTest which enables the system-modules plugin. With
         // it disabled, we expect for the generated classes to not be there.
-        Path javaJmodless = createJavaImageRuntimeLink(new BaseJlinkSpecBuilder()
-                                                            .helper(helper)
-                                                            .name("jlink-jmodless-sysmod2")
-                                                            .addModule("jdk.httpserver")
-                                                            .validatingModule("java.base")
-                                                            .addExtraOption("--disable-plugin")
-                                                            .addExtraOption("system-modules")
-                                                            .build());
-        JImageValidator.validate(javaJmodless.resolve("lib").resolve("modules"),
+        BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder()
+                .helper(helper)
+                .name("jlink-jmodless-sysmod2")
+                .addModule("jdk.httpserver")
+                .validatingModule("java.base")
+                .addExtraOption("--disable-plugin")
+                .addExtraOption("system-modules");
+        Path runtimeImageLinkTarget = createJavaImageRuntimeLink(builder.build());
+        JImageValidator.validate(runtimeImageLinkTarget.resolve("lib").resolve("modules"),
                                     Collections.emptyList(),
                                     List.of("/java.base/jdk/internal/module/SystemModules$all.class",
                                             "/java.base/jdk/internal/module/SystemModules$default.class",

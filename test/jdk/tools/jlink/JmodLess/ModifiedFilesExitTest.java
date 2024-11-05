@@ -28,7 +28,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import tests.Helper;
 
 /*
- * @test
+ * @test id=linkable_runtime
  * @summary Verify jlink fails by default when linking from the run-time image
  *          and files have been modified
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
@@ -40,13 +40,33 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g ModifiedFilesExitTest
+ * @run main/othervm -Xmx1g ModifiedFilesExitTest true
+ */
+
+/*
+ * @test id=default_build
+ * @summary Verify jlink fails by default when linking from the run-time image
+ *          and files have been modified
+ * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @library ../../lib /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
+ *          jdk.jlink/jdk.tools.jimage
+ * @build tests.* jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.process.ProcessTools
+ * @run main/othervm -Xmx1g ModifiedFilesExitTest false
  */
 public class ModifiedFilesExitTest extends ModifiedFilesTest {
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Wrong number of passed arguments");
+        }
+        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         ModifiedFilesExitTest test = new ModifiedFilesExitTest();
-        test.run();
+        test.run(isLinkableRuntime);
     }
 
     @Override

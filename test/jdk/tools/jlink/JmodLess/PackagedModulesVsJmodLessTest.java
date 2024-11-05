@@ -36,7 +36,7 @@ import tests.Helper;
 import tests.JImageGenerator;
 
 /*
- * @test
+ * @test id=linkable_runtime
  * @summary Compare packaged-modules jlink with a run-time image based jlink to
  *          produce the same result
  * @requires (jlink.packagedModules & jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
@@ -48,24 +48,47 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g PackagedModulesVsJmodLessTest
+ * @run main/othervm -Xmx1g PackagedModulesVsJmodLessTest true
+ */
+
+/*
+ * @test id=default_build
+ * @summary Compare packaged-modules jlink with a run-time image based jlink to
+ *          produce the same result
+ * @requires (jlink.packagedModules & !jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @library ../../lib /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
+ *          jdk.jlink/jdk.tools.jimage
+ * @build tests.* jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.process.ProcessTools
+ * @run main/othervm -Xmx1g PackagedModulesVsJmodLessTest false
  */
 public class PackagedModulesVsJmodLessTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Wrong number of passed arguments");
+        }
+        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         PackagedModulesVsJmodLessTest test = new PackagedModulesVsJmodLessTest();
-        test.run();
+        test.run(isLinkableRuntime);
     }
 
     @Override
-    void runTest(Helper helper) throws Exception {
+    void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
         // create a java.se using jmod-less approach
-        Path javaSEruntimeLink = createJavaImageRuntimeLink(new BaseJlinkSpecBuilder()
-                                                            .helper(helper)
-                                                            .name("java-se-jmodless")
-                                                            .addModule("java.se")
-                                                            .validatingModule("java.se")
-                                                            .build());
+        BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder()
+                .helper(helper)
+                .name("java-se-jmodless")
+                .addModule("java.se")
+                .validatingModule("java.se");
+        if (isLinkableRuntime) {
+            builder.setLinkableRuntime();
+        }
+        Path javaSEruntimeLink = createJavaImageRuntimeLink(builder.build());
 
         // create a java.se using packaged modules (jmod-full)
         Path javaSEJmodFull = JImageGenerator.getJLinkTask()

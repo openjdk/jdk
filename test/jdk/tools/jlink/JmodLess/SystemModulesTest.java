@@ -29,7 +29,7 @@ import tests.Helper;
 import tests.JImageValidator;
 
 /*
- * @test
+ * @test id=linkable_runtime
  * @summary Test appropriate handling of generated SystemModules* classes in run-time image link mode
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
@@ -40,13 +40,32 @@ import tests.JImageValidator;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g SystemModulesTest
+ * @run main/othervm -Xmx1g SystemModulesTest true
+ */
+
+/*
+ * @test id=default_build
+ * @summary Test appropriate handling of generated SystemModules* classes in run-time image link mode
+ * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @library ../../lib /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
+ *          jdk.jlink/jdk.tools.jimage
+ * @build tests.* jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.process.ProcessTools
+ * @run main/othervm -Xmx1g SystemModulesTest false
  */
 public class SystemModulesTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Wrong number of passed arguments");
+        }
+        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         SystemModulesTest test = new SystemModulesTest();
-        test.run();
+        test.run(isLinkableRuntime);
     }
 
     /*
@@ -55,17 +74,20 @@ public class SystemModulesTest extends AbstractLinkableRuntimeTest {
      * propagated.
      */
     @Override
-    void runTest(Helper helper) throws Exception {
+    void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
         // create an image with a module containing a main entrypoint (jdk.httpserver),
         // thus producing the SystemModules$0.class. Add jdk.jdwp.agent as a module which
         // isn't resolved by default, so as to generate SystemModules$default.class
-        Path javaseJmodless = createJavaImageRuntimeLink(new BaseJlinkSpecBuilder()
-                                                            .helper(helper)
-                                                            .name("httpserver-jlink-jmodless-derived")
-                                                            .addModule("jdk.httpserver")
-                                                            .addModule("jdk.jdwp.agent")
-                                                            .validatingModule("java.base")
-                                                            .build());
+        BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder()
+                .helper(helper)
+                .name("httpserver-jlink-jmodless-derived")
+                .addModule("jdk.httpserver")
+                .addModule("jdk.jdwp.agent")
+                .validatingModule("java.base");
+        if (isLinkableRuntime) {
+            builder.setLinkableRuntime();
+        }
+        Path javaseJmodless = createJavaImageRuntimeLink(builder.build());
         // Verify that SystemModules$0.class etc. are there, due to httpserver and jdwp.agent
         JImageValidator.validate(javaseJmodless.resolve("lib").resolve("modules"),
                                     List.of("/java.base/jdk/internal/module/SystemModules$default.class",

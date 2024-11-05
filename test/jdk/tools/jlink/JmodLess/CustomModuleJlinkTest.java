@@ -28,7 +28,7 @@ import tests.Helper;
 
 
 /*
- * @test
+ * @test id=linkable_runtime
  * @summary Test jmod-less jlink with a custom module
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
@@ -39,27 +39,49 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g CustomModuleJlinkTest
+ * @run main/othervm -Xmx1g CustomModuleJlinkTest true
+ */
+
+/*
+ * @test id=default_build
+ * @summary Test jmod-less jlink with a custom module
+ * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @library ../../lib /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
+ *          jdk.jlink/jdk.tools.jimage
+ * @build tests.* jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.process.ProcessTools
+ * @run main/othervm -Xmx1g CustomModuleJlinkTest false
  */
 public class CustomModuleJlinkTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Wrong number of passed arguments");
+        }
+        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         CustomModuleJlinkTest test = new CustomModuleJlinkTest();
-        test.run();
+        test.run(isLinkableRuntime);
     }
 
     @Override
-    void runTest(Helper helper) throws Exception {
+    void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
         String customModule = "leaf1";
         helper.generateDefaultJModule(customModule);
 
         // create a base image for linking from the run-time image
-        Path jlinkImage = createRuntimeLinkImage(new BaseJlinkSpecBuilder()
-                                                    .helper(helper)
-                                                    .name("cmod-jlink")
-                                                    .addModule("java.base")
-                                                    .validatingModule("java.base")
-                                                    .build());
+        BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder()
+            .helper(helper)
+            .name("cmod-jlink")
+            .addModule("java.base")
+            .validatingModule("java.base");
+        if (isLinkableRuntime) {
+            builder.setLinkableRuntime();
+        }
+        Path jlinkImage = createRuntimeLinkImage(builder.build());
 
         // Next jlink using the run-time image for java.base, but take
         // the custom module from the module path.

@@ -42,25 +42,34 @@ import java.util.stream.Collectors;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import tests.Helper;
+import tests.JImageGenerator;
+import tests.JImageGenerator.JLinkTask;
 import tests.JImageValidator;
 
 public abstract class AbstractLinkableRuntimeTest {
 
     protected static final boolean DEBUG = true;
 
-    public void run() throws Exception {
-        Helper helper = Helper.newHelper(true /* linking from run-time image */);
+    public void run(boolean isLinkableRuntime) throws Exception {
+        Helper helper = Helper.newHelper(isLinkableRuntime);
         if (helper == null) {
             System.err.println(AbstractLinkableRuntimeTest.class.getSimpleName() +
                                ": Test not run");
             return;
         }
-        runTest(helper);
+        runTest(helper, isLinkableRuntime);
         System.out.println(getClass().getSimpleName() + " PASSED!");
     }
 
-    /** main test entrypoint **/
-    abstract void runTest(Helper helper) throws Exception;
+    /**
+     * Main test entry point that actual tests ought to override.
+     *
+     * @param helper The jlink helper
+     * @param isLinkableRuntime {@code true} iff the JDK build under test already
+     *                          includes the linkable runtime capability in jlink.
+     * @throws Exception
+     */
+    abstract void runTest(Helper helper, boolean isLinkableRuntime) throws Exception;
 
     /**
      * Ensure 'java --list-modules' lists the correct set of modules in the given
@@ -142,8 +151,8 @@ public abstract class AbstractLinkableRuntimeTest {
     }
 
     protected Path jlinkUsingImage(JlinkSpec spec, OutputAnalyzerHandler handler, Predicate<OutputAnalyzer> exitChecker) throws Exception {
-        String jmodLessGeneratedImage = "target-jmodless-" + spec.getName();
-        Path targetImageDir = spec.getHelper().createNewImageDir(jmodLessGeneratedImage);
+        String generatedImage = "target-run-time-" + spec.getName();
+        Path targetImageDir = spec.getHelper().createNewImageDir(generatedImage);
         Path targetJlink = spec.getImageToUse().resolve("bin").resolve(getJlink());
         String[] jlinkCmdArray = new String[] {
                 targetJlink.toString(),
@@ -163,8 +172,8 @@ public abstract class AbstractLinkableRuntimeTest {
             }
         }
         jlinkCmd = Collections.unmodifiableList(jlinkCmd); // freeze
-        System.out.println("DEBUG: jmod-less jlink command: " + jlinkCmd.stream().collect(
-                                                    Collectors.joining(" ")));
+        System.out.println("DEBUG: run-time image based jlink command: " +
+                           jlinkCmd.stream().collect(Collectors.joining(" ")));
         OutputAnalyzer analyzer = null;
         try {
             analyzer = ProcessTools.executeProcess(jlinkCmd.toArray(new String[0]));
@@ -216,23 +225,58 @@ public abstract class AbstractLinkableRuntimeTest {
     }
 
     /**
-     * Prepares the test for execution. This assumes the current runtime
-     * supports linking from it. However, since the 'jmods' dir might be present
-     * (default jmods module path), the 'jmods' directory needs to get removed
-     * to provoke actual linking from the run-time image.
+     * Prepares the test for execution. Creates a JDK with a jlink that has the
+     * capability to link from the run-time image (if needed). It further
+     * ensures that if packaged modules ('jmods' dir) are present, to remove
+     * them entirely or as specified in the {@link excludedJmodFiles} set. If
+     * that set is empty, all packaged modules will be removed. Note that with
+     * packaged modules present no run-time image based linking would be done.
      *
      * @param baseSpec
-     *            The modules to jlink
+     *            The specification for the custom - run-time image link capable
+     *            - JDK to create via jlink (if any)
      * @param excludedJmods
      *            The set of jmod files to exclude in the base JDK. Empty set if
      *            all JMODs should be removed.
-     * @return A path to a JDK image ready for running jlink
+     * @return A path to a JDK, including jdk.jlink, that has the run-time image
+     * link capability.
+     *
      * @throws Exception
      */
     protected Path createRuntimeLinkImage(BaseJlinkSpec baseSpec,
                                           Set<String> excludedJmodFiles) throws Exception {
-        Path runtimeJlinkImage = baseSpec.getHelper().createNewImageDir(baseSpec.getName() + "-jlink");
-        copyJDKTreeWithoutSpecificJmods(runtimeJlinkImage, excludedJmodFiles);
+        // Depending on the shape of the JDK under test, we either only filter
+        // jmod files or create a run-time image link capable JDK on-the-fly.
+        Path from = null;
+        Path runtimeJlinkImage = null;
+        String finalName = baseSpec.getName() + "-jlink";
+        if (baseSpec.isLinkableRuntime()) {
+            // The build is already run-time image link capable
+            String javaHome = System.getProperty("java.home");
+            from = Path.of(javaHome);
+        } else {
+            // Create a run-time image capable JDK using --generate-linkable-runtime
+            Path tempRuntimeImage = Path.of(finalName + "-tmp");
+            JLinkTask task = JImageGenerator.getJLinkTask();
+            task.output(tempRuntimeImage)
+                .addMods("jdk.jlink") // that modules is always needed for the test
+                .option("--generate-linkable-runtime");
+            if (baseJDKhasPackagedModules()) {
+                Path jmodsPath = tempRuntimeImage.resolve("jmods");
+                task.option("--keep-packaged-modules=" + jmodsPath);
+            }
+            for (String module: baseSpec.getModules()) {
+                task.addMods(module);
+            }
+            task.call().assertSuccess();
+            from = tempRuntimeImage;
+        }
+
+        // Create the target directory
+        runtimeJlinkImage = baseSpec.getHelper().createNewImageDir(finalName);
+
+        // Remove JMODs as needed for the test
+        copyJDKTreeWithoutSpecificJmods(from, runtimeJlinkImage, excludedJmodFiles);
         // Verify the base image is actually without desired packaged modules
         if (excludedJmodFiles.isEmpty()) {
             if (Files.exists(runtimeJlinkImage.resolve("jmods"))) {
@@ -250,20 +294,26 @@ public abstract class AbstractLinkableRuntimeTest {
         return runtimeJlinkImage;
     }
 
-    private void copyJDKTreeWithoutSpecificJmods(Path runtimeJlinkImage,
+    private boolean baseJDKhasPackagedModules() {
+        Path jmodsPath = Path.of(System.getProperty("java.home"), "jmods");
+        return jmodsPath.toFile().exists();
+    }
+
+    private void copyJDKTreeWithoutSpecificJmods(Path from,
+                                                 Path to,
                                                  Set<String> excludedJmods) throws Exception {
-        Files.createDirectory(runtimeJlinkImage);
-        String javaHome = System.getProperty("java.home");
-        Path root = Path.of(javaHome);
+        if (Files.exists(to)) {
+            throw new AssertionError("Expected target dir '" + to + "' to exist");
+        }
         FileVisitor<Path> fileVisitor = null;
         if (excludedJmods.isEmpty()) {
-            fileVisitor = new ExcludeAllJmodsFileVisitor(root, runtimeJlinkImage);
+            fileVisitor = new ExcludeAllJmodsFileVisitor(from, to);
         } else {
             fileVisitor = new FileExcludingFileVisitor(excludedJmods,
-                                                       root,
-                                                       runtimeJlinkImage);
+                                                       from,
+                                                       to);
         }
-        Files.walkFileTree(root, fileVisitor);
+        Files.walkFileTree(from, fileVisitor);
     }
 
     private List<String> parseListMods(String output) throws Exception {
@@ -377,14 +427,16 @@ public abstract class AbstractLinkableRuntimeTest {
         final String validatingModule;
         final List<String> modules;
         final List<String> extraOptions;
+        final boolean isLinkableRuntime;
 
         BaseJlinkSpec(Helper helper, String name, String validatingModule,
-                List<String> modules, List<String> extraOptions) {
+                List<String> modules, List<String> extraOptions, boolean isLinkableRuntime) {
             this.helper = helper;
             this.name = name;
             this.modules = modules;
             this.extraOptions = extraOptions;
             this.validatingModule = validatingModule;
+            this.isLinkableRuntime = isLinkableRuntime;
         }
 
         public String getValidatingModule() {
@@ -406,6 +458,10 @@ public abstract class AbstractLinkableRuntimeTest {
         public List<String> getExtraOptions() {
             return extraOptions;
         }
+
+        public boolean isLinkableRuntime() {
+            return isLinkableRuntime;
+        }
     }
 
     static class BaseJlinkSpecBuilder {
@@ -414,6 +470,7 @@ public abstract class AbstractLinkableRuntimeTest {
         String validatingModule;
         List<String> modules = new ArrayList<>();
         List<String> extraOptions = new ArrayList<>();
+        boolean isLinkableRuntime;
 
         BaseJlinkSpecBuilder addModule(String module) {
             modules.add(module);
@@ -422,6 +479,11 @@ public abstract class AbstractLinkableRuntimeTest {
 
         BaseJlinkSpecBuilder addExtraOption(String option) {
             extraOptions.add(option);
+            return this;
+        }
+
+        BaseJlinkSpecBuilder setLinkableRuntime() {
+            isLinkableRuntime = true;
             return this;
         }
 
@@ -447,10 +509,13 @@ public abstract class AbstractLinkableRuntimeTest {
             if (helper == null) {
                 throw new IllegalStateException("helper must be set");
             }
+            if (modules.isEmpty()) {
+                throw new IllegalStateException("modules must be set");
+            }
             if (validatingModule == null) {
                 throw new IllegalStateException("the module which should get validated must be set");
             }
-            return new BaseJlinkSpec(helper, name, validatingModule, modules, extraOptions);
+            return new BaseJlinkSpec(helper, name, validatingModule, modules, extraOptions, isLinkableRuntime);
         }
     }
 

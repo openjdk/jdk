@@ -27,7 +27,7 @@ import java.nio.file.Path;
 import tests.Helper;
 
 /*
- * @test
+ * @test id=linkable_runtime
  * @summary Test reproducibility of linking an java.se image using the run-time
  *          image.
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
@@ -39,33 +39,52 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g JavaSEReproducibleTest
+ * @run main/othervm -Xmx1g JavaSEReproducibleTest true
+ */
+
+/*
+ * @test id=default_build
+ * @summary Test reproducibility of linking an java.se image using the run-time
+ *          image.
+ * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @library ../../lib /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
+ *          jdk.jlink/jdk.tools.jimage
+ * @build tests.* jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.process.ProcessTools
+ * @run main/othervm -Xmx1g JavaSEReproducibleTest false
  */
 public class JavaSEReproducibleTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Wrong number of passed arguments");
+        }
+        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         JavaSEReproducibleTest test = new JavaSEReproducibleTest();
-        test.run();
+        test.run(isLinkableRuntime);
     }
 
     @Override
-    void runTest(Helper helper) throws Exception {
+    void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
         String javaSeModule = "java.se";
         // create a java.se using jmod-less approach
-        Path javaSEJmodLess1 = createJavaImageRuntimeLink(new BaseJlinkSpecBuilder()
-                                                                   .helper(helper)
-                                                                   .name("java-se-repro1")
-                                                                   .addModule(javaSeModule)
-                                                                   .validatingModule(javaSeModule)
-                                                                   .build());
+        BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder()
+                .helper(helper)
+                .addModule(javaSeModule)
+                .validatingModule(javaSeModule);
+        if (isLinkableRuntime) {
+            builder.setLinkableRuntime();
+        }
+        builder.name("java-se-repro1");
+        Path javaSEJmodLess1 = createJavaImageRuntimeLink(builder.build());
 
         // create another java.se version using jmod-less approach
-        Path javaSEJmodLess2 = createJavaImageRuntimeLink(new BaseJlinkSpecBuilder()
-                                                                   .helper(helper)
-                                                                   .name("java-se-repro2")
-                                                                   .addModule(javaSeModule)
-                                                                   .validatingModule(javaSeModule)
-                                                                   .build());
+        builder.name("java-se-repro2");
+        Path javaSEJmodLess2 = createJavaImageRuntimeLink(builder.build());
         if (Files.mismatch(javaSEJmodLess1.resolve("lib").resolve("modules"),
                            javaSEJmodLess2.resolve("lib").resolve("modules")) != -1L) {
             throw new RuntimeException("jlink producing inconsistent result for " + javaSeModule + " (jmod-less)");

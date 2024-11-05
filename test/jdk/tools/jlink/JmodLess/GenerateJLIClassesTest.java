@@ -28,7 +28,7 @@ import java.nio.file.Path;
 import tests.Helper;
 
 /*
- * @test
+ * @test id=linkable_runtime
  * @summary Verify JLI class generation in run-time image link mode
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
@@ -39,13 +39,32 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g GenerateJLIClassesTest
+ * @run main/othervm -Xmx1g GenerateJLIClassesTest true
+ */
+
+/*
+ * @test id=default_build
+ * @summary Verify JLI class generation in run-time image link mode
+ * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @library ../../lib /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
+ *          jdk.jlink/jdk.tools.jimage
+ * @build tests.* jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.process.ProcessTools
+ * @run main/othervm -Xmx1g GenerateJLIClassesTest false
  */
 public class GenerateJLIClassesTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Wrong number of passed arguments");
+        }
+        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         GenerateJLIClassesTest test = new GenerateJLIClassesTest();
-        test.run();
+        test.run(isLinkableRuntime);
     }
 
     /*
@@ -55,16 +74,21 @@ public class GenerateJLIClassesTest extends AbstractLinkableRuntimeTest {
      * target image in the run-time image based link mode.
      */
     @Override
-    void runTest(Helper helper) throws Exception {
+    void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
         Path baseFile = Files.createTempFile("base", "trace");
         String species = "LLLLLLLLLLLLLLLLLLL";
         String fileString = "[SPECIES_RESOLVE] java.lang.invoke.BoundMethodHandle$Species_" + species + " (salvaged)\n";
         Files.write(baseFile, fileString.getBytes(StandardCharsets.UTF_8));
-        Path runtimeLinkableImage = createRuntimeLinkImage(new BaseJlinkSpecBuilder()
-                                                            .helper(helper)
-                                                            .name("jlink.jli-jmodless")
-                                                            .validatingModule("java.base")
-                                                            .build());
+        BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder()
+                .helper(helper)
+                .addModule("java.base")
+                .name("jlink.jli-jmodless")
+                .validatingModule("java.base");
+        if (isLinkableRuntime) {
+            builder.setLinkableRuntime();
+        }
+
+        Path runtimeLinkableImage = createRuntimeLinkImage(builder.build());
         // Finally attempt another jmodless link reducing modules to java.base only,
         // and asking for specific jli classes.
         jlinkUsingImage(new JlinkSpecBuilder()

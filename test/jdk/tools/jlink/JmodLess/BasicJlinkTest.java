@@ -28,7 +28,7 @@ import tests.Helper;
 
 
 /*
- * @test
+ * @test id=linkable_runtime
  * @summary Test basic linking from the run-time image
  * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
@@ -39,28 +39,50 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g BasicJlinkTest
+ * @run main/othervm -Xmx1g BasicJlinkTest true
+ */
+
+/*
+ * @test id=default_build
+ * @summary Test basic linking from the run-time image
+ * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @library ../../lib /test/lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
+ *          jdk.jlink/jdk.tools.jimage
+ * @build tests.* jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.process.ProcessTools
+ * @run main/othervm -Xmx1g BasicJlinkTest false
  */
 public class BasicJlinkTest extends AbstractLinkableRuntimeTest {
 
     @Override
-    public void runTest(Helper helper) throws Exception {
-        Path finalImage = createJavaBaseRuntimeLink(helper, "java-base");
+    public void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
+        Path finalImage = createJavaBaseRuntimeLink(helper, "java-base", isLinkableRuntime);
         verifyListModules(finalImage, List.of("java.base"));
     }
 
-    private Path createJavaBaseRuntimeLink(Helper helper, String name) throws Exception {
+    private Path createJavaBaseRuntimeLink(Helper helper, String name, boolean isLinkableRuntime) throws Exception {
         BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder();
         builder.helper(helper)
                .name(name)
                .addModule("java.base")
                .validatingModule("java.base");
+        if (isLinkableRuntime) {
+            builder.setLinkableRuntime();
+        }
         return createJavaImageRuntimeLink(builder.build());
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Wrong number of passed arguments");
+        }
+        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         BasicJlinkTest test = new BasicJlinkTest();
-        test.run();
+        test.run(isLinkableRuntime);
     }
 
 }
