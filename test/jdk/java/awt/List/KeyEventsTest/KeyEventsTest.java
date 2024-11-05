@@ -21,17 +21,6 @@
  * questions.
  */
 
-/*
-  @test
-  @key headful
-  @bug 6190768 6190778
-  @summary Tests that triggering events on AWT list by pressing CTRL + HOME,
-           CTRL + END, PG-UP, PG-DOWN similar Motif behavior
-  @library /test/lib
-  @build jdk.test.lib.Platform
-  @run main KeyEventsTest
-*/
-
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.awt.KeyboardFocusManager;
@@ -49,6 +38,18 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 import jdk.test.lib.Platform;
+
+/*
+*  @test
+*  @key headful
+*  @bug 6190768 6190778
+*  @requires os.family != "mac"
+*  @summary Tests that triggering events on AWT list by pressing CTRL + HOME,
+*           CTRL + END, PG-UP, PG-DOWN similar Motif behavior
+*  @library /test/lib
+*  @build jdk.test.lib.Platform
+*  @run main KeyEventsTest
+*/
 
 public class KeyEventsTest {
     TestState currentState;
@@ -264,9 +265,6 @@ public class KeyEventsTest {
         boolean isWin = false;
         if (Platform.isWindows()) {
             isWin = true;
-        } else if (Platform.isOSX()) {
-            System.out.println("Not for OS X");
-            return;
         }
 
         System.out.println("multiple? selectedMoved? ?scrollMoved keyID? template? action?");
