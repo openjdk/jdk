@@ -393,7 +393,7 @@ size_t HeapRootSegments::segment_offset(size_t seg_idx) {
 ArchiveWorkers::ArchiveWorkers() :
         _start_semaphore(0),
         _end_semaphore(0),
-        _num_workers(MAX2(1, os::active_processor_count() / CPUS_PER_WORKER - 1)),
+        _num_workers(MAX2(0, os::active_processor_count() / CPUS_PER_WORKER - 1)),
         _started_workers(0),
         _running_workers(0),
         _in_shutdown(false),
@@ -407,8 +407,13 @@ ArchiveWorkers::~ArchiveWorkers() {
   shutdown();
 }
 
+bool ArchiveWorkers::is_parallel() {
+  return _num_workers > 0;
+}
+
 void ArchiveWorkers::shutdown() {
-  if (Atomic::cmpxchg(&_in_shutdown, false, true) == false) {
+  if (is_parallel() &&
+      Atomic::cmpxchg(&_in_shutdown, false, true, memory_order_relaxed) == false) {
     // Execute a shutdown task and block until all workers respond.
     run_task(&_shutdown_task);
   }
@@ -430,13 +435,29 @@ void ArchiveWorkers::start_worker_if_needed() {
 
 void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
   assert(task == &_shutdown_task || !_in_shutdown, "Should not be shutdown");
-  assert(_task == nullptr, "Should not have running tasks");
+  assert(Atomic::load(&_task) == nullptr, "Should not have running tasks");
 
-  // Configure the execution.
-  task->maybe_override_max_chunks(_num_workers * CHUNKS_PER_WORKER);
-  Atomic::store(&_running_workers, _num_workers);
+  if (is_parallel()) {
+    run_task_multi(task);
+  } else {
+    run_task_single(task);
+  }
+}
+
+void ArchiveWorkers::run_task_single(ArchiveWorkerTask* task) {
+  // Single thread needs no chunking.
+  task->configure_max_chunks(1);
+
+  // Execute the task ourselves, as there are no workers.
+  task->work(0, 1);
+}
+
+void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
+  // Multiple threads can work with multiple chunks.
+  task->configure_max_chunks(_num_workers * CHUNKS_PER_WORKER);
 
   // Publish the task and signal workers to pick it up.
+  Atomic::store(&_running_workers, _num_workers);
   Atomic::release_store(&_task, task);
   _start_semaphore.signal(_num_workers);
 
@@ -447,7 +468,7 @@ void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
   // Done executing task locally, wait for any remaining workers to complete,
   // and then do the final housekeeping.
   _end_semaphore.wait();
-  Atomic::store(&_task, (ArchiveWorkerTask*)nullptr);
+  Atomic::store(&_task, (ArchiveWorkerTask *) nullptr);
   OrderAccess::fence();
 }
 
@@ -464,13 +485,14 @@ void ArchiveWorkerTask::run() {
   }
 }
 
-void ArchiveWorkerTask::maybe_override_max_chunks(int max_chunks) {
-  if (_max_chunks == -1) {
+void ArchiveWorkerTask::configure_max_chunks(int max_chunks) {
+  if (_max_chunks == 0) {
     _max_chunks = max_chunks;
   }
 }
 
 bool ArchiveWorkers::run_as_worker() {
+  assert(is_parallel(), "Should be in parallel mode");
   _start_semaphore.wait();
 
   ArchiveWorkerTask* task = Atomic::load_acquire(&_task);

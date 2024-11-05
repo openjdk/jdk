@@ -297,6 +297,7 @@ class ArchiveWorkers;
 // A task to be worked on by worker threads
 class ArchiveWorkerTask : public CHeapObj<mtInternal> {
   friend class ArchiveWorkers;
+  friend class ArchiveWorkerShutdownTask;
 private:
   const char* _name;
   int _max_chunks;
@@ -304,11 +305,11 @@ private:
 
   void run();
 
-  void maybe_override_max_chunks(int max_chunks);
+  void configure_max_chunks(int max_chunks);
 
 public:
-  ArchiveWorkerTask(const char* name, int max_chunks = -1) :
-      _name(name), _max_chunks(max_chunks), _chunk(0) {}
+  ArchiveWorkerTask(const char* name) :
+      _name(name), _max_chunks(0), _chunk(0) {}
   const char* name() const { return _name; }
   virtual void work(int chunk, int max_chunks) = 0;
 };
@@ -326,7 +327,10 @@ public:
 
 class ArchiveWorkerShutdownTask : public ArchiveWorkerTask {
 public:
-  ArchiveWorkerShutdownTask() : ArchiveWorkerTask("Archive Worker Shutdown", 1) {}
+  ArchiveWorkerShutdownTask() : ArchiveWorkerTask("Archive Worker Shutdown") {
+    // This task always have only one chunk.
+    configure_max_chunks(1);
+  }
   void work(int chunk, int max_chunks) override {
     // Do nothing.
   }
@@ -360,6 +364,11 @@ private:
 
   bool run_as_worker();
   void start_worker_if_needed();
+
+  void run_task_single(ArchiveWorkerTask* task);
+  void run_task_multi(ArchiveWorkerTask* task);
+
+  bool is_parallel();
 
 public:
   ArchiveWorkers();
