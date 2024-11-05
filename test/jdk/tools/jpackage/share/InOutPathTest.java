@@ -183,11 +183,12 @@ public final class InOutPathTest {
             }
 
             if (cmd.hasArgument("--app-content")) {
-                // --app-content can be set to the app image directory which
+                // `--app-content` can be set to the app image directory which
                 // should not exist before jpackage is executed:
                 //  jpackage --name Foo --dest output --app-content output/Foo
-                // Verify the directory exists. At least this check will catch the
-                // case when its value is set to a path unrelated to jpackage I/O.
+                // Verify the directory exists after jpackage execution.
+                // At least this will catch the case when the value of
+                // `--app-content` option refers to a path unrelated to jpackage I/O.
                 TKit.assertDirectoryExists(Path.of(cmd.getArgumentValue("--app-content")));
             }
         } else {
