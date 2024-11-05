@@ -398,7 +398,6 @@ class SerializeClosure;
   template(notifyJvmtiEnd_name,                       "notifyJvmtiEnd")                           \
   template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
   template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
-  template(notifyJvmtiHideFrames_name,                "notifyJvmtiHideFrames")                    \
   template(notifyJvmtiDisableSuspend_name,            "notifyJvmtiDisableSuspend")                \
   template(doYield_name,                              "doYield")                                  \
   template(enter_name,                                "enter")                                    \

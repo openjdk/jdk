@@ -105,7 +105,7 @@ findClass(JNIEnv *env, const char * name)
         ERROR_MESSAGE(("JDWP Can't find class %s", name));
         EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
     }
-    if ( JNI_FUNC_PTR(env,ExceptionOccurred)(env) ) {
+    if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
         ERROR_MESSAGE(("JDWP Exception occurred finding class %s", name));
         EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
     }
@@ -135,7 +135,7 @@ getMethod(JNIEnv *env, jclass clazz, const char * name, const char *signature)
                                 name, signature));
         EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
     }
-    if ( JNI_FUNC_PTR(env,ExceptionOccurred)(env) ) {
+    if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
         ERROR_MESSAGE(("JDWP Exception occurred finding method %s with signature %s",
                                 name, signature));
         EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
@@ -166,7 +166,7 @@ getStaticMethod(JNIEnv *env, jclass clazz, const char * name, const char *signat
                                 name, signature));
         EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
     }
-    if ( JNI_FUNC_PTR(env,ExceptionOccurred)(env) ) {
+    if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
         ERROR_MESSAGE(("JDWP Exception occurred finding method %s with signature %s",
                                 name, signature));
         EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
@@ -266,7 +266,7 @@ util_initialize(JNIEnv *env)
                                           (env, "jdk/internal/vm/VMSupport");
         if (localVMSupportClass == NULL) {
             gdata->agent_properties = NULL;
-            if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+            if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
                 JNI_FUNC_PTR(env,ExceptionClear)(env);
             }
         } else {
@@ -276,7 +276,7 @@ util_initialize(JNIEnv *env)
             localAgentProperties =
                 JNI_FUNC_PTR(env,CallStaticObjectMethod)
                             (env, localVMSupportClass, getAgentProperties);
-            if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+            if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
                 JNI_FUNC_PTR(env,ExceptionClear)(env);
                 EXIT_ERROR(AGENT_ERROR_INTERNAL,
                     "Exception occurred calling VMSupport.getAgentProperties");
@@ -855,7 +855,7 @@ spawnNewThread(jvmtiStartFunction func, void *arg, char *name)
         jstring nameString;
 
         nameString = JNI_FUNC_PTR(env,NewStringUTF)(env, name);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             error = AGENT_ERROR_OUT_OF_MEMORY;
             goto err;
@@ -864,7 +864,7 @@ spawnNewThread(jvmtiStartFunction func, void *arg, char *name)
         thread = JNI_FUNC_PTR(env,NewObject)
                         (env, gdata->threadClass, gdata->threadConstructor,
                                    gdata->systemThreadGroup, nameString);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             error = AGENT_ERROR_OUT_OF_MEMORY;
             goto err;
@@ -875,7 +875,7 @@ spawnNewThread(jvmtiStartFunction func, void *arg, char *name)
          */
         JNI_FUNC_PTR(env,CallVoidMethod)
                         (env, thread, gdata->threadSetDaemon, JNI_TRUE);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             error = AGENT_ERROR_JNI_EXCEPTION;
             goto err;
@@ -1593,14 +1593,14 @@ getPropertyValue(JNIEnv *env, char *propertyName)
 
     /* Create new String object to hold the property name */
     nameString = JNI_FUNC_PTR(env,NewStringUTF)(env, propertyName);
-    if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
         JNI_FUNC_PTR(env,ExceptionClear)(env);
         /* NULL will be returned below */
     } else {
         /* Call valueString = System.getProperty(nameString) */
         valueString = JNI_FUNC_PTR(env,CallStaticObjectMethod)
             (env, gdata->systemClass, gdata->systemGetProperty, nameString);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             valueString = NULL;
         }
@@ -1647,7 +1647,7 @@ setAgentPropertyValue(JNIEnv *env, char *propertyName, char* propertyValue)
             }
         }
     }
-    if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
         JNI_FUNC_PTR(env,ExceptionClear)(env);
     }
 }
