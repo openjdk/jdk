@@ -253,7 +253,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">ܐܝܣܪܐܝܠ</territory>
 			<territory type="IM">ܓܙܪܬܐ ܕܡܐܢ</territory>
 			<territory type="IN">ܗܢܕܘ</territory>
-			<territory type="IO" draft="provisional">ܩܠܝܡܐ ܕܒܪܝܛܢܝܐ ܓܘ ܐܘܩܝܢܘܣ ܗܢܕܘܝܐ</territory>
+			<territory type="IO">ܩܠܝܡܐ ܕܒܪܝܛܢܝܐ ܓܘ ܐܘܩܝܢܘܣ ܗܢܕܘܝܐ</territory>
 			<territory type="IQ">ܥܝܪܩ</territory>
 			<territory type="IR">ܐܝܪܐܢ</territory>
 			<territory type="IS">ܐܝܣܠܢܕ</territory>
@@ -425,8 +425,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">ܣܘܪܓܕܐ ܓܪܝܓܘܪܝܐ</type>
 			<type key="calendar" type="hebrew">ܣܘܪܓܕܐ ܝܗܘܕܝܐ</type>
 			<type key="calendar" type="indian">ܣܘܪܓܕܐ ܐܘܡܬܢܝܐ ܗܢܕܘܝܐ</type>
-			<type key="calendar" type="islamic" draft="provisional">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ</type>
-			<type key="calendar" type="islamic-civil" draft="provisional">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ ܡܕܝܢܝܐ</type>
+			<type key="calendar" type="islamic">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ</type>
+			<type key="calendar" type="islamic-civil">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ ܡܕܝܢܝܐ</type>
 			<type key="calendar" type="iso8601">ܣܘܪܓܕܐ ISO-8601</type>
 			<type key="calendar" type="japanese">ܣܘܪܓܕܐ ܝܦܢܝܐ</type>
 			<type key="calendar" type="persian">ܣܘܪܓܕܐ ܦܪܣܝܐ</type>
@@ -482,7 +482,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -932,7 +932,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">ܫܒܘܥܐ w ܕܫܢܬܐ Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y – y G</greatestDifference>
@@ -2009,9 +2008,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>ܐܘܠܐܢܒܐܬܘܪ</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>ܟܘܝܒܠܣܢ</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>ܡܐܟܐܘ</exemplarCity>
 			</zone>
@@ -2793,13 +2789,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>ܥܕܢܐ ܕܨܝܢ</generic>
 					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܨܝܢ</standard>
 					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܨܝܢ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>ܥܕܢܐ ܕܟܘܝܒܠܣܢ</generic>
-					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܟܘܝܒܠܣܢ</standard>
-					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܟܘܝܒܠܣܢ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">

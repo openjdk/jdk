@@ -122,11 +122,6 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
   }
 
-  if (UseAESCTRIntrinsics) {
-    warning("AES/CTR intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-  }
-
   if (UseZba) {
     if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
@@ -428,14 +423,23 @@ void VM_Version::c2_initialize() {
       warning("UseAESIntrinsics enabled, but UseAES not, enabling");
       UseAES = true;
     }
-  } else if (UseAESIntrinsics || UseAES) {
-    if (!FLAG_IS_DEFAULT(UseAESIntrinsics) || !FLAG_IS_DEFAULT(UseAES)) {
-      warning("AES intrinsics require Zvkn extension (not available on this CPU).");
+  } else {
+    if (UseAES) {
+      warning("AES instructions are not available on this CPU");
+      FLAG_SET_DEFAULT(UseAES, false);
     }
-    FLAG_SET_DEFAULT(UseAES, false);
-    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    if (UseAESIntrinsics) {
+      warning("AES intrinsics are not available on this CPU");
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    }
+  }
+
+  if (UseAESCTRIntrinsics) {
+    warning("AES/CTR intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 }
+
 #endif // COMPILER2
 
 void VM_Version::initialize_cpu_information(void) {
