@@ -234,6 +234,10 @@ public:
     this->remove_all();
   }
 
+  int size() {
+    return _node_count;
+  }
+
   void upsert(const K& k, const V& v) {
     TreapNode* found = find(_root, k);
     if (found != nullptr) {

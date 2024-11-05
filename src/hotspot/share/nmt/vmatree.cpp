@@ -240,20 +240,22 @@ VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
   StateType type = out_state(range.start).type();
   RegionData new_data = RegionData(out_state(range.start).stack(), tag);
 
-  position end = MIN2(from + size, range.end->key());
+  position end = MIN2(from + size, pos(range.end));
   SummaryDiff diff = register_mapping(from, end, type, new_data);
   size = size - (end - from);
   from = end;
 
   // If end < from + sz then there are multiple ranges for which to set the flag.
   while (end < from + size) {
+    // Using register_mapping may invalidate the already found range, so we must
+    // use find_enclosing_range repeatedly
     range = _tree.find_enclosing_range(from);
     assert(range.start != nullptr && range.end != nullptr,
            "Setting a memory tag must be done within existing range.");
     if (range.start == nullptr || range.end == nullptr) {
       break;
     }
-    end = MIN2(from + size, range.end->key());
+    end = MIN2(from + size, pos(range.end));
     StateType type = out_state(range.start).type();
     RegionData new_data = RegionData(out_state(range.start).stack(), tag);
     SummaryDiff result = register_mapping(from, end, type, new_data);

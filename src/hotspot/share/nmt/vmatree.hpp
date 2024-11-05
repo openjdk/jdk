@@ -150,6 +150,10 @@ private:
     return node->val().out;
   }
 
+  static position pos(const TreapNode* node) {
+    return node->key();
+  }
+
   // AddressState saves the necessary information for performing online summary accounting.
   struct AddressState {
     position address;
@@ -205,6 +209,7 @@ public:
     return register_mapping(from, from + sz, StateType::Committed, metadata, use_tag_inplace);
   }
 
+  // Modify all ranges found in range [from, from+size) to have tag.
   SummaryDiff set_tag(position from, size size, MemTag tag);
 
   SummaryDiff uncommit_mapping(position from, position sz, const RegionData& metadata) {
@@ -213,6 +218,10 @@ public:
 
   SummaryDiff release_mapping(position from, size sz) {
     return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
+  }
+
+  VMATreap& tree() {
+    return _tree;
   }
 
 public:

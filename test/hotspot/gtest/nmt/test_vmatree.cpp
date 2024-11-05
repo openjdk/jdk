@@ -29,6 +29,7 @@
 #include "nmt/vmatree.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
+#include "gtest/gtest.h"
 
 using Tree = VMATree;
 using TreeNode = Tree::TreapNode;
@@ -285,64 +286,77 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 }
 
 TEST_VM_F(NMTVMATreeTest, SetTag) {
+  using State = VMATree::StateType;
   auto i = [](MemTag f) -> uint8_t { return (uint8_t)f; };
+  struct testrange {
+    VMATree::position from;
+    VMATree::position to;
+    MemTag tag;
+    NCS::StackIndex stack;
+    State state;
+  };
 
+  // Take a list of testranges and check that those and only those are found in the tree.
+  auto expect_equivalent_form = [&](auto& expected, VMATree& tree) {
+    int len = sizeof(expected) / sizeof(testrange);
+    for (int i = 0; i < len; i++) {
+      testrange expect = expected[i];
+      VMATree::VMATreap::Range found = tree.tree().find_enclosing_range(expect.from);
+      ASSERT_NE(nullptr, found.start);
+      ASSERT_NE(nullptr, found.end);
+      // Same region
+      EXPECT_EQ(expect.from, found.start->key());
+      EXPECT_EQ(expect.to, found.end->key());
+      // Same tag
+      EXPECT_EQ(expect.tag, found.start->val().out.mem_tag());
+      EXPECT_EQ(expect.tag, found.end->val().in.mem_tag());
+      // Same stack
+      EXPECT_EQ(expect.stack, found.start->val().out.stack());
+      EXPECT_EQ(expect.stack, found.end->val().in.stack());
+    }
+    EXPECT_EQ(len+1, tree.tree().size());
+  };
+  NCS::StackIndex si = NCS::StackIndex();
+  Tree::RegionData rd(si, mtNone);
   // The gc/cds case with only reserved data
   {
-    VMATree::SummaryDiff diff;
-    Tree::RegionData rd(NCS::StackIndex(), mtNone);
+    testrange expected[2]{
+        {  0, 500,          mtGC, si, State::Reserved},
+        {500, 600, mtClassShared, si, State::Reserved}
+    };
     VMATree tree;
 
-    VMATree::SummaryDiff result = tree.reserve_mapping(0, 500, rd);
-    diff.add(result);
-    EXPECT_EQ(500, diff.tag[i(mtNone)].reserve);
+    tree.reserve_mapping(0, 600, rd);
 
-    result = tree.reserve_mapping(500, 100, rd);
-    diff.add(result);
-    EXPECT_EQ(600, diff.tag[i(mtNone)].reserve);
-
-    result = tree.set_tag(0, 500, mtGC);
-    diff.add(result);
-    EXPECT_EQ(100, diff.tag[i(mtNone)].reserve);
-    EXPECT_EQ(500, diff.tag[i(mtGC)].reserve);
-
-    result = tree.set_tag(500, 100, mtClassShared);
-    diff.add(result);
-    EXPECT_EQ(0, diff.tag[i(mtNone)].reserve);
-    EXPECT_EQ(500, diff.tag[i(mtGC)].reserve);
-    EXPECT_EQ(100, diff.tag[i(mtClassShared)].reserve);
+    tree.set_tag(0, 500, mtGC);
+    tree.set_tag(500, 100, mtClassShared);
+    expect_equivalent_form(expected, tree);
   }
 
   // Now let's add in some committed data
   {
-    VMATree::SummaryDiff diff;
-    Tree::RegionData rd(NCS::StackIndex(), mtNone);
+    testrange expected[]{
+        {  0, 100,          mtGC, si, State::Reserved},
+        {100, 225,          mtGC, si, State::Committed},
+        {225, 500,          mtGC, si, State::Reserved},
+        {500, 550, mtClassShared, si, State::Reserved},
+        {550, 560, mtClassShared, si, State::Committed},
+        {560, 565, mtClassShared, si, State::Reserved},
+        {565, 575, mtClassShared, si, State::Committed},
+        {575, 600, mtClassShared, si, State::Reserved}
+    };
     VMATree tree;
 
-    VMATree::SummaryDiff result = tree.reserve_mapping(0, 600, rd);
-    diff.add(result);
-    EXPECT_EQ(600, diff.tag[i(mtNone)].reserve);
-
+    tree.reserve_mapping(0, 600, rd);
     // The committed areas
-    result = tree.commit_mapping(100, 125, rd);
-    diff.add(result);
-    result = tree.commit_mapping(550, 10, rd);
-    diff.add(result);
-    result = tree.commit_mapping(565, 10, rd);
-    diff.add(result);
-
+    tree.commit_mapping(100, 125, rd);
+    tree.commit_mapping(550, 10, rd);
+    tree.commit_mapping(565, 10, rd);
     // OK, set tag
-    result = tree.set_tag(0, 500, mtGC);
-    diff.add(result);
-    EXPECT_EQ(100, diff.tag[i(mtNone)].reserve);
-    EXPECT_EQ(500, diff.tag[i(mtGC)].reserve);
-    EXPECT_EQ(125, diff.tag[i(mtGC)].commit);
+    tree.set_tag(0, 500, mtGC);
+    tree.set_tag(500, 100, mtClassShared);
 
-    result = tree.set_tag(500, 100, mtClassShared);
-    diff.add(result);
-    EXPECT_EQ(0, diff.tag[i(mtNone)].reserve);
-    EXPECT_EQ(100, diff.tag[i(mtClassShared)].reserve);
-    EXPECT_EQ(20, diff.tag[i(mtClassShared)].commit);
+    expect_equivalent_form(expected, tree);
   }
 }
 
