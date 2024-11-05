@@ -25,7 +25,7 @@
 
 package javax.net.ssl;
 
-import java.io.File;
+import java.nio.file.Paths;
 import java.security.Security;
 import java.security.*;
 import java.util.Objects;
@@ -283,10 +283,9 @@ public class TrustManagerFactory {
                     .getJavaSecurityKeyStoreAccess()
                     .getPath(ks);
             if (keystorePath != null) {
-                SSLLogger.fine(provider.getName() + ": using \"" + keystorePath
-                        .substring(keystorePath
-                                .lastIndexOf(File.separator) + 1)
-                        + "\" keystore in " + ks.getType() + " format");
+                SSLLogger.fine(provider.getName() + ": using \"" + Paths.get(
+                                keystorePath).getFileName().toString() +
+                                "\" keystore in " + ks.getType() + " format");
             }
         }
     }
