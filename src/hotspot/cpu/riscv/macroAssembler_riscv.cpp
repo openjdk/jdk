@@ -4324,7 +4324,7 @@ address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_
 
 int MacroAssembler::max_reloc_call_address_stub_size() {
   // Max stub size: alignment nop, target address.
-  return instruction_size + wordSize;
+  return 1 * instruction_size + wordSize;
 }
 
 int MacroAssembler::static_call_stub_size() {

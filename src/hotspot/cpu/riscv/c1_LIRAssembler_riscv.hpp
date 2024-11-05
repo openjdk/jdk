@@ -67,7 +67,8 @@ private:
   enum {
     // call stub: CompiledDirectCall::to_interp_stub_size() +
     //            CompiledDirectCall::to_trampoline_stub_size()
-    _call_stub_size = 11 * MacroAssembler::instruction_size + MacroAssembler::NativeFarCall::trampoline_size,
+    _call_stub_size = 11 * MacroAssembler::instruction_size +
+                      1 * MacroAssembler::instruction_size + wordSize,
     // See emit_exception_handler for detail
     // verify_not_null_oop + far_call + should_not_reach_here + invalidate_registers(DEBUG_ONLY)
     _exception_handler_size = DEBUG_ONLY(584) NOT_DEBUG(548), // or smaller

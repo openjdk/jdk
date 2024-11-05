@@ -1224,44 +1224,40 @@ public:
   void read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 
   // RISCV64 OpenJDK uses four different types of calls:
-  //   - direct call: jal pc_relative_offset
-  //     This is the shortest and the fastest, but the offset has the range: +/-1MB.
-  //
   //   - far call: auipc reg, pc_relative_offset; jalr ra, reg, offset
-  //     This is longer than a direct call. The offset has
-  //     the range [-(2G + 2K), 2G - 2K). Addresses out of the range in the code cache
-  //     requires indirect call.
-  //     If a jump is needed rather than a call, a far jump 'jalr x0, reg, offset' can
-  //     be used instead.
+  //     The offset has the range [-(2G + 2K), 2G - 2K). Addresses out of the
+  //     range in the code cache requires indirect call.
+  //     If a jump is needed rather than a call, a far jump 'jalr x0, reg, offset'
+  //     can be used instead.
   //     All instructions are embedded at a call site.
   //
   //   - indirect call: movptr + jalr
-  //     This too can reach anywhere in the address space, but it cannot be
-  //     patched while code is running, so it must only be modified at a safepoint.
-  //     This form of call is most suitable for targets at fixed addresses, which
-  //     will never be patched.
+  //     This can reach anywhere in the address space, but it cannot be patched
+  //     while code is running, so it must only be modified at a safepoint.
+  //     This form of call is most suitable for targets at fixed addresses,
+  //     which will never be patched.
   //
   //   - reloc call:
-  //     This is only available in C1/C2-generated code (nmethod).
+  //     This too can reach anywhere in the address space but is only available
+  //     in C1/C2-generated code (nmethod).
   //
   //     [Main code section]
   //       auipc
   //       ld <address_from_stub_section>
   //       jalr
+  //
   //     [Stub section]
-  //     trampoline:
+  //     address stub:
   //       <64-bit destination address>
   //
   //    To change the destination we simply atomically store the new
   //    address in the stub section.
-  //
-  // There is a benign race in that the other thread might observe the old
-  // 64-bit destination address before it observes the new address. That does
-  // not matter because the destination method has been invalidated, so there
-  // will be a trap at its start.
+  //    There is a benign race in that the other thread might observe the old
+  //    64-bit destination address before it observes the new address. That does
+  //    not matter because the destination method has been invalidated, so there
+  //    will be a trap at its start.
 
-  // Emit a direct call if the entry address will always be in range,
-  // otherwise a reloc call.
+  // Emit a reloc call and create a stub to hold the entry point address.
   // Supported entry.rspec():
   // - relocInfo::runtime_call_type
   // - relocInfo::opt_virtual_call_type
@@ -1591,10 +1587,6 @@ public:
     movptr1_instruction_size = 6 * instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
     movptr2_instruction_size = 5 * instruction_size, // lui, lui, slli, add, addi.  See movptr2().
     load_pc_relative_instruction_size = 2 * instruction_size // auipc, ld
-  };
-
-  enum NativeFarCall {
-    trampoline_size        = 1 * instruction_size + wordSize,
   };
 
   static bool is_load_pc_relative_at(address branch);
