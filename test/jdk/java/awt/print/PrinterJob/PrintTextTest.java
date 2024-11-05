@@ -234,13 +234,13 @@ public class PrintTextTest {
         String[] names = ge.getAvailableFontFamilyNames();
 
         for (String n : names) {
-            switch (n.toLowerCase()) {
-                case "dialog":
-                case "dialoginput":
-                case "serif":
-                case "sansserif":
-                case "monospaced":
-                     break;
+            switch (n) {
+                case Font.DIALOG:
+                case Font.DIALOG_INPUT:
+                case Font.SERIF:
+                case Font.SANS_SERIF:
+                case Font.MONOSPACED:
+                     continue;
                 default:
                     Font f = new Font(n, Font.PLAIN, 18);
                     if (f.canDisplayUpTo("AZaz09") == -1) {
