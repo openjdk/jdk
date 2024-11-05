@@ -626,6 +626,17 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
+  void cmov_eq(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ne(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_le(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_leu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ge(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_geu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_lt(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ltu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_gt(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src);
+
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
