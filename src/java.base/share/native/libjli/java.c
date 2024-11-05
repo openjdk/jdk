@@ -758,7 +758,23 @@ checkMode(int mode, int newMode, const char *arg) {
  */
 static jboolean IsSourceFile(const char *arg) {
     struct stat st;
-    return (JLI_HasSuffix(arg, ".java") && stat(arg, &st) == 0);
+    if (JLI_HasSuffix(arg, ".java") == JNI_TRUE)
+        return JNI_TRUE;
+    if (stat(arg, &st) != 0)
+        return JNI_FALSE;
+    if (st.st_size < 2)
+        return JNI_FALSE;
+    /*
+     * In a shebang file, the first two bytes must be 0x23 0x21,
+     * the two-character ASCII encoding of #!.
+     */
+    FILE* file = fopen(arg, "r");
+    if (file == NULL)
+        return JNI_FALSE;
+    char c = fgetc(file);
+    char d = fgetc(file);
+    fclose(file);
+    return c == 0x23 && d == 0x21; // #!
 }
 
 /*
