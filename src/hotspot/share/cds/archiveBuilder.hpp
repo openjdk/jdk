@@ -276,8 +276,6 @@ protected:
 
   static const int _total_dump_regions = 2;
 
-  size_t estimate_archive_size();
-
   void start_dump_region(DumpRegion* next);
   void verify_estimate_size(size_t estimate, const char* which);
 
