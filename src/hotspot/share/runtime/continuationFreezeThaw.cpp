@@ -1412,7 +1412,9 @@ class StackChunkAllocator : public MemAllocator {
 
     // zero out fields (but not the stack)
     const size_t hs = oopDesc::header_size();
-    oopDesc::set_klass_gap(mem, 0);
+    if (oopDesc::has_klass_gap()) {
+      oopDesc::set_klass_gap(mem, 0);
+    }
     Copy::fill_to_aligned_words(mem + hs, vmClasses::StackChunk_klass()->size_helper() - hs);
 
     int bottom = (int)_stack_size - _argsize_md;
