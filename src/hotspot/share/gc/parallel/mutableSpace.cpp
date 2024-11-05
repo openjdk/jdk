@@ -230,6 +230,24 @@ void MutableSpace::object_iterate(ObjectClosure* cl) {
   }
 }
 
+HeapWord* MutableSpace::block_start(const void* addr) const {
+  if (addr >= top()) {
+    return nullptr;
+  }
+
+  HeapWord* cur_addr = bottom();
+  while (cur_addr <= addr) {
+    oop obj = cast_to_oop(cur_addr);
+    assert(oopDesc::is_oop(obj), PTR_FORMAT " should be an object start", p2i(cur_addr));
+    size_t obj_size = obj->size();
+    if (cur_addr + obj_size > addr) {
+      return cur_addr;
+    }
+    cur_addr += obj_size;
+  }
+  ShouldNotReachHere();
+}
+
 void MutableSpace::print_short() const { print_short_on(tty); }
 void MutableSpace::print_short_on( outputStream* st) const {
   st->print(" space " SIZE_FORMAT "K, %d%% used", capacity_in_bytes() / K,

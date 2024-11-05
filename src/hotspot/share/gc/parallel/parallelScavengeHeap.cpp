@@ -669,11 +669,14 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
   if (young_gen()->is_in_reserved(addr)) {
     assert(young_gen()->is_in(addr),
            "addr should be in allocated part of young gen");
-    // called from os::print_location by find or VMError
-    if (DebuggingContext::is_enabled() || VMError::is_error_reported()) {
-      return nullptr;
+    if (young_gen()->eden_space()->contains(addr)) {
+      return young_gen()->eden_space()->block_start(addr);
     }
-    Unimplemented();
+    if (young_gen()->from_space()->contains(addr)) {
+      return young_gen()->from_space()->block_start(addr);
+    }
+    assert(young_gen()->to_space()->contains(addr), "inv");
+    return young_gen()->to_space()->block_start(addr);
   } else if (old_gen()->is_in_reserved(addr)) {
     assert(old_gen()->is_in(addr),
            "addr should be in allocated part of old gen");

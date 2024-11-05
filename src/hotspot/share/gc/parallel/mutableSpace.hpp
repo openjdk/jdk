@@ -136,6 +136,8 @@ class MutableSpace: public CHeapObj<mtGC> {
   void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* cl);
 
+  HeapWord* block_start(const void* addr) const;
+
   // Debugging
   virtual void print() const;
   virtual void print_on(outputStream* st) const;
