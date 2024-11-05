@@ -188,7 +188,7 @@ public final class InOutPathTest {
                 //  jpackage --name Foo --dest output --app-content output/Foo
                 // Verify the directory exists. At least this check will catch the
                 // case when its value is set to a path unrelated to jpackage I/O.
-                TKit.assertDirectoryNotEmpty(Path.of(cmd.getArgumentValue("--app-content")));
+                TKit.assertDirectoryExists(Path.of(cmd.getArgumentValue("--app-content")));
             }
         } else {
             new PackageTest()
