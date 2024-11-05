@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class AddmodsOption {
         final String allSystem = "ALL-SYSTEM";
         final String allModulePath = "ALL-MODULE-PATH";
         final String loggingOption = "-Xlog:cds=debug,cds+module=debug,cds+heap=info,module=trace";
-        final String versionPattern = "java.[0-9][0-9][-].*";
+        final String versionPattern = "java.[0-9][0-9].*";
         final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
         final String warningIncubator = "WARNING: Using incubator modules: jdk.incubator.vector";
         String archiveName = TestCommon.getNewArchiveName("addmods-option");
@@ -72,7 +72,7 @@ public class AddmodsOption {
             "-version");
         oa.shouldHaveExitValue(0)
           // version of the jdk.httpserver module, e.g. java 22-ea
-          //.shouldMatch(versionPattern)
+          .shouldMatch(versionPattern)
           .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.jconsole")
           .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.httpserver");
 
@@ -114,7 +114,7 @@ public class AddmodsOption {
         oa.shouldHaveExitValue(0)
           .shouldContain("--add-modules module name(s) specified during runtime but not found in archive: jdk.jconsole")
           // version of the jdk.httpserver module, e.g. java 22-ea
-          //.shouldMatch(versionPattern)
+          .shouldMatch(versionPattern)
           .shouldContain(subgraphCannotBeUsed);
 
         // dump an archive with an incubator module, -add-modules jdk.incubator.vector
