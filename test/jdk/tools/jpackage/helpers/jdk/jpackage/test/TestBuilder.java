@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -226,7 +227,7 @@ final class TestBuilder implements AutoCloseable {
                 .filter(m -> m.getParameterCount() == 0)
                 .filter(m -> !m.isAnnotationPresent(Test.class))
                 .filter(m -> m.isAnnotationPresent(annotationType))
-                .sorted((a, b) -> a.getName().compareTo(b.getName()));
+                .sorted(Comparator.comparing(Method::getName));
     }
 
     private static Stream<String> cmdLineArgValueToMethodNames(String v) {
@@ -352,7 +353,7 @@ final class TestBuilder implements AutoCloseable {
         return Stream.of(type.getMethods())
                 .filter(m -> m.getParameterCount() == 0)
                 .filter(m -> (m.getModifiers() & Modifier.STATIC) != 0)
-                .sorted();
+                .sorted(Comparator.comparing(Method::getName));
     }
 
     private static Stream<Object[]> createArgs(Method ... parameterSuppliers) throws
@@ -369,7 +370,7 @@ final class TestBuilder implements AutoCloseable {
         Class type = method.getDeclaringClass();
         List<Method> paremeterSuppliers = filterParameterSuppliers(type)
                 .filter(m -> m.isAnnotationPresent(Parameters.class))
-                .sorted().toList();
+                .sorted(Comparator.comparing(Method::getName)).toList();
         if (paremeterSuppliers.isEmpty()) {
             // Single instance using the default constructor.
             return Stream.ofNullable(MethodCall.DEFAULT_CTOR_ARGS);
