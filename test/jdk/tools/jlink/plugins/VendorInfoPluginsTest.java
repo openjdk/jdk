@@ -58,6 +58,9 @@ public class VendorInfoPluginsTest {
     private static final String VERSION = "XyzzyVM 3.14.15";
     private static final String BUG_URL = "https://bugs.xyzzy.com/";
     private static final String VM_BUG_URL = "https://bugs.xyzzy.com/crash/";
+    private static final String VENDOR = "Example Corp.";
+    private static final String VENDOR_URL = "https://example.com";
+    private static final String VENDOR_VM = "Example VM";
 
     public static void main(String[] args) throws Throwable {
 
@@ -73,7 +76,10 @@ public class VendorInfoPluginsTest {
                 "--add-modules", "jdk.unsupported",
                 "--vendor-version", VERSION,
                 "--vendor-bug-url", BUG_URL,
-                "--vendor-vm-bug-url", VM_BUG_URL },
+                "--vendor-vm-bug-url", VM_BUG_URL,
+                "--vendor", VENDOR,
+                "--vendor-url", VENDOR_URL,
+                "--vendor-vm", VENDOR_VM },
             module).assertSuccess();
         helper.checkImage(image, module, null, null);
 
@@ -90,6 +96,9 @@ public class VendorInfoPluginsTest {
         oa.stderrShouldMatch("^ +java.vendor.version = " + VERSION + "$");
         oa.stdoutShouldMatch("^.*Runtime Environment " + VERSION + " \\(.*build.*$");
         oa.stdoutShouldMatch("^.*VM " + VERSION + " \\(.*build.*$");
+        oa.stderrShouldMatch("^ +java.vendor = " + VENDOR + "$");
+        oa.stderrShouldMatch("^ +java.vendor.url = " + VENDOR_URL + "$");
+        oa.stderrShouldMatch("^ +java.vm.vendor = " + VENDOR_VM + "$");
 
         // VM error log
         oa = ProcessTools.executeProcess(launcher,

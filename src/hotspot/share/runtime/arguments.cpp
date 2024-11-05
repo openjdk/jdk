@@ -119,6 +119,7 @@ SystemProperty *Arguments::_java_home = nullptr;
 SystemProperty *Arguments::_java_class_path = nullptr;
 SystemProperty *Arguments::_jdk_boot_class_path_append = nullptr;
 SystemProperty *Arguments::_vm_info = nullptr;
+SystemProperty *Arguments::_vm_vendor = nullptr;
 
 GrowableArray<ModulePatchPath*> *Arguments::_patch_mod_prefix = nullptr;
 PathString *Arguments::_boot_class_path = nullptr;
@@ -423,8 +424,9 @@ void Arguments::init_version_specific_system_properties() {
       new SystemProperty("java.vm.specification.vendor",  spec_vendor, false));
   PropertyList_add(&_system_properties,
       new SystemProperty("java.vm.specification.version", buffer, false));
-  PropertyList_add(&_system_properties,
-      new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
+
+  _vm_vendor = new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(), false);
+  PropertyList_add(&_system_properties, _vm_vendor);
 }
 
 /*

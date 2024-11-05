@@ -27,6 +27,7 @@
 
 #include "memory/allStatic.hpp"  // For declaration of class AllStatic
 #include "utilities/globalDefinitions.hpp"
+#include "runtime/os.hpp"
 
 typedef enum {
   NoDetectedVirtualization,
@@ -78,6 +79,9 @@ class Abstract_VM_Version: AllStatic {
   static int          _vm_build_number;
   static unsigned int _data_cache_line_flush_size;
 
+  // Allow Jlink to override vendor from java.lang.VersionProps
+  static const char*  _vendor_branding_override;
+
  public:
 
   static VirtualizationType _detected_virtualization;
@@ -106,6 +110,10 @@ class Abstract_VM_Version: AllStatic {
   static const char* vm_name();
   // Vendor
   static const char* vm_vendor();
+  static void override_vm_vendor(const char* vendor_override) {
+    _vendor_branding_override = os::strdup(vendor_override);
+  }
+
   // VM version information string printed by launcher (java -version)
   static const char* vm_info_string();
   static const char* vm_release();

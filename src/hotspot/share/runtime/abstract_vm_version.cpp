@@ -128,9 +128,10 @@ const char* Abstract_VM_Version::vm_name() {
 #endif
 
 static const char vm_vendor_string[sizeof(VENDOR) < VENDOR_PADDING ? VENDOR_PADDING : sizeof(VENDOR)] = VENDOR;
+const char* Abstract_VM_Version::_vendor_branding_override = nullptr;
 
 const char* Abstract_VM_Version::vm_vendor() {
-  return vm_vendor_string;
+  return _vendor_branding_override != nullptr ? _vendor_branding_override : vm_vendor_string;
 }
 
 

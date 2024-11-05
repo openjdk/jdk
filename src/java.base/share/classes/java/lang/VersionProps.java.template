@@ -72,14 +72,15 @@ class VersionProps {
     private static final String CLASSFILE_MAJOR_MINOR =
         "@@VERSION_CLASSFILE_MAJOR@@.@@VERSION_CLASSFILE_MINOR@@";
 
-    private static final String VENDOR =
-        "@@VENDOR@@";
-
-    private static final String VENDOR_URL =
-        "@@VENDOR_URL@@";
 
     // The remaining VENDOR_* fields must not be final,
     // so that they can be redefined by jlink plugins
+
+    private static String VENDOR =
+        "@@VENDOR@@";
+
+    private static String VENDOR_URL =
+        "@@VENDOR_URL@@";
 
     // This field is read by HotSpot
     private static String VENDOR_VERSION =
@@ -92,6 +93,10 @@ class VersionProps {
     @SuppressWarnings("unused")
     private static String VENDOR_URL_VM_BUG =
         "@@VENDOR_URL_VM_BUG@@";
+
+    @SuppressWarnings("unused")
+    private static String VENDOR_VM =
+        "@@VENDOR@@";
 
     /**
      * Initialize system properties using build provided values.
@@ -119,6 +124,7 @@ class VersionProps {
         props.put("java.vendor", VENDOR);
         props.put("java.vendor.url", VENDOR_URL);
         props.put("java.vendor.url.bug", VENDOR_URL_BUG);
+        props.put("java.vm.vendor", VENDOR_VM);
     }
 
     private static int parseVersionNumber(String version, int prevIndex, int index) {
