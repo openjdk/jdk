@@ -24,11 +24,13 @@
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.Functional;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
 
 /**
  * Test --install-dir parameter. Output of the test should be
@@ -78,6 +80,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  */
 public class InstallDirTest {
 
+    @Test
     public static void testCommon() {
         final Map<PackageType, Path> INSTALL_DIRS = Functional.identity(() -> {
             Map<PackageType, Path> reply = new HashMap<>();
@@ -100,6 +103,7 @@ public class InstallDirTest {
         }).run();
     }
 
+    @Test(includeOn = OperatingSystem.LINUX)
     @Parameter("/")
     @Parameter(".")
     @Parameter("foo")

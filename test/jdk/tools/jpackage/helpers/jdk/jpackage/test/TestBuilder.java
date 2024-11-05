@@ -45,6 +45,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.Annotations.AfterEach;
 import jdk.jpackage.test.Annotations.BeforeEach;
 import jdk.jpackage.test.Annotations.Parameter;
@@ -242,6 +243,7 @@ final class TestBuilder implements AutoCloseable {
                 defaultClassName = token;
                 result.addAll(Stream.of(testSet.getMethods())
                         .filter(m -> m.isAnnotationPresent(Test.class))
+                        .filter(TestBuilder::canRunOnTheOperatingSystem)
                         .map(Method::getName).distinct()
                         .map(name -> String.join(".", token, name))
                         .toList());
@@ -269,6 +271,20 @@ final class TestBuilder implements AutoCloseable {
                 Parameter.class, ParameterGroup.class,
                 ParameterSupplier.class, ParameterSupplierGroup.class
         ).anyMatch(method::isAnnotationPresent);
+    }
+    
+    private static boolean canRunOnTheOperatingSystem(Method method) {
+        if (!method.isAnnotationPresent(Test.class)) {
+            return true;
+        } else {
+            var a = (Test) method.getAnnotation(Test.class);
+
+            Set<OperatingSystem> suppordOperatingSystems = new HashSet<>();
+            suppordOperatingSystems.addAll(List.of(a.includeOn()));
+            suppordOperatingSystems.removeAll(List.of(a.excludeOn()));
+
+            return suppordOperatingSystems.contains(OperatingSystem.current());
+        }
     }
 
     private static List<Method> getJavaMethodFromString(
@@ -303,7 +319,7 @@ final class TestBuilder implements AutoCloseable {
             } else {
                 return method.getParameterCount() == 0;
             }
-        }).toList();
+        }).filter(TestBuilder::canRunOnTheOperatingSystem).toList();
 
         return methods;
     }

@@ -27,6 +27,7 @@ import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import jdk.internal.util.OperatingSystem;
 
 public class Annotations {
 
@@ -43,6 +44,14 @@ public class Annotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface Test {
+
+        OperatingSystem[] includeOn() default {
+            OperatingSystem.LINUX,
+            OperatingSystem.WINDOWS,
+            OperatingSystem.MACOS
+        };
+
+        OperatingSystem[] excludeOn() default {};
     }
 
     @Retention(RetentionPolicy.RUNTIME)
