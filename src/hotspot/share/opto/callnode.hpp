@@ -1190,9 +1190,15 @@ public:
 //    2 -   a FastLockNode
 //
 class LockNode : public AbstractLockNode {
+  static const TypeFunc *_lock_type_tf;
 public:
 
   static const TypeFunc *lock_type() {
+    assert(_lock_type_tf != nullptr, "should be initialized");
+    return _lock_type_tf;
+  }
+  static void lock_type_init() {
+    assert(_lock_type_tf == nullptr, "should be called once");
     // create input type (domain)
     const Type **fields = TypeTuple::fields(3);
     fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
@@ -1205,7 +1211,7 @@ public:
 
     const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0,fields);
 
-    return TypeFunc::make(domain,range);
+    _lock_type_tf = TypeFunc::make(domain,range);
   }
 
   virtual int Opcode() const;
