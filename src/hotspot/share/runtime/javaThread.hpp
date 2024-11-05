@@ -328,7 +328,6 @@ class JavaThread: public Thread {
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
   bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
-  bool                  _pending_jvmti_unmount_event;    // When preempting we post unmount event at unmount end rather than start
   bool                  _on_monitor_waited_event;        // Avoid callee arg processing for enterSpecial when posting waited event
   ObjectMonitor*        _contended_entered_monitor;      // Monitor for pending monitor_contended_entered callback
 #ifdef ASSERT
@@ -721,9 +720,6 @@ private:
 
   bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
   void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
-
-  bool pending_jvmti_unmount_event()             { return _pending_jvmti_unmount_event; }
-  void set_pending_jvmti_unmount_event(bool val) { _pending_jvmti_unmount_event = val; }
 
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }

@@ -1608,17 +1608,7 @@ static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, fram
   set_anchor(current, top.sp());
 
   JRT_BLOCK
-    current->rebind_to_jvmti_thread_state_of(vth());
-    JvmtiVTMSTransitionDisabler::finish_VTMS_transition((jthread)vth.raw_value(), /* is_mount */ true);
-
-    // If pending_jvmti_unmount_event() is true here we are in the preemption
-    // cancelled case. Since we never unmounted we don't post the mount event
-    // and just clear the pending unmount flag.
-    if (current->pending_jvmti_unmount_event()) {
-      current->set_pending_jvmti_unmount_event(false);
-    } else if (JvmtiExport::should_post_vthread_mount()) {
-      JvmtiExport::post_vthread_mount((jthread)vth.raw_value());
-    }
+    JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)vth.raw_value(), false);
 
     if (current->pending_contended_entered_event()) {
       JvmtiExport::post_monitor_contended_entered(current, current->contended_entered_monitor());

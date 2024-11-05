@@ -70,7 +70,7 @@ class JvmtiUnmountBeginMark : public StackObj {
     assert(!_target->is_in_VTMS_transition(), "must be");
 
     if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
-      JvmtiVTMSTransitionDisabler::start_VTMS_transition((jthread)_vthread.raw_value(), /* is_mount */ false);
+      JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount((jthread)_vthread.raw_value(), true);
 
       // Don't preempt if there is a pending popframe or earlyret operation. This can
       // be installed in start_VTMS_transition() so we need to check it here.
@@ -104,19 +104,10 @@ class JvmtiUnmountBeginMark : public StackObj {
     if (_result != freeze_ok) {
       // Undo transition
       if (jvmti_present) {
-        JvmtiVTMSTransitionDisabler::finish_VTMS_transition((jthread)_vthread.raw_value(), false);
+        JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)_vthread.raw_value(), false);
       } else {
         _target->set_is_in_VTMS_transition(false);
         java_lang_Thread::set_is_in_VTMS_transition(_vthread(), false);
-      }
-    } else {
-      if (jvmti_present) {
-        _target->rebind_to_jvmti_thread_state_of(_target->threadObj());
-        if (JvmtiExport::should_post_vthread_unmount()) {
-          // We are inside the VTMS transition already so we will post the event
-          // once we finish it in JvmtiVTMSTransitionDisabler::VTMS_unmount_end().
-          _target->set_pending_jvmti_unmount_event(true);
-        }
       }
     }
   }
@@ -124,7 +115,7 @@ class JvmtiUnmountBeginMark : public StackObj {
   bool failed() { return _failed; }
 };
 
-static bool is_vthread_safe_to_preempt_for_jvmti(JavaThread* target, oop vthread) {
+static bool is_vthread_safe_to_preempt_for_jvmti(JavaThread* target) {
   if (target->is_in_VTMS_transition()) {
     // We caught target at the end of a mount transition.
     return false;
@@ -138,7 +129,7 @@ static bool is_vthread_safe_to_preempt(JavaThread* target, oop vthread) {
   if (java_lang_VirtualThread::state(vthread) != java_lang_VirtualThread::RUNNING) {  // inside transition
     return false;
   }
-  return JVMTI_ONLY(is_vthread_safe_to_preempt_for_jvmti(target, vthread)) NOT_JVMTI(true);
+  return JVMTI_ONLY(is_vthread_safe_to_preempt_for_jvmti(target)) NOT_JVMTI(true);
 }
 
 typedef freeze_result (*FreezeContFnT)(JavaThread*, intptr_t*);

@@ -1678,9 +1678,8 @@ void JvmtiExport::post_vthread_unmount(jobject vthread) {
   HandleMark hm(thread);
   EVT_TRIG_TRACE(EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, ("[%p] Trg Virtual Thread Unmount event triggered", vthread));
 
-  // On preemption JVMTI state rebinding has already happened so get it always directly from the oop.
-  JvmtiThreadState *state = java_lang_Thread::jvmti_thread_state(JNIHandles::resolve(vthread));
-  if (state == NULL) {
+  JvmtiThreadState *state = get_jvmti_thread_state(thread);
+  if (state == nullptr) {
     return;
   }
 
@@ -1699,7 +1698,7 @@ void JvmtiExport::post_vthread_unmount(jobject vthread) {
         JvmtiJavaThreadEventTransition jet(thread);
         jvmtiExtensionEvent callback = env->ext_callbacks()->VirtualThreadUnmount;
         if (callback != nullptr) {
-          (*callback)(env->jvmti_external(), jem.jni_env(), vthread);
+          (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
         }
       }
     }
@@ -2875,15 +2874,13 @@ void JvmtiExport::vthread_post_monitor_waited(JavaThread *current, ObjectMonitor
   Handle vthread(current, current->vthread());
 
   // Finish the VTMS transition temporarily to post the event.
-  current->rebind_to_jvmti_thread_state_of(vthread());
-  JvmtiVTMSTransitionDisabler::finish_VTMS_transition((jthread)vthread.raw_value(), /* is_mount */ true);
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)vthread.raw_value(), false);
 
   // Post event.
   JvmtiExport::post_monitor_waited(current, obj_mntr, timed_out);
 
   // Go back to VTMS transition state.
-  JvmtiVTMSTransitionDisabler::start_VTMS_transition((jthread)vthread.raw_value(), /* is_mount */ true);
-  current->rebind_to_jvmti_thread_state_of(current->threadObj());
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount((jthread)vthread.raw_value(), true);
 }
 
 void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
