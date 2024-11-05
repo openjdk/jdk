@@ -268,7 +268,7 @@ import java.util.stream.Stream;
  * </li>
  * </ul>
  * <p>
- * Well-formed layouts in function descriptions consumed by a native linker constitutes
+ * Well-formed layouts in function descriptions consumed by a native linker constitute
  * a necessary, but not sufficient, requirement for acceptance. For example, some
  * native linkers may reject <em>packed</em> struct layouts. A packed struct is a struct
  * in which there is at least one member layout {@code L} that has an alignment constraint
