@@ -1785,7 +1785,7 @@ WB_ENTRY(jlong, WB_WordSize(JNIEnv* env))
 WB_END
 
 WB_ENTRY(jlong, WB_RootChunkWordSize(JNIEnv* env))
-return (jlong)Metaspace::reserve_alignment_words();
+  return (jlong)Metaspace::reserve_alignment_words();
 WB_END
 
 //////////////

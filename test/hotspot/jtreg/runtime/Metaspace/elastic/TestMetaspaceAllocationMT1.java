@@ -106,7 +106,7 @@ public class TestMetaspaceAllocationMT1 {
             long commitLimit = (i == 1) ? 2 * Unit.M.size() : 0;
 
             // Note: reserve limit must be a multiple of Metaspace::reserve_alignment_words()
-            //  (512K on 64bit, 1M on 32bit)
+            //  (16 MB)
             long reserveLimit = (i == 2) ? Settings.ROOT_CHUNK_WORD_SIZE * 16: 0;
 
             System.out.println("#### Test: ");
