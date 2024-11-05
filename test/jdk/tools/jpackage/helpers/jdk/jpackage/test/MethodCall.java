@@ -87,7 +87,9 @@ class MethodCall implements ThrowingConsumer {
             Object[] newArgs;
             if (paramTypes.length - args.length == 1) {
                 // Empty var args
-                newArgs = Arrays.copyOf(args, args.length + 1);
+
+                // "args" can be of type String[] if the "executable" is "foo(String ... str)"
+                newArgs = Arrays.copyOf(args, args.length + 1, Object[].class);
                 newArgs[newArgs.length - 1] = Array.newInstance(varArgParamType.componentType(), 0);
             } else {
                 var varArgs = Arrays.copyOfRange(args, paramTypes.length - 1,
