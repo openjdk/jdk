@@ -180,8 +180,8 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
         worklist.push(in);
       }
     }
-    for (uint j = 0; j < n->outcnt(); j++) {
-      worklist.push(n->raw_out(j));
+    for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+      worklist.push(n->fast_out(j));
     }
   }
 }
