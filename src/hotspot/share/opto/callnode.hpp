@@ -1197,6 +1197,7 @@ public:
     assert(_lock_type_tf != nullptr, "should be initialized");
     return _lock_type_tf;
   }
+
   static void lock_type_init() {
     assert(_lock_type_tf == nullptr, "should be called once");
     // create input type (domain)

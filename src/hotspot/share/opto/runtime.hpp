@@ -133,6 +133,72 @@ class OptoRuntime : public AllStatic {
 #undef C2_STUB_FIELD_DECLARE
 #undef C2_JVMTI_STUB_FIELD_DECLARE
 
+  // static TypeFunc* data members
+  static const TypeFunc *_new_instance_tf;
+  static const TypeFunc *_new_array_tf;
+  static const TypeFunc *_multianewarray2_tf;
+  static const TypeFunc *_multianewarray3_tf;
+  static const TypeFunc *_multianewarray4_tf;
+  static const TypeFunc *_multianewarray5_tf;
+  static const TypeFunc *_multianewarrayN_tf;
+  static const TypeFunc *_complete_monitor_enter_tf;
+  static const TypeFunc *_complete_monitor_exit_tf;
+  static const TypeFunc *_monitor_notify_tf;
+  static const TypeFunc *_uncommon_trap_tf;
+  static const TypeFunc *_athrow_tf;
+  static const TypeFunc *_rethrow_tf;
+  static const TypeFunc *_Math_D_D_tf;
+  static const TypeFunc *_Math_DD_D_tf;
+  static const TypeFunc *_modf_tf;
+  static const TypeFunc *_l2f_tf;
+  static const TypeFunc *_void_long_tf;
+  static const TypeFunc *_void_void_tf;
+  static const TypeFunc *_jfr_write_checkpoint_tf;
+  static const TypeFunc *_flush_windows_tf;
+  static const TypeFunc *_fast_arraycopy_tf;
+  static const TypeFunc *_checkcast_arraycopy_tf;
+  static const TypeFunc *_generic_arraycopy_tf;
+  static const TypeFunc *_slow_arraycopy_tf;
+  static const TypeFunc *_make_setmemory_tf;
+  static const TypeFunc *_array_fill_tf;
+  static const TypeFunc *_array_sort_tf;
+  static const TypeFunc *_array_partition_tf;
+  static const TypeFunc *_aescrypt_block_tf;
+  static const TypeFunc *_cipherBlockChaining_aescrypt_tf;
+  static const TypeFunc *_electronicCodeBook_aescrypt_tf;
+  static const TypeFunc *_counterMode_aescrypt_tf;
+  static const TypeFunc *_galoisCounterMode_aescrypt_tf;
+  static const TypeFunc *_digestBase_implCompress_with_sha3_tf;
+  static const TypeFunc *_digestBase_implCompress_without_sha3_tf;
+  static const TypeFunc *_digestBase_implCompressMB_with_sha3_tf;
+  static const TypeFunc *_digestBase_implCompressMB_without_sha3_tf;
+  static const TypeFunc *_multiplyToLen_tf;
+  static const TypeFunc *_montgomeryMultiply_tf;
+  static const TypeFunc *_montgomerySquare_tf;
+  static const TypeFunc *_squareToLen_tf;
+  static const TypeFunc *_mulAdd_tf;
+  static const TypeFunc *_bigIntegerShift_tf;
+  static const TypeFunc *_vectorizedMismatch_tf;
+  static const TypeFunc *_ghash_processBlocks_tf;
+  static const TypeFunc *_chacha20Block_tf;
+  static const TypeFunc *_base64_encodeBlock_tf;
+  static const TypeFunc *_base64_decodeBlock_tf;
+  static const TypeFunc *_string_IndexOf_tf;
+  static const TypeFunc *_poly1305_processBlocks_tf;
+  static const TypeFunc *_intpoly_montgomeryMult_P256_tf;
+  static const TypeFunc *_intpoly_assign_tf;
+  static const TypeFunc *_updateBytesCRC32_tf;
+  static const TypeFunc *_updateBytesCRC32C_tf;
+  static const TypeFunc *_updateBytesAdler32_tf;
+  static const TypeFunc *_osr_end_tf;
+  static const TypeFunc *_register_finalizer_tf;
+  JFR_ONLY(static const TypeFunc *_class_id_load_barrier_tf;)
+#ifdef INCLUDE_JVMTI
+  static const TypeFunc *_notify_jvmti_vthread_tf;
+#endif // INCLUDE_JVMTI
+  static const TypeFunc *_dtrace_method_entry_exit_tf;
+  static const TypeFunc *_dtrace_object_alloc_tf;
+
   // Stub names indexed by sharedStubId
   static const char *_stub_names[];
 
@@ -243,6 +309,95 @@ private:
 
   // Type functions
   // ======================================================
+
+  // Initialization methods
+
+  static void new_instance_Type_init(); // object allocation (slow case)
+  static void new_array_Type_init ();   // [a]newarray (slow case)
+  static void multianewarray2_Type_init(); // multianewarray
+  static void multianewarray3_Type_init(); // multianewarray
+  static void multianewarray4_Type_init(); // multianewarray
+  static void multianewarray5_Type_init(); // multianewarray
+  static void multianewarrayN_Type_init(); // multianewarray
+  static void complete_monitor_enter_Type_init();
+  static void complete_monitor_exit_Type_init();
+  static void monitor_notify_Type_init();
+  static void uncommon_trap_Type_init();
+  static void athrow_Type_init();
+  static void rethrow_Type_init();
+  static void Math_D_D_Type_init();  // sin,cos & friends
+  static void Math_DD_D_Type_init(); // mod,pow & friends
+  static void modf_Type_init();
+  static void l2f_Type_init();
+  static void void_long_Type_init();
+  static void void_void_Type_init();
+
+  static void jfr_write_checkpoint_Type_init();
+
+  static void flush_windows_Type_init();
+
+  // arraycopy routine types
+  static void fast_arraycopy_Type_init(); // bit-blasters
+  static void checkcast_arraycopy_Type_init();
+  static void generic_arraycopy_Type_init();
+  static void slow_arraycopy_Type_init();   // the full routine
+
+  static void make_setmemory_Type_init();
+
+  static void array_fill_Type_init();
+
+  static void array_sort_Type_init();
+  static void array_partition_Type_init();
+  static void aescrypt_block_Type_init();
+  static void cipherBlockChaining_aescrypt_Type_init();
+  static void electronicCodeBook_aescrypt_Type_init();
+  static void counterMode_aescrypt_Type_init();
+  static void galoisCounterMode_aescrypt_Type_init();
+
+  static void digestBase_implCompress_Type_init();
+  static const TypeFunc* digestBase_implCompress_Type_helper(bool is_sha3);
+  static void digestBase_implCompressMB_Type_init();
+  static const TypeFunc* digestBase_implCompressMB_Type_helper(bool is_sha3);
+
+  static void multiplyToLen_Type_init();
+  static void montgomeryMultiply_Type_init();
+  static void montgomerySquare_Type_init();
+
+  static void squareToLen_Type_init();
+
+  static void mulAdd_Type_init();
+
+  static void bigIntegerShift_Type_init();
+
+  static void vectorizedMismatch_Type_init();
+
+  static void ghash_processBlocks_Type_init();
+  static void chacha20Block_Type_init();
+  static void base64_encodeBlock_Type_init();
+  static void base64_decodeBlock_Type_init();
+  static void string_IndexOf_Type_init();
+  static void poly1305_processBlocks_Type_init();
+  static void intpoly_montgomeryMult_P256_Type_init();
+  static void intpoly_assign_Type_init();
+
+  static void updateBytesCRC32_Type_init();
+  static void updateBytesCRC32C_Type_init();
+
+  static void updateBytesAdler32_Type_init();
+
+  // leaf on stack replacement interpreter accessor types
+  static void osr_end_Type_init();
+
+  static void register_finalizer_Type_init();
+
+  JFR_ONLY(static void class_id_load_barrier_Type_init();)
+#if INCLUDE_JVMTI
+  static void notify_jvmti_vthread_Type_init();
+#endif
+
+  // Dtrace support
+  static void dtrace_method_entry_exit_Type_init();
+  static void dtrace_object_alloc_Type_init();
 
   static const TypeFunc* new_instance_Type(); // object allocation (slow case)
   static const TypeFunc* new_array_Type ();   // [a]newarray (slow case)
