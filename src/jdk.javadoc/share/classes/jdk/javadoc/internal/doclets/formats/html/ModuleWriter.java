@@ -41,6 +41,7 @@ import javax.lang.model.util.ElementFilter;
 
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
+import java.util.stream.Collectors;
 
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -582,10 +583,22 @@ public class ModuleWriter extends HtmlDocletWriter {
             TableHeader indirectPackagesHeader =
                     new TableHeader(contents.fromLabel, contents.packagesLabel);
             if (display(indirectPackages)) {
+                Map<ModuleElement, SortedSet<PackageElement>> filteredIndirectPackages = indirectPackages;
+                boolean javaSEModule = mdle.getQualifiedName().contentEquals("java.se");
+                if (javaSEModule) {
+                    filteredIndirectPackages = filteredIndirectPackages.entrySet().stream().filter(e -> !e.getKey().getQualifiedName().contentEquals("java.base")).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+                }
                 String aepText = resources.getText("doclet.Indirect_Exports_Summary");
                 var aepTable = getTable2(Text.of(aepText), indirectPackagesHeader);
-                addIndirectPackages(aepTable, indirectPackages);
+                addIndirectPackages(aepTable, filteredIndirectPackages);
                 section.add(aepTable);
+                if (javaSEModule) {
+                    filteredIndirectPackages = indirectPackages.entrySet().stream().filter(e -> e.getKey().getQualifiedName().contentEquals("java.base")).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+                    String aepPreviewText = resources.getText("doclet.Indirect_Exports_Preview_Summary");
+                    var aepPreviewTable = getTable2(Text.of(aepPreviewText), indirectPackagesHeader);
+                    addIndirectPackages(aepPreviewTable, filteredIndirectPackages);
+                    section.add(aepPreviewTable);
+                }
             }
             if (display(indirectOpenPackages)) {
                 String aopText = resources.getText("doclet.Indirect_Opens_Summary");
