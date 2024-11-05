@@ -33,13 +33,13 @@
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @build ManyRequests ManyRequests2
- * @run main/othervm/timeout=400  -Dsun.net.httpserver.idleInterval=400 -Dtest.XFixed=true
+ * @run main/othervm/timeout=400 -Dsun.net.httpserver.idleInterval=400 -Dtest.XFixed=true
  *                              -Djdk.tracePinnedThreads=full
  *                              -Djdk.httpclient.HttpClient.log=channel ManyRequests2
- * @run main/othervm/timeout=400  -Dsun.net.httpserver.idleInterval=400 -Dtest.XFixed=true -Dtest.insertDelay=true
+ * @run main/othervm/timeout=400 -Dsun.net.httpserver.idleInterval=400 -Dtest.XFixed=true -Dtest.insertDelay=true
  *                              -Djdk.tracePinnedThreads=full
  *                              -Djdk.httpclient.HttpClient.log=channel ManyRequests2
- * @run main/othervm/timeout=400  -Dsun.net.httpserver.idleInterval=400 -Dtest.XFixed=true -Dtest.chunkSize=64
+ * @run main/othervm/timeout=400 -Dsun.net.httpserver.idleInterval=400 -Dtest.XFixed=true -Dtest.chunkSize=64
  *                              -Djdk.tracePinnedThreads=full
  *                              -Djdk.httpclient.HttpClient.log=channel ManyRequests2
  * @run main/othervm/timeout=400 -Dsun.net.httpserver.idleInterval=400 -Djdk.internal.httpclient.debug=true
