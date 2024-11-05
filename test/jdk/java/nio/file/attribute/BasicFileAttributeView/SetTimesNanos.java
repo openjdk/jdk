@@ -39,6 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileTime;
+import java.util.List;
 import java.util.Set;
 
 import static java.nio.file.LinkOption.*;
@@ -132,19 +133,23 @@ public class SetTimesNanos {
             var newTime = FileTime.from(1730417633157646106L, NANOSECONDS);
             System.out.println("newTime: " + newTime.to(NANOSECONDS));
 
-            var symlinkView = Files.getFileAttributeView
-                (symlink, BasicFileAttributeView.class, NOFOLLOW_LINKS);
-            symlinkView.setTimes(newTime, newTime, null);
-            var symlinkAttrs = symlinkView.readAttributes();
+            for (Path p : List.of(target, symlink)) {
+                System.out.println("p: " + p);
 
-            if (!symlinkAttrs.lastAccessTime().equals(newTime))
-                throw new RuntimeException("Last access time "
-                                           + symlinkAttrs.lastAccessTime()
-                                           + " != " + newTime);
-            if (!symlinkAttrs.lastAccessTime().equals(newTime))
-                throw new RuntimeException("Last modified time "
-                                           + symlinkAttrs.lastModifiedTime()
-                                           + " != " + newTime);
+                var view = Files.getFileAttributeView(p,
+                    BasicFileAttributeView.class, NOFOLLOW_LINKS);
+                view.setTimes(newTime, newTime, null);
+                var attrs = view.readAttributes();
+
+                if (!attrs.lastAccessTime().equals(newTime))
+                    throw new RuntimeException("Last access time "
+                                               + attrs.lastAccessTime()
+                                               + " != " + newTime);
+                if (!attrs.lastAccessTime().equals(newTime))
+                    throw new RuntimeException("Last modified time "
+                                               + attrs.lastModifiedTime()
+                                               + " != " + newTime);
+            }
         } finally {
             Files.deleteIfExists(target);
             Files.deleteIfExists(symlink);

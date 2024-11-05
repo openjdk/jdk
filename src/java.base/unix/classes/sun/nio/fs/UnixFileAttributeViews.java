@@ -79,11 +79,11 @@ class UnixFileAttributeViews {
             boolean useUtimensat = false;
             int fd = -1;
             try {
-                if (!followLinks &&
-                    UnixFileAttributes.get(file, false).isSymbolicLink()) {
-                    useUtimensat = utimensatSupported();
-                    if (!useUtimensat)
+                if (!followLinks) {
+                    // these path-based syscalls also work if following links
+                    if (!(useUtimensat = utimensatSupported())) {
                         useLutimes = lutimesSupported();
+                    }
                 }
                 if (!useUtimensat && !useLutimes) {
                     fd = file.openForAttributeAccess(followLinks);
@@ -95,8 +95,8 @@ class UnixFileAttributeViews {
                     }
                 }
             } catch (UnixException x) {
-                if (!(x.errno() == UnixConstants.ENXIO ||
-                     (x.errno() == UnixConstants.ELOOP && useLutimes))) {
+                if (!(x.errno() == ENXIO ||
+                     (x.errno() == ELOOP && (useUtimensat || useLutimes)))) {
                     x.rethrowAsIOException(file);
                 }
             }
@@ -134,14 +134,15 @@ class UnixFileAttributeViews {
                     } else if (useLutimes) {
                         lutimes(file, accessValue, modValue);
                     } else if (useUtimensat) {
-                        utimensat(AT_FDCWD, file, accessValue, modValue, AT_SYMLINK_NOFOLLOW);
+                        utimensat(AT_FDCWD, file, accessValue, modValue,
+                                  followLinks ? 0 : AT_SYMLINK_NOFOLLOW);
                     } else {
                         utimes(file, accessValue, modValue);
                     }
                 } catch (UnixException x) {
                     // if futimes/utimes fails with EINVAL and one/both of the times is
                     // negative then we adjust the value to the epoch and retry.
-                    if (x.errno() == UnixConstants.EINVAL &&
+                    if (x.errno() == EINVAL &&
                         (modValue < 0L || accessValue < 0L)) {
                         retry = true;
                     } else {
@@ -159,7 +160,8 @@ class UnixFileAttributeViews {
                         } else if (useLutimes) {
                             lutimes(file, accessValue, modValue);
                         } else if (useUtimensat) {
-                            utimensat(AT_FDCWD, file, accessValue, modValue, AT_SYMLINK_NOFOLLOW);
+                            utimensat(AT_FDCWD, file, accessValue, modValue,
+                                      followLinks ? 0 : AT_SYMLINK_NOFOLLOW);
                         } else {
                             utimes(file, accessValue, modValue);
                         }
