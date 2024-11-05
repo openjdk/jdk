@@ -142,11 +142,11 @@ public:
 private:
   VMATreap _tree;
 
-  IntervalState& in_state(TreapNode* node) {
+  static IntervalState& in_state(TreapNode* node) {
     return node->val().in;
   }
 
-  IntervalState& out_state(TreapNode* node) {
+  static IntervalState& out_state(TreapNode* node) {
     return node->val().out;
   }
 
