@@ -272,8 +272,8 @@ import java.util.stream.Stream;
  * a necessary, but not sufficient, requirement for acceptance. For example, some
  * native linkers may reject <em>packed</em> struct layouts. A packed struct is a struct
  * in which there is at least one member layout {@code L} that has an alignment constraint
- * less strict than its natural alignment. This allows to avoid padding between
- * member layouts, as well as avoiding padding at the end of the struct layout.
+ * less strict than its natural alignment. This allows clients to avoid adding padding
+ * between member layouts, as well as avoiding padding at the end of the struct layout.
  * For example:
   * {@snippet lang = java:
  * // No padding between the 2 element layouts:
