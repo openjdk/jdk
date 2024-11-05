@@ -54,9 +54,22 @@ public final class Main {
 
                 if (arg.startsWith("@")) {
                     // Command file
-                    var newArgs = Files.readAllLines(Path.of(arg.substring(1))).stream().map(line -> {
-                        return Stream.of(line.split("\\s+"));
-                    }).flatMap(x -> x).collect(toCollection(ArrayDeque::new));
+                    // @=args will read arguments from the "args" file, one argument per line
+                    // @args will read arguments from the "args" file, splitting lines into arguments at whitespaces
+                    arg = arg.substring(1);
+                    var oneArgPerLine = arg.startsWith("=");
+                    if (oneArgPerLine) {
+                        arg = arg.substring(1);
+                    }
+
+                    var newArgsStream = Files.readAllLines(Path.of(arg)).stream();
+                    if (!oneArgPerLine) {
+                        newArgsStream.map(line -> {
+                            return Stream.of(line.split("\\s+"));
+                        }).flatMap(x -> x);
+                    }
+
+                    var newArgs = newArgsStream.collect(toCollection(ArrayDeque::new));
                     newArgs.addAll(argsAsList);
                     argsAsList = newArgs;
                     continue;
