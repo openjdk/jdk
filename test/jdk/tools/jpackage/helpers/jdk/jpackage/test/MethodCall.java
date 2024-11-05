@@ -178,7 +178,7 @@ class MethodCall implements ThrowingConsumer {
         });
     }
 
-    private final static class ParameterTypeMatcher implements Predicate<Class<?>> {
+    private static final class ParameterTypeMatcher implements Predicate<Class<?>> {
         ParameterTypeMatcher(Class<?> parameterType) {
             Objects.requireNonNull(parameterType);
             this.parameterType = NORM_TYPES.getOrDefault(parameterType, parameterType);
@@ -201,9 +201,9 @@ class MethodCall implements ThrowingConsumer {
     private final Method method;
     private final Object[] ctorArgs;
 
-    final static Object[] DEFAULT_CTOR_ARGS = new Object[0];
+    static final Object[] DEFAULT_CTOR_ARGS = new Object[0];
 
-    private final static Map<Class<?>, Class<?>> NORM_TYPES;
+    private static final Map<Class<?>, Class<?>> NORM_TYPES;
 
     static {
         Map<Class<?>, Class<?>> primitives = Map.of(

@@ -337,7 +337,7 @@ final class TestInstance implements ThrowingRunnable {
     private final boolean dryRun;
     private final Path workDir;
 
-    private final static Set<Status> KEEP_WORK_DIR = Functional.identity(
+    private static final Set<Status> KEEP_WORK_DIR = Functional.identity(
             () -> {
                 final String propertyName = "keep-work-dir";
                 Set<String> keepWorkDir = TKit.tokenizeConfigProperty(
@@ -361,7 +361,7 @@ final class TestInstance implements ThrowingRunnable {
                 return Collections.unmodifiableSet(result);
             }).get();
     
-    private final static Map<Class<?>, Function<Object, String>> PRIMITIVE_ARRAY_FORMATTERS = Map.of(
+    private static final Map<Class<?>, Function<Object, String>> PRIMITIVE_ARRAY_FORMATTERS = Map.of(
             boolean[].class, v -> Arrays.toString((boolean[])v),
             byte[].class, v -> Arrays.toString((byte[])v),
             char[].class, v -> Arrays.toString((char[])v),

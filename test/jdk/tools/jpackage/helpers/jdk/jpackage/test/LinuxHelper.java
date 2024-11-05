@@ -750,10 +750,10 @@ public final class LinuxHelper {
 
     private static Map<PackageType, String> archs;
 
-    private final static Pattern XDG_CMD_ICON_SIZE_PATTERN = Pattern.compile("\\s--size\\s+(\\d+)\\b");
+    private static final Pattern XDG_CMD_ICON_SIZE_PATTERN = Pattern.compile("\\s--size\\s+(\\d+)\\b");
 
     // Values grabbed from https://linux.die.net/man/1/xdg-icon-resource
-    private final static Set<Integer> XDG_CMD_VALID_ICON_SIZES = Set.of(16, 22, 32, 48, 64, 128);
+    private static final Set<Integer> XDG_CMD_VALID_ICON_SIZES = Set.of(16, 22, 32, 48, 64, 128);
 
-    private final static Method getServiceUnitFileName = initGetServiceUnitFileName();
+    private static final Method getServiceUnitFileName = initGetServiceUnitFileName();
 }

@@ -613,9 +613,9 @@ final class TestBuilder implements AutoCloseable {
     private String spaceSubstitute;
     private boolean dryRun;
 
-    private final static Map<Class, Function<String, Object>> FROM_STRING;
+    private static final Map<Class, Function<String, Object>> FROM_STRING;
 
-    final static String CMDLINE_ARG_PREFIX = "--jpt-";
+    static final String CMDLINE_ARG_PREFIX = "--jpt-";
 
     static {
         Map<Class, Function<String, Object>> primitives = Map.of(
