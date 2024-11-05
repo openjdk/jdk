@@ -314,7 +314,7 @@ public class MLKEMBench {
 
     static byte[] xeh(String in) {
         return HexFormat.of().parseHex(in);
-    }   
+    }
 
     record KeygenTestCase(
             byte[] d,
