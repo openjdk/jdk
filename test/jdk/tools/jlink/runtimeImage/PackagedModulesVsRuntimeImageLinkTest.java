@@ -48,7 +48,7 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g PackagedModulesVsJmodLessTest true
+ * @run main/othervm -Xmx1g PackagedModulesVsRuntimeImageLinkTest true
  */
 
 /*
@@ -64,16 +64,16 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g PackagedModulesVsJmodLessTest false
+ * @run main/othervm -Xmx1g PackagedModulesVsRuntimeImageLinkTest false
  */
-public class PackagedModulesVsJmodLessTest extends AbstractLinkableRuntimeTest {
+public class PackagedModulesVsRuntimeImageLinkTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             throw new IllegalArgumentException("Wrong number of passed arguments");
         }
         boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
-        PackagedModulesVsJmodLessTest test = new PackagedModulesVsJmodLessTest();
+        PackagedModulesVsRuntimeImageLinkTest test = new PackagedModulesVsRuntimeImageLinkTest();
         test.run(isLinkableRuntime);
     }
 
