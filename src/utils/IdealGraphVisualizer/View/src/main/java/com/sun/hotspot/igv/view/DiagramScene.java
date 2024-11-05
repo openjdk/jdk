@@ -952,7 +952,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     }
                 } else if (controlPointIndex == controlPoints.size()) {
                     if (predecessor != null) {
-                        Figure figure = ((Slot) connection.getTo()).getFigure();
+                        Figure figure = connection.getOutputSlot().getFigure();
                         if (figureToInLineWidget.containsKey(figure)) {
                             figureToInLineWidget.get(figure).add(predecessor);
                         } else {
