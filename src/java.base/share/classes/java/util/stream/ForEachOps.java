@@ -489,6 +489,7 @@ final class ForEachOps {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public void onCompletion(CountedCompleter<?> caller) {
             if (node != null) {
                 // Dump buffered elements from this leaf into the sink

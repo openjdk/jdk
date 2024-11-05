@@ -544,7 +544,7 @@ public class Infer {
             case TYPECAST:
                 JCTypeCast castTree = (JCTypeCast)env.next.tree;
                 restype = (TreeInfo.skipParens(castTree.expr) == env.tree) ?
-                          castTree.clazz.type :
+                          types.erasure(castTree.clazz.type) :
                           spType;
                 break;
             case EXEC:
