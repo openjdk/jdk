@@ -335,7 +335,7 @@ public final class Subject implements java.io.Serializable {
             final Callable<T> action) throws CompletionException {
         Objects.requireNonNull(action);
         try {
-            return ScopedValue.callWhere(SCOPED_SUBJECT, subject, action::call);
+            return ScopedValue.where(SCOPED_SUBJECT, subject).call(action::call);
         } catch (Exception e) {
             throw new CompletionException(e);
         }
