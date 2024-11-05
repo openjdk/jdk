@@ -32,10 +32,8 @@ import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
@@ -45,9 +43,6 @@ public abstract class AbstractAlgorithmConstraints
         implements AlgorithmConstraints {
 
     protected final AlgorithmDecomposer decomposer;
-    // Cache of the wildcard matching results
-    private static final Map<String, Boolean> matchCache =
-            new ConcurrentHashMap<>();
 
     protected AbstractAlgorithmConstraints(AlgorithmDecomposer decomposer) {
         this.decomposer = decomposer;
@@ -123,18 +118,10 @@ public abstract class AbstractAlgorithmConstraints
                         "Wildcard pattern should start with 'TLS_'");
             }
 
-            final String key = pattern + ":" + algorithm;
-            Boolean match = matchCache.get(key);
-
-            if (match == null) {
-                match = Pattern.compile(pattern.replace("*", ".*"),
-                                        Pattern.CASE_INSENSITIVE)
-                        .matcher(algorithm)
-                        .matches();
-                matchCache.put(key, match);
-            }
-
-            return match;
+            return Pattern.compile(pattern.replace("*", ".*"),
+                                   Pattern.CASE_INSENSITIVE)
+                    .matcher(algorithm)
+                    .matches();
         }
 
         return false;
