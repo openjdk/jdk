@@ -45,13 +45,13 @@ public class Annotations {
     @Target(ElementType.METHOD)
     public @interface Test {
 
-        OperatingSystem[] includeOn() default {
+        OperatingSystem[] ifOS() default {
             OperatingSystem.LINUX,
             OperatingSystem.WINDOWS,
             OperatingSystem.MACOS
         };
 
-        OperatingSystem[] excludeOn() default {};
+        OperatingSystem[] ifNotOS() default {};
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -60,6 +60,14 @@ public class Annotations {
     public @interface Parameter {
 
         String[] value();
+
+        OperatingSystem[] ifOS() default {
+            OperatingSystem.LINUX,
+            OperatingSystem.WINDOWS,
+            OperatingSystem.MACOS
+        };
+
+        OperatingSystem[] ifNotOS() default {};
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -75,6 +83,14 @@ public class Annotations {
     public @interface ParameterSupplier {
 
         String value();
+
+        OperatingSystem[] ifOS() default {
+            OperatingSystem.LINUX,
+            OperatingSystem.WINDOWS,
+            OperatingSystem.MACOS
+        };
+
+        OperatingSystem[] ifNotOS() default {};
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -87,5 +103,13 @@ public class Annotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface Parameters {
+
+        OperatingSystem[] ifOS() default {
+            OperatingSystem.LINUX,
+            OperatingSystem.WINDOWS,
+            OperatingSystem.MACOS
+        };
+
+        OperatingSystem[] ifNotOS() default {};
     }
 }

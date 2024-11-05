@@ -31,10 +31,11 @@ import java.util.Set;
 import java.util.function.Predicate;
 import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.PackageFile;
-import jdk.jpackage.test.Annotations;
+import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.JPackageCommand;
@@ -56,7 +57,7 @@ import jdk.jpackage.test.TKit;
  */
 public final class InOutPathTest {
 
-    @Annotations.Parameters
+    @Parameters
     public static Collection input() {
         List<Object[]> data = new ArrayList<>();
 
@@ -79,12 +80,14 @@ public final class InOutPathTest {
             }, "--app-content same as output bundle")},
         }));
 
-        if (TKit.isOSX()) {
-            data.addAll(additionalContentInput(PackageType.MAC_DMG.toString(),
-                    "--mac-dmg-content"));
-        }
-
         return data;
+    }
+    
+    @Parameters(ifOS = OperatingSystem.MACOS)
+    public static Collection inputOSX() {
+        return List.<Object[]>of(additionalContentInput(
+                PackageType.MAC_DMG.toString(), "--mac-dmg-content").toArray(
+                Object[]::new));
     }
 
     private static List<Object[]> additionalContentInput(String packageTypes, String argName) {

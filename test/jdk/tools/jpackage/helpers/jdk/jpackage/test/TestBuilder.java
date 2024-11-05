@@ -23,6 +23,7 @@
 
 package jdk.jpackage.test;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -272,19 +273,42 @@ final class TestBuilder implements AutoCloseable {
                 ParameterSupplier.class, ParameterSupplierGroup.class
         ).anyMatch(method::isAnnotationPresent);
     }
-    
+
     private static boolean canRunOnTheOperatingSystem(Method method) {
-        if (!method.isAnnotationPresent(Test.class)) {
-            return true;
-        } else {
-            var a = (Test) method.getAnnotation(Test.class);
+        return Stream.of(Test.class, Parameters.class)
+                .filter(method::isAnnotationPresent)
+                .findFirst()
+                .map(method::getAnnotation)
+                .map(TestBuilder::canRunOnTheOperatingSystem)
+                .orElse(true);
+    }
 
-            Set<OperatingSystem> suppordOperatingSystems = new HashSet<>();
-            suppordOperatingSystems.addAll(List.of(a.includeOn()));
-            suppordOperatingSystems.removeAll(List.of(a.excludeOn()));
-
-            return suppordOperatingSystems.contains(OperatingSystem.current());
+    private static boolean canRunOnTheOperatingSystem(Annotation a) {
+        switch (a) {
+            case Test t -> {
+                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
+            }
+            case Parameters t -> {
+                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
+            }
+            case Parameter t -> {
+                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
+            }
+            case ParameterSupplier t -> {
+                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
+            }
+            default -> {
+                return true;
+            }
         }
+    }
+
+    private static boolean canRunOnTheOperatingSystem(OperatingSystem[] include,
+            OperatingSystem[] exclude) {
+        Set<OperatingSystem> suppordOperatingSystems = new HashSet<>();
+        suppordOperatingSystems.addAll(List.of(include));
+        suppordOperatingSystems.removeAll(List.of(exclude));
+        return suppordOperatingSystems.contains(OperatingSystem.current());
     }
 
     private static List<Method> getJavaMethodFromString(
@@ -386,6 +410,7 @@ final class TestBuilder implements AutoCloseable {
         Class type = method.getDeclaringClass();
         List<Method> paremeterSuppliers = filterParameterSuppliers(type)
                 .filter(m -> m.isAnnotationPresent(Parameters.class))
+                .filter(TestBuilder::canRunOnTheOperatingSystem)
                 .sorted(Comparator.comparing(Method::getName)).toList();
         if (paremeterSuppliers.isEmpty()) {
             // Single instance using the default constructor.
@@ -461,6 +486,10 @@ final class TestBuilder implements AutoCloseable {
     }
 
     private static List<Object[]> createArgsForAnnotation(Executable exec, Parameter a) {
+        if (!canRunOnTheOperatingSystem(a)) {
+            return List.of();
+        }
+
         final var annotationArgs = a.value();
         final var execParameterTypes = exec.getParameterTypes();
 
@@ -503,6 +532,10 @@ final class TestBuilder implements AutoCloseable {
     private static List<Object[]> createArgsForAnnotation(Executable exec,
             ParameterSupplier a) throws IllegalAccessException,
             InvocationTargetException {
+        if (!canRunOnTheOperatingSystem(a)) {
+            return List.of();
+        }
+
         final Class<?> execClass = exec.getDeclaringClass();
         String supplierFuncName = a.value();
         if (!a.value().contains(".")) {
