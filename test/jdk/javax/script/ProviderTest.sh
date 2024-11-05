@@ -44,7 +44,7 @@ $JAR ${TESTTOOLVMOPTS} -cf ${TESTCLASSES}/dummy.jar \
     -C "${TESTSRC}" META-INF/services/javax.script.ScriptEngineFactory
 
 echo "Running test with security manager ..."
-$JAVA ${TESTVMOPTS} -Djava.security.manager -classpath \
+$JAVA ${TESTVMOPTS} ${TESTJAVAOPTS} -Djava.security.manager -classpath \
   "${TESTCLASSES}${PS}${TESTCLASSES}/dummy.jar" \
   ProviderTest
 
@@ -55,6 +55,6 @@ then
 fi
 
 echo "Running test without security manager ..."
-$JAVA ${TESTVMOPTS} -classpath \
+$JAVA ${TESTVMOPTS} ${TESTJAVAOPTS} -classpath \
   "${TESTCLASSES}${PS}${TESTCLASSES}/dummy.jar" \
   ProviderTest
