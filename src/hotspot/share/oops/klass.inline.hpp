@@ -58,6 +58,7 @@ inline bool Klass::is_loader_alive() const {
   return class_loader_data()->is_alive();
 }
 
+// Loading the java_mirror does not keep its holder alive. See Klass::keep_alive().
 inline oop Klass::java_mirror() const {
   return _java_mirror.resolve();
 }
