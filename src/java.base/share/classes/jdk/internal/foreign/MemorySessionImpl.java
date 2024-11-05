@@ -59,8 +59,8 @@ public abstract sealed class MemorySessionImpl
 
     /**
      * The value of the {@code state} of a {@code MemorySessionImpl}. The only possible transition
-     * is OPEN -> CLOSED. As a result, the states CLOSED and UNCLOSEABLE are stable. This allows us
-     * to annotate {@code state} with {@link Stable} and elide liveness check on non-closeable
+     * is OPEN -> CLOSED. As a result, the states CLOSED and NONCLOSEABLE are stable. This allows
+     * us to annotate {@code state} with {@link Stable} and elide liveness check on non-closeable
      * constant scopes, such as {@code GLOBAL_SESSION}.
      */
     static final int OPEN = 0;

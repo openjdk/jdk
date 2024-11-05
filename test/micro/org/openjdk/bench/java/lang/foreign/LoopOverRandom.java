@@ -47,6 +47,7 @@ import sun.misc.Unsafe;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
 public class LoopOverRandom extends JavaLayouts {
+    static final int SEED = 0;
 
     static final long ELEM_SIZE = ValueLayout.JAVA_INT.byteSize();
     static final int ELEM_COUNT = 1_000;
@@ -62,7 +63,7 @@ public class LoopOverRandom extends JavaLayouts {
 
     @Setup
     public void setup() {
-        indices = new Random().ints(0, ELEM_COUNT).limit(ELEM_COUNT).toArray();
+        indices = new Random(SEED).ints(0, ELEM_COUNT).limit(ELEM_COUNT).toArray();
         arena = Arena.ofConfined();
         segment = arena.allocate(ALLOC_SIZE);
         for (int i = 0; i < ELEM_COUNT; i++) {

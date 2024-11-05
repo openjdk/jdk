@@ -87,7 +87,7 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
             throw alreadyAcquired(acquireCount);
         }
 
-        STATE.setOpaque(this, CLOSED);
+        STATE.setVolatile(this, CLOSED);
         SCOPED_MEMORY_ACCESS.closeScope(this, ALREADY_CLOSED);
     }
 
