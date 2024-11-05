@@ -34,11 +34,12 @@ import static jdk.test.lib.Utils.toByteArray;
 public class ML_DSA_Test {
 
     public static void run(JSONValue kat, Provider provider) throws Exception {
-        switch (kat.get("mode").asString()) {
+        var mode = kat.get("mode").asString();
+        switch (mode) {
             case "keyGen" -> mldsaGen(kat, provider);
             case "sigGen" -> mldsaSign(kat, provider);
             case "sigVer" -> mldsaVerify(kat, provider);
-            default -> throw new UnsupportedOperationException();
+            default -> throw new UnsupportedOperationException("Unknown mode: " + mode);
         }
     }
 

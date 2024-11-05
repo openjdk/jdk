@@ -38,7 +38,8 @@ public class SHA_Test {
         var md = provider == null ? MessageDigest.getInstance(alg)
                 : MessageDigest.getInstance(alg, provider);
         for (var t : kat.get("testGroups").asArray()) {
-            switch (t.get("testType").asString()) {
+            var testType = t.get("testType").asString();
+            switch (testType) {
                 case "AFT" -> {
                     for (var c : t.get("tests").asArray()) {
                         System.out.print(c.get("tcId").asString() + " ");
@@ -113,7 +114,8 @@ public class SHA_Test {
                                 toByteArray(c.get("md").asString()));
                     }
                 }
-                default -> throw new UnsupportedOperationException("Unknown testType");
+                default -> throw new UnsupportedOperationException(
+                        "Unknown testType: " + testType);
             }
             System.out.println();
         }

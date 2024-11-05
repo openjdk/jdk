@@ -35,10 +35,11 @@ import static jdk.test.lib.Utils.toByteArray;
 public class ML_KEM_Test {
 
     public static void run(JSONValue kat, Provider provider) throws Exception {
-        switch (kat.get("mode").asString()) {
+        var mode = kat.get("mode").asString();
+        switch (mode) {
             case "keyGen" -> mlkemGen(kat, provider);
             case "encapDecap" -> mlkemEnc(kat, provider);
-            default -> throw new UnsupportedOperationException();
+            default -> throw new UnsupportedOperationException("Unknown mode: " + mode);
         }
     }
 

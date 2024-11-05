@@ -75,7 +75,7 @@ public class Launcher {
             var p = Security.getProvider(provProp);
             if (p == null) {
                 System.err.println(provProp + " is not a registered provider name");
-                throw new RuntimeException("Cannot run test");
+                throw new RuntimeException(provProp + " is not a registered provider name");
             }
             PROVIDER = p;
         } else {
