@@ -23,17 +23,10 @@
 
 package jdk.jpackage.test;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,24 +34,15 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.Annotations.AfterEach;
 import jdk.jpackage.test.Annotations.BeforeEach;
-import jdk.jpackage.test.Annotations.Parameter;
-import jdk.jpackage.test.Annotations.ParameterGroup;
-import jdk.jpackage.test.Annotations.ParameterSupplier;
-import jdk.jpackage.test.Annotations.ParameterSupplierGroup;
-import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
-import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
-import static jdk.jpackage.test.MethodCall.mapVarArgs;
+import static jdk.jpackage.test.TestMethodSupplier.MethodQuery.fromQualifiedMethodName;
 
 final class TestBuilder implements AutoCloseable {
 
@@ -68,6 +52,7 @@ final class TestBuilder implements AutoCloseable {
     }
 
     TestBuilder(Consumer<TestInstance> testConsumer) {
+        this.testMethodSupplier = new TestMethodSupplier();
         argProcessors = Map.of(
                 CMDLINE_ARG_PREFIX + "after-run",
                 arg -> getJavaMethodsFromArg(arg).map(
@@ -80,7 +65,7 @@ final class TestBuilder implements AutoCloseable {
                 CMDLINE_ARG_PREFIX + "run",
                 arg -> addTestGroup(getJavaMethodsFromArg(arg).map(
                         ThrowingFunction.toFunction(
-                                TestBuilder::toMethodCalls)).flatMap(s -> s).collect(
+                                this::toMethodCalls)).flatMap(s -> s).collect(
                         Collectors.toList())),
 
                 CMDLINE_ARG_PREFIX + "exclude",
@@ -232,7 +217,7 @@ final class TestBuilder implements AutoCloseable {
                 .sorted(Comparator.comparing(Method::getName));
     }
 
-    private static Stream<String> cmdLineArgValueToMethodNames(String v) {
+    private Stream<String> cmdLineArgValueToMethodNames(String v) {
         List<String> result = new ArrayList<>();
         String defaultClassName = null;
         for (String token : v.split(",")) {
@@ -244,7 +229,7 @@ final class TestBuilder implements AutoCloseable {
                 defaultClassName = token;
                 result.addAll(Stream.of(testSet.getMethods())
                         .filter(m -> m.isAnnotationPresent(Test.class))
-                        .filter(TestBuilder::canRunOnTheOperatingSystem)
+                        .filter(testMethodSupplier::isEnabled)
                         .map(Method::getName).distinct()
                         .map(name -> String.join(".", token, name))
                         .toList());
@@ -258,7 +243,7 @@ final class TestBuilder implements AutoCloseable {
                 qualifiedMethodName = token;
                 defaultClassName = token.substring(0, lastDotIdx);
             } else if (defaultClassName == null) {
-                throw new ParseException("Default class name not found in");
+                throw new ParseException("Missing default class name in");
             } else {
                 qualifiedMethodName = String.join(".", defaultClassName, token);
             }
@@ -267,205 +252,41 @@ final class TestBuilder implements AutoCloseable {
         return result.stream();
     }
 
-    private static boolean isParametrized(Method method) {
-        return method.isAnnotationPresent(Test.class) && Stream.of(
-                Parameter.class, ParameterGroup.class,
-                ParameterSupplier.class, ParameterSupplierGroup.class
-        ).anyMatch(method::isAnnotationPresent);
-    }
-
-    private static boolean canRunOnTheOperatingSystem(Method method) {
-        return Stream.of(Test.class, Parameters.class)
-                .filter(method::isAnnotationPresent)
-                .findFirst()
-                .map(method::getAnnotation)
-                .map(TestBuilder::canRunOnTheOperatingSystem)
-                .orElse(true);
-    }
-
-    private static boolean canRunOnTheOperatingSystem(Annotation a) {
-        switch (a) {
-            case Test t -> {
-                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
-            }
-            case Parameters t -> {
-                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
-            }
-            case Parameter t -> {
-                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
-            }
-            case ParameterSupplier t -> {
-                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
-            }
-            default -> {
-                return true;
-            }
-        }
-    }
-
-    private static boolean canRunOnTheOperatingSystem(OperatingSystem[] include,
-            OperatingSystem[] exclude) {
-        Set<OperatingSystem> suppordOperatingSystems = new HashSet<>();
-        suppordOperatingSystems.addAll(List.of(include));
-        suppordOperatingSystems.removeAll(List.of(exclude));
-        return suppordOperatingSystems.contains(OperatingSystem.current());
-    }
-
-    private static List<Method> getJavaMethodFromString(
-            String qualifiedMethodName) {
+    private List<Method> getJavaMethodFromString(String qualifiedMethodName) {
         int lastDotIdx = qualifiedMethodName.lastIndexOf('.');
         if (lastDotIdx == -1) {
-            throw new ParseException("Class name not found in");
+            throw new ParseException("Missing class name in");
         }
-        final String className = qualifiedMethodName.substring(0, lastDotIdx);
-        final String methodName = qualifiedMethodName.substring(lastDotIdx + 1);
-        final Class methodClass;
+
         try {
-            methodClass = Class.forName(className);
-        } catch (ClassNotFoundException ex) {
-            throw new ParseException(String.format("Class [%s] not found;",
-                    className));
+            return testMethodSupplier.findNullaryLikeMethods(
+                    fromQualifiedMethodName(qualifiedMethodName));
+        } catch (NoSuchMethodException ex) {
+            throw new ParseException(ex.getMessage() + ";", ex);
         }
-        // Get the list of all public methods as need to deal with overloads.
-        var methods = Stream.of(methodClass.getMethods()).filter(method -> {
-            return method.getName().equals(methodName);
-        }).toList();
-        if (methods.isEmpty()) {
-            throw new ParseException(String.format(
-                    "Public method [%s] not found in [%s] class;",
-                    methodName, methodClass.getCanonicalName()));
-        }
-
-        methods = methods.stream().filter(method -> {
-            if (isParametrized(method)) {
-                // Always accept method with annotations producing arguments for its invocation.
-                return true;
-            } else {
-                return method.getParameterCount() == 0;
-            }
-        }).filter(TestBuilder::canRunOnTheOperatingSystem).toList();
-
-        return methods;
     }
 
-    private static Stream<Method> getJavaMethodsFromArg(String argValue) {
+    private Stream<Method> getJavaMethodsFromArg(String argValue) {
         var methods = cmdLineArgValueToMethodNames(argValue)
-                .map(qualifiedMethodName -> {
-                    var someMethods = getJavaMethodFromString(qualifiedMethodName);
-                    if (someMethods.isEmpty()) {
-                        throw new ParseException(String.format(
-                                "Suitable public method [%s] not found;",
-                                qualifiedMethodName));
-                    }
-                    return someMethods;
-                })
+                .map(this::getJavaMethodFromString)
                 .flatMap(List::stream).toList();
         trace(String.format("%s -> %s", argValue, methods));
         return methods.stream();
     }
 
-    private static Parameter[] getMethodParameters(Method method) {
-        if (method.isAnnotationPresent(ParameterGroup.class)) {
-            return ((ParameterGroup) method.getAnnotation(ParameterGroup.class)).value();
-        }
-
-        if (method.isAnnotationPresent(Parameter.class)) {
-            return new Parameter[]{(Parameter) method.getAnnotation(Parameter.class)};
-        }
-
-        return new Parameter[0];
-    }
-
-    private static ParameterSupplier[] getMethodParameterSuppliers(Method method) {
-        if (method.isAnnotationPresent(ParameterSupplierGroup.class)) {
-            return ((ParameterSupplierGroup) method.getAnnotation(ParameterSupplierGroup.class)).value();
-        }
-
-        if (method.isAnnotationPresent(ParameterSupplier.class)) {
-            return new ParameterSupplier[]{(ParameterSupplier) method.getAnnotation(
-                ParameterSupplier.class)};
-        }
-
-        return new ParameterSupplier[0];
-    }
-
-    private static Stream<Method> filterParameterSuppliers(Class<?> type) {
-        return Stream.of(type.getMethods())
-                .filter(m -> m.getParameterCount() == 0)
-                .filter(m -> (m.getModifiers() & Modifier.STATIC) != 0)
-                .sorted(Comparator.comparing(Method::getName));
-    }
-
-    private static Stream<Object[]> createArgs(Method ... parameterSuppliers) throws
+    private Stream<MethodCall> toMethodCalls(Method method) throws
             IllegalAccessException, InvocationTargetException {
-        List<Object[]> args = new ArrayList<>();
-        for (var parameterSupplier : parameterSuppliers) {
-            args.addAll((Collection) parameterSupplier.invoke(null));
-        }
-        return args.stream();
-    }
-
-    private static Stream<Object[]> toCtorArgs(Method method) throws
-            IllegalAccessException, InvocationTargetException {
-        Class type = method.getDeclaringClass();
-        List<Method> paremeterSuppliers = filterParameterSuppliers(type)
-                .filter(m -> m.isAnnotationPresent(Parameters.class))
-                .filter(TestBuilder::canRunOnTheOperatingSystem)
-                .sorted(Comparator.comparing(Method::getName)).toList();
-        if (paremeterSuppliers.isEmpty()) {
-            // Single instance using the default constructor.
-            return Stream.ofNullable(MethodCall.DEFAULT_CTOR_ARGS);
-        }
-
-        // Construct collection of arguments for test class instances.
-        return createArgs(paremeterSuppliers.toArray(Method[]::new));
-    }
-
-    private static Stream<MethodCall> toMethodCalls(Method method) throws
-            IllegalAccessException, InvocationTargetException {
-        return toCtorArgs(method).map(v -> toMethodCalls(v, method)).flatMap(
-                s -> s).peek(methodCall -> {
-                    // Make sure required constructor is accessible if the one is needed.
-                    // Need to probe all methods as some of them might be static
-                    // and some class members.
-                    // Only class members require ctors.
-                    try {
-                        methodCall.checkRequiredConstructor();
-                    } catch (NoSuchMethodException ex) {
-                        throw new ParseException(ex.getMessage() + ".");
-                    }
-                });
-    }
-
-    private static Stream<MethodCall> toMethodCalls(Object[] ctorArgs, Method method) {
-        if (!isParametrized(method)) {
-            return Stream.of(new MethodCall(ctorArgs, method));
-        }
-
-        var fromParameter = Stream.of(getMethodParameters(method)).map(a -> {
-            return createArgsForAnnotation(method, a);
-        }).flatMap(List::stream);
-
-        var fromParameterSupplier = Stream.of(getMethodParameterSuppliers(method)).map(a -> {
-            return toSupplier(() -> createArgsForAnnotation(method, a)).get();
-        }).flatMap(List::stream);
-
-        return Stream.concat(fromParameter, fromParameterSupplier).map(args -> {
-            return new MethodCall(ctorArgs, method, args);
+        return testMethodSupplier.mapToMethodCalls(method).peek(methodCall -> {
+            // Make sure required constructor is accessible if the one is needed.
+            // Need to probe all methods as some of them might be static
+            // and some class members.
+            // Only class members require ctors.
+            try {
+                methodCall.checkRequiredConstructor();
+            } catch (NoSuchMethodException ex) {
+                throw new ParseException(ex.getMessage() + ".", ex);
+            }
         });
-    }
-
-    private static Object fromString(String value, Class toType) {
-        if (toType.isEnum()) {
-            return Enum.valueOf(toType, value);
-        }
-        Function<String, Object> converter = FROM_STRING.get(toType);
-        if (converter == null) {
-            throw new RuntimeException(String.format(
-                    "Failed to find a conversion of [%s] string to %s type",
-                    value, toType.getCanonicalName()));
-        }
-        return converter.apply(value);
     }
 
     // Wraps Method.invike() into ThrowingRunnable.run()
@@ -485,101 +306,14 @@ final class TestBuilder implements AutoCloseable {
         };
     }
 
-    private static List<Object[]> createArgsForAnnotation(Executable exec, Parameter a) {
-        if (!canRunOnTheOperatingSystem(a)) {
-            return List.of();
-        }
-
-        final var annotationArgs = a.value();
-        final var execParameterTypes = exec.getParameterTypes();
-
-        if (execParameterTypes.length > annotationArgs.length) {
-            if (execParameterTypes.length - annotationArgs.length == 1 && exec.isVarArgs()) {
-            } else {
-                throw new RuntimeException(String.format(
-                        "Not enough annotation values %s for [%s]",
-                        List.of(annotationArgs), exec));
-            }
-        }
-
-        final Class<?>[] argTypes;
-        if (exec.isVarArgs()) {
-            List<Class<?>> argTypesBuilder = new ArrayList<>();
-            var lastExecParameterTypeIdx = execParameterTypes.length - 1;
-            argTypesBuilder.addAll(List.of(execParameterTypes).subList(0,
-                    lastExecParameterTypeIdx));
-            argTypesBuilder.addAll(Collections.nCopies(
-                    Integer.max(0, annotationArgs.length - lastExecParameterTypeIdx),
-                    execParameterTypes[lastExecParameterTypeIdx].componentType()));
-            argTypes = argTypesBuilder.toArray(Class[]::new);
-        } else {
-            argTypes = execParameterTypes;
-        }
-
-        if (argTypes.length < annotationArgs.length) {
-            throw new RuntimeException(String.format(
-                    "Too many annotation values %s for [%s]",
-                    List.of(annotationArgs), exec));
-        }
-
-        var args = mapVarArgs(exec, IntStream.range(0, argTypes.length).mapToObj(idx -> {
-            return fromString(annotationArgs[idx], argTypes[idx]);
-        }).toArray(Object[]::new));
-
-        return List.<Object[]>of(args);
-    }
-
-    private static List<Object[]> createArgsForAnnotation(Executable exec,
-            ParameterSupplier a) throws IllegalAccessException,
-            InvocationTargetException {
-        if (!canRunOnTheOperatingSystem(a)) {
-            return List.of();
-        }
-
-        final Class<?> execClass = exec.getDeclaringClass();
-        String supplierFuncName = a.value();
-        if (!a.value().contains(".")) {
-            // No class name specified
-            supplierFuncName = String.join(".", execClass.getCanonicalName(), a.value());
-        }
-
-        final Method supplierMethod;
-        try {
-            var allParameterSuppliers = filterParameterSuppliers(execClass).toList();
-
-            var methodName = supplierFuncName;
-            supplierMethod = getJavaMethodFromString(supplierFuncName)
-                    .stream()
-                    .filter(allParameterSuppliers::contains)
-                    .findFirst().orElseThrow(() -> {
-                        var msg = String.format(
-                                "No suitable parameter supplier found for %s(%s) annotation",
-                                a, methodName);
-                        trace(String.format(
-                                "%s. Parameter suppliers of %s class:", msg,
-                                execClass.getCanonicalName()));
-                        IntStream.range(0, allParameterSuppliers.size()).mapToObj(idx -> {
-                            return String.format("  [%d/%d] %s()", idx + 1,
-                                    allParameterSuppliers.size(),
-                                    allParameterSuppliers.get(idx).getName());
-                        }).forEachOrdered(TestBuilder::trace);
-
-                        return new RuntimeException(msg);
-                    });
-        } catch (ParseException ex) {
-            throw new RuntimeException(String.format(
-                    "Method not found for %s(%s) annotation", a, supplierFuncName));
-        }
-
-        return createArgs(supplierMethod).map(args -> {
-            return mapVarArgs(exec, args);
-        }).toList();
-    }
-
     private static class ParseException extends IllegalArgumentException {
 
         ParseException(String msg) {
             super(msg);
+        }
+
+        ParseException(String msg, Exception ex) {
+            super(msg, ex);
         }
 
         void setContext(String badCmdLineArg) {
@@ -603,8 +337,9 @@ final class TestBuilder implements AutoCloseable {
         }
     }
 
+    private final TestMethodSupplier testMethodSupplier;
     private final Map<String, ThrowingConsumer<String>> argProcessors;
-    private Consumer<TestInstance> testConsumer;
+    private final Consumer<TestInstance> testConsumer;
     private List<MethodCall> testGroup;
     private List<ThrowingConsumer> beforeActions;
     private List<ThrowingConsumer> afterActions;
@@ -613,37 +348,5 @@ final class TestBuilder implements AutoCloseable {
     private String spaceSubstitute;
     private boolean dryRun;
 
-    private static final Map<Class, Function<String, Object>> FROM_STRING;
-
     static final String CMDLINE_ARG_PREFIX = "--jpt-";
-
-    static {
-        Map<Class, Function<String, Object>> primitives = Map.of(
-            boolean.class, Boolean::valueOf,
-            byte.class, Byte::valueOf,
-            short.class, Short::valueOf,
-            int.class, Integer::valueOf,
-            long.class, Long::valueOf,
-            float.class, Float::valueOf,
-            double.class, Double::valueOf);
-
-        Map<Class, Function<String, Object>> boxed = Map.of(
-            Boolean.class, Boolean::valueOf,
-            Byte.class, Byte::valueOf,
-            Short.class, Short::valueOf,
-            Integer.class, Integer::valueOf,
-            Long.class, Long::valueOf,
-            Float.class, Float::valueOf,
-            Double.class, Double::valueOf);
-
-        Map<Class, Function<String, Object>> other = Map.of(
-            String.class, String::valueOf,
-            Path.class, Path::of);
-
-        Map<Class, Function<String, Object>> combined = new HashMap<>(primitives);
-        combined.putAll(other);
-        combined.putAll(boxed);
-
-        FROM_STRING = Collections.unmodifiableMap(combined);
-    }
 }
