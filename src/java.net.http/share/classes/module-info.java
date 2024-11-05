@@ -45,9 +45,7 @@
  * and whitespace is ignored. Note that this property is intended for testing and not for
  * real-world deployments. Protocol errors or other undefined behavior are likely to occur
  * when using this property. There may be other headers that are restricted from being set
- * depending on the context. This includes the "Authorization" header when the relevant
- * HttpClient has an authenticator set. These restrictions cannot be overridden by this
- * property.
+ * depending on the context. These restrictions cannot be overridden by this property.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.bufsize}</b> (default: 16384 bytes or 16 kB)<br>
  * The size to use for internal allocated buffers in bytes.

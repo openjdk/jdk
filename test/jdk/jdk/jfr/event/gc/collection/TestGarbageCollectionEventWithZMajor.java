@@ -35,10 +35,10 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @requires vm.hasJFR & vm.gc.ZGenerational
+ * @requires vm.hasJFR & vm.gc.Z
  * @key jfr
  * @library /test/lib /test/jdk
- * @run main/othervm -Xmx50m -XX:+UseZGC -XX:+ZGenerational -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xlog:gc* jdk.jfr.event.gc.collection.TestGarbageCollectionEventWithZMajor
+ * @run main/othervm -Xmx50m -XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xlog:gc* jdk.jfr.event.gc.collection.TestGarbageCollectionEventWithZMajor
  */
 public class TestGarbageCollectionEventWithZMajor {
 

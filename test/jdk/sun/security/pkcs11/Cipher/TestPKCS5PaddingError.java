@@ -77,7 +77,7 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                             KeyGenerator.getInstance(currTest.keyAlgo, p);
                     SecretKey key = kg.generateKey();
                     Cipher c1 = Cipher.getInstance(currTest.transformation,
-                                                   "SunJCE");
+                               System.getProperty("test.provider.name", "SunJCE"));
                     c1.init(Cipher.ENCRYPT_MODE, key);
                     byte[] cipherText = c1.doFinal(plainText);
                     AlgorithmParameters params = c1.getParameters();

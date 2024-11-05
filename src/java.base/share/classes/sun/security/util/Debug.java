@@ -87,7 +87,6 @@ public class Debug {
     public static void Help() {
         System.err.println();
         System.err.println("all           turn on all debugging");
-        System.err.println("access        print all checkPermission results");
         System.err.println("certpath      PKIX CertPathBuilder and");
         System.err.println("              CertPathValidator debugging");
         System.err.println("combiner      SubjectDomainCombiner debugging");
@@ -100,7 +99,6 @@ public class Debug {
         System.err.println("jca           JCA engine class debugging");
         System.err.println("keystore      KeyStore debugging");
         System.err.println("pcsc          Smartcard library debugging");
-        System.err.println("policy        loading and granting");
         System.err.println("provider      security provider debugging");
         System.err.println("pkcs11        PKCS11 session manager debugging");
         System.err.println("pkcs11keystore");
@@ -117,22 +115,6 @@ public class Debug {
         System.err.println("              a timestamp for that debug option");
         System.err.println("+thread can be appended to any of above options to print");
         System.err.println("              thread and caller information for that debug option");
-        System.err.println();
-        System.err.println("The following can be used with access:");
-        System.err.println();
-        System.err.println("stack         include stack trace");
-        System.err.println("domain        dump all domains in context");
-        System.err.println("failure       before throwing exception, dump stack");
-        System.err.println("              and domain that didn't have permission");
-        System.err.println();
-        System.err.println("The following can be used with stack and domain:");
-        System.err.println();
-        System.err.println("permission=<classname>");
-        System.err.println("              only dump output if specified permission");
-        System.err.println("              is being checked");
-        System.err.println("codebase=<URL>");
-        System.err.println("              only dump output if specified codebase");
-        System.err.println("              is being checked");
         System.err.println();
         System.err.println("The following can be used with provider:");
         System.err.println();

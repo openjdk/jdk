@@ -141,7 +141,8 @@ public class Basic extends PKCS11Test {
 
         // get private keys
         KeyFactory kf = KeyFactory.getInstance("RSA");
-        KeyFactory dsaKf = KeyFactory.getInstance("DSA", "SUN");
+        KeyFactory dsaKf = KeyFactory.getInstance("DSA",
+                System.getProperty("test.provider.name", "SUN"));
 
         ObjectInputStream ois1 = new ObjectInputStream
                         (new FileInputStream(new File(DIR, "pk1.key")));

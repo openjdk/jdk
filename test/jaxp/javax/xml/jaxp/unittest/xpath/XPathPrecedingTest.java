@@ -182,3 +182,4 @@ public class XPathPrecedingTest {
         Assert.assertEquals(result, null);
     }
 }
+

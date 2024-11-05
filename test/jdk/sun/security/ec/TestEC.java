@@ -83,7 +83,7 @@ public class TestEC {
     }
 
     public static void main0(String[] args) throws Exception {
-        Provider p = Security.getProvider("SunEC");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunEC"));
 
         if (p == null) {
             throw new NoSuchProviderException("Can't get SunEC provider");
