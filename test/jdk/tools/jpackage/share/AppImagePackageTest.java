@@ -43,10 +43,9 @@ import jdk.jpackage.test.Annotations.Test;
  * @test
  * @summary jpackage with --app-image
  * @key jpackagePlatformPackage
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile AppImagePackageTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppImagePackageTest
