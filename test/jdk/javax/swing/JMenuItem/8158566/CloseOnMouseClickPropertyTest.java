@@ -138,6 +138,7 @@ public class CloseOnMouseClickPropertyTest {
         menuBar.add(menu);
 
         frame.setJMenuBar(menuBar);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
