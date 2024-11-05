@@ -47,6 +47,8 @@
 #define SHARED_JFR_STUBS_DO(do_blob)
 #endif
 
+// client macro to operate on shared stubs
+//
 // do_blob(name, type)
 #define SHARED_STUBS_DO(do_blob)                                       \
   do_blob(deopt, DeoptimizationBlob*)                                  \
@@ -73,6 +75,8 @@
 // C1 stubs are always generated in a generic CodeBlob
 
 #ifdef COMPILER1
+// client macro to operate on c1 stubs
+//
 // do_blob(name)
 #define C1_STUBS_DO(do_blob)                                           \
   do_blob(dtrace_object_alloc)                                         \
@@ -135,6 +139,8 @@
 #define C2_JVMTI_STUBS_DO(do_jvmti_stub)
 #endif // INCLUDE_JVMTI
 
+// client macro to operate on c2 stubs
+//
 // do_blob(name, type)
 // do_stub(name, fancy_jump, pass_tls, return_pc)
 // do_jvmti_stub(name)
@@ -165,17 +171,1026 @@
 #define C2_STUBS_DO(do_blob, do_stub, do_jvmti_stub)
 #endif
 
-// generate a stub or blob id enum tag from a name
+// Stub Generator Blobs and Stubs Overview
+//
+// StubGenerator stubs do not require their own individual blob. They
+// are generated in batches into one of four distinct BufferBlobs:
+//
+// 1) Initial stubs
+// 2) Continuation stubs
+// 3) Compiler stubs
+// 4) Final stubs
+//
+// Creation of each successive BufferBlobs is staged to ensure that
+// specific VM subsystems required by those stubs are suitably
+// initialized before generated code attempt to reference data or
+// addresses exported by those subsystems. The sequencing of
+// initialization must be taken into account when adding a new stub
+// declaration.
+//
+// StubGenerator stubs are declared using template macros, one set of
+// declarations per blob (see below), with arch-specific stubs for any
+// gven blob declared after generic stubs for that blob. Blobs are
+// created in a fixed order during startup, which is reflected in the
+// order of the declaration set. Stubs within a blob are currently
+// created in an order determined by the arch-specific generator code
+// which may not reflect the order of stub declarations. It is not
+// straightforward to enforce a strict ordering. not least because
+// arch-specific stub creation may need to be interleaved with generic
+// stub creation.
+//
+// Blob and stub declaration templates are used to generate a variety
+// of C++ code elements needed to manage stubs.
+//
+// Blob identifiers:
+//
+// public enum StubGenBlobId is generated to identify each of the
+// StubGenerator blobs in blob declaration order. This enum is
+// provided for use by client code to identify a specific blob. For a
+// blob declared with name <blob_name> the associated enum value is
+// StubGenBlobId::<blob_name>.
+//
+// Global stub identifiers:
+//
+// public enum StubGenStubId is generated to identify all declared
+// stubs across all blobs, sorted first by blob declaration order and
+// then within a blob by stub declaration order, generic stubs before
+// arch-specific stubs. This enum is provided for use by client code
+// to identify a specific stub, independent of the blob it belongs to.
+// For a stub declared with name <stub_name> the associated enum value
+// is StubGenStubId::<stub_name>.
+//
+// Blob-local stub identifiers:
+//
+// For each blob <blob_name>, public enum StubGenStubId_<blob_name> is
+// generated to enumerate all stubs within the blob in stub
+// declaration order, generic stubs before arch-specific stubs. This
+// enum is provided only in a non-product build and is intended for
+// internal use by class StubRoutines to validate stub declarations.
+// For a stub declared with name <stub_name> belonging to blob
+// <blob_name> the associated enum value is
+// StubGenStubId::<blob_name>_<stub_name>.
+//
+// Stub names and associated getters:
+//
+// Two private static fields are generated to hold the names of the
+// four generated blobs and all the generated stubs.
+//
+//  const char* StubRoutines::_blob_names[];
+//  const char* StubRoutines::_stub_names[];
+//
+// The entry in _blob_names for a blob declared with name <blob_name>
+// will be "<blob_name>".
+//
+// The entry in _stub_names for a stub declared with name <stub_name>
+// will be "<stub_name>".
+//
+// Corresponding public static lookup methods are generated to allow
+// names to be looked up by blob or global stub id.
+//
+//  const char* StubRoutines::get_blob_name(StubGenBlobId id)
+//  const char* StubRoutines::get_stub_name(StubGenStubId id)
+//
+// These name lookup methods should be used by generic and
+// cpu-specific client code to ensure that blobs and stubs are
+// identified consistently.
+//
+// Blob code buffer sizes:
+//
+// An enumeration enum platform_dependent_constants is generated in
+// the architecture specific StubRoutines header. For each blob named
+// <nnn> there an associated enum tag is generated which defines the
+// relevant size
+//
+//  _<nnn>_stubs_code_size      = <size>,
+//
+// For example,
+//
+// enum platform_dependent_constants {
+//   _initial_stubs_code_size      = 10000,
+//   _continuation_stubs_code_size =  2000,
+//   . . .
+//
+// Blob fields and associated getters:
+//
+// For each blob named <nnn> a field declaration will be generated:
+// static field address StubRoutines::_<nnn>_stubs_code and a
+// declarttion provided to initialised it to nullptr. A corresponding
+// getter method address StubRoutines::_<nnn>_stubs_code() will be
+// generated.
+//
+// Blob initialization routines:
+//
+// For each blob named <nnn> an initalization function is defined
+// which allows clients to schedule blob and stub generation during
+// JVM bootstrap:
+//
+// void <nnn>_stubs_init() { StubRoutines::initialize_<nnn>_stubs(); }
+//
+// A declaration and definition of each underlying implementation
+// method StubRoutines::initialize_<nnn>_stubs() is also generated.
+//
+// Stub entry points and associated getters:
+//
+// Some generated stubs require their main entry point and, possibly,
+// auxiliary entry points to be stored in fields declared either as
+// members of class SharedRuntime. For stubs that are specific to a
+// given cpu, the field needs to be declared in an arch-specific inner
+// class of SharedRuntime.
+//
+// For a generic stub named <nnn> the corresponding main entry usually
+// has the same name: static field address StubRoutines::_<nnn>.  An
+// associated getter is also generated again normally using the same
+// name: method address StubRoutines::<nnn>() e.g.
+//
+//  class StubRoutines {
+//    . . .
+//    static address _aescrypt_encryptBlock;
+//    . . .
+//    address aescrypt_encryptBlock() { return aescrypt_encryptBlock; }
+//
+// Multiple fields and getters may be generated where a stub has more
+// than one entry point, each provided with their own unique field and
+// getter name e.g.
+//
+//    . . .
+//    static address _call_stub;
+//    static address _call_stub_return_address;
+//    . . .
+//    static address call_stub_entry() { return _call_stub; }
+//    static address call_stub_return_address() { return _call_stub_return_address; }
+//
+// CPU-specific stub entry points and associated getters:
+//
+// For an an arch-specific stub with name <nnn> belonging to
+// architecture <arch> field address StubRoutines::<arch>::_<nnn> is
+// generated to hold the entry address. An associated getter method
+// address StubRoutines::<arch>::<nnn>() is also generated e.g.
+//
+//  class StubRoutines {
+//    . . .
+//    class x86 {
+//      . . .
+//      static address _f2i_fixup;
+//      . . .
+//      static address f2i_fixup() { return _f2i_fixup; }
+//      static void set_f2i_fixup(address a) { _f2i_fixup = a; }
+//
+
+
+//--------------------------------------------------
+// Stub Generator Blob, Stub and Entry Declarations
+// -------------------------------------------------
+//
+// The formal declarations of blobs, stubs and entries provided below
+// can be used to schedule application of templates that either
+// declare or define the C++ code we need to manage those blobs, stubs
+// and entries.
+//
+// If you want to define a new stub or entry then you can do so by
+// adding suitable declarations within the scope of the relevant blob.
+// For a blob with name BLOB_NAME add your declarations to macro
+// STUBGEN_<BLOB_NAME>STUBS_DO). If a stub or entries are
+// arch-specific then add them to the arch-specific section of the
+// macro (or create on if needed).
+//
+// Note, the client macro STUBGEN_ALL_DO has only been split into
+// separate per-blob submacros, STUBGEN_<BLOB_NAME>_BLOBS_DO for
+// convenience, to make it easier to manage definitions. These
+// blob_specific sub-macros should not be called directly by client
+// code (in class StubRoutines and StubGenerator),
+//
+// A client is expected to pass template macros as arguments to
+// STUBGEN_ALL_DO which will be used to generate code for whatever C++
+// code elements are required to implement a declaration or definition
+// relevant to each blob, stub or entry. Alternatively, a client can
+// operate on a subset of the declaratiosn by calling macros
+// STUBGEN_BLOBS_DO, STUBGEN_STUBS_DO, STUBGEN_BLOBS_STUBS_DO,
+// STUBGEN_ENTRIES_DO and STUBGEN_ARCH_ENTRIES_DO.
+//
+// The do_blob and end_blob templates receive a blob name as argument.
+//
+// do_blob(blob_name)
+// end_blob(blob_name)
+//
+// do_blob is primarily used to define a global enum tag for a blob
+// and an associated constant string name, both for use by client
+// code.
+//
+// end_blob is provided for use in combination with do_blob to to open
+// and close a blob-local enum type identifying all stubs within a
+// given blob. This enum is private to the stub management code and
+// used to validate correct use of stubs within a given blob.
+//
+// The do_stub template receives a blob name and stub name as argument.
+//
+// do_stub(blob_name, stub_name)
+//
+// do_stub is primarily used to define a global enum tag for a stub
+// and a constant string name, both for use by client code. It is also
+// used to declare a tag within the blob-local enum type used to
+// validate correct use of stubs within their declared blob. Finally,
+// it is also used to declare a name for each stub.
+//
+// The repeat_stub template receives a blob name, stub name and a
+// (constant expression) count as argument.
+//
+// repeat_stub(blob_name, stub_name, count)
+//
+// repeat_stub is needed as an alternative to do_stub in the special
+// case where a series of stubs are generated with the same base name,
+// currently only for the lookup_secondary_supers_table_index stub. It
+// generates all the same code elements as do_stub. However, it also
+// bumps the current enum tag to accomomodate the multi-stub range and
+// generates extra numbered stub names for each stub in the multi-stub
+// range. It is not (yet) possible to use entry declarations to
+// associate either single entries or an array of entries with the
+// resulting series of stubs.
+//
+// The do_entry templates receive 4 or 5 arguments
+//
+// do_entry(blob_name, stub_name, field_name, getter_name)
+//
+// do_entry_init(blob_name, stub_name, field_name, getter_name, init_function)
+//
+// do_entry is used to declare or define a static field of class
+// StubRoutines with type address that stores a specific entry point
+// for a given stub. n.b. the number of entries associated with a stub
+// is often one but it can be more than one and, in a few special
+// cases, it is zero. do_entry is also used to declare and define an
+// associated getter method for the field. do_entry is used to declare
+// fields that shoudl eb initialized to nullptr. do_entry5 is used
+// when the field needs to be initialized a specific function or
+// method.
+//
+// blob_name and stub_name are the names of the blob and stub to which
+// the entry belongs.
+//
+// field_name is prefixed with a leading '_' to produce the name of
+// the field used to store an entry address for the stub. For stubs
+// with one entry field_name is normally, but not always, the same as
+// stub_name.  Obviously when a stub has multiple entries secondary
+// names must be different to stub_name.
+//
+// getter_name is the name of a getter that is generated to allow
+// access to the field. It us normally, but not always, the same as
+// stub_name.
+//
+// init_function is the name of an function or method which should be
+// assigned to the field as a default value.
+//
+// Architecture-specific blob details need to be specified using the
+// do_arch_blob template
+//
+// do_arch_blob(blob_name, size)
+//
+// The do_arch_blob macro is used to define the size of the code
+// buffer into which blob-specific stub code is to be generated.
+//
+// Architecture-specific entries need to be declared using the
+// do_arch_entry template
+//
+// do_arch_entry(arch, blob_name, stub_name, field_name, getter_name)
+//
+// do_arch_entry_init(arch, blob_name, stub_name, field_name,
+//                    getter_name, init_function)
+//
+// The only difference between these templates and the generix ones is
+// that they receive an extra argument which identifies the current
+// architecture e.g. x86, aarch64 etc.
+
+// Iterator macros to apply templates to all relevant blobs, stubs and
+// entries. Clients should use STUBGEN_ALL_DO, STUBGEN_BLOBS_DO,
+// STUBGEN_STUBS_DO, STUBGEN_ENTRIES_DO and STUBGEN_ARCH_ENTRIES_DO.
+//
+// n.b. Client macros appear after the STUBGEN_<BLOB_NAME>_BLOBS_DO
+// submacros which follow next. These submacros are not intended to be
+// called directly. They serve to define the main client macro
+// STUBGEN_ALL_DO and, from there, the other more specific client
+// macros. Multiple, 'per-blob; submacros are used to declare each
+// group of stubs and entries, because that makes it simpler to lookup
+// and update related elements. If you need to update these submacros
+// to change the list of stubs or entries be sure to locate stubs
+// within the correct blob and locate entry declarations immediately
+// after their associated stub declaration.
+
+#define STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                     \
+                                 do_stub, repeat_stub,                  \
+                                 do_entry, do_entry_init,               \
+                                 do_arch_blob,                          \
+                                 do_arch_entry, do_arch_entry_init)     \
+  do_blob(initial)                                                      \
+  do_stub(initial, call_stub)                                           \
+  do_entry(initial, call_stub, call_stub_entry, call_stub_entry)        \
+  do_entry(initial, call_stub, call_stub_return_address,                \
+           call_stub_return_address)                                    \
+  do_stub(initial, forward_exception)                                   \
+  do_entry(initial, forward_exception, forward_exception_entry,         \
+           forward_exception_entry)                                     \
+  do_stub(initial, catch_exception)                                     \
+  do_entry(initial, catch_exception, catch_exception_entry,             \
+           catch_exception_entry)                                       \
+  do_stub(initial, fence)                                               \
+  do_entry(initial, fence, fence_entry, fence_entry)                    \
+  do_stub(initial, updateBytesCRC32)                                    \
+  do_entry(initial, updateBytesCRC32, updateBytesCRC32,                 \
+           updateBytesCRC32)                                            \
+  do_entry(initial, updateBytesCRC32, crc_table_adr, crc_table_addr)    \
+  do_stub(initial, updateBytesCRC32C)                                   \
+  do_entry(initial, updateBytesCRC32C, updateBytesCRC32C,               \
+           updateBytesCRC32C)                                           \
+  do_entry(initial, updateBytesCRC32C, crc32c_table_addr,               \
+           crc32c_table_addr)                                           \
+  do_stub(initial, f2hf)                                                \
+  do_entry(initial, f2hf, f2hf, f2hf_adr)                               \
+  do_stub(initial, hf2f)                                                \
+  do_entry(initial, hf2f, hf2f, hf2f_adr)                               \
+  do_stub(initial, dexp)                                                \
+  do_entry(initial, dexp, dexp, dexp)                                   \
+  do_stub(initial, dlog)                                                \
+  do_entry(initial, dlog, dlog, dlog)                                   \
+  do_stub(initial, dlog10)                                              \
+  do_entry(initial, dlog10, dlog10, dlog10)                             \
+  do_stub(initial, dpow)                                                \
+  do_entry(initial, dpow, dpow, dpow)                                   \
+  do_stub(initial, dsin)                                                \
+  do_entry(initial, dsin, dsin, dsin)                                   \
+  do_stub(initial, dcos)                                                \
+  do_entry(initial, dcos, dcos, dcos)                                   \
+  do_stub(initial, dtan)                                                \
+  do_entry(initial, dtan, dtan, dtan)                                   \
+  do_stub(initial, dtanh)                                               \
+  do_entry(initial, dtanh, dtanh, dtanh)                                \
+  do_stub(initial, fmod)                                                \
+  do_entry(initial, fmod, fmod, fmod)                                   \
+  /* following generic entries should really be x86_32 only */          \
+  do_stub(initial, dlibm_sin_cos_huge)                                  \
+  do_entry(initial, dlibm_sin_cos_huge, dlibm_sin_cos_huge,             \
+           dlibm_sin_cos_huge)                                          \
+  do_stub(initial, dlibm_reduce_pi04l)                                  \
+  do_entry(initial, dlibm_reduce_pi04l, dlibm_reduce_pi04l,             \
+           dlibm_reduce_pi04l)                                          \
+  do_stub(initial, dlibm_tan_cot_huge)                                  \
+  do_entry(initial, dlibm_tan_cot_huge, dlibm_tan_cot_huge,             \
+           dlibm_tan_cot_huge)                                          \
+  AARCH64_ONLY(                                                         \
+    do_arch_blob(initial, 10000)                                        \
+  )                                                                     \
+  X86_ONLY(                                                             \
+    do_arch_blob(initial, 20000 WINDOWS_ONLY(+1000))                    \
+    do_stub(initial, get_previous_sp)                                   \
+    do_arch_entry(x86, initial, get_previous_sp, get_previous_sp,       \
+                  get_previous_sp)                                      \
+    do_stub(initial, verify_mxcsr)                                      \
+    do_arch_entry(x86, initial, verify_mxcsr, verify_mxcsr,             \
+                  verify_mxcsr)                                         \
+    do_stub(initial, f2i_fixup)                                         \
+    do_arch_entry(x86, initial, f2i_fixup, f2i_fixup, f2i_fixup)        \
+    do_stub(initial, f2l_fixup)                                         \
+    do_arch_entry(x86, initial, f2l_fixup, f2l_fixup, f2l_fixup)        \
+    do_stub(initial, d2i_fixup)                                         \
+    do_arch_entry(x86, initial, d2i_fixup, d2i_fixup, d2i_fixup)        \
+    do_stub(initial, d2l_fixup)                                         \
+    do_arch_entry(x86, initial, d2l_fixup, d2l_fixup, d2l_fixup)        \
+    do_stub(initial, float_sign_mask)                                   \
+    do_arch_entry(x86, initial, float_sign_mask, float_sign_mask,       \
+                  float_sign_mask)                                      \
+    do_stub(initial, float_sign_mask)                                   \
+    do_arch_entry(x86, initial, float_sign_flip, float_sign_flip,       \
+                  float_sign_flip)                                      \
+    do_stub(initial, double_sign_mask)                                  \
+    do_arch_entry(x86, initial, double_sign_mask, double_sign_mask,     \
+                  double_sign_mask)                                     \
+    do_stub(initial, double_sign_mask)                                  \
+    do_arch_entry(x86, initial, double_sign_flip, double_sign_flip,     \
+                  double_sign_flip)                                     \
+  )                                                                     \
+  end_blob(initial)                                                     \
+
+
+#define STUBGEN_CONTINUATION_BLOBS_DO(do_blob, end_blob,                \
+                                      do_stub, repeat_stub,             \
+                                      do_entry, do_entry_init,          \
+                                      do_arch_blob,                     \
+                                      do_arch_entry, do_arch_entry_init) \
+  do_blob(continuation)                                                 \
+  do_stub(continuation, cont_thaw)                                      \
+  do_entry(continuation, cont_thaw, cont_thaw, cont_thaw)               \
+  do_stub(continuation, cont_returnBarrier)                             \
+  do_entry(continuation, cont_returnBarrier, cont_returnBarrier,        \
+           cont_returnBarrier)                                          \
+  do_stub(continuation, cont_returnBarrierExc)                          \
+  do_entry(continuation, cont_returnBarrierExc, cont_returnBarrierExc,  \
+           cont_returnBarrierExc)                                       \
+  AARCH64_ONLY(                                                         \
+    do_arch_blob(continuation, 2000)                                    \
+  )                                                                     \
+  X86_ONLY(                                                             \
+    do_arch_blob(continuation, 1000 LP64_ONLY(+1000))                   \
+  )                                                                     \
+  end_blob(continuation)                                                \
+
+
+#define STUBGEN_COMPILER_BLOBS_DO(do_blob, end_blob,                    \
+                                  do_stub, repeat_stub,                 \
+                                  do_entry, do_entry_init,              \
+                                  do_arch_blob,                         \
+                                  do_arch_entry, do_arch_entry_init)    \
+  do_blob(compiler)                                                     \
+  do_stub(compiler, atomic_xchg)                                        \
+  do_entry(compiler, atomic_xchg, atomic_xchg_entry, atomic_xchg_entry) \
+  do_stub(compiler, atomic_cmpxchg)                                     \
+  do_entry(compiler, atomic_cmpxchg, atomic_cmpxchg_entry,              \
+           atomic_cmpxchg_entry)                                        \
+  do_stub(compiler, atomic_cmpxchg_long)                                \
+  do_entry(compiler, atomic_cmpxchg_long, atomic_cmpxchg_long_entry,    \
+           atomic_cmpxchg_long_entry)                                   \
+  do_stub(compiler, atomic_add)                                         \
+  do_entry(compiler, atomic_add, atomic_add_entry, atomic_add_entry)    \
+  do_stub(compiler, array_sort)                                         \
+  do_entry(compiler, array_sort, array_sort, select_arraysort_function) \
+  do_stub(compiler, array_partition)                                    \
+  do_entry(compiler, array_partition, array_partition,                  \
+           select_array_partition_function)                             \
+  do_stub(compiler, aescrypt_encryptBlock)                              \
+  do_entry(compiler, aescrypt_encryptBlock, aescrypt_encryptBlock,      \
+           aescrypt_encryptBlock)                                       \
+  do_stub(compiler, aescrypt_decryptBlock)                              \
+  do_entry(compiler, aescrypt_decryptBlock, aescrypt_decryptBlock,      \
+           aescrypt_decryptBlock)                                       \
+  do_stub(compiler, cipherBlockChaining_encryptAESCrypt)                \
+  do_entry(compiler, cipherBlockChaining_encryptAESCrypt,               \
+           cipherBlockChaining_encryptAESCrypt,                         \
+           cipherBlockChaining_encryptAESCrypt)                         \
+  do_stub(compiler, cipherBlockChaining_decryptAESCrypt)                \
+  do_entry(compiler, cipherBlockChaining_decryptAESCrypt,               \
+           cipherBlockChaining_decryptAESCrypt,                         \
+           cipherBlockChaining_decryptAESCrypt)                         \
+  do_stub(compiler, electronicCodeBook_encryptAESCrypt)                 \
+  do_entry(compiler, electronicCodeBook_encryptAESCrypt,                \
+           electronicCodeBook_encryptAESCrypt,                          \
+           electronicCodeBook_encryptAESCrypt)                          \
+  do_stub(compiler, electronicCodeBook_decryptAESCrypt)                 \
+  do_entry(compiler, electronicCodeBook_decryptAESCrypt,                \
+           electronicCodeBook_decryptAESCrypt,                          \
+           electronicCodeBook_decryptAESCrypt)                          \
+  do_stub(compiler, counterMode_AESCrypt)                               \
+  do_entry(compiler, counterMode_AESCrypt, counterMode_AESCrypt,        \
+           counterMode_AESCrypt)                                        \
+  do_stub(compiler, galoisCounterMode_AESCrypt)                         \
+  do_entry(compiler, galoisCounterMode_AESCrypt,                        \
+           galoisCounterMode_AESCrypt, galoisCounterMode_AESCrypt)      \
+  do_stub(compiler, ghash_processBlocks)                                \
+  do_entry(compiler, ghash_processBlocks, ghash_processBlocks,          \
+           ghash_processBlocks)                                         \
+  do_stub(compiler, chacha20Block)                                      \
+  do_entry(compiler, chacha20Block, chacha20Block, chacha20Block)       \
+  do_stub(compiler, data_cache_writeback)                               \
+  do_entry(compiler, data_cache_writeback, data_cache_writeback,        \
+           data_cache_writeback)                                        \
+  do_stub(compiler, data_cache_writeback_sync)                          \
+  do_entry(compiler, data_cache_writeback_sync,                         \
+           data_cache_writeback_sync, data_cache_writeback_sync)        \
+  do_stub(compiler, base64_encodeBlock)                                 \
+  do_entry(compiler, base64_encodeBlock, base64_encodeBlock,            \
+           base64_encodeBlock)                                          \
+  do_stub(compiler, base64_decodeBlock)                                 \
+  do_entry(compiler, base64_decodeBlock, base64_decodeBlock,            \
+           base64_decodeBlock)                                          \
+  do_stub(compiler, poly1305_processBlocks)                             \
+  do_entry(compiler, poly1305_processBlocks, poly1305_processBlocks,    \
+           poly1305_processBlocks)                                      \
+  do_stub(compiler, intpoly_montgomeryMult_P256)                        \
+  do_entry(compiler, intpoly_montgomeryMult_P256,                       \
+           intpoly_montgomeryMult_P256, intpoly_montgomeryMult_P256)    \
+  do_stub(compiler, intpoly_assign)                                     \
+  do_entry(compiler, intpoly_assign, intpoly_assign, intpoly_assign)    \
+  do_stub(compiler, md5_implCompress)                                   \
+  do_entry(compiler, md5_implCompress, md5_implCompress,                \
+           md5_implCompress)                                            \
+  do_stub(compiler, md5_implCompressMB)                                 \
+  do_entry(compiler, md5_implCompressMB, md5_implCompressMB,            \
+           md5_implCompressMB)                                          \
+  do_stub(compiler, sha1_implCompress)                                  \
+  do_entry(compiler, sha1_implCompress, sha1_implCompress,              \
+           sha1_implCompress)                                           \
+  do_stub(compiler, sha1_implCompressMB)                                \
+  do_entry(compiler, sha1_implCompressMB, sha1_implCompressMB,          \
+           sha1_implCompressMB)                                         \
+  do_stub(compiler, sha256_implCompress)                                \
+  do_entry(compiler, sha256_implCompress, sha256_implCompress,          \
+           sha256_implCompress)                                         \
+  do_stub(compiler, sha256_implCompressMB)                              \
+  do_entry(compiler, sha256_implCompressMB, sha256_implCompressMB,      \
+           sha256_implCompressMB)                                       \
+  do_stub(compiler, sha512_implCompress)                                \
+  do_entry(compiler, sha512_implCompress, sha512_implCompress,          \
+           sha512_implCompress)                                         \
+  do_stub(compiler, sha512_implCompressMB)                              \
+  do_entry(compiler, sha512_implCompressMB, sha512_implCompressMB,      \
+           sha512_implCompressMB)                                       \
+  do_stub(compiler, sha3_implCompress)                                  \
+  do_entry(compiler, sha3_implCompress, sha3_implCompress,              \
+           sha3_implCompress)                                           \
+  do_stub(compiler, sha3_implCompressMB)                                \
+  do_entry(compiler, sha3_implCompressMB, sha3_implCompressMB,          \
+           sha3_implCompressMB)                                         \
+  do_stub(compiler, updateBytesAdler32)                                 \
+  do_entry(compiler, updateBytesAdler32, updateBytesAdler32,            \
+           updateBytesAdler32)                                          \
+  do_stub(compiler, multiplyToLen)                                      \
+  do_entry(compiler, multiplyToLen, multiplyToLen, multiplyToLen)       \
+  do_stub(compiler, squareToLen)                                        \
+  do_entry(compiler, squareToLen, squareToLen, squareToLen)             \
+  do_stub(compiler, mulAdd)                                             \
+  do_entry(compiler, mulAdd, mulAdd, mulAdd)                            \
+  do_stub(compiler, montgomeryMultiply)                                 \
+  do_entry(compiler, montgomeryMultiply, montgomeryMultiply,            \
+           montgomeryMultiply)                                          \
+  do_stub(compiler, montgomerySquare)                                   \
+  do_entry(compiler, montgomerySquare, montgomerySquare,                \
+           montgomerySquare)                                            \
+  do_stub(compiler, bigIntegerRightShiftWorker)                         \
+  do_entry(compiler, bigIntegerRightShiftWorker,                        \
+           bigIntegerRightShiftWorker, bigIntegerRightShift)            \
+  do_stub(compiler, bigIntegerLeftShiftWorker)                          \
+  do_entry(compiler, bigIntegerLeftShiftWorker,                         \
+           bigIntegerLeftShiftWorker, bigIntegerLeftShift)              \
+  AARCH64_ONLY(                                                         \
+    do_arch_blob(compiler, 30000 ZGC_ONLY(+10000))                      \
+    do_stub(compiler, vector_iota_indices)                              \
+    do_arch_entry(aarch64, compiler, vector_iota_indices,               \
+                  vector_iota_indices, vector_iota_indices)             \
+    do_stub(compiler, large_array_equals)                               \
+    do_arch_entry(aarch64, compiler, large_array_equals,                \
+                  large_array_equals, large_array_equals)               \
+    do_stub(compiler, large_byte_array_inflate)                         \
+    do_arch_entry(aarch64, compiler, large_byte_array_inflate,          \
+                  large_byte_array_inflate, large_byte_array_inflate)   \
+    do_stub(compiler, count_positives)                                  \
+    do_arch_entry(aarch64, compiler, count_positives, count_positives,  \
+                  count_positives)                                      \
+    do_stub(compiler, count_positives_long)                             \
+    do_arch_entry(aarch64, compiler, count_positives_long,              \
+                  count_positives_long, count_positives_long)           \
+    do_stub(compiler, compare_long_string_LL)                           \
+    do_arch_entry(aarch64, compiler, compare_long_string_LL,            \
+                  compare_long_string_LL, compare_long_string_LL)       \
+    do_stub(compiler, compare_long_string_UU)                           \
+    do_arch_entry(aarch64, compiler, compare_long_string_UU,            \
+                  compare_long_string_UU, compare_long_string_UU)       \
+    do_stub(compiler, compare_long_string_LU)                           \
+    do_arch_entry(aarch64, compiler, compare_long_string_LU,            \
+                  compare_long_string_LU, compare_long_string_LU)       \
+    do_stub(compiler, compare_long_string_UL)                           \
+    do_arch_entry(aarch64, compiler, compare_long_string_UL,            \
+                  compare_long_string_UL, compare_long_string_UL)       \
+    do_stub(compiler, string_indexof_linear_ll)                         \
+    do_arch_entry(aarch64, compiler, string_indexof_linear_ll,          \
+                  string_indexof_linear_ll, string_indexof_linear_ll)   \
+    do_stub(compiler, string_indexof_linear_uu)                         \
+    do_arch_entry(aarch64, compiler, string_indexof_linear_uu,          \
+                  string_indexof_linear_uu, string_indexof_linear_uu)   \
+    do_stub(compiler, string_indexof_linear_ul)                         \
+    do_arch_entry(aarch64, compiler, string_indexof_linear_ul,          \
+                  string_indexof_linear_ul, string_indexof_linear_ul)   \
+    /* this uses the entry for ghash_processBlocks */                   \
+    do_stub(compiler, ghash_processBlocks_wide)                         \
+  )                                                                     \
+  X86_ONLY(                                                             \
+    do_arch_blob(compiler, 20000 LP64_ONLY(+46000) WINDOWS_ONLY(+2000)) \
+    do_stub(compiler, vector_float_sign_mask)                           \
+    do_arch_entry(x86, compiler, vector_float_sign_mask,                \
+                  vector_float_sign_mask, vector_float_sign_mask)       \
+    do_stub(compiler, vector_float_sign_flip)                           \
+    do_arch_entry(x86, compiler, vector_float_sign_flip,                \
+                  vector_float_sign_flip, vector_float_sign_flip)       \
+    do_stub(compiler, vector_double_sign_mask)                          \
+    do_arch_entry(x86, compiler, vector_double_sign_mask,               \
+                  vector_double_sign_mask, vector_double_sign_mask)     \
+    do_stub(compiler, vector_double_sign_flip)                          \
+    do_arch_entry(x86, compiler, vector_double_sign_flip,               \
+                  vector_double_sign_flip, vector_double_sign_flip)     \
+    do_stub(compiler, vector_all_bits_set)                              \
+    do_arch_entry(x86, compiler, vector_all_bits_set,                   \
+                  vector_all_bits_set, vector_all_bits_set)             \
+    do_stub(compiler, vector_int_mask_cmp_bits)                         \
+    do_arch_entry(x86, compiler, vector_int_mask_cmp_bits,              \
+                  vector_int_mask_cmp_bits, vector_int_mask_cmp_bits)   \
+    do_stub(compiler, vector_short_to_byte_mask)                        \
+    do_arch_entry(x86, compiler, vector_short_to_byte_mask,             \
+                  vector_short_to_byte_mask, vector_short_to_byte_mask) \
+    do_stub(compiler, vector_byte_perm_mask)                            \
+    do_arch_entry(x86, compiler,vector_byte_perm_mask,                  \
+                  vector_byte_perm_mask, vector_byte_perm_mask)         \
+    do_stub(compiler, vector_int_to_byte_mask)                          \
+    do_arch_entry(x86, compiler, vector_int_to_byte_mask,               \
+                  vector_int_to_byte_mask, vector_int_to_byte_mask)     \
+    do_stub(compiler, vector_int_to_short_mask)                         \
+    do_arch_entry(x86, compiler, vector_int_to_short_mask,              \
+                  vector_int_to_short_mask, vector_int_to_short_mask)   \
+    do_stub(compiler, vector_32_bit_mask)                               \
+    do_arch_entry(x86, compiler, vector_32_bit_mask,                    \
+                  vector_32_bit_mask, vector_32_bit_mask)               \
+    do_stub(compiler, vector_64_bit_mask)                               \
+    do_arch_entry(x86, compiler, vector_64_bit_mask,                    \
+                  vector_64_bit_mask, vector_64_bit_mask)               \
+    do_stub(compiler, vector_byte_shuffle_mask)                         \
+    do_arch_entry(x86, compiler, vector_int_shuffle_mask,               \
+                  vector_byte_shuffle_mask, vector_byte_shuffle_mask)   \
+    do_stub(compiler, vector_short_shuffle_mask)                        \
+    do_arch_entry(x86, compiler, vector_int_shuffle_mask,               \
+                  vector_short_shuffle_mask, vector_short_shuffle_mask) \
+    do_stub(compiler, vector_int_shuffle_mask)                          \
+    do_arch_entry(x86, compiler, vector_int_shuffle_mask,               \
+                  vector_int_shuffle_mask, vector_int_shuffle_mask)     \
+    do_stub(compiler, vector_long_shuffle_mask)                         \
+    do_arch_entry(x86, compiler, vector_long_shuffle_mask,              \
+                  vector_long_shuffle_mask, vector_long_shuffle_mask)   \
+    do_stub(compiler, vector_long_sign_mask)                            \
+    do_arch_entry(x86, compiler, vector_long_sign_mask,                 \
+                  vector_long_sign_mask, vector_long_sign_mask)         \
+    do_stub(compiler, vector_iota_indices)                              \
+    do_arch_entry(x86, compiler, vector_iota_indices,                   \
+                  vector_iota_indices, vector_iota_indices)             \
+    do_stub(compiler, vector_count_leading_zeros_lut)                   \
+    do_arch_entry(x86, compiler, vector_count_leading_zeros_lut,        \
+                  vector_count_leading_zeros_lut,                       \
+                  vector_count_leading_zeros_lut)                       \
+    do_stub(compiler, vector_reverse_bit_lut)                           \
+    do_arch_entry(x86, compiler, vector_reverse_bit_lut,                \
+                  vector_reverse_bit_lut, vector_reverse_bit_lut)       \
+    do_stub(compiler, vector_reverse_byte_perm_mask_long)               \
+    do_arch_entry(x86, compiler, vector_reverse_byte_perm_mask_short,   \
+                  vector_reverse_byte_perm_mask_short,                  \
+                  vector_reverse_byte_perm_mask_short)                  \
+    do_arch_entry(x86, compiler, vector_reverse_byte_perm_mask_int,     \
+                  vector_reverse_byte_perm_mask_int,                    \
+                  vector_reverse_byte_perm_mask_int)                    \
+    do_arch_entry(x86, compiler, vector_reverse_byte_perm_mask_long,    \
+                  vector_reverse_byte_perm_mask_long,                   \
+                  vector_reverse_byte_perm_mask_long)                   \
+    do_stub(compiler, compress_perm_table32)                            \
+    do_arch_entry(x86, compiler, compress_perm_table32,                 \
+                  compress_perm_table32, compress_perm_table32)         \
+    do_stub(compiler, compress_perm_table64)                            \
+    do_arch_entry(x86, compiler, compress_perm_table64,                 \
+                  compress_perm_table64, compress_perm_table64)         \
+    do_stub(compiler, expand_perm_table32)                              \
+    do_arch_entry(x86, compiler, expand_perm_table32,                   \
+                  expand_perm_table32, expand_perm_table32)             \
+    do_stub(compiler, expand_perm_table64)                              \
+    do_arch_entry(x86, compiler, expand_perm_table64,                   \
+                  expand_perm_table64, expand_perm_table64)             \
+    do_stub(compiler, vector_popcount_lut)                              \
+    do_arch_entry(x86, compiler, vector_popcount_lut,                   \
+                  vector_popcount_lut, vector_popcount_lut)             \
+    do_stub(compiler, upper_word_mask)                                  \
+    do_arch_entry(x86, compiler, upper_word_mask, upper_word_mask,      \
+                  upper_word_mask)                                      \
+    do_stub(compiler, shuffle_byte_flip_mask)                           \
+    do_arch_entry(x86, compiler, shuffle_byte_flip_mask,                \
+                  shuffle_byte_flip_mask, shuffle_byte_flip_mask)       \
+    do_stub(compiler, pshuffle_byte_flip_mask)                          \
+    do_arch_entry(x86, compiler, pshuffle_byte_flip_mask,               \
+                  pshuffle_byte_flip_mask, pshuffle_byte_flip_mask)     \
+    /* still need to add x86 base64 stubs/entries */                    \
+    do_stub(compiler, string_indexof_linear_ll)                         \
+    do_arch_entry(x86, compiler, string_indexof_linear_ll,              \
+                  string_indexof_linear_ll, string_indexof_linear_ll)   \
+    do_stub(compiler, string_indexof_linear_uu)                         \
+    do_arch_entry(x86, compiler, string_indexof_linear_uu,              \
+                  string_indexof_linear_uu, string_indexof_linear_uu)   \
+    do_stub(compiler, string_indexof_linear_ul)                         \
+    do_arch_entry(x86, compiler, string_indexof_linear_ul,              \
+                  string_indexof_linear_ul, string_indexof_linear_ul)   \
+  )                                                                     \
+  end_blob(compiler)                                                    \
+
+
+#define STUBGEN_FINAL_BLOBS_DO(do_blob, end_blob,                       \
+                               do_stub, repeat_stub,                    \
+                               do_entry, do_entry_init,                 \
+                               do_arch_blob,                            \
+                               do_arch_entry, do_arch_entry_init)       \
+  do_blob(final)                                                        \
+  do_stub(final, verify_oop)                                            \
+  do_entry(final, verify_oop, verify_oop_subroutine_entry,              \
+           verify_oop_subroutine_entry)                                 \
+  do_stub(final, jbyte_arraycopy)                                       \
+  do_entry_init(final, jbyte_arraycopy, jbyte_arraycopy,                \
+                jbyte_arraycopy, StubRoutines::jbyte_copy)              \
+  do_stub(final, jshort_arraycopy)                                      \
+  do_entry_init(final, jshort_arraycopy, jshort_arraycopy,              \
+                jshort_arraycopy, StubRoutines::jshort_copy)            \
+  do_stub(final, jint_arraycopy)                                        \
+  do_entry_init(final, jint_arraycopy, jint_arraycopy,                  \
+                jint_arraycopy, StubRoutines::jint_copy)                \
+  do_stub(final, jlong_arraycopy)                                       \
+  do_entry_init(final, jlong_arraycopy, jlong_arraycopy,                \
+                jlong_arraycopy, StubRoutines::jlong_copy)              \
+  do_stub(final, oop_arraycopy)                                         \
+  do_entry_init(final, oop_arraycopy, oop_arraycopy,                    \
+                oop_arraycopy_entry, StubRoutines::oop_copy)            \
+  do_stub(final, oop_arraycopy_uninit)                                  \
+  do_entry_init(final, oop_arraycopy_uninit, oop_arraycopy_uninit,      \
+                oop_arraycopy_uninit_entry,                             \
+                StubRoutines::oop_copy_uninit)                          \
+  do_stub(final, jbyte_disjoint_arraycopy)                              \
+  do_entry_init(final, jbyte_disjoint_arraycopy,                        \
+                jbyte_disjoint_arraycopy, jbyte_disjoint_arraycopy,     \
+                StubRoutines::jbyte_copy)                               \
+  do_stub(final, jshort_disjoint_arraycopy)                             \
+  do_entry_init(final, jshort_disjoint_arraycopy,                       \
+                jshort_disjoint_arraycopy, jshort_disjoint_arraycopy,   \
+                StubRoutines::jshort_copy)                              \
+  do_stub(final, jint_disjoint_arraycopy)                               \
+  do_entry_init(final, jint_disjoint_arraycopy,                         \
+                jint_disjoint_arraycopy, jint_disjoint_arraycopy,       \
+                StubRoutines::jint_copy)                                \
+  do_stub(final, jlong_disjoint_arraycopy)                              \
+  do_entry_init(final, jlong_disjoint_arraycopy,                        \
+                jlong_disjoint_arraycopy, jlong_disjoint_arraycopy,     \
+                StubRoutines::jlong_copy)                               \
+  do_stub(final, oop_disjoint_arraycopy)                                \
+  do_entry_init(final, oop_disjoint_arraycopy, oop_disjoint_arraycopy,  \
+                oop_disjoint_arraycopy_entry, StubRoutines::oop_copy)   \
+  do_stub(final, oop_disjoint_arraycopy_uninit)                         \
+  do_entry_init(final, oop_disjoint_arraycopy_uninit,                   \
+                oop_disjoint_arraycopy_uninit,                          \
+                oop_disjoint_arraycopy_uninit_entry,                    \
+                StubRoutines::oop_copy_uninit)                          \
+  do_stub(final, arrayof_jbyte_arraycopy)                               \
+  do_entry_init(final, arrayof_jbyte_arraycopy,                         \
+                arrayof_jbyte_arraycopy, arrayof_jbyte_arraycopy,       \
+                StubRoutines::arrayof_jbyte_copy)                       \
+  do_stub(final, arrayof_jshort_arraycopy)                              \
+  do_entry_init(final, arrayof_jshort_arraycopy,                        \
+                arrayof_jshort_arraycopy, arrayof_jshort_arraycopy,     \
+                StubRoutines::arrayof_jshort_copy)                      \
+  do_stub(final, arrayof_jint_arraycopy)                                \
+  do_entry_init(final, arrayof_jint_arraycopy, arrayof_jint_arraycopy,  \
+                arrayof_jint_arraycopy,                                 \
+                StubRoutines::arrayof_jint_copy)                        \
+  do_stub(final, arrayof_jlong_arraycopy)                               \
+  do_entry_init(final, arrayof_jlong_arraycopy,                         \
+                arrayof_jlong_arraycopy, arrayof_jlong_arraycopy,       \
+                StubRoutines::arrayof_jlong_copy)                       \
+  do_stub(final, arrayof_oop_arraycopy)                                 \
+  do_entry_init(final, arrayof_oop_arraycopy, arrayof_oop_arraycopy,    \
+                arrayof_oop_arraycopy, StubRoutines::arrayof_oop_copy)  \
+  do_stub(final, arrayof_oop_arraycopy_uninit)                          \
+  do_entry_init(final, arrayof_oop_arraycopy_uninit,                    \
+                arrayof_oop_arraycopy_uninit,                           \
+                arrayof_oop_arraycopy_uninit,                           \
+                StubRoutines::arrayof_oop_copy_uninit)                  \
+  do_stub(final, arrayof_jbyte_disjoint_arraycopy)                      \
+  do_entry_init(final, arrayof_jbyte_disjoint_arraycopy,                \
+                arrayof_jbyte_disjoint_arraycopy,                       \
+                arrayof_jbyte_disjoint_arraycopy,                       \
+                StubRoutines::arrayof_jbyte_copy)                       \
+  do_stub(final, arrayof_jshort_disjoint_arraycopy)                     \
+  do_entry_init(final, arrayof_jshort_disjoint_arraycopy,               \
+                arrayof_jshort_disjoint_arraycopy,                      \
+                arrayof_jshort_disjoint_arraycopy,                      \
+                StubRoutines::arrayof_jshort_copy)                      \
+  do_stub(final, arrayof_jint_disjoint_arraycopy)                       \
+  do_entry_init(final, arrayof_jint_disjoint_arraycopy,                 \
+                arrayof_jint_disjoint_arraycopy,                        \
+                arrayof_jint_disjoint_arraycopy,                        \
+                StubRoutines::arrayof_jint_copy)                        \
+  do_stub(final, arrayof_jlong_disjoint_arraycopy)                      \
+  do_entry_init(final, arrayof_jlong_disjoint_arraycopy,                \
+                arrayof_jlong_disjoint_arraycopy,                       \
+                arrayof_jlong_disjoint_arraycopy,                       \
+                StubRoutines::arrayof_jlong_copy)                       \
+  do_stub(final, arrayof_oop_disjoint_arraycopy)                        \
+  do_entry_init(final, arrayof_oop_disjoint_arraycopy,                  \
+                arrayof_oop_disjoint_arraycopy,                         \
+                arrayof_oop_disjoint_arraycopy_entry,                   \
+                StubRoutines::arrayof_oop_copy)                         \
+  do_stub(final, arrayof_oop_disjoint_arraycopy_uninit)                 \
+  do_entry_init(final, arrayof_oop_disjoint_arraycopy_uninit,           \
+                arrayof_oop_disjoint_arraycopy_uninit,                  \
+                arrayof_oop_disjoint_arraycopy_uninit_entry,            \
+                StubRoutines::arrayof_oop_copy_uninit)                  \
+  do_stub(final, checkcast_arraycopy)                                   \
+  do_entry(final, checkcast_arraycopy, checkcast_arraycopy,             \
+           checkcast_arraycopy_entry)                                   \
+  do_stub(final, checkcast_arraycopy_uninit)                            \
+  do_entry(final, checkcast_arraycopy_uninit,                           \
+           checkcast_arraycopy_uninit,                                  \
+           checkcast_arraycopy_uninit_entry)                            \
+  do_stub(final, unsafe_arraycopy)                                      \
+  do_entry(final, unsafe_arraycopy, unsafe_arraycopy, unsafe_arraycopy) \
+  do_stub(final, generic_arraycopy)                                     \
+  do_entry(final, generic_arraycopy, generic_arraycopy,                 \
+           generic_arraycopy)                                           \
+  do_stub(final, unsafe_setmemory)                                      \
+  do_entry(final, unsafe_setmemory, unsafe_setmemory, unsafe_setmemory) \
+  do_stub(final, jbyte_fill)                                            \
+  do_entry(final, jbyte_fill, jbyte_fill, jbyte_fill)                   \
+  do_stub(final, jshort_fill)                                           \
+  do_entry(final, jshort_fill, jshort_fill, jshort_fill)                \
+  do_stub(final, jint_fill)                                             \
+  do_entry(final, jint_fill, jint_fill, jint_fill)                      \
+  do_stub(final, arrayof_jbyte_fill)                                    \
+  do_entry(final, arrayof_jbyte_fill, arrayof_jbyte_fill,               \
+           arrayof_jbyte_fill)                                          \
+  do_stub(final, arrayof_jshort_fill)                                   \
+  do_entry(final, arrayof_jshort_fill, arrayof_jshort_fill,             \
+           arrayof_jshort_fill)                                         \
+  do_stub(final, arrayof_jint_fill)                                     \
+  do_entry(final, arrayof_jint_fill, arrayof_jint_fill,                 \
+           arrayof_jint_fill)                                           \
+  do_stub(final, method_entry_barrier)                                  \
+  do_entry(final, method_entry_barrier, method_entry_barrier,           \
+           method_entry_barrier)                                        \
+  do_stub(final, vectorizedMismatch) /* only used by x86! */            \
+  do_entry(final, vectorizedMismatch, vectorizedMismatch,               \
+           vectorizedMismatch)                                          \
+  do_stub(final, upcall_stub_exception_handler)                         \
+  do_entry(final, upcall_stub_exception_handler,                        \
+           upcall_stub_exception_handler,                               \
+           upcall_stub_exception_handler)                               \
+  do_stub(final, upcall_stub_load_target)                               \
+  do_entry(final, upcall_stub_load_target, upcall_stub_load_target,     \
+           upcall_stub_load_target)                                     \
+  /* n.b. entry array for next two stubs is hand-generated */           \
+  repeat_stub(final, lookup_secondary_supers_table,                     \
+              Klass::SECONDARY_SUPERS_TABLE_SIZE)                       \
+  do_stub(final, lookup_secondary_supers_table_slow_path)               \
+  do_entry(final, lookup_secondary_supers_table_slow_path,              \
+           lookup_secondary_supers_table_slow_path_stub,                \
+           lookup_secondary_supers_table_slow_path_stub)                \
+  AARCH64_ONLY(                                                         \
+    do_arch_blob(final, 20000 ZGC_ONLY(+100000))                        \
+    do_stub(final, copy_byte_f)                                         \
+    do_arch_entry(aarch64, final, copy_byte_f, copy_byte_f,             \
+                  copy_byte_f)                                          \
+    do_stub(final, copy_byte_b)                                         \
+    do_arch_entry(aarch64, final, copy_byte_b, copy_byte_b,             \
+                  copy_byte_b)                                          \
+    do_stub(final, copy_oop_f)                                          \
+    do_arch_entry(aarch64, final, copy_oop_f, copy_oop_f, copy_oop_f)   \
+    do_stub(final, copy_oop_b)                                          \
+    do_arch_entry(aarch64, final, copy_oop_b, copy_oop_b, copy_oop_b)   \
+    do_stub(final, copy_oop_uninit_f)                                   \
+    do_arch_entry(aarch64, final, copy_oop_uninit_f, copy_oop_uninit_f, \
+                  copy_oop_uninit_f)                                    \
+    do_stub(final, copy_oop_uninit_b)                                   \
+    do_arch_entry(aarch64, final, copy_oop_uninit_b, copy_oop_uninit_b, \
+                  copy_oop_uninit_b)                                    \
+    do_stub(final, zero_blocks)                                         \
+    do_arch_entry(aarch64, final, zero_blocks, zero_blocks,             \
+                  zero_blocks)                                          \
+    do_stub(final, spin_wait)                                           \
+    do_arch_entry(aarch64, final, spin_wait, spin_wait, spin_wait)      \
+    /* atomic entries are not stored in class StubRoutines::aarch64 */  \
+    do_stub(final, atomic_entry_points)                                 \
+  )                                                                     \
+  X86_ONLY(                                                             \
+    do_arch_blob(final, 10000 LP64_ONLY(+20000)                         \
+                        WINDOWS_ONLY(+2000) ZGC_ONLY(+20000))           \
+  )                                                                     \
+  end_blob(final)                                                       \
+
+
+// Convenience macros for use by template implementations
 
 #define STUB_ID_NAME(base) base##_id
 
-// generate a stub field name
+// emit a runtime or stubgen stub field name
 
 #define STUB_FIELD_NAME(base) _##base
 
-// generate a blob field name
+// emit a runtime blob field name
 
 #define BLOB_FIELD_NAME(base) _##base##_blob
+
+// emit a stubgen blob field name
+
+#define STUBGEN_BLOB_FIELD_NAME(base) _ ## base ## _stubs_code
+
+// Convenience templates that emit nothing
+
+// ignore do_blob(blob_name, type) declarations
+#define DO_BLOB_EMPTY2(blob_name, type)
+
+// ignore do_blob(blob_name) and end_blob(blob_name) declarations
+#define DO_BLOB_EMPTY1(blob_name)
+
+// ignore do_stub(name, fancy_jump, pass_tls, return_pc) declarations
+#define DO_STUB_EMPTY4(name, fancy_jump, pass_tls, return_pc)
+
+// ignore do_jvmti_stub(name) declarations
+#define DO_JVMTI_STUB_EMPTY1(stub_name)
+
+// ignore do_stub(blob_name, stub_name) declarations
+#define DO_STUB_EMPTY2(blob_name, stub_name)
+
+// ignore repeat_stub(blob_name, stub_name, count) declarations
+#define REPEAT_STUB_EMPTY3(blob_name, stub_name, count)
+
+// ignore do_entry(blob_name, stub_name, fieldname, getter_name) declarations
+#define DO_ENTRY_EMPTY4(blob_name, stub_name, fieldname, getter_name)
+
+// ignore do_entry(blob_name, stub_name, fieldname, getter_name, init_function) declarations
+#define DO_ENTRY_EMPTY5(blob_name, stub_name, fieldname, getter_name, init_function)
+
+// ignore do_arch_blob(blob_name, size) declarations
+#define DO_ARCH_BLOB_EMPTY2(arch, size)
+
+// ignore do_arch_entry(arch, blob_name, stub_name, fieldname, getter_name) declarations
+#define DO_ARCH_ENTRY_EMPTY5(arch, blob_name, stub_name, field_name, getter_name)
+
+// ignore do_arch_entry(arch, blob_name, stub_name, fieldname, getter_name, init_function) declarations
+#define DO_ARCH_ENTRY_EMPTY6(arch, blob_name, stub_name, field_name, getter_name, init_function)
+
+// The whole shebang!
+//
+// client macro for emitting StubGenerator blobs, stubs and entries
+
+#define STUBGEN_ALL_DO(do_blob, end_blob,                               \
+                       do_stub, repeat_stub,                            \
+                       do_entry, do_entry_init,                         \
+                       do_arch_blob,                                    \
+                       do_arch_entry, do_arch_entry_init)               \
+  STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                           \
+                           do_stub, repeat_stub,                        \
+                           do_entry, do_entry_init,                     \
+                           do_arch_blob,                                \
+                           do_arch_entry, do_arch_entry_init)           \
+  STUBGEN_CONTINUATION_BLOBS_DO(do_blob, end_blob,                      \
+                                do_stub, repeat_stub,                   \
+                                do_entry, do_entry_init,                \
+                                do_arch_blob,                           \
+                                do_arch_entry, do_arch_entry_init)      \
+  STUBGEN_COMPILER_BLOBS_DO(do_blob, end_blob,                          \
+                            do_stub, repeat_stub,                       \
+                            do_entry, do_entry_init,                    \
+                            do_arch_blob,                               \
+                            do_arch_entry, do_arch_entry_init)          \
+  STUBGEN_FINAL_BLOBS_DO(do_blob, end_blob,                             \
+                         do_stub, repeat_stub,                          \
+                         do_entry, do_entry_init,                       \
+                         do_arch_blob,                                  \
+                         do_arch_entry, do_arch_entry_init)             \
+
+// client macro to operate only on StubGenerator blobs
+
+#define STUBGEN_BLOBS_DO(do_blob)                                       \
+  STUBGEN_ALL_DO(do_blob, DO_BLOB_EMPTY1,                               \
+                 DO_STUB_EMPTY2, REPEAT_STUB_EMPTY3,                    \
+                 DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
+                 DO_ARCH_BLOB_EMPTY2,                                   \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+
+// client macro to operate only on StubGenerator stubs
+
+#define STUBGEN_STUBS_DO(do_stub, repeat_stub)                          \
+  STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
+                 do_stub, repeat_stub,                                  \
+                 DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
+                 DO_ARCH_BLOB_EMPTY2,                                   \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+
+// client macro to operate only on StubGenerator blobs and stubs
+
+#define STUBGEN_BLOBS_STUBS_DO(do_blob, end_blob, do_stub, repeat_stub) \
+  STUBGEN_ALL_DO(do_blob, end_blob,                                     \
+                 do_stub, repeat_stub,                                  \
+                 DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
+                 DO_ARCH_BLOB_EMPTY2,                                   \
+                 DO_ARCH_ENTRY_EMPTY5,DO_ARCH_ENTRY_EMPTY6)             \
+
+// client macro to operate only on StubGenerator entries
+
+#define STUBGEN_ENTRIES_DO(do_entry, do_entry_init)                     \
+  STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
+                 DO_STUB_EMPTY2, REPEAT_STUB_EMPTY3,                    \
+                 do_entry, do_entry_init,                               \
+                 DO_ARCH_BLOB_EMPTY2,                                   \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+
+
+// client macro to operate only on StubGenerator arch blobs
+
+#define STUBGEN_ARCH_BLOBS_DO(do_arch_blob)                             \
+  STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
+                 DO_STUB_EMPTY2, REPEAT_STUB_EMPTY3,                    \
+                 DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
+                 do_arch_blob,                                          \
+                 DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
+
+// client macro to operate only on StubGenerator arch entries
+
+#define STUBGEN_ARCH_ENTRIES_DO(do_arch_entry, do_arch_entry_init)      \
+  STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
+                 DO_STUB_EMPTY2, REPEAT_STUB_EMPTY3,                    \
+                 DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
+                 DO_ARCH_BLOB_EMPTY2,                                   \
+                 do_arch_entry, do_arch_entry_init)                     \
 
 #endif // SHARE_RUNTIME_STUBDECLARATIONS_HPP
 

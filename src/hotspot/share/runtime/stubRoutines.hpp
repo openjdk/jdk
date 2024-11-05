@@ -31,6 +31,7 @@
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubDeclarations.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/macros.hpp"
 
@@ -150,15 +151,146 @@ class UnsafeMemoryAccessMark : public StackObj {
   ~UnsafeMemoryAccessMark();
 };
 
+// declare stubgen blob id enum
+
+#define BLOB_ENUM_DECLARE(blob_name) \
+  STUB_ID_NAME(blob_name),
+
+enum StubGenBlobId {
+  NO_BLOBID = -1,
+  STUBGEN_BLOBS_DO(BLOB_ENUM_DECLARE)
+  NUM_BLOBIDS
+};
+
+#undef BLOB_ENUM_DECLARE
+
+// declare blob local stub id enums
+
+#define BLOB_LOCAL_ENUM_START(blob_name)        \
+  enum StubGenStubId_ ## blob_name {            \
+    NO_STUBID_ ## blob_name = -1,
+
+#define BLOB_LOCAL_ENUM_END(blob_name)   \
+    NUM_STUBIDS_ ## blob_name            \
+  };
+
+#define BLOB_LOCAL_STUB_ENUM_DECLARE(blob_name, stub_name) \
+  blob_name ## _ ## stub_name ## _id,
+
+#define BLOB_LOCAL_STUB_ENUM_REPEAT_DECLARE(blob_name, stub_name, count)       \
+  blob_name ## _ ## stub_name ## _id,                                   \
+  blob_name ## _ ## stub_name ## _limit = blob_name ## _ ## stub_name ## _id + (count - 1),
+
+STUBGEN_BLOBS_STUBS_DO(BLOB_LOCAL_ENUM_START, BLOB_LOCAL_ENUM_END, BLOB_LOCAL_STUB_ENUM_DECLARE, BLOB_LOCAL_STUB_ENUM_REPEAT_DECLARE)
+
+#undef BLOB_LOCAL_ENUM_START
+#undef BLOB_LOCAL_ENUM_END
+#undef BLOB_LOCAL_STUB_ENUM_DECLARE
+
+// declare global stub id enum
+
+#define STUB_ENUM_DECLARE(blob_name, stub_name) \
+  STUB_ID_NAME(stub_name),
+
+#define STUB_ENUM_REPEAT(blob_name, stub_name, count)                   \
+  STUB_ID_NAME(stub_name),                                              \
+    _ ## stub_name ## _limit = STUB_ID_NAME(stub_name) + (count - 1),
+
+enum StubGenStubId {
+  NO_STUBID = -1,
+  STUBGEN_STUBS_DO(STUB_ENUM_DECLARE, STUB_ENUM_REPEAT)
+  NUM_STUBIDS
+};
+
+#undef STUB_ENUM_DECLARE
+
 class StubRoutines: AllStatic {
 
- public:
+public:
   // Dependencies
   friend class StubGenerator;
+  friend class VMStructs;
+#if INCLUDE_JVMCI
+  friend class JVMCIVMStructs;
+#endif
 
 #include CPU_HEADER(stubRoutines)
 
+// declare blob and stub name storage and associated lookup methods
+
+private:
+  static bool _inited_names;
+  static const char* _blob_names[StubGenBlobId::NUM_BLOBIDS];
+  static const char* _stub_names[StubGenStubId::NUM_STUBIDS];
+
+public:
+  static bool init_names();
+  static const char* get_blob_name(StubGenBlobId id);
+  static const char* get_stub_name(StubGenStubId id);
+
+// declare blob fields
+
+#define DECLARE_BLOB_FIELD(blob_name) \
+  static BufferBlob* STUBGEN_BLOB_FIELD_NAME(blob_name);
+
+private:
+  STUBGEN_BLOBS_DO(DECLARE_BLOB_FIELD);
+
+#undef DECLARE_BLOB_FIELD
+
+// declare fields to store entry addresses
+
+#define DECLARE_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name) \
+  static address STUB_FIELD_NAME(field_name);
+
+#define DECLARE_ENTRY_FIELD_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
+  DECLARE_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name)
+
+private:
+  STUBGEN_ENTRIES_DO(DECLARE_ENTRY_FIELD, DECLARE_ENTRY_FIELD_INIT);
+
+#undef DECLARE_ENTRY_FIELD_INIT
+#undef DECLARE_ENTRY_FIELD
+
+// declare getters and setters for entry addresses
+
+#define DEFINE_ENTRY_GETTER(blob_name, stub_name, field_name, getter_name) \
+  static address getter_name() { return STUB_FIELD_NAME(field_name); } \
+
+#define DEFINE_ENTRY_GETTER_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
+  DEFINE_ENTRY_GETTER(blob_name, stub_name, field_name, getter_name)
+
+public:
+  STUBGEN_ENTRIES_DO(DEFINE_ENTRY_GETTER, DEFINE_ENTRY_GETTER_INIT);
+
+#undef DEFINE_ENTRY_GETTER_INIT
+#undef DEFINE_ENTRY_GETTER
+
+public:
+
+#define DECLARE_BLOB_INIT_METHOD(blob_name)     \
+  static void initialize_ ## blob_name ## _stubs();
+
+  STUBGEN_BLOBS_DO(DECLARE_BLOB_INIT_METHOD)
+
+#undef DECLARE_BLOB_INIT_METHOD
+
+public:
+
+  // Calls to Java
+  typedef void (*CallStub)(
+    address   link,
+    intptr_t* result,
+    int       result_type, /* BasicType on 4 bytes */
+    Method* method,
+    address   entry_point,
+    intptr_t* parameters,
+    int       size_of_parameters,
+    TRAPS
+  );
+
   static jint    _verify_oop_count;
+  /*
   static address _verify_oop_subroutine_entry;
 
   static address _call_stub_return_address;                // the return PC, when returning to a call stub
@@ -254,9 +386,13 @@ class StubRoutines: AllStatic {
 
   static address _updateBytesCRC32;
   static address _crc_table_adr;
+  */
 
+public:
   static address _string_indexof_array[4];
 
+  /*
+  private:
   static address _crc32c_table_addr;
   static address _updateBytesCRC32C;
   static address _updateBytesAdler32;
@@ -293,23 +429,28 @@ class StubRoutines: AllStatic {
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
   static address _cont_preempt_stub;
+  */
+
+  /* special case: stub employs array of entries */
 
   // Vector Math Routines
   static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
   static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
-
+  /*
   static address _upcall_stub_exception_handler;
   static address _upcall_stub_load_target;
 
   static address _lookup_secondary_supers_table_stubs[];
   static address _lookup_secondary_supers_table_slow_path_stub;
+  */
 
- public:
+  /*
   // Initialization/Testing
   static void    initialize_initial_stubs();               // must happen before universe::genesis
   static void    initialize_continuation_stubs();          // must happen after  universe::genesis
   static void    initialize_compiler_stubs();              // must happen after  universe::genesis
   static void    initialize_final_stubs();                 // must happen after  universe::genesis
+  */
 
   static bool is_stub_code(address addr)                   { return contains(addr); }
 
@@ -321,10 +462,21 @@ class StubRoutines: AllStatic {
       (_final_stubs_code        != nullptr && _final_stubs_code->blob_contains(addr)) ;
   }
 
+// define getters for stub code blobs
+
+#define DEFINE_BLOB_GETTER(blob_name) \
+  static RuntimeBlob* blob_name ## _stubs_code() { return _ ## blob_name ## _stubs_code; }
+
+  STUBGEN_BLOBS_DO(DEFINE_BLOB_GETTER);
+
+#undef DEFINE_BLOB_GETTER
+
+  /*
   static RuntimeBlob* initial_stubs_code()      { return _initial_stubs_code; }
   static RuntimeBlob* continuation_stubs_code() { return _continuation_stubs_code; }
   static RuntimeBlob* compiler_stubs_code()     { return _compiler_stubs_code; }
   static RuntimeBlob* final_stubs_code()        { return _final_stubs_code; }
+  */
 
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }
@@ -332,22 +484,12 @@ class StubRoutines: AllStatic {
   // a subroutine for debugging the GC
   static address verify_oop_subroutine_entry_address()     { return (address)&_verify_oop_subroutine_entry; }
 
+  /*
   static address catch_exception_entry()                   { return _catch_exception_entry; }
-
-  // Calls to Java
-  typedef void (*CallStub)(
-    address   link,
-    intptr_t* result,
-    int       result_type, /* BasicType on 4 bytes */
-    Method* method,
-    address   entry_point,
-    intptr_t* parameters,
-    int       size_of_parameters,
-    TRAPS
-  );
+  */
 
   static CallStub call_stub()                              { return CAST_TO_FN_PTR(CallStub, _call_stub_entry); }
-
+  /*
   // Exceptions
   static address forward_exception_entry()                 { return _forward_exception_entry; }
 
@@ -356,41 +498,52 @@ class StubRoutines: AllStatic {
   static address atomic_cmpxchg_long_entry()               { return _atomic_cmpxchg_long_entry; }
   static address atomic_add_entry()                        { return _atomic_add_entry; }
   static address fence_entry()                             { return _fence_entry; }
+  */
 
   static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);
 
+  /*
   static address jbyte_arraycopy()  { return _jbyte_arraycopy; }
   static address jshort_arraycopy() { return _jshort_arraycopy; }
   static address jint_arraycopy()   { return _jint_arraycopy; }
   static address jlong_arraycopy()  { return _jlong_arraycopy; }
+  */
+
   static address oop_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _oop_arraycopy_uninit : _oop_arraycopy;
   }
+  /*
   static address jbyte_disjoint_arraycopy()  { return _jbyte_disjoint_arraycopy; }
   static address jshort_disjoint_arraycopy() { return _jshort_disjoint_arraycopy; }
   static address jint_disjoint_arraycopy()   { return _jint_disjoint_arraycopy; }
   static address jlong_disjoint_arraycopy()  { return _jlong_disjoint_arraycopy; }
+  */
+
   static address oop_disjoint_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ?  _oop_disjoint_arraycopy_uninit : _oop_disjoint_arraycopy;
   }
-
+  /*
   static address arrayof_jbyte_arraycopy()  { return _arrayof_jbyte_arraycopy; }
   static address arrayof_jshort_arraycopy() { return _arrayof_jshort_arraycopy; }
   static address arrayof_jint_arraycopy()   { return _arrayof_jint_arraycopy; }
   static address arrayof_jlong_arraycopy()  { return _arrayof_jlong_arraycopy; }
+  */
   static address arrayof_oop_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _arrayof_oop_arraycopy_uninit : _arrayof_oop_arraycopy;
   }
-
+  /*
   static address arrayof_jbyte_disjoint_arraycopy()  { return _arrayof_jbyte_disjoint_arraycopy; }
   static address arrayof_jshort_disjoint_arraycopy() { return _arrayof_jshort_disjoint_arraycopy; }
   static address arrayof_jint_disjoint_arraycopy()   { return _arrayof_jint_disjoint_arraycopy; }
   static address arrayof_jlong_disjoint_arraycopy()  { return _arrayof_jlong_disjoint_arraycopy; }
+  */
   static address arrayof_oop_disjoint_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _arrayof_oop_disjoint_arraycopy_uninit : _arrayof_oop_disjoint_arraycopy;
   }
+  /*
   static address data_cache_writeback()              { return _data_cache_writeback; }
   static address data_cache_writeback_sync()         { return _data_cache_writeback_sync; }
+  */
 
   typedef void (*DataCacheWritebackStub)(void *);
   static DataCacheWritebackStub DataCacheWriteback_stub()         { return CAST_TO_FN_PTR(DataCacheWritebackStub,  _data_cache_writeback); }
@@ -400,16 +553,22 @@ class StubRoutines: AllStatic {
   static address checkcast_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _checkcast_arraycopy_uninit : _checkcast_arraycopy;
   }
+
+  /*
   static address unsafe_arraycopy()     { return _unsafe_arraycopy; }
+  */
 
   typedef void (*UnsafeArrayCopyStub)(const void* src, void* dst, size_t count);
   static UnsafeArrayCopyStub UnsafeArrayCopy_stub()         { return CAST_TO_FN_PTR(UnsafeArrayCopyStub,  _unsafe_arraycopy); }
 
+  /*
   static address unsafe_setmemory()     { return _unsafe_setmemory; }
+  */
 
   typedef void (*UnsafeSetMemoryStub)(void* dst, size_t count, char byte);
   static UnsafeSetMemoryStub UnsafeSetMemory_stub()         { return CAST_TO_FN_PTR(UnsafeSetMemoryStub,  _unsafe_setmemory); }
 
+  /*
   static address generic_arraycopy()   { return _generic_arraycopy; }
   static address select_arraysort_function() { return _array_sort; }
   static address select_array_partition_function() { return _array_partition; }
@@ -483,6 +642,7 @@ class StubRoutines: AllStatic {
   //
   static address f2hf_adr()            { return _f2hf; }
   static address hf2f_adr()            { return _hf2f; }
+  */
 
   static jshort f2hf(jfloat x) {
     assert(_f2hf != nullptr, "stub is not implemented on this platform");
@@ -497,6 +657,7 @@ class StubRoutines: AllStatic {
     return ((hf2f_stub_t)_hf2f)(x);
   }
 
+  /*
   static address method_entry_barrier() { return _method_entry_barrier; }
 
   static address cont_thaw()           { return _cont_thaw; }
@@ -513,6 +674,11 @@ class StubRoutines: AllStatic {
     assert(_upcall_stub_load_target != nullptr, "not implemented");
     return _upcall_stub_load_target;
   }
+  */
+
+  /* special case: stub employs array of entries */
+
+  static address _lookup_secondary_supers_table_stubs[];
 
   static address lookup_secondary_supers_table_stub(u1 slot) {
     assert(slot < Klass::SECONDARY_SUPERS_TABLE_SIZE, "out of bounds");
@@ -520,16 +686,18 @@ class StubRoutines: AllStatic {
     return _lookup_secondary_supers_table_stubs[slot];
   }
 
+  /*
   static address lookup_secondary_supers_table_slow_path_stub() {
     assert(_lookup_secondary_supers_table_slow_path_stub != nullptr, "not implemented");
     return _lookup_secondary_supers_table_slow_path_stub;
   }
+  */
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 
   //
-  // Default versions of the above arraycopy functions for platforms which do
-  // not have specialized versions
+  // Default versions of some of the arraycopy functions for platforms
+  // which do not have specialized versions
   //
   static void jbyte_copy     (jbyte*  src, jbyte*  dest, size_t count);
   static void jshort_copy    (jshort* src, jshort* dest, size_t count);
@@ -544,6 +712,7 @@ class StubRoutines: AllStatic {
   static void arrayof_jlong_copy     (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy       (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count);
+
 };
 
 #endif // SHARE_RUNTIME_STUBROUTINES_HPP

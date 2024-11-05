@@ -33,17 +33,7 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::aarch64::_get_previous_sp_entry = nullptr;
-
-address StubRoutines::aarch64::_f2i_fixup = nullptr;
-address StubRoutines::aarch64::_f2l_fixup = nullptr;
-address StubRoutines::aarch64::_d2i_fixup = nullptr;
-address StubRoutines::aarch64::_d2l_fixup = nullptr;
 address StubRoutines::aarch64::_vector_iota_indices = nullptr;
-address StubRoutines::aarch64::_float_sign_mask = nullptr;
-address StubRoutines::aarch64::_float_sign_flip = nullptr;
-address StubRoutines::aarch64::_double_sign_mask = nullptr;
-address StubRoutines::aarch64::_double_sign_flip = nullptr;
 address StubRoutines::aarch64::_zero_blocks = nullptr;
 address StubRoutines::aarch64::_count_positives = nullptr;
 address StubRoutines::aarch64::_count_positives_long = nullptr;

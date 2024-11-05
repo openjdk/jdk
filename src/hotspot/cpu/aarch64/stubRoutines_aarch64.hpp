@@ -34,33 +34,32 @@ static bool    returns_to_call_stub(address return_pc)   {
   return return_pc == _call_stub_return_address;
 }
 
+#define DEFINE_BLOB_SIZE(blob_name, size) \
+  _ ## blob_name ## _code_size = size,
+
 enum platform_dependent_constants {
   // simply increase sizes if too small (assembler will crash if too small)
+  /*
   _initial_stubs_code_size      = 10000,
   _continuation_stubs_code_size =  2000,
   _compiler_stubs_code_size     = 30000 ZGC_ONLY(+10000),
   _final_stubs_code_size        = 20000 ZGC_ONLY(+100000)
+  */
+  STUBGEN_ARCH_BLOBS_DO(DEFINE_BLOB_SIZE)
 };
+
+#undef DEFINE_BLOB_SIZE
 
 class aarch64 {
  friend class StubGenerator;
+#if INCLUDE_JVMCI
+  friend class JVMCIVMStructs;
+#endif
 
  private:
-  static address _get_previous_sp_entry;
-
-  static address _f2i_fixup;
-  static address _f2l_fixup;
-  static address _d2i_fixup;
-  static address _d2l_fixup;
-
+#if 0
+  // compiler stubs
   static address _vector_iota_indices;
-  static address _float_sign_mask;
-  static address _float_sign_flip;
-  static address _double_sign_mask;
-  static address _double_sign_flip;
-
-  static address _zero_blocks;
-
   static address _large_array_equals;
   static address _large_arrays_hashcode_boolean;
   static address _large_arrays_hashcode_byte;
@@ -75,63 +74,33 @@ class aarch64 {
   static address _string_indexof_linear_uu;
   static address _string_indexof_linear_ul;
   static address _large_byte_array_inflate;
+  static address _count_positives;
+  static address _count_positives_long;
 
+  // final stubs
+  static address _zero_blocks;
   static address _spin_wait;
+
+#endif
+
+#define DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  static address STUB_FIELD_NAME(field_name) ;
+
+#define DECLARE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name)
+
+private:
+  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY, DECLARE_ARCH_ENTRY_INIT)
+
+#undef DECLARE_ARCH_ENTRY_INIT
+#undef DECLARE_ARCH_ENTRY
 
   static bool _completed;
 
  public:
 
-  static address _count_positives;
-  static address _count_positives_long;
-
-  static address get_previous_sp_entry()
-  {
-    return _get_previous_sp_entry;
-  }
-
-  static address f2i_fixup()
-  {
-    return _f2i_fixup;
-  }
-
-  static address f2l_fixup()
-  {
-    return _f2l_fixup;
-  }
-
-  static address d2i_fixup()
-  {
-    return _d2i_fixup;
-  }
-
-  static address d2l_fixup()
-  {
-    return _d2l_fixup;
-  }
-
   static address vector_iota_indices() {
     return _vector_iota_indices;
-  }
-
-  static address float_sign_mask()
-  {
-    return _float_sign_mask;
-  }
-
-  static address float_sign_flip()
-  {
-    return _float_sign_flip;
-  }
-
-  static address double_sign_mask()
-  {
-    return _double_sign_mask;
-  }
-
-  static address double_sign_flip()
-  {
-    return _double_sign_flip;
   }
 
   static address zero_blocks() {

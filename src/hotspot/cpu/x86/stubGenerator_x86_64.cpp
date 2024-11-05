@@ -3995,10 +3995,6 @@ void StubGenerator::generate_final_stubs() {
     StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
   }
 
-  // data cache line writeback
-  StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
-  StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
-
   // arraycopy stubs used by compilers
   generate_arraycopy_stubs();
 
@@ -4065,6 +4061,10 @@ void StubGenerator::generate_compiler_stubs() {
   generate_chacha_stubs();
 
   generate_sha3_stubs();
+
+  // data cache line writeback
+  StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
+  StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
 
 #ifdef COMPILER2
   if ((UseAVX == 2) && EnableX86ECoreOpts) {

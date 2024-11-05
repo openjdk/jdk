@@ -46,22 +46,121 @@ int UnsafeMemoryAccess::_table_length                           = 0;
 int UnsafeMemoryAccess::_table_max_length                       = 0;
 address UnsafeMemoryAccess::_common_exit_stub_pc                = nullptr;
 
-// Implementation of StubRoutines - for a description
-// of how to extend it, see the header file.
+// Implementation of StubRoutines - for a description of how to
+// declare new blobs, stubs and entries , see stubDefinitions.hpp.
 
-// Class Variables
+// define arrays to hold stub and blob names
 
+// use a template to generate the initializer for the blob names array
+
+#define DEFINE_BLOB_NAME(blob_name)             \
+  "StubRoutines " # blob_name " stubs",
+
+const char* StubRoutines::_blob_names[] = {
+  STUBGEN_BLOBS_DO(DEFINE_BLOB_NAME)
+};
+
+#undef DEFINE_BLOB_NAME
+
+// stub repeats mean that we cannot fill in the _stub_names array
+// using a generated initializer (even though the repeat count is a
+// compile time constant). what we can do is declare the array using
+// the correct size and generate some code that will fill in the
+// names, inlcuding the repated ones. the generated code is used to
+// initialize a local (static) var i.e. before anyone can use
+// _stub_names.
+
+const char* StubRoutines::_stub_names[StubGenStubId::NUM_STUBIDS];
+
+#define DEFINE_STUB_NAME(blob_name, stub_name)          \
+  stub_id = StubGenStubId:: STUB_ID_NAME(stub_name);    \
+  _stub_names[stub_id] = # stub_name ;                  \
+
+
+#define REPEAT_STUB_NAME(blob_name, stub_name, count)            \
+  stub_id = StubGenStubId:: STUB_ID_NAME(stub_name);             \
+  const char *name = # stub_name;                                \
+  int len = strlen(name);                                        \
+  _stub_names[stub_id] = name ;                                  \
+  assert(count < 100, "increase digit count in repeat names");   \
+  for (int i = 1; i < count; i++) {                              \
+    assert(buffer + len + 3 < name_buffer_end,                   \
+           "increase size of repeat stub name_buffer");          \
+    _stub_names[stub_id + i] = buffer;                           \
+    strcpy(buffer, name);                                        \
+    buffer += strlen(buffer);                                    \
+    if (i < 10) {                                                \
+      *buffer++ = '0' + i;                                       \
+    } else {                                                     \
+      *buffer++ = '0' + (i / 10);                                \
+      *buffer++ = '0' + (i % 10);                                \
+    }                                                            \
+    *buffer++ = '\0';                                             \
+  }                                                              \
+
+// this should be big enough to hold all the repeat stub names we
+// need. it allows for 100 stub repeats in total with 100 bytes for
+// the stub name (inlcuding 1 or 2 digit numeric suffix). if we don't
+// have enough space or need more digits the generated init function
+// will assert.
+
+static char name_buffer[100 * 100];
+static char* name_buffer_end = name_buffer + sizeof(name_buffer);
+
+bool StubRoutines::init_names() {
+  assert(!_inited_names, "should only be called once!");
+  _inited_names = true;
+  char *buffer = name_buffer;
+  StubGenStubId stub_id;
+  STUBGEN_STUBS_DO(DEFINE_STUB_NAME, REPEAT_STUB_NAME);
+  return _inited_names;
+}
+
+#undef REPEAT_STUB_NAME
+#undef DEFINE_STUB_NAME
+
+bool StubRoutines::_inited_names = StubRoutines::init_names();
+
+// Define fields used to store blobs
+
+#define DEFINE_BLOB_FIELD(blob_name) \
+  BufferBlob* StubRoutines:: STUBGEN_BLOB_FIELD_NAME(blob_name) = nullptr;
+
+STUBGEN_BLOBS_DO(DEFINE_BLOB_FIELD)
+
+#undef DEFINE_BLOB_FIELD
+
+/*
 BufferBlob* StubRoutines::_initial_stubs_code                   = nullptr;
 BufferBlob* StubRoutines::_final_stubs_code                     = nullptr;
 BufferBlob* StubRoutines::_compiler_stubs_code                  = nullptr;
 BufferBlob* StubRoutines::_continuation_stubs_code              = nullptr;
+*/
 
+// Define fields used to store stub entries
+
+#define DEFINE_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name) \
+  address StubRoutines:: STUB_FIELD_NAME(field_name) = nullptr;
+
+#define DEFINE_ENTRY_FIELD_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
+  address StubRoutines:: STUB_FIELD_NAME(field_name) = CAST_FROM_FN_PTR(address, init_function);
+
+STUBGEN_ENTRIES_DO(DEFINE_ENTRY_FIELD, DEFINE_ENTRY_FIELD_INIT)
+
+#undef DEFINE_ENTRY_FIELD_INIT
+#undef DEFINE_ENTRY_FIELD
+
+/*
 address StubRoutines::_call_stub_return_address                 = nullptr;
 address StubRoutines::_call_stub_entry                          = nullptr;
 
 address StubRoutines::_catch_exception_entry                    = nullptr;
 address StubRoutines::_forward_exception_entry                  = nullptr;
+*/
+
 jint    StubRoutines::_verify_oop_count                         = 0;
+
+/*
 address StubRoutines::_verify_oop_subroutine_entry              = nullptr;
 address StubRoutines::_atomic_xchg_entry                        = nullptr;
 address StubRoutines::_atomic_cmpxchg_entry                     = nullptr;
@@ -143,9 +242,11 @@ address StubRoutines::_sha3_implCompressMB   = nullptr;
 
 address StubRoutines::_updateBytesCRC32 = nullptr;
 address StubRoutines::_crc_table_adr =    nullptr;
+*/
 
 address StubRoutines::_string_indexof_array[4]   =    { nullptr };
 
+/*
 address StubRoutines::_crc32c_table_addr = nullptr;
 address StubRoutines::_updateBytesCRC32C = nullptr;
 address StubRoutines::_updateBytesAdler32 = nullptr;
@@ -176,9 +277,11 @@ address StubRoutines::_dtanh = nullptr;
 address StubRoutines::_f2hf = nullptr;
 address StubRoutines::_hf2f = nullptr;
 
+*/
 address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
 address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
 
+/*
 address StubRoutines::_method_entry_barrier = nullptr;
 address StubRoutines::_array_sort = nullptr;
 address StubRoutines::_array_partition  = nullptr;
@@ -192,8 +295,93 @@ address StubRoutines::_upcall_stub_exception_handler = nullptr;
 address StubRoutines::_upcall_stub_load_target = nullptr;
 
 address StubRoutines::_lookup_secondary_supers_table_slow_path_stub = nullptr;
+*/
+
 address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPERS_TABLE_SIZE] = { nullptr };
 
+const char* StubRoutines::get_blob_name(StubGenBlobId id) {
+  assert(0 <= id && id < StubGenBlobId::NUM_BLOBIDS, "invalid blob id");
+  return _blob_names[id];
+}
+
+const char* StubRoutines::get_stub_name(StubGenStubId id) {
+  assert(0 <= id && id < StubGenStubId::NUM_STUBIDS, "invalid stub id");
+  return _stub_names[id];
+}
+
+#ifndef PRODUCT
+
+// array holding start and end indices for stub ids associated with a
+// given blob. Given a blob with id (StubGenBlobId) blob_id for any
+// stub with id (StubGenStubId) stub_id declared within the blob:
+// _blob_offsets[blob_id] <= stub_id < _blob_offsets[blob_id+1]
+
+static int _blob_limits[StubGenBlobId::NUM_BLOBIDS + 1];
+
+// macro used to compute blob limits
+#define BLOB_COUNT(blob_name)                                           \
+  counter += StubGenStubId_ ## blob_name :: NUM_STUBIDS_ ## blob_name;  \
+  _blob_limits[++index] = counter;                                      \
+
+// macro that checks stubs are associated with the correct blobs
+#define STUB_VERIFY(blob_name, stub_name)                               \
+  localStubId = (int) (StubGenStubId_ ## blob_name :: blob_name ## _ ## stub_name ## _id); \
+  globalStubId = (int) (StubGenStubId:: stub_name ## _id);              \
+  blobId = (int) (StubGenBlobId:: blob_name ## _id);                    \
+  assert((globalStubId >= _blob_limits[blobId] &&                       \
+          globalStubId < _blob_limits[blobId+1]),                       \
+         "stub " # stub_name " uses incorrect blob name " # blob_name); \
+  assert(globalStubId == _blob_limits[blobId] + localStubId,            \
+         "stub " # stub_name " id found at wrong offset!");             \
+
+#define REPEAT_VERIFY(blob_name, stub_name, count)                      \
+  STUB_VERIFY(blob_name, stub_name)                                     \
+  localStubLimit = (int) (StubGenStubId_ ## blob_name :: blob_name ## _ ## stub_name ## _limit); \
+  assert(globalStubId + (count - 1) == _blob_limits[blobId] + localStubLimit, \
+         "stub " # stub_name " limit found at wrong offset!");          \
+
+bool verifyStubIds() {
+  // first compute the blob limits
+  int counter = 0;
+  int index = 0;
+  // populate offsets table with cumulative total of local enum counts
+  STUBGEN_BLOBS_DO(BLOB_COUNT);
+
+  // ensure 1) global stub ids lie in the range of the associated blob
+  // and 2) each blob's base + local stub id == global stub id
+  int globalStubId, blobId, localStubId, localStubLimit;
+  STUBGEN_STUBS_DO(STUB_VERIFY, REPEAT_VERIFY);
+  return true;
+}
+
+#undef BLOB_COUNT
+#undef STUB_VERIFY
+
+// ensure we verify the blob ids when this compile unit is first entered
+bool _verified_stub_ids = verifyStubIds();
+
+
+// macro used by stub to blob translation
+
+#define BLOB_CHECK_OFFSET(blob_name)                                \
+  if (id < _blob_limits[((int)blobId) + 1]) { return blobId; }      \
+  blobId = StubGenBlobId:: blob_name ## _id;                        \
+
+// translate a global stub id to an associated blob id based on the
+// computed blob limits
+
+StubGenBlobId stub_to_blob(StubGenStubId stubId) {
+  int id = (int)stubId;
+  assert(id > ((int)StubGenStubId::NO_STUBID) && id < ((int)StubGenStubId::NUM_STUBIDS), "stub id out of range");
+  // start with no blob to catch stub id == -1
+  StubGenBlobId blobId = StubGenBlobId::NO_BLOBID;
+  STUBGEN_BLOBS_DO(BLOB_CHECK_OFFSET);
+  // if we reach here we should have the lats blob id
+  assert(blobId == StubGenBlobId::NUM_BLOBIDS - 1, "unexpected blob id");
+  return blobId;
+}
+
+#endif // !PRODUCT
 
 // Initialization
 //
@@ -201,7 +389,7 @@ address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPE
 // The first one generates stubs needed during universe init (e.g., _handle_must_compile_first_entry).
 // The second phase includes all other stubs (which may depend on universe being initialized.)
 
-extern void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind); // only interface to generators
+extern void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id); // only interface to generators
 
 void UnsafeMemoryAccess::create_table(int max_size) {
   UnsafeMemoryAccess::_table = new UnsafeMemoryAccess[max_size];
@@ -229,7 +417,7 @@ address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
 }
 
 
-static BufferBlob* initialize_stubs(StubCodeGenerator::StubsKind kind,
+static BufferBlob* initialize_stubs(StubGenBlobId blob_id,
                                     int code_size, int max_aligned_stubs,
                                     const char* timer_msg,
                                     const char* buffer_name,
@@ -243,7 +431,7 @@ static BufferBlob* initialize_stubs(StubCodeGenerator::StubsKind kind,
     vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);
   }
   CodeBuffer buffer(stubs_code);
-  StubGenerator_generate(&buffer, kind);
+  StubGenerator_generate(&buffer, blob_id);
   // When new stubs added we need to make sure there is some space left
   // to catch situation when we should increase size again.
   assert(code_size == 0 || buffer.insts_remaining() > 200, "increase %s", assert_msg);
@@ -258,6 +446,37 @@ static BufferBlob* initialize_stubs(StubCodeGenerator::StubsKind kind,
   return stubs_code;
 }
 
+#define DEFINE_BLOB_INIT_METHOD(blob_name)                              \
+  void StubRoutines::initialize_ ## blob_name ## _stubs() {             \
+    if (STUBGEN_BLOB_FIELD_NAME(blob_name) == nullptr) {                \
+      StubGenBlobId blob_id = StubGenBlobId:: STUB_ID_NAME(blob_name);  \
+      int size = _ ## blob_name ## _code_size;                          \
+      int max_aligned_size = 10;                                        \
+      const char* timer_msg = "StubRoutines generation " # blob_name " stubs"; \
+      const char* name = "StubRoutines (" # blob_name "stubs)";         \
+      const char* assert_msg = "_" # blob_name "_code_size";            \
+      STUBGEN_BLOB_FIELD_NAME(blob_name) =                              \
+        initialize_stubs(blob_id, size, max_aligned_size, timer_msg,    \
+                         name, assert_msg);                             \
+    }                                                                   \
+  }
+
+
+STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_METHOD)
+
+#undef DEFINE_BLOB_INIT_METHOD
+
+
+#define DEFINE_BLOB_INIT_FUNCTION(blob_name)            \
+void blob_name ## _stubs_init()  {                      \
+  StubRoutines::initialize_ ## blob_name ## _stubs();   \
+}
+
+STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_FUNCTION)
+
+#undef DEFINE_BLOB_INIT_FUNCTION
+
+/*
 void StubRoutines::initialize_initial_stubs() {
   if (_initial_stubs_code == nullptr) {
     _initial_stubs_code = initialize_stubs(StubCodeGenerator::Initial_stubs,
@@ -298,9 +517,11 @@ void StubRoutines::initialize_final_stubs() {
   }
 }
 
+
 void initial_stubs_init()      { StubRoutines::initialize_initial_stubs(); }
 void continuation_stubs_init() { StubRoutines::initialize_continuation_stubs(); }
 void final_stubs_init()        { StubRoutines::initialize_final_stubs(); }
+*/
 
 void compiler_stubs_init(bool in_compiler_thread) {
   if (in_compiler_thread && DelayCompilerStubsGeneration) {
@@ -316,6 +537,7 @@ void compiler_stubs_init(bool in_compiler_thread) {
     StubRoutines::initialize_compiler_stubs();
   }
 }
+
 
 //
 // Default versions of arraycopy functions
