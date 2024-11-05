@@ -130,13 +130,6 @@ STUBGEN_BLOBS_DO(DEFINE_BLOB_FIELD)
 
 #undef DEFINE_BLOB_FIELD
 
-/*
-BufferBlob* StubRoutines::_initial_stubs_code                   = nullptr;
-BufferBlob* StubRoutines::_final_stubs_code                     = nullptr;
-BufferBlob* StubRoutines::_compiler_stubs_code                  = nullptr;
-BufferBlob* StubRoutines::_continuation_stubs_code              = nullptr;
-*/
-
 // Define fields used to store stub entries
 
 #define DEFINE_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name) \
@@ -150,153 +143,11 @@ STUBGEN_ENTRIES_DO(DEFINE_ENTRY_FIELD, DEFINE_ENTRY_FIELD_INIT)
 #undef DEFINE_ENTRY_FIELD_INIT
 #undef DEFINE_ENTRY_FIELD
 
-/*
-address StubRoutines::_call_stub_return_address                 = nullptr;
-address StubRoutines::_call_stub_entry                          = nullptr;
-
-address StubRoutines::_catch_exception_entry                    = nullptr;
-address StubRoutines::_forward_exception_entry                  = nullptr;
-*/
-
 jint    StubRoutines::_verify_oop_count                         = 0;
 
-/*
-address StubRoutines::_verify_oop_subroutine_entry              = nullptr;
-address StubRoutines::_atomic_xchg_entry                        = nullptr;
-address StubRoutines::_atomic_cmpxchg_entry                     = nullptr;
-address StubRoutines::_atomic_cmpxchg_long_entry                = nullptr;
-address StubRoutines::_atomic_add_entry                         = nullptr;
-address StubRoutines::_fence_entry                              = nullptr;
-
-// Compiled code entry points default values
-// The default functions don't have separate disjoint versions.
-address StubRoutines::_jbyte_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jbyte_copy);
-address StubRoutines::_jshort_arraycopy         = CAST_FROM_FN_PTR(address, StubRoutines::jshort_copy);
-address StubRoutines::_jint_arraycopy           = CAST_FROM_FN_PTR(address, StubRoutines::jint_copy);
-address StubRoutines::_jlong_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jlong_copy);
-address StubRoutines::_oop_arraycopy            = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy);
-address StubRoutines::_oop_arraycopy_uninit     = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy_uninit);
-address StubRoutines::_jbyte_disjoint_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jbyte_copy);
-address StubRoutines::_jshort_disjoint_arraycopy         = CAST_FROM_FN_PTR(address, StubRoutines::jshort_copy);
-address StubRoutines::_jint_disjoint_arraycopy           = CAST_FROM_FN_PTR(address, StubRoutines::jint_copy);
-address StubRoutines::_jlong_disjoint_arraycopy          = CAST_FROM_FN_PTR(address, StubRoutines::jlong_copy);
-address StubRoutines::_oop_disjoint_arraycopy            = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy);
-address StubRoutines::_oop_disjoint_arraycopy_uninit     = CAST_FROM_FN_PTR(address, StubRoutines::oop_copy_uninit);
-
-address StubRoutines::_arrayof_jbyte_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jbyte_copy);
-address StubRoutines::_arrayof_jshort_arraycopy = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jshort_copy);
-address StubRoutines::_arrayof_jint_arraycopy   = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jint_copy);
-address StubRoutines::_arrayof_jlong_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jlong_copy);
-address StubRoutines::_arrayof_oop_arraycopy    = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
-address StubRoutines::_arrayof_oop_arraycopy_uninit      = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy_uninit);
-address StubRoutines::_arrayof_jbyte_disjoint_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jbyte_copy);
-address StubRoutines::_arrayof_jshort_disjoint_arraycopy = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jshort_copy);
-address StubRoutines::_arrayof_jint_disjoint_arraycopy   = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jint_copy);
-address StubRoutines::_arrayof_jlong_disjoint_arraycopy  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_jlong_copy);
-address StubRoutines::_arrayof_oop_disjoint_arraycopy    = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
-address StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy_uninit);
-
-address StubRoutines::_data_cache_writeback              = nullptr;
-address StubRoutines::_data_cache_writeback_sync         = nullptr;
-
-address StubRoutines::_checkcast_arraycopy               = nullptr;
-address StubRoutines::_checkcast_arraycopy_uninit        = nullptr;
-address StubRoutines::_unsafe_arraycopy                  = nullptr;
-address StubRoutines::_generic_arraycopy                 = nullptr;
-
-address StubRoutines::_unsafe_setmemory                  = nullptr;
-
-address StubRoutines::_jbyte_fill;
-address StubRoutines::_jshort_fill;
-address StubRoutines::_jint_fill;
-address StubRoutines::_arrayof_jbyte_fill;
-address StubRoutines::_arrayof_jshort_fill;
-address StubRoutines::_arrayof_jint_fill;
-
-address StubRoutines::_aescrypt_encryptBlock               = nullptr;
-address StubRoutines::_aescrypt_decryptBlock               = nullptr;
-address StubRoutines::_cipherBlockChaining_encryptAESCrypt = nullptr;
-address StubRoutines::_cipherBlockChaining_decryptAESCrypt = nullptr;
-address StubRoutines::_electronicCodeBook_encryptAESCrypt  = nullptr;
-address StubRoutines::_electronicCodeBook_decryptAESCrypt  = nullptr;
-address StubRoutines::_counterMode_AESCrypt                = nullptr;
-address StubRoutines::_galoisCounterMode_AESCrypt          = nullptr;
-address StubRoutines::_ghash_processBlocks                 = nullptr;
-address StubRoutines::_chacha20Block                       = nullptr;
-address StubRoutines::_base64_encodeBlock                  = nullptr;
-address StubRoutines::_base64_decodeBlock                  = nullptr;
-address StubRoutines::_poly1305_processBlocks              = nullptr;
-address StubRoutines::_intpoly_montgomeryMult_P256         = nullptr;
-address StubRoutines::_intpoly_assign                      = nullptr;
-
-address StubRoutines::_md5_implCompress      = nullptr;
-address StubRoutines::_md5_implCompressMB    = nullptr;
-address StubRoutines::_sha1_implCompress     = nullptr;
-address StubRoutines::_sha1_implCompressMB   = nullptr;
-address StubRoutines::_sha256_implCompress   = nullptr;
-address StubRoutines::_sha256_implCompressMB = nullptr;
-address StubRoutines::_sha512_implCompress   = nullptr;
-address StubRoutines::_sha512_implCompressMB = nullptr;
-address StubRoutines::_sha3_implCompress     = nullptr;
-address StubRoutines::_sha3_implCompressMB   = nullptr;
-
-address StubRoutines::_updateBytesCRC32 = nullptr;
-address StubRoutines::_crc_table_adr =    nullptr;
-*/
-
 address StubRoutines::_string_indexof_array[4]   =    { nullptr };
-
-/*
-address StubRoutines::_crc32c_table_addr = nullptr;
-address StubRoutines::_updateBytesCRC32C = nullptr;
-address StubRoutines::_updateBytesAdler32 = nullptr;
-
-address StubRoutines::_multiplyToLen = nullptr;
-address StubRoutines::_squareToLen = nullptr;
-address StubRoutines::_mulAdd = nullptr;
-address StubRoutines::_montgomeryMultiply = nullptr;
-address StubRoutines::_montgomerySquare = nullptr;
-address StubRoutines::_bigIntegerRightShiftWorker = nullptr;
-address StubRoutines::_bigIntegerLeftShiftWorker = nullptr;
-
-address StubRoutines::_vectorizedMismatch = nullptr;
-
-address StubRoutines::_dexp = nullptr;
-address StubRoutines::_dlog = nullptr;
-address StubRoutines::_dlog10 = nullptr;
-address StubRoutines::_fmod = nullptr;
-address StubRoutines::_dpow = nullptr;
-address StubRoutines::_dsin = nullptr;
-address StubRoutines::_dcos = nullptr;
-address StubRoutines::_dlibm_sin_cos_huge = nullptr;
-address StubRoutines::_dlibm_reduce_pi04l = nullptr;
-address StubRoutines::_dlibm_tan_cot_huge = nullptr;
-address StubRoutines::_dtan = nullptr;
-address StubRoutines::_dtanh = nullptr;
-
-address StubRoutines::_f2hf = nullptr;
-address StubRoutines::_hf2f = nullptr;
-
-*/
 address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
 address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
-
-/*
-address StubRoutines::_method_entry_barrier = nullptr;
-address StubRoutines::_array_sort = nullptr;
-address StubRoutines::_array_partition  = nullptr;
-
-address StubRoutines::_cont_thaw          = nullptr;
-address StubRoutines::_cont_returnBarrier = nullptr;
-address StubRoutines::_cont_returnBarrierExc = nullptr;
-address StubRoutines::_cont_preempt_stub = nullptr;
-
-address StubRoutines::_upcall_stub_exception_handler = nullptr;
-address StubRoutines::_upcall_stub_load_target = nullptr;
-
-address StubRoutines::_lookup_secondary_supers_table_slow_path_stub = nullptr;
-*/
-
 address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPERS_TABLE_SIZE] = { nullptr };
 
 const char* StubRoutines::get_blob_name(StubGenBlobId id) {
@@ -477,51 +328,11 @@ STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_FUNCTION)
 #undef DEFINE_BLOB_INIT_FUNCTION
 
 /*
-void StubRoutines::initialize_initial_stubs() {
-  if (_initial_stubs_code == nullptr) {
-    _initial_stubs_code = initialize_stubs(StubCodeGenerator::Initial_stubs,
-                                           _initial_stubs_code_size, 10,
-                                           "StubRoutines generation initial stubs",
-                                           "StubRoutines (initial stubs)",
-                                           "_initial_stubs_code_size");
-  }
-}
-
-void StubRoutines::initialize_continuation_stubs() {
-  if (_continuation_stubs_code == nullptr) {
-    _continuation_stubs_code = initialize_stubs(StubCodeGenerator::Continuation_stubs,
-                                           _continuation_stubs_code_size, 10,
-                                           "StubRoutines generation continuation stubs",
-                                           "StubRoutines (continuation stubs)",
-                                           "_continuation_stubs_code_size");
-  }
-}
-
-void StubRoutines::initialize_compiler_stubs() {
-  if (_compiler_stubs_code == nullptr) {
-    _compiler_stubs_code = initialize_stubs(StubCodeGenerator::Compiler_stubs,
-                                           _compiler_stubs_code_size, 100,
-                                           "StubRoutines generation compiler stubs",
-                                           "StubRoutines (compiler stubs)",
-                                           "_compiler_stubs_code_size");
-  }
-}
-
-void StubRoutines::initialize_final_stubs() {
-  if (_final_stubs_code == nullptr) {
-    _final_stubs_code = initialize_stubs(StubCodeGenerator::Final_stubs,
-                                         _final_stubs_code_size, 10,
-                                         "StubRoutines generation final stubs",
-                                         "StubRoutines (final stubs)",
-                                         "_final_stubs_code_size");
-  }
-}
-
-
-void initial_stubs_init()      { StubRoutines::initialize_initial_stubs(); }
-void continuation_stubs_init() { StubRoutines::initialize_continuation_stubs(); }
-void final_stubs_init()        { StubRoutines::initialize_final_stubs(); }
-*/
+ * we generate the underlying driver method but this wrapper is needed
+ * to perform special handling depending on where the compiler init
+ * gets called from. it ought to be possible to remove this at some
+ * point and have adeterminate ordered init.
+ */
 
 void compiler_stubs_init(bool in_compiler_thread) {
   if (in_compiler_thread && DelayCompilerStubsGeneration) {

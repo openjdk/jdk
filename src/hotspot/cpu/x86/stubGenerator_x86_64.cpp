@@ -3784,7 +3784,8 @@ address StubGenerator::generate_cont_returnBarrier_exception() {
 
 address StubGenerator::generate_cont_preempt_stub() {
   if (!Continuations::enabled()) return nullptr;
-  StubCodeMark mark(this, "StubRoutines","Continuation preempt stub");
+  StubGenStubId stub_id = StubGenStubId::cont_preempt_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   __ reset_last_Java_frame(true);

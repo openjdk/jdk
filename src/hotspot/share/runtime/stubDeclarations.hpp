@@ -576,7 +576,10 @@
   do_blob(continuation)                                                 \
   do_stub(continuation, cont_thaw)                                      \
   do_entry(continuation, cont_thaw, cont_thaw, cont_thaw)               \
-  do_stub(continuation, cont_returnBarrier)                             \
+  do_stub(continuation, cont_preempt)                                   \
+  do_entry(continuation, cont_prempt, cont_preempt_stub,                \
+           cont_preempt_stub)                                           \
+do_stub(continuation, cont_returnBarrier)                               \
   do_entry(continuation, cont_returnBarrier, cont_returnBarrier,        \
            cont_returnBarrier)                                          \
   do_stub(continuation, cont_returnBarrierExc)                          \
