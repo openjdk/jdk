@@ -79,7 +79,7 @@ public final class InOutPathTest {
                 }, "--app-content same as output bundle")},
             }));
         } else {
-            var contentsFolder = "Contents";
+            var contentsFolder = "Contents/MacOS";
             data.addAll(List.of(new Object[][]{
                 {PackageType.IMAGE.toString(), wrap(cmd -> {
                     additionalContent(cmd, "--app-content", cmd.outputBundle().resolve(contentsFolder));
@@ -180,6 +180,15 @@ public final class InOutPathTest {
             cmd.executeAndAssertHelloAppImageCreated();
             if (isAppImageValid(cmd)) {
                 verifyAppImage(cmd);
+            }
+
+            if (cmd.hasArgument("--app-content")) {
+                // --app-content can be set to the app image directory which
+                // should not exist before jpackage is executed:
+                //  jpackage --name Foo --dest output --app-content output/Foo
+                // Verify the directory exists. At least this check will catch the
+                // case when its value is set to a path unrelated to jpackage I/O.
+                TKit.assertDirectoryNotEmpty(Path.of(cmd.getArgumentValue("--app-content")));
             }
         } else {
             new PackageTest()
