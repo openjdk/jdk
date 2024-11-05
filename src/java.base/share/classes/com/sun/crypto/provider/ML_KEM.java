@@ -17,7 +17,7 @@ import javax.crypto.spec.SecretKeySpec;
 public final class ML_KEM {
 
     private final int mlKem_size;
-    private final int mlKem_k;
+    public final int mlKem_k;
     private final int mlKem_eta1;
     private final int mlKem_eta2;
 
@@ -27,7 +27,7 @@ public final class ML_KEM {
 
     public static final int secretSize = 32;
 
-    private static final int mlKem_q = 3329;
+    public static final int mlKem_q = 3329;
     private static final int mlKem_n = 256;
 
     // mlKemXofBlockLen + mlKemXofPad should be divisible by 192 as that is
@@ -427,29 +427,6 @@ public final class ML_KEM {
             K_PKE_CipherText cipherText, byte[] sharedSecret) {
     }
 
-    private boolean isValidEncapsulationKey(ML_KEM_EncapsulationKey key) {
-        byte[] keyBytes = key.keyBytes;
-        if (keyBytes.length != mlKem_k * 384 + 32) {
-            return false;
-        }
-        int x, y, z, a, b;
-        for (int i = 0; i < mlKem_k * 384; i += 3) {
-            x = keyBytes[i] & 0xFF;
-            y = keyBytes[i + 1] & 0xFF;
-            z = keyBytes[i + 2] & 0xFF;
-            a = x + ((y & 0xF) << 8);
-            b = (y >> 4) + (z << 4);
-            if ((a >= mlKem_q) || (b >= mlKem_q)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean isValidDecapsulationKey(ML_KEM_DecapsulationKey key) {
-        return (key.keyBytes.length == mlKem_k * 768 + 96);
-    }
-
     /*
     Main internal algorithms from Section 6 of specification
      */
@@ -484,9 +461,6 @@ public final class ML_KEM {
         var mlKemH = MessageDigest.getInstance("SHA3-256");
         var mlKemG = MessageDigest.getInstance("SHA3-512");
 
-        if (!isValidEncapsulationKey(encapsulationKey)) {
-            throw new InvalidKeyException("Invalid encapsulation key");
-        }
         mlKemH.update(encapsulationKey.keyBytes);
         mlKemG.update(randomMessage);
         mlKemG.update(mlKemH.digest());
@@ -506,10 +480,7 @@ public final class ML_KEM {
             throws NoSuchAlgorithmException,
             InvalidKeyException, DecapsulateException {
 
-        //Check input validity
-        if (!isValidDecapsulationKey(decapsulationKey)) {
-            throw new InvalidKeyException("Invalid decapsulation key");
-        }
+        //Check ciphertext validity
         if (!isValidCipherText(cipherText)) {
             throw new DecapsulateException("Invalid ciphertext");
         }

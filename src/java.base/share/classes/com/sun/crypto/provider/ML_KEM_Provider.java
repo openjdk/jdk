@@ -171,6 +171,54 @@ public final class ML_KEM_Provider {
             return mlKem.encapsulationSize;
         }
 
+        @Override
+        public Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
+            ML_KEM mlKem = new ML_KEM(name2int(name));
+
+            //Encapsulation key type check
+            if (pk.length != mlKem.mlKem_k * 384 + 32) {
+                throw new InvalidKeyException("Public key is not the correct size");
+            }
+
+            //Encapsulation key modulus check
+            int x, y, z, a, b;
+            for (int i = 0; i < mlKem.mlKem_k * 384; i += 3) {
+                x = pk[i] & 0xFF;
+                y = pk[i + 1] & 0xFF;
+                z = pk[i + 2] & 0xFF;
+                a = x + ((y & 0xF) << 8);
+                b = (y >> 4) + (z << 4);
+                if ((a >= ML_KEM.mlKem_q) || (b >= ML_KEM.mlKem_q)) {
+                    throw new InvalidKeyException("Coefficients in public key not in specified range");
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+            ML_KEM mlKem = new ML_KEM(name2int(name));
+            int k = mlKem.mlKem_k;
+            MessageDigest mlKemH;
+            try {
+                mlKemH = MessageDigest.getInstance("SHA3-256");
+            } catch (NoSuchAlgorithmException e) {
+                throw new ProviderException("Failed to get instance of SHA3", e);
+            }
+
+            //Decapsulation key type check
+            if (sk.length != k * 768 + 96) {
+                throw new InvalidKeyException("Private key is not the correct size");
+            }
+
+            //Decapsulation hash check
+            mlKemH.update(sk, k * 384, k * 384 + 32);
+            byte[] check = Arrays.copyOfRange(sk, k * 768 + 32, k * 768 + 64);
+            if (!MessageDigest.isEqual(mlKemH.digest(), check)) {
+                throw new InvalidKeyException("Private key hash check failed");
+            }
+            return null;
+        }
         public K() {
             super("ML-KEM", "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024");
         }
