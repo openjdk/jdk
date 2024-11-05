@@ -320,9 +320,8 @@ void WriteClosure::do_ptr(void** p) {
 void ReadClosure::do_ptr(void** p) {
   assert(*p == nullptr, "initializing previous initialized pointer.");
   intptr_t obj = nextPtr();
-  assert((intptr_t)obj >= 0 || (intptr_t)obj < -100,
-         "hit tag while initializing ptrs.");
-  *p = (void*)obj != nullptr ? (void*)(SharedBaseAddress + obj) : (void*)obj;
+  assert(obj >= 0, "sanity.");
+  *p = (obj != 0) ? (void*)(_base_address + obj) : (void*)obj;
 }
 
 void ReadClosure::do_u4(u4* p) {
