@@ -32,6 +32,17 @@ import java.util.Arrays;
 
 public class ML_DSA_Provider {
 
+    public enum Version {
+        DRAFT, FINAL
+    }
+
+    // This implementation works in FIPS 204 final. If for some reason
+    // (for example, interop with an old version, or running an old test),
+    // set the version to an older one. The following VM option is required:
+    //
+    // --add-exports java.base/sun.security.provider=ALL-UNNAMED
+    public static Version version = Version.FINAL;
+
     static int name2int(String name) {
         if (name.endsWith("44")) return 2;
         else if (name.endsWith("65")) return 3;
@@ -128,6 +139,13 @@ public class ML_DSA_Provider {
             byte[] rnd = new byte[32];
             r.nextBytes(rnd);
             var mlDsa = new ML_DSA(size);
+            if (version == Version.FINAL) {
+                // FIPS 204 Algorithm 2 ML-DSA.Sign prepend {0, len(ctx)}
+                // to message before passing it to Sign_internal.
+                var m = new byte[msg.length + 2];
+                System.arraycopy(msg, 0, m, 2, msg.length); // len(ctx) = 0
+                msg = m;
+            }
             ML_DSA.ML_DSA_Signature sig = mlDsa.signInternal(msg, rnd, skBytes);
             return mlDsa.sigEncode(sig);
         }
@@ -136,6 +154,13 @@ public class ML_DSA_Provider {
         public boolean implVerify(String name, byte[] pkBytes, Object pk2, byte[] msg, byte[] sigBytes) {
             var size = name2int(name);
             var mlDsa = new ML_DSA(size);
+            if (version == Version.FINAL) {
+                // FIPS 204 Algorithm 3 ML-DSA.Verify prepend {0, len(ctx)}
+                // to message before passing it to Verify_internal.
+                var m = new byte[msg.length + 2];
+                System.arraycopy(msg, 0, m, 2, msg.length); // len(ctx) = 0
+                msg = m;
+            }
             return mlDsa.verifyInternal(pkBytes, msg, sigBytes);
         }
     }
