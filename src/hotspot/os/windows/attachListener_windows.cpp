@@ -107,7 +107,11 @@ public:
                              (DWORD)size,
                              &nread,
                              nullptr);   // not overlapped
-    return fSuccess ? (int)nread : -1;
+    if (!fSuccess) {
+      log_error(attach)("pipe read error (%d)", GetLastError());
+      return -1;
+    }
+    return (int)nread;
   }
 
   // ReplyWriter
@@ -119,7 +123,11 @@ public:
                               (DWORD)size,
                               &written,
                               nullptr);  // not overlapped
-    return fSuccess ? (int)written : -1;
+    if (!fSuccess) {
+        log_error(attach)("pipe write error (%d)", GetLastError());
+        return -1;
+    }
+    return (int)written;
   }
 
   void flush() override {
@@ -392,7 +400,7 @@ Win32AttachOperation* Win32AttachListener::dequeue() {
           op->append_arg(request->arg(i));
         }
         if (!op->open_pipe(request->pipe(), true/*write-only*/)) {
-          log_error(attach)("AttachListener::dequeue(v1), open pipe error");
+          // error is already logged
           delete op;
           op = nullptr;
         }
@@ -401,7 +409,7 @@ Win32AttachOperation* Win32AttachListener::dequeue() {
         op = new Win32AttachOperation();
         if (!op->open_pipe(request->pipe(), false/*write-only*/)
             || !op->read_request()) {
-          log_error(attach)("AttachListener::dequeue(v2), reading request ERROR");
+          // error is already logged
           delete op;
           op = nullptr;
         }
