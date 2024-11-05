@@ -292,7 +292,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
   // iterations at least.
   int simulated_unrolling_count = SuperWordStoreToLoadForwardingFailureDetection;
   int unrolled_count = vloop_analyzer.vloop().cl()->unrolled_count();
-  uint simulated_super_unrolling_count = MAX(1, simulated_unrolling_count / unrolled_count);
+  uint simulated_super_unrolling_count = MAX2(1, simulated_unrolling_count / unrolled_count);
   int iv_stride = vloop_analyzer.vloop().iv_stride();
   int order = 0;
   for (uint k = 0; k < simulated_super_unrolling_count; k++) {

@@ -764,11 +764,14 @@ public class TestDependencyOffsets {
                 }
 
                 ExpectVectorization expectVectorization = ExpectVectorization.ALWAYS;
-                if (isSingleArray && 0 < offset) {
+                if (isSingleArray && 0 < offset && offset < 64) {
                     // In a store-forward case at iteration distances below a certain threshold, and not there
                     // is some partial overlap between the expected vector store and some vector load in a later
                     // iteration, we avoid vectorization to avoid the latency penalties of store-to-load
                     // forwarding failure. We only detect these failures in single-array cases.
+                    //
+                    // Note: we currently never detect store-to-load-forwarding failures beyond 64 iterations,
+                    //       And so if the offset >= 64, we always expect vectorization.
                     //
                     // The condition for partial overlap:
                     //   offset % #elements != 0
@@ -791,8 +794,8 @@ public class TestDependencyOffsets {
                             builder.append("    // Unknown if detect store-to-load-forwarding failures -> maybe disable IR rules.\n");
                             expectVectorization = ExpectVectorization.UNKNOWN;
                         } else {
-                            builder.append("    // Offset is large -> expect no store-to-load-failure detection -> should vectoirze.\n");
-                            expectVectorization = ExpectVectorization.ALWAYS;
+                            // offset > 64  -> offset too large, expect no store-to-load-failure detection
+                            throw new RuntimeException("impossible");
                         }
 		    } else if (sometimesPartialOverlap && !alwaysPartialOverlap) {
                         builder.append("    // Partial overlap condition true: sometimes but not always -> maybe disable IR rules.\n");
