@@ -91,7 +91,7 @@ public class ProtocolFilter {
 
         // Only enable cipher suites for TLS v1.2.
         sslServerSocket.setEnabledCipherSuites(
-            new String[]{"TLS_RSA_WITH_AES_128_CBC_SHA256"});
+                new String[]{"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"});
 
         serverPort = sslServerSocket.getLocalPort();
 

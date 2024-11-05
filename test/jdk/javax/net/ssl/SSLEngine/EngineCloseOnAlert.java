@@ -54,7 +54,7 @@ public class EngineCloseOnAlert {
     private static TrustManagerFactory TMF;
 
     private static final String[] ONECIPHER =
-            { "TLS_RSA_WITH_AES_128_CBC_SHA" };
+            {"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"};
 
     public interface TestCase {
         public void runTest() throws Exception;
