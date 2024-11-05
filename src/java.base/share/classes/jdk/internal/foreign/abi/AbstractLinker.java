@@ -262,12 +262,6 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                     " is not of minimum size to align " + element +
                     "(with byte alignment " + element.byteAlignment() + ")" + inMessage(gl));
         }
-        long pos = (gl != null) ? gl.byteOffset(MemoryLayout.PathElement.groupElement(index)) : 0;
-        if (!Utils.isAligned(pos, element.byteAlignment())) {
-            throw new IllegalArgumentException("The padding layout " + padding +
-                    " does not align the element " + element +
-                    " (at byte offset " + pos + ")" + inMessage(gl));
-        }
     }
 
     private static String inMessage(GroupLayout gl) {
