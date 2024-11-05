@@ -1263,10 +1263,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   if (LockingMode != LM_LEGACY) {
     // Check preemption for Object.wait()
     Label not_preempted;
-    __ ld(t0, Address(xthread, JavaThread::preempt_alternate_return_offset()));
-    __ beqz(t0, not_preempted);
+    __ ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    __ beqz(t1, not_preempted);
     __ sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
-    __ jr(t0);
+    __ jr(t1);
     __ bind(native_return);
     __ restore_after_resume(true /* is_native */);
     // reload result_handler
