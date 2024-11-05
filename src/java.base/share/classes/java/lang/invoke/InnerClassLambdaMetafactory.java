@@ -189,13 +189,17 @@ import sun.invoke.util.Wrapper;
         return i < ARG_NAME_CACHE.length ? ARG_NAME_CACHE[i] :  "arg$" + (i + 1);
     }
 
-    private static String lambdaClassName(Class<?> targetClass) {
+    private static String sanitizedTargetClassName(Class<?> targetClass) {
         String name = targetClass.getName();
         if (targetClass.isHidden()) {
             // use the original class name
             name = name.replace('/', '_');
         }
-        return name.replace('.', '/').concat("$$Lambda");
+        return name.replace('.', '/');
+    }
+
+    private static String lambdaClassName(Class<?> targetClass) {
+        return sanitizedTargetClassName(targetClass).concat("$$Lambda");
     }
 
     /**
@@ -434,7 +438,7 @@ import sun.invoke.util.Wrapper;
                     public void accept(CodeBuilder cob) {
                         cob.new_(SerializationSupport.CD_SerializedLambda)
                            .dup()
-                           .ldc(classDesc(targetClass))
+                           .ldc(ClassDesc.ofInternalName(sanitizedTargetClassName(targetClass)))
                            .ldc(factoryType.returnType().getName().replace('.', '/'))
                            .ldc(interfaceMethodName)
                            .ldc(interfaceMethodType.toMethodDescriptorString())

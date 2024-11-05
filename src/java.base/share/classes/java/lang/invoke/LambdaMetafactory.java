@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,6 +206,18 @@ import java.util.Objects;
  * method, and returns an object (the lambda object) that implements the target
  * type. (For method references, the implementation method is simply the
  * referenced method; no desugaring is needed.)
+ *
+ * <p>Uses besides evaluation of lambda expressions and method references are
+ * unintended.  These linkage methods may change their unspecified behaviors at
+ * any time to better suit the Java language features, which may impact
+ * unintended uses.  For example, classes and interfaces in Java source code
+ * are all strongly reachable from their defining loaders (JLS {@jls 12.7}).
+ * Thus, the class implementing the "function objects" returned by these methods
+ * may be similarly strongly reachable from the defining class loader of the
+ * caller of these methods, because these objects are logically a part of the
+ * caller class or interface.  These methods do not have to consider the scenario
+ * where the caller is {@linkplain MethodHandles.Lookup#defineHiddenClass not
+ * strongly reachable} from its defining class loader.
  *
  * <p>The argument list of the implementation method and the argument list of
  * the interface method(s) may differ in several ways.  The implementation
