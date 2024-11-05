@@ -699,19 +699,6 @@ void CallGenerator::do_late_inline_helper() {
       C->print_inlining_update_delayed(this);
     }
 
-    C->print_inlining_reset();
-    if (is_mh_late_inline()) {
-      print_inlining_late(InliningResult::SUCCESS, "late inline (method handle)");
-    } else if (is_string_late_inline()) {
-      print_inlining_late(InliningResult::SUCCESS, "late inline (string method)");
-    } else if (is_boxing_late_inline()) {
-      print_inlining_late(InliningResult::SUCCESS, "late inline (boxing method)");
-    } else if (is_vector_reboxing_late_inline()) {
-      print_inlining_late(InliningResult::SUCCESS, "late inline (vector reboxing method)");
-    } else {
-      print_inlining_late(InliningResult::SUCCESS, "late inline");
-    }
-
     // Setup default node notes to be picked up by the inlining
     Node_Notes* old_nn = C->node_notes_at(call->_idx);
     if (old_nn != nullptr) {
@@ -724,6 +711,22 @@ void CallGenerator::do_late_inline_helper() {
     JVMState* new_jvms = inline_cg()->generate(jvms);
     if (new_jvms == nullptr)  return;  // no change
     if (C->failing())      return;
+
+    bool do_print_inlining = C->print_inlining() || C->print_intrinsics();
+    if (do_print_inlining) {
+      C->print_inlining_reset();
+      if (is_mh_late_inline()) {
+        print_inlining_late(InliningResult::SUCCESS, "late inline (method handle)");
+      } else if (is_string_late_inline()) {
+        print_inlining_late(InliningResult::SUCCESS, "late inline (string method)");
+      } else if (is_boxing_late_inline()) {
+        print_inlining_late(InliningResult::SUCCESS, "late inline (boxing method)");
+      } else if (is_vector_reboxing_late_inline()) {
+        print_inlining_late(InliningResult::SUCCESS, "late inline (vector reboxing method)");
+      } else {
+        print_inlining_late(InliningResult::SUCCESS, "late inline");
+      }
+    }
 
     // Capture any exceptional control flow
     GraphKit kit(new_jvms);
