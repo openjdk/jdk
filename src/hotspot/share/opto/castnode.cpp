@@ -303,6 +303,39 @@ const Type* CastLLNode::Value(PhaseGVN* phase) const {
   return widen_type(phase, res, T_LONG);
 }
 
+bool CastLLNode::used_at_inner_loop_exit_test() {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* convl2i = fast_out(i);
+    if (convl2i->Opcode() == Op_ConvL2I) {
+      for (DUIterator_Fast jmax, j = convl2i->fast_outs(jmax); j < jmax; j++) {
+        Node* cmp = convl2i->fast_out(j);
+        if (cmp->Opcode() == Op_CmpI) {
+          for (DUIterator_Fast kmax, k = cmp->fast_outs(kmax); k < kmax; k++) {
+            Node* bol = cmp->fast_out(k);
+            if (bol->Opcode() == Op_Bool) {
+              for (DUIterator_Fast lmax, l = bol->fast_outs(lmax); l < lmax; l++) {
+                Node* iff = bol->fast_out(l);
+                if (iff->Opcode() == Op_If) {
+                  Node* true_proj = iff->as_If()->proj_out_or_null(true);
+                  if (true_proj != nullptr) {
+                    Node* ctrl_use = true_proj->unique_ctrl_out_or_null();
+                    if (ctrl_use != nullptr && ctrl_use->Opcode() == Op_Loop &&
+                        ctrl_use->in(2) == true_proj &&
+                        ctrl_use->as_Loop()->is_loop_nest_inner_loop()) {
+                      return true;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
 Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* progress = ConstraintCastNode::Ideal(phase, can_reshape);
   if (progress != nullptr) {
@@ -338,37 +371,10 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     if (igvn == nullptr) {
       return res;
     }
-    igvn->register_new_node_with_optimizer(res);
-    for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-      Node* u = fast_out(i);
-      if (u->Opcode() == Op_ConvL2I) {
-        Node* convl2i = u;
-        for (DUIterator_Fast jmax, j = convl2i->fast_outs(jmax); j < jmax; j++) {
-          Node* cmp = convl2i->fast_out(j);
-          if (cmp->Opcode() == Op_CmpI) {
-            for (DUIterator_Fast kmax, k = cmp->fast_outs(kmax); k < kmax; k++) {
-              Node* bol = cmp->fast_out(k);
-              if (bol->Opcode() == Op_Bool) {
-                for (DUIterator_Fast lmax, l = bol->fast_outs(lmax); l < lmax; l++) {
-                  Node* iff = bol->fast_out(l);
-                  if (iff->Opcode() == Op_If) {
-                    Node* true_proj = iff->as_If()->proj_out(true);
-                    Node* ctrl_use = true_proj->unique_ctrl_out();
-                    if (ctrl_use->Opcode() == Op_Loop && ctrl_use->as_Loop()->is_loop_nest_inner_loop()) {
-                      tty->print_cr("XXX found");
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      igvn->rehash_node_delayed(u);
-      int replaced = u->replace_edge(this, res);
-      assert(replaced > 0, "should have succeeded");
-      --i, imax -= replaced;
+    if (used_at_inner_loop_exit_test()) {
+      return nullptr;
     }
+    return res;
   }
   return nullptr;
 }

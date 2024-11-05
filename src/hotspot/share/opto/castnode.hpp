@@ -136,6 +136,9 @@ public:
   }
 
   virtual const Type* Value(PhaseGVN* phase) const;
+
+  bool used_at_inner_loop_exit_test();
+
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegL; }

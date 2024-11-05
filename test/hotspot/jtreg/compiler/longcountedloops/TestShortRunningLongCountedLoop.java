@@ -549,4 +549,25 @@ public class TestShortRunningLongCountedLoop {
         testLongLoopUnknownBoundsShortUnswitchedLoop(0, 100, 100, true);
         testLongLoopUnknownBoundsShortUnswitchedLoop(0, 100, 100, false);
     }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, "1", IRNode.SHORT_RUNNING_LOOP_TRAP, "1" })
+    @IR(failOn = { IRNode.LOOP, IRNode.OUTER_STRIP_MINED_LOOP })
+    public static int testLongLoopUnknownBoundsAddLimitShortLoop(int stop1, long stop2) {
+        int j = 0;
+        for (long i = 0; i < stop1 + stop2; i++) {
+            volatileField = 42;
+            j++;
+        }
+        return j;
+    }
+
+    @Run(test = "testLongLoopUnknownBoundsAddLimitShortLoop")
+    @Warmup(10_000)
+    public static void testLongLoopUnknownBoundsAddLimitShortLoop_runner() {
+        int res = testLongLoopUnknownBoundsAddLimitShortLoop(100, 0);
+        if (res != 100) {
+            throw new RuntimeException("incorrect result: " + res);
+        }
+    }
 }
