@@ -46,20 +46,17 @@ class TestResultTracker {
     private int trackedRegion = -1;
     private int curGC = -1;
     private String stdout;
-    private int expectedMarkingSkipEvents;      // How many times has the region from the "marking" collection set candidate set been "skipped".
     private int expectedRetainedSkipEvents;     // How many times has the region from the "retained" collection set candidate set been "skipped".
     private int expectedDropEvents;             // How many times has the region from the "retained" collection set candidate set been "dropped".
     private int expectedMarkingReclaimEvents;   // How many times has the region from the "marking" collection set candidate set been put into the collection set.
-    private int expectedRetainedReclaimEvents;  // How many times has the region from the "marking" collection set candidate set been put into the collection set.
+    private int expectedRetainedReclaimEvents;  // How many times has the region from the "retained" collection set candidate set been put into the collection set.
 
     TestResultTracker(String stdout,
-                      int expectedMarkingSkipEvents,
                       int expectedRetainedSkipEvents,
                       int expectedDropEvents,
                       int expectedMarkingReclaimEvents,
                       int expectedRetainedReclaimEvents) {
         this.stdout = stdout;
-        this.expectedMarkingSkipEvents = expectedMarkingSkipEvents;
         this.expectedRetainedSkipEvents = expectedRetainedSkipEvents;
         this.expectedDropEvents = expectedDropEvents;
         this.expectedMarkingReclaimEvents = expectedMarkingReclaimEvents;
@@ -210,11 +207,11 @@ class TestResultTracker {
 public class TestPinnedOldObjectsEvacuation {
 
     public static void main(String[] args) throws Exception {
-        // younGCsBeforeUnpin, expectedMarkingSkipEvents, expectedRetainedSkipEvents, expectedDropEvents, expectedMarkingReclaimEvents, expectedRetainedReclaimEvents
-        testPinnedEvacuation(1, 1, 0, 0, 0, 1);
-        testPinnedEvacuation(2, 1, 1, 0, 0, 1);
-        testPinnedEvacuation(3, 1, 2, 0, 0, 1);
-        testPinnedEvacuation(4, 1, 2, 1, 0, 0);
+        // younGCsBeforeUnpin, expectedRetainedSkipEvents, expectedDropEvents, expectedMarkingReclaimEvents, expectedRetainedReclaimEvents
+        testPinnedEvacuation(1, 0, 0, 0, 1);
+        testPinnedEvacuation(2, 1, 0, 0, 1);
+        testPinnedEvacuation(3, 2, 0, 0, 1);
+        testPinnedEvacuation(4, 2, 1, 0, 0);
     }
 
     private static int numMatches(String stringToMatch, String pattern) {
@@ -230,7 +227,6 @@ public class TestPinnedOldObjectsEvacuation {
     }
 
     private static void testPinnedEvacuation(int youngGCsBeforeUnpin,
-                                             int expectedMarkingSkipEvents,
                                              int expectedRetainedSkipEvents,
                                              int expectedDropEvents,
                                              int expectedMarkingReclaimEvents,
@@ -256,7 +252,6 @@ public class TestPinnedOldObjectsEvacuation {
         output.shouldHaveExitValue(0);
 
         TestResultTracker t = new TestResultTracker(output.getStdout(),
-                                                    expectedMarkingSkipEvents,
                                                     expectedRetainedSkipEvents,
                                                     expectedDropEvents,
                                                     expectedMarkingReclaimEvents,
