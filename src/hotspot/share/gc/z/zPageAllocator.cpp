@@ -826,6 +826,11 @@ void ZPageAllocator::free_page(ZPage* page, bool allow_defragment) {
   // Prepare page for recycling before taking the lock
   ZPage* const to_recycle = prepare_to_recycle(page, allow_defragment);
 
+  // Remove the remset before recycling
+  if (to_recycle->is_old() && to_recycle == page) {
+    to_recycle->remset_delete();
+  }
+
   ZLocker<ZLock> locker(&_lock);
 
   // Update used statistics
@@ -857,6 +862,11 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
 
     // Prepare to recycle
     ZPage* const to_recycle = prepare_to_recycle(page, true /* allow_defragment */);
+
+    // Remove the remset before recycling
+    if (to_recycle->is_old() && to_recycle == page) {
+      to_recycle->remset_delete();
+    }
 
     // Register for recycling
     to_recycle_pages.push(to_recycle);
