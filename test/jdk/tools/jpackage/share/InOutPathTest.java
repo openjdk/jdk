@@ -81,7 +81,7 @@ public final class InOutPathTest {
 
         return data;
     }
-    
+
     @Parameters(ifOS = OperatingSystem.MACOS)
     public static Collection inputOSX() {
         return List.<Object[]>of(additionalContentInput(

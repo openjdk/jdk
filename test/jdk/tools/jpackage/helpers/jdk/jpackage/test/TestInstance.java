@@ -360,7 +360,7 @@ final class TestInstance implements ThrowingRunnable {
 
                 return Collections.unmodifiableSet(result);
             }).get();
-    
+
     private static final Map<Class<?>, Function<Object, String>> PRIMITIVE_ARRAY_FORMATTERS = Map.of(
             boolean[].class, v -> Arrays.toString((boolean[])v),
             byte[].class, v -> Arrays.toString((byte[])v),
@@ -369,7 +369,7 @@ final class TestInstance implements ThrowingRunnable {
             int[].class, v -> Arrays.toString((int[])v),
             long[].class, v -> Arrays.toString((long[])v),
             float[].class, v -> Arrays.toString((float[])v),
-            double[].class, v -> Arrays.toString((double[])v)            
+            double[].class, v -> Arrays.toString((double[])v)
     );
 
 }
