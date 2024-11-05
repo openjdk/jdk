@@ -62,6 +62,21 @@ public class Annotations {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
+    @Repeatable(ParameterSupplierGroup.class)
+    public @interface ParameterSupplier {
+
+        String value();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface ParameterSupplierGroup {
+
+        ParameterSupplier[] value();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
     public @interface Parameters {
     }
 }

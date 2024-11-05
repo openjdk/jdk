@@ -26,9 +26,8 @@ package jdk.jpackage.tests;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
@@ -60,9 +59,6 @@ import jdk.jpackage.test.TKit;
 
 public final class ErrorTest {
 
-    private final JPackageCommand cmd;
-
-    @Parameters
     public static Collection input() {
         return List.of(new Object[][]{
             // non-existent arg
@@ -114,11 +110,12 @@ public final class ErrorTest {
         });
     }
 
-    public ErrorTest(String javaAppDesc, String[] jpackageArgs,
-            String[] removeArgs, String ... expectedErrors) {
-
+    @Test
+    @ParameterSupplier("input")
+    public static void test(String javaAppDesc, String[] jpackageArgs,
+            String[] removeArgs, String... expectedErrors) {
         // Init default jpackage test command line.
-        cmd = JPackageCommand.helloAppImage(javaAppDesc)
+        var cmd = JPackageCommand.helloAppImage(javaAppDesc)
                 // Disable default logic adding `--verbose` option
                 // to jpackage command line.
                 // It will affect jpackage error messages if the command line is malformed.
@@ -139,10 +136,7 @@ public final class ErrorTest {
         cmd.verifyOutput(Stream.of(expectedErrors)
                 .map(TKit::assertTextStream)
                 .reduce(TKit.TextStreamVerifier::andThen).get());
-    }
 
-    @Test
-    public void test() {
         cmd.execute(1);
     }
 }

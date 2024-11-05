@@ -32,8 +32,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -107,9 +109,13 @@ final class TestInstance implements ThrowingRunnable {
                 }
                 return values.stream().map(v -> {
                     if (v != null && v.getClass().isArray()) {
-                        return String.format("%s(length=%d)",
-                                Arrays.deepToString((Object[]) v),
-                                Array.getLength(v));
+                        String asString;
+                        if (v.getClass().getComponentType().isPrimitive()) {
+                            asString = PRIMITIVE_ARRAY_FORMATTERS.get(v.getClass()).apply(v);
+                        } else {
+                            asString = Arrays.deepToString((Object[]) v);
+                        }
+                        return String.format("%s(length=%d)", asString, Array.getLength(v));
                     }
                     return String.format("%s", v);
                 }).collect(Collectors.joining(", "));
@@ -354,5 +360,16 @@ final class TestInstance implements ThrowingRunnable {
 
                 return Collections.unmodifiableSet(result);
             }).get();
+    
+    private final static Map<Class<?>, Function<Object, String>> PRIMITIVE_ARRAY_FORMATTERS = Map.of(
+            boolean[].class, v -> Arrays.toString((boolean[])v),
+            byte[].class, v -> Arrays.toString((byte[])v),
+            char[].class, v -> Arrays.toString((char[])v),
+            short[].class, v -> Arrays.toString((short[])v),
+            int[].class, v -> Arrays.toString((int[])v),
+            long[].class, v -> Arrays.toString((long[])v),
+            float[].class, v -> Arrays.toString((float[])v),
+            double[].class, v -> Arrays.toString((double[])v)            
+    );
 
 }

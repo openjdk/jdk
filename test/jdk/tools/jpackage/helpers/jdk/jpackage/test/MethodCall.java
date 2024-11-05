@@ -22,14 +22,15 @@
  */
 package jdk.jpackage.test;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -41,18 +42,11 @@ import jdk.jpackage.test.TestInstance.TestDesc;
 
 class MethodCall implements ThrowingConsumer {
 
-    MethodCall(Object[] instanceCtorArgs, Method method) {
+    MethodCall(Object[] instanceCtorArgs, Method method, Object ... args) {
         this.ctorArgs = Optional.ofNullable(instanceCtorArgs).orElse(
                 DEFAULT_CTOR_ARGS);
         this.method = method;
-        this.methodArgs = new Object[0];
-    }
-
-    MethodCall(Object[] instanceCtorArgs, Method method, Object arg) {
-        this.ctorArgs = Optional.ofNullable(instanceCtorArgs).orElse(
-                DEFAULT_CTOR_ARGS);
-        this.method = method;
-        this.methodArgs = new Object[]{arg};
+        this.methodArgs = args;
     }
 
     TestDesc createDescription() {
@@ -80,20 +74,29 @@ class MethodCall implements ThrowingConsumer {
         }
 
         var ctor = findRequiredConstructor(method.getDeclaringClass(), ctorArgs);
-        if (ctor.isVarArgs()) {
-            var paramTypes = ctor.getParameterTypes();
-            var varArgParamType = paramTypes[paramTypes.length - 1];
 
-            var varArgs = Arrays.copyOfRange(ctorArgs, paramTypes.length - 1,
-                    ctorArgs.length, varArgParamType);
+        return ctor.newInstance(mapVarArgs(ctor, ctorArgs));
+    }
 
-            var varArgCtorArgs = Arrays.copyOfRange(ctorArgs, 0, paramTypes.length);
-            varArgCtorArgs[varArgCtorArgs.length - 1] = varArgs;
+    static Object[] mapVarArgs(Executable executable, Object ... args) {
+        if (executable.isVarArgs()) {
+            var paramTypes = executable.getParameterTypes();
+            Class varArgParamType = paramTypes[paramTypes.length - 1];
 
-            return ctor.newInstance(varArgCtorArgs);
+            if (paramTypes.length - args.length == 1) {
+                // Empty var args
+                args = Arrays.copyOf(args, args.length + 1);
+                args[args.length - 1] = Array.newInstance(varArgParamType.componentType(), 0);
+            } else {
+                var varArgs = Arrays.copyOfRange(args, paramTypes.length - 1,
+                        args.length, varArgParamType);
+
+                args = Arrays.copyOfRange(args, 0, paramTypes.length);
+                args[args.length - 1] = varArgs;
+            }
         }
 
-        return ctor.newInstance(ctorArgs);
+        return args;
     }
 
     void checkRequiredConstructor() throws NoSuchMethodException {
@@ -193,11 +196,30 @@ class MethodCall implements ThrowingConsumer {
 
     final static Object[] DEFAULT_CTOR_ARGS = new Object[0];
 
-    private final static Map<Class<?>, Class<?>> NORM_TYPES = Map.of(
+    private final static Map<Class<?>, Class<?>> NORM_TYPES;
+
+    static {
+        Map<Class<?>, Class<?>> primitives = Map.of(
             boolean.class, Boolean.class,
+            byte.class, Byte.class,
+            short.class, Short.class,
             int.class, Integer.class,
             long.class, Long.class,
+            float.class, Float.class,
+            double.class, Double.class);
+
+        Map<Class<?>, Class<?>> primitiveArrays = Map.of(
             boolean[].class, Boolean[].class,
+            byte[].class, Byte[].class,
+            short[].class, Short[].class,
             int[].class, Integer[].class,
-            long[].class, Long[].class);
+            long[].class, Long[].class,
+            float[].class, Float[].class,
+            double[].class, Double[].class);
+
+        Map<Class<?>, Class<?>> combined = new HashMap<>(primitives);
+        combined.putAll(primitiveArrays);
+
+        NORM_TYPES = Collections.unmodifiableMap(combined);
+    }
 }
