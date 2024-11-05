@@ -809,6 +809,11 @@ ZPage* ZPageAllocator::prepare_to_recycle(ZPage* page, bool allow_defragment) {
     return defragment_page(to_recycle);
   }
 
+  // Remove the remset before recycling
+  if (to_recycle->is_old() && to_recycle == page) {
+    to_recycle->remset_delete();
+  }
+
   return to_recycle;
 }
 
@@ -825,11 +830,6 @@ void ZPageAllocator::free_page(ZPage* page, bool allow_defragment) {
 
   // Prepare page for recycling before taking the lock
   ZPage* const to_recycle = prepare_to_recycle(page, allow_defragment);
-
-  // Remove the remset before recycling
-  if (to_recycle->is_old() && to_recycle == page) {
-    to_recycle->remset_delete();
-  }
 
   ZLocker<ZLock> locker(&_lock);
 
@@ -863,11 +863,6 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
     // Prepare to recycle
     ZPage* const to_recycle = prepare_to_recycle(page, true /* allow_defragment */);
 
-    // Remove the remset before recycling
-    if (to_recycle->is_old() && to_recycle == page) {
-      to_recycle->remset_delete();
-    }
-
     // Register for recycling
     to_recycle_pages.push(to_recycle);
   }
@@ -890,18 +885,6 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
 }
 
 void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
-  ZArray<ZPage*> to_recycle_pages;
-
-  // Prepare pages for recycling before taking the lock
-  ZListRemoveIterator<ZPage> allocation_pages_iter(allocation->pages());
-  for (ZPage* page; allocation_pages_iter.next(&page);) {
-    // Prepare to recycle
-    ZPage* const to_recycle = prepare_to_recycle(page, false /* allow_defragment */);
-
-    // Register for recycling
-    to_recycle_pages.push(to_recycle);
-  }
-
   ZLocker<ZLock> locker(&_lock);
 
   // Only decrease the overall used and not the generation used,
@@ -911,10 +894,10 @@ void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
   size_t freed = 0;
 
   // Free any allocated/flushed pages
-  ZArrayIterator<ZPage*> iter(&to_recycle_pages);
+  ZListRemoveIterator<ZPage> iter(allocation->pages());
   for (ZPage* page; iter.next(&page);) {
     freed += page->size();
-    recycle_page(page);
+    _cache.free_page(page);
   }
 
   // Adjust capacity and used to reflect the failed capacity increase
