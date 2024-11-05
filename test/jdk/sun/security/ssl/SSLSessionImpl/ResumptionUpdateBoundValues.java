@@ -179,8 +179,8 @@ public class ResumptionUpdateBoundValues extends SSLContextTemplate {
     public static void main(String[] args) throws Exception {
 
         if (args.length == 0) {
-            System.setProperty("test.java.opts",
-                    "-Dtest.src=" + System.getProperty("test.src") +
+            System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
+                    " -Dtest.src=" + System.getProperty("test.src") +
                             " -Dtest.jdk=" + System.getProperty("test.jdk") +
                             " -Djavax.net.debug=ssl,handshake");
 

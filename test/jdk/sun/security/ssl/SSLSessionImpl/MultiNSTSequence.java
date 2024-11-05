@@ -60,8 +60,8 @@ public class MultiNSTSequence {
             StringBuilder sb = new StringBuilder();
             Arrays.stream(args).forEach(a -> sb.append(a).append(" "));
             String params = sb.toString();
-            System.setProperty("test.java.opts",
-                "-Dtest.src=" + System.getProperty("test.src") +
+            System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
+                " -Dtest.src=" + System.getProperty("test.src") +
                     " -Dtest.jdk=" + System.getProperty("test.jdk") +
                     " -Dtest.root=" + System.getProperty("test.root") +
                     " -Djavax.net.debug=ssl,handshake " + params
