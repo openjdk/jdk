@@ -59,7 +59,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 
-public class PrintTextTest extends Component implements Printable {
+public class PrintTextTest {
 
     static final String INSTRUCTIONS = """
         This tests that printed text renders similarly to on-screen under a variety
@@ -80,132 +80,126 @@ public class PrintTextTest extends Component implements Printable {
         properly, should both match Page 1 on screen.
         """;
 
-    static int preferredSize;
-    Font textFont;
-    AffineTransform gxTx;
-    String page;
-    boolean useFM;
-
     public static void main(String[] args) throws Exception {
 
         PrinterJob pjob = PrinterJob.getPrinterJob();
         PageFormat portrait = pjob.defaultPage();
         portrait.setOrientation(PageFormat.PORTRAIT);
-        preferredSize = (int)portrait.getImageableWidth();
+        int preferredSize = (int) portrait.getImageableWidth();
 
         PageFormat landscape = pjob.defaultPage();
         landscape.setOrientation(PageFormat.LANDSCAPE);
 
         Book book = new Book();
 
-        JTabbedPane p = new JTabbedPane();
+        JTabbedPane pane = new JTabbedPane();
 
         int page = 1;
         Font font = new Font("Dialog", Font.PLAIN, 18);
         String name = "Page " + page++;
-        PrintTextTest ptt = new PrintTextTest(name, font, null, false);
-        p.add(name, ptt);
-        book.append(ptt, portrait);
-        book.append(ptt, landscape);
+        PrintText pt = new PrintText(name, font, null, false, preferredSize);
+        pane.add(name, pt);
+        book.append(pt, portrait);
+        book.append(pt, landscape);
 
         font = new Font("Dialog", Font.PLAIN, 18);
         name = "Page " + page++;
-        ptt = new PrintTextTest(name, font, null, true);
-        p.add(name, ptt);
-        book.append(ptt, portrait);
-        book.append(ptt, landscape);
+        pt = new PrintText(name, font, null, true, preferredSize);
+        pane.add(name, pt);
+        book.append(pt, portrait);
+        book.append(pt, landscape);
 
         font = getPhysicalFont();
         name = "Page " + page++;
-        ptt = new PrintTextTest(name, font, null, false);
-        p.add(name, ptt);
-        book.append(ptt, portrait);
-        book.append(ptt, landscape);
+        pt = new PrintText(name, font, null, false, preferredSize);
+        pane.add(name, pt);
+        book.append(pt, portrait);
+        book.append(pt, landscape);
 
         font = getPhysicalFont();
         AffineTransform rotTx = AffineTransform.getRotateInstance(0.15);
         rotTx.translate(60,0);
         name = "Page " + page++;
-        ptt = new PrintTextTest(name, font, rotTx, false);
-        p.add(name, ptt);
-        book.append(ptt, portrait);
-        book.append(ptt, landscape);
+        pt = new PrintText(name, font, rotTx, false, preferredSize);
+        pane.add(name, pt);
+        book.append(pt, portrait);
+        book.append(pt, landscape);
 
         font = new Font("Dialog", Font.PLAIN, 18);
         AffineTransform scaleTx = AffineTransform.getScaleInstance(1.25, 1.25);
         name = "Page " + page++;
-        ptt = new PrintTextTest(name, font, scaleTx, false);
-        p.add(name, ptt);
-        book.append(ptt, portrait);
-        book.append(ptt, landscape);
+        pt = new PrintText(name, font, scaleTx, false, preferredSize);
+        pane.add(name, pt);
+        book.append(pt, portrait);
+        book.append(pt, landscape);
 
         font = new Font("Dialog", Font.PLAIN, 18);
         scaleTx = AffineTransform.getScaleInstance(-1.25, 1.25);
         scaleTx.translate(-preferredSize/1.25, 0);
         name = "Page " + page++;
-        ptt = new PrintTextTest(name, font, scaleTx, false);
-        p.add(name, ptt);
-        book.append(ptt, portrait);
-        book.append(ptt, landscape);
+        pt = new PrintText(name, font, scaleTx, false, preferredSize);
+        pane.add(name, pt);
+        book.append(pt, portrait);
+        book.append(pt, landscape);
 
         font = new Font("Dialog", Font.PLAIN, 18);
         scaleTx = AffineTransform.getScaleInstance(1.25, -1.25);
         scaleTx.translate(0, -preferredSize/1.25);
         name = "Page " + page++;
-        ptt = new PrintTextTest(name, font, scaleTx, false);
-        p.add(name, ptt);
-        book.append(ptt, portrait);
-        book.append(ptt, landscape);
+        pt = new PrintText(name, font, scaleTx, false, preferredSize);
+        pane.add(name, pt);
+        book.append(pt, portrait);
+        book.append(pt, landscape);
 
         font = font.deriveFont(rotTx);
         name = "Page " + page++;
-        ptt = new PrintTextTest(name, font, null, false);
-        p.add(ptt, BorderLayout.CENTER);
-        p.add(name, ptt);
-        book.append(ptt, portrait);
-        book.append(ptt, landscape);
+        pt = new PrintText(name, font, null, false, preferredSize);
+        pane.add(pt, BorderLayout.CENTER);
+        pane.add(name, pt);
+        book.append(pt, portrait);
+        book.append(pt, landscape);
 
         font = new Font("Monospaced", Font.PLAIN, 12);
         name = "Page " + page++;
-        ptt = new PrintTextTest(name, font, null, false);
-        p.add(ptt, BorderLayout.CENTER);
-        p.add(name, ptt);
-        book.append(ptt, portrait);
-        book.append(ptt, landscape);
+        pt = new PrintText(name, font, null, false, preferredSize);
+        pane.add(pt, BorderLayout.CENTER);
+        pane.add(name, pt);
+        book.append(pt, portrait);
+        book.append(pt, landscape);
 
         Font xfont = font.deriveFont(AffineTransform.getScaleInstance(1.5, 1));
         name = "Page " + page++;
-        ptt = new PrintTextTest(name, xfont, null, false);
-        p.add(ptt, BorderLayout.CENTER);
-        p.add(name, ptt);
-        book.append(ptt, portrait);
-        book.append(ptt, landscape);
+        pt = new PrintText(name, xfont, null, false, preferredSize);
+        pane.add(pt, BorderLayout.CENTER);
+        pane.add(name, pt);
+        book.append(pt, portrait);
+        book.append(pt, landscape);
 
         Font yfont = font.deriveFont(AffineTransform.getScaleInstance(1, 1.5));
         name = "Page " + page++;
-        ptt = new PrintTextTest(name, yfont, null, false);
-        p.add(ptt, BorderLayout.CENTER);
-        p.add(name, ptt);
-        book.append(ptt, portrait);
-        book.append(ptt, landscape);
+        pt = new PrintText(name, yfont, null, false, preferredSize);
+        pane.add(pt, BorderLayout.CENTER);
+        pane.add(name, pt);
+        book.append(pt, portrait);
+        book.append(pt, landscape);
 
         if (System.getProperty("os.name").startsWith("Windows")) {
             font = new Font("MS Gothic", Font.PLAIN, 12);
             name = "Page " + page++;
-            ptt = new PrintJAText(name, font, null, true);
-            p.add(ptt, BorderLayout.CENTER);
-            p.add(name, ptt);
-            book.append(ptt, portrait);
-            book.append(ptt, landscape);
+            pt = new PrintJapaneseText(name, font, null, true, preferredSize);
+            pane.add(pt, BorderLayout.CENTER);
+            pane.add(name, pt);
+            book.append(pt, portrait);
+            book.append(pt, landscape);
 
             font = new Font("MS Gothic", Font.PLAIN, 12);
             name = "Page " + page++;
             rotTx = AffineTransform.getRotateInstance(0.15);
-            ptt = new PrintJAText(name, font, rotTx, true);
-            p.add(ptt, BorderLayout.CENTER);
-            p.add(name, ptt);
-            book.append(ptt, portrait);
-            book.append(ptt, landscape);
+            pt = new PrintJapaneseText(name, font, rotTx, true, preferredSize);
+            pane.add(pt, BorderLayout.CENTER);
+            pane.add(name, pt);
+            book.append(pt, portrait);
+            book.append(pt, landscape);
         }
 
         pjob.setPageable(book);
@@ -222,7 +216,7 @@ public class PrintTextTest extends Component implements Printable {
         });
 
         JFrame f = new JFrame("PrintTextTest");
-        f.add(BorderLayout.CENTER, p);
+        f.add(BorderLayout.CENTER, pane);
         f.add(BorderLayout.SOUTH, printButton);
         f.pack();
 
@@ -265,199 +259,204 @@ public class PrintTextTest extends Component implements Printable {
         return physicalFont;
     }
 
-    public PrintTextTest(String page, Font font, AffineTransform gxTx,
-                         boolean fm) {
-        this.page = page;
-        textFont = font;
-        this.gxTx = gxTx;
-        this.useFM = fm;
-        setBackground(Color.white);
-    }
+    private static class PrintText extends Component implements Printable {
 
-    public static AttributedCharacterIterator getIterator(String s) {
-        return new AttributedString(s).getIterator();
-    }
+        protected Font textFont;
+        protected AffineTransform gxTx;
+        protected String page;
+        protected boolean useFM;
+        protected int preferredSize;
 
-    static String orient(PageFormat pf) {
-        if (pf.getOrientation() == PageFormat.PORTRAIT) {
-            return "Portrait";
-        } else {
-            return "Landscape";
-        }
-    }
-
-    public int print(Graphics g, PageFormat pf, int pageIndex) {
-
-        Graphics2D g2d = (Graphics2D)g;
-        g2d.translate(pf.getImageableX(),  pf.getImageableY());
-        g.drawString(page+" "+orient(pf),50,20);
-        g.translate(0, 25);
-        paint(g);
-        return PAGE_EXISTS;
-    }
-
-    public Dimension getMinimumSize() {
-        return getPreferredSize();
-    }
-
-    public Dimension getPreferredSize() {
-        return new Dimension(preferredSize, preferredSize);
-    }
-
-    public void paint(Graphics g) {
-
-        /* fill with white before any transformation is applied */
-        g.setColor(Color.white);
-        g.fillRect(0, 0, getSize().width, getSize().height);
-
-        Graphics2D g2d = (Graphics2D) g;
-        if (gxTx != null) {
-            g2d.transform(gxTx);
-        }
-        if (useFM) {
-            g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
-                                 RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        public PrintText(String page, Font font, AffineTransform gxTx, boolean fm, int size) {
+            this.page = page;
+            this.textFont = font;
+            this.gxTx = gxTx;
+            this.useFM = fm;
+            this.preferredSize = size;
+            setBackground(Color.WHITE);
         }
 
-        g.setFont(textFont);
-        FontMetrics fm = g.getFontMetrics();
-
-        String s;
-        int LS = 30;
-        int ix=10, iy=LS+10;
-        g.setColor(Color.black);
-
-        s = "drawString(String str, int x, int y)";
-        g.drawString(s, ix, iy);
-        if (!textFont.isTransformed()) {
-            g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
+        public static AttributedCharacterIterator getIterator(String s) {
+            return new AttributedString(s).getIterator();
         }
 
-        iy += LS;
-        s = "drawString(AttributedCharacterIterator iterator, int x, int y)";
-        g.drawString(getIterator(s), ix, iy);
-
-        iy += LS;
-        s = "\tdrawChars(\t\r\nchar[], int off, int len, int x, int y\t)";
-        g.drawChars(s.toCharArray(), 0, s.length(), ix, iy);
-        if (!textFont.isTransformed()) {
-            g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
-        }
-
-        iy += LS;
-        s = "drawBytes(byte[], int off, int len, int x, int y)";
-        byte data[] = new byte[s.length()];
-        for (int i = 0; i < data.length; i++) {
-            data[i] = (byte) s.charAt(i);
-        }
-        g.drawBytes(data, 0, data.length, ix, iy);
-
-        Font f = g2d.getFont();
-        FontRenderContext frc = g2d.getFontRenderContext();
-
-        iy += LS;
-        s = "drawString(String s, float x, float y)";
-        g2d.drawString(s, (float) ix, (float) iy);
-        if (!textFont.isTransformed()) {
-            g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
-        }
-
-        iy += LS;
-        s = "drawString(AttributedCharacterIterator iterator, "+
-            "float x, float y)";
-        g2d.drawString(getIterator(s), (float) ix, (float) iy);
-
-        iy += LS;
-        s = "drawGlyphVector(GlyphVector g, float x, float y)";
-        GlyphVector gv = f.createGlyphVector(frc, s);
-        g2d.drawGlyphVector(gv, ix, iy);
-        Point2D adv = gv.getGlyphPosition(gv.getNumGlyphs());
-        if (!textFont.isTransformed()) {
-            g.drawLine(ix, iy+1, ix+(int)adv.getX(), iy+1);
-        }
-
-        iy += LS;
-        s = "GlyphVector with position adjustments";
-
-        gv = f.createGlyphVector(frc, s);
-        int ng = gv.getNumGlyphs();
-        adv = gv.getGlyphPosition(ng);
-        for (int i=0; i<ng; i++) {
-            Point2D gp = gv.getGlyphPosition(i);
-            double gx = gp.getX();
-            double gy = gp.getY();
-            if (i % 2 == 0) {
-                gy+=5;
+        static String orient(PageFormat pf) {
+            if (pf.getOrientation() == PageFormat.PORTRAIT) {
+                return "Portrait";
             } else {
-                gy-=5;
+                return "Landscape";
             }
-            gp.setLocation(gx, gy);
-            gv.setGlyphPosition(i, gp);
-        }
-        g2d.drawGlyphVector(gv, ix, iy);
-        if (!textFont.isTransformed()) {
-            g.drawLine(ix, iy+1, ix+(int)adv.getX(), iy+1);
         }
 
-        iy +=LS;
-        s = "drawString: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
-        g.drawString(s, ix, iy);
-        if (!textFont.isTransformed()) {
-            g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
+        public int print(Graphics g, PageFormat pf, int pageIndex) {
+            Graphics2D g2d = (Graphics2D)g;
+            g2d.translate(pf.getImageableX(),  pf.getImageableY());
+            g.drawString(page+" "+orient(pf),50,20);
+            g.translate(0, 25);
+            paint(g);
+            return PAGE_EXISTS;
         }
 
-        iy += LS;
-        s = "TextLayout 1: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
-        TextLayout tl = new TextLayout(s, new HashMap(), frc);
-        tl.draw(g2d,  ix, iy);
+        public Dimension getMinimumSize() {
+            return getPreferredSize();
+        }
 
-        iy += LS;
-        s = "TextLayout 2: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
-        tl = new TextLayout(s, f, frc);
-        tl.draw(g2d,  ix, iy);
+        public Dimension getPreferredSize() {
+            return new Dimension(preferredSize, preferredSize);
+        }
+
+        public void paint(Graphics g) {
+
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, getSize().width, getSize().height);
+
+            Graphics2D g2d = (Graphics2D) g;
+            if (gxTx != null) {
+                g2d.transform(gxTx);
+            }
+            if (useFM) {
+                g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+                                     RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+            }
+
+            g.setFont(textFont);
+            FontMetrics fm = g.getFontMetrics();
+
+            String s;
+            int LS = 30;
+            int ix=10, iy=LS+10;
+            g.setColor(Color.BLACK);
+
+            s = "drawString(String str, int x, int y)";
+            g.drawString(s, ix, iy);
+            if (!textFont.isTransformed()) {
+                g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
+            }
+
+            iy += LS;
+            s = "drawString(AttributedCharacterIterator iterator, int x, int y)";
+            g.drawString(getIterator(s), ix, iy);
+
+            iy += LS;
+            s = "\tdrawChars(\t\r\nchar[], int off, int len, int x, int y\t)";
+            g.drawChars(s.toCharArray(), 0, s.length(), ix, iy);
+            if (!textFont.isTransformed()) {
+                g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
+            }
+
+            iy += LS;
+            s = "drawBytes(byte[], int off, int len, int x, int y)";
+            byte[] data = new byte[s.length()];
+            for (int i = 0; i < data.length; i++) {
+                data[i] = (byte) s.charAt(i);
+            }
+            g.drawBytes(data, 0, data.length, ix, iy);
+
+            Font f = g2d.getFont();
+            FontRenderContext frc = g2d.getFontRenderContext();
+
+            iy += LS;
+            s = "drawString(String s, float x, float y)";
+            g2d.drawString(s, (float) ix, (float) iy);
+            if (!textFont.isTransformed()) {
+                g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
+            }
+
+            iy += LS;
+            s = "drawString(AttributedCharacterIterator iterator, "+
+                "float x, float y)";
+            g2d.drawString(getIterator(s), (float) ix, (float) iy);
+
+            iy += LS;
+            s = "drawGlyphVector(GlyphVector g, float x, float y)";
+            GlyphVector gv = f.createGlyphVector(frc, s);
+            g2d.drawGlyphVector(gv, ix, iy);
+            Point2D adv = gv.getGlyphPosition(gv.getNumGlyphs());
+            if (!textFont.isTransformed()) {
+                g.drawLine(ix, iy+1, ix+(int)adv.getX(), iy+1);
+            }
+
+            iy += LS;
+            s = "GlyphVector with position adjustments";
+
+            gv = f.createGlyphVector(frc, s);
+            int ng = gv.getNumGlyphs();
+            adv = gv.getGlyphPosition(ng);
+            for (int i=0; i<ng; i++) {
+                Point2D gp = gv.getGlyphPosition(i);
+                double gx = gp.getX();
+                double gy = gp.getY();
+                if (i % 2 == 0) {
+                    gy+=5;
+                } else {
+                    gy-=5;
+                }
+                gp.setLocation(gx, gy);
+                gv.setGlyphPosition(i, gp);
+            }
+            g2d.drawGlyphVector(gv, ix, iy);
+            if (!textFont.isTransformed()) {
+                g.drawLine(ix, iy+1, ix+(int)adv.getX(), iy+1);
+            }
+
+            iy +=LS;
+            s = "drawString: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
+            g.drawString(s, ix, iy);
+            if (!textFont.isTransformed()) {
+                g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
+            }
+
+            iy += LS;
+            s = "TextLayout 1: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
+            TextLayout tl = new TextLayout(s, new HashMap<>(), frc);
+            tl.draw(g2d,  ix, iy);
+
+            iy += LS;
+            s = "TextLayout 2: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
+            tl = new TextLayout(s, f, frc);
+            tl.draw(g2d,  ix, iy);
+        }
     }
-}
 
-class PrintJAText extends PrintTextTest {
+    private static class PrintJapaneseText extends PrintText {
 
-    public PrintJAText(String page, Font font, AffineTransform gxTx,
-                         boolean fm) {
-        super(page, font, gxTx, fm);
-    }
-
-    private static final String TEXT =
-        "\u3042\u3044\u3046\u3048\u304a\u30a4\u30ed\u30cf" +
-        "\u30cb\u30db\u30d8\u30c8\u4e00\u4e01\u4e02\u4e05\uff08";
-
-    public void paint(Graphics g) {
-
-        /* fill with white before any transformation is applied */
-        g.setColor(Color.white);
-        g.fillRect(0, 0, getSize().width, getSize().height);
-
-        Graphics2D g2d = (Graphics2D) g;
-        if (gxTx != null) {
-            g2d.transform(gxTx);
-        }
-        if (useFM) {
-            g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
-                                 RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        public PrintJapaneseText(String page, Font font, AffineTransform gxTx, boolean fm, int size) {
+            super(page, font, gxTx, fm, size);
         }
 
-        String text = TEXT + TEXT + TEXT;
-        g.setColor(Color.black);
-        int y = 20;
-        float origSize = 7f;
-        for (int i=0;i<11;i++) {
-            float size = origSize+(i*0.1f);
-            g2d.translate(0, size+6);
-            Font f = textFont.deriveFont(size);
-            g2d.setFont(f);
-            FontMetrics fontMetrics = g2d.getFontMetrics();
-            int stringWidth = fontMetrics.stringWidth(text);
-            g.drawLine(0, y+1, stringWidth, y+1);
-            g.drawString(text, 0, y);
-            y +=10;
+        private static final String TEXT =
+            "\u3042\u3044\u3046\u3048\u304a\u30a4\u30ed\u30cf" +
+            "\u30cb\u30db\u30d8\u30c8\u4e00\u4e01\u4e02\u4e05\uff08";
+
+        public void paint(Graphics g) {
+
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, getSize().width, getSize().height);
+
+            Graphics2D g2d = (Graphics2D) g;
+            if (gxTx != null) {
+                g2d.transform(gxTx);
+            }
+            if (useFM) {
+                g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+                                     RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+            }
+
+            String text = TEXT + TEXT + TEXT;
+            g.setColor(Color.BLACK);
+            int y = 20;
+            float origSize = 7f;
+            for (int i=0;i<11;i++) {
+                float size = origSize+(i*0.1f);
+                g2d.translate(0, size+6);
+                Font f = textFont.deriveFont(size);
+                g2d.setFont(f);
+                FontMetrics fontMetrics = g2d.getFontMetrics();
+                int stringWidth = fontMetrics.stringWidth(text);
+                g.drawLine(0, y+1, stringWidth, y+1);
+                g.drawString(text, 0, y);
+                y +=10;
+            }
         }
     }
 }
