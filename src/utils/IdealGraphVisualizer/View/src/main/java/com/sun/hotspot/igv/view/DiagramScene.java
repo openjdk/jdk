@@ -700,29 +700,32 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     selectedFigures.sort(Comparator.comparingInt(f -> f.getPosition().x));
                     for (Figure figure : selectedFigures) {
                         FigureWidget fw = getWidget(figure);
-                        if (figureToInLineWidget.containsKey(fw.getFigure())) {
-                            for (LineWidget lw : figureToInLineWidget.get(fw.getFigure())) {
-                                Point toPt = lw.getTo();
-                                lw.setTo(new Point(toPt.x + shiftX, toPt.y + shiftY));
-                                Point fromPt = lw.getFrom();
-                                lw.setFrom(new Point(fromPt.x + shiftX, fromPt.y));
-                                lw.revalidate();
-                                LineWidget pred = lw.getPredecessor();
-                                pred.setTo(new Point(pred.getTo().x + shiftX, pred.getTo().y));
-                                pred.revalidate();
-
+                        for (InputSlot inputSlot : figure.getInputSlots()) {
+                            if (inputSlotToLineWidget.containsKey(inputSlot)) {
+                                for (LineWidget lw : inputSlotToLineWidget.get(inputSlot)) {
+                                    Point toPt = lw.getTo();
+                                    lw.setTo(new Point(toPt.x + shiftX, toPt.y + shiftY));
+                                    Point fromPt = lw.getFrom();
+                                    lw.setFrom(new Point(fromPt.x + shiftX, fromPt.y));
+                                    lw.revalidate();
+                                    LineWidget pred = lw.getPredecessor();
+                                    pred.setTo(new Point(pred.getTo().x + shiftX, pred.getTo().y));
+                                    pred.revalidate();
+                                }
                             }
                         }
-                        if (figureToOutLineWidget.containsKey(fw.getFigure())) {
-                            for (LineWidget lw : figureToOutLineWidget.get(fw.getFigure())) {
-                                Point toPt = lw.getTo();
-                                lw.setTo(new Point(toPt.x + shiftX, toPt.y));
-                                Point fromPt = lw.getFrom();
-                                lw.setFrom(new Point(fromPt.x + shiftX, fromPt.y + shiftY));
-                                lw.revalidate();
-                                for (LineWidget succ : lw.getSuccessors()) {
-                                    succ.setFrom(new Point(succ.getFrom().x + shiftX, succ.getFrom().y));
-                                    succ.revalidate();
+                        for (OutputSlot outputSlot : figure.getOutputSlots()) {
+                            if (outputSlotToLineWidget.containsKey(outputSlot)) {
+                                for (LineWidget lw : outputSlotToLineWidget.get(outputSlot)) {
+                                    Point toPt = lw.getTo();
+                                    lw.setTo(new Point(toPt.x + shiftX, toPt.y));
+                                    Point fromPt = lw.getFrom();
+                                    lw.setFrom(new Point(fromPt.x + shiftX, fromPt.y + shiftY));
+                                    lw.revalidate();
+                                    for (LineWidget succ : lw.getSuccessors()) {
+                                        succ.setFrom(new Point(succ.getFrom().x + shiftX, succ.getFrom().y));
+                                        succ.revalidate();
+                                    }
                                 }
                             }
                         }
@@ -924,17 +927,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private void processOutputSlot(OutputSlot outputSlot, List<FigureConnection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor) {
         Map<Point, List<FigureConnection>> pointMap = new HashMap<>(connections.size());
 
-        if (predecessor != null) {
-            if (controlPointIndex == 2) {
-                Figure figure = outputSlot.getFigure();
-                if (figureToOutLineWidget.containsKey(figure)) {
-                    figureToOutLineWidget.get(figure).add(predecessor);
-                } else {
-                    figureToOutLineWidget.put(figure, new HashSet<>(Collections.singleton(predecessor)));
-                }
-            }
-        }
-
         for (FigureConnection connection : connections) {
             if (isVisibleFigureConnection(connection)) {
                 List<Point> controlPoints = connection.getControlPoints();
@@ -950,15 +942,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     } else {
                         pointMap.put(currentPoint, new ArrayList<>(Collections.singletonList(connection)));
                     }
-                } else if (controlPointIndex == controlPoints.size()) {
-                    if (predecessor != null) {
-                        Figure figure = connection.getOutputSlot().getFigure();
-                        if (figureToInLineWidget.containsKey(figure)) {
-                            figureToInLineWidget.get(figure).add(predecessor);
-                        } else {
-                            figureToInLineWidget.put(figure, new HashSet<>(Collections.singleton(predecessor)));
-                        }
-                    }
                 }
             }
         }
@@ -969,7 +952,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             boolean isBold = false;
             boolean isDashed = true;
             boolean isVisible = true;
-            for (Connection c : connectionList) {
+            for (FigureConnection c : connectionList) {
                 if (c.getStyle() == Connection.ConnectionStyle.BOLD) {
                     isBold = true;
                 } else if (c.getStyle() == Connection.ConnectionStyle.INVISIBLE) {
@@ -986,6 +969,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 Point dest = new Point(currentPoint);
                 newPredecessor = new LineWidget(this, outputSlot, connectionList, src, dest, predecessor, isBold, isDashed);
                 newPredecessor.setVisible(isVisible);
+
+                if (predecessor == null) {
+                    if (outputSlotToLineWidget.containsKey(outputSlot)) {
+                        outputSlotToLineWidget.get(outputSlot).add(newPredecessor);
+                    } else {
+                        outputSlotToLineWidget.put(outputSlot, new HashSet<>(Collections.singleton(newPredecessor)));
+                    }
+                }
 
                 connectionLayer.addChild(newPredecessor);
                 addObject(new ConnectionSet(connectionList), newPredecessor);
@@ -1068,6 +1059,19 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
 
             processOutputSlot(outputSlot, connectionList, controlPointIndex + 1, currentPoint, newPredecessor);
+        }
+
+        if (pointMap.isEmpty()) {
+            for (FigureConnection connection : connections) {
+                if (isVisibleFigureConnection(connection)) {
+                    InputSlot inputSlot = connection.getInputSlot();
+                    if (inputSlotToLineWidget.containsKey(inputSlot)) {
+                        inputSlotToLineWidget.get(inputSlot).add(predecessor);
+                    } else {
+                        inputSlotToLineWidget.put(inputSlot, new HashSet<>(Collections.singleton(predecessor)));
+                    }
+                }
+            }
         }
     }
 
@@ -1235,8 +1239,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void rebuildConnectionLayer() {
-        figureToOutLineWidget.clear();
-        figureToInLineWidget.clear();
+        outputSlotToLineWidget.clear();
+        inputSlotToLineWidget.clear();
         connectionLayer.removeChildren();
         for (Figure figure : getModel().getDiagram().getFigures()) {
             for (OutputSlot outputSlot : figure.getOutputSlots()) {
@@ -1445,8 +1449,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
-    Map<Figure, Set<LineWidget>> figureToOutLineWidget = new HashMap<>();
-    Map<Figure, Set<LineWidget>> figureToInLineWidget = new HashMap<>();
+    Map<OutputSlot, Set<LineWidget>> outputSlotToLineWidget = new HashMap<>();
+    Map<InputSlot, Set<LineWidget>> inputSlotToLineWidget = new HashMap<>();
 
     private void relayout() {
         rebuilding = true;
