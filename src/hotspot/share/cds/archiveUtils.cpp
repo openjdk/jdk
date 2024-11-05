@@ -393,7 +393,7 @@ size_t HeapRootSegments::segment_offset(size_t seg_idx) {
 ArchiveWorkers::ArchiveWorkers() :
         _start_semaphore(0),
         _end_semaphore(0),
-        _num_workers(MAX2(0, os::active_processor_count() / CPUS_PER_WORKER - 1)),
+        _num_workers(max_workers()),
         _started_workers(0),
         _running_workers(0),
         _in_shutdown(false),
@@ -405,6 +405,10 @@ ArchiveWorkers::ArchiveWorkers() :
 ArchiveWorkers::~ArchiveWorkers() {
   // If nothing called shutdown yet, we need to gracefully shutdown now.
   shutdown();
+}
+
+int ArchiveWorkers::max_workers() {
+  return MAX2(0, MIN2(MAX_WORKERS, os::active_processor_count() / CPUS_PER_WORKER) - 1);
 }
 
 bool ArchiveWorkers::is_parallel() {
