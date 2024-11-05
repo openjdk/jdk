@@ -47,7 +47,7 @@ inline int64_t ObjectMonitor::owner_from(JavaThread* thread) {
 
 inline int64_t ObjectMonitor::owner_from(oop vthread) {
   int64_t tid = java_lang_Thread::thread_id(vthread);
-  assert(tid >= 3 && tid < ThreadIdentifier::current(), "must be reasonable");
+  assert(tid >= ThreadIdentifier::initial() && tid < ThreadIdentifier::current(), "must be reasonable");
   return tid;
 }
 
