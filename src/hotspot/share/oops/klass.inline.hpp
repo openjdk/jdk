@@ -38,7 +38,8 @@ inline oop Klass::klass_holder() const {
 
 inline void Klass::keep_alive() const {
   // Resolving the holder (a WeakHandle) will keep the klass alive until the next safepoint.
-  // Making the klass's CLD handle oops (e.g. the java_mirror), safe to store in the object graph.
+  // Making the klass's CLD handle oops (e.g. the java_mirror), safe to store in the object
+  // graph and it's roots (e.g. Handles).
   static_cast<void>(klass_holder());
 }
 
