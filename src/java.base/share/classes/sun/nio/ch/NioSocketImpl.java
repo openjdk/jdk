@@ -576,6 +576,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         ReentrantLock connectLock = readLock;
         boolean connected = false;
         long start = SocketConnectEvent.timestamp();
+        IOException thrown = null;
         try {
             connectLock.lock();
             try {
@@ -610,16 +611,16 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             }
         } catch (IOException ioe) {
             close();
+            thrown = ioe;
             if (ioe instanceof InterruptedIOException) {
                 throw ioe;
             } else {
-                throw SocketExceptions.of(ioe, isa);
+                thrown = SocketExceptions.of(ioe, isa);
+                throw thrown;
             }
-        }
-        if (SocketConnectEvent.enabled()) {
-            long duration = SocketConnectEvent.timestamp() - start;
-            if (SocketConnectEvent.shouldCommit(duration)) {
-                SocketConnectEvent.commit(start, duration, isa.getHostString(), address.getHostAddress(), port, connected);
+        } finally {
+            if (SocketConnectEvent.enabled()) {
+                    SocketConnectEvent.offer(start, isa.getHostString(), address.getHostAddress(), port, thrown);
             }
         }
     }

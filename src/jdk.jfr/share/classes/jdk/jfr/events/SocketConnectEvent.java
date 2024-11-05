@@ -47,6 +47,6 @@ public class SocketConnectEvent extends MirrorEvent {
     @Label("Remote Port")
     public int port;
 
-    @Label("Connected")
-    public boolean connected;
+    @Label("Exception Message")
+    public String exceptionMessage;
 }

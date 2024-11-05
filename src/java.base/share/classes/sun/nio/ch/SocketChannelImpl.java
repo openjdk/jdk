@@ -133,6 +133,9 @@ class SocketChannelImpl
     // preserve the semantics of blocking operations.
     private volatile boolean forcedNonBlocking;
 
+    // timestamp for socket connect event
+    private long connectStartTimestamp;
+
     // -- End of fields protected by stateLock
 
     SocketChannelImpl(SelectorProvider sp) throws IOException {
@@ -948,15 +951,20 @@ class SocketChannelImpl
         }
     }
 
-    private boolean implConnect(SocketAddress sa) throws IOException {
+    @Override
+    public boolean connect(SocketAddress remote) throws IOException {
+        boolean connected = false;
+        IOException thrown = null;
+        long start = SocketConnectEvent.timestamp();
+        SocketAddress sa = checkRemote(remote);
         try {
             readLock.lock();
             try {
                 writeLock.lock();
                 try {
+                    connectStartTimestamp = start;
                     ensureOpen();
                     boolean blocking = isBlocking();
-                    boolean connected = false;
                     try {
                         beginConnect(blocking, sa);
                         configureSocketNonBlockingIfVirtualThread();
@@ -990,20 +998,13 @@ class SocketChannelImpl
         } catch (IOException ioe) {
             // connect failed, close the channel
             close();
-            throw SocketExceptions.of(ioe, sa);
+            thrown = SocketExceptions.of(ioe, sa);
+            throw thrown;
+        } finally {
+            if (SocketConnectEvent.enabled() && (connected || thrown != null)) {
+                SocketConnectEvent.offer(start, sa, thrown);
+            }
         }
-    }
-
-    @Override
-    public boolean connect(SocketAddress remote) throws IOException {
-        SocketAddress sa = checkRemote(remote);
-        if (!SocketConnectEvent.enabled()) {
-            return implConnect(sa);
-        }
-        long start = SocketConnectEvent.timestamp();
-        boolean connected = implConnect(sa);
-        SocketConnectEvent.offer(start, connected, sa);
-        return connected;
     }
 
     /**
@@ -1056,18 +1057,23 @@ class SocketChannelImpl
 
     @Override
     public boolean finishConnect() throws IOException {
+        boolean connected = false;
+        IOException thrown = null;
+        long start = 0;
         try {
             readLock.lock();
+            start = connectStartTimestamp;
             try {
                 writeLock.lock();
                 try {
                     // no-op if already connected
-                    if (isConnected())
-                        return true;
+                    if (isConnected()) {
+                        connected = true;
+                        return connected;
+                    }
 
                     ensureOpen();
                     boolean blocking = isBlocking();
-                    boolean connected = false;
                     try {
                         beginFinishConnect(blocking);
                         boolean polled = Net.pollConnectNow(fd);
@@ -1092,7 +1098,12 @@ class SocketChannelImpl
         } catch (IOException ioe) {
             // connect failed, close the channel
             close();
-            throw SocketExceptions.of(ioe, remoteAddress);
+            thrown = SocketExceptions.of(ioe, remoteAddress);
+            throw thrown;
+        } finally {
+            if (SocketConnectEvent.enabled() && (connected || thrown != null)) {
+                SocketConnectEvent.offer(start, remoteAddress, thrown);
+            }
         }
     }
 
