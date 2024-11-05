@@ -42,7 +42,7 @@ import jdk.test.lib.process.ProcessTools;
  * @test
  * @summary The test verifies JFR.dump command
  * @key jfr
- * @requires vm.hasJFRLeakProf
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:FlightRecorderOptions:maxchunksize=1M jdk.jfr.jcmd.TestJcmdDump
  */

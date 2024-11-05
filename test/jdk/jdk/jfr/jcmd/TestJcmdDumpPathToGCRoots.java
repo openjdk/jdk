@@ -42,7 +42,7 @@ import jdk.test.lib.jfr.EventNames;
 /**
  * @test
  * @summary Start a recording with or without path-to-gc-roots
- * @requires vm.hasJFRLeakProf
+ * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk
  * @key jfr

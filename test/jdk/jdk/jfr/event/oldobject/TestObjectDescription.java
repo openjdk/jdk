@@ -40,7 +40,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @key jfr
- * @requires vm.hasJFRLeakProf
+ * @requires vm.hasJFR
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test

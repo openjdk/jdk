@@ -113,7 +113,6 @@ public class VMProps implements Callable<Map<String, String>> {
         // vm.hasJFR is "true" if JFR is included in the build of the VM and
         // so tests can be executed.
         map.put("vm.hasJFR", this::vmHasJFR);
-        map.put("vm.hasJFRLeakProf", this::vmHasJFRLeakProf);
         map.put("vm.hasDTrace", this::vmHasDTrace);
         map.put("vm.jvmti", this::vmHasJVMTI);
         map.put("vm.cpu.features", this::cpuFeatures);
@@ -393,13 +392,6 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmHasJFR() {
         return "" + WB.isJFRIncluded();
-    }
-
-    /**
-     * @return "true" if the VM supports JFR Leak Profiler.
-     */
-    protected String vmHasJFRLeakProf() {
-        return "" + WB.isJFRLeakProfSupported();
     }
 
     /**

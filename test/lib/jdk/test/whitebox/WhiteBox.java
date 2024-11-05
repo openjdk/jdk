@@ -742,7 +742,6 @@ public class WhiteBox {
   public native boolean isSharedInternedString(String s);
   public native boolean isCDSIncluded();
   public native boolean isJFRIncluded();
-  public native boolean isJFRLeakProfSupported();
   public native boolean isDTraceIncluded();
   public native boolean canWriteJavaHeapArchive();
   public native void    linkClass(Class<?> c);
