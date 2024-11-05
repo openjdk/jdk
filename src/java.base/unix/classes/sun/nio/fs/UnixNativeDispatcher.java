@@ -394,17 +394,15 @@ class UnixNativeDispatcher {
     /**
      * utimensat(int fd, const char* path,
      *           const struct timeval times[2], int flags)
-     *
-     * We hard code fd to FD_ATCWD and flags to AT_SYMLINK_NOFOLLOW.
      */
-    static void utimensat(UnixPath path, long times0, long times1)
+    static void utimensat(int fd, UnixPath path, long times0, long times1, int flags)
         throws UnixException
     {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            utimensat0(buffer.address(), times0, times1);
+            utimensat0(fd, buffer.address(), times0, times1, flags);
         }
     }
-    private static native void utimensat0(long pathAddress, long times0, long times1)
+    private static native void utimensat0(int fd, long pathAddress, long times0, long times1, int flags)
         throws UnixException;
 
     /**

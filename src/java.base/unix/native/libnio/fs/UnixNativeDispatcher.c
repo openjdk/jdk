@@ -985,7 +985,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_lutimes0(JNIEnv* env, jclass this,
 
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_utimensat0(JNIEnv* env, jclass this,
-    jlong pathAddress, jlong accessTime, jlong modificationTime) {
+    jint fd, jlong pathAddress, jlong accessTime, jlong modificationTime, jint flags) {
 #if defined(__linux__)
     int err;
     struct timespec times[2];
@@ -1001,7 +1001,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_utimensat0(JNIEnv* env, jclass this,
         JNU_ThrowInternalError(env, "my_utimensat_func is NULL");
         return;
     }
-    RESTARTABLE((*my_utimensat_func)(AT_FDCWD, path, &times[0], AT_SYMLINK_NOFOLLOW), err);
+    RESTARTABLE((*my_utimensat_func)(fd, path, &times[0], flags), err);
 
     if (err == -1) {
         throwUnixException(env, errno);

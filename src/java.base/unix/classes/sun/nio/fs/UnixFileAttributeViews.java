@@ -134,7 +134,7 @@ class UnixFileAttributeViews {
                     } else if (useLutimes) {
                         lutimes(file, accessValue, modValue);
                     } else if (useUtimensat) {
-                        utimensat(file, accessValue, modValue);
+                        utimensat(AT_FDCWD, file, accessValue, modValue, AT_SYMLINK_NOFOLLOW);
                     } else {
                         utimes(file, accessValue, modValue);
                     }
@@ -159,7 +159,7 @@ class UnixFileAttributeViews {
                         } else if (useLutimes) {
                             lutimes(file, accessValue, modValue);
                         } else if (useUtimensat) {
-                            utimensat(file, accessValue, modValue);
+                            utimensat(AT_FDCWD, file, accessValue, modValue, AT_SYMLINK_NOFOLLOW);
                         } else {
                             utimes(file, accessValue, modValue);
                         }
