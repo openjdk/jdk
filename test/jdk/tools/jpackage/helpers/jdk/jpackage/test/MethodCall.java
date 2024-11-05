@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ class MethodCall implements ThrowingConsumer {
             return null;
         }
 
-        var ctor = findRequiredConstructor(method.getDeclaringClass(), ctorArgs);
+        var ctor = findMatchingConstructor(method.getDeclaringClass(), ctorArgs);
 
         return ctor.newInstance(mapVarArgs(ctor, ctorArgs));
     }
@@ -107,16 +107,11 @@ class MethodCall implements ThrowingConsumer {
 
     void checkRequiredConstructor() throws NoSuchMethodException {
         if ((method.getModifiers() & Modifier.STATIC) == 0) {
-            findRequiredConstructor(method.getDeclaringClass(), ctorArgs);
+            findMatchingConstructor(method.getDeclaringClass(), ctorArgs);
         }
     }
 
-    private static Constructor findVarArgConstructor(Class type) {
-        return Stream.of(type.getConstructors()).filter(
-                Constructor::isVarArgs).findFirst().orElse(null);
-    }
-
-    private static Constructor findRequiredConstructor(Class type, Object... ctorArgs)
+    private static Constructor findMatchingConstructor(Class type, Object... ctorArgs)
             throws NoSuchMethodException {
 
         var ctors = filterMatchingExecutablesForParameterValues(Stream.of(
