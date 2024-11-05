@@ -818,10 +818,18 @@ public final class TKit {
             }
         }
 
-        public DirectoryContentVerifier removeAll(Path ... paths) {
+        public DirectoryContentVerifier removeAll(Collection<Path> paths) {
             Set<Path> newContent = new HashSet<>(content);
-            newContent.removeAll(List.of(paths));
+            newContent.removeAll(paths);
             return new DirectoryContentVerifier(baseDir, newContent);
+        }
+
+        public DirectoryContentVerifier removeAll(Path ... paths) {
+            return removeAll(List.of(paths));
+        }
+
+        public Set<Path> items() {
+            return content;
         }
 
         private DirectoryContentVerifier(Path baseDir, Set<Path> contents) {
