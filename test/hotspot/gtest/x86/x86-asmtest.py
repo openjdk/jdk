@@ -29,6 +29,9 @@ import subprocess
 OBJDUMP = "objdump"
 X86_AS = "as"
 X86_OBJCOPY = "objcopy"
+SEED = 1327
+
+random.seed(SEED)
 
 cond_to_suffix = {
     'overflow': 'o',
