@@ -242,7 +242,7 @@ import java.util.stream.Stream;
  * </table></blockquote>
  * <p>
  * A native linker only supports function descriptors whose argument/return layouts are
- * <em>well-formed</em> layouts. More formally, a layout `L`is well-formed if:
+ * <em>well-formed</em> layouts. More formally, a layout `L` is well-formed if:
  * <ul>
  * <li>{@code L} is a value layout and {@code L} is derived from a canonical layout
  *     {@code C} such that {@code L.byteAlignment() <= C.byteAlignment()}</li>
