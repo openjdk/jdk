@@ -140,6 +140,64 @@ public class SegmentFactories {
                 MemorySessionImpl.createHeap(arr));
     }
 
+    // Buffer conversion factories
+
+    public static AbstractMemorySegmentImpl arrayOfByteSegment(Object base,
+                                                               long offset,
+                                                               long length,
+                                                               boolean readOnly,
+                                                               MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfByte(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfShortSegment(Object base,
+                                                                long offset,
+                                                                long length,
+                                                                boolean readOnly,
+                                                                MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfShort(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfCharSegment(Object base,
+                                                               long offset,
+                                                               long length,
+                                                               boolean readOnly,
+                                                               MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfChar(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfIntSegment(Object base,
+                                                              long offset,
+                                                              long length,
+                                                              boolean readOnly,
+                                                              MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfInt(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfFloatSegment(Object base,
+                                                                long offset,
+                                                                long length,
+                                                                boolean readOnly,
+                                                                MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfFloat(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfLongSegment(Object base,
+                                                               long offset,
+                                                               long length,
+                                                               boolean readOnly,
+                                                               MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfLong(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfDoubleSegment(Object base,
+                                                                 long offset,
+                                                                 long length,
+                                                                 boolean readOnly,
+                                                                 MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfDouble(offset, base, length, readOnly, bufferScope);
+    }
+
     public static MemorySegment allocateSegment(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,
                                                   boolean shouldReserve) {
         ensureInitialized();

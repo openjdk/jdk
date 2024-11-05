@@ -357,12 +357,6 @@ bool ZPhysicalMemoryManager::uncommit(ZPhysicalMemory& pmem) {
   return true;
 }
 
-void ZPhysicalMemoryManager::pretouch(zoffset offset, size_t size) const {
-  const uintptr_t addr = untype(ZOffset::address(offset));
-  const size_t page_size = ZLargePages::is_explicit() ? ZGranuleSize : os::vm_page_size();
-  os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
-}
-
 // Map virtual memory to physcial memory
 void ZPhysicalMemoryManager::map(zoffset offset, const ZPhysicalMemory& pmem) const {
   const zaddress_unsafe addr = ZOffset::address_unsafe(offset);
