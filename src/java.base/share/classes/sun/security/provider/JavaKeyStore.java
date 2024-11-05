@@ -660,7 +660,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             ByteArrayInputStream bais;
             byte[] encoded;
             int trustedKeyCount = 0, privateKeyCount = 0;
-            String keystorePath = null;
+            String storeName = null;
 
             if (stream == null)
                 return;
@@ -673,12 +673,13 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             }
 
             if (debug != null) {
-                keystorePath = SharedSecrets
+                String keystorePath = SharedSecrets
                                 .getJavaIOFileInputStreamAccess()
                                 .getPath(stream);
                 if (keystorePath != null) {
-                    debug.println("JavaKeyStore: loading \"" + keystorePath.substring(
-                        keystorePath.lastIndexOf(File.separator) + 1)
+                    storeName = Paths.get(keystorePath).getFileName()
+                                .toString();
+                    debug.println("JavaKeyStore: loading \"" + storeName
                         + "\" keystore");
                 }
             }
@@ -799,9 +800,6 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             }
 
             if (debug != null) {
-                String storeName = (keystorePath != null)
-                        ? Paths.get(keystorePath).getFileName().toString()
-                        : null;
                 debug.println("JavaKeyStore loaded: \"" + storeName +
                     "\" keystore with private key count: " + privateKeyCount +
                     ". trusted key count: " + trustedKeyCount);
