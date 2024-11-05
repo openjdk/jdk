@@ -2057,7 +2057,6 @@ public class Socket implements java.io.Closeable {
      *
      * @since 9
      */
-    @SuppressWarnings("unchecked")
     public <T> T getOption(SocketOption<T> name) throws IOException {
         Objects.requireNonNull(name);
         if (isClosed())
