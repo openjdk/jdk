@@ -428,5 +428,5 @@ void CONT_RegisterNativeMethods(JNIEnv *env, jclass cls) {
     ThreadToNativeFromVM trans(thread);
     int status = env->RegisterNatives(cls, CONT_methods, sizeof(CONT_methods)/sizeof(JNINativeMethod));
     guarantee(status == JNI_OK, "register jdk.internal.vm.Continuation natives");
-    guarantee(!env->ExceptionOccurred(), "register jdk.internal.vm.Continuation natives");
+    guarantee(!env->ExceptionCheck(), "register jdk.internal.vm.Continuation natives");
 }

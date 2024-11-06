@@ -49,7 +49,6 @@ static const char* describe_spacetype(Metaspace::MetaspaceType st) {
     case Metaspace::StandardMetaspaceType: s = "Standard"; break;
     case Metaspace::BootMetaspaceType: s = "Boot"; break;
     case Metaspace::ClassMirrorHolderMetaspaceType: s = "ClassMirrorHolder"; break;
-    case Metaspace::ReflectionMetaspaceType: s = "Reflection"; break;
     default: ShouldNotReachHere();
   }
   return s;
