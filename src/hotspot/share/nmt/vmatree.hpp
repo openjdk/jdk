@@ -201,23 +201,23 @@ public:
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
 
  public:
-  SummaryDiff reserve_mapping(position from, position sz, const RegionData& metadata) {
-    return register_mapping(from, from + sz, StateType::Reserved, metadata, false);
+  SummaryDiff reserve_mapping(position from, size size, const RegionData& metadata) {
+    return register_mapping(from, from + size, StateType::Reserved, metadata, false);
   }
 
-  SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata, bool use_tag_inplace = false) {
-    return register_mapping(from, from + sz, StateType::Committed, metadata, use_tag_inplace);
+  SummaryDiff commit_mapping(position from, size size, const RegionData& metadata, bool use_tag_inplace = false) {
+    return register_mapping(from, from + size, StateType::Committed, metadata, use_tag_inplace);
   }
 
   // Modify all ranges found in range [from, from+size) to have tag.
   SummaryDiff set_tag(position from, size size, MemTag tag);
 
-  SummaryDiff uncommit_mapping(position from, position sz, const RegionData& metadata) {
-    return register_mapping(from, from + sz, StateType::Reserved, metadata, true);
+  SummaryDiff uncommit_mapping(position from, size size, const RegionData& metadata) {
+    return register_mapping(from, from + size, StateType::Reserved, metadata, true);
   }
 
-  SummaryDiff release_mapping(position from, size sz) {
-    return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
+  SummaryDiff release_mapping(position from, size size) {
+    return register_mapping(from, from + size, StateType::Released, VMATree::empty_regiondata);
   }
 
   VMATreap& tree() {
