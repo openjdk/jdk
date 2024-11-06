@@ -1948,6 +1948,19 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException("SunPKCS11 not directly deserializable");
+    }
+
+    /**
      * Serialized representation of the SunPKCS11 provider.
      */
     private static class SunPKCS11Rep implements Serializable {

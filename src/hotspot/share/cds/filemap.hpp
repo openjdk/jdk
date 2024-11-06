@@ -192,7 +192,6 @@ private:
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
-  bool    _use_secondary_supers_table;            // save the flag UseSecondarySupersTable
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
   size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
   bool _has_non_jar_in_classpath;                 // non-jar file entry exists in classpath
@@ -271,6 +270,7 @@ public:
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   HeapRootSegments heap_root_segments()    const { return _heap_root_segments; }
+  bool has_full_module_graph()             const { return _has_full_module_graph; }
   size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos; }
   size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos; }
   size_t rw_ptrmap_start_pos()             const { return _rw_ptrmap_start_pos; }
@@ -554,6 +554,7 @@ public:
                     GrowableArray<const char*>* rp_array,
                     unsigned int dumptime_prefix_len,
                     unsigned int runtime_prefix_len) NOT_CDS_RETURN_(false);
+  void  extract_module_paths(const char* runtime_path, GrowableArray<const char*>* module_paths);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
   bool  map_heap_region_impl() NOT_CDS_JAVA_HEAP_RETURN_(false);

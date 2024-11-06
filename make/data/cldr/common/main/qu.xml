@@ -27,6 +27,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ann">Obolo Simi</language>
 			<language type="anp">Angika</language>
 			<language type="ar">Arabe Simi</language>
+			<language type="ar_001">Musuq Estandar Arabe Simi</language>
 			<language type="arn">Mapuche Simi</language>
 			<language type="arp">Arapaho</language>
 			<language type="ars">Árabe Najdi Simi</language>
@@ -472,7 +473,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hebr">Hebreo Simi</script>
 			<script type="Hira">Hiragana</script>
 			<script type="Hrkt">Japones silabico sananpakuna</script>
-			<script type="Jamo">Jamo</script>
 			<script type="Jpan">Japones Simi</script>
 			<script type="Kana">Katakana</script>
 			<script type="Khmr">Khmer</script>
@@ -1362,40 +1362,211 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</calendars>
 		<fields>
 			<field type="year">
+				<displayName>wata</displayName>
 				<relative type="-1">qayna wata</relative>
 				<relative type="0">kunan wata</relative>
 				<relative type="1">hamuq wata</relative>
 			</field>
+			<field type="year-short">
+				<displayName>wata</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} watapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa watapi</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<displayName>wata</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} hamuq watapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ñawpaq watapi</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="quarter">
+				<displayName>trimestral nisqa</displayName>
 				<relative type="-1">qayna kimsa killa</relative>
 				<relative type="0">kunan kimsa killa</relative>
 				<relative type="1">hamuq kimsa killa</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} kimsa killapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa kimsa killa</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<displayName>trimestral nisqa</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} kimsa killapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa kimsa killa</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>trimestral nisqa</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} kimsa killapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa kimsa killa</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month">
+				<displayName>killa</displayName>
 				<relative type="-1">qayna killa</relative>
 				<relative type="0">kunan killa</relative>
 				<relative type="1">hamuq killa</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} killapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa killa</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<displayName>killa</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} killapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa killa</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<displayName>killa</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} killapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa killa</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="week">
+				<displayName>simana</displayName>
 				<relative type="-1">qayna semana</relative>
 				<relative type="0">kunan semana</relative>
 				<relative type="1">hamuq semana</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} semanapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa semana</relativeTimePattern>
+				</relativeTime>
 				<relativePeriod>{0} semanapi</relativePeriod>
 			</field>
+			<field type="week-short">
+				<displayName>simana</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} semanapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa semana</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week-narrow">
+				<displayName>simana</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} semanapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa semana</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>killamanta simana</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>killamanta simana</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>killamanta simana</displayName>
+			</field>
 			<field type="day">
+				<displayName>punchaw</displayName>
 				<relative type="-1">qayna punchaw</relative>
 				<relative type="0">kunan punchaw</relative>
 				<relative type="1">paqarin</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} punchawpi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa punchaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
+				<displayName>punchaw</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} punchawpi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa punchaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<displayName>punchaw</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} punchawpi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa punchaw</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>watamanta punchaw</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>watamanta punchaw</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>watamanta punchaw</displayName>
+			</field>
+			<field type="weekday">
+				<displayName>simanamanta punchaw</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>simanamanta punchaw</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>simanamanta punchaw</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>killamanta llamkaypa punchawnin</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>killamanta llamkaypa punchawnin</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>killamanta llamkaypa punchawnin</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">qayna domingo</relative>
 				<relative type="0">kunan domingo</relative>
 				<relative type="1">hamuq domingo</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} Domingopi</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Domingopi</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Domingopi</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Qipa domingo</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Domingopi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa domingo</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Domingopi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa domingo</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon">
@@ -1403,26 +1574,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">kunan Lunes</relative>
 				<relative type="1">hamuq Lunes</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} Lunes</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Lunespi</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Lunes</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Qipa lunes</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Lunespi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa lunes</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon-narrow">
-				<relative type="-1">qayna Lunes</relative>
-				<relative type="0">kunan Lunes</relative>
-				<relative type="1">next Monday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Lunespi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa lunes</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">qayna Martes</relative>
 				<relative type="0">kunan Martes</relative>
 				<relative type="1">hamuq Martes</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} Martes</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Martespi</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Martes</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Qipa martes</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Martespi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa martes</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Martespi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa martes</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="wed">
@@ -1430,10 +1628,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">kunan Miércoles</relative>
 				<relative type="1">hamuq Miércoles</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} Miércoles</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Miércolespi</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Miércoles</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Qipa miércoles</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Miércolespi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa miércoles</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Miércolespi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa miércoles</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu">
@@ -1447,15 +1661,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">-{0} Jueves</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="thu-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Juevespi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa jueves</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Juevespi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa jueves</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="fri">
 				<relative type="-1">Qayna Viernes</relative>
 				<relative type="0">kunan Viernes</relative>
 				<relative type="1">hamuq Viernes</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} Viernes</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Viernespi</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Viernes</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Qipa viernes</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Viernespi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa viernes</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Viernespi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa viernes</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat">
@@ -1463,25 +1709,134 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">kunan Sábado</relative>
 				<relative type="1">hamuq Sábado</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} Sábado</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sábadopi</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Sábado</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Qipa sábado</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Sábadopi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa sábado</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat-narrow">
-				<relative type="-1">qayna Sábado</relative>
-				<relative type="0">kunan Sábado</relative>
-				<relative type="1">next Saturday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Sábadopi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Qipa sábado</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>a. m. / p. m.</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>a. m. / p. m.</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>a. m. / p. m.</displayName>
 			</field>
 			<field type="hour">
+				<displayName>ura</displayName>
 				<relative type="0">kay hora</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} urapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa ura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<displayName>ura</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} urapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa ura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<displayName>ura</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} urapi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa ura</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute">
+				<displayName>minutu</displayName>
 				<relative type="0">kay minuto</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} minutupi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa minutu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<displayName>minutu</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} minutupi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa minutu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<displayName>minutu</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} minutupi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa minutu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second">
+				<displayName>segundu</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} segundupi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa segundu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<displayName>segundu</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} segundupi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa segundu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<displayName>segundu</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} segundupi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} qipa segundu</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="zone">
+				<displayName>ura pachapi</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>ura pachapi</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>ura pachapi</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Tiqsimuyuntin Tupachisqa Hora</standard>
@@ -1741,9 +2096,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
 			<zone type="Asia/Samarkand">
 				<exemplarCity>Samarcanda</exemplarCity>
 			</zone>
@@ -1975,13 +2327,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Hora de China</generic>
 					<standard>Hora Estandar de China</standard>
 					<daylight>Hora de Verano de China</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Hora de Choybalsan</generic>
-					<standard>Hora Estandar de Choybalsan</standard>
-					<daylight>Hora de Verano de Choybalsan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -2220,6 +2565,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Hora de Japón</generic>
 					<standard>Hora Estandar de Japón</standard>
 					<daylight>Hora de Verano de Japón</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Hora de Kazajistán</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -2657,7 +3007,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -3146,12 +3495,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Libra de santa helena</displayName>
 			</currency>
 			<currency type="SLE">
-				<displayName>Leone de Sierra Leona</displayName>
-				<displayName count="other">Leone de sierra leona</displayName>
+				<displayName>Leone qullqi de Sierra Leona</displayName>
+				<displayName count="other">Leone qullqi de Sierra Leona</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>Leone de Sierra Leona (1964—2022)</displayName>
-				<displayName count="other">Leone de sierra leona (1964—2022)</displayName>
+				<displayName>Leone qullqi de Sierra Leona (1964–2022)</displayName>
+				<displayName count="other">Leones qullqi de Sierra Leona (1964–2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Chelín Somalí</displayName>
