@@ -132,8 +132,6 @@ public final class DecimalDigits {
         return 19 + d;
     }
 
-    // Used by trusted callers.  Assumes all necessary bounds checks have
-    // been done by the caller.
     /**
      * Places characters representing the integer i into the
      * character array buf. The characters are placed into
@@ -435,5 +433,4 @@ public final class DecimalDigits {
     private static void putCharUTF16(byte[] buf, int charPos, int c) {
         UNSAFE.putChar(buf, ARRAY_BYTE_BASE_OFFSET + (charPos << 1), (char) c);
     }
-    // End of trusted methods.
 }
