@@ -38,6 +38,8 @@ void ZArguments::initialize_alignments() {
 }
 
 void ZArguments::initialize_heap_flags_and_sizes() {
+  GCArguments::initialize_heap_flags_and_sizes();
+
   if (!FLAG_IS_CMDLINE(MaxHeapSize) &&
       !FLAG_IS_CMDLINE(MaxRAMPercentage) &&
       !FLAG_IS_CMDLINE(SoftMaxHeapSize)) {
@@ -117,6 +119,8 @@ void ZArguments::select_max_gc_threads() {
 }
 
 void ZArguments::initialize() {
+  GCArguments::initialize();
+
   // Check mark stack size
   const size_t mark_stack_space_limit = ZAddressSpaceLimit::mark_stack();
   if (ZMarkStackSpaceLimit > mark_stack_space_limit) {
@@ -146,7 +150,7 @@ void ZArguments::initialize() {
   ZHeuristics::set_medium_page_size();
 
   if (!FLAG_IS_DEFAULT(ZTenuringThreshold) && ZTenuringThreshold != -1) {
-    FLAG_SET_ERGO_IF_DEFAULT(MaxTenuringThreshold, ZTenuringThreshold);
+    FLAG_SET_ERGO_IF_DEFAULT(MaxTenuringThreshold, (uint)ZTenuringThreshold);
     if (MaxTenuringThreshold == 0) {
       FLAG_SET_ERGO_IF_DEFAULT(AlwaysTenure, true);
     }
@@ -220,6 +224,10 @@ void ZArguments::initialize() {
 #endif
 }
 
+size_t ZArguments::conservative_max_heap_alignment() {
+  return 0;
+}
+
 size_t ZArguments::heap_virtual_to_physical_ratio() {
   return ZVirtualToPhysicalRatio;
 }
@@ -228,6 +236,6 @@ CollectedHeap* ZArguments::create_heap() {
   return new ZCollectedHeap();
 }
 
-bool ZArguments::is_supported() {
+bool ZArguments::is_supported() const {
   return is_os_supported();
 }

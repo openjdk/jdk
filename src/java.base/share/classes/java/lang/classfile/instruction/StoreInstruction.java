@@ -29,6 +29,7 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
@@ -61,9 +62,12 @@ public sealed interface StoreInstruction extends Instruction
      *
      * @param kind the type of the value to be stored
      * @param slot the local variable slot to store to
+     * @throws IllegalArgumentException if {@code kind} is {@link
+     *         TypeKind#VOID void} or {@code slot} is out of range
      */
     static StoreInstruction of(TypeKind kind, int slot) {
-        return of(BytecodeHelpers.storeOpcode(kind, slot), slot);
+        var opcode = BytecodeHelpers.storeOpcode(kind, slot); // validates slot
+        return new AbstractInstruction.UnboundStoreInstruction(opcode, slot);
     }
 
     /**
@@ -73,10 +77,11 @@ public sealed interface StoreInstruction extends Instruction
      *           which must be of kind {@link Opcode.Kind#STORE}
      * @param slot the local variable slot to store to
      * @throws IllegalArgumentException if the opcode kind is not
-     *         {@link Opcode.Kind#STORE}.
+     *         {@link Opcode.Kind#STORE} or {@code slot} is out of range
      */
     static StoreInstruction of(Opcode op, int slot) {
         Util.checkKind(op, Opcode.Kind.STORE);
+        BytecodeHelpers.validateSlot(op, slot, false);
         return new AbstractInstruction.UnboundStoreInstruction(op, slot);
     }
 }

@@ -25,15 +25,15 @@
 
 #include "precompiled.hpp"
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_WIN64)
 
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
 #include "memory/resourceArea.hpp"
-#include "nmt/memflags.hpp"
-#include "nmt/memFlagBitmap.hpp"
+#include "nmt/memTag.hpp"
+#include "nmt/memTagBitmap.hpp"
 #include "nmt/memMapPrinter.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
@@ -50,9 +50,9 @@
 /// NMT mechanics
 
 // Short, clear, descriptive names for all possible markers. Note that we only expect to see
-// those that have been used with mmap. Flags left out are printed with their nmt flag name.
+// those that have been used with mmap. Flags left out are printed with their nmt tags name.
 #define NMT_FLAGS_DO(f) \
-  /* flag, short, description */ \
+  /* mem_tag, short, description */ \
   f(mtGCCardSet,      "CARDTBL", "GC Card table") \
   f(mtClassShared,    "CDS", "CDS archives") \
   f(mtClass,          "CLASS", "Class Space") \
@@ -67,11 +67,11 @@
   f(mtTest,           "TEST", "JVM internal test mappings")
   //end
 
-static const char* get_shortname_for_nmt_flag(MEMFLAGS f) {
-#define DO(flag, shortname, text) if (flag == f) return shortname;
+static const char* get_shortname_for_mem_tag(MemTag mem_tag) {
+#define DO(t, shortname, text) if (t == mem_tag) return shortname;
   NMT_FLAGS_DO(DO)
 #undef DO
-  return NMTUtil::flag_to_enum_name(f);
+  return NMTUtil::tag_to_enum_name(mem_tag);
 }
 
 /// NMT virtual memory
@@ -80,7 +80,7 @@ static bool range_intersects(const void* from1, const void* to1, const void* fro
   return MAX2(from1, from2) < MIN2(to1, to2);
 }
 
-// A Cache that correlates range with MEMFLAG, optimized to be iterated quickly
+// A Cache that correlates range with MemTag, optimized to be iterated quickly
 // (cache friendly).
 class CachedNMTInformation : public VirtualMemoryWalker {
   struct Range { const void* from; const void* to; };
@@ -88,24 +88,24 @@ class CachedNMTInformation : public VirtualMemoryWalker {
   // structure would have, and it allows for faster iteration of ranges since more
   // of them fit into a cache line.
   Range* _ranges;
-  MEMFLAGS* _flags;
+  MemTag* _mem_tags;
   size_t _count, _capacity;
   mutable size_t _last;
 
 public:
-  CachedNMTInformation() : _ranges(nullptr), _flags(nullptr),
+  CachedNMTInformation() : _ranges(nullptr), _mem_tags(nullptr),
                            _count(0), _capacity(0), _last(0) {}
 
   ~CachedNMTInformation() {
     ALLOW_C_FUNCTION(free, ::free(_ranges);)
-    ALLOW_C_FUNCTION(free, ::free(_flags);)
+    ALLOW_C_FUNCTION(free, ::free(_mem_tags);)
   }
 
-  bool add(const void* from, const void* to, MEMFLAGS f) {
+  bool add(const void* from, const void* to, MemTag mem_tag) {
     // We rely on NMT regions being sorted by base
     assert(_count == 0 || (from >= _ranges[_count - 1].to), "NMT regions unordered?");
-    // we can just fold two regions if they are adjacent and have the same flag.
-    if (_count > 0 && from == _ranges[_count - 1].to && f == _flags[_count - 1]) {
+    // we can just fold two regions if they are adjacent and have the same mem_tag.
+    if (_count > 0 && from == _ranges[_count - 1].to && mem_tag == _mem_tags[_count - 1]) {
       _ranges[_count - 1].to = to;
       return true;
     }
@@ -114,8 +114,8 @@ public:
       const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
       // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
       ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
-      ALLOW_C_FUNCTION(realloc, _flags = (MEMFLAGS*)::realloc(_flags, new_capacity * sizeof(MEMFLAGS));)
-      if (_ranges == nullptr || _flags == nullptr) {
+      ALLOW_C_FUNCTION(realloc, _mem_tags = (MemTag*)::realloc(_mem_tags, new_capacity * sizeof(MemTag));)
+      if (_ranges == nullptr || _mem_tags == nullptr) {
         // In case of OOM lets make no fuss. Just return.
         return false;
       }
@@ -123,14 +123,14 @@ public:
     }
     assert(_capacity > _count, "Sanity");
     _ranges[_count] = Range { from, to };
-    _flags[_count] = f;
+    _mem_tags[_count] = mem_tag;
     _count++;
     return true;
   }
 
   // Given a vma [from, to), find all regions that intersect with this vma and
   // return their collective flags.
-  MemFlagBitmap lookup(const void* from, const void* to) const {
+  MemTagBitmap lookup(const void* from, const void* to) const {
     assert(from <= to, "Sanity");
     // We optimize for sequential lookups. Since this class is used when a list
     // of OS mappings is scanned (VirtualQuery, /proc/pid/maps), and these lists
@@ -139,10 +139,10 @@ public:
       // the range is to the right of the given section, we need to re-start the search
       _last = 0;
     }
-    MemFlagBitmap bm;
+    MemTagBitmap bm;
     for(uintx i = _last; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
-        bm.set_flag(_flags[i]);
+        bm.set_tag(_mem_tags[i]);
       } else if (to <= _ranges[i].from) {
         _last = i;
         break;
@@ -153,7 +153,7 @@ public:
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) override {
     // Cancel iteration if we run out of memory (add returns false);
-    return add(rgn->base(), rgn->end(), rgn->flag());
+    return add(rgn->base(), rgn->end(), rgn->mem_tag());
   }
 
   // Iterate all NMT virtual memory regions and fill this cache.
@@ -247,16 +247,16 @@ bool MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
   // print NMT information, if available
   if (MemTracker::enabled()) {
     // Correlate vma region (from, to) with NMT region(s) we collected previously.
-    const MemFlagBitmap flags = _nmt_info.lookup(vma_from, vma_to);
+    const MemTagBitmap flags = _nmt_info.lookup(vma_from, vma_to);
     if (flags.has_any()) {
-      for (int i = 0; i < mt_number_of_types; i++) {
-        const MEMFLAGS flag = (MEMFLAGS)i;
-        if (flags.has_flag(flag)) {
+      for (int i = 0; i < mt_number_of_tags; i++) {
+        const MemTag mem_tag = (MemTag)i;
+        if (flags.has_tag(mem_tag)) {
           if (num_printed > 0) {
             _out->put(',');
           }
-          _out->print("%s", get_shortname_for_nmt_flag(flag));
-          if (flag == mtThreadStack) {
+          _out->print("%s", get_shortname_for_mem_tag(mem_tag));
+          if (mem_tag == mtThreadStack) {
             print_thread_details_for_supposed_stack_address(vma_from, vma_to, _out);
           }
           num_printed++;

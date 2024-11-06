@@ -623,9 +623,6 @@ private:
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx) const;
 
-  // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
-  BasicType longer_type_for_conversion(Node* n) const;
-
   bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
   bool schedule_and_apply() const;

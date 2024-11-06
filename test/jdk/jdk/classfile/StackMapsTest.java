@@ -24,30 +24,33 @@
 /*
  * @test
  * @summary Testing Classfile stack maps generator.
- * @bug 8305990 8320222 8320618 8335475
+ * @bug 8305990 8320222 8320618 8335475 8338623 8338661 8343436
  * @build testdata.*
  * @run junit StackMapsTest
  */
 
 import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.components.ClassPrinter;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
-
-import static java.lang.constant.ConstantDescs.MTD_void;
-import static org.junit.jupiter.api.Assertions.*;
-import static helpers.TestUtil.assertEmpty;
-import static java.lang.classfile.ClassFile.ACC_STATIC;
-
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static helpers.TestUtil.assertEmpty;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.*;
 
 /**
  * StackMapsTest
@@ -329,7 +332,7 @@ class StackMapsTest {
         var cm = ClassFile.of().parse(bytes);
         for (var method : cm.methods()) {
             var name = method.methodName();
-            var code = method.code().orElseThrow();
+            var code = (CodeAttribute) method.code().orElseThrow();
             if (name.equalsString("a")) {
                 assertEquals(0, code.maxLocals()); // static method
                 assertEquals(0, code.maxStack());
@@ -339,5 +342,77 @@ class StackMapsTest {
                 assertEquals(0, code.maxStack());
             }
         }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ClassFile.StackMapsOption.class)
+    void testI2LCounters(ClassFile.StackMapsOption option) {
+        var cf = ClassFile.of(option);
+        var bytes = cf.build(ClassDesc.of("Test"), clb -> clb
+            .withMethodBody("a", MTD_long_int, ACC_STATIC, cob ->
+                    cob.iload(0)
+                       .i2l()
+                       .lreturn()));
+
+        var cm = ClassFile.of().parse(bytes);
+        for (var method : cm.methods()) {
+            var code = (CodeAttribute) method.code().orElseThrow();
+            assertEquals(1, code.maxLocals());
+            assertEquals(2, code.maxStack());
+        }
+    }
+
+    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
+    private static final MethodTypeDesc MTD_int_String = MethodTypeDesc.of(CD_int, CD_String);
+    private static final MethodTypeDesc MTD_long_int = MethodTypeDesc.of(CD_long, CD_int);
+
+    @ParameterizedTest
+    @EnumSource(ClassFile.StackMapsOption.class)
+    void testInvocationCounters(ClassFile.StackMapsOption option) {
+        var cf = ClassFile.of(option);
+        var cd = ClassDesc.of("Test");
+        var bytes = cf.build(cd, clb -> clb
+            .withMethodBody("a", MTD_int_String, ACC_STATIC, cob -> cob
+                    .aload(0)
+                    .invokevirtual(CD_String, "hashCode", MTD_int)
+                    .ireturn())
+            .withMethodBody("b", MTD_int, 0, cob -> cob
+                    .aload(0)
+                    .invokevirtual(cd, "hashCode", MTD_int)
+                    .ireturn())
+        );
+
+        var cm = ClassFile.of().parse(bytes);
+        for (var method : cm.methods()) {
+            var code = method.findAttribute(Attributes.code()).orElseThrow();
+            assertEquals(1, code.maxLocals());
+            assertEquals(1, code.maxStack());
+        }
+    }
+
+    @Test
+    void testDeadCodeCountersWithCustomSMTA() {
+        ClassDesc bar = ClassDesc.of("Bar");
+        byte[] bytes = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS).build(bar, clb -> clb
+                .withMethodBody(
+                        "foo", MethodTypeDesc.of(ConstantDescs.CD_long), ACC_STATIC, cob -> {
+                            cob.lconst_0().lreturn();
+                            Label f2 = cob.newBoundLabel();
+                            cob.lstore(0);
+                            Label f3 = cob.newBoundLabel();
+                            cob.lload(0).lreturn().with(
+                                    StackMapTableAttribute.of(List.of(
+                                    StackMapFrameInfo.of(f2,
+                                            List.of(),
+                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.LONG)),
+                                    StackMapFrameInfo.of(f3,
+                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.LONG),
+                                            List.of()))));
+                        }
+                ));
+        assertEmpty(ClassFile.of().verify(bytes));
+        var code = (CodeAttribute) ClassFile.of().parse(bytes).methods().getFirst().code().orElseThrow();
+        assertEquals(2, code.maxLocals());
+        assertEquals(2, code.maxStack());
     }
 }

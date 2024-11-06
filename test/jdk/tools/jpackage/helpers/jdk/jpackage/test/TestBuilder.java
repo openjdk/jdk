@@ -392,6 +392,9 @@ final class TestBuilder implements AutoCloseable {
     }
 
     private static Object fromString(String value, Class toType) {
+        if (toType.isEnum()) {
+            return Enum.valueOf(toType, value);
+        }
         Function<String, Object> converter = conv.get(toType);
         if (converter == null) {
             throw new RuntimeException(String.format(

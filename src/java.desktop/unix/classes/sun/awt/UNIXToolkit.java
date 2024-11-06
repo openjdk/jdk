@@ -70,19 +70,12 @@ public abstract class UNIXToolkit extends SunToolkit
     private static final int[] BAND_OFFSETS_ALPHA = { 0, 1, 2, 3 };
     private static final int DEFAULT_DATATRANSFER_TIMEOUT = 10000;
 
-    private static final String GTK2_DEPRECATION_MESSAGE =
-            "WARNING: the GTK 2 library is deprecated and " +
-                    "its support will be removed in a future release";
-    private static volatile boolean gtk2WarningIssued = false;
-
     // Allowed GTK versions
     public enum GtkVersions {
         ANY(0),
-        GTK2(Constants.GTK2_MAJOR_NUMBER),
         GTK3(Constants.GTK3_MAJOR_NUMBER);
 
         static class Constants {
-            static final int GTK2_MAJOR_NUMBER = 2;
             static final int GTK3_MAJOR_NUMBER = 3;
         }
 
@@ -94,8 +87,6 @@ public abstract class UNIXToolkit extends SunToolkit
 
         public static GtkVersions getVersion(int number) {
             switch (number) {
-                case Constants.GTK2_MAJOR_NUMBER:
-                    return GTK2;
                 case Constants.GTK3_MAJOR_NUMBER:
                     return GTK3;
                 default:
@@ -498,15 +489,7 @@ public abstract class UNIXToolkit extends SunToolkit
         @SuppressWarnings("removal")
         String version = AccessController.doPrivileged(
                 new GetPropertyAction("jdk.gtk.version"));
-        if (version == null) {
-            return GtkVersions.ANY;
-        } else if (version.startsWith("2")) {
-            if (!gtk2WarningIssued) {
-                System.err.println(GTK2_DEPRECATION_MESSAGE);
-                gtk2WarningIssued = true;
-            }
-            return GtkVersions.GTK2;
-        } else if("3".equals(version) ){
+        if ("3".equals(version)) {
             return GtkVersions.GTK3;
         }
         return GtkVersions.ANY;

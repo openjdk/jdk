@@ -2048,7 +2048,7 @@ bool nmethod::make_not_entrant() {
   } // leave critical region under NMethodState_lock
 
 #if INCLUDE_JVMCI
-  // Invalidate can't occur while holding the Patching lock
+  // Invalidate can't occur while holding the NMethodState_lock
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != nullptr) {
     nmethod_data->invalidate_nmethod_mirror(this);
@@ -3270,7 +3270,7 @@ void nmethod::print_recorded_oop(int log_n, int i) {
   if (value == Universe::non_oop_word()) {
     tty->print("non-oop word");
   } else {
-    if (value == 0) {
+    if (value == nullptr) {
       tty->print("nullptr-oop");
     } else {
       oop_at(i)->print_value_on(tty);

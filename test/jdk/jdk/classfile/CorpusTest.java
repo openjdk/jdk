@@ -39,6 +39,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.io.ByteArrayInputStream;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.util.*;
 
 import static helpers.ClassRecord.assertEqualsDeep;
@@ -222,9 +223,11 @@ class CorpusTest {
             var m1 = itStack.next();
             var m2 = itNoStack.next();
             var text1 = m1.methodName().stringValue() + m1.methodType().stringValue() + ": "
-                      + m1.code().map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
+                      + m1.code().map(CodeAttribute.class::cast)
+                                 .map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
             var text2 = m2.methodName().stringValue() + m2.methodType().stringValue() + ": "
-                      + m2.code().map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
+                      + m2.code().map(CodeAttribute.class::cast)
+                                 .map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
             assertEquals(text1, text2);
         }
         assertFalse(itNoStack.hasNext());

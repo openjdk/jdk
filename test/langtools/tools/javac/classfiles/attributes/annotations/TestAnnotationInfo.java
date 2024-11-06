@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public class TestAnnotationInfo {
                     testResult.checkEquals((int)((AnnotationValue.OfShort) element_value).shortValue(), value, "const_value_index : " + value);
                     break;
                 default:
-                    testResult.checkEquals(((AnnotationValue.OfInteger) element_value).intValue(), value, "const_value_index : " + value);
+                    testResult.checkEquals(((AnnotationValue.OfInt) element_value).intValue(), value, "const_value_index : " + value);
             }
         }
 
@@ -169,8 +169,8 @@ public class TestAnnotationInfo {
                                      ClassModel classFile,
                                      AnnotationValue element_value) {
             testTag(testResult, element_value.tag());
-            AnnotationValue.OfCharacter ev =
-                    (AnnotationValue.OfCharacter) element_value;
+            AnnotationValue.OfChar ev =
+                    (AnnotationValue.OfChar) element_value;
             testResult.checkEquals(ev.charValue(), value, "const_value_index : " + value);
         }
 

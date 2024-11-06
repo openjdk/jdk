@@ -85,10 +85,10 @@ class AdvancedTransformationsTest {
                             mb.transformCode(com, new CodeTransform() {
                                 @Override
                                 public void atStart(CodeBuilder builder) {
-                                    builder.allocateLocal(TypeKind.ReferenceType);
-                                    builder.allocateLocal(TypeKind.LongType);
-                                    builder.allocateLocal(TypeKind.IntType);
-                                    builder.allocateLocal(TypeKind.DoubleType);
+                                    builder.allocateLocal(TypeKind.REFERENCE);
+                                    builder.allocateLocal(TypeKind.LONG);
+                                    builder.allocateLocal(TypeKind.INT);
+                                    builder.allocateLocal(TypeKind.DOUBLE);
                                 }
                                 @Override
                                 public void accept(CodeBuilder builder, CodeElement element) {
@@ -324,7 +324,7 @@ class AdvancedTransformationsTest {
                                                 var storeStack = new ArrayDeque<StoreInstruction>();
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                    storeStack.push(StoreInstruction.of(TypeKind.REFERENCE, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
                                                     var tk = TypeKind.from(pt);
                                                     storeStack.push(StoreInstruction.of(tk, slot));

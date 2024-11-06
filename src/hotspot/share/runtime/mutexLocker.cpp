@@ -36,7 +36,6 @@
 
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
 
-Mutex*   Patching_lock                = nullptr;
 Mutex*   NMethodState_lock            = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
 Mutex*   InvokeMethodTypeTable_lock   = nullptr;
@@ -45,7 +44,6 @@ Mutex*   SharedDictionary_lock        = nullptr;
 Monitor* ClassInitError_lock          = nullptr;
 Mutex*   Module_lock                  = nullptr;
 Mutex*   CompiledIC_lock              = nullptr;
-Mutex*   InlineCacheBuffer_lock       = nullptr;
 Mutex*   VMStatistic_lock             = nullptr;
 Mutex*   JmethodIdCreation_lock       = nullptr;
 Mutex*   JfieldIdCreation_lock        = nullptr;
@@ -67,6 +65,7 @@ Monitor* CodeCache_lock               = nullptr;
 Mutex*   TouchedMethodLog_lock        = nullptr;
 Mutex*   RetData_lock                 = nullptr;
 Monitor* VMOperation_lock             = nullptr;
+Monitor* ThreadsLockThrottle_lock     = nullptr;
 Monitor* Threads_lock                 = nullptr;
 Mutex*   NonJavaThreadsList_lock      = nullptr;
 Mutex*   NonJavaThreadsListSync_lock  = nullptr;
@@ -136,6 +135,7 @@ Mutex*   SharedDecoder_lock           = nullptr;
 Mutex*   DCmdFactory_lock             = nullptr;
 Mutex*   NMTQuery_lock                = nullptr;
 Mutex*   NMTCompilationCostHistory_lock = nullptr;
+Mutex*   NmtVirtualMemory_lock          = nullptr;
 
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
@@ -233,15 +233,9 @@ void mutex_init() {
   MUTEX_DEFN(Metaspace_lock                  , PaddedMutex  , nosafepoint-3);
   MUTEX_DEFN(MetaspaceCritical_lock          , PaddedMonitor, nosafepoint-1);
 
-  MUTEX_DEFN(Patching_lock                   , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
   MUTEX_DEFN(MonitorDeflation_lock           , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations
-  MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);      // used for service thread operations
-
-  if (UseNotificationThread) {
-    MUTEX_DEFN(Notification_lock             , PaddedMonitor, service);  // used for notification thread operations
-  } else {
-    Notification_lock = Service_lock;
-  }
+  MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);          // used for service thread operations
+  MUTEX_DEFN(Notification_lock               , PaddedMonitor, service);          // used for notification thread operations
 
   MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint-2); // used for creating jmethodIDs.
   MUTEX_DEFN(InvokeMethodTypeTable_lock      , PaddedMutex  , safepoint);
@@ -267,14 +261,13 @@ void mutex_init() {
 
   MUTEX_DEFN(JfieldIdCreation_lock           , PaddedMutex  , safepoint);
 
-  MUTEX_DEFN(CompiledIC_lock                 , PaddedMutex  , nosafepoint);  // locks VtableStubs_lock, InlineCacheBuffer_lock
+  MUTEX_DEFN(CompiledIC_lock                 , PaddedMutex  , nosafepoint);  // locks VtableStubs_lock
   MUTEX_DEFN(MethodCompileQueue_lock         , PaddedMonitor, safepoint);
   MUTEX_DEFN(CompileStatistics_lock          , PaddedMutex  , safepoint);
   MUTEX_DEFN(DirectivesStack_lock            , PaddedMutex  , nosafepoint);
 
-  MUTEX_DEFN(JvmtiThreadState_lock           , PaddedMutex  , safepoint);   // Used by JvmtiThreadState/JvmtiEventController
-  MUTEX_DEFN(EscapeBarrier_lock              , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
   MUTEX_DEFN(JvmtiVTMSTransition_lock        , PaddedMonitor, safepoint);   // used for Virtual Thread Mount State transition management
+  MUTEX_DEFN(EscapeBarrier_lock              , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
   MUTEX_DEFN(Management_lock                 , PaddedMutex  , safepoint);   // used for JVM management
 
   MUTEX_DEFN(ConcurrentGCBreakpoints_lock    , PaddedMonitor, safepoint, true);
@@ -301,10 +294,11 @@ void mutex_init() {
   MUTEX_DEFN(CodeHeapStateAnalytics_lock     , PaddedMutex  , safepoint);
   MUTEX_DEFN(ThreadsSMRDelete_lock           , PaddedMonitor, service-2); // Holds ConcurrentHashTableResize_lock
   MUTEX_DEFN(ThreadIdTableCreate_lock        , PaddedMutex  , safepoint);
-  MUTEX_DEFN(SharedDecoder_lock              , PaddedMutex  , tty-1);
+  MUTEX_DEFN(SharedDecoder_lock              , PaddedMutex  , service-5); // Must be lower than NmtVirtualMemory_lock due to MemTracker::print_containing_region
   MUTEX_DEFN(DCmdFactory_lock                , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(NMTQuery_lock                   , PaddedMutex  , safepoint);
   MUTEX_DEFN(NMTCompilationCostHistory_lock  , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(NmtVirtualMemory_lock           , PaddedMutex  , service-4);
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
   MUTEX_DEFN(CDSClassFileStream_lock         , PaddedMutex  , safepoint);
@@ -324,8 +318,9 @@ void mutex_init() {
   MUTEX_DEFN(JVMCIRuntime_lock               , PaddedMonitor, safepoint, true);
 #endif
 
+  MUTEX_DEFN(ThreadsLockThrottle_lock        , PaddedMonitor, safepoint);
+
   // These locks have relative rankings, and inherit safepoint checking attributes from that rank.
-  MUTEX_DEFL(InlineCacheBuffer_lock         , PaddedMutex  , CompiledIC_lock);
   MUTEX_DEFL(VtableStubs_lock               , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock
   MUTEX_DEFL(CodeCache_lock                 , PaddedMonitor, VtableStubs_lock);
   MUTEX_DEFL(NMethodState_lock              , PaddedMutex  , CodeCache_lock);
@@ -360,6 +355,7 @@ void mutex_init() {
   // JVMCIRuntime_lock must be acquired before JVMCI_lock to avoid deadlock
   MUTEX_DEFL(JVMCI_lock                     , PaddedMonitor, JVMCIRuntime_lock);
 #endif
+  MUTEX_DEFL(JvmtiThreadState_lock          , PaddedMutex  , JvmtiVTMSTransition_lock);   // Used by JvmtiThreadState/JvmtiEventController
 
   // Allocate RecursiveMutex
   MultiArray_lock = new RecursiveMutex();

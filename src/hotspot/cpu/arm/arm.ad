@@ -1003,10 +1003,6 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return nullptr;
 }
 
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return nullptr;
-}
-
 // Vector calling convention not yet implemented.
 bool Matcher::supports_vector_calling_convention(void) {
   return false;
@@ -3890,6 +3886,7 @@ instruct loadRange(iRegI dst, memoryI mem) %{
 
 
 instruct loadP(iRegP dst, memoryP mem) %{
+  predicate(!(UseG1GC && n->as_Load()->barrier_data() != 0));
   match(Set dst (LoadP mem));
   ins_cost(MEMORY_REF_COST);
   size(4);
@@ -4225,18 +4222,6 @@ instruct storeB(memoryB mem, store_RegI src) %{
   ins_pipe(istore_mem_reg);
 %}
 
-instruct storeCM(memoryB mem, store_RegI src) %{
-  match(Set mem (StoreCM mem src));
-  ins_cost(MEMORY_REF_COST);
-
-  size(4);
-  format %{ "STRB    $src,$mem\t! CMS card-mark byte" %}
-  ins_encode %{
-    __ strb($src$$Register, $mem$$Address);
-  %}
-  ins_pipe(istore_mem_reg);
-%}
-
 // Store Char/Short
 
 
@@ -4356,6 +4341,7 @@ instruct movSP(store_ptr_RegP dst, SPRegP src) %{
 
 
 instruct storeP(memoryP mem, store_ptr_RegP src) %{
+  predicate(!(UseG1GC && n->as_Store()->barrier_data() != 0));
   match(Set mem (StoreP mem src));
   ins_cost(MEMORY_REF_COST);
   size(4);
@@ -5390,6 +5376,7 @@ instruct compareAndSwapI_bool(memoryex mem, iRegI oldval, iRegI newval, iRegI re
 %}
 
 instruct compareAndSwapP_bool(memoryex mem, iRegP oldval, iRegP newval, iRegI res, iRegI tmp, flagsReg ccr ) %{
+  predicate(!(UseG1GC && n->as_LoadStore()->barrier_data() != 0));
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   effect( KILL ccr, TEMP tmp);
   size(28);
@@ -5659,6 +5646,7 @@ instruct xchgL(memoryex mem, iRegLd newval, iRegLd res, iRegI tmp, flagsReg ccr)
 %}
 
 instruct xchgP(memoryex mem, iRegP newval, iRegP res, iRegI tmp, flagsReg ccr) %{
+  predicate(!(UseG1GC && n->as_LoadStore()->barrier_data() != 0));
   match(Set res (GetAndSetP mem newval));
   effect(KILL ccr, TEMP tmp, TEMP res);
   size(16);
@@ -8949,6 +8937,20 @@ instruct tailjmpInd(IPRegP jump_target, RExceptionRegP ex_oop) %{
   ins_encode %{
     __ mov(Rexception_pc, LR);
     __ jump($jump_target$$Register);
+  %}
+  ins_pipe(tail_call);
+%}
+
+// Forward exception.
+instruct ForwardExceptionjmp()
+%{
+  match(ForwardException);
+  ins_cost(CALL_COST);
+
+  format %{ "b    forward_exception_stub" %}
+  ins_encode %{
+    // OK to trash Rtemp, because Rtemp is used by stub
+    __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
   %}
   ins_pipe(tail_call);
 %}

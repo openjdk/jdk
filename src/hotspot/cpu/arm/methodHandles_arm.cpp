@@ -39,6 +39,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -140,7 +141,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, bool for_comp
 
   __ bind(L_no_such_method);
   // throw exception
-  __ jump(StubRoutines::throw_AbstractMethodError_entry(), relocInfo::runtime_call_type, Rtemp);
+  __ jump(SharedRuntime::throw_AbstractMethodError_entry(), relocInfo::runtime_call_type, Rtemp);
 }
 
 void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
@@ -461,7 +462,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     if (iid == vmIntrinsics::_linkToInterface) {
       __ bind(L_incompatible_class_change_error);
-      __ jump(StubRoutines::throw_IncompatibleClassChangeError_entry(), relocInfo::runtime_call_type, Rtemp);
+      __ jump(SharedRuntime::throw_IncompatibleClassChangeError_entry(), relocInfo::runtime_call_type, Rtemp);
     }
   }
 }

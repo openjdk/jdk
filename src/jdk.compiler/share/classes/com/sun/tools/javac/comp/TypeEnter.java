@@ -979,11 +979,17 @@ public class TypeEnter implements Completer {
             if (sym.isPermittedExplicit) {
                 ListBuffer<Symbol> permittedSubtypeSymbols = new ListBuffer<>();
                 List<JCExpression> permittedTrees = tree.permitting;
-                for (JCExpression permitted : permittedTrees) {
-                    Type pt = attr.attribBase(permitted, baseEnv, false, false, false);
-                    permittedSubtypeSymbols.append(pt.tsym);
+                var isPermitsClause = baseEnv.info.isPermitsClause;
+                try {
+                    baseEnv.info.isPermitsClause = true;
+                    for (JCExpression permitted : permittedTrees) {
+                        Type pt = attr.attribBase(permitted, baseEnv, false, false, false);
+                        permittedSubtypeSymbols.append(pt.tsym);
+                    }
+                    sym.setPermittedSubclasses(permittedSubtypeSymbols.toList());
+                } finally {
+                    baseEnv.info.isPermitsClause = isPermitsClause;
                 }
-                sym.setPermittedSubclasses(permittedSubtypeSymbols.toList());
             }
         }
     }

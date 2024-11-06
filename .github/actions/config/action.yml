@@ -41,6 +41,6 @@ runs:
       id: read-config
       run: |
         # Extract value from configuration file
-        value="$(grep -h ${{ inputs.var }}= make/conf/github-actions.conf | cut -d '=' -f 2-)"
+        value="$(grep -h '^${{ inputs.var }}'= make/conf/github-actions.conf | cut -d '=' -f 2-)"
         echo "value=$value" >> $GITHUB_OUTPUT
       shell: bash

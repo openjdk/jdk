@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,17 @@
 
 #ifndef OS_LINUX_OSTHREAD_LINUX_HPP
 #define OS_LINUX_OSTHREAD_LINUX_HPP
- public:
+
+#include "runtime/osThreadBase.hpp"
+#include "suspendResume_posix.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class OSThread : public OSThreadBase {
+  friend class VMStructs;
+
   typedef pid_t thread_id_t;
 
- private:
-  int _thread_type;
-
- public:
-
-  int thread_type() const {
-    return _thread_type;
-  }
-  void set_thread_type(int type) {
-    _thread_type = type;
-  }
+  thread_id_t _thread_id;
 
   // _pthread_id is the pthread id, which is used by library calls
   // (e.g. pthread_kill).
@@ -46,15 +43,19 @@
   sigset_t _caller_sigmask; // Caller's signal mask
 
  public:
+  OSThread();
+  ~OSThread();
 
   // Methods to save/restore caller's signal mask
   sigset_t  caller_sigmask() const       { return _caller_sigmask; }
   void    set_caller_sigmask(sigset_t sigmask)  { _caller_sigmask = sigmask; }
 
-#ifndef PRODUCT
-  // Used for debugging, return a unique integer for each thread.
-  int thread_identifier() const   { return _thread_id; }
-#endif
+  thread_id_t thread_id() const {
+    return _thread_id;
+  }
+  void set_thread_id(thread_id_t id) {
+    _thread_id = id;
+  }
 
   pthread_t pthread_id() const {
     return _pthread_id;
@@ -67,7 +68,6 @@
   // suspension support.
   // ***************************************************************
 
-public:
   // flags that support signal based suspend/resume on Linux are in a
   // separate class to avoid confusion with many flags in OSThread that
   // are used by VM level suspend/resume.
@@ -113,17 +113,10 @@ public:
     return _startThread_lock;
   }
 
-  // ***************************************************************
-  // Platform dependent initialization and cleanup
-  // ***************************************************************
-
-private:
-
-  void pd_initialize();
-  void pd_destroy();
-
-// Reconciliation History
-// osThread_solaris.hpp 1.24 99/08/27 13:11:54
-// End
+  // Printing
+  uintx thread_id_for_printing() const override {
+    return (uintx)_thread_id;
+  }
+};
 
 #endif // OS_LINUX_OSTHREAD_LINUX_HPP

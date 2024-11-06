@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,8 +302,8 @@ void ZNMethod::nmethods_do(bool secondary, NMethodClosure* cl) {
 
 uintptr_t ZNMethod::color(nmethod* nm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  // color is stored at low order bits of int; implicit conversion to uintptr_t is fine
-  return bs_nm->guard_value(nm);
+  // color is stored at low order bits of int; conversion to uintptr_t is fine
+  return (uintptr_t)bs_nm->guard_value(nm);
 }
 
 oop ZNMethod::load_oop(oop* p, DecoratorSet decorators) {

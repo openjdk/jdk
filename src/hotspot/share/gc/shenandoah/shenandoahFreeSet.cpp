@@ -48,19 +48,19 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
 
 #ifndef PRODUCT
 void ShenandoahRegionPartitions::dump_bitmap() const {
-  log_info(gc)("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
-               _leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _leftmosts[int(ShenandoahFreeSetPartitionId::Collector)],
-               _rightmosts[int(ShenandoahFreeSetPartitionId::Collector)]);
-  log_info(gc)("Empty Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT
-               "], Empty Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
-               _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)],
-               _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)]);
+  log_debug(gc)("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
+                _leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _leftmosts[int(ShenandoahFreeSetPartitionId::Collector)],
+                _rightmosts[int(ShenandoahFreeSetPartitionId::Collector)]);
+  log_debug(gc)("Empty Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT
+                "], Empty Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
+                _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)],
+                _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)]);
 
-  log_info(gc)("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
+  log_debug(gc)("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
   dump_bitmap_range(0, _max-1);
 }
 
@@ -83,8 +83,8 @@ void ShenandoahRegionPartitions::dump_bitmap_row(idx_t region_idx) const {
   uintx collector_bits = _membership[int(ShenandoahFreeSetPartitionId::Collector)].bits_at(aligned_idx);
   uintx free_bits = mutator_bits | collector_bits;
   uintx notfree_bits =  ~free_bits;
-  log_info(gc)(SSIZE_FORMAT_W(6) ": " SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0,
-               aligned_idx, mutator_bits, collector_bits, notfree_bits);
+  log_debug(gc)(SSIZE_FORMAT_W(6) ": " SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0,
+                aligned_idx, mutator_bits, collector_bits, notfree_bits);
 }
 #endif
 
@@ -910,7 +910,6 @@ void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion* r) {
 void ShenandoahFreeSet::recycle_trash() {
   // lock is not reentrable, check we don't have it
   shenandoah_assert_not_heaplocked();
-
   size_t count = 0;
   for (size_t i = 0; i < _heap->num_regions(); i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
@@ -919,16 +918,45 @@ void ShenandoahFreeSet::recycle_trash() {
     }
   }
 
-  // Relinquish the lock after this much time passed.
-  static constexpr jlong deadline_ns = 30000; // 30 us
+  size_t total_batches = 0;
+  jlong batch_start_time = 0;
+  jlong recycle_trash_start_time = os::javaTimeNanos();    // This value will be treated as the initial batch_start_time
+  jlong batch_end_time = recycle_trash_start_time;
+  // Process as many batches as can be processed within 10 us.
+  static constexpr jlong deadline_ns = 10000;               // 10 us
   size_t idx = 0;
+  jlong predicted_next_batch_end_time;
+  jlong batch_process_time_estimate = 0;
   while (idx < count) {
-    os::naked_yield(); // Yield to allow allocators to take the lock
-    ShenandoahHeapLocker locker(_heap->lock());
-    const jlong deadline = os::javaTimeNanos() + deadline_ns;
-    while (idx < count && os::javaTimeNanos() < deadline) {
-      try_recycle_trashed(_trash_regions[idx++]);
+    if (idx > 0) {
+      os::naked_yield(); // Yield to allow allocators to take the lock, except on the first iteration
     }
+    // Avoid another call to javaTimeNanos() if we already know time at which last batch ended
+    batch_start_time = batch_end_time;
+    const jlong deadline = batch_start_time + deadline_ns;
+
+    ShenandoahHeapLocker locker(_heap->lock());
+    do {
+      // Measurements on typical 2024 hardware suggest it typically requires between 1400 and 2000 ns to process a batch of
+      // 32 regions, assuming low contention with other threads.  Sometimes this goes higher, when mutator threads
+      // are contending for CPU cores and/or the heap lock.  On this hardware with a 10 us deadline, we expect 3-6 batches
+      // to be processed between yields most of the time.
+      //
+      // Note that deadline is enforced since the end of previous batch.  In the case that yield() or acquisition of heap lock
+      // takes a "long time", we will have less time to process regions, but we will always process at least one batch between
+      // yields.  Yielding more frequently when there is heavy contention for the heap lock or for CPU cores is considered the
+      // right thing to do.
+      const size_t REGIONS_PER_BATCH = 32;
+      size_t max_idx = MIN2(count, idx + REGIONS_PER_BATCH);
+      while (idx < max_idx) {
+        try_recycle_trashed(_trash_regions[idx++]);
+      }
+      total_batches++;
+      batch_end_time = os::javaTimeNanos();
+      // Estimate includes historic combination of yield times and heap lock acquisition times.
+      batch_process_time_estimate = (batch_end_time - recycle_trash_start_time) / total_batches;
+      predicted_next_batch_end_time = batch_end_time + batch_process_time_estimate;
+    } while ((idx < count) && (predicted_next_batch_end_time < deadline));
   }
 }
 
@@ -1009,7 +1037,9 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
       }
     }
   }
-  _partitions.establish_mutator_intervals(mutator_leftmost, mutator_rightmost, mutator_leftmost_empty, mutator_rightmost_empty,
+  idx_t rightmost_idx = (mutator_leftmost == max_regions)? -1: (idx_t) mutator_rightmost;
+  idx_t rightmost_empty_idx = (mutator_leftmost_empty == max_regions)? -1: (idx_t) mutator_rightmost_empty;
+  _partitions.establish_mutator_intervals(mutator_leftmost, rightmost_idx, mutator_leftmost_empty, rightmost_empty_idx,
                                           mutator_regions, mutator_used);
 }
 
@@ -1060,8 +1090,8 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
   }
 
   size_t collector_xfer = collector_empty_xfer + collector_not_empty_xfer;
-  log_info(gc)("At start of update refs, moving " SIZE_FORMAT "%s to Mutator free partition from Collector Reserve",
-               byte_size_in_proper_unit(collector_xfer), proper_unit_for_byte_size(collector_xfer));
+  log_info(gc, ergo)("At start of update refs, moving " SIZE_FORMAT "%s to Mutator free partition from Collector Reserve",
+                     byte_size_in_proper_unit(collector_xfer), proper_unit_for_byte_size(collector_xfer));
 }
 
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &cset_regions) {
@@ -1134,7 +1164,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
   }
 
   if (LogTarget(Info, gc, free)::is_enabled()) {
-    size_t reserve = _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector);
+    size_t reserve = _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
     if (reserve < to_reserve) {
       log_debug(gc)("Wanted " PROPERFMT " for young reserve, but only reserved: " PROPERFMT,
                     PROPERFMTARGS(to_reserve), PROPERFMTARGS(reserve));
@@ -1308,7 +1338,7 @@ void ShenandoahFreeSet::log_status() {
 
 HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
   shenandoah_assert_heaplocked();
-  if (req.size() > ShenandoahHeapRegion::humongous_threshold_words()) {
+  if (ShenandoahHeapRegion::requires_humongous(req.size())) {
     switch (req.type()) {
       case ShenandoahAllocRequest::_alloc_shared:
       case ShenandoahAllocRequest::_alloc_shared_gc:
@@ -1317,8 +1347,7 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
       case ShenandoahAllocRequest::_alloc_gclab:
       case ShenandoahAllocRequest::_alloc_tlab:
         in_new_region = false;
-        assert(false, "Trying to allocate TLAB larger than the humongous threshold: " SIZE_FORMAT " > " SIZE_FORMAT,
-               req.size(), ShenandoahHeapRegion::humongous_threshold_words());
+        assert(false, "Trying to allocate TLAB in humongous region: " SIZE_FORMAT, req.size());
         return nullptr;
       default:
         ShouldNotReachHere();
