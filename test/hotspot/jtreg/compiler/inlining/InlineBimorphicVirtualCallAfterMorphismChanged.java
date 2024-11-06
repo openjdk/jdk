@@ -44,22 +44,26 @@ public class InlineBimorphicVirtualCallAfterMorphismChanged {
             return new FirstClass(); 
         }
 
-	    private static AbstractBase secondInstance() { 
+        private static AbstractBase secondInstance() {
             return new SecondClass(); 
         }
     }
 
     public final static class FirstClass extends AbstractBase {
-	    public int inlinee() { return 1; }
+        public int inlinee() {
+            return 1;
+        }
     }
 
     public final static class SecondClass extends AbstractBase {
-	    public int inlinee() { return 2; };
+        public int inlinee() {
+            return 2;
+        };
     }
 
     public static void main(String[] args) throws Exception {
         test("-XX:-TieredCompilation");
-	    test("-XX:+TieredCompilation");
+        test("-XX:+TieredCompilation");
     }
 
     private static void test(String option) throws Exception {
