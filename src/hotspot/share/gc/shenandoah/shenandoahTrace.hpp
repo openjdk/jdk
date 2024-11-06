@@ -28,15 +28,15 @@
 #include "gc/shared/gcTrace.hpp"
 #include "memory/allocation.hpp"
 
-class ShenandoahEvacInfo;
+class ShenandoahEvacuationInformation;
 
 class ShenandoahTracer : public GCTracer, public CHeapObj<mtGC> {
 public:
   ShenandoahTracer() : GCTracer(Shenandoah) {}
-  void report_evacuation_info(ShenandoahEvacInfo* info);
+  void report_evacuation_info(ShenandoahEvacuationInformation* info);
 
 private:
-  void send_evacuation_info_event(ShenandoahEvacInfo* info);
+  void send_evacuation_info_event(ShenandoahEvacuationInformation* info);
 };
 
 #endif
