@@ -472,8 +472,8 @@ class JavaThread: public Thread {
   int _frames_to_pop_failed_realloc;
 
   ContinuationEntry* _cont_entry;
-  intptr_t* _cont_fastpath; // the sp of the oldest known interpreted/call_stub frame inside the
-                            // continuation that we know about
+  intptr_t* _cont_fastpath; // the sp of the oldest known interpreted/call_stub/upcall_stub/native_wrapper
+                            // frame inside the continuation that we know about
   int _cont_fastpath_thread_state; // whether global thread state allows continuation fastpath (JVMTI)
 
   // It's signed for error detection.
