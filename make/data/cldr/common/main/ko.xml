@@ -77,6 +77,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bin">비니어</language>
 			<language type="bkm">콤어</language>
 			<language type="bla">식시카어</language>
+			<language type="blo">아니이어</language>
 			<language type="bm">밤바라어</language>
 			<language type="bn">벵골어</language>
 			<language type="bo">티베트어</language>
@@ -199,7 +200,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gmh">중세 고지 독일어</language>
 			<language type="gn">과라니어</language>
 			<language type="goh">고대 고지 독일어</language>
-			<language type="gom">고아 콘칸어</language>
 			<language type="gon">곤디어</language>
 			<language type="gor">고론탈로어</language>
 			<language type="got">고트어</language>
@@ -301,6 +301,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">코미어</language>
 			<language type="kw">콘월어</language>
 			<language type="kwk">곽왈라어</language>
+			<language type="kxv">쿠비어</language>
 			<language type="ky">키르기스어</language>
 			<language type="la">라틴어</language>
 			<language type="lad">라디노어</language>
@@ -312,8 +313,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lfn">링구아 프랑카 노바</language>
 			<language type="lg">간다어</language>
 			<language type="li">림버거어</language>
+			<language type="lij">리구리아어</language>
 			<language type="lil">릴루엣어</language>
 			<language type="lkt">라코타어</language>
+			<language type="lmo">롬바르드어</language>
 			<language type="ln">링갈라어</language>
 			<language type="lo">라오어</language>
 			<language type="lol">몽고어</language>
@@ -510,6 +513,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">코모로어</language>
 			<language type="syc">고전 시리아어</language>
 			<language type="syr">시리아어</language>
+			<language type="szl">실레시아어</language>
 			<language type="ta">타밀어</language>
 			<language type="tce">남부 투톤어</language>
 			<language type="te">텔루구어</language>
@@ -537,7 +541,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tog">니아사 통가어</language>
 			<language type="tok">도기 보나</language>
 			<language type="tpi">토크 피신어</language>
-			<language type="tr">터키어</language>
+			<language type="tr">튀르키예어</language>
 			<language type="trv">타로코어</language>
 			<language type="ts">총가어</language>
 			<language type="tsi">트심시안어</language>
@@ -560,7 +564,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">우즈베크어</language>
 			<language type="vai">바이어</language>
 			<language type="ve">벤다어</language>
+			<language type="vec">베네치아어</language>
 			<language type="vi">베트남어</language>
+			<language type="vmw">마쿠와어</language>
 			<language type="vo">볼라퓌크어</language>
 			<language type="vot">보틱어</language>
 			<language type="vun">분조어</language>
@@ -574,6 +580,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">우어</language>
 			<language type="xal">칼미크어</language>
 			<language type="xh">코사어</language>
+			<language type="xnr">캉리어</language>
 			<language type="xog">소가어</language>
 			<language type="yao">야오족어</language>
 			<language type="yap">얍페세어</language>
@@ -670,6 +677,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Khar">카로슈티 문자</script>
 			<script type="Khmr">크메르 문자</script>
 			<script type="Khoj" draft="contributed">코즈키 문자</script>
+			<script type="Kits" draft="unconfirmed">거란 소자</script>
 			<script type="Knda">칸나다 문자</script>
 			<script type="Kore">한국 문자</script>
 			<script type="Kpel" draft="contributed">크펠레 문자</script>
@@ -1117,6 +1125,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="NJIVA" draft="provisional">니바 방언</variant>
 			<variant type="OSOJS" draft="provisional">오세아코/오소가네 방언</variant>
 			<variant type="PAMAKA" draft="contributed">파마카 방언</variant>
+			<variant type="PEHOEJI" draft="unconfirmed">백화자</variant>
 			<variant type="PINYIN" draft="provisional">병음 로마자 표기법</variant>
 			<variant type="POLYTON" draft="provisional">복음</variant>
 			<variant type="POSIX" draft="contributed">Computer</variant>
@@ -1129,6 +1138,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="SOLBA" draft="provisional">스톨비자/솔비카 방언</variant>
 			<variant type="SURMIRAN" draft="contributed">서미안</variant>
 			<variant type="TARASK" draft="provisional">타라쉬키에비샤 표기법</variant>
+			<variant type="TONGYONG" draft="unconfirmed">통용 병음</variant>
 			<variant type="UCCOR" draft="provisional">통합 표기법</variant>
 			<variant type="UCRCOR" draft="contributed">통합 개정 표기법</variant>
 			<variant type="ULSTER" draft="contributed">얼스터</variant>
@@ -1303,7 +1313,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1343,18 +1353,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">1월</month>
-							<month type="2" draft="contributed">2월</month>
-							<month type="3" draft="contributed">3월</month>
-							<month type="4" draft="contributed">4월</month>
-							<month type="5" draft="contributed">5월</month>
-							<month type="6" draft="contributed">6월</month>
-							<month type="7" draft="contributed">7월</month>
-							<month type="8" draft="contributed">8월</month>
-							<month type="9" draft="contributed">9월</month>
-							<month type="10" draft="contributed">10월</month>
-							<month type="11" draft="contributed">11월</month>
-							<month type="12" draft="contributed">12월</month>
+							<month type="1">1월</month>
+							<month type="2">2월</month>
+							<month type="3">3월</month>
+							<month type="4">4월</month>
+							<month type="5">5월</month>
+							<month type="6">6월</month>
+							<month type="7">7월</month>
+							<month type="8">8월</month>
+							<month type="9">9월</month>
+							<month type="10">10월</month>
+							<month type="11">11월</month>
+							<month type="12">12월</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -2025,7 +2035,43 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">자정</dayPeriod>
 							<dayPeriod type="noon">정오</dayPeriod>
-							<dayPeriod type="morning1">새벽</dayPeriod>
+							<dayPeriod type="morning1">아침</dayPeriod>
+							<dayPeriod type="morning2">오전</dayPeriod>
+							<dayPeriod type="afternoon1">오후</dayPeriod>
+							<dayPeriod type="evening1">저녁</dayPeriod>
+							<dayPeriod type="night1">밤</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">자정</dayPeriod>
+							<dayPeriod type="noon">정오</dayPeriod>
+							<dayPeriod type="morning1">아침</dayPeriod>
+							<dayPeriod type="morning2">오전</dayPeriod>
+							<dayPeriod type="afternoon1">오후</dayPeriod>
+							<dayPeriod type="evening1">저녁</dayPeriod>
+							<dayPeriod type="night1">밤</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="midnight">자정</dayPeriod>
+							<dayPeriod type="am">오전</dayPeriod>
+							<dayPeriod type="noon">정오</dayPeriod>
+							<dayPeriod type="pm">오후</dayPeriod>
+							<dayPeriod type="morning1">아침</dayPeriod>
+							<dayPeriod type="morning2">오전</dayPeriod>
+							<dayPeriod type="afternoon1">오후</dayPeriod>
+							<dayPeriod type="evening1">저녁</dayPeriod>
+							<dayPeriod type="night1">밤</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="morning1">아침</dayPeriod>
+							<dayPeriod type="morning2">오전</dayPeriod>
+							<dayPeriod type="afternoon1">오후</dayPeriod>
+							<dayPeriod type="evening1">저녁</dayPeriod>
+							<dayPeriod type="night1">밤</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="morning1">아침</dayPeriod>
 							<dayPeriod type="morning2">오전</dayPeriod>
 							<dayPeriod type="afternoon1">오후</dayPeriod>
 							<dayPeriod type="evening1">저녁</dayPeriod>
@@ -2034,12 +2080,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">오전</dayPeriod>
 							<dayPeriod type="pm">오후</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">오전</dayPeriod>
-							<dayPeriod type="pm">오후</dayPeriod>
+							<dayPeriod type="morning1">아침</dayPeriod>
+							<dayPeriod type="morning2">오전</dayPeriod>
+							<dayPeriod type="afternoon1">오후</dayPeriod>
+							<dayPeriod type="evening1">저녁</dayPeriod>
+							<dayPeriod type="night1">밤</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -2271,8 +2316,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M월~M월</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">M. d ~ M. d</greatestDifference>
-							<greatestDifference id="M">M. d ~ M. d</greatestDifference>
+							<greatestDifference id="d">M/d ~ M/d</greatestDifference>
+							<greatestDifference id="M">M/d ~ M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d">M. d (E) ~ M. d (E)</greatestDifference>
@@ -2931,6 +2976,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat type="daylight">{0} 하계 표준시</regionFormat>
 			<regionFormat type="standard">{0} 표준시</regionFormat>
 			<fallbackFormat>{1}({0})</fallbackFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>호놀룰루</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>협정 세계시</standard>
@@ -3668,9 +3716,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>울란바토르</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>초이발산</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>마카오</exemplarCity>
 			</zone>
@@ -4070,9 +4115,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>놈</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>호놀룰루</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>앵커리지</exemplarCity>
 			</zone>
@@ -4457,13 +4499,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>중국 하계 표준시</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>초이발산 시간</generic>
-					<standard>초이발산 표준시</standard>
-					<daylight>초이발산 하계 표준시</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>크리스마스섬 시간</standard>
@@ -4712,6 +4747,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">페트로파블롭스크-캄차츠키 시간</generic>
 					<standard draft="contributed">페트로파블롭스크-캄차츠키 표준시</standard>
 					<daylight draft="contributed">페트로파블롭스크-캄차츠키 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>카자흐스탄 시간</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -5224,7 +5264,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000조</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -5947,7 +5986,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>터키 리라(1922~2005)</displayName>
 			</currency>
 			<currency type="TRY">
-				<displayName>터키 리라</displayName>
+				<displayName>튀르키예 리라</displayName>
+				<displayName count="other">튀르키예 리라</displayName>
 			</currency>
 			<currency type="TTD">
 				<displayName>트리니다드 토바고 달러</displayName>
@@ -6901,6 +6941,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>영국 쿼트</displayName>
 				<unitPattern count="other">{0}영국 쿼트</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="other">{0}ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>박</displayName>
+				<unitPattern count="other">{0}박</unitPattern>
+				<perUnitPattern>1박당 {0}</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>방향</displayName>
 				<coordinateUnitPattern type="east">동경 {0}</coordinateUnitPattern>
@@ -7478,6 +7526,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<unitPattern count="other">{0}qt Imp.</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="other">{0}ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>박</displayName>
+				<unitPattern count="other">{0}박</unitPattern>
+				<perUnitPattern>{0}/박</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>쪽</displayName>
 			</coordinateUnit>
@@ -7519,6 +7575,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>dsp Imp</displayName>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="other">{0}ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>박</displayName>
+				<unitPattern count="other">{0}박</unitPattern>
+				<perUnitPattern>{0}/박</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>
@@ -7627,7 +7691,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="rightwards_arrows">오른쪽 방향 화살표</characterLabel>
 		<characterLabel type="sign_standard_symbols">상징/표준 기호</characterLabel>
 		<characterLabel type="small_form_variant">작은 부호 변형</characterLabel>
-		<characterLabel type="smiley">스마일</characterLabel>
+		<characterLabel type="smiley">스마일리</characterLabel>
 		<characterLabel type="smileys_people">스마일리 및 사람</characterLabel>
 		<characterLabel type="south_asian_scripts">남아시아 문자</characterLabel>
 		<characterLabel type="southeast_asian_scripts">동남아시아 문자</characterLabel>

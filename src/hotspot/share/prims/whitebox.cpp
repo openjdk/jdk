@@ -1080,6 +1080,10 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
     tty->print_cr("WB error: request to compile null method");
     return false;
   }
+  if (method->is_abstract()) {
+    tty->print_cr("WB error: request to compile abstract method");
+    return false;
+  }
   if (comp_level > CompilationPolicy::highest_compile_level()) {
     tty->print_cr("WB error: invalid compilation level %d", comp_level);
     return false;

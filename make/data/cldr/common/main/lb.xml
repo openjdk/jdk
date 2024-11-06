@@ -205,7 +205,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gmh">Mëttelhéichdäitsch</language>
 			<language type="gn">Guarani</language>
 			<language type="goh">Alhéichdäitsch</language>
-			<language type="gom">Goan-Konkani</language>
 			<language type="gon">Gondi-Sprooch</language>
 			<language type="gor">Mongondou</language>
 			<language type="got">Gotesch</language>
@@ -2580,13 +2579,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Chinesesch Zäit</generic>
 					<standard>Chinesesch Normalzäit</standard>
 					<daylight>Chinesesch Summerzäit</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Choibalsan-Zäit</generic>
-					<standard>Choibalsan-Normalzäit</standard>
-					<daylight>Choibalsan-Summerzäit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
