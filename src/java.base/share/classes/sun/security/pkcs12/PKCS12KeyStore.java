@@ -1959,7 +1959,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         certPbeIterationCount = -1;
         macAlgorithm = null;
         macIterationCount = -1;
-        String storeName = null;
+        String storeName = "";
 
         if (stream == null)
            return;
