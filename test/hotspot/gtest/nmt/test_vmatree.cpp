@@ -318,8 +318,8 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
   };
   NCS::StackIndex si = NCS::StackIndex();
   Tree::RegionData rd(si, mtNone);
-  // The gc/cds case with only reserved data
-  {
+
+  { // The gc/cds case with only reserved data
     testrange expected[2]{
         {  0, 500,          mtGC, si, State::Reserved},
         {500, 600, mtClassShared, si, State::Reserved}
@@ -333,8 +333,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     expect_equivalent_form(expected, tree);
   }
 
-  // Now let's add in some committed data
-  {
+  { // Now let's add in some committed data
     testrange expected[]{
         {  0, 100,          mtGC, si, State::Reserved},
         {100, 225,          mtGC, si, State::Committed},
@@ -356,6 +355,46 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     tree.set_tag(0, 500, mtGC);
     tree.set_tag(500, 100, mtClassShared);
 
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Setting the tag for adjacent regions with same stacks should merge the regions
+    testrange expected[]{
+        {0, 200, mtGC, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData gc(si, mtGC);
+    Tree::RegionData compiler(si, mtCompiler);
+    tree.reserve_mapping(0, 100, gc);
+    tree.reserve_mapping(100, 100, compiler);
+    tree.set_tag(0, 200, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Setting the tag for adjacent regions with different stacks should NOT merge the regions
+    NCS::StackIndex si1 = 1;
+    NCS::StackIndex si2 = 2;
+    testrange expected[]{
+        {  0, 100, mtGC, si1, State::Reserved},
+        {100, 200, mtGC, si2, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData gc(si1, mtGC);
+    Tree::RegionData compiler(si2, mtCompiler);
+    tree.set_tag(0, 200, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+
+  {
+    testrange expected[]{
+        {  0, 100, mtCompiler, si, State::Reserved},
+        {100, 150,       mtGC, si, State::Reserved},
+        {150, 200, mtCompiler, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData compiler(si, mtCompiler);
+    tree.reserve_mapping(0, 200, compiler);
+    tree.set_tag(100, 50, mtGC);
     expect_equivalent_form(expected, tree);
   }
 }
