@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,15 @@ public final class PackageTest extends RunnablePackageTest {
 
     public PackageTest setExpectedExitCode(int v) {
         expectedJPackageExitCode = v;
+        return this;
+    }
+
+    public PackageTest ignoreBundleOutputDir() {
+        return ignoreBundleOutputDir(true);
+    }
+
+    public PackageTest ignoreBundleOutputDir(boolean v) {
+        ignoreBundleOutputDir = v;
         return this;
     }
 
@@ -366,7 +375,7 @@ public final class PackageTest extends RunnablePackageTest {
         private final List<Consumer<Action>> handlers;
     }
 
-    final static class PackageHandlers {
+    static final class PackageHandlers {
         Consumer<JPackageCommand> installHandler;
         Consumer<JPackageCommand> uninstallHandler;
         BiFunction<JPackageCommand, Path, Path> unpackHandler;
@@ -526,7 +535,7 @@ public final class PackageTest extends RunnablePackageTest {
             private final JPackageCommand cmd = Functional.identity(() -> {
                 JPackageCommand result = new JPackageCommand();
                 result.setDefaultInputOutput().setDefaultAppName();
-                if (BUNDLE_OUTPUT_DIR != null) {
+                if (BUNDLE_OUTPUT_DIR != null && !ignoreBundleOutputDir) {
                     result.setArgumentValue("--dest", BUNDLE_OUTPUT_DIR.toString());
                 }
                 type.applyTo(result);
@@ -775,8 +784,9 @@ public final class PackageTest extends RunnablePackageTest {
     private Map<PackageType, Handler> handlers;
     private Set<String> namedInitializers;
     private Map<PackageType, PackageHandlers> packageHandlers;
+    private boolean ignoreBundleOutputDir;
 
-    private final static Path BUNDLE_OUTPUT_DIR;
+    private final static File BUNDLE_OUTPUT_DIR;
 
     static {
         final String propertyName = "output";
