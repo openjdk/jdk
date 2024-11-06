@@ -342,8 +342,6 @@ private:
   const char*    _base_archive_name;
   FileMapHeader* _header;
 
-  ArchiveWorkers _archive_workers;
-
   static SharedPathTable       _shared_path_table;
   static bool                  _validating_shared_path_table;
 

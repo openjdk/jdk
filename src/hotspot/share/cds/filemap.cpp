@@ -1738,9 +1738,6 @@ void FileMapInfo::close() {
     _file_open = false;
     _fd = -1;
   }
-
-  // Workers are no longer needed.
-  _archive_workers.shutdown();
 }
 
 /*
@@ -2016,7 +2013,7 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
 
     if (AOTCacheParallelRelocation) {
       SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
-      _archive_workers.run_task(&task);
+      ArchiveWorkers::workers()->run_task(&task);
     } else {
       rw_ptrmap.iterate(&rw_patcher);
       ro_ptrmap.iterate(&ro_patcher);

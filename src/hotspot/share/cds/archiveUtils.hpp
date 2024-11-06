@@ -346,8 +346,10 @@ private:
   // Target number of chunks per worker. This should be large enough to even
   // out work imbalance, and small enough to keep bookkeeping overheads low.
   static constexpr int CHUNKS_PER_WORKER = 4;
-
   static int max_workers();
+
+  // Global shared instance. Can be uninitialized, can be shut down.
+  static ArchiveWorkers _workers;
 
   ArchiveWorkerShutdownTask _shutdown_task;
   Semaphore _start_semaphore;
@@ -357,7 +359,8 @@ private:
   int _started_workers;
   int _waiting_workers;
   int _running_workers;
-  bool _in_shutdown;
+
+  enum { state_uninitialized, state_initialized, state_shutdown} _state;
   ArchiveWorkerTask* _task;
 
   bool run_as_worker();
@@ -369,9 +372,11 @@ private:
 
   bool is_parallel();
 
-public:
   ArchiveWorkers();
-  ~ArchiveWorkers();
+
+public:
+  static ArchiveWorkers* workers() { return &_workers; }
+  void initialize();
   void shutdown();
   void run_task(ArchiveWorkerTask* task);
 };
