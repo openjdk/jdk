@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,8 @@ public class DigestCloneabilityTest {
         // make SampleProvider the most preferred, so its digest impl is picked
         int status = Security.insertProviderAt(p, 1);
         try {
-            Mac mac = Mac.getInstance(ALGO, "SunJCE");
+            Mac mac = Mac.getInstance(ALGO,
+                    System.getProperty("test.provider.name", "SunJCE"));
             // do a complete mac generation and check if the supplied
             // digest is used
             mac.init(new SecretKeySpec(new byte[512>>3], ALGO));
@@ -72,7 +73,8 @@ public class DigestCloneabilityTest {
 
             public CloneableDigest() throws NoSuchAlgorithmException {
                 try {
-                    md = MessageDigest.getInstance("SHA-512", "SUN");
+                    md = MessageDigest.getInstance("SHA-512",
+                            System.getProperty("test.provider.name", "SUN"));
                 } catch (NoSuchProviderException nspe) {
                     // should never happen
                 }

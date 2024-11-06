@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.Random;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestRSACipher extends PKCS11Test {
 
@@ -58,8 +59,10 @@ public class TestRSACipher extends PKCS11Test {
             System.out.println("Not supported by provider, skipping");
             return;
         }
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
-        kpg.initialize(1024);
+        String kpgAlgorithm = "RSA";
+        int keySize = SecurityUtils.getTestKeySize(kpgAlgorithm);
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
+        kpg.initialize(keySize);
         KeyPair kp = kpg.generateKeyPair();
         PublicKey publicKey = kp.getPublic();
         PrivateKey privateKey = kp.getPrivate();
@@ -70,7 +73,8 @@ public class TestRSACipher extends PKCS11Test {
 
         for (String rsaAlgo: RSA_ALGOS) {
             Cipher c1 = Cipher.getInstance(rsaAlgo, p);
-            Cipher c2 = Cipher.getInstance(rsaAlgo, "SunJCE");
+            Cipher c2 = Cipher.getInstance(rsaAlgo,
+                            System.getProperty("test.provider.name", "SunJCE"));
 
             c1.init(Cipher.ENCRYPT_MODE, publicKey);
             e = c1.doFinal(b);
@@ -112,7 +116,8 @@ public class TestRSACipher extends PKCS11Test {
             c1.update(b);
             e = c1.doFinal();
 
-            c1.update(new byte[256]);
+            // Longer buffer size to verify IllegalBlockSizeException is thrown
+            c1.update(new byte[keySize / 4]);
             try {
                 e = c1.doFinal();
                 throw new Exception("completed call");

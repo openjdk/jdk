@@ -86,12 +86,12 @@ public class CertificateRevokedException extends CertificateException {
      * @param revocationDate the date on which the certificate was revoked. The
      *    date is copied to protect against subsequent modification.
      * @param reason the revocation reason
-     * @param extensions a map of X.509 Extensions. Each key is an OID String
-     *    that maps to the corresponding Extension. The map is copied to
-     *    prevent subsequent modification.
      * @param authority the {@code X500Principal} that represents the name
      *    of the authority that signed the certificate's revocation status
      *    information
+     * @param extensions a map of X.509 Extensions. Each key is an OID String
+     *    that maps to the corresponding Extension. The map is copied to
+     *    prevent subsequent modification.
      * @throws NullPointerException if {@code revocationDate},
      *    {@code reason}, {@code authority}, or
      *    {@code extensions} is {@code null}

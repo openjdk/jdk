@@ -1,6 +1,6 @@
 
 grant {
-
+    permission java.util.PropertyPermission "test.provider.name", "read";
     permission java.util.PropertyPermission "test.src", "read";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www";
     permission java.io.FilePermission
