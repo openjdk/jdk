@@ -153,10 +153,6 @@ final class PublicMethods {
                     Key.matches(method, name, ptypes)) {
                     if (tail == null) {
                         head = tail = new MethodList(method);
-                        if (ptypes.length == 0) {
-                            // zero args can only have one match - stop looking
-                            break;
-                        }
                     } else {
                         tail = tail.next = new MethodList(method);
                     }
