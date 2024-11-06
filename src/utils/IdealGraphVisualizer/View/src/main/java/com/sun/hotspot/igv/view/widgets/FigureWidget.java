@@ -184,6 +184,10 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         this.setToolTipText(PropertiesConverter.convertToHTML(f.getProperties()));
     }
 
+    public void refreshColor() {
+        middleWidget.setBackground(figure.getColor());
+    }
+
     @Override
     protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
         super.notifyStateChanged(previousState, state);

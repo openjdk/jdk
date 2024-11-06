@@ -26,10 +26,7 @@ package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.data.InputNode;
-import java.awt.Component;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.util.Collection;
 import javax.swing.JComponent;
 import org.openide.awt.UndoRedo;
@@ -89,4 +86,6 @@ public interface DiagramViewer {
     Rectangle getBounds();
 
     JComponent getView();
+
+    void colorSelectedFigures(Color color);
 }

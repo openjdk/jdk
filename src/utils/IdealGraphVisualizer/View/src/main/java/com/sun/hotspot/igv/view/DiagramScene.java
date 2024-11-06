@@ -222,6 +222,17 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     };
 
+    public void colorSelectedFigures(Color color) {
+        for (Figure figure :  model.getSelectedFigures()) {
+            figure.setColor(color);
+            FigureWidget figureWidget = getWidget(figure);
+            if (figureWidget != null) {
+                figureWidget.refreshColor();
+            }
+        }
+        validateAll();
+    }
+
     private Point getScrollPosition() {
         return scrollPane.getViewport().getViewPosition();
     }

@@ -34,6 +34,7 @@ import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.util.List;
@@ -166,6 +167,8 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.addSeparator();
         toolBar.add(ReduceDiffAction.get(ReduceDiffAction.class));
         toolBar.add(ExpandDiffAction.get(ExpandDiffAction.class));
+        toolBar.addSeparator();
+        toolBar.add(ColorAction.get(ColorAction.class));
         toolBar.addSeparator();
         toolBar.add(ExtractAction.get(ExtractAction.class));
         toolBar.add(HideAction.get(HideAction.class));
@@ -347,6 +350,10 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
     public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
         scene.addSelectedNodes(nodes, showIfHidden);
+    }
+
+    public void colorSelectedFigures(Color color) {
+        scene.colorSelectedFigures(color);
     }
 
     public void centerSelectedNodes() {
