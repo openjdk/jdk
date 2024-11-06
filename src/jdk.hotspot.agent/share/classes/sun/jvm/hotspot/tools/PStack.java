@@ -26,13 +26,12 @@ package sun.jvm.hotspot.tools;
 
 import java.io.*;
 import java.util.*;
-
 import sun.jvm.hotspot.*;
 import sun.jvm.hotspot.code.*;
+import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.remote.*;
-import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.utilities.PlatformInfo;
@@ -84,7 +83,6 @@ public class PStack extends Tool {
 
          VMLocksPrinter vmLocksPrinter = new VMLocksPrinter(out);
          vmLocksPrinter.printVMLocks();
-
 
          List<ThreadProxy> l = cdbg.getThreadList();
          if (l.isEmpty() && PlatformInfo.getOS().equals("darwin")) {
