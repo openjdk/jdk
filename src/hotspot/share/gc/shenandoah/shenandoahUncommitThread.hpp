@@ -33,6 +33,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   ShenandoahHeap* _heap;
   ShenandoahSharedFlag _soft_max_changed;
   ShenandoahSharedFlag _explicit_gc_requested;
+  ShenandoahSharedFlag _stop_requested;
   Monitor _lock;
 
   bool has_work(double shrink_before, size_t shrink_until) const;
@@ -50,7 +51,7 @@ public:
   void notify_explicit_gc_requested();
 
 protected:
-  void stop_service() override {};
+  void stop_service() override;
 };
 
 

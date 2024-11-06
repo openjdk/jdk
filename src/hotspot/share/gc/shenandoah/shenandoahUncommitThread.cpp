@@ -63,8 +63,12 @@ void ShenandoahUncommitThread::run_service() {
         last_shrink_time = current;
       }
     }
-    MonitorLocker locker(&_lock, Mutex::_no_safepoint_check_flag);
-    locker.wait((int64_t )shrink_period);
+    {
+      MonitorLocker locker(&_lock, Mutex::_no_safepoint_check_flag);
+      if (!_stop_requested.is_set()) {
+        locker.wait((int64_t )shrink_period);
+      }
+    }
   }
 }
 
@@ -134,4 +138,10 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
     double elapsed = os::elapsedTime() - start;
     log_info(gc)("Uncommitted " SIZE_FORMAT " regions, in %.3fs", count, elapsed);
   }
+}
+
+void ShenandoahUncommitThread::stop_service() {
+  MonitorLocker locker(&_lock, Mutex::_no_safepoint_check_flag);
+  _stop_requested.set();
+  locker.notify_all();
 }
