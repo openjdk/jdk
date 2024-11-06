@@ -31,7 +31,6 @@ import java.io.Serializable;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
 import java.util.EventListener;
-import java.util.LinkedList;
 
 
 /**
@@ -151,11 +150,6 @@ public class AWTEventMulticaster implements
     protected EventListener remove(EventListener oldl) {
         if (oldl == a)  return b;
         if (oldl == b)  return a;
-
-        EventListener z = removeWithoutRecursion(oldl);
-        if (z != null)
-            return z;
-
         EventListener a2 = removeInternal(a, oldl);
         EventListener b2 = removeInternal(b, oldl);
         if (a2 == a && b2 == b) {
@@ -165,78 +159,13 @@ public class AWTEventMulticaster implements
     }
 
     /**
-     * Removes a listener from this multicaster without recursion.
-     * <p>
-     * If you use the recommended static <code>add(x, y)</code> methods,
-     * then you create a "tree" that is basically a LinkedList: the `b` node
-     * is ALWAYS an EventListener and the `a` node is
-     * the `a` node is a parent node, and the `b` node is an EventListener. This method will
-     * iterate over list-like AWTEventMulticasters to remove elements without recursion.
-     * <p>
-     * This method returns null if recursion is the only way to remove oldl. The logic
-     * in AWTEventMulticaster always creates unbalanced list-like tree, but
-     * AWTEventMulticasters is public and fields `a` and `b` are protected, so it is
-     * possible a subclass may exist that creates well-balanced trees that cannot use this
-     * method.
-     *
-     * @param oldl the listener to be removed
-     * @return resulting listener, or null if recursion is necessary to remove the argument
-     */
-    private EventListener removeWithoutRecursion(EventListener oldl) {
-        AWTEventMulticaster node = this;
-        LinkedList<AWTEventMulticaster> treepath = new LinkedList<>();
-        treepath.add(this);
-        EventListener returnValue = null;
-
-        while (true) {
-            if (node.a == oldl) {
-                returnValue = node.b;
-                treepath.removeLast();
-                break;
-            } else if (node.b == oldl) {
-                returnValue = node.a;
-                treepath.removeLast();
-                break;
-            } else {
-                boolean isAMulticaster = node.a instanceof AWTEventMulticaster;
-                boolean isBMulticaster = node.b instanceof AWTEventMulticaster;
-                if (isAMulticaster && isBMulticaster) {
-                    // If both are AWTEventMulticasters: then we have to use recursion.
-                    // This non-recursive method can't help us.
-                    return null;
-                } else if (isAMulticaster) {
-                    node = (AWTEventMulticaster) node.a;
-                } else if (isBMulticaster) {
-                    node = (AWTEventMulticaster) node.b;
-                } else {
-                    // we iterated over everything and oldl isn't here
-                    return this;
-                }
-                treepath.add(node);
-            }
-        }
-
-        // iterate back up the tree and rebuild all the nodes:
-        while (!treepath.isEmpty()) {
-            AWTEventMulticaster parent = treepath.removeLast();
-            if (parent.a instanceof AWTEventMulticaster) {
-                returnValue = new AWTEventMulticaster(returnValue, parent.b);
-            } else {
-                returnValue = new AWTEventMulticaster(parent.a, returnValue);
-            }
-        }
-
-        return returnValue;
-    }
-
-    /**
      * Handles the componentResized event by invoking the
      * componentResized methods on listener-a and listener-b.
      * @param e the component event
      */
     public void componentResized(ComponentEvent e) {
-        for (ComponentListener l : getListeners(this, ComponentListener.class))
-            l.componentResized(e);
+        ((ComponentListener)a).componentResized(e);
+        ((ComponentListener)b).componentResized(e);
     }
 
     /**
@@ -245,8 +174,8 @@ public class AWTEventMulticaster implements
      * @param e the component event
      */
     public void componentMoved(ComponentEvent e) {
-        for (ComponentListener l : getListeners(this, ComponentListener.class))
-            l.componentMoved(e);
+        ((ComponentListener)a).componentMoved(e);
+        ((ComponentListener)b).componentMoved(e);
     }
 
     /**
@@ -255,8 +184,8 @@ public class AWTEventMulticaster implements
      * @param e the component event
      */
     public void componentShown(ComponentEvent e) {
-        for (ComponentListener l : getListeners(this, ComponentListener.class))
-            l.componentShown(e);
+        ((ComponentListener)a).componentShown(e);
+        ((ComponentListener)b).componentShown(e);
     }
 
     /**
@@ -265,8 +194,8 @@ public class AWTEventMulticaster implements
      * @param e the component event
      */
     public void componentHidden(ComponentEvent e) {
-        for (ComponentListener l : getListeners(this, ComponentListener.class))
-            l.componentHidden(e);
+        ((ComponentListener)a).componentHidden(e);
+        ((ComponentListener)b).componentHidden(e);
     }
 
     /**
@@ -275,8 +204,8 @@ public class AWTEventMulticaster implements
      * @param e the component event
      */
     public void componentAdded(ContainerEvent e) {
-        for (ContainerListener l : getListeners(this, ContainerListener.class))
-            l.componentAdded(e);
+        ((ContainerListener)a).componentAdded(e);
+        ((ContainerListener)b).componentAdded(e);
     }
 
     /**
@@ -285,8 +214,8 @@ public class AWTEventMulticaster implements
      * @param e the component event
      */
     public void componentRemoved(ContainerEvent e) {
-        for (ContainerListener l : getListeners(this, ContainerListener.class))
-            l.componentRemoved(e);
+        ((ContainerListener)a).componentRemoved(e);
+        ((ContainerListener)b).componentRemoved(e);
     }
 
     /**
@@ -295,8 +224,8 @@ public class AWTEventMulticaster implements
      * @param e the focus event
      */
     public void focusGained(FocusEvent e) {
-        for (FocusListener l : getListeners(this, FocusListener.class))
-            l.focusGained(e);
+        ((FocusListener)a).focusGained(e);
+        ((FocusListener)b).focusGained(e);
     }
 
     /**
@@ -305,8 +234,8 @@ public class AWTEventMulticaster implements
      * @param e the focus event
      */
     public void focusLost(FocusEvent e) {
-        for (FocusListener l : getListeners(this, FocusListener.class))
-            l.focusLost(e);
+        ((FocusListener)a).focusLost(e);
+        ((FocusListener)b).focusLost(e);
     }
 
     /**
@@ -315,8 +244,8 @@ public class AWTEventMulticaster implements
      * @param e the key event
      */
     public void keyTyped(KeyEvent e) {
-        for (KeyListener l : getListeners(this, KeyListener.class))
-            l.keyTyped(e);
+        ((KeyListener)a).keyTyped(e);
+        ((KeyListener)b).keyTyped(e);
     }
 
     /**
@@ -325,8 +254,8 @@ public class AWTEventMulticaster implements
      * @param e the key event
      */
     public void keyPressed(KeyEvent e) {
-        for (KeyListener l : getListeners(this, KeyListener.class))
-            l.keyPressed(e);
+        ((KeyListener)a).keyPressed(e);
+        ((KeyListener)b).keyPressed(e);
     }
 
     /**
@@ -335,8 +264,8 @@ public class AWTEventMulticaster implements
      * @param e the key event
      */
     public void keyReleased(KeyEvent e) {
-        for (KeyListener l : getListeners(this, KeyListener.class))
-            l.keyReleased(e);
+        ((KeyListener)a).keyReleased(e);
+        ((KeyListener)b).keyReleased(e);
     }
 
     /**
@@ -345,8 +274,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseClicked(MouseEvent e) {
-        for (MouseListener l : getListeners(this, MouseListener.class))
-            l.mouseClicked(e);
+        ((MouseListener)a).mouseClicked(e);
+        ((MouseListener)b).mouseClicked(e);
     }
 
     /**
@@ -355,8 +284,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mousePressed(MouseEvent e) {
-        for (MouseListener l : getListeners(this, MouseListener.class))
-            l.mousePressed(e);
+        ((MouseListener)a).mousePressed(e);
+        ((MouseListener)b).mousePressed(e);
     }
 
     /**
@@ -365,8 +294,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseReleased(MouseEvent e) {
-        for (MouseListener l : getListeners(this, MouseListener.class))
-            l.mouseReleased(e);
+        ((MouseListener)a).mouseReleased(e);
+        ((MouseListener)b).mouseReleased(e);
     }
 
     /**
@@ -375,8 +304,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseEntered(MouseEvent e) {
-        for (MouseListener l : getListeners(this, MouseListener.class))
-            l.mouseEntered(e);
+        ((MouseListener)a).mouseEntered(e);
+        ((MouseListener)b).mouseEntered(e);
     }
 
     /**
@@ -385,8 +314,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseExited(MouseEvent e) {
-        for (MouseListener l : getListeners(this, MouseListener.class))
-            l.mouseExited(e);
+        ((MouseListener)a).mouseExited(e);
+        ((MouseListener)b).mouseExited(e);
     }
 
     /**
@@ -395,8 +324,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseDragged(MouseEvent e) {
-        for (MouseMotionListener l : getListeners(this, MouseMotionListener.class))
-            l.mouseDragged(e);
+        ((MouseMotionListener)a).mouseDragged(e);
+        ((MouseMotionListener)b).mouseDragged(e);
     }
 
     /**
@@ -405,8 +334,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseMoved(MouseEvent e) {
-        for (MouseMotionListener l : getListeners(this, MouseMotionListener.class))
-            l.mouseMoved(e);
+        ((MouseMotionListener)a).mouseMoved(e);
+        ((MouseMotionListener)b).mouseMoved(e);
     }
 
     /**
@@ -415,8 +344,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowOpened(WindowEvent e) {
-        for (WindowListener l : getListeners(this, WindowListener.class))
-            l.windowOpened(e);
+        ((WindowListener)a).windowOpened(e);
+        ((WindowListener)b).windowOpened(e);
     }
 
     /**
@@ -425,8 +354,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowClosing(WindowEvent e) {
-        for (WindowListener l : getListeners(this, WindowListener.class))
-            l.windowClosing(e);
+        ((WindowListener)a).windowClosing(e);
+        ((WindowListener)b).windowClosing(e);
     }
 
     /**
@@ -435,8 +364,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowClosed(WindowEvent e) {
-        for (WindowListener l : getListeners(this, WindowListener.class))
-            l.windowClosed(e);
+        ((WindowListener)a).windowClosed(e);
+        ((WindowListener)b).windowClosed(e);
     }
 
     /**
@@ -445,8 +374,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowIconified(WindowEvent e) {
-        for (WindowListener l : getListeners(this, WindowListener.class))
-            l.windowIconified(e);
+        ((WindowListener)a).windowIconified(e);
+        ((WindowListener)b).windowIconified(e);
     }
 
     /**
@@ -455,8 +384,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowDeiconified(WindowEvent e) {
-        for (WindowListener l : getListeners(this, WindowListener.class))
-            l.windowDeiconified(e);
+        ((WindowListener)a).windowDeiconified(e);
+        ((WindowListener)b).windowDeiconified(e);
     }
 
     /**
@@ -465,8 +394,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowActivated(WindowEvent e) {
-        for (WindowListener l : getListeners(this, WindowListener.class))
-            l.windowActivated(e);
+        ((WindowListener)a).windowActivated(e);
+        ((WindowListener)b).windowActivated(e);
     }
 
     /**
@@ -475,8 +404,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowDeactivated(WindowEvent e) {
-        for (WindowListener l : getListeners(this, WindowListener.class))
-            l.windowDeactivated(e);
+        ((WindowListener)a).windowDeactivated(e);
+        ((WindowListener)b).windowDeactivated(e);
     }
 
     /**
@@ -486,8 +415,8 @@ public class AWTEventMulticaster implements
      * @since 1.4
      */
     public void windowStateChanged(WindowEvent e) {
-        for (WindowStateListener l : getListeners(this, WindowStateListener.class))
-            l.windowStateChanged(e);
+        ((WindowStateListener)a).windowStateChanged(e);
+        ((WindowStateListener)b).windowStateChanged(e);
     }
 
 
@@ -498,8 +427,8 @@ public class AWTEventMulticaster implements
      * @since 1.4
      */
     public void windowGainedFocus(WindowEvent e) {
-        for (WindowFocusListener l : getListeners(this, WindowFocusListener.class))
-            l.windowGainedFocus(e);
+        ((WindowFocusListener)a).windowGainedFocus(e);
+        ((WindowFocusListener)b).windowGainedFocus(e);
     }
 
     /**
@@ -509,8 +438,8 @@ public class AWTEventMulticaster implements
      * @since 1.4
      */
     public void windowLostFocus(WindowEvent e) {
-        for (WindowFocusListener l : getListeners(this, WindowFocusListener.class))
-            l.windowLostFocus(e);
+        ((WindowFocusListener)a).windowLostFocus(e);
+        ((WindowFocusListener)b).windowLostFocus(e);
     }
 
     /**
@@ -519,8 +448,8 @@ public class AWTEventMulticaster implements
      * @param e the action event
      */
     public void actionPerformed(ActionEvent e) {
-        for (ActionListener l : getListeners(this, ActionListener.class))
-            l.actionPerformed(e);
+        ((ActionListener)a).actionPerformed(e);
+        ((ActionListener)b).actionPerformed(e);
     }
 
     /**
@@ -529,8 +458,8 @@ public class AWTEventMulticaster implements
      * @param e the item event
      */
     public void itemStateChanged(ItemEvent e) {
-        for (ItemListener l : getListeners(this, ItemListener.class))
-            l.itemStateChanged(e);
+        ((ItemListener)a).itemStateChanged(e);
+        ((ItemListener)b).itemStateChanged(e);
     }
 
     /**
@@ -539,12 +468,12 @@ public class AWTEventMulticaster implements
      * @param e the adjustment event
      */
     public void adjustmentValueChanged(AdjustmentEvent e) {
-        for (AdjustmentListener l : getListeners(this, AdjustmentListener.class))
-            l.adjustmentValueChanged(e);
+        ((AdjustmentListener)a).adjustmentValueChanged(e);
+        ((AdjustmentListener)b).adjustmentValueChanged(e);
     }
     public void textValueChanged(TextEvent e) {
-        for (TextListener l : getListeners(this, TextListener.class))
-            l.textValueChanged(e);
+        ((TextListener)a).textValueChanged(e);
+        ((TextListener)b).textValueChanged(e);
     }
 
     /**
@@ -553,8 +482,8 @@ public class AWTEventMulticaster implements
      * @param e the item event
      */
     public void inputMethodTextChanged(InputMethodEvent e) {
-        for (InputMethodListener l : getListeners(this, InputMethodListener.class))
-            l.inputMethodTextChanged(e);
+        ((InputMethodListener)a).inputMethodTextChanged(e);
+        ((InputMethodListener)b).inputMethodTextChanged(e);
     }
 
     /**
@@ -563,8 +492,8 @@ public class AWTEventMulticaster implements
      * @param e the item event
      */
     public void caretPositionChanged(InputMethodEvent e) {
-        for (InputMethodListener l : getListeners(this, InputMethodListener.class))
-            l.caretPositionChanged(e);
+        ((InputMethodListener)a).caretPositionChanged(e);
+        ((InputMethodListener)b).caretPositionChanged(e);
     }
 
     /**
@@ -574,8 +503,8 @@ public class AWTEventMulticaster implements
      * @since 1.3
      */
     public void hierarchyChanged(HierarchyEvent e) {
-        for (HierarchyListener l : getListeners(this, HierarchyListener.class))
-            l.hierarchyChanged(e);
+        ((HierarchyListener)a).hierarchyChanged(e);
+        ((HierarchyListener)b).hierarchyChanged(e);
     }
 
     /**
@@ -585,8 +514,8 @@ public class AWTEventMulticaster implements
      * @since 1.3
      */
     public void ancestorMoved(HierarchyEvent e) {
-        for (HierarchyBoundsListener l : getListeners(this, HierarchyBoundsListener.class))
-            l.ancestorMoved(e);
+        ((HierarchyBoundsListener)a).ancestorMoved(e);
+        ((HierarchyBoundsListener)b).ancestorMoved(e);
     }
 
     /**
@@ -596,8 +525,8 @@ public class AWTEventMulticaster implements
      * @since 1.3
      */
     public void ancestorResized(HierarchyEvent e) {
-        for (HierarchyBoundsListener l : getListeners(this, HierarchyBoundsListener.class))
-            l.ancestorResized(e);
+        ((HierarchyBoundsListener)a).ancestorResized(e);
+        ((HierarchyBoundsListener)b).ancestorResized(e);
     }
 
     /**
@@ -607,8 +536,8 @@ public class AWTEventMulticaster implements
      * @since 1.4
      */
     public void mouseWheelMoved(MouseWheelEvent e) {
-        for (MouseWheelListener l : getListeners(this, MouseWheelListener.class))
-            l.mouseWheelMoved(e);
+        ((MouseWheelListener)a).mouseWheelMoved(e);
+        ((MouseWheelListener)b).mouseWheelMoved(e);
     }
 
     /**
@@ -1112,38 +1041,14 @@ public class AWTEventMulticaster implements
      * are counted.  Method modified to fix bug 4513402.  -bchristi
      */
     private static int getListenerCount(EventListener l, Class<?> listenerType) {
-        if (!(l instanceof AWTEventMulticaster in))
+        if (l instanceof AWTEventMulticaster) {
+            AWTEventMulticaster mc = (AWTEventMulticaster)l;
+            return getListenerCount(mc.a, listenerType) +
+                    getListenerCount(mc.b, listenerType);
+        }
+        else {
+            // Only count listeners of correct type
             return listenerType.isInstance(l) ? 1 : 0;
-
-        AWTEventMulticaster node = in;
-        int returnValue = 0;
-
-        while (true) {
-            if (node.a instanceof AWTEventMulticaster aMulticaster) {
-                if (node.b instanceof AWTEventMulticaster) {
-                    // If both are AWTEventMulticasters: then we have to use recursion
-                    return returnValue +
-                            getListenerCount(node.a, listenerType) +
-                            getListenerCount(node.b, listenerType);
-                }
-
-                if (listenerType.isInstance(node.b))
-                    returnValue++;
-
-                node = aMulticaster;
-            } else if (node.b instanceof AWTEventMulticaster bMulticaster) {
-
-                if (listenerType.isInstance(node.a))
-                    returnValue++;
-
-                node = bMulticaster;
-            } else {
-                if (listenerType.isInstance(node.a))
-                    returnValue++;
-                if (listenerType.isInstance(node.b))
-                    returnValue++;
-                return returnValue;
-            }
         }
     }
 
@@ -1153,50 +1058,20 @@ public class AWTEventMulticaster implements
      * if l differed in type from the element type of a, an ArrayStoreException
      * would occur.  Now l is only inserted into a if it's of the appropriate
      * type.  -bchristi
-     *
-     * @param a the array to populate
-     * @param l the listener to populate the array with. This is sometimes a
-     *          AWTEventMulticaster.
-     * @param rangeStart the first index in the array to store a listener in
-     * @param rangeEnd the last index in the array to store a listener in
      */
-    private static void populateListenerArray(EventListener[] a, EventListener l, int rangeStart, int rangeEnd) {
-        Class<?> componentType = a.getClass().getComponentType();
-        if (!(l instanceof AWTEventMulticaster in)) {
-            if (componentType.isInstance(l)) {
-                a[rangeStart++] = l;
-            }
-        } else {
-            AWTEventMulticaster node = in;
-            while (true) {
-                if (node.a instanceof AWTEventMulticaster aMulticaster) {
-                    if (node.b instanceof AWTEventMulticaster) {
-                        // we have to resort to recursion here:
-
-                        int nodeA_size = getListenerCount(node.a, componentType);
-                        populateListenerArray(a, node.a, rangeStart, rangeStart + nodeA_size - 1);
-                        populateListenerArray(a, node.b, rangeStart + nodeA_size, rangeEnd);
-                        break;
-                    }
-                    if (componentType.isInstance(node.b)) {
-                        a[rangeEnd--] = node.b;
-                    }
-                    node = aMulticaster;
-                } else if (node.b instanceof AWTEventMulticaster bMulticaster) {
-                    if (componentType.isInstance(node.a)) {
-                        a[rangeStart++] = node.a;
-                    }
-                    node = bMulticaster;
-                } else {
-                    if (componentType.isInstance(node.a)) {
-                        a[rangeStart++] = node.a;
-                    }
-                    if (componentType.isInstance(node.b)) {
-                        a[rangeEnd--] = node.b;
-                    }
-                    break;
-                }
-            }
+    private static int populateListenerArray(EventListener[] a, EventListener l, int index) {
+        if (l instanceof AWTEventMulticaster) {
+            AWTEventMulticaster mc = (AWTEventMulticaster)l;
+            int lhs = populateListenerArray(a, mc.a, index);
+            return populateListenerArray(a, mc.b, lhs);
+        }
+        else if (a.getClass().getComponentType().isInstance(l)) {
+            a[index] = l;
+            return index + 1;
+        }
+        // Skip nulls, instances of wrong class
+        else {
+            return index;
         }
     }
 
@@ -1240,7 +1115,7 @@ public class AWTEventMulticaster implements
 
         int n = getListenerCount(l, listenerType);
         T[] result = (T[])Array.newInstance(listenerType, n);
-        populateListenerArray(result, l, 0, result.length - 1);
+        populateListenerArray(result, l, 0);
         return result;
     }
 }
