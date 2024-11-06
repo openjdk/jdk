@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,11 +179,6 @@
     return true;
   }
 
-  // Does the CPU supports doubleword multiplication with quadword saturation.
-  static bool supports_doubleword_mult_with_quadword_staturation(void) {
-    return UseAVX > 0;
-  }
-
   // Some microarchitectures have mask registers used on vectors
   static bool has_predicated_vectors(void) {
     return VM_Version::supports_evex();
@@ -278,4 +273,5 @@
       return false;
     }
   }
+
 #endif // CPU_X86_MATCHER_X86_HPP
