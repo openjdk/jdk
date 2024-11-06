@@ -27,7 +27,6 @@ import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_POS_COMPARA
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_PROCESSING_UP_COMPARATOR;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
-import com.sun.hotspot.igv.util.Statistics;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.*;
@@ -103,7 +102,12 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
             i++;
         }
 
-        return Statistics.median(values);
+        Arrays.sort(values);
+        if (values.length % 2 == 0) {
+            return (values[values.length / 2 - 1] + values[values.length / 2]) / 2;
+        } else {
+            return values[values.length / 2];
+        }
     }
 
     /**
