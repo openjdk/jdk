@@ -133,8 +133,9 @@ class SocketChannelImpl
     // preserve the semantics of blocking operations.
     private volatile boolean forcedNonBlocking;
 
-    // timestamp for socket connect event
-    private long connectStartTimestamp;
+    // JFR support, start time of non-blocking connect
+    private long nonBlockingConnectStart;
+
 
     // -- End of fields protected by stateLock
 
@@ -860,7 +861,7 @@ class SocketChannelImpl
     /**
      * Marks the beginning of a connect operation that might block.
      * @param blocking true if configured blocking
-     * @param isa the remote address
+     * @param sa the remote socket address
      * @throws ClosedChannelException if the channel is closed
      * @throws AlreadyConnectedException if already connected
      * @throws ConnectionPendingException is a connection is pending
@@ -953,21 +954,23 @@ class SocketChannelImpl
 
     @Override
     public boolean connect(SocketAddress remote) throws IOException {
-        boolean connected = false;
-        IOException connectEx = null;
-        long start = SocketConnectEvent.timestamp();
         SocketAddress sa = checkRemote(remote);
+
+        boolean connected = false;
+        long connectStart = 0L;
+        IOException connectEx = null;
+
         try {
             readLock.lock();
             try {
                 writeLock.lock();
                 try {
-                    connectStartTimestamp = start;
                     ensureOpen();
                     boolean blocking = isBlocking();
                     try {
                         beginConnect(blocking, sa);
                         configureSocketNonBlockingIfVirtualThread();
+                        connectStart = SocketConnectEvent.timestamp();
                         int n;
                         if (isUnixSocket()) {
                             n = UnixDomainSockets.connect(fd, sa);
@@ -984,11 +987,13 @@ class SocketChannelImpl
                                 polled = Net.pollConnectNow(fd);
                             }
                             connected = polled && isOpen();
+                        } else {
+                            // non-blocking and not connected
+                            this.nonBlockingConnectStart = connectStart;
                         }
                     } finally {
                         endConnect(blocking, connected);
                     }
-                    return connected;
                 } finally {
                     writeLock.unlock();
                 }
@@ -999,11 +1004,20 @@ class SocketChannelImpl
             // connect failed, close the channel
             close();
             connectEx = SocketExceptions.of(ioe, sa);
+        }
+
+        // record JFR event
+        if (connectStart != 0L
+                && SocketConnectEvent.enabled()
+                && (connected || connectEx != null)) {
+            SocketConnectEvent.offer(connectStart, sa, connectEx);
+        }
+
+        if (connectEx == null) {
+            return connected;
+        } else {
+            assert !connected;
             throw connectEx;
-        } finally {
-            if (SocketConnectEvent.enabled() && (connected || connectEx != null)) {
-                SocketConnectEvent.offer(start, sa, connectEx);
-            }
         }
     }
 
@@ -1057,25 +1071,22 @@ class SocketChannelImpl
 
     @Override
     public boolean finishConnect() throws IOException {
+        long connectStart = 0L;
         boolean connected = false;
         IOException connectEx = null;
-        long start = 0;
         try {
             readLock.lock();
-            start = connectStartTimestamp;
             try {
                 writeLock.lock();
                 try {
                     // no-op if already connected
-                    if (isConnected()) {
-                        connected = true;
-                        return connected;
-                    }
-
+                    if (isConnected())
+                        return true;
                     ensureOpen();
                     boolean blocking = isBlocking();
                     try {
                         beginFinishConnect(blocking);
+                        connectStart = this.nonBlockingConnectStart;
                         boolean polled = Net.pollConnectNow(fd);
                         if (blocking) {
                             while (!polled && isOpen()) {
@@ -1088,7 +1099,6 @@ class SocketChannelImpl
                         endFinishConnect(blocking, connected);
                     }
                     assert (blocking && connected) ^ !blocking;
-                    return connected;
                 } finally {
                     writeLock.unlock();
                 }
@@ -1099,11 +1109,20 @@ class SocketChannelImpl
             // connect failed, close the channel
             close();
             connectEx = SocketExceptions.of(ioe, remoteAddress);
+        }
+
+        // record JFR event
+        if (connectStart != 0L
+                && SocketConnectEvent.enabled()
+                && (connected || connectEx != null)) {
+            SocketConnectEvent.offer(connectStart, remoteAddress(), connectEx);
+        }
+
+        if (connectEx != null) {
+            assert !connected;
             throw connectEx;
-        } finally {
-            if (SocketConnectEvent.enabled() && (connected || connectEx != null)) {
-                SocketConnectEvent.offer(start, remoteAddress, connectEx);
-            }
+        } else {
+            return connected;
         }
     }
 
@@ -1327,6 +1346,9 @@ class SocketChannelImpl
      */
     void blockingConnect(SocketAddress remote, long nanos) throws IOException {
         SocketAddress sa = checkRemote(remote);
+
+        long connectStart = 0L;
+        IOException connectEx = null;
         try {
             readLock.lock();
             try {
@@ -1340,6 +1362,7 @@ class SocketChannelImpl
                         // change socket to non-blocking
                         lockedConfigureBlocking(false);
                         try {
+                            connectStart = SocketConnectEvent.timestamp();
                             int n;
                             if (isUnixSocket()) {
                                 n = UnixDomainSockets.connect(fd, sa);
@@ -1363,7 +1386,16 @@ class SocketChannelImpl
         } catch (IOException ioe) {
             // connect failed, close the channel
             close();
-            throw SocketExceptions.of(ioe, sa);
+            connectEx = SocketExceptions.of(ioe, sa);
+        }
+
+        // record JFR event
+        if (connectStart != 0L && SocketConnectEvent.enabled()) {
+            SocketConnectEvent.offer(connectStart, sa, connectEx);
+        }
+
+        if (connectEx != null) {
+            throw connectEx;
         }
     }
 
