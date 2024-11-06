@@ -24,9 +24,9 @@
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.apps.LingeredApp;
 
-public class LingeredAppWithDeadlockInVM extends LingeredApp {
+public class LingeredAppWithLockInVM extends LingeredApp {
 
-    private static class LockThread extends Thread {
+    private static class LockerThread implements Runnable {
         public void run() {
             WhiteBox wb = WhiteBox.getWhiteBox();
             wb.lockAndStuckInSafepoint();
@@ -40,7 +40,9 @@ public class LingeredAppWithDeadlockInVM extends LingeredApp {
             System.exit(7);
         }
 
-        new LockThread().start();
+        Thread t = new Thread(new LockerThread());
+        t.setName("LockerThread");
+        t.start();
 
         LingeredApp.main(args);
     }

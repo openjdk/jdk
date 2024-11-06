@@ -24,7 +24,6 @@
 
 package sun.jvm.hotspot.runtime;
 
-import java.io.PrintStream;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.types.*;
@@ -134,21 +133,5 @@ public class Thread extends VMObject {
 
   /** Assistance for ObjectMonitor implementation */
   Address threadObjectAddress() { return addr; }
-
-
-  public void printOwnedMutexes(PrintStream out) {
-    Address mutexAddress = this.ownedMonitor();
-
-    if (mutexAddress != null) {
-      System.out.print("   Owned VM mutexes: ");
-      StringJoiner mutexes = new StringJoiner(", ");
-      while (mutexAddress != null) {
-        Mutex mutex = new Mutex(mutexAddress);
-        mutexes.add(mutex.name());
-        mutexAddress = mutex.next();
-      }
-      System.out.println(mutexes);
-    }
-  }
 
 }

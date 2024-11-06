@@ -43,7 +43,7 @@ public class TestJhsdbJstackPrintVMLocks {
 
         LingeredApp theApp = null;
         try {
-            theApp = new LingeredAppWithDeadlockInVM();
+            theApp = new LingeredAppWithLockInVM();
             String classPath = System.getProperty("test.class.path");
             LingeredApp.startAppExactJvmOpts(theApp,
                     "-XX:+UnlockDiagnosticVMOptions",
@@ -68,7 +68,7 @@ public class TestJhsdbJstackPrintVMLocks {
             System.out.println(out.getStdout());
             System.err.println(out.getStderr());
 
-            out.shouldContain("Owned VM");
+            out.shouldContain("Mutex Compile_lock is owned by LockerThread");
   
         } catch (SkippedException se) {
             throw se;

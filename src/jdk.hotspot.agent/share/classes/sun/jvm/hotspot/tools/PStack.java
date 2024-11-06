@@ -82,13 +82,8 @@ public class PStack extends Tool {
             out.println("can't print deadlock information: " + exp);
          }
 
-         int maxNum = Mutex.maxNum();
-         for (int i = 0; i < maxNum; i++) {
-         Mutex mutex = new Mutex(Mutex.at(i));
-            if (mutex.owner() != null) {
-	        out.println("Locked mutex: " + i + "   name: " + mutex.name() + " owner: " + mutex.owner());
-	    }
-         }
+         VMLocksPrinter vmLocksPrinter = new VMLocksPrinter(out);
+         vmLocksPrinter.printVMLocks();
 
 
          List<ThreadProxy> l = cdbg.getThreadList();

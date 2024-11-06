@@ -62,7 +62,6 @@ public class Mutex extends VMObject {
     super(addr);
   }
 
-  static int addressSize = (int)VM.getVM().getAddressSize();
 
 
   public String name() { return CStringUtilities.getString(addr.getAddressAt(nameFieldOffset)); }
