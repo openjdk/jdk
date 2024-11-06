@@ -1970,6 +1970,7 @@ public:
     BitMap::idx_t size  = bm->size();
     BitMap::idx_t start = MIN2(size, size * chunk / max_chunks);
     BitMap::idx_t end   = MIN2(size, size * (chunk + 1) / max_chunks);
+    assert(end > start, "Sanity: no empty slices");
     bm->iterate(reloc, start, end);
   }
 };
