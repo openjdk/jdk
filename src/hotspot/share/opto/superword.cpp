@@ -141,6 +141,9 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
           // Mark the components of the memory operation in nstack
           VPointer p1(current, vloop, &nstack);
           have_side_effects = p1.node_stack()->is_nonempty();
+
+          XPointer xp(current, vloop);
+          NOT_PRODUCT( xp.print_on(tty); )
         }
 
         // Process the pointer stack

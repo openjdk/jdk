@@ -669,35 +669,59 @@ private:
 };
 
 // TODO
-// vpointer = base + con + invar + iv_scale * iv
 class XPointer : public ArenaObj {
 private:
-  bool        _is_valid;
-
-  Node* const _base;
-  jint        _con;
-  Node* const _invar;
-  jint        _invar_alignment;
-  jint        _iv_scale;
-
-  jint        _size;
+  const MemPointerDecomposedForm _decomposed_form;
+  const jint _size;
+  const bool _is_valid;
 
 public:
   // Default constructor, e.g. for GrowableArray.
   XPointer() :
-    _is_valid(false),
-    _base(nullptr),
-    _con(0),
-    _invar(0),
-    _invar_alignment(0),
-    _iv_scale(0),
-    _size(0) {}
+    _decomposed_form(),
+    _size(0),
+    _is_valid(false) {}
 
+  XPointer(const MemNode* mem, const VLoop& vloop) :
+    _decomposed_form(init_decomposed_form(mem)),
+    _size(mem->memory_size()),
+    _is_valid(init_is_valid(_decomposed_form, vloop)) {}
+
+  // Accessors
   bool is_valid() const { return _is_valid; }
 
+  // TODO
+  // if (vloop.is_trace_pointer_analysis()) {
+  NOT_PRODUCT( void print_on(outputStream* st) const; )
+
+private:
+  static const MemPointerDecomposedForm init_decomposed_form(const MemNode* mem) {
+    assert(mem->is_Store() || mem->is_Load(), "only stores and loads are supported");
+    ResourceMark rm;
+    MemPointerDecomposedFormParser parser(mem);
+    return parser.decomposed_form();
+  }
+
+  // Check that all variables are either the iv, or else invariants.
+  // TODO why invariant?
+  static bool init_is_valid(const MemPointerDecomposedForm& decomposed_form, const VLoop& vloop) {
+    for (uint i = 0; i < MemPointerDecomposedForm::SUMMANDS_SIZE; i++) {
+      const MemPointerSummand& summand = decomposed_form.summands_at(i);
+      Node* variable = summand.variable();
+      if (variable != nullptr && variable != vloop.iv() && !is_invariant(variable, vloop)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   // TODO
-  // , _tracer(vloop.is_trace_pointer_analysis())
+  static bool is_invariant(Node* n, const VLoop& vloop) {
+    assert(vloop.cl()->is_main_loop(), "must be");
+    Node* ctrl = vloop.phase()->get_ctrl(n);
+    // TODO
+    return true;
+  }
 };
 
 // TODO rm

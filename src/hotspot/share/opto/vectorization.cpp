@@ -469,6 +469,19 @@ int VPointer::cmp_for_sort(const VPointer** p1, const VPointer** p2) {
 }
 
 #ifndef PRODUCT
+void XPointer::print_on(outputStream* st) const {
+  st->print("XPointer[");
+
+  if (!is_valid()) {
+    st->print_cr("invalid]");
+    return;
+  }
+
+  st->print("size = %2d, form = ", _size);
+  _decomposed_form.print_form_on(st);
+  st->print_cr("]");
+}
+
 // Function for printing the fields of a VPointer
 void VPointer::print() const {
   tty->print("VPointer[mem: %4d %10s, ", _mem->_idx, _mem->Name());

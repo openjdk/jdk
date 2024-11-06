@@ -461,9 +461,8 @@ public:
 
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
-    st->print("Summand[");
     _scale.print_on(st);
-    tty->print(" * [%d %s]]", _variable->_idx, _variable->Name());
+    tty->print(" * [%d %s]", _variable->_idx, _variable->Name());
   }
 #endif
 };
@@ -473,13 +472,14 @@ public:
 //   pointer = SUM(summands) + con
 //
 class MemPointerDecomposedForm : public StackObj {
-private:
+public:
   // We limit the number of summands to 10. This is just a best guess, and not at this
   // point supported by evidence. But I think it is reasonable: usually, a pointer
   // contains a base pointer (e.g. array pointer or null for native memory) and a few
   // variables. It should be rare that we have more than 9 variables.
   static const int SUMMANDS_SIZE = 10;
 
+private:
   Node* _pointer; // pointer node associated with this (sub)pointer
 
   MemPointerSummand _summands[SUMMANDS_SIZE];
@@ -524,7 +524,7 @@ public:
   MemPointerAliasing get_aliasing_with(const MemPointerDecomposedForm& other
                                        NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const;
 
-  const MemPointerSummand summands_at(const uint i) const {
+  const MemPointerSummand& summands_at(const uint i) const {
     assert(i < SUMMANDS_SIZE, "in bounds");
     return _summands[i];
   }
@@ -532,20 +532,24 @@ public:
   const NoOverflowInt con() const { return _con; }
 
 #ifndef PRODUCT
+  void print_form_on(outputStream* st) const {
+    _con.print_on(st);
+    for (int i = 0; i < SUMMANDS_SIZE; i++) {
+      const MemPointerSummand& summand = _summands[i];
+      if (summand.variable() != nullptr) {
+        st->print(" + ");
+        summand.print_on(st);
+      }
+    }
+  }
+
   void print_on(outputStream* st) const {
     if (_pointer == nullptr) {
       st->print_cr("MemPointerDecomposedForm empty.");
       return;
     }
-    st->print("MemPointerDecomposedForm[%d %s:  con = ", _pointer->_idx, _pointer->Name());
-    _con.print_on(st);
-    for (int i = 0; i < SUMMANDS_SIZE; i++) {
-      const MemPointerSummand& summand = _summands[i];
-      if (summand.variable() != nullptr) {
-        st->print(", ");
-        summand.print_on(st);
-      }
-    }
+    st->print("MemPointerDecomposedForm[%d %s: form = ", _pointer->_idx, _pointer->Name());
+    print_form_on(st);
     st->print_cr("]");
   }
 #endif
@@ -568,7 +572,7 @@ public:
     _decomposed_form = parse_decomposed_form();
   }
 
-  const MemPointerDecomposedForm decomposed_form() const { return _decomposed_form; }
+  const MemPointerDecomposedForm& decomposed_form() const { return _decomposed_form; }
 
 private:
   MemPointerDecomposedForm parse_decomposed_form();
