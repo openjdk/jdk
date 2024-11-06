@@ -939,35 +939,28 @@ private:
   }
 
 #ifdef ASSERT
-  void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
+  static void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
-  void copy_assertion_predicates_to_main_loop_helper(const PredicateBlock* predicate_block, Node* init, Node* stride,
-                                                     IdealLoopTree* outer_loop, LoopNode* outer_main_head,
-                                                     uint dd_main_head, uint idx_before_pre_post,
-                                                     uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
-                                                     Node* zero_trip_guard_proj_post, const Node_List &old_new);
-  void copy_assertion_predicates_to_main_loop(CountedLoopNode* pre_head, Node* init, Node* stride, IdealLoopTree* outer_loop,
-                                              LoopNode* outer_main_head, uint dd_main_head, uint idx_before_pre_post,
-                                              uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
-                                              Node* zero_trip_guard_proj_post, const Node_List& old_new);
-  Node* clone_template_assertion_predicate(IfNode* iff, Node* new_init, Node* predicate, Node* uncommon_proj, Node* control,
-                                           IdealLoopTree* outer_loop, Node* new_control);
  public:
   IfTrueNode* create_initialized_assertion_predicate(IfNode* template_assertion_predicate, Node* new_init,
                                                      Node* new_stride, Node* control);
+  DEBUG_ONLY(static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);)
  private:
   DEBUG_ONLY(static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);)
-  DEBUG_ONLY(static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);)
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
-  void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head,
-                                              Node* stride);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                        CountedLoopNode* remaining_loop_head,
                                                        uint first_node_index_in_cloned_loop_body,
                                                        const Node_List& old_new);
+  void initialize_assertion_predicates_for_main_loop(CountedLoopNode* pre_loop_head,
+                                                     CountedLoopNode* main_loop_head,
+                                                     uint first_node_index_in_cloned_loop_body,
+                                                     const Node_List& old_new);
+  void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
+                                                     uint first_node_index_in_cloned_loop_body);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
-                                           const NodeInLoopBody& _node_in_loop_body);
+                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
   void log_loop_tree();

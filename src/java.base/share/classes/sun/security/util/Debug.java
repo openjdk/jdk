@@ -139,7 +139,7 @@ public class Debug {
         System.err.println("engine=<engines>");
         System.err.println("              only dump output for the specified list");
         System.err.println("              of JCA engines. Supported values:");
-        System.err.println("              Cipher, KeyAgreement, KeyGenerator,");
+        System.err.println("              Cipher, KDF, KeyAgreement, KeyGenerator,");
         System.err.println("              KeyPairGenerator, KeyStore, Mac,");
         System.err.println("              MessageDigest, SecureRandom, Signature.");
         System.err.println();
