@@ -682,8 +682,9 @@ public:
     _size(0),
     _is_valid(false) {}
 
-  XPointer(const MemNode* mem, const VLoop& vloop) :
-    _decomposed_form(init_decomposed_form(mem)),
+  template<typename Callback>
+  XPointer(const MemNode* mem, const VLoop& vloop, Callback adr_node_callback) :
+    _decomposed_form(init_decomposed_form(mem, adr_node_callback)),
     _size(mem->memory_size()),
     _is_valid(init_is_valid(_decomposed_form, vloop)) {}
 
@@ -695,7 +696,8 @@ public:
   NOT_PRODUCT( void print_on(outputStream* st) const; )
 
 private:
-  static const MemPointerDecomposedForm init_decomposed_form(const MemNode* mem) {
+  template<typename Callback>
+  static const MemPointerDecomposedForm init_decomposed_form(const MemNode* mem, Callback adr_node_callback) {
     assert(mem->is_Store() || mem->is_Load(), "only stores and loads are supported");
     ResourceMark rm;
     MemPointerDecomposedFormParser parser(mem);
@@ -703,7 +705,7 @@ private:
   }
 
   // Check that all variables are either the iv, or else invariants.
-  // TODO why invariant?
+  // TODO why pre-loop
   static bool init_is_valid(const MemPointerDecomposedForm& decomposed_form, const VLoop& vloop) {
     for (uint i = 0; i < MemPointerDecomposedForm::SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = decomposed_form.summands_at(i);
@@ -715,12 +717,21 @@ private:
     return true;
   }
 
-  // TODO
+  // TODO refactor to VLoop?
+  // Is it invariant of the loop, i.e. the main-loop and even the pre-loop?
+  // The invariants are used for alignment, in the exit check of the pre-loop,
+  // this is why we need invariance of even the pre-loop.
   static bool is_invariant(Node* n, const VLoop& vloop) {
     assert(vloop.cl()->is_main_loop(), "must be");
     Node* ctrl = vloop.phase()->get_ctrl(n);
-    // TODO
-    return true;
+
+    // Quick test: is it in the main-loop?
+    if (vloop.lpt()->is_member(vloop.phase()->get_loop(ctrl))) {
+      return false;
+    }
+
+    // Is it before the pre-loop?
+    return vloop.phase()->is_dominator(ctrl, vloop.pre_loop_head());
   }
 };
 

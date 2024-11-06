@@ -142,7 +142,10 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
           VPointer p1(current, vloop, &nstack);
           have_side_effects = p1.node_stack()->is_nonempty();
 
-          XPointer xp(current, vloop);
+          XPointer xp(current, vloop, [&] (Node* n) {
+            NOT_PRODUCT( n->dump(); )
+            assert(false, "TODO");
+          });
           NOT_PRODUCT( xp.print_on(tty); )
         }
 
