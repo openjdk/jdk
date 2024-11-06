@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,11 +104,11 @@ final class PublicMethods {
         static boolean matches(Method method,
                                String name, // may not be interned
                                Class<?>[] ptypes) {
-            return method.getName().equals(name) &&
-                   Arrays.equals(
-                       reflectionFactory.getExecutableSharedParameterTypes(method),
-                       ptypes
-                   );
+            // check for matching param types length, then name, then param type equality
+            return method.getParameterCount() == ptypes.length &&
+                   method.getName().equals(name) &&
+                   Arrays.equals(reflectionFactory.getExecutableSharedParameterTypes(method),
+                           ptypes);
         }
 
         @Override
@@ -153,6 +153,10 @@ final class PublicMethods {
                     Key.matches(method, name, ptypes)) {
                     if (tail == null) {
                         head = tail = new MethodList(method);
+                        if (ptypes.length == 0) {
+                            // zero args can only have one match - stop looking
+                            break;
+                        }
                     } else {
                         tail = tail.next = new MethodList(method);
                     }
