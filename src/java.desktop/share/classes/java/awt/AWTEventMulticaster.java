@@ -235,8 +235,8 @@ public class AWTEventMulticaster implements
      * @param e the component event
      */
     public void componentResized(ComponentEvent e) {
-        ((ComponentListener)a).componentResized(e);
-        ((ComponentListener)b).componentResized(e);
+        for (ComponentListener l : getListeners(this, ComponentListener.class))
+            l.componentResized(e);
     }
 
     /**
@@ -245,8 +245,8 @@ public class AWTEventMulticaster implements
      * @param e the component event
      */
     public void componentMoved(ComponentEvent e) {
-        ((ComponentListener)a).componentMoved(e);
-        ((ComponentListener)b).componentMoved(e);
+        for (ComponentListener l : getListeners(this, ComponentListener.class))
+            l.componentMoved(e);
     }
 
     /**
@@ -255,8 +255,8 @@ public class AWTEventMulticaster implements
      * @param e the component event
      */
     public void componentShown(ComponentEvent e) {
-        ((ComponentListener)a).componentShown(e);
-        ((ComponentListener)b).componentShown(e);
+        for (ComponentListener l : getListeners(this, ComponentListener.class))
+            l.componentShown(e);
     }
 
     /**
@@ -265,8 +265,8 @@ public class AWTEventMulticaster implements
      * @param e the component event
      */
     public void componentHidden(ComponentEvent e) {
-        ((ComponentListener)a).componentHidden(e);
-        ((ComponentListener)b).componentHidden(e);
+        for (ComponentListener l : getListeners(this, ComponentListener.class))
+            l.componentHidden(e);
     }
 
     /**
@@ -275,8 +275,8 @@ public class AWTEventMulticaster implements
      * @param e the component event
      */
     public void componentAdded(ContainerEvent e) {
-        ((ContainerListener)a).componentAdded(e);
-        ((ContainerListener)b).componentAdded(e);
+        for (ContainerListener l : getListeners(this, ContainerListener.class))
+            l.componentAdded(e);
     }
 
     /**
@@ -285,8 +285,8 @@ public class AWTEventMulticaster implements
      * @param e the component event
      */
     public void componentRemoved(ContainerEvent e) {
-        ((ContainerListener)a).componentRemoved(e);
-        ((ContainerListener)b).componentRemoved(e);
+        for (ContainerListener l : getListeners(this, ContainerListener.class))
+            l.componentRemoved(e);
     }
 
     /**
@@ -295,8 +295,8 @@ public class AWTEventMulticaster implements
      * @param e the focus event
      */
     public void focusGained(FocusEvent e) {
-        ((FocusListener)a).focusGained(e);
-        ((FocusListener)b).focusGained(e);
+        for (FocusListener l : getListeners(this, FocusListener.class))
+            l.focusGained(e);
     }
 
     /**
@@ -305,8 +305,8 @@ public class AWTEventMulticaster implements
      * @param e the focus event
      */
     public void focusLost(FocusEvent e) {
-        ((FocusListener)a).focusLost(e);
-        ((FocusListener)b).focusLost(e);
+        for (FocusListener l : getListeners(this, FocusListener.class))
+            l.focusLost(e);
     }
 
     /**
@@ -315,8 +315,8 @@ public class AWTEventMulticaster implements
      * @param e the key event
      */
     public void keyTyped(KeyEvent e) {
-        ((KeyListener)a).keyTyped(e);
-        ((KeyListener)b).keyTyped(e);
+        for (KeyListener l : getListeners(this, KeyListener.class))
+            l.keyTyped(e);
     }
 
     /**
@@ -325,8 +325,8 @@ public class AWTEventMulticaster implements
      * @param e the key event
      */
     public void keyPressed(KeyEvent e) {
-        ((KeyListener)a).keyPressed(e);
-        ((KeyListener)b).keyPressed(e);
+        for (KeyListener l : getListeners(this, KeyListener.class))
+            l.keyPressed(e);
     }
 
     /**
@@ -335,8 +335,8 @@ public class AWTEventMulticaster implements
      * @param e the key event
      */
     public void keyReleased(KeyEvent e) {
-        ((KeyListener)a).keyReleased(e);
-        ((KeyListener)b).keyReleased(e);
+        for (KeyListener l : getListeners(this, KeyListener.class))
+            l.keyReleased(e);
     }
 
     /**
@@ -345,8 +345,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseClicked(MouseEvent e) {
-        ((MouseListener)a).mouseClicked(e);
-        ((MouseListener)b).mouseClicked(e);
+        for (MouseListener l : getListeners(this, MouseListener.class))
+            l.mouseClicked(e);
     }
 
     /**
@@ -355,8 +355,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mousePressed(MouseEvent e) {
-        ((MouseListener)a).mousePressed(e);
-        ((MouseListener)b).mousePressed(e);
+        for (MouseListener l : getListeners(this, MouseListener.class))
+            l.mousePressed(e);
     }
 
     /**
@@ -365,8 +365,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseReleased(MouseEvent e) {
-        ((MouseListener)a).mouseReleased(e);
-        ((MouseListener)b).mouseReleased(e);
+        for (MouseListener l : getListeners(this, MouseListener.class))
+            l.mouseReleased(e);
     }
 
     /**
@@ -375,8 +375,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseEntered(MouseEvent e) {
-        ((MouseListener)a).mouseEntered(e);
-        ((MouseListener)b).mouseEntered(e);
+        for (MouseListener l : getListeners(this, MouseListener.class))
+            l.mouseEntered(e);
     }
 
     /**
@@ -385,8 +385,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseExited(MouseEvent e) {
-        ((MouseListener)a).mouseExited(e);
-        ((MouseListener)b).mouseExited(e);
+        for (MouseListener l : getListeners(this, MouseListener.class))
+            l.mouseExited(e);
     }
 
     /**
@@ -395,8 +395,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseDragged(MouseEvent e) {
-        ((MouseMotionListener)a).mouseDragged(e);
-        ((MouseMotionListener)b).mouseDragged(e);
+        for (MouseMotionListener l : getListeners(this, MouseMotionListener.class))
+            l.mouseDragged(e);
     }
 
     /**
@@ -405,8 +405,8 @@ public class AWTEventMulticaster implements
      * @param e the mouse event
      */
     public void mouseMoved(MouseEvent e) {
-        ((MouseMotionListener)a).mouseMoved(e);
-        ((MouseMotionListener)b).mouseMoved(e);
+        for (MouseMotionListener l : getListeners(this, MouseMotionListener.class))
+            l.mouseMoved(e);
     }
 
     /**
@@ -415,8 +415,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowOpened(WindowEvent e) {
-        ((WindowListener)a).windowOpened(e);
-        ((WindowListener)b).windowOpened(e);
+        for (WindowListener l : getListeners(this, WindowListener.class))
+            l.windowOpened(e);
     }
 
     /**
@@ -425,8 +425,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowClosing(WindowEvent e) {
-        ((WindowListener)a).windowClosing(e);
-        ((WindowListener)b).windowClosing(e);
+        for (WindowListener l : getListeners(this, WindowListener.class))
+            l.windowClosing(e);
     }
 
     /**
@@ -435,8 +435,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowClosed(WindowEvent e) {
-        ((WindowListener)a).windowClosed(e);
-        ((WindowListener)b).windowClosed(e);
+        for (WindowListener l : getListeners(this, WindowListener.class))
+            l.windowClosed(e);
     }
 
     /**
@@ -445,8 +445,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowIconified(WindowEvent e) {
-        ((WindowListener)a).windowIconified(e);
-        ((WindowListener)b).windowIconified(e);
+        for (WindowListener l : getListeners(this, WindowListener.class))
+            l.windowIconified(e);
     }
 
     /**
@@ -455,8 +455,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowDeiconified(WindowEvent e) {
-        ((WindowListener)a).windowDeiconified(e);
-        ((WindowListener)b).windowDeiconified(e);
+        for (WindowListener l : getListeners(this, WindowListener.class))
+            l.windowDeiconified(e);
     }
 
     /**
@@ -465,8 +465,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowActivated(WindowEvent e) {
-        ((WindowListener)a).windowActivated(e);
-        ((WindowListener)b).windowActivated(e);
+        for (WindowListener l : getListeners(this, WindowListener.class))
+            l.windowActivated(e);
     }
 
     /**
@@ -475,8 +475,8 @@ public class AWTEventMulticaster implements
      * @param e the window event
      */
     public void windowDeactivated(WindowEvent e) {
-        ((WindowListener)a).windowDeactivated(e);
-        ((WindowListener)b).windowDeactivated(e);
+        for (WindowListener l : getListeners(this, WindowListener.class))
+            l.windowDeactivated(e);
     }
 
     /**
@@ -486,8 +486,8 @@ public class AWTEventMulticaster implements
      * @since 1.4
      */
     public void windowStateChanged(WindowEvent e) {
-        ((WindowStateListener)a).windowStateChanged(e);
-        ((WindowStateListener)b).windowStateChanged(e);
+        for (WindowStateListener l : getListeners(this, WindowStateListener.class))
+            l.windowStateChanged(e);
     }
 
 
@@ -498,8 +498,8 @@ public class AWTEventMulticaster implements
      * @since 1.4
      */
     public void windowGainedFocus(WindowEvent e) {
-        ((WindowFocusListener)a).windowGainedFocus(e);
-        ((WindowFocusListener)b).windowGainedFocus(e);
+        for (WindowFocusListener l : getListeners(this, WindowFocusListener.class))
+            l.windowGainedFocus(e);
     }
 
     /**
@@ -509,8 +509,8 @@ public class AWTEventMulticaster implements
      * @since 1.4
      */
     public void windowLostFocus(WindowEvent e) {
-        ((WindowFocusListener)a).windowLostFocus(e);
-        ((WindowFocusListener)b).windowLostFocus(e);
+        for (WindowFocusListener l : getListeners(this, WindowFocusListener.class))
+            l.windowLostFocus(e);
     }
 
     /**
@@ -519,8 +519,8 @@ public class AWTEventMulticaster implements
      * @param e the action event
      */
     public void actionPerformed(ActionEvent e) {
-        ((ActionListener)a).actionPerformed(e);
-        ((ActionListener)b).actionPerformed(e);
+        for (ActionListener l : getListeners(this, ActionListener.class))
+            l.actionPerformed(e);
     }
 
     /**
@@ -529,8 +529,8 @@ public class AWTEventMulticaster implements
      * @param e the item event
      */
     public void itemStateChanged(ItemEvent e) {
-        ((ItemListener)a).itemStateChanged(e);
-        ((ItemListener)b).itemStateChanged(e);
+        for (ItemListener l : getListeners(this, ItemListener.class))
+            l.itemStateChanged(e);
     }
 
     /**
@@ -539,12 +539,12 @@ public class AWTEventMulticaster implements
      * @param e the adjustment event
      */
     public void adjustmentValueChanged(AdjustmentEvent e) {
-        ((AdjustmentListener)a).adjustmentValueChanged(e);
-        ((AdjustmentListener)b).adjustmentValueChanged(e);
+        for (AdjustmentListener l : getListeners(this, AdjustmentListener.class))
+            l.adjustmentValueChanged(e);
     }
     public void textValueChanged(TextEvent e) {
-        ((TextListener)a).textValueChanged(e);
-        ((TextListener)b).textValueChanged(e);
+        for (TextListener l : getListeners(this, TextListener.class))
+            l.textValueChanged(e);
     }
 
     /**
@@ -553,8 +553,8 @@ public class AWTEventMulticaster implements
      * @param e the item event
      */
     public void inputMethodTextChanged(InputMethodEvent e) {
-       ((InputMethodListener)a).inputMethodTextChanged(e);
-       ((InputMethodListener)b).inputMethodTextChanged(e);
+        for (InputMethodListener l : getListeners(this, InputMethodListener.class))
+            l.inputMethodTextChanged(e);
     }
 
     /**
@@ -563,8 +563,8 @@ public class AWTEventMulticaster implements
      * @param e the item event
      */
     public void caretPositionChanged(InputMethodEvent e) {
-       ((InputMethodListener)a).caretPositionChanged(e);
-       ((InputMethodListener)b).caretPositionChanged(e);
+        for (InputMethodListener l : getListeners(this, InputMethodListener.class))
+            l.caretPositionChanged(e);
     }
 
     /**
@@ -574,8 +574,8 @@ public class AWTEventMulticaster implements
      * @since 1.3
      */
     public void hierarchyChanged(HierarchyEvent e) {
-        ((HierarchyListener)a).hierarchyChanged(e);
-        ((HierarchyListener)b).hierarchyChanged(e);
+        for (HierarchyListener l : getListeners(this, HierarchyListener.class))
+            l.hierarchyChanged(e);
     }
 
     /**
@@ -585,8 +585,8 @@ public class AWTEventMulticaster implements
      * @since 1.3
      */
     public void ancestorMoved(HierarchyEvent e) {
-        ((HierarchyBoundsListener)a).ancestorMoved(e);
-        ((HierarchyBoundsListener)b).ancestorMoved(e);
+        for (HierarchyBoundsListener l : getListeners(this, HierarchyBoundsListener.class))
+            l.ancestorMoved(e);
     }
 
     /**
@@ -596,8 +596,8 @@ public class AWTEventMulticaster implements
      * @since 1.3
      */
     public void ancestorResized(HierarchyEvent e) {
-        ((HierarchyBoundsListener)a).ancestorResized(e);
-        ((HierarchyBoundsListener)b).ancestorResized(e);
+        for (HierarchyBoundsListener l : getListeners(this, HierarchyBoundsListener.class))
+            l.ancestorResized(e);
     }
 
     /**
@@ -607,8 +607,8 @@ public class AWTEventMulticaster implements
      * @since 1.4
      */
     public void mouseWheelMoved(MouseWheelEvent e) {
-        ((MouseWheelListener)a).mouseWheelMoved(e);
-        ((MouseWheelListener)b).mouseWheelMoved(e);
+        for (MouseWheelListener l : getListeners(this, MouseWheelListener.class))
+            l.mouseWheelMoved(e);
     }
 
     /**
