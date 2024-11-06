@@ -43,7 +43,7 @@ public class LayoutGraph {
                     .thenComparingInt(l -> l.getFrom().getRelativePosition().x)
                     .thenComparingInt(l -> l.getTo().getRelativePosition().x);
 
-    private final Set<? extends Link> links;
+    private final Set<Link> links;
     private final SortedSet<Vertex> vertices;
     private final HashMap<Vertex, Set<Port>> inputPorts;
     private final HashMap<Vertex, Set<Port>> outputPorts;
@@ -62,6 +62,109 @@ public class LayoutGraph {
         layers = new ArrayList<>(layerCount);
         for (int i = 0; i < layerCount; i++) {
             layers.add(new LayoutLayer());
+        }
+    }
+
+    public void addLink(Link link) {
+        this.links.add(link);
+        if (link.getFrom() == null || link.getTo() == null) {
+            return;
+        }
+        Port fromPort = link.getFrom();
+        Port toPort = link.getTo();
+        Vertex fromVertex = fromPort.getVertex();
+        Vertex toVertex = toPort.getVertex();
+
+        addVertex(fromVertex);
+        addVertex(toVertex);
+
+        outputPorts.computeIfAbsent(fromVertex, k -> new HashSet<>()).add(fromPort);
+        inputPorts.computeIfAbsent(toVertex, k -> new HashSet<>()).add(toPort);
+
+        portLinks.computeIfAbsent(fromPort, k -> new HashSet<>()).add(link);
+        portLinks.computeIfAbsent(toPort, k -> new HashSet<>()).add(link);
+    }
+
+    public void addVertex(Vertex vertex) {
+        if (vertices.contains(vertex)) {
+            return;
+        }
+        LayoutNode node = new LayoutNode(vertex);
+        vertices.add(vertex);
+        vertexToLayoutNode.put(vertex, node);
+    }
+
+    public void removeVertex(Vertex vertex) {
+        removeNodeAndEdges(vertexToLayoutNode.get(vertex));
+        vertexToLayoutNode.remove(vertex);
+        vertices.remove(vertex);
+        inputPorts.remove(vertex);
+        outputPorts.remove(vertex);
+    }
+
+    public void removeLink(Link link) {
+        if (link == null) {
+            return; // Nothing to remove
+        }
+        links.remove(link);
+
+        Port fromPort = link.getFrom();
+        Port toPort = link.getTo();
+
+        // If either port is null, the link was likely not fully initialized or already removed
+        if (fromPort == null || toPort == null) {
+            return;
+        }
+
+        Vertex fromVertex = fromPort.getVertex();
+        Vertex toVertex = toPort.getVertex();
+
+        // Remove the link from portLinks for both ports
+        Set<Link> links2 = portLinks.get(fromPort);
+        if (links2 != null) {
+            links2.remove(link);
+            if (links2.isEmpty()) {
+                portLinks.remove(fromPort);
+            }
+        }
+
+        Set<Link> links1 = portLinks.get(toPort);
+        if (links1 != null) {
+            links1.remove(link);
+            if (links1.isEmpty()) {
+                portLinks.remove(toPort);
+            }
+        }
+
+        // Optionally, remove the ports from outputPorts/inputPorts if they have no more links
+        if (portLinks.get(fromPort) == null || portLinks.get(fromPort).isEmpty()) {
+            removePortFromOutputPorts(fromVertex, fromPort);
+        }
+
+        if (portLinks.get(toPort) == null || portLinks.get(toPort).isEmpty()) {
+            removePortFromInputPorts(toVertex, toPort);
+        }
+    }
+
+    private void removePortFromOutputPorts(Vertex vertex, Port port) {
+        Set<Port> ports = outputPorts.get(vertex);
+        if (ports != null) {
+            ports.remove(port);
+            if (ports.isEmpty()) {
+                outputPorts.remove(vertex);
+                vertices.remove(vertex); // Optionally remove the vertex if no output ports
+            }
+        }
+    }
+
+    private void removePortFromInputPorts(Vertex vertex, Port port) {
+        Set<Port> ports = inputPorts.get(vertex);
+        if (ports != null) {
+            ports.remove(port);
+            if (ports.isEmpty()) {
+                inputPorts.remove(vertex);
+                vertices.remove(vertex); // Optionally remove the vertex if no input ports
+            }
         }
     }
 
@@ -171,41 +274,20 @@ public class LayoutGraph {
     }
 
     public LayoutGraph(Set<? extends Link> links, Set<? extends Vertex> additionalVertices) {
-        this.links = links;
-
-        vertices = new TreeSet<>(additionalVertices);
-        portLinks = new HashMap<>(links.size());
-        inputPorts = new HashMap<>(links.size());
-        outputPorts = new HashMap<>(links.size());
+        this.links = new HashSet<>(links.size());
+        this.vertices = new TreeSet<>();
+        this.portLinks = new HashMap<>(links.size());
+        this.inputPorts = new HashMap<>(links.size());
+        this.outputPorts = new HashMap<>(links.size());
+        this.vertexToLayoutNode = new LinkedHashMap<>();
+        this.dummyNodes = new ArrayList<>();
 
         for (Link link : links) {
-            if (link.getFrom() == null || link.getTo() == null) {
-                continue;
-            }
-            Port fromPort = link.getFrom();
-            Port toPort = link.getTo();
-            Vertex fromVertex = fromPort.getVertex();
-            Vertex toVertex = toPort.getVertex();
-
-            vertices.add(fromVertex);
-            vertices.add(toVertex);
-
-            outputPorts.computeIfAbsent(fromVertex, k -> new HashSet<>()).add(fromPort);
-            inputPorts.computeIfAbsent(toVertex, k -> new HashSet<>()).add(toPort);
-
-            portLinks.computeIfAbsent(fromPort, k -> new HashSet<>()).add(link);
-            portLinks.computeIfAbsent(toPort, k -> new HashSet<>()).add(link);
+            addLink(link);
         }
 
-        // cleanup
-        vertexToLayoutNode = new LinkedHashMap<>();
-        dummyNodes = new ArrayList<>();
-
-
-        // Set up nodes
-        for (Vertex v : getVertices()) {
-            LayoutNode node = new LayoutNode(v);
-            vertexToLayoutNode.put(v, node);
+        for (Vertex vertex : additionalVertices) {
+            addVertex(vertex);
         }
 
         // Set up edges
@@ -292,7 +374,7 @@ public class LayoutGraph {
         return links;
     }
 
-    public SortedSet<Vertex> getVertices() {
+    public SortedSet<? extends Vertex> getVertices() {
         return vertices;
     }
 
@@ -601,5 +683,4 @@ public class LayoutGraph {
             alignLayerDummySuccessors(getLayer(i));
         }
     }
-
 }

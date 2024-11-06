@@ -34,7 +34,7 @@ import java.util.*;
 
 public class HierarchicalLayoutManager extends LayoutManager {
 
-    private LayoutGraph graph;
+    private LayoutGraph graph = null;
 
     public HierarchicalLayoutManager() {
         maxLayerLength = -1;
@@ -300,6 +300,61 @@ public class HierarchicalLayoutManager extends LayoutManager {
     @Override
     public void setCutEdges(boolean enable) {
         maxLayerLength = enable ? 10 : -1;
+    }
+
+
+
+    public void updateLayout(LayoutGraph layoutGraph) {
+        if (graph == null) {
+            doLayout(layoutGraph);
+            return;
+        }
+
+        if (maxLayerLength > 0) return; // TODO: not implemented
+
+        Set<? extends Vertex> oldVertices = graph.getVertices();
+        Set<? extends Vertex> newVertices = layoutGraph.getVertices();
+        Set<? extends Link> oldLinks = graph.getLinks();
+        Set<? extends Link> newLinks = layoutGraph.getLinks();
+
+        // Compute removed vertices
+        Set<Vertex> removedVertices = new HashSet<>(oldVertices);
+        removedVertices.removeAll(newVertices);
+        for (Vertex vertex : removedVertices) {
+            graph.removeVertex(vertex);
+        }
+
+        // Compute removed links
+        Set<Link> removedLinks = new HashSet<>(oldLinks);
+        removedLinks.removeAll(newLinks);
+        for (Link link : removedLinks) {
+            graph.removeLink(link);
+        }
+
+        // Compute added vertices
+        Set<Vertex> addedVertices = new HashSet<>(newVertices);
+        addedVertices.removeAll(oldVertices);
+        for (Vertex vertex : addedVertices) {
+            graph.addVertex(vertex);
+        }
+
+        // Compute added links
+        Set<Link> addedLink = new HashSet<>(newLinks);
+        addedLink.removeAll(oldLinks);
+        for (Link link : addedLink) {
+            graph.addLink(link);
+        }
+
+        for (Vertex vertex : addedVertices) {
+            LayoutNode addedNode = graph.getLayoutNode(vertex);
+            int layerNr = 4444; // TODO
+            layerNr = graph.insertNewLayerIfNeeded(addedNode, layerNr);
+            int nodePos = 4444; // TODO
+            graph.addNodeAtPosition(addedNode, layerNr, nodePos);
+            graph.getLayer(layerNr).sortNodesByXAndSetPositions();
+            graph.removeEmptyLayers();
+            addEdges(addedNode);
+        }
     }
 
     public void doLayout(LayoutGraph layoutGraph) {

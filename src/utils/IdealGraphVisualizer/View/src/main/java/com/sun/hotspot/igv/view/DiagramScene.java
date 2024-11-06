@@ -89,6 +89,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private ModelState modelState;
     private boolean rebuilding;
     private final HierarchicalLayoutManager seaLayoutManager;
+    private final HierarchicalLayoutManager stableSeaLayoutManager;
+
     public boolean FREE_FORM = false;
 
     /**
@@ -509,6 +511,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         });
 
         seaLayoutManager = new HierarchicalLayoutManager();
+        stableSeaLayoutManager = new HierarchicalLayoutManager();
 
         this.model = model;
         modelState = new ModelState(model);
@@ -868,8 +871,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     private void doStableSeaLayout(Set<Figure> figures, Set<Connection> edges) {
         FREE_FORM = true;
-        seaLayoutManager.setCutEdges(model.getCutEdges());
-        seaLayoutManager.doLayout(new LayoutGraph(edges, figures));
+        stableSeaLayoutManager.setCutEdges(model.getCutEdges());
+        stableSeaLayoutManager.doLayout(new LayoutGraph(edges, figures));
         //rebuildConnectionLayer();
         //validateAll();
        // TODO
@@ -878,7 +881,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private void doSeaLayout(Set<Figure> figures, Set<Connection> edges) {
         FREE_FORM = false;
         seaLayoutManager.setCutEdges(model.getCutEdges());
-        seaLayoutManager.doLayout(new LayoutGraph(edges, figures));
+        seaLayoutManager.updateLayout(new LayoutGraph(edges, figures));
     }
 
     private void doClusteredLayout(Set<Connection> edges) {
