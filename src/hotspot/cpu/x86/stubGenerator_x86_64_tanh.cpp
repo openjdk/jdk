@@ -324,6 +324,23 @@ address StubGenerator::generate_libmTanh() {
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
   __ bind(B1_2);
+  // test dummy code
+  if (UseAPX) {
+    __ movl(r22, 5);  //src1
+    __ movl(r23, 10); //src2
+    //__ esubl(r23, r21, r22, true);  // dst, src2, src1
+    __ esubl(r21, r22, r23, false);  // works =10-5=5 (d,s1,s2) + swap steve
+    __ esubl(r21, r22, r23, true);
+
+//#sub %r22, %r21, %r23                      # *WORKS* 62 ec c4 10 29 f5
+    /* swap Steve=true;  r21=5, r22=10, exp r23=-5
+    62 ec 44 10 29 f5       sub    r23d,r21d,r22d   ans=5
+    62 ec 44 10 29 ee       sub    r23d,r22d,r21d   ans=4294967291
+    62 ec 44 14 29 f5       {nf} sub r23d,r21d,r22d ans=5
+    62 ec 44 14 29 ee       {nf} sub r23d,r22d,r21d ans=4294967291
+    */
+  }
+  // end of test code
   __ movsd(xmm3, ExternalAddress(HALFMASK), r11 /*rscratch*/);
   __ xorpd(xmm4, xmm4);
   __ movsd(xmm1, ExternalAddress(L2E), r11 /*rscratch*/);
