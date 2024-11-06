@@ -391,6 +391,10 @@ class TemplateAssertionPredicate : public Predicate {
     return _if_node->in(0);
   }
 
+  OpaqueTemplateAssertionPredicateNode* opaque_node() const {
+    return _if_node->in(1)->as_OpaqueTemplateAssertionPredicate();
+  }
+
   IfNode* head() const override {
     return _if_node;
   }
@@ -399,6 +403,7 @@ class TemplateAssertionPredicate : public Predicate {
     return _success_proj;
   }
 
+  IfTrueNode* clone_and_replace_init(Node* new_control, OpaqueLoopInitNode* new_opaque_init, PhaseIdealLoop* phase) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      PhaseIdealLoop* phase) const;
   static bool is_predicate(Node* node);
@@ -941,6 +946,22 @@ class NodeInOriginalLoopBody : public NodeInLoopBody {
   }
 };
 
+// This class checks whether a node is in the cloned loop body and not the original one from which the loop was cloned.
+class NodeInClonedLoopBody : public NodeInLoopBody {
+  const uint _first_node_index_in_cloned_loop_body;
+
+ public:
+  explicit NodeInClonedLoopBody(const uint first_node_index_in_cloned_loop_body)
+      : _first_node_index_in_cloned_loop_body(first_node_index_in_cloned_loop_body) {}
+  NONCOPYABLE(NodeInClonedLoopBody);
+
+  // Check if 'node' is a clone. This can easily be achieved by comparing its node index to the first node index
+  // inside the cloned loop body (all of them are clones).
+  bool check(Node* node) const override {
+    return node->_idx >= _first_node_index_in_cloned_loop_body;
+  }
+};
+
 // Visitor to create Initialized Assertion Predicates at a target loop from Template Assertion Predicates from a source
 // loop. This visitor can be used in combination with a PredicateIterator.
 class CreateAssertionPredicatesVisitor : public PredicateVisitor {
@@ -951,17 +972,22 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   PhaseIdealLoop* const _phase;
   bool _has_hoisted_check_parse_predicates;
   const NodeInLoopBody& _node_in_loop_body;
+  const bool _clone_template;
+
+  IfTrueNode* clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate);
+  IfTrueNode* initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate) const;
 
  public:
   CreateAssertionPredicatesVisitor(Node* init, Node* stride, Node* new_control, PhaseIdealLoop* phase,
-                                   const NodeInLoopBody& node_in_loop_body)
+                                   const NodeInLoopBody& node_in_loop_body, const bool clone_template)
       : _init(init),
         _stride(stride),
         _old_target_loop_entry(new_control),
         _new_control(new_control),
         _phase(phase),
         _has_hoisted_check_parse_predicates(false),
-        _node_in_loop_body(node_in_loop_body) {}
+        _node_in_loop_body(node_in_loop_body),
+        _clone_template(clone_template) {}
   NONCOPYABLE(CreateAssertionPredicatesVisitor);
 
   using PredicateVisitor::visit;
