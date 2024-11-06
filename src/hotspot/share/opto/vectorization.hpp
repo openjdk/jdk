@@ -28,6 +28,7 @@
 #include "opto/matcher.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/mempointer.hpp"
 #include "utilities/pair.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and
@@ -667,45 +668,41 @@ private:
   VStatus setup_submodules_helper();
 };
 
-// A vectorization pointer (VPointer) has information about an address for
-// dependence checking and vector alignment. It's usually bound to a memory
-// operation in a counted loop for vectorizable analysis.
+// TODO
+// vpointer = base + con + invar + iv_scale * iv
+class XPointer : public ArenaObj {
+private:
+  bool        _is_valid;
+
+  Node* const _base;
+  jint        _con;
+  Node* const _invar;
+  jint        _invar_alignment;
+  jint        _iv_scale;
+
+  jint        _size;
+
+public:
+  // Default constructor, e.g. for GrowableArray.
+  XPointer() :
+    _is_valid(false),
+    _base(nullptr),
+    _con(0),
+    _invar(0),
+    _invar_alignment(0),
+    _iv_scale(0),
+    _size(0) {}
+
+  bool is_valid() const { return _is_valid; }
+
+
+  // TODO
+  // , _tracer(vloop.is_trace_pointer_analysis())
+};
+
+// TODO rm
+// vpointer = base + con + invar + scale * iv
 //
-// We parse and represent pointers of the simple form:
-//
-//   pointer   = adr + offset + invar + scale * ConvI2L(iv)
-//
-// Where:
-//
-//   adr: the base address of an array (base = adr)
-//        OR
-//        some address to off-heap memory (base = TOP)
-//
-//   offset: a constant offset
-//   invar:  a runtime variable, which is invariant during the loop
-//   scale:  scaling factor
-//   iv:     loop induction variable
-//
-// But more precisely, we parse the composite-long-int form:
-//
-//   pointer   = adr + long_offset + long_invar + long_scale * ConvI2L(int_offset + inv_invar + int_scale * iv)
-//
-//   pointer   = adr + long_offset + long_invar + long_scale * ConvI2L(int_index)
-//   int_index =       int_offset  + int_invar  + int_scale  * iv
-//
-// However, for aliasing and adjacency checks (e.g. VPointer::cmp()) we always use the simple form to make
-// decisions. Hence, we must make sure to only create a "valid" VPointer if the optimisations based on the
-// simple form produce the same result as the compound-long-int form would. Intuitively, this depends on
-// if the int_index overflows, but the precise conditions are given in VPointer::is_safe_to_use_as_simple_form().
-//
-//   ConvI2L(int_index) = ConvI2L(int_offset  + int_invar  + int_scale  * iv)
-//                      = Convi2L(int_offset) + ConvI2L(int_invar) + ConvI2L(int_scale) * ConvI2L(iv)
-//
-//   scale  = long_scale * ConvI2L(int_scale)
-//   offset = long_offset + long_scale * ConvI2L(int_offset)
-//   invar  = long_invar  + long_scale * ConvI2L(int_invar)
-//
-//   pointer   = adr + offset + invar + scale * ConvI2L(iv)
 //
 class VPointer : public ArenaObj {
  protected:
@@ -725,13 +722,6 @@ class VPointer : public ArenaObj {
   Node* _debug_invar_scale;  // multiplier for invariant
 #endif
 
-  // The int_index components of the compound-long-int form. Used to decide if it is safe to use the
-  // simple form rather than the compound-long-int form that was parsed.
-  bool  _has_int_index_after_convI2L;
-  int   _int_index_after_convI2L_offset;
-  Node* _int_index_after_convI2L_invar;
-  int   _int_index_after_convI2L_scale;
-
   Node_Stack* _nstack;       // stack used to record a vpointer trace of variants
   bool        _analyze_only; // Used in loop unrolling only for vpointer trace
   uint        _stack_idx;    // Used in loop unrolling only for vpointer trace
@@ -739,16 +729,6 @@ class VPointer : public ArenaObj {
   PhaseIdealLoop* phase() const { return _vloop.phase(); }
   IdealLoopTree*  lpt() const   { return _vloop.lpt(); }
   PhiNode*        iv() const    { return _vloop.iv(); }
-
-  bool is_loop_member(Node* n) const;
-  bool invariant(Node* n) const;
-
-  // Match: k*iv + offset
-  bool scaled_iv_plus_offset(Node* n);
-  // Match: k*iv where k is a constant that's not zero
-  bool scaled_iv(Node* n);
-  // Match: offset is (k [+/- invariant])
-  bool offset_plus_k(Node* n, bool negate = false);
 
  public:
   enum CMP {
@@ -766,12 +746,7 @@ class VPointer : public ArenaObj {
  private:
   VPointer(MemNode* const mem, const VLoop& vloop,
            Node_Stack* nstack, bool analyze_only);
-  // Following is used to create a temporary object during
-  // the pattern match of an address expression.
-  VPointer(VPointer* p);
   NONCOPYABLE(VPointer);
-
-  bool is_safe_to_use_as_simple_form(Node* base, Node* adr) const;
 
  public:
   bool valid()             const { return _adr != nullptr; }
@@ -870,82 +845,6 @@ class VPointer : public ArenaObj {
   static int cmp_for_sort(const VPointer** p1, const VPointer** p2);
 
   NOT_PRODUCT( void print() const; )
-
-#ifndef PRODUCT
-  class Tracer {
-    friend class VPointer;
-    bool _is_trace_alignment;
-    static int _depth;
-    int _depth_save;
-    void print_depth() const;
-    int  depth() const    { return _depth; }
-    void set_depth(int d) { _depth = d; }
-    void inc_depth()      { _depth++; }
-    void dec_depth()      { if (_depth > 0) _depth--; }
-    void store_depth()    { _depth_save = _depth; }
-    void restore_depth()  { _depth = _depth_save; }
-
-    class Depth {
-      friend class VPointer;
-      Depth()      { ++_depth; }
-      Depth(int x) { _depth = 0; }
-      ~Depth()     { if (_depth > 0) --_depth; }
-    };
-    Tracer(bool is_trace_alignment) : _is_trace_alignment(is_trace_alignment) {}
-
-    // tracing functions
-    void ctor_1(const Node* mem);
-    void ctor_2(Node* adr);
-    void ctor_3(Node* adr, int i);
-    void ctor_4(Node* adr, int i);
-    void ctor_5(Node* adr, Node* base,  int i);
-    void ctor_6(const Node* mem);
-
-    void scaled_iv_plus_offset_1(Node* n);
-    void scaled_iv_plus_offset_2(Node* n);
-    void scaled_iv_plus_offset_3(Node* n);
-    void scaled_iv_plus_offset_4(Node* n);
-    void scaled_iv_plus_offset_5(Node* n);
-    void scaled_iv_plus_offset_6(Node* n);
-    void scaled_iv_plus_offset_7(Node* n);
-    void scaled_iv_plus_offset_8(Node* n);
-
-    void scaled_iv_1(Node* n);
-    void scaled_iv_2(Node* n, int scale);
-    void scaled_iv_3(Node* n, int scale);
-    void scaled_iv_4(Node* n, int scale);
-    void scaled_iv_5(Node* n, int scale);
-    void scaled_iv_6(Node* n, int scale);
-    void scaled_iv_7(Node* n);
-    void scaled_iv_8(Node* n, VPointer* tmp);
-    void scaled_iv_9(Node* n, int _scale, int _offset, Node* _invar);
-    void scaled_iv_10(Node* n);
-
-    void offset_plus_k_1(Node* n);
-    void offset_plus_k_2(Node* n, int _offset);
-    void offset_plus_k_3(Node* n, int _offset);
-    void offset_plus_k_4(Node* n);
-    void offset_plus_k_5(Node* n, Node* _invar);
-    void offset_plus_k_6(Node* n, Node* _invar, bool _negate_invar, int _offset);
-    void offset_plus_k_7(Node* n, Node* _invar, bool _negate_invar, int _offset);
-    void offset_plus_k_8(Node* n, Node* _invar, bool _negate_invar, int _offset);
-    void offset_plus_k_9(Node* n, Node* _invar, bool _negate_invar, int _offset);
-    void offset_plus_k_10(Node* n, Node* _invar, bool _negate_invar, int _offset);
-    void offset_plus_k_11(Node* n);
-  } _tracer; // Tracer
-#endif
-
-  Node* maybe_negate_invar(bool negate, Node* invar);
-
-  void maybe_add_to_invar(Node* new_invar, bool negate);
-
-  static bool try_AddI_no_overflow(int offset1, int offset2, int& result);
-  static bool try_SubI_no_overflow(int offset1, int offset2, int& result);
-  static bool try_AddSubI_no_overflow(int offset1, int offset2, bool is_sub, int& result);
-  static bool try_LShiftI_no_overflow(int offset1, int offset2, int& result);
-  static bool try_MulI_no_overflow(int offset1, int offset2, int& result);
-
-  Node* register_if_new(Node* n) const;
 };
 
 
