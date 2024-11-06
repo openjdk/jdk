@@ -327,6 +327,8 @@ public:
   struct Range {
     TreapNode* start;
     TreapNode* end;
+    Range(TreapNode* start, TreapNode* end)
+    : start(start), end(end) {}
   };
 
   // Return the range [start, end)
@@ -335,7 +337,7 @@ public:
   Range find_enclosing_range(K addr) {
     TreapNode* start = closest_leq(addr);
     TreapNode* end = closest_gt(addr);
-    return Range{start, end};
+    return Range(start, end);
   }
 
   // Visit all TreapNodes in ascending key order.
