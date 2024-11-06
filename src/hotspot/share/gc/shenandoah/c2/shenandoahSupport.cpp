@@ -1149,8 +1149,9 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
         }
       }
     }
+    // Load barrier on the control output of a call
     if ((ctrl->is_Proj() && ctrl->in(0)->is_CallJava()) || ctrl->is_CallJava()) {
-      CallNode* call = ctrl->is_Proj() ? ctrl->in(0)->as_CallJava() : ctrl->as_CallJava();
+      CallJavaNode* call = ctrl->is_Proj() ? ctrl->in(0)->as_CallJava() : ctrl->as_CallJava();
       if (call->entry_point() == OptoRuntime::rethrow_stub()) {
         // The rethrow call may have too many projections to be
         // properly handled here. Given there's no reason for a
@@ -1186,6 +1187,14 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       CallProjections projs;
       call->extract_projections(&projs, false, false);
 
+      // If this is a runtime call, it doesn't have an exception handling path
+      if (projs.fallthrough_catchproj == nullptr) {
+        assert(call->method() == nullptr, "should be runtime call");
+        assert(projs.catchall_catchproj == nullptr, "runtime call should not have catch all projection");
+        continue;
+      }
+
+      // Otherwise, clone the barrier so there's one for the fallthrough and one for the exception handling path
 #ifdef ASSERT
       VectorSet cloned;
 #endif
