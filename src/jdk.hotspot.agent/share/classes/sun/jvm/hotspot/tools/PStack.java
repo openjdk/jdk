@@ -24,14 +24,10 @@
 
 package sun.jvm.hotspot.tools;
 
-import java.io.PrintStream;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
+import sun.jvm.hotspot.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
@@ -89,7 +85,9 @@ public class PStack extends Tool {
          int maxNum = Mutex.maxNum();
          for (int i = 0; i < maxNum; i++) {
          Mutex mutex = new Mutex(Mutex.at(i));
-            out.println("Locked mutex: " + i + "   name: " + mutex.name() + " owner: " + mutex.owner());
+            if (mutex.owner() != null) {
+	        out.println("Locked mutex: " + i + "   name: " + mutex.name() + " owner: " + mutex.owner());
+	    }
          }
 
 
