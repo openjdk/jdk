@@ -24,14 +24,12 @@
 
 package sun.jvm.hotspot.runtime;
 
-import java.util.Observable;
-import java.util.Observer;
-
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.types.AddressField;
+import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.types.WrongTypeException;
-import sun.jvm.hotspot.utilities.CStringUtilities;
+import sun.jvm.hotspot.utilities.*;
 
 public class Mutex extends VMObject {
   static {
@@ -57,8 +55,6 @@ public class Mutex extends VMObject {
     mutex_array = type.getAddressField("_mutex_array");
 
     maxNum =  type.getCIntegerField("_num_mutex").getJInt();
-
-    System.out.println("NUM: " + maxNum);
 
   }
 
