@@ -381,6 +381,8 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     VMATree tree;
     Tree::RegionData gc(si1, mtGC);
     Tree::RegionData compiler(si2, mtCompiler);
+    tree.reserve_mapping(0, 100, gc);
+    tree.reserve_mapping(100, 100, compiler);
     tree.set_tag(0, 200, mtGC);
     expect_equivalent_form(expected, tree);
   }
