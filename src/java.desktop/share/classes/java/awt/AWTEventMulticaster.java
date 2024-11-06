@@ -31,6 +31,7 @@ import java.io.Serializable;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
 import java.util.EventListener;
+import java.util.LinkedList;
 
 
 /**
@@ -150,12 +151,82 @@ public class AWTEventMulticaster implements
     protected EventListener remove(EventListener oldl) {
         if (oldl == a)  return b;
         if (oldl == b)  return a;
+
+        EventListener z = removeWithoutRecursion(oldl);
+        if (z != null)
+            return z;
+
         EventListener a2 = removeInternal(a, oldl);
         EventListener b2 = removeInternal(b, oldl);
         if (a2 == a && b2 == b) {
             return this;        // it's not here
         }
         return addInternal(a2, b2);
+    }
+
+    /**
+     * Removes a listener from this multicaster without recursion.
+     * <p>
+     * If you use the recommended static <code>add(x, y)</code> methods,
+     * then you create a "tree" that is basically a LinkedList: the `b` node
+     * is ALWAYS an EventListener and the `a` node is
+     * the `a` node is a parent node, and the `b` node is an EventListener. This method will
+     * iterate over list-like AWTEventMulticasters to remove elements without recursion.
+     * <p>
+     * This method returns null if recursion is the only way to remove oldl. The logic
+     * in AWTEventMulticaster always creates unbalanced list-like tree, but
+     * AWTEventMulticasters is public and fields `a` and `b` are protected, so it is
+     * possible a subclass may exist that creates well-balanced trees that cannot use this
+     * method.
+     *
+     * @param oldl the listener to be removed
+     * @return resulting listener, or null if recursion is necessary to remove the argument
+     */
+    private EventListener removeWithoutRecursion(EventListener oldl) {
+        AWTEventMulticaster node = this;
+        LinkedList<AWTEventMulticaster> treepath = new LinkedList<>();
+        treepath.add(this);
+        EventListener returnValue = null;
+
+        while (true) {
+            if (node.a == oldl) {
+                returnValue = node.b;
+                treepath.removeLast();
+                break;
+            } else if (node.b == oldl) {
+                returnValue = node.a;
+                treepath.removeLast();
+                break;
+            } else {
+                boolean isAMulticaster = node.a instanceof AWTEventMulticaster;
+                boolean isBMulticaster = node.b instanceof AWTEventMulticaster;
+                if (isAMulticaster && isBMulticaster) {
+                    // If both are AWTEventMulticasters: then we have to use recursion.
+                    // This non-recursive method can't help us.
+                    return null;
+                } else if (isAMulticaster) {
+                    node = (AWTEventMulticaster) node.a;
+                } else if (isBMulticaster) {
+                    node = (AWTEventMulticaster) node.b;
+                } else {
+                    // we iterated over everything and oldl isn't here
+                    return this;
+                }
+                treepath.add(node);
+            }
+        }
+
+        // iterate back up the tree and rebuild all the nodes:
+        while (!treepath.isEmpty()) {
+            AWTEventMulticaster parent = treepath.removeLast();
+            if (parent.a instanceof AWTEventMulticaster) {
+                returnValue = new AWTEventMulticaster(returnValue, parent.b);
+            } else {
+                returnValue = new AWTEventMulticaster(parent.a, returnValue);
+            }
+        }
+
+        return returnValue;
     }
 
     /**
