@@ -55,8 +55,11 @@ CompilerThread::~CompilerThread() {
 }
 
 void CompilerThread::set_compiler(AbstractCompiler* c) {
-  // Only jvmci compiler threads can call Java
-  _can_call_java = c != nullptr && c->is_jvmci();
+  /*
+   * Compiler threads need to make Java upcalls to the jargraal compiler.
+   * Java upcalls are also needed by the InterpreterRuntime when using jargraal.
+   */
+  _can_call_java = c != nullptr && c->is_jvmci() JVMCI_ONLY(&& !UseJVMCINativeLibrary);
   _compiler = c;
 }
 

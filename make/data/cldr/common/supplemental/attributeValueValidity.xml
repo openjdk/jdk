@@ -7,105 +7,88 @@
 	<metadata>
 		<validity>
 			<!-- BCP 47 contains many more language codes than we are interested in maintaining as a part of the CLDR -->
-			<!-- This $language list contains ONLY those languages that are in the CLDR locales' IDs (after maximizing with LikelySubtags) -->
+			<!-- This $language list contains ONLY those languages that TC Locale's IDs (after maximizing with LikelySubtags) -->
 			<variable id='$language' type='choice'>
-                aa ab af agq ak am an ann apc ar arn as asa ast az
-                ba bal bas be bem bew bez bg bgc bgn bho blo blt bm bn bo br brx bs bss byn
-                ca cad cch ccp ce ceb cgg cho chr cic ckb co cs csw cu cv cy
-                da dav de dje doi dsb dua dv dyo dz
-                ebu ee el en eo es et eu ewo
-                fa ff fi fil fo fr frr fur fy
-                ga gaa gd gez gl gn gsw gu guz gv
-                ha haw he hi hnj hr hsb hu hy
-                ia id ie ig ii io is it iu
-                ja jbo jgo jmc jv
-                ka kab kaj kam kcg kde kea ken kgp khq ki kk kkj kl kln km kn ko kok kpe ks ksb ksf ksh ku kw kxv ky
-                la lag lb lg lij lkt lmo ln lo lrc lt lu luo luy lv
-                mai mas mdf mer mfe mg mgh mgo mi mic mk ml mn mni moh mr ms mt mua mus my myv mzn
-                naq nb nd nds ne nl nmg nn nnh no nqo nr nso nus nv ny nyn
-                oc om or os osa
-                pa pap pcm pis pl prg ps pt
-                qu quc
-                raj rhg rif rm rn ro rof ru rw rwk
-                sa sah saq sat sbp sc scn sd sdh se seh ses sg shi shn si sid sk skr sl sma smj smn sms sn so sq sr ss ssy st su sv sw syr szl
-                ta te teo tg th ti tig tk tn to tok tpi tr trv trw ts tt twq tyv tzm
-                ug uk ur uz
-                vai ve vec vi vmw vo vun
-                wa wae wal wbp wo
-                xh xnr xog
-                yav yi yo yrl yue
-                za zgh zh zu
+			    af am ar as az
+			    be bg bgc bho bn brx bs
+			    ca ceb cs cv cy
+			    da de doi
+			    el en es et eu
+			    fa fi fil fr
+			    ga gd gl gu
+			    ha he hi hr hu hy
+			    id ig is it
+			    ja jv
+			    ka kk km kn ko kok ks ky
+			    lo lt lv
+			    mai mi mk ml mn mni mr ms my
+			    ne nl nn no
+			    or
+			    pa pcm pl ps pt
+			    raj ro ru
+			    sa sat sd si sk sl so sq sr su sv sw
+			    ta te tg th ti tk tr tt
+			    uk ur uz
+			    vi
+			    wo
+			    xh
+			    yo yue
+			    zh zu
 			</variable>
-			<!-- The following are exceptional cases.
-				In v44 this contains a copy of the previous $language list to make review of CLDR-16789 easier;
-				this should be rationalized later.
-			  -->
-			<variable id='$languageExceptions' type='choice'>
-				af agq ak am ann apc ar as asa ast az
-				bas be bem bez bg bgc bho bm bn bo br brx bs
-				ca ccp ce ceb cgg chr ckb cs cu cv cy
-				da dav de dje doi dsb dua dyo dz
-				ebu ee el en eo es et eu ewo
-				fa ff fi fil fo fr frr fur fy
-				ga gd gl gsw gu guz gv
-				ha haw he hi hr hsb hu hy
-				ia id ig ii is it
-				ja jgo jmc jv
-				ka kab kam kde kea kgp khq ki kk kkj kl kln km kn ko kok ks ksb ksf ksh ku kw ky
-				lag lb lg lij lkt lmo ln lo lrc lt lu luo luy lv
-				mai mas mer mfe mg mgh mgo mi mk ml mn mni mr ms mt mua my mzn
-				naq nb nd nds ne nl nmg nn nnh no nus nyn
-				om or os
-				pa pap pcm pis pl prg ps pt
+			<!-- The following are non-TC locales that have reached at least Basic, plus specials mul root zxx und -->
+			<variable id='$languageNonTcGeqBasic' type='choice'>
+				ast
+				blo br
+				chr csw
+				dsb
+				eo
+				ff fo fy
+				hsb
+				ia ie
+				kea kgp ku kxv
+				lb lij lmo
+				mt
+				nds nqo
+				oc
+				prg
 				qu
-				raj rif rm rn ro rof
-				und
-				ru rw rwk
-				sa sah saq sat sbp sc sd se seh ses sg shi si sk sl smn sms sn so sq sr su sv sw
-				ta te teo tg th ti tk to tok tr tt twq tzm
-				ug uk ur uz
-				vai vec vi vo vun
-				wae wo
-				xh xog
-				yav yi yo yrl yue
-				zgh zh zu
-
-				mul root zxx
-				ab ace ada ady ain ale alt an anp arn arp ars atj av awa ay
-				ba ban bi bin bla bug byn
-				cay ch chk chm cho chp chy clc co crg crj crk crl crm crr csw
-				dak dar dgr dv dzg
-				efi eka
-				fj fon frc
-				gaa gez gil gn gor gwi
-				hai hax hil hmn ht hup hur hz
-				iba ibb ikt ilo inh io iu
-				jbo
-				kac kaj kbd kcg kfo kha kj kmb kpe kr krc krl kru kum kv kwk
-				la lad lez li lil lou loz lsm lua lun lus
-				mad mag mak mdf men mh mic min moe moh mos mus mwl myv
-				na nap new ng nia niu nog nqo nr nso nv ny
-				oc ojb ojc ojs ojw oka
-				pag pam pau pqm
-				rap rar rhg rup
-				sad sba scn sco shn slh sm snk srn ss st str suk swb syr
-				tce tem tet tgx tht tig tlh tli tn tpi trv ts ttm tum tvl ty tyv
-				udm umb
-				ve
-				wa wal war wuu
-				xal
-				ybb
-				zun zza
+				rm
+				sah sc syr szl
+				to
+				ug
+				vec vmw
+				xnr
+				yrl
+				za
+				mul root zxx und
 			</variable>
-			<!-- The following are not in modern coverage: -->
-			<variable id='$oldLanguages' type='choice'>
-				aa
-				crs
-				gan
-				hak hsn
-				nan
-				quc
-				sma smj sms ssy
+			<!-- The following have not yet made it to Basic -->
+			<variable id='$languageNonTcLtBasic' type='choice'>
+				 aa ab agq ak an ann apc arn asa
+				 ba bal bas bem bew bez bgn blt bm bo bss byn
+				 cad cch ccp ce cgg cho cic ckb co cu
+				 dav dje dua dv dyo dz
+				 ebu ee ewo
+				 ff frr fur
+				 gaa gez gn gsw guz gv
+				 haw hnj
+				 ii io iu
+				 jbo jgo jmc
+				 kaa kab kaj kam kcg kde ken khq ki kkj kl kln kpe ksb ksf ksh kw
+				 la lag lg lkt lld ln lrc ltg lu luo luy
+				 mas mdf mer mfe mhn mg mgh mgo mic moh mua mus myv mzn
+				 naq nb nd nmg nnh nr nso nus nv ny nyn om
+				 os osa
+				 pap pis
+				 quc
+				 rhg rif rn rof rw rwk
+				 saq sbp scn sdh se seh ses sg shi shn sid skr sma smj smn sms sn ss ssy st
+				 teo tig tn tok tpi trv trw ts twq tyv tzm
+				 vai ve vo vun
+				 wa wae wal wbp
+				 xog
+				 yav yi
+				 zgh
 			</variable>
 			<variable id='$scriptNonUnicode' type='choice'>Afak Aran Blis Cirt Cyrs Egyd Egyh Geok Inds Jurc Kitl Kpel Latf Latg Loma Maya Moon
 				Nkgb Phlv Roro Sara Syre Syrj Syrn Teng Visp Wole

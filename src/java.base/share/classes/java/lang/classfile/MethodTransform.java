@@ -31,6 +31,8 @@ import java.util.function.Supplier;
 import jdk.internal.classfile.impl.TransformImpl;
 import jdk.internal.javac.PreviewFeature;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * A transformation on streams of {@link MethodElement}.
  *
@@ -62,6 +64,7 @@ public non-sealed interface MethodTransform
      * @return the stateful method transform
      */
     static MethodTransform ofStateful(Supplier<MethodTransform> supplier) {
+        requireNonNull(supplier);
         return new TransformImpl.SupplierMethodTransform(supplier);
     }
 
@@ -73,6 +76,7 @@ public non-sealed interface MethodTransform
      * @return the method transform
      */
     static MethodTransform endHandler(Consumer<MethodBuilder> finisher) {
+        requireNonNull(finisher);
         return new MethodTransform() {
             @Override
             public void accept(MethodBuilder builder, MethodElement element) {
@@ -94,6 +98,7 @@ public non-sealed interface MethodTransform
      * @return the method transform
      */
     static MethodTransform dropping(Predicate<MethodElement> filter) {
+        requireNonNull(filter);
         return (b, e) -> {
             if (!filter.test(e))
                 b.with(e);
@@ -108,7 +113,7 @@ public non-sealed interface MethodTransform
      * @return the class transform
      */
     static MethodTransform transformingCode(CodeTransform xform) {
-        return new TransformImpl.MethodCodeTransform(xform);
+        return new TransformImpl.MethodCodeTransform(requireNonNull(xform));
     }
 
     /**
@@ -120,6 +125,6 @@ public non-sealed interface MethodTransform
      */
     @Override
     default MethodTransform andThen(MethodTransform t) {
-        return new TransformImpl.ChainedMethodTransform(this, t);
+        return new TransformImpl.ChainedMethodTransform(this, requireNonNull(t));
     }
 }

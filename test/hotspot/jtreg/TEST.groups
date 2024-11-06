@@ -42,10 +42,6 @@ hotspot_compiler_xcomp = \
   :hotspot_compiler \
   -:tier1_compiler_not_xcomp
 
-hotspot_compiler_all_gcs = \
-  :hotspot_compiler \
-  -compiler/jvmci
-
 hotspot_gc = \
   gc
 
