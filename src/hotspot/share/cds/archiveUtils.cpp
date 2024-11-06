@@ -426,8 +426,8 @@ bool ArchiveWorkers::is_parallel() {
 }
 
 void ArchiveWorkers::shutdown() {
-  if (is_parallel()) {
-    if (Atomic::cmpxchg(&_state, state_initialized, state_shutdown, memory_order_relaxed) == false) {
+  if (Atomic::cmpxchg(&_state, state_initialized, state_shutdown, memory_order_relaxed) == state_initialized) {
+    if (is_parallel()) {
       // Execute a shutdown task and block until all workers respond.
       run_task(&_shutdown_task);
     }
