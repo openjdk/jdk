@@ -360,7 +360,9 @@ private:
   int _waiting_workers;
   int _running_workers;
 
-  enum { state_uninitialized, state_initialized, state_shutdown} _state;
+  enum { NOT_READY, READY, SHUTDOWN }
+  volatile _state;
+
   ArchiveWorkerTask* _task;
 
   bool run_as_worker();

@@ -399,15 +399,15 @@ ArchiveWorkers::ArchiveWorkers() :
         _started_workers(0),
         _waiting_workers(0),
         _running_workers(0),
-        _state(state_uninitialized),
+        _state(NOT_READY),
         _task(nullptr) {
 }
 
 void ArchiveWorkers::initialize() {
-  assert(Atomic::load(&_state) == state_uninitialized, "Should be");
+  assert(Atomic::load(&_state) == NOT_READY, "Should be");
 
   Atomic::store(&_num_workers, max_workers());
-  Atomic::store(&_state, state_initialized);
+  Atomic::store(&_state, READY);
 
   // Kick off pool startup by creating a single worker.
   start_worker_if_needed();
@@ -426,7 +426,7 @@ bool ArchiveWorkers::is_parallel() {
 }
 
 void ArchiveWorkers::shutdown() {
-  if (Atomic::cmpxchg(&_state, state_initialized, state_shutdown, memory_order_relaxed) == state_initialized) {
+  if (Atomic::cmpxchg(&_state, READY, SHUTDOWN, memory_order_relaxed) == READY) {
     if (is_parallel()) {
       // Execute a shutdown task and block until all workers respond.
       run_task(&_shutdown_task);
@@ -441,11 +441,10 @@ void ArchiveWorkers::start_worker_if_needed() {
       return;
     }
     if (Atomic::cmpxchg(&_started_workers, cur, cur + 1, memory_order_relaxed) == cur) {
-      break;
+      new ArchiveWorkerThread(this);
+      return;
     }
   }
-
-  new ArchiveWorkerThread(this);
 }
 
 void ArchiveWorkers::signal_worker_if_needed() {
@@ -455,15 +454,15 @@ void ArchiveWorkers::signal_worker_if_needed() {
       return;
     }
     if (Atomic::cmpxchg(&_waiting_workers, cur, cur - 1, memory_order_relaxed) == cur) {
-      break;
+      _start_semaphore.signal(1);
+      return;
     }
   }
-  _start_semaphore.signal(1);
 }
 
 void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
-  assert((Atomic::load(&_state) == state_initialized) ||
-         ((Atomic::load(&_state) == state_shutdown) && (task == &_shutdown_task)),
+  assert((Atomic::load(&_state) == READY) ||
+         ((Atomic::load(&_state) == SHUTDOWN) && (task == &_shutdown_task)),
          "Should be in correct state");
   assert(Atomic::load(&_task) == nullptr, "Should not have running tasks");
 
