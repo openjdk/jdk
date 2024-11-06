@@ -403,7 +403,7 @@ class VirtualMemoryTracker : AllStatic {
       return _lock != nullptr;
     }
 
-    static bool force_unlock() {
+    static void force_unlock() {
       assert(Thread::current_or_null_safe() == _owner, "must own the lock to force unlock");
       _lock->unlock();
     }
