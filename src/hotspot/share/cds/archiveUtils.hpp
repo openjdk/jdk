@@ -360,8 +360,8 @@ private:
   int _waiting_workers;
   int _running_workers;
 
-  enum { NOT_READY, READY, SHUTDOWN }
-  volatile _state;
+  typedef enum { NOT_READY, READY, SHUTDOWN } State;
+  volatile State _state;
 
   ArchiveWorkerTask* _task;
 

@@ -1536,6 +1536,9 @@ void MetaspaceShared::initialize_shared_spaces() {
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
+  // Archive was fully read. Workers are no longer needed.
+  ArchiveWorkers::workers()->shutdown();
+
   // Set up LambdaFormInvokers::_lambdaform_lines for dynamic dump
   if (CDSConfig::is_dumping_dynamic_archive()) {
     // Read stored LF format lines stored in static archive
@@ -1573,9 +1576,6 @@ void MetaspaceShared::initialize_shared_spaces() {
       vm_exit(0);
     }
   }
-
-  // Workers are no longer needed.
-  ArchiveWorkers::workers()->shutdown();
 }
 
 // JVM/TI RedefineClasses() support:

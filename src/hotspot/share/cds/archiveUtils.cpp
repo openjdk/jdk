@@ -426,10 +426,17 @@ bool ArchiveWorkers::is_parallel() {
 }
 
 void ArchiveWorkers::shutdown() {
-  if (Atomic::cmpxchg(&_state, READY, SHUTDOWN, memory_order_relaxed) == READY) {
-    if (is_parallel()) {
-      // Execute a shutdown task and block until all workers respond.
-      run_task(&_shutdown_task);
+  while (true) {
+    State state = Atomic::load(&_state);
+    if (state == SHUTDOWN) {
+      // Already shut down.
+      return;
+    }
+    if (Atomic::cmpxchg(&_state, state, SHUTDOWN, memory_order_relaxed) == state) {
+      if (is_parallel()) {
+        // Execute a shutdown task and block until all workers respond.
+        run_task(&_shutdown_task);
+      }
     }
   }
 }
