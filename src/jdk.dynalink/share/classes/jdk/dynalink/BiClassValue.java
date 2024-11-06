@@ -112,8 +112,8 @@ final class BiClassValue<T> {
             return reverse.get(c);
         }
 
+        @SuppressWarnings({"unchecked", "rawtypes"})
         private T compute(final VarHandle mapHandle, final Class<?> c, final Function<Class<?>, T> compute) {
-            @SuppressWarnings("unchecked")
             Map<Class<?>, T> map = (Map<Class<?>, T>) mapHandle.getVolatile(this);
             T value;
             T newValue = null;
@@ -124,11 +124,9 @@ final class BiClassValue<T> {
                         break;
                     }
                 }
-                @SuppressWarnings({"unchecked", "rawtypes"})
                 final Map.Entry<Class<?>, T>[] entries = map.entrySet().toArray(new Map.Entry[map.size() + 1]);
                 entries[map.size()] = Map.entry(c, newValue);
                 final var newMap = Map.ofEntries(entries);
-                @SuppressWarnings("unchecked")
                 final var witness = (Map<Class<?>, T>) mapHandle.compareAndExchange(this, map, newMap);
                 if (witness == map) {
                     value = newValue;
