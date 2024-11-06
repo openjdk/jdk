@@ -4219,9 +4219,9 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
     assert_alignment(call_pc);
   }
 #endif
+
   relocate(entry.rspec(), [&] {
-    int64_t distance = target - pc();
-    assert(is_simm32(distance), "Must be");
+    int64_t distance = 0;
     auipc(tmp, (int32_t)distance + 0x800);
     ld(tmp, Address(tmp, ((int32_t)distance << 20) >> 20));
     jalr(tmp);
