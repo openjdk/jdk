@@ -29,9 +29,10 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
 
+class Thread;
+
 // Mutexes used in the VM.
 
-extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Mutex*   NMethodState_lock;               // a lock used to guard a compiled method state
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   InvokeMethodTypeTable_lock;
@@ -116,6 +117,7 @@ extern Mutex*   SharedDecoder_lock;              // serializes access to the dec
 extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFactory information
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
 extern Mutex*   NMTCompilationCostHistory_lock;  // guards NMT compilation cost history
+extern Mutex*   NmtVirtualMemory_lock;           // guards NMT virtual memory updates
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti

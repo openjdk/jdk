@@ -25,10 +25,11 @@
 
 package java.lang.classfile.constantpool;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.ClassReader;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 import jdk.internal.javac.PreviewFeature;
 
 /**

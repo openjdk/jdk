@@ -129,11 +129,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</eras>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="MMMMW" count="one" draft="contributed">W. 'sjedmica' 'u' MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="few" draft="contributed">W. 'sjedmica' 'u' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one" draft="contributed">MMMM: W. 'nedelja'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="few" draft="contributed">MMMM: W. 'nedelja'</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other" draft="contributed">W. 'sjedmica' 'u' MMMM</dateFormatItem>
-						<dateFormatItem id="yw" count="one" draft="contributed">w. 'sjedmica' 'u' Y.</dateFormatItem>
-						<dateFormatItem id="yw" count="few" draft="contributed">w. 'sjedmica' 'u' Y.</dateFormatItem>
+						<dateFormatItem id="yw" count="one" draft="contributed">w. 'nedelja' 'u' Y.</dateFormatItem>
+						<dateFormatItem id="yw" count="few" draft="contributed">w. 'nedelja' 'u' Y.</dateFormatItem>
 						<dateFormatItem id="yw" count="other" draft="contributed">w. 'sjedmica' 'u' Y.</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>

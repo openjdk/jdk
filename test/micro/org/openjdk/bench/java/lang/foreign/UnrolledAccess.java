@@ -30,7 +30,7 @@ import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -40,7 +40,7 @@ import static java.lang.foreign.ValueLayout.*;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED" })
 public class UnrolledAccess extends JavaLayouts {
 
     static final Unsafe U = Utils.unsafe;

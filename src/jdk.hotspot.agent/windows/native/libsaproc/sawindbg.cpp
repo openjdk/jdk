@@ -99,7 +99,7 @@ class AutoJavaString {
   const char* m_buf;
 
 public:
-  // check env->ExceptionOccurred() after ctor
+  // check env->ExceptionCheck() after ctor
   AutoJavaString(JNIEnv* env, jstring str)
     : m_env(env), m_str(str), m_buf(str == nullptr ? nullptr : env->GetStringUTFChars(str, nullptr)) {
   }
@@ -122,7 +122,7 @@ class AutoJavaByteArray {
   jint releaseMode;
 
 public:
-  // check env->ExceptionOccurred() after ctor
+  // check env->ExceptionCheck() after ctor
   AutoJavaByteArray(JNIEnv* env, jbyteArray byteArray, jint releaseMode = JNI_ABORT)
     : env(env), byteArray(byteArray),
       bytePtr(env->GetByteArrayElements(byteArray, nullptr)),
@@ -164,8 +164,8 @@ static jmethodID addThread_ID                   = 0;
 static jmethodID createClosestSymbol_ID         = 0;
 static jmethodID setThreadIntegerRegisterSet_ID = 0;
 
-#define CHECK_EXCEPTION_(value) if (env->ExceptionOccurred()) { return value; }
-#define CHECK_EXCEPTION if (env->ExceptionOccurred()) { return; }
+#define CHECK_EXCEPTION_(value) if (env->ExceptionCheck()) { return value; }
+#define CHECK_EXCEPTION if (env->ExceptionCheck()) { return; }
 
 #define THROW_NEW_DEBUGGER_EXCEPTION_(str, value) { \
                           throwNewDebuggerException(env, str); return value; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,18 +48,4 @@ Java_java_io_Console_istty(JNIEnv *env, jclass cls)
     }
 
     return JNI_TRUE;
-}
-
-JNIEXPORT jstring JNICALL
-Java_java_io_Console_encoding(JNIEnv *env, jclass cls)
-{
-    char buf[64];
-    int cp = GetConsoleCP();
-    if (cp >= 874 && cp <= 950)
-        snprintf(buf, sizeof(buf), "ms%d", cp);
-    else if (cp == 65001)
-        snprintf(buf, sizeof(buf), "UTF-8");
-    else
-        snprintf(buf, sizeof(buf), "cp%d", cp);
-    return JNU_NewStringPlatform(env, buf);
 }

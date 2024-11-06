@@ -939,31 +939,28 @@ private:
   }
 
 #ifdef ASSERT
-  void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
+  static void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
-  void copy_assertion_predicates_to_main_loop_helper(const PredicateBlock* predicate_block, Node* init, Node* stride,
-                                                     IdealLoopTree* outer_loop, LoopNode* outer_main_head,
-                                                     uint dd_main_head, uint idx_before_pre_post,
-                                                     uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
-                                                     Node* zero_trip_guard_proj_post, const Node_List &old_new);
-  void copy_assertion_predicates_to_main_loop(CountedLoopNode* pre_head, Node* init, Node* stride, IdealLoopTree* outer_loop,
-                                              LoopNode* outer_main_head, uint dd_main_head, uint idx_before_pre_post,
-                                              uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
-                                              Node* zero_trip_guard_proj_post, const Node_List& old_new);
-  Node* clone_template_assertion_predicate(IfNode* iff, Node* new_init, Node* predicate, Node* uncommon_proj, Node* control,
-                                           IdealLoopTree* outer_loop, Node* input_proj);
+ public:
   IfTrueNode* create_initialized_assertion_predicate(IfNode* template_assertion_predicate, Node* new_init,
                                                      Node* new_stride, Node* control);
-  static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
-  static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
+  DEBUG_ONLY(static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);)
+ private:
+  DEBUG_ONLY(static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);)
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
-  void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head,
-                                              Node* stride);
-  void initialize_assertion_predicates_for_peeled_loop(const PredicateBlock* predicate_block, LoopNode* outer_loop_head,
-                                                       int dd_outer_loop_head, Node* init, Node* stride,
-                                                       IdealLoopTree* outer_loop, uint idx_before_clone,
+  void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
+                                                       CountedLoopNode* remaining_loop_head,
+                                                       uint first_node_index_in_cloned_loop_body,
                                                        const Node_List& old_new);
+  void initialize_assertion_predicates_for_main_loop(CountedLoopNode* pre_loop_head,
+                                                     CountedLoopNode* main_loop_head,
+                                                     uint first_node_index_in_cloned_loop_body,
+                                                     const Node_List& old_new);
+  void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
+                                                     uint first_node_index_in_cloned_loop_body);
+  void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
+                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
   void log_loop_tree();
@@ -1133,6 +1130,8 @@ private:
     DEBUG_ONLY(C->reset_phase_verify_ideal_loop();)
   }
 #endif
+
+  Node* insert_convert_node_if_needed(BasicType target, Node* input);
 
 public:
   Node* idom_no_update(Node* d) const {
@@ -1384,20 +1383,17 @@ public:
  private:
   bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
                                     ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl, ConNode* zero,
-                                    Invariance& invar, Deoptimization::DeoptReason reason);
+                                    Invariance& invar, Deoptimization::DeoptReason deopt_reason);
   bool can_create_loop_predicates(const PredicateBlock* profiled_loop_predicate_block) const;
   bool loop_predication_should_follow_branches(IdealLoopTree* loop, float& loop_trip_cnt);
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
-  IfTrueNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
-                                               ParsePredicateSuccessProj* parse_predicate_proj,
-                                               IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
-                                               jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
+  IfTrueNode* create_template_assertion_predicate(int if_opcode, CountedLoopNode* loop_head,
+                                                  ParsePredicateSuccessProj* parse_predicate_proj,
+                                                  IfProjNode* new_control, int scale, Node* offset,
+                                                  Node* range, Deoptimization::DeoptReason deopt_reason);
   void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
-  Node* add_range_check_elimination_assertion_predicate(
-      IdealLoopTree* loop, Node* predicate_proj, int scale_con, Node* offset, Node* limit, int stride_con, Node* value,
-      bool is_template NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None));
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates();

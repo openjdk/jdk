@@ -2422,13 +2422,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="unconfirmed">oa de stæ da Ciña</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic draft="unconfirmed">oa de Choibalsan</generic>
-					<standard draft="unconfirmed">oa standard de Choibalsan</standard>
-					<daylight draft="unconfirmed">oa de stæ de Choibalsan</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard draft="unconfirmed">oa de l’isoa Christmas</standard>
