@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.test.lib.security.DiffieHellmanGroup;
 
 /**
  * Common library for various security test helper functions.
@@ -144,6 +145,25 @@ public final class SecurityUtils {
             case "DSA" -> KeySize.DSA.keySize;
             case "DH", "DiffieHellman" -> KeySize.DH.keySize;
             default -> throw new RuntimeException("Test key size not defined for " + algo);
+        };
+    }
+
+    /**
+     * Returns a DH predefined group for tests
+     */
+    public static DiffieHellmanGroup getTestDHGroup() {
+        return getTestDHGroup(2048);
+    }
+
+    /**
+     * Returns a DH predefined group for tests, depending on the specified prime size
+     */
+    public static DiffieHellmanGroup getTestDHGroup(int primeSize) {
+        return switch(primeSize) {
+            case 2048 -> DiffieHellmanGroup.ffdhe2048;
+            case 3072 -> DiffieHellmanGroup.ffdhe3072;
+            case 4096 -> DiffieHellmanGroup.ffdhe4096;
+            default -> throw new RuntimeException("Test DH group not defined for " + primeSize);
         };
     }
 
