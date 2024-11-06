@@ -378,6 +378,37 @@ class VirtualMemoryTracker : AllStatic {
   friend class CommittedVirtualMemoryTest;
 
  public:
+  class Locker {
+    static PlatformMutex* _lock;
+    static Thread* _owner;
+  public:
+    static void initialize();
+
+    Locker(Thread* owner = Thread::current_or_null_safe()) {
+      assert(_lock != nullptr, "must");
+      assert(_owner == nullptr, "lock is not recursive");
+      _lock->lock();
+      _owner = owner;
+    }
+    ~Locker() {
+      _lock->unlock();
+      _owner = nullptr;
+    }
+
+    static bool owned_by(Thread* thr) {
+      return thr == _owner;
+    }
+
+    static bool is_initialized() {
+      return _lock != nullptr;
+    }
+
+    static bool force_unlock() {
+      assert(Thread::current_or_null_safe() == _owner, "must own the lock to force unlock");
+      _lock->unlock();
+    }
+  };
+
   static bool initialize(NMT_TrackingLevel level);
 
   static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MemTag mem_tag = mtNone);

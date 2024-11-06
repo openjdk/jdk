@@ -322,8 +322,15 @@ address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
   return bottom;
 }
 
+
+void VirtualMemoryTracker::Locker::initialize() {
+  _lock = new PlatformMutex();
+  _owner = nullptr;
+}
+
 bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   assert(_reserved_regions == nullptr, "only call once");
+  Locker::initialize();
   if (level >= NMT_summary) {
     _reserved_regions = new (std::nothrow, mtNMT)
       SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
@@ -620,7 +627,7 @@ public:
   SnapshotThreadStackWalker() {}
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
-    assert_lock_strong(NmtVirtualMemory_lock);
+    assert(VirtualMemoryTracker::Locker::owned_by(Thread::current_or_null_safe()), "must be");
     if (rgn->mem_tag() == mtThreadStack) {
       address stack_bottom = rgn->thread_stack_uncommitted_bottom();
       address committed_start;
@@ -661,7 +668,7 @@ void VirtualMemoryTracker::snapshot_thread_stacks() {
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   assert(_reserved_regions != nullptr, "Sanity check");
-  NmtVirtualMemoryLocker ml;
+  Locker l;
   // Check that the _reserved_regions haven't been deleted.
   if (_reserved_regions != nullptr) {
     LinkedListNode<ReservedMemoryRegion>* head = _reserved_regions->head();
