@@ -1112,14 +1112,38 @@ public class AWTEventMulticaster implements
      * are counted.  Method modified to fix bug 4513402.  -bchristi
      */
     private static int getListenerCount(EventListener l, Class<?> listenerType) {
-        if (l instanceof AWTEventMulticaster) {
-            AWTEventMulticaster mc = (AWTEventMulticaster)l;
-            return getListenerCount(mc.a, listenerType) +
-             getListenerCount(mc.b, listenerType);
-        }
-        else {
-            // Only count listeners of correct type
+        if (!(l instanceof AWTEventMulticaster in))
             return listenerType.isInstance(l) ? 1 : 0;
+
+        AWTEventMulticaster node = in;
+        int returnValue = 0;
+
+        while (true) {
+            if (node.a instanceof AWTEventMulticaster aMulticaster) {
+                if (node.b instanceof AWTEventMulticaster) {
+                    // If both are AWTEventMulticasters: then we have to use recursion
+                    return returnValue +
+                            getListenerCount(node.a, listenerType) +
+                            getListenerCount(node.b, listenerType);
+                }
+
+                if (listenerType.isInstance(node.b))
+                    returnValue++;
+
+                node = aMulticaster;
+            } else if (node.b instanceof AWTEventMulticaster bMulticaster) {
+
+                if (listenerType.isInstance(node.a))
+                    returnValue++;
+
+                node = bMulticaster;
+            } else {
+                if (listenerType.isInstance(node.a))
+                    returnValue++;
+                if (listenerType.isInstance(node.b))
+                    returnValue++;
+                return returnValue;
+            }
         }
     }
 
@@ -1129,20 +1153,50 @@ public class AWTEventMulticaster implements
      * if l differed in type from the element type of a, an ArrayStoreException
      * would occur.  Now l is only inserted into a if it's of the appropriate
      * type.  -bchristi
+     *
+     * @param a the array to populate
+     * @param l the listener to populate the array with. This is sometimes a
+     *          AWTEventMulticaster.
+     * @param rangeStart the first index in the array to store a listener in
+     * @param rangeEnd the last index in the array to store a listener in
      */
-    private static int populateListenerArray(EventListener[] a, EventListener l, int index) {
-        if (l instanceof AWTEventMulticaster) {
-            AWTEventMulticaster mc = (AWTEventMulticaster)l;
-            int lhs = populateListenerArray(a, mc.a, index);
-            return populateListenerArray(a, mc.b, lhs);
-        }
-        else if (a.getClass().getComponentType().isInstance(l)) {
-            a[index] = l;
-            return index + 1;
-        }
-        // Skip nulls, instances of wrong class
-        else {
-            return index;
+    private static void populateListenerArray(EventListener[] a, EventListener l, int rangeStart, int rangeEnd) {
+        Class<?> componentType = a.getClass().getComponentType();
+        if (!(l instanceof AWTEventMulticaster in)) {
+            if (componentType.isInstance(l)) {
+                a[rangeStart++] = l;
+            }
+        } else {
+            AWTEventMulticaster node = in;
+            while (true) {
+                if (node.a instanceof AWTEventMulticaster aMulticaster) {
+                    if (node.b instanceof AWTEventMulticaster) {
+                        // we have to resort to recursion here:
+
+                        int nodeA_size = getListenerCount(node.a, componentType);
+                        populateListenerArray(a, node.a, rangeStart, rangeStart + nodeA_size - 1);
+                        populateListenerArray(a, node.b, rangeStart + nodeA_size, rangeEnd);
+                        break;
+                    }
+                    if (componentType.isInstance(node.b)) {
+                        a[rangeEnd--] = node.b;
+                    }
+                    node = aMulticaster;
+                } else if (node.b instanceof AWTEventMulticaster bMulticaster) {
+                    if (componentType.isInstance(node.a)) {
+                        a[rangeStart++] = node.a;
+                    }
+                    node = bMulticaster;
+                } else {
+                    if (componentType.isInstance(node.a)) {
+                        a[rangeStart++] = node.a;
+                    }
+                    if (componentType.isInstance(node.b)) {
+                        a[rangeEnd--] = node.b;
+                    }
+                    break;
+                }
+            }
         }
     }
 
@@ -1186,7 +1240,7 @@ public class AWTEventMulticaster implements
 
         int n = getListenerCount(l, listenerType);
         T[] result = (T[])Array.newInstance(listenerType, n);
-        populateListenerArray(result, l, 0);
+        populateListenerArray(result, l, 0, result.length - 1);
         return result;
     }
 }
