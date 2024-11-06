@@ -281,11 +281,20 @@ public class JMXBench {
             mbsc.setAttribute(o, updatedAttribute);
             t.stop();
             t = new Timer(id + " getAttribute (updated attribute, known to exist)");
-            boolean isVerboseChanged = (boolean) mbsc.getAttribute(o, "Verbose");
+            boolean updatedIsVerbose = (boolean) mbsc.getAttribute(o, "Verbose");
             t.stop();
-
             System.out.println("updated attr = " + attr);
-            Asserts.assertTrue(isVerbose != isVerboseChanged, "Verbose setting not changed: " + isVerboseChanged);
+            Asserts.assertTrue(isVerbose != updatedIsVerbose, "Verbose setting not changed: " + updatedIsVerbose);
+
+            // Put it back: set Verbose to the opposite of what it now is.
+            updatedAttribute = new Attribute("Verbose", (Boolean) !updatedIsVerbose);
+            t = new Timer(id + " setAttribute (updating again, known to exist)");
+            mbsc.setAttribute(o, updatedAttribute);
+            t.stop();
+            t = new Timer(id + " getAttribute again (updated attribute, known to exist)");
+            updatedIsVerbose = (boolean) mbsc.getAttribute(o, "Verbose");
+            t.stop();
+            Asserts.assertTrue(isVerbose == updatedIsVerbose, "Verbose setting not changed back: " + updatedIsVerbose);
         }
 
         System.out.println("Closing the client ...");
@@ -330,7 +339,7 @@ public class JMXBench {
 
         public void stop() {
             long t = System.nanoTime() - t1;
-            System.out.println("Timer: " + s + ": " + t + " nanos, or " + ((float) t/1000000) + " millis");
+            System.out.println("Timer: " + String.format("%-70s", s, 70) + ": " + ((float) t/1000000) + " millis");
         }
     }
 }

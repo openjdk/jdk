@@ -42,6 +42,7 @@ public class HttpResponse {
     public static final HttpResponse METHOD_NOT_ALLOWED = new HttpResponse(HttpURLConnection.HTTP_BAD_METHOD, "Method not allowed");
     public static final HttpResponse BAD_REQUEST = new HttpResponse(HttpURLConnection.HTTP_BAD_REQUEST, "Bad request");
     public static final HttpResponse REQUEST_NOT_FOUND = new HttpResponse(HttpURLConnection.HTTP_NOT_FOUND, "Request not found");
+    // Exception from MBeanServer during operation? XXXX
 
     private final int code;
     private final String message;

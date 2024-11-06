@@ -43,6 +43,7 @@ import javax.management.MBeanServerDelegateMBean;
 import javax.management.remote.JMXAuthenticator;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXServerErrorException;
 import javax.security.auth.Subject;
 
 import jdk.internal.management.remote.rest.JMXRestAdapter;
@@ -238,11 +239,16 @@ public final class MBeanServerResource implements RestResource, JMXRestAdapter {
         String pathPrefix = httpContext.getPath();
 
         // Route request to appropriate resource
+        try {
         if (path.matches(pathPrefix + "/?$")) {
             RestResource.super.handle(exchange);
         } else if (path.matches(pathPrefix + "/mbeans.*")) { // startsWith XXXX
             mBeansResource.handle(exchange);
         } else {
+            HttpUtil.sendResponse(exchange, HttpResponse.REQUEST_NOT_FOUND);
+        }
+        } catch (JMXServerErrorException jse) {
+            // Exception response XXXX
             HttpUtil.sendResponse(exchange, HttpResponse.REQUEST_NOT_FOUND);
         }
     }
