@@ -196,17 +196,6 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         layoutButtons.add(cfgLayoutButton);
         toolBar.add(cfgLayoutButton);
 
-        diagramViewModel.getGraphChangedEvent().addListener(model -> {
-            // HierarchicalStableLayoutManager is not reliable for difference graphs
-            boolean isDiffGraph = model.getGraph().isDiffGraph();
-            // deactivate HierarchicalStableLayoutManager for difference graphs
-            stableSeaLayoutButton.setEnabled(!isDiffGraph);
-            if (stableSeaLayoutButton.isSelected() && isDiffGraph) {
-                // fallback to HierarchicalLayoutManager for difference graphs
-                seaLayoutButton.setSelected(true);
-            }
-        });
-
         toolBar.addSeparator();
         toolBar.add(new JToggleButton(new PredSuccAction(diagramViewModel.getShowNodeHull())));
         toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, diagramViewModel.getShowEmptyBlocks())));
