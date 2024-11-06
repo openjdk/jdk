@@ -74,6 +74,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 layer.sortNodesByXAndSetPositions();
             }
         } else { // only remove edges if we moved the node to a new layer
+            if (maxLayerLength > 0) return; // TODO: not implemented
             graph.removeNodeAndEdges(movedNode);
             layerNr = graph.insertNewLayerIfNeeded(movedNode, layerNr);
             graph.addNodeToLayer(movedNode, layerNr);
