@@ -17,7 +17,7 @@ import javax.crypto.spec.SecretKeySpec;
 public final class ML_KEM {
 
     private final int mlKem_size;
-    public final int mlKem_k;
+    private final int mlKem_k;
     private final int mlKem_eta1;
     private final int mlKem_eta2;
 
@@ -27,7 +27,7 @@ public final class ML_KEM {
 
     public static final int secretSize = 32;
 
-    public static final int mlKem_q = 3329;
+    private static final int mlKem_q = 3329;
     private static final int mlKem_n = 256;
 
     // mlKemXofBlockLen + mlKemXofPad should be divisible by 192 as that is
@@ -425,6 +425,52 @@ public final class ML_KEM {
 
     public record ML_KEM_EncapsulateResult(
             K_PKE_CipherText cipherText, byte[] sharedSecret) {
+    }
+
+    /*
+    Key check functions from the beginning of sections 7.2 and 7.3 of the spec
+     */
+    public Object checkPublicKey(byte[] pk) throws InvalidKeyException {
+        //Encapsulation key type check
+        if (pk.length != mlKem_k * 384 + 32) {
+            throw new InvalidKeyException("Public key is not the correct size");
+        }
+
+        //Encapsulation key modulus check
+        int x, y, z, a, b;
+        for (int i = 0; i < mlKem_k * 384; i += 3) {
+            x = pk[i] & 0xFF;
+            y = pk[i + 1] & 0xFF;
+            z = pk[i + 2] & 0xFF;
+            a = x + ((y & 0xF) << 8);
+            b = (y >> 4) + (z << 4);
+            if ((a >= mlKem_q) || (b >= mlKem_q)) {
+                throw new InvalidKeyException("Coefficients in public key not in specified range");
+            }
+        }
+        return null;
+    }
+
+    public Object checkPrivateKey(byte[] sk) throws InvalidKeyException {
+        MessageDigest mlKemH;
+        try {
+            mlKemH = MessageDigest.getInstance("SHA3-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+
+        //Decapsulation key type check
+        if (sk.length != mlKem_k * 768 + 96) {
+            throw new InvalidKeyException("Private key is not the correct size");
+        }
+
+        //Decapsulation hash check
+        mlKemH.update(sk, mlKem_k * 384, mlKem_k * 384 + 32);
+        byte[] check = Arrays.copyOfRange(sk, mlKem_k * 768 + 32, mlKem_k * 768 + 64);
+        if (!MessageDigest.isEqual(mlKemH.digest(), check)) {
+            throw new InvalidKeyException("Private key hash check failed");
+        }
+        return null;
     }
 
     /*
