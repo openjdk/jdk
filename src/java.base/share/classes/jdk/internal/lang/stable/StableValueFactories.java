@@ -1,6 +1,9 @@
 package jdk.internal.lang.stable;
 
+import jdk.internal.access.SharedSecrets;
+
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -37,16 +40,15 @@ public final class StableValueFactories {
                 : StableFunction.of(inputs, original);
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T, R extends Enum<R>> EnumSet<R> asEnumSet(Set<? extends T> original) {
-        return (EnumSet<R>) original;
+    public static <E> List<E> ofList(int size, IntFunction<? extends E> mapper) {
+        return SharedSecrets.getJavaUtilCollectionAccess().stableList(size, mapper);
     }
 
-    public static <T extends Enum<T>, R> Function<T, R> newCachingEnumFunction(EnumSet<T> inputs,
-                                                                               Function<? super T, ? extends R> original) {
-
-        return StableEnumFunction.of(inputs, original);
+    public static <K, V> Map<K, V> ofMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+        return SharedSecrets.getJavaUtilCollectionAccess().stableMap(keys, mapper);
     }
+
+    // Supporting methods
 
     public static <T> StableValueImpl<T>[] ofArray(int size) {
         if (size < 0) {

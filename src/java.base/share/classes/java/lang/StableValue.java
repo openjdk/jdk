@@ -556,7 +556,7 @@ public sealed interface StableValue<T>
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(mapper);
-        return SharedSecrets.getJavaUtilCollectionAccess().stableList(size, mapper);
+        return StableValueFactories.ofList(size, mapper);
     }
 
     /**
@@ -584,7 +584,7 @@ public sealed interface StableValue<T>
     static <K, V> Map<K, V> ofMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
         Objects.requireNonNull(keys);
         Objects.requireNonNull(mapper);
-        return SharedSecrets.getJavaUtilCollectionAccess().stableMap(keys, mapper);
+        return StableValueFactories.ofMap(keys, mapper);
     }
 
 }
