@@ -39,7 +39,7 @@
 #include "gc/shenandoah/shenandoahMarkClosures.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"

@@ -22,25 +22,14 @@
  */
 
 /*
- * @test id=ZSinglegen
+ * @test id=Z
  * @key stress randomness
- * @requires vm.gc.ZSinglegen
+ * @requires vm.gc.Z
  * @bug 8237859
  * @summary A LoadP node has a wrong control input (too early) which results in an out-of-bounds read of an object array with ZGC.
  *
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational compiler.loopopts.TestRangeCheckPredicatesControl
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM compiler.loopopts.TestRangeCheckPredicatesControl
- */
-
-/*
- * @test id=ZGenerational
- * @key stress randomness
- * @requires vm.gc.ZGenerational
- * @bug 8237859
- * @summary A LoadP node has a wrong control input (too early) which results in an out-of-bounds read of an object array with ZGC.
- *
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational compiler.loopopts.TestRangeCheckPredicatesControl
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM compiler.loopopts.TestRangeCheckPredicatesControl
+ * @run main/othervm -XX:+UseZGC compiler.loopopts.TestRangeCheckPredicatesControl
+ * @run main/othervm -XX:+UseZGC -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM compiler.loopopts.TestRangeCheckPredicatesControl
  */
 
 package compiler.loopopts;

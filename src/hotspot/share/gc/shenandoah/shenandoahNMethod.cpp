@@ -28,7 +28,6 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/safepointVerifiers.hpp"
