@@ -727,6 +727,25 @@ do_stub(continuation, cont_returnBarrier)                               \
     do_stub(compiler, large_array_equals)                               \
     do_arch_entry(aarch64, compiler, large_array_equals,                \
                   large_array_equals, large_array_equals)               \
+    do_arch_entry(aarch64, compiler, large_arrays_hashcode_boolean,     \
+                  large_arrays_hashcode_boolean,                        \
+                  large_arrays_hashcode_boolean)                        \
+    do_stub(compiler, large_arrays_hashcode_byte)                       \
+    do_arch_entry(aarch64, compiler, large_arrays_hashcode_byte,        \
+                  large_arrays_hashcode_byte,                           \
+                  large_arrays_hashcode_byte)                           \
+    do_stub(compiler, large_arrays_hashcode_char)                       \
+    do_arch_entry(aarch64, compiler, large_arrays_hashcode_char,        \
+                  large_arrays_hashcode_char,                           \
+                  large_arrays_hashcode_char)                           \
+    do_stub(compiler, large_arrays_hashcode_short)                      \
+    do_arch_entry(aarch64, compiler, large_arrays_hashcode_short,       \
+                  large_arrays_hashcode_short,                          \
+                  large_arrays_hashcode_short)                          \
+    do_stub(compiler, large_arrays_hashcode_int)                        \
+    do_arch_entry(aarch64, compiler, large_arrays_hashcode_int,         \
+                  large_arrays_hashcode_int,                            \
+                  large_arrays_hashcode_int)                            \
     do_stub(compiler, large_byte_array_inflate)                         \
     do_arch_entry(aarch64, compiler, large_byte_array_inflate,          \
                   large_byte_array_inflate, large_byte_array_inflate)   \
