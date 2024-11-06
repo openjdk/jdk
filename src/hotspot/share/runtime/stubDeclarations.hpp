@@ -555,13 +555,13 @@
     do_stub(initial, float_sign_mask)                                   \
     do_arch_entry(x86, initial, float_sign_mask, float_sign_mask,       \
                   float_sign_mask)                                      \
-    do_stub(initial, float_sign_mask)                                   \
+    do_stub(initial, float_sign_flip)                                   \
     do_arch_entry(x86, initial, float_sign_flip, float_sign_flip,       \
                   float_sign_flip)                                      \
     do_stub(initial, double_sign_mask)                                  \
     do_arch_entry(x86, initial, double_sign_mask, double_sign_mask,     \
                   double_sign_mask)                                     \
-    do_stub(initial, double_sign_mask)                                  \
+    do_stub(initial, double_sign_flip)                                  \
     do_arch_entry(x86, initial, double_sign_flip, double_sign_flip,     \
                   double_sign_flip)                                     \
   )                                                                     \
