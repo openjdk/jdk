@@ -32,6 +32,14 @@ import sun.jvm.hotspot.types.WrongTypeException;
 import sun.jvm.hotspot.utilities.*;
 
 public class Mutex extends VMObject {
+  private static long          nameFieldOffset;
+  private static long          ownerFieldOffset;
+
+  private static AddressField mutex_array;
+  private static int           maxNum;
+
+  private static final long addrSize = VM.getVM().getAddressSize();
+
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -48,12 +56,7 @@ public class Mutex extends VMObject {
 
     f = type.getField("_owner");
     ownerFieldOffset = f.getOffset();
-
-    f = type.getField("_next");
-    nextOMFieldOffset = f.getOffset();
-
     mutex_array = type.getAddressField("_mutex_array");
-
     maxNum =  type.getCIntegerField("_num_mutex").getJInt();
 
   }
@@ -62,24 +65,13 @@ public class Mutex extends VMObject {
     super(addr);
   }
 
-
-
   public String name() { return CStringUtilities.getString(addr.getAddressAt(nameFieldOffset)); }
 
   public Address owner() { return addr.getAddressAt(ownerFieldOffset); }
 
-  public Address next() { return addr.getAddressAt(nextOMFieldOffset); }
-
-  public static Address at(int i) { return mutex_array.getValue().getAddressAt(i * 8); }
+  public static Address at(int i) { return mutex_array.getValue().getAddressAt(i * addrSize); }
 
   public static int maxNum() { return maxNum; }
 
-
-  private static long          nameFieldOffset;
-  private static long          ownerFieldOffset;
-  private static long          nextOMFieldOffset;
-
-  private static AddressField mutex_array;
-  private static int           maxNum;
 
 }
