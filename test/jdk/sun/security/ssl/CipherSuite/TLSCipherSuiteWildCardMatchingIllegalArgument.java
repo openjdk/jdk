@@ -63,7 +63,7 @@ public class TLSCipherSuiteWildCardMatchingIllegalArgument {
         } catch (ExceptionInInitializerError e) {
             assertEquals(IllegalArgumentException.class,
                          e.getCause().getClass());
-            assertEquals("Wildcard pattern should start with 'TLS_'",
+            assertEquals("Wildcard pattern must start with 'TLS_'",
                          e.getCause().getMessage());
             return;
         }

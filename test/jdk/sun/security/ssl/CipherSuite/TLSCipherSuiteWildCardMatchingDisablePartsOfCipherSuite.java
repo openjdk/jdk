@@ -37,11 +37,11 @@ import java.security.Security;
 import java.util.List;
 
 public class TLSCipherSuiteWildCardMatchingDisablePartsOfCipherSuite extends
-    NoDesRC4DesEdeCiphSuite {
+        AbstractDisableCipherSuites {
 
     private static final String SECURITY_PROPERTY = "jdk.tls.disabledAlgorithms";
     private static final String TEST_ALGORITHMS =
-            "TLS_ECDH_*, TLS_RSA_*, TLS_ECDHE_*_WITH_AES_256_GCM_*, Tls_DH_anon_*SHA, tls_ECDH_anon_WITH_AES_*_SHA";
+            "TLS_ECDH_*, TLS_RSA_*, TLS_ECDHE_*_WITH_AES_256_GCM_*, TLS_DH_anon_*SHA, TLS_ECDH_anon_WITH_AES_*_SHA";
     private static final String[] CIPHER_SUITES = new String[] {
             "TLS_RSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",

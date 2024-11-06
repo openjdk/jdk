@@ -32,8 +32,10 @@ import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
@@ -43,6 +45,8 @@ public abstract class AbstractAlgorithmConstraints
         implements AlgorithmConstraints {
 
     protected final AlgorithmDecomposer decomposer;
+    private static final Map<String, Pattern> patternCache =
+            new ConcurrentHashMap<>();
 
     protected AbstractAlgorithmConstraints(AlgorithmDecomposer decomposer) {
         this.decomposer = decomposer;
@@ -111,17 +115,22 @@ public abstract class AbstractAlgorithmConstraints
         return true;
     }
 
-    private static boolean wildCardMatch(String pattern, String algorithm) {
+    private static boolean wildCardMatch(final String pattern,
+                                         final String algorithm) {
         if (pattern.contains("*")) {
-            if (!pattern.toUpperCase(Locale.ENGLISH).startsWith("TLS_")) {
+            if (!pattern.startsWith("TLS_")) {
                 throw new IllegalArgumentException(
-                        "Wildcard pattern should start with 'TLS_'");
+                        "Wildcard pattern must start with 'TLS_'");
             }
 
-            return Pattern.compile(pattern.replace("*", ".*"),
-                                   Pattern.CASE_INSENSITIVE)
-                    .matcher(algorithm)
-                    .matches();
+            Pattern p = patternCache.get(pattern);
+
+            if (p == null) {
+                p = Pattern.compile(pattern.replace("*", ".*"));
+                patternCache.put(pattern, p);
+            }
+
+            return p.matcher(algorithm).matches();
         }
 
         return false;
