@@ -120,7 +120,7 @@ public class DebugReportsOneExtraByte extends SSLEngineTemplate {
         serverEngine.setUseClientMode(false);
         // Force a block-oriented ciphersuite.
         serverEngine.setEnabledCipherSuites(
-                new String [] {"TLS_RSA_WITH_AES_128_CBC_SHA"});
+                new String[]{"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"});
         return serverEngine;
     }
 
