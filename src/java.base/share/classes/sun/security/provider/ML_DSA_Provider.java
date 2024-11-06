@@ -167,29 +167,13 @@ public class ML_DSA_Provider {
         @Override
         public Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
             ML_DSA mlDsa = new ML_DSA(name2int(name));
-            int k = mlDsa.mlDsa_k;
-
-            //PK size is 32 + 32 * k * (bitlen(q-1) - d), where bitlen(q-1) = 23
-            int pk_size = 32 + (k * 32 * (23 - ML_DSA.ML_DSA_D));
-            if (pk.length != pk_size) {
-                throw new InvalidKeyException("Incorrect public key size");
-            }
-            return null;
+            return mlDsa.checkPublicKey(pk);
         }
 
         @Override
         public Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
-            int size = name2int(name);
-            ML_DSA mlDsa = new ML_DSA(size);
-            int k = mlDsa.mlDsa_k;
-            int eta_bits = size == 3 ? 4 : 3;
-
-            //SK size is 128 + 32 * ((l + k) * bitlen(2*eta) + d*k)
-            int sk_size = 128 + 32 * ((mlDsa.mlDsa_l + k) * eta_bits + ML_DSA.ML_DSA_D * k);
-            if (sk.length != sk_size) {
-                throw new InvalidKeyException("Incorrect private key size");
-            }
-            return null;
+            ML_DSA mlDsa = new ML_DSA(name2int(name));
+            return mlDsa.checkPrivateKey(sk);
         }
     }
 

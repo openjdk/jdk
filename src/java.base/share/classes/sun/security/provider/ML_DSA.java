@@ -30,11 +30,12 @@ import sun.security.provider.SHA3.SHAKE128;
 import sun.security.provider.SHA3.SHAKE256;
 
 import java.security.MessageDigest;
+import java.security.InvalidKeyException;
 import java.util.Arrays;
 
 public class ML_DSA {
     // Constants from FIPS 204 that do not depend on security level
-    public static final int ML_DSA_D = 13;
+    private static final int ML_DSA_D = 13;
     private static final int ML_DSA_Q = 8380417;
     private static final int ML_DSA_N = 256;
     private static final int SHAKE256_BLOCK_SIZE = 136; // the block length for SHAKE256
@@ -408,9 +409,9 @@ public class ML_DSA {
     private final int lambda;
     private final int gamma1;
     private final int gamma2;
-    public final int mlDsa_k;
-    public final int mlDsa_l;
-    public final int eta;
+    private final int mlDsa_k;
+    private final int mlDsa_l;
+    private final int eta;
     private final int beta;
     private final int omega;
 
@@ -521,6 +522,28 @@ public class ML_DSA {
     }
 
     public record ML_DSA_Signature(byte[] commitmentHash, int[][] response, boolean[][] hint) {
+    }
+
+    /*
+    Key validity checks
+     */
+    public Object checkPublicKey(byte[] pk) throws InvalidKeyException {
+        int pk_size = 32 + (mlDsa_k * 32 * (23 - ML_DSA_D));
+        if (pk.length != pk_size) {
+            throw new InvalidKeyException("Incorrect public key size");
+        }
+        return null;
+    }
+
+    public Object checkPrivateKey(byte[] sk) throws InvalidKeyException {
+        int eta_bits = eta == 4 ? 4 : 3;
+
+        //SK size is 128 + 32 * ((l + k) * bitlen(2*eta) + d*k)
+        int sk_size = 128 + 32 * ((mlDsa_l + mlDsa_k) * eta_bits + ML_DSA_D * mlDsa_k);
+        if (sk.length != sk_size) {
+            throw new InvalidKeyException("Incorrect private key size");
+        }
+        return null;
     }
 
     //Internal functions in Section 6 of specification
