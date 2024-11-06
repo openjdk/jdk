@@ -27,8 +27,9 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.foreign.abi.NativeEntryPoint;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -54,7 +55,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -67,7 +67,6 @@ import static java.lang.invoke.MethodHandleNatives.Constants.MN_HIDDEN_MEMBER;
 import static java.lang.invoke.MethodHandleNatives.Constants.NESTMATE_CLASS;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
-import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 
 /**
  * Trusted implementation code for MethodHandle.
@@ -1038,7 +1037,7 @@ abstract class MethodHandleImpl {
     // That way we can lazily load the code and set up the constants.
     private static class BindCaller {
 
-        private static final ClassDesc CD_Object_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;");
+        private static final ClassDesc CD_Object_array = ConstantUtils.CD_Object_array;
         private static final MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
         private static final MethodType REFLECT_INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object.class, Object[].class);
 
@@ -1267,7 +1266,7 @@ abstract class MethodHandleImpl {
             //     }
             // }
             // }
-            return ClassFile.of().build(ReferenceClassDescImpl.ofValidated("LInjectedInvoker;"), clb -> clb
+            return ClassFile.of().build(ClassOrInterfaceDescImpl.ofValidated("LInjectedInvoker;"), clb -> clb
                     .withFlags(ACC_PRIVATE | ACC_SUPER)
                     .withMethodBody(
                         "invoke_V",

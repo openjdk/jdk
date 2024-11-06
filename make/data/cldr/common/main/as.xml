@@ -55,6 +55,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bi">বিছলামা</language>
 			<language type="bin">বিনি</language>
 			<language type="bla">ছিক্সিকা</language>
+			<language type="blo">আনি</language>
 			<language type="bm">বামবাৰা</language>
 			<language type="bn">বাংলা</language>
 			<language type="bo">তিব্বতী</language>
@@ -176,7 +177,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="iba">ইবান</language>
 			<language type="ibb">ইবিবিও</language>
 			<language type="id">ইণ্ডোনেচিয়</language>
-			<language type="ie" draft="unconfirmed">উপস্থাপন ভাষা</language>
+			<language type="ie">ইণ্টাৰলিংগুৱে</language>
 			<language type="ig">ইগ্বো</language>
 			<language type="ii">ছিচুৱান ই</language>
 			<language type="ikt">ৱেষ্টাৰ্ণ কানাডিয়ান ইনক্টিটুট</language>
@@ -229,6 +230,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">কোমি</language>
 			<language type="kw">কোৰ্নিচ</language>
 			<language type="kwk">ক্বাকৱালা</language>
+			<language type="kxv">কুভি</language>
 			<language type="ky">কিৰ্গিজ</language>
 			<language type="la">লেটিন</language>
 			<language type="lad">লাডিনো</language>
@@ -237,6 +239,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">লেজঘিয়ান</language>
 			<language type="lg">গান্দা</language>
 			<language type="li">লিম্বুৰ্গিচ</language>
+			<language type="lij">লিংগুৰিয়ান</language>
 			<language type="lil">লিল্লোৱেট</language>
 			<language type="lkt">লাকোটা</language>
 			<language type="lmo">ল’ম্বাৰ্ড</language>
@@ -393,6 +396,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw_CD">কঙ্গো স্বাহিলি</language>
 			<language type="swb">কোমোৰিয়ান</language>
 			<language type="syr">চিৰিয়াক</language>
+			<language type="szl">ছাইলেছিয়ান</language>
 			<language type="ta">তামিল</language>
 			<language type="tce">দাক্ষিণাত্যৰ টুটচ’ন</language>
 			<language type="te">তেলুগু</language>
@@ -432,7 +436,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">উজবেক</language>
 			<language type="vai">ভাই</language>
 			<language type="ve">ভেণ্ডা</language>
+			<language type="vec">ভেনেছিয়ান</language>
 			<language type="vi">ভিয়েটনামী</language>
+			<language type="vmw">মাখুৱা</language>
 			<language type="vo">ভোলাপুক</language>
 			<language type="vun">ভুঞ্জু</language>
 			<language type="wa">ৱালুন</language>
@@ -443,6 +449,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">ৱু চাইনিজ</language>
 			<language type="xal">কাল্মিক</language>
 			<language type="xh">হোছা</language>
+			<language type="xnr">কাংগৰি</language>
 			<language type="xog">ছোগা</language>
 			<language type="yav">য়াংবেন</language>
 			<language type="ybb">য়েম্বা</language>
@@ -451,6 +458,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">হিংগাটো</language>
 			<language type="yue">কেণ্টোনীজ</language>
 			<language type="yue" alt="menu">চাইনিজ, কেণ্টোনীজ</language>
+			<language type="za">ঝুৱাং</language>
 			<language type="zgh">ষ্টেণ্ডাৰ্ড মোৰোক্কান তামাজাইট</language>
 			<language type="zh">চীনা</language>
 			<language type="zh" alt="menu">চীনা, মেণ্ডাৰিন</language>
@@ -945,12 +953,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="index">[় অ আ ই ঈ উ ঊ ঋ এ ঐ ও ঔ ং ঃ ক খ গ ঘ ঙ চ ছ জ ঝ ঞ ট ঠ ড ঢ ণ ৎ ত থ দ ধ ন প ফ ব ভ ম য ৰ ল ৱ শ ষ স হ ্]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0০ 1১ 2২ 3৩ 4৪ 5৫ 6৬ 7৭ 8৮ 9৯]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … । '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
-		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":">[\: ∶]</parseLenient>
-		</parseLenients>
-		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
-		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
 			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
@@ -1199,9 +1201,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">am</dayPeriod>
+							<dayPeriod type="pm">pm</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">পূৰ্বাহ্ন</dayPeriod>
-							<dayPeriod type="pm">অপৰাহ্ন</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -2525,9 +2545,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>উলানবাটাৰ</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>কোইবাল্ছন</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>মাকাও</exemplarCity>
 			</zone>
@@ -3271,13 +3288,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>চীনৰ ডেলাইট সময়</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>কোইবাল্ছনৰ সময়</generic>
-					<standard>কোইবাল্ছনৰ মান সময়</standard>
-					<daylight>কোইবাল্ছনৰ গ্ৰীষ্মকালীন সময়</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>খ্ৰীষ্টমাছ দ্বীপৰ সময়</standard>
@@ -3517,6 +3527,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>জাপানৰ সময়</generic>
 					<standard>জাপানৰ মান সময়</standard>
 					<daylight>জাপানৰ ডেলাইট সময়</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>কাজাখস্তানৰ সময়</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4060,8 +4075,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -5321,6 +5334,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ইম্পেৰিয়েল কুৱাৰ্ট</unitPattern>
 				<unitPattern count="other">{0} ইম্পেৰিয়েল কুৱাৰ্ট</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>আলোক</displayName>
+				<unitPattern count="one">{0} আলোক</unitPattern>
+				<unitPattern count="other">{0} আলোক</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>প্ৰতি বিলিয়নত অংশ</displayName>
+				<unitPattern count="one">{0} প্ৰতি বিলিয়নত অংশ</unitPattern>
+				<unitPattern count="other">{0} প্ৰতি বিলিয়নত অংশ</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>নিশা</displayName>
+				<unitPattern count="one">{0} নিশা</unitPattern>
+				<unitPattern count="other">{0} নিশা</unitPattern>
+				<perUnitPattern>{0}/নিশা</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>প্ৰধান দিক্-নিৰ্দেশনা</displayName>
 				<coordinateUnitPattern type="east">{0} পূব</coordinateUnitPattern>
@@ -6230,6 +6259,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} পিঞ্চ</unitPattern>
 				<unitPattern count="other">{0} পিঞ্চ</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>আলোক</displayName>
+				<unitPattern count="one">{0} আলোক</unitPattern>
+				<unitPattern count="other">{0} আলোক</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>অংশ/বিলিয়ন</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>নিশা</displayName>
+				<unitPattern count="one">{0} নিশা</unitPattern>
+				<unitPattern count="other">{0} নিশা</unitPattern>
+				<perUnitPattern>{0}/নিশা</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>দিক্-নিৰ্দেশনা</displayName>
 				<coordinateUnitPattern type="east">{0} পূঃ</coordinateUnitPattern>
@@ -6395,6 +6438,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="force-newton">
 				<displayName>N</displayName>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<unitPattern count="one">{0}kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
+			</unit>
 			<unit type="graphics-pixel">
 				<displayName>পি.</displayName>
 				<unitPattern count="one">{0} পি</unitPattern>
@@ -6467,6 +6514,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dsp Imp</displayName>
 				<unitPattern count="one">{0}dsp-Imp</unitPattern>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>আলোক</displayName>
+				<unitPattern count="one">{0}আলোক</unitPattern>
+				<unitPattern count="other">{0}আলোক</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="one">{0}ppb</unitPattern>
+				<unitPattern count="other">{0}ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>নিশা</displayName>
+				<unitPattern count="one">{0} নিশা</unitPattern>
+				<unitPattern count="other">{0} নিশা</unitPattern>
+				<perUnitPattern>{0}/নিশা</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>
@@ -6675,6 +6737,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und as</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+		<parameterDefault parameter="formality">informal</parameterDefault>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {credentials}</namePattern>
 		</personName>
