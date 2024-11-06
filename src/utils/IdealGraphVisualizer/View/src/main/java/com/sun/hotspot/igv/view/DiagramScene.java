@@ -325,7 +325,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         addChild(shadowWidget);
 
         connectionLayer = new LayerWidget(this);
-        addChild(connectionLayer);
+        LayerWidget paddedLayer = new LayerWidget(this);
+        paddedLayer.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50)); // Adds 50px padding on all sides
+        paddedLayer.addChild(connectionLayer);
+        addChild(paddedLayer);
 
         mainLayer = new LayerWidget(this);
         addChild(mainLayer);
