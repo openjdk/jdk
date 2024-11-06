@@ -1,4 +1,5 @@
 ///usr/bin/env jbang "$0" "$@" ; exit $?
+// /nodynamiccopyright/
 
 /** A class comment */
 public class JBangException1 {
