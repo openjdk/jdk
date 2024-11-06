@@ -278,5 +278,4 @@
       return false;
     }
   }
-
 #endif // CPU_X86_MATCHER_X86_HPP

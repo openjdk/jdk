@@ -398,26 +398,13 @@ class MulVINode : public VectorNode {
 //------------------------------MulVLNode--------------------------------------
 // Vector multiply long
 class MulVLNode : public VectorNode {
-  // Only multiply lower doubleword with quadword saturation.
-  const bool _mult_lower_double_word;
-  const bool _is_signed_mult;
-
 public:
-  MulVLNode(Node* in1, Node* in2, const TypeVect* vt,
-            bool is_signed_mult = true, bool mult_lower_double_word = false)
-    : VectorNode(in1, in2, vt), _mult_lower_double_word(mult_lower_double_word),
-                 _is_signed_mult(is_signed_mult) {
+  MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
     init_class_id(Class_MulVL);
   }
-
   virtual int Opcode() const;
-
-  bool is_mult_lower_double_word() { return _mult_lower_double_word; }
-  bool is_signed_mult() { return _is_signed_mult; }
-
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual uint size_of() const { return sizeof(*this); }
-  virtual uint hash() const { return Node::hash() + _mult_lower_double_word + _is_signed_mult; }
+  bool has_int_inputs() const;
+  bool has_uint_inputs() const;
 };
 
 //------------------------------MulVFNode--------------------------------------
