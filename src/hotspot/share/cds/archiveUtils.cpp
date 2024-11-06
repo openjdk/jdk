@@ -409,7 +409,11 @@ ArchiveWorkers::~ArchiveWorkers() {
 }
 
 int ArchiveWorkers::max_workers() {
-  return MAX2(0, MIN2(MAX_WORKERS, os::active_processor_count() / CPUS_PER_WORKER) - 1);
+  // The pool is used for short-lived bursty tasks. We do not want to spend
+  // too much time creating and waking up threads unnecessarily. Plus, we do
+  // not want to overwhelm large machines. This is why we want to be very
+  // conservative about the number of workers actually needed.
+  return MAX2(0, log2i_graceful(os::active_processor_count()));
 }
 
 bool ArchiveWorkers::is_parallel() {

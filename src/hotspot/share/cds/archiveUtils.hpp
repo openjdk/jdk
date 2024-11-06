@@ -343,15 +343,6 @@ public:
 class ArchiveWorkers {
   friend class ArchiveWorkerThread;
 private:
-  // The absolute limit on the number of archive workers. This should protect
-  // from workers stumbling over each other on very large machines.
-  static constexpr int MAX_WORKERS = 16;
-
-  // The reciprocal ratio for number of workers per CPU. We are targeting
-  // to take 1/2 CPUs to provide decent parallelism without letting workers
-  // stumble over each other.
-  static constexpr int CPUS_PER_WORKER = 2;
-
   // Target number of chunks per worker. This should be large enough to even
   // out work imbalance, and small enough to keep bookkeeping overheads low.
   static constexpr int CHUNKS_PER_WORKER = 4;
