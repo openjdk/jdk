@@ -239,12 +239,7 @@ void LambdaFormInvokers::read_static_archive_invokers() {
   if (_static_archive_invokers != nullptr) {
     for (int i = 0; i < _static_archive_invokers->length(); i++) {
       u4 offset = _static_archive_invokers->at(i);
-      Array<char>* line;
-      if (ArchiveBuilder::is_active()) {
-        line = ArchiveBuilder::current()->offset_to_buffered<Array<char>*>(offset);
-      } else {
-        line = ArchiveUtils::from_offset<Array<char>*>(offset);
-      }
+      Array<char>* line = ArchiveUtils::from_offset<Array<char>*>(offset);
       char* str = line->adr_at(0);
       append(str);
     }

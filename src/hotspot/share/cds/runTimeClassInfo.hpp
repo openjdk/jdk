@@ -176,11 +176,8 @@ public:
   }
 
   InstanceKlass* nest_host() {
-    if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space((address)this)) {
-      return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(_nest_host_offset);
-    } else {
-      return ArchiveUtils::from_offset<InstanceKlass*>(_nest_host_offset);
-    }
+    assert(!ArchiveBuilder::is_active(), "not called when dumping archive");
+    return ArchiveUtils::from_offset<InstanceKlass*>(_nest_host_offset);
   }
 
   RTLoaderConstraint* loader_constraints() {
