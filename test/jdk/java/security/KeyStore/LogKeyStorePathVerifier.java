@@ -53,6 +53,7 @@ public class LogKeyStorePathVerifier {
     static String passwd = "passphrase";
     static String fisKeyStoreName = "FileInputStreamKeyStore";
     static String bisKeyStoreName = "BufferedInputStreamKeyStore";
+    static String bbisKeyStoreName = "BufferedBufferedInputStreamKeyStore";
     static Path keyStorePath = Path.of (System.getProperty("test.src", "."),
             pathToStores, keyStoreFile);
 
@@ -61,10 +62,13 @@ public class LogKeyStorePathVerifier {
                             StandardCopyOption.REPLACE_EXISTING);
         Files.copy(keyStorePath, Path.of(bisKeyStoreName),
                             StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(keyStorePath, Path.of(bbisKeyStoreName),
+                            StandardCopyOption.REPLACE_EXISTING);
         try (FileInputStream fis = new FileInputStream(fisKeyStoreName);
              BufferedInputStream bis = new BufferedInputStream(
              new FileInputStream(bisKeyStoreName));
-             BufferedInputStream bbis = new BufferedInputStream(bis)) {
+             BufferedInputStream bbis = new BufferedInputStream(
+             new BufferedInputStream(new FileInputStream(bbisKeyStoreName)))) {
             loadAndTestKeyStore(fis);
             loadAndTestKeyStore(bis);
             // Test nested wrappers on FileInputStream with BufferedInputStream
@@ -100,13 +104,18 @@ public class LogKeyStorePathVerifier {
             // Check for the presence of new message and verify
             // the keystore name in debug logs
             output.shouldContain("PKCS12KeyStore: loading " +
-                                    "\"FileInputStreamKeyStore\" keystore")
-                .shouldContain("SunJSSE: using \"FileInputStreamKeyStore\" " +
-                                    "keystore in pkcs12 format")
+                                    "\"" + fisKeyStoreName +"\" keystore")
+                .shouldContain("SunJSSE: using \"" + fisKeyStoreName + "\"" +
+                                    " keystore in pkcs12 format")
                 .shouldContain("PKCS12KeyStore: loading " +
-                                    "\"BufferedInputStreamKeyStore\" keystore")
-                .shouldContain("SunJSSE: using \"BufferedInputStreamKeyStore\" " +
-                                    "keystore in pkcs12 format");
+                                     "\"" + bisKeyStoreName +"\" keystore")
+                .shouldContain("SunJSSE: using \"" + bisKeyStoreName + "\"" +
+                                    " keystore in pkcs12 format")
+                .shouldContain("PKCS12KeyStore: loading " +
+                        "\"" + bbisKeyStoreName +"\" keystore")
+                .shouldContain("SunJSSE: using " +
+                        "\"" + bbisKeyStoreName +"\" keystore in" +
+                        " pkcs12 format");
         }
     }
 }

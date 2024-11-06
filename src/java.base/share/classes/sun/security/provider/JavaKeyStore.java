@@ -26,7 +26,7 @@
 package sun.security.provider;
 
 import java.io.*;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -660,7 +660,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             ByteArrayInputStream bais;
             byte[] encoded;
             int trustedKeyCount = 0, privateKeyCount = 0;
-            String storeName = null;
+            String storeName = "";
 
             if (stream == null)
                 return;
@@ -677,7 +677,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
                                 .getJavaIOFileInputStreamAccess()
                                 .getPath(stream);
                 if (keystorePath != null) {
-                    storeName = Paths.get(keystorePath).getFileName()
+                    storeName = Path.of(keystorePath).getFileName()
                                 .toString();
                     debug.println("JavaKeyStore: loading \"" + storeName
                         + "\" keystore");

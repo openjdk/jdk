@@ -29,7 +29,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -290,8 +290,8 @@ public class KeyStoreDelegator extends KeyStoreSpi {
                         .getJavaIOFileInputStreamAccess()
                         .getPath(stream);
                 String storeName = (keystorePath != null)
-                        ? Paths.get(keystorePath).getFileName().toString()
-                        : null;
+                        ? Path.of(keystorePath).getFileName().toString()
+                        : "";
                 debug.println("Loaded \"" + storeName + "\" keystore in " +
                         type + " format");
             }

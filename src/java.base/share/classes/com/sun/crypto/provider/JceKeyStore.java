@@ -29,7 +29,7 @@ import sun.security.util.Debug;
 import sun.security.util.IOUtils;
 
 import java.io.*;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.DigestInputStream;
 import java.security.DigestOutputStream;
@@ -697,7 +697,7 @@ public final class JceKeyStore extends KeyStoreSpi {
             ByteArrayInputStream bais = null;
             byte[] encoded = null;
             int trustedKeyCount = 0, privateKeyCount = 0, secretKeyCount = 0;
-            String storeName = null;
+            String storeName = "";
             if (stream == null)
                 return;
 
@@ -706,7 +706,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                                 .getJavaIOFileInputStreamAccess()
                                 .getPath(stream);
                 if (keystorePath != null) {
-                    storeName = Paths.get(keystorePath).getFileName()
+                    storeName = Path.of(keystorePath).getFileName()
                                 .toString();
                     debug.println("JceKeyStore: loading \"" + storeName
                         + "\" keystore");

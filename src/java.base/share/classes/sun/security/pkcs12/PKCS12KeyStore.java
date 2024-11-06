@@ -26,7 +26,7 @@
 package sun.security.pkcs12;
 
 import java.io.*;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -1969,7 +1969,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     .getJavaIOFileInputStreamAccess()
                     .getPath(stream);
             if (keystorePath != null) {
-                storeName = Paths.get(keystorePath).getFileName().toString();
+                storeName = Path.of(keystorePath).getFileName().toString();
                 debug.println("PKCS12KeyStore: loading \"" + storeName
                         + "\" keystore");
             }
