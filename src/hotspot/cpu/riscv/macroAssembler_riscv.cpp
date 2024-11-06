@@ -3928,7 +3928,7 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // Initialize result value to 1 which means mismatch.
   mv(result, 1);
 
-  ld(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+  ld(r_bitmap, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
 
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
