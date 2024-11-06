@@ -1,6 +1,6 @@
 /**
  * @test
- * bug 
+ * bug
  * @summary C2 doesn't perform bimorphic inlining on a call site that was monomorphic during tier 3 compilation.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -29,7 +29,7 @@ public class InlineBimorphicVirtualCallAfterMorphismChanged {
                     instance.callSiteHolder();
                 }
             }
-        
+
             // second step: trigger recompilation by loading a second instance,
             // also make the call site bimorphic
             classes = new AbstractBase[] { firstInstance(), secondInstance() };
@@ -40,12 +40,12 @@ public class InlineBimorphicVirtualCallAfterMorphismChanged {
             }
         }
 
-        private static AbstractBase firstInstance() { 
-            return new FirstClass(); 
+        private static AbstractBase firstInstance() {
+            return new FirstClass();
         }
 
         private static AbstractBase secondInstance() {
-            return new SecondClass(); 
+            return new SecondClass();
         }
     }
 
