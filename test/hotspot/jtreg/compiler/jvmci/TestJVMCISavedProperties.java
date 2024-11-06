@@ -48,15 +48,13 @@ public class TestJVMCISavedProperties {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+EagerJVMCI",
-            "-XX:+UseJVMCICompiler",
-            "-Djvmci.Compiler=null",
+            "-XX:+EnableJVMCI",
             "-Ddebug.jvmci.PrintSavedProperties=true",
             "-Dapp1.propX=true",
             "-Dapp2.propY=SomeStringValue",
             "TestJVMCISavedProperties", "true");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.stdoutShouldContain("debug.jvmci.PrintSavedProperties=true");
-        output.stdoutShouldContain("jvmci.Compiler=null");
         output.stdoutShouldContain("app1.propX=true");
         output.stdoutShouldContain("app2.propY=SomeStringValue");
         output.stdoutShouldContain("java.specification.version=" + Runtime.version().feature());

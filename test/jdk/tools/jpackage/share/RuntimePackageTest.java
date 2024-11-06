@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,10 @@ import static jdk.jpackage.test.TKit.assertFalse;
 /*
  * @test
  * @summary jpackage with --runtime-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest == null)
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimePackageTest.java
  * @run main/othervm/timeout=1400 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest
@@ -68,11 +67,10 @@ import static jdk.jpackage.test.TKit.assertFalse;
 /*
  * @test
  * @summary jpackage with --runtime-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest != null)
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimePackageTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest.test
@@ -113,7 +111,6 @@ public class RuntimePackageTest {
                 .dumpOutput()
                 .addArguments(
                         "--output", runtimeImageDir.toString(),
-                        "--compress=0",
                         "--add-modules", "ALL-MODULE-PATH",
                         "--strip-debug",
                         "--no-header-files",

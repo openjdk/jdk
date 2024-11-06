@@ -1060,6 +1060,7 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX;
     _features &= ~CPU_VZEROUPPER;
     _features &= ~CPU_F16C;
+    _features &= ~CPU_SHA512;
   }
 
   if (logical_processors_per_package() == 1) {
@@ -1304,7 +1305,7 @@ void VM_Version::get_processor_features() {
 
 #ifdef _LP64
   // These are only supported on 64-bit
-  if (UseSHA && supports_avx2() && supports_bmi2()) {
+  if (UseSHA && supports_avx2() && (supports_bmi2() || supports_sha512())) {
     if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
     }
@@ -1315,9 +1316,16 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
-  if (UseSHA3Intrinsics) {
-    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+#ifdef _LP64
+  if (supports_evex() && supports_avx512bw()) {
+      if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+          UseSHA3Intrinsics = true;
+      }
+  } else
+#endif
+   if (UseSHA3Intrinsics) {
+      warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+      FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
@@ -3007,6 +3015,8 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
       xem_xcr0_eax.bits.ymm != 0) {
     result |= CPU_AVX;
     result |= CPU_VZEROUPPER;
+    if (sefsl1_cpuid7_eax.bits.sha512 != 0)
+      result |= CPU_SHA512;
     if (std_cpuid1_ecx.bits.f16c != 0)
       result |= CPU_F16C;
     if (sef_cpuid7_ebx.bits.avx2 != 0) {

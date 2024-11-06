@@ -118,6 +118,9 @@ Updates an existing JAR file.
 .TP
 \f[V]-x\f[R] or \f[V]--extract\f[R]
 Extracts the named (or all) files from the archive.
+If a file with the same name appears more than once in the archive, each
+copy will be extracted, with later copies overwriting (replacing)
+earlier copies unless -k is specified.
 .TP
 \f[V]-d\f[R] or \f[V]--describe-module\f[R]
 Prints the module descriptor or automatic module name.
@@ -212,6 +215,14 @@ time-zone format, to use for the timestamp of the entries, e.g.
 .TP
 \f[V]--dir\f[R] \f[I]DIR\f[R]
 Directory into which the JAR file will be extracted.
+.TP
+\f[V]-k\f[R] or \f[V]--keep-old-files\f[R]
+Do not overwrite existing files.
+If a Jar file entry with the same name exists in the target directory,
+the existing file will not be overwritten.
+As a result, if a file appears more than once in an archive, later
+copies will not overwrite earlier copies.
+Also note that some file system can be case insensitive.
 .SH OTHER OPTIONS
 .PP
 The following options are recognized by the \f[V]jar\f[R] command and
