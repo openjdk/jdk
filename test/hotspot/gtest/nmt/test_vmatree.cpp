@@ -385,7 +385,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     expect_equivalent_form(expected, tree);
   }
 
-  {
+  { // Setting the tag in the middle of a range causes a split
     testrange expected[]{
         {  0, 100, mtCompiler, si, State::Reserved},
         {100, 150,       mtGC, si, State::Reserved},
@@ -396,6 +396,20 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     tree.reserve_mapping(0, 200, compiler);
     tree.set_tag(100, 50, mtGC);
     expect_equivalent_form(expected, tree);
+  }
+
+  { // Setting the tag in between two ranges causes a split
+    testrange expected[]{
+        {  0,  75,       mtGC, si, State::Reserved},
+        { 75, 125,    mtClass, si, State::Reserved},
+        {125, 200, mtCompiler, si, State::Reserved},
+    };
+    VMATree tree;
+    Tree::RegionData gc(si, mtGC);
+    Tree::RegionData compiler(si, mtCompiler);
+    tree.reserve_mapping(0, 100, gc);
+    tree.reserve_mapping(100, 100, compiler);
+    tree.set_tag(75, 50, mtClass);
   }
 }
 
