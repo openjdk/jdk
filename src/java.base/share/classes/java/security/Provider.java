@@ -27,6 +27,7 @@ package java.security;
 
 import jdk.internal.event.SecurityProviderServiceEvent;
 
+import javax.crypto.KDFParameters;
 import javax.security.auth.login.Configuration;
 import java.io.*;
 import java.security.cert.CertStoreParameters;
@@ -1451,6 +1452,7 @@ public abstract class Provider extends Properties {
         addEngine("KeyGenerator",                       false, null);
         addEngine("SecretKeyFactory",                   false, null);
         addEngine("KEM",                                true,  null);
+        addEngine("KDF",                                false, KDFParameters.class);
         // JSSE
         addEngine("KeyManagerFactory",                  false, null);
         addEngine("SSLContext",                         false, null);
