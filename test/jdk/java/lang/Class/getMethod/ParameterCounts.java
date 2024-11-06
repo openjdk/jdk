@@ -50,6 +50,9 @@ public class ParameterCounts {
         public void fiveArgs(Object one, Object two, Object three, Object four, Object five) {
         }
 
+        public void fiveArgs(Integer one, Integer two, Integer three, Integer four, Integer five) {
+        }
+
         public void noArgs() {
         }
 
@@ -80,6 +83,9 @@ public class ParameterCounts {
         public void superFiveArgs(Object one, Object two, Object three, Object four, Object five) {
         }
 
+        public void superFiveArgs(Integer one, Integer two, Integer three, Integer four, Integer five) {
+        }
+
         public void superNoArgs() {
         }
 
@@ -100,6 +106,9 @@ public class ParameterCounts {
         public void b_noiseMethod(byte[] bytes);
 
         default void defaultIntfFiveArgs(Object a, Object b, Object c, Object d, Object e) {
+        }
+
+        default void defaultIntfFiveArgs(Integer a, Integer b, Integer c, Integer d, Integer e) {
         }
 
         default void defaultIntfNoArgs() {

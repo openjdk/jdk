@@ -63,6 +63,9 @@ public class ClassGetMethod {
         public void fiveArgs(Object one, Object two, Object three, Object four, Object five) {
         }
 
+        public void fiveArgs(Integer one, Integer two, Integer three, Integer four, Integer five) {
+        }
+
         public void noArgs() {
         }
 
@@ -93,6 +96,9 @@ public class ClassGetMethod {
         public void superFiveArgs(Object one, Object two, Object three, Object four, Object five) {
         }
 
+        public void superFiveArgs(Integer one, Integer two, Integer three, Integer four, Integer five) {
+        }
+
         public void superNoArgs() {
         }
 
@@ -115,6 +121,9 @@ public class ClassGetMethod {
         default void defaultIntfFiveArgs(Object a, Object b, Object c, Object d, Object e) {
         }
 
+        default void defaultIntfFiveArgs(Integer a, Integer b, Integer c, Integer d, Integer e) {
+        }
+
         default void defaultIntfNoArgs() {
         }
 
@@ -129,6 +138,8 @@ public class ClassGetMethod {
             Object.class, Object.class };
 
     @Benchmark
+    @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
+    @Measurement(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
     public Method getConcreteFiveArg() throws NoSuchMethodException, SecurityException {
         return ConcreteClass.class.getMethod("fiveArgs", FIVE_ARG_CLASSES);
     }
