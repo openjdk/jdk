@@ -44,7 +44,7 @@ import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
 
 /*
  * @test
- * @summary Test processor annotations of jpackage test library
+ * @summary Test jpackage test library's annotation processor
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile AnnotationsTest.java
