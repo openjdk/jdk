@@ -298,6 +298,8 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
 
   // Take a list of testranges and check that those and only those are found in the tree.
   auto expect_equivalent_form = [&](auto& expected, VMATree& tree) {
+    // With auto& our arrays do not deteriorate to pointers but are kept as testrange[N]
+    // so this actually works!
     int len = sizeof(expected) / sizeof(testrange);
     for (int i = 0; i < len; i++) {
       testrange expect = expected[i];
