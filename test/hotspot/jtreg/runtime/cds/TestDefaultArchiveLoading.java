@@ -38,7 +38,6 @@
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
  * @requires vm.bits == 64
- * @requires !vm.gc.ZGenerational
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -61,7 +60,6 @@
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
  * @requires vm.bits == 64
- * @requires !vm.gc.ZGenerational
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
