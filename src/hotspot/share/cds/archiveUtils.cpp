@@ -395,6 +395,7 @@ ArchiveWorkers::ArchiveWorkers() :
         _end_semaphore(0),
         _num_workers(max_workers()),
         _started_workers(0),
+        _waiting_workers(_num_workers),
         _running_workers(0),
         _in_shutdown(false),
         _task(nullptr) {
@@ -437,6 +438,19 @@ void ArchiveWorkers::start_worker_if_needed() {
   new ArchiveWorkerThread(this);
 }
 
+void ArchiveWorkers::signal_worker_if_needed() {
+  while (true) {
+    int cur = Atomic::load(&_waiting_workers);
+    if (cur == 0) {
+      return;
+    }
+    if (Atomic::cmpxchg(&_waiting_workers, cur, cur - 1, memory_order_relaxed) == cur) {
+      break;
+    }
+  }
+  _start_semaphore.signal(1);
+}
+
 void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
   assert(task == &_shutdown_task || !_in_shutdown, "Should not be shutdown");
   assert(Atomic::load(&_task) == nullptr, "Should not have running tasks");
@@ -460,10 +474,14 @@ void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
   // Multiple threads can work with multiple chunks.
   task->configure_max_chunks(_num_workers * CHUNKS_PER_WORKER);
 
-  // Publish the task and signal workers to pick it up.
+  // Set up the run and publish the task.
+  Atomic::store(&_waiting_workers, _num_workers);
   Atomic::store(&_running_workers, _num_workers);
   Atomic::release_store(&_task, task);
-  _start_semaphore.signal(_num_workers);
+
+  // Kick off pool wakeup by signaling a single worker, and proceed
+  // immediately to executing the task locally.
+  signal_worker_if_needed();
 
   // Execute the task ourselves, while workers are catching up.
   // This allows us to hide parts of task handoff latency.
@@ -474,6 +492,9 @@ void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
   _end_semaphore.wait();
   Atomic::store(&_task, (ArchiveWorkerTask *) nullptr);
   OrderAccess::fence();
+
+  assert(Atomic::load(&_waiting_workers) == 0, "All workers were signaled");
+  assert(Atomic::load(&_running_workers) == 0, "No workers are running");
 }
 
 void ArchiveWorkerTask::run() {
@@ -498,6 +519,10 @@ void ArchiveWorkerTask::configure_max_chunks(int max_chunks) {
 bool ArchiveWorkers::run_as_worker() {
   assert(is_parallel(), "Should be in parallel mode");
   _start_semaphore.wait();
+
+  // Avalanche wakeups: each worker signals two others.
+  signal_worker_if_needed();
+  signal_worker_if_needed();
 
   ArchiveWorkerTask* task = Atomic::load_acquire(&_task);
   task->run();

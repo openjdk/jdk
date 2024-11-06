@@ -364,12 +364,14 @@ private:
 
   int _num_workers;
   int _started_workers;
+  int _waiting_workers;
   int _running_workers;
   bool _in_shutdown;
   ArchiveWorkerTask* _task;
 
   bool run_as_worker();
   void start_worker_if_needed();
+  void signal_worker_if_needed();
 
   void run_task_single(ArchiveWorkerTask* task);
   void run_task_multi(ArchiveWorkerTask* task);
