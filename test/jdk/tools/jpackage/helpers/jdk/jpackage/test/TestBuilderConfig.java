@@ -26,7 +26,7 @@ package jdk.jpackage.test;
 import java.util.Objects;
 import jdk.internal.util.OperatingSystem;
 
-public final class TestBuilderConfig {
+final class TestBuilderConfig {
     TestBuilderConfig() {
     }
 
@@ -42,24 +42,12 @@ public final class TestBuilderConfig {
         return DEFAULT.get();
     }
 
-    public static void setOperatingSystem(OperatingSystem os) {
+    static void setOperatingSystem(OperatingSystem os) {
         Objects.requireNonNull(os);
         DEFAULT.get().os = os;
     }
 
-    public static void setOperatingSystemLinux() {
-        setOperatingSystem(OperatingSystem.LINUX);
-    }
-
-    public static void setOperatingSystemWindows() {
-        setOperatingSystem(OperatingSystem.WINDOWS);
-    }
-
-    public static void setOperatingSystemOSX() {
-        setOperatingSystem(OperatingSystem.MACOS);
-    }
-
-    public static void setDefault() {
+    static void setDefaults() {
         DEFAULT.set(new TestBuilderConfig());
     }
 

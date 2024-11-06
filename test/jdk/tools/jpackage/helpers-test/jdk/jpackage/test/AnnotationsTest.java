@@ -55,9 +55,13 @@ public class AnnotationsTest {
     public static void main(String... args) {
         runTestSuites(BasicTestSuite.class, ParameterizedInstanceTestSuite.class);
         for (var os : OperatingSystem.values()) {
-            TestBuilderConfig.setOperatingSystem(os);
-            TKit.log("Current operating system: " + os);
-            runTestSuites(IfOSTestSuite.class);
+            try {
+                TestBuilderConfig.setOperatingSystem(os);
+                TKit.log("Current operating system: " + os);
+                runTestSuites(IfOSTestSuite.class);
+            } finally {
+                TestBuilderConfig.setDefaults();
+            }
         }
     }
 
@@ -151,7 +155,7 @@ public class AnnotationsTest {
             return List.of(new Object[][] {
                 {},
                 {55, new Boolean[]{false, true, false}, "foo", "bar"},
-                {Integer.valueOf(78)},
+                {78},
             });
         }
 

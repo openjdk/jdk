@@ -84,9 +84,7 @@ public final class InOutPathTest {
 
     @Parameters(ifOS = OperatingSystem.MACOS)
     public static Collection<Object[]> inputOSX() {
-        return List.of(new Object[][]{
-            additionalContentInput(PackageType.MAC_DMG.toString(), "--mac-dmg-content").toArray(Object[]::new)
-        });
+        return List.of(additionalContentInput(PackageType.MAC_DMG.toString(), "--mac-dmg-content").toArray(Object[][]::new));
     }
 
     private static List<Object[]> additionalContentInput(String packageTypes, String argName) {
