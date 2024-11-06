@@ -1567,7 +1567,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   Label L_vector_entry,
         L_unroll_loop,
         L_by4_loop_entry, L_by4_loop,
-        L_by1_loop, L_exit;
+        L_by1_loop, L_exit, L_skip1, L_skip2;
 
   const int64_t single_table_size = 256;
   const int64_t unroll = 16;
@@ -1580,6 +1580,27 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   add(table1, table0, 1*single_table_size*sizeof(juint), tmp1);
   add(table2, table0, 2*single_table_size*sizeof(juint), tmp1);
   add(table3, table2, 1*single_table_size*sizeof(juint), tmp1);
+
+  // Ensure basic 4-byte alignment of input byte buffer
+  mv(tmp1, 4);
+  blt(len, tmp1, L_by1_loop);
+  test_bit(tmp1, buf, 0);
+  beqz(tmp1, L_skip1);
+    subw(len, len, 1);
+    lbu(tmp1, Address(buf));
+    add(buf, buf, 1);
+    update_byte_crc32(crc, tmp1, table0);
+  bind(L_skip1);
+    test_bit(tmp1, buf, 1);
+    beqz(tmp1, L_skip2);
+    subw(len, len, 2);
+    lhu(tmp1, Address(buf));
+    add(buf, buf, 2);
+    andi(tmp2, tmp1, right_8_bits);
+    update_byte_crc32(crc, tmp2, table0);
+    srli(tmp2, tmp1, 8);
+    update_byte_crc32(crc, tmp2, table0);
+  bind(L_skip2);
 
 #ifdef COMPILER2
   if (UseRVV) {
@@ -1625,21 +1646,18 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     beqz(len, L_exit);
 
     subw(len, len, 1);
-    lwu(tmp1, Address(buf));
-    andi(tmp2, tmp1, right_8_bits);
-    update_byte_crc32(crc, tmp2, table0);
+    lbu(tmp1, Address(buf));
+    update_byte_crc32(crc, tmp1, table0);
     beqz(len, L_exit);
 
     subw(len, len, 1);
-    srli(tmp2, tmp1, 8);
-    andi(tmp2, tmp2, right_8_bits);
-    update_byte_crc32(crc, tmp2, table0);
+    lbu(tmp1, Address(buf, 1));
+    update_byte_crc32(crc, tmp1, table0);
     beqz(len, L_exit);
 
     subw(len, len, 1);
-    srli(tmp2, tmp1, 16);
-    andi(tmp2, tmp2, right_8_bits);
-    update_byte_crc32(crc, tmp2, table0);
+    lbu(tmp1, Address(buf, 2));
+    update_byte_crc32(crc, tmp1, table0);
 
 #ifdef COMPILER2
   // put vector code here, otherwise "offset is too large" error occurs.
