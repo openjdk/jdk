@@ -28,12 +28,19 @@
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @run driver AddmodsOption
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AddmodsOption
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.whitebox.WhiteBox;
 
 public class AddmodsOption {
+
+    private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private static final boolean isJVMCISupported = (WB.getBooleanVMFlag("EnableJVMCI") != null);
+
     public static void main(String[] args) throws Exception {
         final String moduleOption = "jdk.httpserver/sun.net.httpserver.simpleserver.Main";
         final String incubatorModule = "jdk.incubator.vector";
@@ -42,7 +49,7 @@ public class AddmodsOption {
         final String allSystem = "ALL-SYSTEM";
         final String allModulePath = "ALL-MODULE-PATH";
         final String loggingOption = "-Xlog:cds=debug,cds+module=debug,cds+heap=info,module=trace";
-        final String versionPattern = "java.[0-9][0-9][-].*";
+        final String versionPattern = "java.[0-9][0-9].*";
         final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
         final String warningIncubator = "WARNING: Using incubator modules: jdk.incubator.vector";
         String archiveName = TestCommon.getNewArchiveName("addmods-option");
@@ -136,31 +143,33 @@ public class AddmodsOption {
           .shouldContain("subgraph jdk.internal.module.ArchivedBootLayer is not recorde")
           .shouldHaveExitValue(0);
 
-        // dump an archive with JVMCI option which indirectly adds the
-        // jdk.internal.vm.ci module using the --add-modules option
-        archiveName = TestCommon.getNewArchiveName("jvmci-module");
-        TestCommon.setCurrentArchiveName(archiveName);
-        oa = TestCommon.dumpBaseArchive(
-            archiveName,
-            loggingOption,
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:+EagerJVMCI", "-XX:+UseJVMCICompiler",
-            "-version");
-        oa.shouldHaveExitValue(0);
+        if (isJVMCISupported) {
+            // dump an archive with JVMCI option which indirectly adds the
+            // jdk.internal.vm.ci module using the --add-modules option
+            archiveName = TestCommon.getNewArchiveName("jvmci-module");
+            TestCommon.setCurrentArchiveName(archiveName);
+            oa = TestCommon.dumpBaseArchive(
+                archiveName,
+                loggingOption,
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+EagerJVMCI", "-XX:+UseJVMCICompiler",
+                "-version");
+            oa.shouldHaveExitValue(0);
 
-        // run with the JVMCI option
-        oa = TestCommon.execCommon(
-            loggingOption,
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:+EagerJVMCI", "-XX:+UseJVMCICompiler",
-            "-version");
-        try {
-            oa.shouldHaveExitValue(0)
-              .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.internal.vm.ci");
-        } catch (RuntimeException re) {
-            // JVMCI compile may not be available
-            oa.shouldHaveExitValue(1)
-              .shouldContain("Cannot use JVMCI compiler: No JVMCI compiler found");
+            // run with the JVMCI option
+            oa = TestCommon.execCommon(
+                loggingOption,
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+EagerJVMCI", "-XX:+UseJVMCICompiler",
+                "-version");
+            try {
+                oa.shouldHaveExitValue(0)
+                  .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.internal.vm.ci");
+            } catch (RuntimeException re) {
+                // JVMCI compile may not be available
+                oa.shouldHaveExitValue(1)
+                  .shouldContain("Cannot use JVMCI compiler: No JVMCI compiler found");
+            }
         }
 
         // dump an archive with multiple modules in -add-modules
