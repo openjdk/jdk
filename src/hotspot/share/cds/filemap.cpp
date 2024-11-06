@@ -2013,7 +2013,7 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
     SharedDataRelocator ro_patcher((address*)ro_patch_base + header()->ro_ptrmap_start_pos(), (address*)ro_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
 
-    if (ArchiveParallelRelocation) {
+    if (AOTCacheParallelRelocation) {
       SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
       _archive_workers.run_task(&task);
     } else {

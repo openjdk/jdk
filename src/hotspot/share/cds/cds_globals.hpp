@@ -95,7 +95,7 @@
            "do not map the archive")                                        \
            range(0, 2)                                                      \
                                                                             \
-  product(bool, ArchiveParallelRelocation, true, DIAGNOSTIC,                \
+  product(bool, AOTCacheParallelRelocation, true, DIAGNOSTIC,               \
           "Use parallel relocation code to speed up startup.")              \
                                                                             \
 // end of CDS_FLAGS
