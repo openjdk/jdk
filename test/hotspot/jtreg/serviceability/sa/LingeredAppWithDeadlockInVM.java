@@ -22,6 +22,7 @@
  */
 
 import jdk.test.whitebox.WhiteBox;
+import jdk.test.lib.apps.LingeredApp;
 
 public class LingeredAppWithDeadlockInVM extends LingeredApp {
 
