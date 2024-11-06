@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -53,6 +54,15 @@ import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.MethodCall.mapArgs;
 
 final class TestMethodSupplier {
+
+    TestMethodSupplier() {
+        this(OperatingSystem.current());
+    }
+
+    TestMethodSupplier(OperatingSystem os) {
+        Objects.requireNonNull(os);
+        this.os = os;
+    }
 
     record MethodQuery(String className, String methodName) {
 
@@ -76,10 +86,6 @@ final class TestMethodSupplier {
 
             return new MethodQuery(className, methodName);
         }
-    }
-
-    void verifyTestClass(Class<?> type) throws InvalidAnnotationException {
-        TestClassVerifier.verifyType(type);
     }
 
     List<Method> findNullaryLikeMethods(MethodQuery query) throws NoSuchMethodException {
@@ -114,6 +120,45 @@ final class TestMethodSupplier {
         }
 
         return methods;
+    }
+
+    boolean isTestClass(Class<?> type) {
+        var typeStatus = processedTypes.get(type);
+        if (typeStatus == null) {
+            typeStatus = Verifier.isTestClass(type) ? TypeStatus.TEST_CLASS : TypeStatus.NOT_TEST_CLASS;
+            processedTypes.put(type, typeStatus);
+        }
+
+        return !TypeStatus.NOT_TEST_CLASS.equals(typeStatus);
+    }
+
+    void verifyTestClass(Class<?> type) throws InvalidAnnotationException {
+        var typeStatus = processedTypes.get(type);
+        if (typeStatus == null) {
+            try {
+                Verifier.verifyTestClass(type);
+                processedTypes.put(type, TypeStatus.VALID_TEST_CLASS);
+                return;
+            } catch (InvalidAnnotationException ex) {
+                processedTypes.put(type, TypeStatus.TEST_CLASS);
+                throw ex;
+            }
+        }
+
+        switch (typeStatus) {
+            case NOT_TEST_CLASS -> Verifier.throwNotTestClassException(type);
+            case TEST_CLASS -> Verifier.verifyTestClass(type);
+            case VALID_TEST_CLASS -> {}
+        }
+    }
+
+    boolean isEnabled(Method method) {
+        return Stream.of(Test.class, Parameters.class)
+                .filter(method::isAnnotationPresent)
+                .findFirst()
+                .map(method::getAnnotation)
+                .map(this::canRunOnTheOperatingSystem)
+                .orElse(true);
     }
 
     Stream<MethodCall> mapToMethodCalls(Method method) throws
@@ -153,15 +198,6 @@ final class TestMethodSupplier {
         return Stream.concat(fromParameter, fromParameterSupplier).map(args -> {
             return new MethodCall(ctorArgs, method, args);
         });
-    }
-
-    boolean isEnabled(Method method) {
-        return Stream.of(Test.class, Parameters.class)
-                .filter(method::isAnnotationPresent)
-                .findFirst()
-                .map(method::getAnnotation)
-                .map(this::canRunOnTheOperatingSystem)
-                .orElse(true);
     }
 
     private List<Object[]> createArgsForAnnotation(Executable exec, Parameter a) {
@@ -270,16 +306,16 @@ final class TestMethodSupplier {
     private boolean canRunOnTheOperatingSystem(Annotation a) {
         switch (a) {
             case Test t -> {
-                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
+                return canRunOnTheOperatingSystem(os, t.ifOS(), t.ifNotOS());
             }
             case Parameters t -> {
-                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
+                return canRunOnTheOperatingSystem(os, t.ifOS(), t.ifNotOS());
             }
             case Parameter t -> {
-                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
+                return canRunOnTheOperatingSystem(os, t.ifOS(), t.ifNotOS());
             }
             case ParameterSupplier t -> {
-                return canRunOnTheOperatingSystem(t.ifOS(), t.ifNotOS());
+                return canRunOnTheOperatingSystem(os, t.ifOS(), t.ifNotOS());
             }
             default -> {
                 return true;
@@ -293,17 +329,17 @@ final class TestMethodSupplier {
                 ParameterSupplier.class, ParameterSupplierGroup.class
         ).anyMatch(method::isAnnotationPresent);
     }
-    
+
     private static boolean isTest(Method method) {
         return method.isAnnotationPresent(Test.class);
     }
 
-    private static boolean canRunOnTheOperatingSystem(OperatingSystem[] include,
-            OperatingSystem[] exclude) {
+    private static boolean canRunOnTheOperatingSystem(OperatingSystem value,
+            OperatingSystem[] include, OperatingSystem[] exclude) {
         Set<OperatingSystem> suppordOperatingSystems = new HashSet<>();
         suppordOperatingSystems.addAll(List.of(include));
         suppordOperatingSystems.removeAll(List.of(exclude));
-        return suppordOperatingSystems.contains(OperatingSystem.current());
+        return suppordOperatingSystems.contains(value);
     }
 
     private static Parameter[] getMethodParameters(Method method) {
@@ -372,12 +408,36 @@ final class TestMethodSupplier {
         }
     }
 
-    private static class TestClassVerifier {
-        static void verifyType(Class<?> type) throws InvalidAnnotationException {
+    private static class Verifier {
+        static boolean isTestClass(Class<?> type) {
             for (var method : type.getDeclaredMethods()) {
                 method.setAccessible(true);
+                if (isParameterized(method) || isTest(method)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static void verifyTestClass(Class<?> type) throws InvalidAnnotationException {
+            boolean withTestAnnotations = false;
+            for (var method : type.getDeclaredMethods()) {
+                method.setAccessible(true);
+                if (withTestAnnotations) {
+                } else if (isParameterized(method) || isTest(method)) {
+                    withTestAnnotations = true;
+                }
                 verifyAnnotationsCorrect(method);
             }
+
+            if (!withTestAnnotations) {
+                throwNotTestClassException(type);
+            }
+        }
+
+        static void throwNotTestClassException(Class<?> type) throws InvalidAnnotationException {
+            throw new InvalidAnnotationException(String.format(
+                    "Type [%s] is not a test class", type.getName()));
         }
 
         private static void verifyAnnotationsCorrect(Method method) throws
@@ -403,6 +463,15 @@ final class TestMethodSupplier {
             }
         }
     }
+
+    private enum TypeStatus {
+        NOT_TEST_CLASS,
+        TEST_CLASS,
+        VALID_TEST_CLASS,
+    }
+
+    private final OperatingSystem os;
+    private final Map<Class<?>, TypeStatus> processedTypes = new HashMap<>();
 
     private static final Map<Class, Function<String, Object>> FROM_STRING;
 

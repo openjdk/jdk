@@ -142,29 +142,30 @@ class MethodCall implements ThrowingConsumer {
             throw new IllegalArgumentException(
                     "The number of arguments must be equal to the number of parameters of the executable");
         }
-        
+
         if (IntStream.range(0, args.length).allMatch(idx -> {
             return Optional.ofNullable(args[idx]).map(Object::getClass).map(paramTypes[idx]::isAssignableFrom).orElse(true);
         })) {
             return args;
         } else {
-            var newArgs = Arrays.copyOf(args, args.length, Object[].class);
+            final var newArgs = Arrays.copyOf(args, args.length, Object[].class);
             for (var idx = 0; idx != args.length; ++idx) {
-                var paramType = paramTypes[idx];
-                var argValue = args[idx];
-                var argType = argValue.getClass();
-                if(argType.isArray() && !paramType.isAssignableFrom(argType) ) {
-                    var length = Array.getLength(argValue);
-                    var newArray = Array.newInstance(paramType.getComponentType(), length);
-                    for (var arrayIdx = 0; arrayIdx != length; ++arrayIdx) {
-                        Array.set(newArray, arrayIdx, Array.get(argValue, arrayIdx));
+                final var paramType = paramTypes[idx];
+                final var argValue = args[idx];
+                newArgs[idx] = Optional.ofNullable(argValue).map(Object::getClass).map(argType -> {
+                    if(argType.isArray() && !paramType.isAssignableFrom(argType) ) {
+                        var length = Array.getLength(argValue);
+                        var newArray = Array.newInstance(paramType.getComponentType(), length);
+                        for (var arrayIdx = 0; arrayIdx != length; ++arrayIdx) {
+                            Array.set(newArray, arrayIdx, Array.get(argValue, arrayIdx));
+                        }
+                        return newArray;
+                    } else {
+                        return argValue;
                     }
-                    newArgs[idx] = newArray;
-                } else {
-                    newArgs[idx] = argValue;
-                }
+                }).orElse(argValue);
             }
-            
+
             return newArgs;
         }
     }

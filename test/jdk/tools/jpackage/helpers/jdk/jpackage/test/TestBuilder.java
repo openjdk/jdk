@@ -54,7 +54,7 @@ final class TestBuilder implements AutoCloseable {
     }
 
     TestBuilder(Consumer<TestInstance> testConsumer) {
-        this.testMethodSupplier = new TestMethodSupplier();
+        this.testMethodSupplier = TestBuilderConfig.getDefault().createTestMethodSupplier();
         argProcessors = Map.of(
                 CMDLINE_ARG_PREFIX + "after-run",
                 arg -> getJavaMethodsFromArg(arg).map(
@@ -225,8 +225,10 @@ final class TestBuilder implements AutoCloseable {
         for (String token : v.split(",")) {
             Class testSet = probeClass(token);
             if (testSet != null) {
-                toConsumer(testMethodSupplier::verifyTestClass).accept(testSet);
-                
+                if (testMethodSupplier.isTestClass(testSet)) {
+                    toConsumer(testMethodSupplier::verifyTestClass).accept(testSet);
+                }
+
                 // Test set class specified. Pull in all public methods
                 // from the class with @Test annotation removing name duplicates.
                 // Overloads will be handled at the next phase of processing.

@@ -26,7 +26,6 @@ import static java.lang.StackWalker.Option.RETAIN_CLASS_REFERENCE;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -35,6 +34,8 @@ import java.util.Optional;
 import java.util.Set;
 import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
+import static jdk.internal.util.OperatingSystem.LINUX;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Parameters;
@@ -47,12 +48,17 @@ import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile AnnotationsTest.java
- * @run main/othervm/timeout=360 -Xmx512m AnnotationsTest
+ * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.AnnotationsTest
  */
 public class AnnotationsTest {
 
     public static void main(String... args) {
         runTestSuites(BasicTestSuite.class, ParameterizedInstanceTestSuite.class);
+        for (var os : OperatingSystem.values()) {
+            TestBuilderConfig.setOperatingSystem(os);
+            TKit.log("Current operating system: " + os);
+            runTestSuites(IfOSTestSuite.class);
+        }
     }
 
     public static class BasicTestSuite extends TestSuiteExecutionRecorder {
@@ -141,19 +147,21 @@ public class AnnotationsTest {
         }
 
         @Parameters
-        public static Collection<Object[]> dateSupplier() {
+        public static Collection<Object[]> input() {
             return List.of(new Object[][] {
                 {},
-                {33},
+                {55, new Boolean[]{false, true, false}, "foo", "bar"},
                 {Integer.valueOf(78)},
             });
         }
 
         @Parameters
-        public static Collection<Object[]> dateSupplier2() {
+        public static Collection<Object[]> input2() {
             return List.of(new Object[][] {
                 {51, new boolean[]{true, true, true}, "foo"},
-                {55, new Boolean[]{false, true, false}, "foo", "bar"},
+                {33},
+                {55, null, null },
+                {55, null, null, "1" },
             });
         }
 
@@ -173,8 +181,76 @@ public class AnnotationsTest {
                     "ParameterizedInstanceTestSuite(55, [false, true, false](length=3), foo, [bar](length=1)).testDates(2034-05-05)",
                     "ParameterizedInstanceTestSuite(55, [false, true, false](length=3), foo, [bar](length=1)).testDates(2056-07-11)",
                     "ParameterizedInstanceTestSuite(78).testDates(2034-05-05)",
-                    "ParameterizedInstanceTestSuite(78).testDates(2056-07-11)"
+                    "ParameterizedInstanceTestSuite(78).testDates(2056-07-11)",
+                    "ParameterizedInstanceTestSuite(55, null, null, [1](length=1)).testDates(2034-05-05)",
+                    "ParameterizedInstanceTestSuite(55, null, null, [1](length=1)).testDates(2056-07-11)",
+                    "ParameterizedInstanceTestSuite(55, null, null, [1](length=1)).testNoArgs()",
+                    "ParameterizedInstanceTestSuite(55, null, null, [](length=0)).testDates(2034-05-05)",
+                    "ParameterizedInstanceTestSuite(55, null, null, [](length=0)).testDates(2056-07-11)",
+                    "ParameterizedInstanceTestSuite(55, null, null, [](length=0)).testNoArgs()"
             );
+        }
+    }
+
+    public static class IfOSTestSuite extends TestSuiteExecutionRecorder {
+        @Test(ifOS = OperatingSystem.LINUX)
+        public void testNoArgs() {
+            recordTestCase();
+        }
+
+        @Test(ifNotOS = OperatingSystem.LINUX)
+        public void testNoArgs2() {
+            recordTestCase();
+        }
+
+        @Test
+        @Parameter(value = "foo", ifOS = OperatingSystem.LINUX)
+        @Parameter(value = {"foo", "bar"}, ifOS = { OperatingSystem.LINUX, OperatingSystem.MACOS })
+        @Parameter(value = {}, ifNotOS = { OperatingSystem.WINDOWS })
+        public void testVarArgs(String ... args) {
+            recordTestCase((Object[]) args);
+        }
+
+        @Test
+        @ParameterSupplier(value = "jdk.jpackage.test.AnnotationsTest.dateSupplier", ifOS = OperatingSystem.WINDOWS)
+        public void testDates(LocalDate v) {
+            recordTestCase(v);
+        }
+
+        public static Set<String> getExpectedTestDescs() {
+            switch (TestBuilderConfig.getDefault().getOperatingSystem()) {
+                case LINUX -> {
+                    return Set.of(
+                            "IfOSTestSuite().testNoArgs()",
+                            "IfOSTestSuite().testVarArgs()",
+                            "IfOSTestSuite().testVarArgs(foo)",
+                            "IfOSTestSuite().testVarArgs(foo, bar)"
+                    );
+                }
+
+                case MACOS -> {
+                    return Set.of(
+                            "IfOSTestSuite().testNoArgs2()",
+                            "IfOSTestSuite().testVarArgs()",
+                            "IfOSTestSuite().testVarArgs(foo, bar)"
+                    );
+                }
+
+                case WINDOWS -> {
+                    return Set.of(
+                            "IfOSTestSuite().testDates(2034-05-05)",
+                            "IfOSTestSuite().testDates(2056-07-11)",
+                            "IfOSTestSuite().testNoArgs2()"
+                    );
+                }
+
+                case AIX -> {
+                    return Set.of(
+                    );
+                }
+            }
+
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -186,6 +262,8 @@ public class AnnotationsTest {
     }
 
     private static void runTestSuites(Class<? extends TestSuiteExecutionRecorder>... testSuites) {
+        ACTUAL_TEST_DESCS.get().clear();
+
         var expectedTestDescs = Stream.of(testSuites)
                 .map(AnnotationsTest::getExpectedTestDescs)
                 .flatMap(Set::stream)
@@ -196,6 +274,7 @@ public class AnnotationsTest {
         var args = Stream.of(testSuites).map(testSuite -> {
             return String.format("--jpt-run=%s", testSuite.getName());
         }).toArray(String[]::new);
+
         try {
             Main.main(args);
             assertRecordedTestDescs(expectedTestDescs);
@@ -227,7 +306,8 @@ public class AnnotationsTest {
         }
 
         if (!comm.unique2().isEmpty() || !comm.unique1().isEmpty()) {
-            System.err.println("Test case signatures mismatched");
+            // Don't use TKit asserts as this call is outside the test execution
+            throw new AssertionError("Test case signatures mismatched");
         }
     }
 
