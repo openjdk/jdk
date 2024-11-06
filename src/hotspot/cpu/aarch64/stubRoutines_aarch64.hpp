@@ -57,31 +57,6 @@ class aarch64 {
 #endif
 
  private:
-#if 0
-  // compiler stubs
-  static address _vector_iota_indices;
-  static address _large_array_equals;
-  static address _large_arrays_hashcode_boolean;
-  static address _large_arrays_hashcode_byte;
-  static address _large_arrays_hashcode_char;
-  static address _large_arrays_hashcode_int;
-  static address _large_arrays_hashcode_short;
-  static address _compare_long_string_LL;
-  static address _compare_long_string_LU;
-  static address _compare_long_string_UL;
-  static address _compare_long_string_UU;
-  static address _string_indexof_linear_ll;
-  static address _string_indexof_linear_uu;
-  static address _string_indexof_linear_ul;
-  static address _large_byte_array_inflate;
-  static address _count_positives;
-  static address _count_positives_long;
-
-  // final stubs
-  static address _zero_blocks;
-  static address _spin_wait;
-
-#endif
 
 #define DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
   static address STUB_FIELD_NAME(field_name) ;
