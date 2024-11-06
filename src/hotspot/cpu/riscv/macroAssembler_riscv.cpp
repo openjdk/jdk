@@ -4282,7 +4282,7 @@ int MacroAssembler::ic_check(int end_alignment) {
 }
 
 // Emit an address stub for a call to a target which is too far away.
-// Note that we only put the target address in the trampoline stub.
+// Note that we only put the target address of the call in the stub.
 //
 // code sequences:
 //
