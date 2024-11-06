@@ -59,7 +59,6 @@ public class LayoutNode {
     private int rightMargin;
     private int leftMargin;
 
-    // TODO make final
     private Vertex vertex; // Only used for non-dummy nodes, otherwise null
 
     private final List<LayoutEdge> preds = new ArrayList<>();

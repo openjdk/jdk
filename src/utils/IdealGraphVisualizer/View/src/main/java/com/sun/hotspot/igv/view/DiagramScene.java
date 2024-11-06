@@ -859,9 +859,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         FREE_FORM = true;
         seaLayoutManager.setCutEdges(model.getCutEdges());
         seaLayoutManager.doLayout(new LayoutGraph(edges, figures));
-        //rebuildConnectionLayer();
-        //validateAll();
-       // TODO
     }
 
     private void doSeaLayout(Set<Figure> figures, Set<Connection> edges) {
