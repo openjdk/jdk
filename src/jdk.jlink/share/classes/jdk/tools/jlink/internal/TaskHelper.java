@@ -592,9 +592,16 @@ public final class TaskHelper {
 
             log.println(bundleHelper.getMessage("main.command.files"));
             // If the JDK build has the run-time image capability show it
-            // in the help output
-            log.println(bundleHelper.getMessage("main.runtime.image.linking.capability",
-                                                linkableRuntimeEnabled ? "+" : "-"));
+            // in the help output in human readable form.
+            String qualifier = null;
+            if (linkableRuntimeEnabled) {
+                qualifier = bundleHelper.getMessage("main.runtime.image.linking.cap.enabled");
+            } else {
+                qualifier = bundleHelper.getMessage("main.runtime.image.linking.cap.disabled");
+            }
+            log.println(bundleHelper.getMessage("main.runtime.image.linking.cap.sect.header"));
+            log.println(bundleHelper.getMessage("main.runtime.image.linking.cap.msg",
+                                                qualifier));
         }
 
         public void listPlugins() {

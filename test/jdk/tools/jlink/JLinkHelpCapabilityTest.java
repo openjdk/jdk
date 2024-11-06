@@ -29,14 +29,14 @@ import java.util.spi.ToolProvider;
  * @test id=run-time-image-cap-yes
  * @summary Test jlink --help for capability output (true)
  * @requires (vm.compMode != "Xcomp" & jlink.runtime.linkable)
- * @run main/othervm JLinkHelpCapabilityTest true
+ * @run main/othervm -Duser.language=en JLinkHelpCapabilityTest true
  */
 
 /*
  * @test id=run-time-image-cap-no
  * @summary Test jlink --help for capability output (false)
  * @requires (vm.compMode != "Xcomp" & !jlink.runtime.linkable)
- * @run main/othervm JLinkHelpCapabilityTest false
+ * @run main/othervm -Duser.language=en JLinkHelpCapabilityTest false
  */
 public class JLinkHelpCapabilityTest {
     static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
@@ -46,8 +46,8 @@ public class JLinkHelpCapabilityTest {
 
     public static void main(String[] args) throws Exception {
         boolean runtimeLinkCap = Boolean.parseBoolean(args[0]);
-        String capabilities = String.format("Capabilities: %srun-time-image",
-                                            runtimeLinkCap ? "+" : "-");
+        String capabilities = String.format("Linking from run-time image %s",
+                                            runtimeLinkCap ? "enabled" : "disabled");
         {
             // Verify capability in --help output
             StringWriter writer = new StringWriter();
@@ -55,9 +55,27 @@ public class JLinkHelpCapabilityTest {
             JLINK_TOOL.run(pw, pw, "--help");
             String output = writer.toString().trim();
             String lines[] = output.split("\n");
-            if (!capabilities.equals(lines[lines.length - 1])) {
+            String capabilitiesMsg = null;
+            boolean seenCap = false;
+            for (int i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith("Capabilities:")) {
+                    seenCap = true;
+                    continue; // skip 'Capabilities:'
+                }
+                if (!seenCap) {
+                    continue;
+                } else {
+                    // Line after capabilities is the message we care about
+                    capabilitiesMsg = lines[i].trim();
+                    break;
+                }
+            }
+            System.out.println("DEBUG: Capabilities:");
+            System.out.println("DEBUG:   " + capabilitiesMsg);
+            if (!capabilities.equals(capabilitiesMsg)) {
                 System.err.println(output);
-                throw new AssertionError("'--help': Capabilities mismatch. Expected: '" + capabilities +"'");
+                throw new AssertionError("'--help': Capabilities mismatch. Expected: '" +
+                                         capabilities +"' but got '" + capabilitiesMsg + "'");
             }
         }
     }
