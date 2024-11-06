@@ -28,7 +28,6 @@ import static com.sun.hotspot.igv.hierarchicallayout.LayoutGraph.LINK_COMPARATOR
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.*;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
-import com.sun.hotspot.igv.util.Statistics;
 import java.awt.Point;
 import java.util.*;
 
@@ -76,7 +75,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
         } else { // only remove edges if we moved the node to a new layer
             graph.removeNodeAndEdges(movedNode);
-
             layerNr = graph.insertNewLayerIfNeeded(movedNode, layerNr);
             graph.addNodeToLayer(movedNode, layerNr);
             movedNode.setX(newLoc.x);
@@ -730,7 +728,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
 
             for (LayoutNode addedNode : addedNodes) {
-                int x = (AssignXCoordinates.calculateOptimalDown(addedNode) + AssignXCoordinates.calculateOptimalDown(addedNode)) / 2;
+                int x = (addedNode.calculateOptimalPositionDown() + addedNode.calculateOptimalPositionDown()) / 2;
                 addedNode.setX(x);
                 graph.getLayer(addedNode.getLayer()).sortNodesByXAndSetPositions();
 
@@ -879,32 +877,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
             graph.straightenEdges();
         }
 
-        static public int calculateOptimalDown(LayoutNode node) {
-            int size = node.getPreds().size();
-            if (size == 0) {
-                return node.getX();
-            }
-            int[] values = new int[size];
-            for (int i = 0; i < size; i++) {
-                LayoutEdge edge = node.getPreds().get(i);
-                values[i] = edge.getStartX() - edge.getRelativeToX();
-            }
-            return Statistics.median(values);
-        }
-
-        static public int calculateOptimalUp(LayoutNode node) {
-            int size = node.getSuccs().size();
-            if (size == 0) {
-                return node.getX();
-            }
-            int[] values = new int[size];
-            for (int i = 0; i < size; i++) {
-                LayoutEdge edge = node.getSuccs().get(i);
-                values[i] = edge.getEndX() - edge.getRelativeFromX();
-            }
-            return Statistics.median(values);
-        }
-
         static private void processRow(int[] space, LayoutNode[] processingOrder) {
             Arrays.sort(processingOrder, DUMMY_NODES_THEN_OPTIMAL_X);
             TreeSet<LayoutNode> treeSet = new TreeSet<>(NODE_POS_COMPARATOR);
@@ -931,7 +903,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         static private void sweepUp(LayoutGraph graph) {
             for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
                 for (LayoutNode node : upProcessingOrder[i]) {
-                    node.setOptimalX(calculateOptimalUp(node));
+                    node.setOptimalX(node.calculateOptimalPositionUp());
                 }
                 processRow(space[i], upProcessingOrder[i]);
             }
@@ -940,7 +912,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         static private void sweepDown(LayoutGraph graph) {
             for (int i = 1; i < graph.getLayerCount(); i++) {
                 for (LayoutNode node : downProcessingOrder[i]) {
-                    node.setOptimalX(calculateOptimalDown(node));
+                    node.setOptimalX(node.calculateOptimalPositionDown());
                 }
                 processRow(space[i], downProcessingOrder[i]);
             }

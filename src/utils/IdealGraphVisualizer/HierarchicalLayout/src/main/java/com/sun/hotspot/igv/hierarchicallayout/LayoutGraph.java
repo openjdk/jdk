@@ -482,10 +482,12 @@ public class LayoutGraph {
             if (dummyNode.getSuccs().isEmpty()) {
                 dummyNode.setLayer(layerNr + 1);
                 getLayer(layerNr + 1).add(dummyNode);
+                dummyNode.setX(dummyNode.calculateOptimalPositionDown());
                 getLayer(layerNr + 1).sortNodesByXAndSetPositions();
                 continue;
             } else if (dummyNode.getPreds().isEmpty()) {
                 dummyNode.setLayer(layerNr - 1);
+                dummyNode.setX(dummyNode.calculateOptimalPositionUp());
                 getLayer(layerNr - 1).add(dummyNode);
                 getLayer(layerNr - 1).sortNodesByXAndSetPositions();
                 continue;

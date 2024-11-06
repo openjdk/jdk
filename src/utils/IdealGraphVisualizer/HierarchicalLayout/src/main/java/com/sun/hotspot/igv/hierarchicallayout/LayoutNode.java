@@ -89,6 +89,42 @@ public class LayoutNode {
         }
     }
 
+    public int calculateOptimalPositionDown() {
+        int numPreds = preds.size();
+        if (numPreds == 0) {
+            return getX();
+        }
+
+        List<Integer> positions = new ArrayList<>(numPreds);
+        for (LayoutEdge edge : preds) {
+            positions.add(edge.getStartX() - edge.getRelativeToX());
+        }
+
+        Collections.sort(positions);
+        int midIndex = numPreds / 2;
+        return (numPreds % 2 == 0)
+                ? (positions.get(midIndex - 1) + positions.get(midIndex)) / 2
+                : positions.get(midIndex);
+    }
+
+    public int calculateOptimalPositionUp() {
+        int numSuccs = succs.size();
+        if (numSuccs == 0) {
+            return getX();
+        }
+
+        List<Integer> positions = new ArrayList<>(numSuccs);
+        for (LayoutEdge edge : succs) {
+            positions.add(edge.getEndX() - edge.getRelativeFromX());
+        }
+
+        Collections.sort(positions);
+        int midIndex = numSuccs / 2;
+        return (numSuccs % 2 == 0)
+                ? (positions.get(midIndex - 1) + positions.get(midIndex)) / 2
+                : positions.get(midIndex);
+    }
+
     public LayoutNode() {
         this(null);
     }
