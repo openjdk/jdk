@@ -31,6 +31,7 @@ import jtreg.SkippedException;
  * @test 
  * @summary Test verifies that jstack --mixed print information about VM locks
  * @requires vm.hasSA
+ * @requires vm.flagless
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -40,6 +41,7 @@ import jtreg.SkippedException;
 public class TestJhsdbJstackPrintVMLocks {
 
     public static void main(String[] args) throws Exception {
+        SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
 
         LingeredApp theApp = null;
         try {
@@ -51,6 +53,7 @@ public class TestJhsdbJstackPrintVMLocks {
                     "-Xbootclasspath/a:.");
 
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
+            theApp.waitAppReadyOrCrashed();
 
             JDKToolLauncher launcher = JDKToolLauncher
                     .createUsingTestJDK("jhsdb");
@@ -69,11 +72,6 @@ public class TestJhsdbJstackPrintVMLocks {
             System.err.println(out.getStderr());
 
             out.shouldContain("Mutex Compile_lock is owned by LockerThread");
-  
-        } catch (SkippedException se) {
-            throw se;
-        } catch (Exception ex) {
-            throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
             theApp.getProcess().destroyForcibly();
         }
