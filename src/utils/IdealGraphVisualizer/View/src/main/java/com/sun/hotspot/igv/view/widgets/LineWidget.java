@@ -110,6 +110,28 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         int minY = from.y;
         int maxX = to.x;
         int maxY = to.y;
+
+        if (fromControlYOffset != 0 && toControlYOffset != 0) {
+            // Adjust the bounding box to accommodate control points for curves
+            if (from.y < to.y) { // non-reversed edges
+                minY = Math.min(minY, from.y + fromControlYOffset);
+                maxY = Math.max(maxY, to.y + toControlYOffset);
+            } else { // reversed edges
+                if (from.x - to.x > 0) {
+                    minX = Math.min(minX, from.x - 150);
+                    maxX = Math.max(maxX, to.x + 150);
+                    minY = Math.min(minY, from.y + fromControlYOffset);
+                    maxY = Math.max(maxY, to.y + toControlYOffset);
+                } else {
+                    minX = Math.min(minX, from.x + 150);
+                    maxX = Math.max(maxX, to.x - 150);
+                    minY = Math.min(minY, from.y + fromControlYOffset);
+                    maxY = Math.max(maxY, to.y + toControlYOffset);
+                }
+            }
+        }
+
+        // Ensure min and max values are correct
         if (minX > maxX) {
             int tmp = minX;
             minX = maxX;
@@ -122,6 +144,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             maxY = tmp;
         }
 
+        // Set client area to include the curve and add a BORDER for extra space
         clientArea = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         clientArea.grow(BORDER, BORDER);
     }
@@ -151,10 +174,12 @@ public class LineWidget extends Widget implements PopupMenuProvider {
 
     public void setFromControlYOffset(int fromControlYOffset) {
         this.fromControlYOffset = fromControlYOffset;
+        computeClientArea();
     }
 
     public void setToControlYOffset(int toControlYOffset) {
         this.toControlYOffset = toControlYOffset;
+        computeClientArea();
     }
 
     public Point getFrom() {
