@@ -287,7 +287,6 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
 TEST_VM_F(NMTVMATreeTest, SetTag) {
   using State = VMATree::StateType;
-  auto i = [](MemTag f) -> uint8_t { return (uint8_t)f; };
   struct testrange {
     VMATree::position from;
     VMATree::position to;
