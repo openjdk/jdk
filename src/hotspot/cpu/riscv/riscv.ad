@@ -1266,8 +1266,7 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   sd(t0, Address(sp, wordSize))  ->  sd
   //   movptr(t1, addr, offset, t0)   ->  lui + lui + slli + add
   //   jalr(t1, offset)               ->  jalr
-  CodeBlob *cb = CodeCache::find_blob(_entry_point);
-  if (cb != nullptr) {
+  if (CodeCache::contains(_entry_point)) {
     if (UseTrampolines) {
       return 1 * NativeInstruction::instruction_size;
     }
@@ -2494,8 +2493,7 @@ encode %{
     // will be in a reachable segment) otherwise we have to use a jalr
     // which loads the absolute address into a register.
     address entry = (address)$meth$$method;
-    CodeBlob *cb = CodeCache::find_blob(entry);
-    if (cb != nullptr) {
+    if (CodeCache::contains(entry)) {
       address call = __ reloc_call(Address(entry, relocInfo::runtime_call_type));
       if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");

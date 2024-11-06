@@ -261,8 +261,8 @@ import jdk.internal.invoke.MhUtil;
  * {@snippet lang=java :
  *     private static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
  *
- *     // @link substring="runWhere" target="ScopedValue#runWhere(ScopedValue, Object, Runnable)" :
- *     ScopedValue.runWhere(USERNAME, "duke", () -> {
+ *     // @link substring="run" target="ScopedValue.Carrier#run(Runnable)" :
+ *     ScopedValue.where(USERNAME, "duke").run(() -> {
  *         try (var scope = new StructuredTaskScope<String>()) {
  *
  *             scope.fork(() -> childTask());           // @highlight substring="fork"
@@ -1007,9 +1007,9 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
          * value} bindings for inheritance by threads started in the task scope. The
-         * <a href="#TreeStructure">Tree Structure</a> section in the class description
-         * details how parent-child relations are established implicitly for the purpose
-         * of inheritance of scoped value bindings.
+         * {@linkplain StructuredTaskScope##TreeStructure Tree Structure} section
+         * in the class description details how parent-child relations are established
+         * implicitly for the purpose of inheritance of scoped value bindings.
          *
          * @param name the name of the task scope, can be null
          * @param factory the thread factory
@@ -1187,7 +1187,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
          * value} bindings for inheritance by threads started in the task scope. The
-         * <a href="#TreeStructure">Tree Structure</a> section in the class description
+         * {@linkplain StructuredTaskScope##TreeStructure Tree Structure} section in the class description
          * details how parent-child relations are established implicitly for the purpose
          * of inheritance of scoped value bindings.
          *

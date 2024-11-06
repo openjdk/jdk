@@ -47,9 +47,8 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Test jpackage command line with overlapping input and output paths
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile InOutPathTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=InOutPathTest
