@@ -27,7 +27,6 @@
  * @summary Test the caller class loader is not kept strongly reachable
  *         by reflection API
  * @library /test/lib/
- * @requires vm.compMode != "Xcomp"
  * @modules jdk.compiler
  * @build ReflectionCallerCacheTest Members jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm ReflectionCallerCacheTest
