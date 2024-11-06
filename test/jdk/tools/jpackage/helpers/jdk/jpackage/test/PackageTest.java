@@ -786,7 +786,7 @@ public final class PackageTest extends RunnablePackageTest {
     private Map<PackageType, PackageHandlers> packageHandlers;
     private boolean ignoreBundleOutputDir;
 
-    private final static File BUNDLE_OUTPUT_DIR;
+    private final static Path BUNDLE_OUTPUT_DIR;
 
     static {
         final String propertyName = "output";
