@@ -30,6 +30,7 @@ import com.sun.hotspot.igv.graph.OutputSlot;
 import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
+import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -145,6 +146,17 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         computeClientArea();
     }
 
+    private int fromControlYOffset;
+    private int toControlYOffset;
+
+    public void setFromControlYOffset(int fromControlYOffset) {
+        this.fromControlYOffset = fromControlYOffset;
+    }
+
+    public void setToControlYOffset(int toControlYOffset) {
+        this.toControlYOffset = toControlYOffset;
+    }
+
     public Point getFrom() {
         return from;
     }
@@ -190,7 +202,41 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
         }
 
-        g.drawLine(from.x, from.y, to.x, to.y);
+        // Define S-shaped curve with control points
+        if (fromControlYOffset != 0 && toControlYOffset != 0) {
+            if (from.y < to.y) { // non-reversed edges
+                if (Math.abs(from.x - to.x) > 10) {
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x, from.y + fromControlYOffset,
+                            to.x, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                } else {
+                    g.drawLine(from.x, from.y, to.x, to.y);
+                }
+            } else {  // reverse edges
+                if (from.x - to.x > 0) {
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x - 150, from.y + fromControlYOffset,
+                            to.x + 150, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                } else {
+                    // add x offset
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x + 150, from.y + fromControlYOffset,
+                            to.x - 150, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                }
+            }
+        } else {
+            // Fallback to straight line if control points are not set
+            g.drawLine(from.x, from.y, to.x, to.y);
+        }
 
         boolean sameFrom = false;
         boolean sameTo = successors.isEmpty();
