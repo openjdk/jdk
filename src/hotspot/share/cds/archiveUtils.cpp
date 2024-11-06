@@ -502,6 +502,9 @@ bool ArchiveWorkers::run_as_worker() {
   ArchiveWorkerTask* task = Atomic::load_acquire(&_task);
   task->run();
 
+  // All work done in threads should be visible to caller.
+  OrderAccess::fence();
+
   // Signal the pool the tasks are complete, if this is the last worker.
   if (Atomic::sub(&_running_workers, 1, memory_order_relaxed) == 0) {
     _end_semaphore.signal();
@@ -528,7 +531,4 @@ void ArchiveWorkerThread::run() {
   while (_pool->run_as_worker()) {
     // Work until terminated.
   }
-
-  // All work done in threads should be visible to caller.
-  OrderAccess::fence();
 }
