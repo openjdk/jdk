@@ -954,6 +954,10 @@ public class AWTEventMulticaster implements
      * If listener-b is null, it returns listener-a
      * If neither are null, then it creates and returns
      * a new AWTEventMulticaster instance which chains a with b.
+     * <p>
+     * Occasionally (after approximately 500 invocations) the root
+     * AWTEventMulticaster is rebalanced.
+     *
      * @param a event listener-a
      * @param b event listener-b
      * @return the resulting listener
@@ -961,7 +965,54 @@ public class AWTEventMulticaster implements
     protected static EventListener addInternal(EventListener a, EventListener b) {
         if (a == null)  return b;
         if (b == null)  return a;
-        return new AWTEventMulticaster(a, b);
+        AWTEventMulticaster n = new AWTEventMulticaster(a, b);
+        if (needsRebalance(n)) {
+            EventListener[] array = getListeners(n, EventListener.class);
+            return rebalance(array, 0, array.length - 1);
+        }
+        return n;
+    }
+
+    /**
+     * Return true if the argument represents a binary tree that needs to be rebalanced.
+     * <p>
+     * The criteria for when we "need" a rebalance is subjective. For now this method
+     * checks up to 500 of the topmost nodes of a AWTEventMulticaster. If they all include
+     * one leaf node, then this method returns true. This criteria will be met after
+     * 500 iterations of {@link #addInternal(EventListener, EventListener)}.
+     * <p>
+     * The first time this method is invoked it will convert a tree that has a degree
+     * of approximately 500 to a tree with a degree of approximately 10.
+     */
+    private static boolean needsRebalance(AWTEventMulticaster l) {
+        int level = 0;
+        while (true) {
+            level++;
+            if (l.a instanceof AWTEventMulticaster aMulti) {
+                if (l.b instanceof AWTEventMulticaster) {
+                    // we reached a node where both children are AWTEventMulticaster: let's assume
+                    // the current node marks the start of a well-balanced subtree
+                    break;
+                }
+                l = aMulti;
+            } else if (l.b instanceof AWTEventMulticaster bMulti) {
+                l = bMulti;
+            } else {
+                break;
+            }
+        }
+        return level > 500;
+    }
+
+    private static EventListener rebalance(EventListener[] array, int index0, int index1) {
+        if (index0 == index1)
+            return array[index0];
+        if (index0 == index1 -1)
+            return new AWTEventMulticaster(array[index0], array[index1]);
+        int mid = (index0 + index1)/2;
+        return new AWTEventMulticaster(
+                rebalance(array, index0, mid),
+                rebalance(array, mid + 1, index1));
     }
 
     /**
