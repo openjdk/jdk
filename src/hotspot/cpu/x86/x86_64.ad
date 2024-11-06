@@ -5551,13 +5551,24 @@ instruct bytes_reverse_short(rRegI dst, rFlagsReg cr) %{
 //---------- Zeros Count Instructions ------------------------------------------
 
 instruct countLeadingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
-  predicate(UseCountLeadingZerosInstruction);
+  predicate(UseCountLeadingZerosInstruction && !UseAPX);
   match(Set dst (CountLeadingZerosI src));
   effect(KILL cr);
 
   format %{ "lzcntl  $dst, $src\t# count leading zeros (int)" %}
   ins_encode %{
     __ lzcntl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countLeadingZerosI_ndd(rRegI dst, rRegI src) %{
+  predicate(UseCountLeadingZerosInstruction && UseAPX);
+  match(Set dst (CountLeadingZerosI src));
+
+  format %{ "elzcntl  $dst, $src\t# count leading zeros (int  nf)" %}
+  ins_encode %{
+    __ elzcntl($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -5600,13 +5611,24 @@ instruct countLeadingZerosI_bsr(rRegI dst, rRegI src, rFlagsReg cr) %{
 %}
 
 instruct countLeadingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
-  predicate(UseCountLeadingZerosInstruction);
+  predicate(UseCountLeadingZerosInstruction && !UseAPX);
   match(Set dst (CountLeadingZerosL src));
   effect(KILL cr);
 
   format %{ "lzcntq  $dst, $src\t# count leading zeros (long)" %}
   ins_encode %{
     __ lzcntq($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countLeadingZerosL_ndd(rRegI dst, rRegL src) %{
+  predicate(UseCountLeadingZerosInstruction && UseAPX);
+  match(Set dst (CountLeadingZerosL src));
+
+  format %{ "elzcntq  $dst, $src\t# count leading zeros (long nf)" %}
+  ins_encode %{
+    __ elzcntq($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
