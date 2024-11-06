@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,31 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
 
   return q;
 }
+
+//--------------------------transform_unsigned_int_divide------------------------
+// Convert a unsigned division by constant divisor into an alternate Ideal graph.
+// Return null if no transformation occurs.
+static Node *transform_unsigned_int_divide( PhaseGVN *phase, Node *dividend, jint divisor ) {
+  // Check for invalid divisors
+  assert( divisor != 0 && divisor != min_jint,
+          "bad divisor for transforming to long multiply" );
+
+  jint d = divisor;
+
+  if ( is_power_of_2(d) ) {
+    // division by a power of 2
+    return new URShiftINode(dividend, phase->intcon(log2i_graceful(d)));
+  } else {
+    /* TODO: we could implement the optimizations by
+     * Granlund and Montgomery: Division by Invariant Integers using Multiplication
+     * as was done for signed division.
+     * https://dl.acm.org/doi/pdf/10.1145/178243.178249
+     */
+  }
+
+  return nullptr;
+}
+
 
 //---------------------magic_long_divide_constants-----------------------------
 // Compute magic multiplier and shift constant for converting a 64 bit divide
@@ -875,7 +900,32 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
 Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
-  return nullptr;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return nullptr;
+
+  const Type *t = phase->type( in(2) );
+  if( t == TypeInt::ONE )      // Identity?
+    return nullptr;            // Skip it
+
+  const TypeInt *ti = t->isa_int();
+  if( !ti ) return nullptr;
+
+  // Check for useless control input
+  // Check for excluding div-zero case
+  if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
+    set_req(0, nullptr);           // Yank control input
+    return this;
+  }
+
+  if( !ti->is_con() ) return nullptr;
+  jint i = ti->get_con();       // Get divisor
+
+  if (i == 0) return nullptr;   // Dividing by zero constant does not idealize
+
+  // Dividing by MININT does not optimize as a power-of-2 shift.
+  if( i == min_jint ) return nullptr;
+
+  return transform_unsigned_int_divide( phase, in(1), i );
 }
 
 
