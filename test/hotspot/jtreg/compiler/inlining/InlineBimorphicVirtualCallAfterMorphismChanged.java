@@ -72,7 +72,7 @@ public class InlineBimorphicVirtualCallAfterMorphismChanged {
             "-XX:CompileCommand=compileonly,*::callSiteHolder", option,
             AbstractBase.class.getName()
         );
-        
+
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
 
