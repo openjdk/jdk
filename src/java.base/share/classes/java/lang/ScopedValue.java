@@ -158,7 +158,8 @@ import sun.security.action.GetPropertyAction;
  *     private static final ScopedValue<String> NAME = ScopedValue.newInstance();
 
  *     ScopedValue.where(NAME, "duke").run(() -> {
- *         try (var scope = new StructuredTaskScope<String>()) {
+ *         // @link substring="open" target="StructuredTaskScope#open()" :
+ *         try (var scope = StructuredTaskScope.open()) {
  *
  *              // @link substring="fork" target="StructuredTaskScope#fork(java.util.concurrent.Callable)" :
  *              scope.fork(() -> childTask1());

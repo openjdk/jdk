@@ -822,3 +822,7 @@ java/awt/Checkbox/CheckboxBoxSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxIndicatorSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all
 java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
+
+############################################################################
+
+tools/sincechecker/modules/java_base/CheckSince_javaBase.java 8343598 generic-all
