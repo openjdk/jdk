@@ -218,11 +218,9 @@ static Node *transform_unsigned_int_divide( PhaseGVN *phase, Node *dividend, jin
   assert( divisor != 0 && divisor != min_jint,
           "bad divisor for transforming to long multiply" );
 
-  jint d = divisor;
-
-  if ( is_power_of_2(d) ) {
+  if ( is_power_of_2(divisor) ) {
     // division by a power of 2
-    return new URShiftINode(dividend, phase->intcon(log2i_graceful(d)));
+    return new URShiftINode(dividend, phase->intcon(log2i_graceful(divisor)));
   } else {
     /* TODO: we could implement the optimizations by
      * Granlund and Montgomery: Division by Invariant Integers using Multiplication
@@ -470,6 +468,25 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
   }
 
   return q;
+}
+
+static Node *transform_unsigned_long_divide( PhaseGVN *phase, Node *dividend, jlong divisor ) {
+  // Check for invalid divisors
+  assert( divisor != 0 && divisor != min_jint,
+          "bad divisor for transforming to long multiply" );
+
+  if ( is_power_of_2(divisor) ) {
+    // division by a power of 2
+    return new URShiftLNode(dividend, phase->intcon(log2i_graceful(divisor)));
+  } else {
+    /* TODO: we could implement the optimizations by
+     * Granlund and Montgomery: Division by Invariant Integers using Multiplication
+     * as was done for signed division.
+     * https://dl.acm.org/doi/pdf/10.1145/178243.178249
+     */
+  }
+
+  return nullptr;
 }
 
 //=============================================================================
@@ -964,7 +981,32 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
 Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
-  return nullptr;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return nullptr;
+
+  const Type *t = phase->type( in(2) );
+  if( t == TypeLong::ONE )      // Identity?
+    return nullptr;             // Skip it
+
+  const TypeLong *tl = t->isa_long();
+  if( !tl ) return nullptr;
+
+  // Check for useless control input
+  // Check for excluding div-zero case
+  if (in(0) && (tl->_hi < 0 || tl->_lo > 0)) {
+    set_req(0, nullptr);         // Yank control input
+    return this;
+  }
+
+  if( !tl->is_con() ) return nullptr;
+  jlong l = tl->get_con();      // Get divisor
+
+  if (l == 0) return nullptr;   // Dividing by zero constant does not idealize
+
+  // Dividing by MINLONG does not optimize as a power-of-2 shift.
+  if( l == min_jlong ) return nullptr;
+
+  return transform_unsigned_long_divide( phase, in(1), l );
 }
 
 
