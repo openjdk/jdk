@@ -24,14 +24,19 @@
 
 package sun.jvm.hotspot.tools;
 
-import java.io.*;
-import java.util.*;
-import sun.jvm.hotspot.*;
+import java.io.PrintStream;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import sun.jvm.hotspot.code.*;
-import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.remote.*;
+import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.utilities.PlatformInfo;
@@ -80,6 +85,13 @@ public class PStack extends Tool {
          } catch (Exception exp) {
             out.println("can't print deadlock information: " + exp);
          }
+
+         int maxNum = Mutex.maxNum();
+         for (int i = 0; i < maxNum; i++) {
+         Mutex mutex = new Mutex(Mutex.at(i));
+            out.println("Locked mutex: " + i + "   name: " + mutex.name() + " owner: " + mutex.owner());
+         }
+
 
          List<ThreadProxy> l = cdbg.getThreadList();
          if (l.isEmpty() && PlatformInfo.getOS().equals("darwin")) {
