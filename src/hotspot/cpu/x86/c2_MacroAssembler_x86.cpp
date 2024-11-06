@@ -319,9 +319,9 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   movptr(Address(boxReg, 0), checked_cast<int32_t>(markWord::unused_mark().value()));
 
   // It's inflated and we use scrReg for ObjectMonitor* in this section.
+  movptr(boxReg, Address(r15_thread, JavaThread::lock_id_offset()));
   movq(scrReg, tmpReg);
   xorq(tmpReg, tmpReg);
-  movptr(boxReg, Address(r15_thread, JavaThread::lock_id_offset()));
   lock();
   cmpxchgptr(boxReg, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
 
