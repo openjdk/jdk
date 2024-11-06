@@ -25,6 +25,7 @@
 /*
  * @test
  * @summary Record timings of JMX Connector operations.
+ * @library /test/lib
  *
  * @run main/othervm JMXBench rmi
  * @run main/othervm JMXBench http
@@ -41,6 +42,8 @@ import java.lang.management.*;
 
 import javax.management.*;
 import javax.management.remote.*;
+
+import jdk.test.lib.Asserts;
 
 public class JMXBench {
 
@@ -72,7 +75,7 @@ public class JMXBench {
         Map<String, ?> env = Collections.singletonMap("jmx.remote.x.daemon", "true");
         JMXConnectorServer server = JMXConnectorServerFactory.newJMXConnectorServer(addr, env, mbs);
 
-        Timer t = new Timer("server start");
+        Timer t = new Timer(id + " server start");
         server.start();
         t.stop();
         System.out.println("Started server on " + server.getAddress());
@@ -90,50 +93,229 @@ public class JMXBench {
         t = new Timer(id + " getDefaultDomain");
         String defaultDomain = mbsc.getDefaultDomain();
         t.stop();
+        System.out.println("defaultDomain: " + defaultDomain);
 
         t = new Timer(id + " getMBeanCount");
         int mbeanCount = mbsc.getMBeanCount();
         t.stop();
+        System.out.println("mbeanCount: " + mbeanCount);
 
 
         ObjectName o = new ObjectName("JMImplementation:type=MBeanServerDelegate");
         MBeanInfo mbeanInfo = null;
-        t = new Timer(id + " getMBInfo JMImpl.");
+        t = new Timer(id + " getMBInfo JMImplementation 1");
         try {
             mbeanInfo = mbsc.getMBeanInfo(o);
         } catch (Exception e) {
             // ignore
         }
         t.stop();
+        System.out.println("MBeanInfo: " + mbeanInfo);
 
-        MBeanInfo mbeanInfo2 = null;
-        if (platform) {
-            o = new ObjectName("com.sun.management:type=HotSpotDiagnostic");
-            t = new Timer(id + " getMBInfo 2");
-            try {
-                mbeanInfo2 = mbsc.getMBeanInfo(o);
-            } catch (Exception e) {
-                // ignore
-            }
-            t.stop();
+        t = new Timer(id + " getMBInfo JMImplementation 2");
+        try {
+            mbeanInfo = mbsc.getMBeanInfo(o);
+        } catch (Exception e) {
+            // ignore
         }
+        t.stop();
+        System.out.println("MBeanInfo: " + mbeanInfo);
 
-        t = new Timer(id + " queryMBeans");
+        t = new Timer(id + " isRegistered (known to be registered) 1");
+        boolean isRegistered = mbsc.isRegistered(o);
+        t.stop();
+        Asserts.assertTrue(isRegistered, "expected isRegistered true");
+        t = new Timer(id + " isRegistered (known to be registered) 2");
+        isRegistered = mbsc.isRegistered(o);
+        t.stop();
+        Asserts.assertTrue(isRegistered, "expected isRegistered true");
+
+        ObjectName unknownObj = new ObjectName("SomeUnknownObject:type=Mystery");
+        t = new Timer(id + " isRegistered (known not to be registered) 1");
+        isRegistered = mbsc.isRegistered(unknownObj);
+        t.stop();
+        Asserts.assertFalse(isRegistered, "expected isRegistered false");
+        t = new Timer(id + " isRegistered (known not to be registered) 2");
+        isRegistered = mbsc.isRegistered(unknownObj);
+        t.stop();
+        Asserts.assertFalse(isRegistered, "expected isRegistered false");
+
+        Object attr = null;
+        t = new Timer(id + " getAttribute (known not to exist) 1");
+        try {
+            attr = mbsc.getAttribute(o, "foobar");
+            Asserts.fail("expected AttributeNotFoundException");
+        } catch (AttributeNotFoundException anfe) {
+        }
+        t.stop();
+        System.out.println("attr = " + attr);
+        t = new Timer(id + " getAttribute (known not to exist) 2");
+        try {
+            attr = mbsc.getAttribute(o, "foobar");
+            Asserts.fail("expected AttributeNotFoundException");
+        } catch (AttributeNotFoundException anfe) {
+        }
+        t.stop();
+        System.out.println("attr = " + attr);
+
+        t = new Timer(id + " getAttribute (known to exist) 1");
+        try {
+            attr = mbsc.getAttribute(o, "ImplementationVersion");
+        } catch (AttributeNotFoundException anfe) {
+            Asserts.fail("NOT expected: " + anfe);
+        }
+        t.stop();
+        System.out.println("attr = " + attr);
+
+        t = new Timer(id + " getAttribute (known to exist) 2");
+        try {
+            attr = mbsc.getAttribute(o, "ImplementationVersion");
+        } catch (AttributeNotFoundException anfe) {
+            Asserts.fail("NOT expected: " + anfe);
+        }
+        t.stop();
+        System.out.println("attr = " + attr);
+
+        AttributeList attrs = new AttributeList();
+        Attribute a1 = new Attribute("a1", 1);
+        Attribute a2 = new Attribute("a2", 2);
+        attrs.add(a1);
+        attrs.add(a2);
+
+        AttributeList attrResults = null;
+        t = new Timer(id + " getAttributes (plural) (not known)");
+        try {
+            attrResults = mbsc.getAttributes(o, new String [] { "a1", "a2"});
+        } catch (Exception e) {
+            Asserts.fail("NOT expected: " + e);
+        }
+        Asserts.assertTrue(attrResults.size() == 0, "attribute values not expected");
+        t.stop();
+        System.out.println("attr = " + attr);
+
+
+        t = new Timer(id + " setAttribute (not known)");
+        Object attrValue = null;
+        try {
+            mbsc.setAttribute(o, a1);
+            Asserts.fail("NO expected AttributeNotFoundException");
+        } catch (AttributeNotFoundException e) {
+            System.out.println("got expected: " + e);
+        }
+        t.stop();
+        
+        t = new Timer(id + " setAttributes");
+        try {
+            attrs = mbsc.setAttributes(o,  attrs);
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+            Asserts.fail("NOT expected: " + e);
+        }
+        t.stop();
+        System.out.println("attrs = " + attrs);
+
+        
+
+        NotificationListener listener = new MyListener();
+        t = new Timer(id + " addNotificationListener: null Listener"); 
+        try {
+            mbsc.addNotificationListener(o, (NotificationListener) null, (NotificationFilter) null, (Object) null); 
+            Asserts.fail(id + ": No expected Exception.");
+        } catch (Exception e) {
+            System.err.println("As expected: " + e);
+        }
+        t.stop();
+
+        t = new Timer(id + " addNotificationListener: valid Listener 1"); 
+        mbsc.addNotificationListener(o, listener, null, null); 
+        t.stop();
+        t = new Timer(id + " addNotificationListener: valid Listener 2"); 
+        mbsc.addNotificationListener(o, listener, null, null); 
+        t.stop();
+
+        t = new Timer(id + " addNotificationListener: with handback object"); 
+        mbsc.addNotificationListener(o, listener, null, new byte[1024 * 1024]); 
+        t.stop();
+
+
+        t = new Timer(id + " queryMBeans (null query)");
         Set<ObjectInstance> objects = mbsc.queryMBeans(null, null);
         t.stop();
+        System.out.println("objects: " + objects);
+
+
+        if (platform) {
+            MBeanInfo mbeanInfoClassLoading = null;
+            // o = new ObjectName("com.sun.management:type=HotSpotDiagnostic");
+            o = new ObjectName("java.lang:type=ClassLoading");
+            t = new Timer(id + " getMBInfo 2");
+            try {
+                mbeanInfoClassLoading = mbsc.getMBeanInfo(o);
+            } catch (Exception e) {
+                e.printStackTrace(System.err);
+                Asserts.fail(id + ": unexpected Exception: " + e);
+            }
+            t.stop();
+            System.out.println("MBeanInfo ClassLoading: " + mbeanInfoClassLoading);
+
+            t = new Timer(id + " getAttribute (known to exist) 1");
+            attr = mbsc.getAttribute(o, "TotalLoadedClassCount");
+            t.stop();
+            System.out.println("attr = " + attr);
+
+            t = new Timer(id + " getAttribute (known to exist) 2");
+            attr = mbsc.getAttribute(o, "TotalLoadedClassCount");
+            t.stop();
+
+            t = new Timer(id + " getAttribute (known to exist) 3");
+            attr = mbsc.getAttribute(o, "TotalLoadedClassCount");
+            t.stop();
+
+            // Get a boolean Attribute value, flip it, and check it:
+            t = new Timer(id + " getAttribute (Verbose, known to exist)");
+            boolean isVerbose = (Boolean) mbsc.getAttribute(o, "Verbose");
+            t.stop();
+            System.out.println("Verbose attr = " + attr);
+            Attribute updatedAttribute = new Attribute("Verbose", (Boolean) !isVerbose);
+            t = new Timer(id + " setAttribute (updating, known to exist)");
+            mbsc.setAttribute(o, updatedAttribute);
+            t.stop();
+            t = new Timer(id + " getAttribute (updated attribute, known to exist)");
+            boolean isVerboseChanged = (boolean) mbsc.getAttribute(o, "Verbose");
+            t.stop();
+
+            System.out.println("updated attr = " + attr);
+            Asserts.assertTrue(isVerbose != isVerboseChanged, "Verbose setting not changed: " + isVerboseChanged);
+        }
 
         System.out.println("Closing the client ...");
         t = new Timer(id + " close connection");
         conn.close();
         t.stop();
 
-        System.out.println("defaultDomain: " + defaultDomain);
-        System.out.println("mbeanCount: " + mbeanCount);
-        System.out.println("MBeanInfo: " + mbeanInfo);
-        if (platform) {
-            System.out.println("MBeanInfo 2: " + mbeanInfo2);
+    }
+
+    public class MyListener implements NotificationListener {
+
+        public void handleNotification(Notification notification, Object handback) {
+
         }
-        System.out.println("objects: " + objects);
+    }
+
+    public interface MyMBean {
+        public void setAttr1(int a);
+        public int getAttr1(int a);
+        public void setAttr2(int a);
+        public int getAttr2(int a);
+    }
+
+    public class My implements MyMBean {
+        int a1;
+        int a2;
+        public void setAttr1(int a) { a1 = a; }
+        public int getAttr1(int a) { return a1; }
+        public void setAttr2(int a) { a2 = a; }
+        public int getAttr2(int a) { return a2; }
 
     }
 

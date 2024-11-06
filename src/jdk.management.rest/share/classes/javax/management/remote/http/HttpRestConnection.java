@@ -547,6 +547,7 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
         JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(Attribute.class);
 //         System.err.println("AAAAA Attribute = " + attribute + " typeMapper = " + typeMapper);
         try {
+            // Manually form a simple JSON body:
             String body = null;
             if (typeMapper != null) {
                 body = typeMapper.toJsonValue(attribute).toJsonString();
@@ -562,12 +563,54 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
         }
     }
 
-    public AttributeList setAttributes(ObjectName name,
-                                       AttributeList attributes)
+    public AttributeList setAttributes(ObjectName name, AttributeList attributes)
         throws InstanceNotFoundException, ReflectionException, IOException {
 
-        // XXX POST 
-        return null;
+        JSONObject o = objectForName(name);
+        if (o == null) {
+            throw new InstanceNotFoundException("no object for '" + name + "'");
+        }
+        String href = objectRefMap.get(name);
+/* not necessary...
+        JSONObject oi = objectInfoForName(name);
+        JSONArray objectAttrs = JSONObject.getObjectFieldArray(oi, "attributeInfo");
+        if (objectAttrs == null) {
+            throw new InstanceNotFoundException("no Attribute Info in '" + name + "' (internal error)");
+        }  */
+
+        JSONObject body = new JSONObject();
+        JSONObject jsonAttributes = new JSONObject();
+        body.put("attributes", jsonAttributes);
+        JSONObject set = new JSONObject();
+        jsonAttributes.put("set", set);
+
+        for (Attribute a : attributes.asList()) {
+            Object value = a.getValue();
+            JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(value);
+            if (typeMapper == null) {
+                System.err.println("AAAAA Attribute = " + a + " no typeMapper for: " + value);
+                continue;
+            }
+            try {
+                set.put(a.getName(), typeMapper.toJsonValue(value));
+            } catch (JSONMappingException jme) {
+                System.err.println("AAAAA Attribute = " + a + " value: " + value + ": " + jme);
+            }
+        }
+        System.err.println("AAAAA setAttributes body = " + body.toJsonString());
+
+        AttributeList attrList = null;
+        try {
+            String s = executeHttpPostRequest(url(href), body.toJsonString());
+            System.err.println("AAAAA result = " + s);
+            JSONParser parser = new JSONParser(s);
+            JSONElement json = parser.parse();
+            System.err.println("AAAAA setAttributes gets: " + json.toJsonString());
+
+        } catch (ParseException pe) {
+            pe.printStackTrace(System.err);
+        }
+        return attrList;
     }
 
     /**
@@ -1110,10 +1153,18 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
         return n;
     }
 
+    public void removeNotificationListener(ObjectName name, ObjectName listener)
+        throws InstanceNotFoundException, ListenerNotFoundException, IOException {
+
+        // Lookup listener by name?
+//        removeNotificationListener(name, listener, null, null);
+    }
+
     public void removeNotificationListener(ObjectName name,
-                                           ObjectName listener)
-        throws InstanceNotFoundException, ListenerNotFoundException,
-               IOException {
+                                           ObjectName listener,
+                                           NotificationFilter filter,
+                                           Object handback)
+            throws InstanceNotFoundException, ListenerNotFoundException, IOException {
 
         JSONObject o = objectInfoForName(name);
         // remove local poller
@@ -1139,32 +1190,20 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
         }
     }
 
-    public void removeNotificationListener(ObjectName name,
-                                           ObjectName listener,
-                                           NotificationFilter filter,
-                                           Object handback)
+    public void removeNotificationListener(ObjectName name, NotificationListener listener)
             throws InstanceNotFoundException, ListenerNotFoundException,
                    IOException {
 
-//        throw new UnsupportedOperationException("removeNotificationListener not supported");
-    }
-
-    public void removeNotificationListener(ObjectName name,
-                                           NotificationListener listener)
-            throws InstanceNotFoundException, ListenerNotFoundException,
-                   IOException {
-
-//        throw new UnsupportedOperationException("removeNotificationListener not supported");
+        removeNotificationListener(name, listener, null, null);
     }
 
     public void removeNotificationListener(ObjectName name,
                                            NotificationListener listener,
                                            NotificationFilter filter,
                                            Object handback)
-            throws InstanceNotFoundException, ListenerNotFoundException,
-                   IOException {
+            throws InstanceNotFoundException, ListenerNotFoundException, IOException {
 
-//        throw new UnsupportedOperationException("removeNotificationListener not supported");
+        removeNotificationListener(name, listener, null, null);
     }
 
     public MBeanInfo getMBeanInfo(ObjectName name)
