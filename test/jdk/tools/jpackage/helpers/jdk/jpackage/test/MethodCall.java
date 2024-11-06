@@ -76,33 +76,11 @@ class MethodCall implements ThrowingConsumer {
 
         var ctor = findMatchingConstructor(method.getDeclaringClass(), ctorArgs);
 
-        return ctor.newInstance(mapVarArgs(ctor, ctorArgs));
+        return ctor.newInstance(mapArgs(ctor, ctorArgs));
     }
 
-    static Object[] mapVarArgs(Executable executable, final Object ... args) {
-        if (executable.isVarArgs()) {
-            var paramTypes = executable.getParameterTypes();
-            Class varArgParamType = paramTypes[paramTypes.length - 1];
-
-            Object[] newArgs;
-            if (paramTypes.length - args.length == 1) {
-                // Empty var args
-
-                // "args" can be of type String[] if the "executable" is "foo(String ... str)"
-                newArgs = Arrays.copyOf(args, args.length + 1, Object[].class);
-                newArgs[newArgs.length - 1] = Array.newInstance(varArgParamType.componentType(), 0);
-            } else {
-                var varArgs = Arrays.copyOfRange(args, paramTypes.length - 1,
-                        args.length, varArgParamType);
-
-                // "args" can be of type String[] if the "executable" is "foo(String ... str)"
-                newArgs = Arrays.copyOfRange(args, 0, paramTypes.length, Object[].class);
-                newArgs[newArgs.length - 1] = varArgs;
-            }
-            return newArgs;
-        }
-
-        return args;
+    static Object[] mapArgs(Executable executable, final Object ... args) {
+        return mapPrimitiveTypeArgs(executable, mapVarArgs(executable, args));
     }
 
     void checkRequiredConstructor() throws NoSuchMethodException {
@@ -130,6 +108,65 @@ class MethodCall implements ThrowingConsumer {
     @Override
     public void accept(Object thiz) throws Throwable {
         method.invoke(thiz, methodArgs);
+    }
+
+    private static Object[] mapVarArgs(Executable executable, final Object ... args) {
+        if (executable.isVarArgs()) {
+            var paramTypes = executable.getParameterTypes();
+            Class varArgParamType = paramTypes[paramTypes.length - 1];
+
+            Object[] newArgs;
+            if (paramTypes.length - args.length == 1) {
+                // Empty var args
+
+                // "args" can be of type String[] if the "executable" is "foo(String ... str)"
+                newArgs = Arrays.copyOf(args, args.length + 1, Object[].class);
+                newArgs[newArgs.length - 1] = Array.newInstance(varArgParamType.componentType(), 0);
+            } else {
+                var varArgs = Arrays.copyOfRange(args, paramTypes.length - 1,
+                        args.length, varArgParamType);
+
+                // "args" can be of type String[] if the "executable" is "foo(String ... str)"
+                newArgs = Arrays.copyOfRange(args, 0, paramTypes.length, Object[].class);
+                newArgs[newArgs.length - 1] = varArgs;
+            }
+            return newArgs;
+        }
+
+        return args;
+    }
+
+    private static Object[] mapPrimitiveTypeArgs(Executable executable, final Object ... args) {
+        var paramTypes = executable.getParameterTypes();
+        if (paramTypes.length != args.length) {
+            throw new IllegalArgumentException(
+                    "The number of arguments must be equal to the number of parameters of the executable");
+        }
+        
+        if (IntStream.range(0, args.length).allMatch(idx -> {
+            return Optional.ofNullable(args[idx]).map(Object::getClass).map(paramTypes[idx]::isAssignableFrom).orElse(true);
+        })) {
+            return args;
+        } else {
+            var newArgs = Arrays.copyOf(args, args.length, Object[].class);
+            for (var idx = 0; idx != args.length; ++idx) {
+                var paramType = paramTypes[idx];
+                var argValue = args[idx];
+                var argType = argValue.getClass();
+                if(argType.isArray() && !paramType.isAssignableFrom(argType) ) {
+                    var length = Array.getLength(argValue);
+                    var newArray = Array.newInstance(paramType.getComponentType(), length);
+                    for (var arrayIdx = 0; arrayIdx != length; ++arrayIdx) {
+                        Array.set(newArray, arrayIdx, Array.get(argValue, arrayIdx));
+                    }
+                    newArgs[idx] = newArray;
+                } else {
+                    newArgs[idx] = argValue;
+                }
+            }
+            
+            return newArgs;
+        }
     }
 
     private static <T extends Executable> Stream<T> filterMatchingExecutablesForParameterValues(

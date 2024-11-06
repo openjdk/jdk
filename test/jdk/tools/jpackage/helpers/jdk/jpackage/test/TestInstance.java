@@ -80,12 +80,12 @@ final class TestInstance implements ThrowingRunnable {
             }
 
             Builder ctorArgs(Object... v) {
-                ctorArgs = ofNullable(v);
+                ctorArgs = Arrays.asList(v);
                 return this;
             }
 
             Builder methodArgs(Object... v) {
-                methodArgs = ofNullable(v);
+                methodArgs = Arrays.asList(v);
                 return this;
             }
 
@@ -119,14 +119,6 @@ final class TestInstance implements ThrowingRunnable {
                     }
                     return String.format("%s", v);
                 }).collect(Collectors.joining(", "));
-            }
-
-            private static List<Object> ofNullable(Object... values) {
-                List<Object> result = new ArrayList();
-                for (var v: values) {
-                    result.add(v);
-                }
-                return result;
             }
 
             private List<Object> ctorArgs;

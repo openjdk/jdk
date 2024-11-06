@@ -41,7 +41,9 @@ import jdk.jpackage.test.Annotations.AfterEach;
 import jdk.jpackage.test.Annotations.BeforeEach;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
+import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
+import jdk.jpackage.test.TestMethodSupplier.InvalidAnnotationException;
 import static jdk.jpackage.test.TestMethodSupplier.MethodQuery.fromQualifiedMethodName;
 
 final class TestBuilder implements AutoCloseable {
@@ -223,6 +225,8 @@ final class TestBuilder implements AutoCloseable {
         for (String token : v.split(",")) {
             Class testSet = probeClass(token);
             if (testSet != null) {
+                toConsumer(testMethodSupplier::verifyTestClass).accept(testSet);
+                
                 // Test set class specified. Pull in all public methods
                 // from the class with @Test annotation removing name duplicates.
                 // Overloads will be handled at the next phase of processing.
@@ -275,7 +279,7 @@ final class TestBuilder implements AutoCloseable {
     }
 
     private Stream<MethodCall> toMethodCalls(Method method) throws
-            IllegalAccessException, InvocationTargetException {
+            IllegalAccessException, InvocationTargetException, InvalidAnnotationException {
         return testMethodSupplier.mapToMethodCalls(method).peek(methodCall -> {
             // Make sure required constructor is accessible if the one is needed.
             // Need to probe all methods as some of them might be static

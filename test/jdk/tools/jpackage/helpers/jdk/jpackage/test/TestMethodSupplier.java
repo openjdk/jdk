@@ -48,8 +48,9 @@ import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.ParameterSupplierGroup;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
+import static jdk.jpackage.test.Functional.ThrowingFunction.toFunction;
 import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
-import static jdk.jpackage.test.MethodCall.mapVarArgs;
+import static jdk.jpackage.test.MethodCall.mapArgs;
 
 final class TestMethodSupplier {
 
@@ -77,6 +78,10 @@ final class TestMethodSupplier {
         }
     }
 
+    void verifyTestClass(Class<?> type) throws InvalidAnnotationException {
+        TestClassVerifier.verifyType(type);
+    }
+
     List<Method> findNullaryLikeMethods(MethodQuery query) throws NoSuchMethodException {
         List<Method> methods;
 
@@ -94,8 +99,8 @@ final class TestMethodSupplier {
         }
 
         methods = methods.stream().filter(method -> {
-            if (isParametrized(method)) {
-                // Always accept method with annotations producing arguments for its invocation.
+            if (isParameterized(method) && isTest(method)) {
+                // Always accept test method with annotations producing arguments for its invocation.
                 return true;
             } else {
                 return method.getParameterCount() == 0;
@@ -133,7 +138,7 @@ final class TestMethodSupplier {
     }
 
     private Stream<MethodCall> toMethodCalls(Object[] ctorArgs, Method method) {
-        if (!isParametrized(method)) {
+        if (!isParameterized(method)) {
             return Stream.of(new MethodCall(ctorArgs, method));
         }
 
@@ -196,7 +201,7 @@ final class TestMethodSupplier {
                     List.of(annotationArgs), exec));
         }
 
-        var args = mapVarArgs(exec, IntStream.range(0, argTypes.length).mapToObj(idx -> {
+        var args = mapArgs(exec, IntStream.range(0, argTypes.length).mapToObj(idx -> {
             return fromString(annotationArgs[idx], argTypes[idx]);
         }).toArray(Object[]::new));
 
@@ -216,14 +221,23 @@ final class TestMethodSupplier {
         final MethodQuery methodQuery;
         if (!a.value().contains(".")) {
             // No class name specified
-            methodQuery = new MethodQuery(execClass.getCanonicalName(), a.value());
+            methodQuery = new MethodQuery(execClass.getName(), a.value());
         } else {
             methodQuery = MethodQuery.fromQualifiedMethodName(supplierFuncName);
         }
 
         final Method supplierMethod;
         try {
-            var allParameterSuppliers = filterParameterSuppliers(execClass).toList();
+            final var parameterSupplierCandidates = findNullaryLikeMethods(methodQuery);
+            final Function<String, Class> classForName = toFunction(Class::forName);
+            final var supplierMethodClass = classForName.apply(methodQuery.className());
+            if (parameterSupplierCandidates.isEmpty()) {
+                throw new RuntimeException(String.format(
+                        "No parameter suppliers in [%s] class",
+                        supplierMethodClass.getName()));
+            }
+
+            var allParameterSuppliers = filterParameterSuppliers(supplierMethodClass).toList();
 
             supplierMethod = findNullaryLikeMethods(methodQuery)
                     .stream()
@@ -234,7 +248,7 @@ final class TestMethodSupplier {
                                 a, supplierFuncName);
                         trace(String.format(
                                 "%s. Parameter suppliers of %s class:", msg,
-                                execClass.getCanonicalName()));
+                                execClass.getName()));
                         IntStream.range(0, allParameterSuppliers.size()).mapToObj(idx -> {
                             return String.format("  [%d/%d] %s()", idx + 1,
                                     allParameterSuppliers.size(),
@@ -249,7 +263,7 @@ final class TestMethodSupplier {
         }
 
         return createArgs(supplierMethod).map(args -> {
-            return mapVarArgs(exec, args);
+            return mapArgs(exec, args);
         }).toList();
     }
 
@@ -273,11 +287,15 @@ final class TestMethodSupplier {
         }
     }
 
-    private static boolean isParametrized(Method method) {
-        return method.isAnnotationPresent(Test.class) && Stream.of(
+    private static boolean isParameterized(Method method) {
+        return Stream.of(
                 Parameter.class, ParameterGroup.class,
                 ParameterSupplier.class, ParameterSupplierGroup.class
         ).anyMatch(method::isAnnotationPresent);
+    }
+    
+    private static boolean isTest(Method method) {
+        return method.isAnnotationPresent(Test.class);
     }
 
     private static boolean canRunOnTheOperatingSystem(OperatingSystem[] include,
@@ -337,14 +355,52 @@ final class TestMethodSupplier {
         if (converter == null) {
             throw new RuntimeException(String.format(
                     "Failed to find a conversion of [%s] string to %s type",
-                    value, toType.getCanonicalName()));
+                    value, toType.getName()));
         }
         return converter.apply(value);
     }
 
-    static void trace(String msg) {
+    private static void trace(String msg) {
         if (TKit.VERBOSE_TEST_SETUP) {
             TKit.log(msg);
+        }
+    }
+
+    static class InvalidAnnotationException extends Exception {
+        InvalidAnnotationException(String msg) {
+            super(msg);
+        }
+    }
+
+    private static class TestClassVerifier {
+        static void verifyType(Class<?> type) throws InvalidAnnotationException {
+            for (var method : type.getDeclaredMethods()) {
+                method.setAccessible(true);
+                verifyAnnotationsCorrect(method);
+            }
+        }
+
+        private static void verifyAnnotationsCorrect(Method method) throws
+                InvalidAnnotationException {
+            var parameterized = isParameterized(method);
+            if (parameterized && !isTest(method)) {
+                throw new InvalidAnnotationException(String.format(
+                        "Missing %s annotation on [%s] method", Test.class.getName(), method));
+            }
+
+            var isPublic = Modifier.isPublic(method.getModifiers());
+
+            if (isTest(method) && !isPublic) {
+                throw new InvalidAnnotationException(String.format(
+                        "Non-public method [%s] with %s annotation",
+                        method, Test.class.getName()));
+            }
+
+            if (method.isAnnotationPresent(Parameters.class) && !isPublic) {
+                throw new InvalidAnnotationException(String.format(
+                        "Non-public method [%s] with %s annotation",
+                        method, Test.class.getName()));
+            }
         }
     }
 
