@@ -51,4 +51,9 @@ void Compile::pd_compiler2_init() {
     FLAG_SET_DEFAULT(OptimizeFill, false);
   }
 
+  if (OptoScheduling) {
+    // The OptoScheduling information is not maintained in ppd.ad.
+    warning("OptoScheduling is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptoScheduling, false);
+  }
 }
