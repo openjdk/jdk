@@ -34,6 +34,9 @@
 
 VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
 
+PlatformMutex* VirtualMemoryTracker::Locker::_lock = nullptr;
+Thread* VirtualMemoryTracker::Locker::_owner = nullptr;
+
 void VirtualMemory::update_peak(size_t size) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
