@@ -386,7 +386,6 @@ class VirtualMemoryTracker : AllStatic {
 
     Locker(Thread* owner = Thread::current_or_null_safe()) {
       assert(_lock != nullptr, "must");
-      assert(_owner == nullptr, "lock is not recursive");
       _lock->lock();
       _owner = owner;
     }
