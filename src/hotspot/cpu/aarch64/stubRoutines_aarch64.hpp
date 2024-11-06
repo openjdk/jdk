@@ -34,17 +34,12 @@ static bool    returns_to_call_stub(address return_pc)   {
   return return_pc == _call_stub_return_address;
 }
 
+// emit enum used to size per-blob code buffers
+
 #define DEFINE_BLOB_SIZE(blob_name, size) \
   _ ## blob_name ## _code_size = size,
 
 enum platform_dependent_constants {
-  // simply increase sizes if too small (assembler will crash if too small)
-  /*
-  _initial_stubs_code_size      = 10000,
-  _continuation_stubs_code_size =  2000,
-  _compiler_stubs_code_size     = 30000 ZGC_ONLY(+10000),
-  _final_stubs_code_size        = 20000 ZGC_ONLY(+100000)
-  */
   STUBGEN_ARCH_BLOBS_DO(DEFINE_BLOB_SIZE)
 };
 
@@ -56,7 +51,7 @@ class aarch64 {
   friend class JVMCIVMStructs;
 #endif
 
- private:
+  // declare fields for arch-specific entries -- getters are not needed
 
 #define DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
   static address STUB_FIELD_NAME(field_name) ;
