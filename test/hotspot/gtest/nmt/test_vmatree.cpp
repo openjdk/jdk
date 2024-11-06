@@ -354,7 +354,6 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     // OK, set tag
     tree.set_tag(0, 500, mtGC);
     tree.set_tag(500, 100, mtClassShared);
-
     expect_equivalent_form(expected, tree);
   }
 
@@ -412,6 +411,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     tree.reserve_mapping(0, 100, gc);
     tree.reserve_mapping(100, 100, compiler);
     tree.set_tag(75, 50, mtClass);
+    expect_equivalent_form(expected, tree);
   }
 }
 
