@@ -151,7 +151,8 @@ public class ML_DSA_Provider {
         }
 
         @Override
-        public boolean implVerify(String name, byte[] pkBytes, Object pk2, byte[] msg, byte[] sigBytes) {
+        public boolean implVerify(String name, byte[] pkBytes, Object pk2, byte[] msg, byte[] sigBytes)
+                throws SignatureException {
             var size = name2int(name);
             var mlDsa = new ML_DSA(size);
             if (version == Version.FINAL) {

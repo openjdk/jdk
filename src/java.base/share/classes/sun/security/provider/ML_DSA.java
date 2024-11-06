@@ -31,6 +31,7 @@ import sun.security.provider.SHA3.SHAKE256;
 
 import java.security.MessageDigest;
 import java.security.InvalidKeyException;
+import java.security.SignatureException;
 import java.util.Arrays;
 
 public class ML_DSA {
@@ -682,13 +683,11 @@ public class ML_DSA {
         }
     }
 
-    public boolean verifyInternal(byte[] pkBytes, byte[] message, byte[] sigBytes) {
+    public boolean verifyInternal(byte[] pkBytes, byte[] message, byte[] sigBytes)
+            throws SignatureException {
         //Decode sig and initialize hash
         ML_DSA_Signature sig = sigDecode(sigBytes);
         var hash = new SHAKE256(0);
-
-        //Check hint encoding
-        if (sig.hint() == null) {return false;}
 
         //Decode pk
         ML_DSA_PublicKey pk = pkDecode(pkBytes);
@@ -1000,19 +999,32 @@ public class ML_DSA {
         return sigBytes;
     }
 
-    public ML_DSA_Signature sigDecode(byte[] sig) {
+    public ML_DSA_Signature sigDecode(byte[] sig) throws SignatureException {
+
+        int cSize = lambda / 4;
+        int zSize = mlDsa_l * 32 * (1 + gamma1Bits);
+
+        int sigLen = cSize + zSize + omega + mlDsa_k;
+        if (sig.length != sigLen) {
+            throw new SignatureException("Incorrect signature length");
+        }
+
         //Decode cTilde
         byte[] cTilde = Arrays.copyOfRange(sig, 0, lambda/4);
 
         //Decode z
-        int start = lambda / 4;
-        int end = start + (32 * mlDsa_l * (1 + gamma1Bits));
+        int start = cSize;
+        int end = start + zSize;
         int[][] z = new int[mlDsa_l][ML_DSA_N];
         bitUnpack(z, sig, start, mlDsa_l, gamma1, gamma1Bits + 1);
 
         //Decode h
         start = end;
         boolean[][] h = hintBitUnpack(sig, start);
+        if (h == null) {
+            throw new SignatureException("Invalid hints encoding");
+        }
+
         return new ML_DSA_Signature(cTilde, z, h);
     }
 
