@@ -5817,7 +5817,6 @@ void* os::get_default_process_handle() {
   return (void*)GetModuleHandle(nullptr);
 }
 
-// FIXME
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
 // which is used to find statically linked in agents.
 // Parameters:
