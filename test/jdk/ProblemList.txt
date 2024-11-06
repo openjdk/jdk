@@ -774,8 +774,8 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 
-java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id0    8343244 linux-all
-java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1    8343244 linux-all
+java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id0    8343244 generic-all
+java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1    8343244 generic-all
 
 ############################################################################
 
