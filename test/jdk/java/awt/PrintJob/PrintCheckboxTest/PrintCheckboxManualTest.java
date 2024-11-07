@@ -19,7 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- * @requires (os.family == "linux")
  */
 
 /*
@@ -28,10 +27,11 @@
  * @summary Tests that there is no ClassCastException thrown in printing
  *          checkbox and scrollbar with XAWT
  * @key printer
+ * @requires (os.family == "linux")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PrintCheckboxManualTest
-*/
+ */
 
 import java.awt.Button;
 import java.awt.Checkbox;
