@@ -8792,12 +8792,24 @@ instruct i2s(rRegI dst, rRegI src, immI_16 sixteen)
 // Rotate left by constant.
 instruct rolI_immI8_legacy(rRegI dst, immI8 shift, rFlagsReg cr)
 %{
-  predicate(!VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  predicate(!UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateLeft dst shift));
   effect(KILL cr);
   format %{ "roll    $dst, $shift" %}
   ins_encode %{
     __ roll($dst$$Register, $shift$$constant);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Rotate left by constant.
+instruct rolI_immI8_ndd(rRegI dst, rRegI src, immI8 shift)
+%{
+  predicate(UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateLeft src shift));
+  format %{ "eroll    $dst, $src, $shift\t# rotate left (int ndd)" %}
+  ins_encode %{
+    __ eroll($dst$$Register, $src$$Register, $shift$$constant, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8830,12 +8842,24 @@ instruct rolI_mem_immI8(rRegI dst, memory src, immI8 shift)
 // Rotate Left by variable
 instruct rolI_rReg_Var(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %{
-  predicate(n->bottom_type()->basic_type() == T_INT);
+  predicate(!UseAPX && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateLeft dst shift));
   effect(KILL cr);
   format %{ "roll    $dst, $shift" %}
   ins_encode %{
     __ roll($dst$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Rotate Left by variable
+instruct rolI_rReg_Var_ndd(rRegI dst, rRegI src, rcx_RegI shift)
+%{
+  predicate(UseAPX && n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateLeft src shift));
+  format %{ "eroll    $dst, $src, $shift\t# rotate left (int ndd)" %}
+  ins_encode %{
+    __ eroll($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -8893,12 +8917,24 @@ instruct rorI_rReg_Var(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 // Rotate Left by constant.
 instruct rolL_immI8_legacy(rRegL dst, immI8 shift, rFlagsReg cr)
 %{
-  predicate(!VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  predicate(!UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateLeft dst shift));
   effect(KILL cr);
   format %{ "rolq    $dst, $shift" %}
   ins_encode %{
     __ rolq($dst$$Register, $shift$$constant);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Rotate Left by constant.
+instruct rolL_immI8_ndd(rRegL dst, rRegL src, immI8 shift)
+%{
+  predicate(UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateLeft src shift));
+  format %{ "erolq    $dst, $src, $shift\t# rotate left (long ndd)" %}
+  ins_encode %{
+    __ erolq($dst$$Register, $src$$Register, $shift$$constant, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8931,12 +8967,24 @@ instruct rolL_mem_immI8(rRegL dst, memory src, immI8 shift)
 // Rotate Left by variable
 instruct rolL_rReg_Var(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %{
-  predicate(n->bottom_type()->basic_type() == T_LONG);
+  predicate(!UseAPX && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateLeft dst shift));
   effect(KILL cr);
   format %{ "rolq    $dst, $shift" %}
   ins_encode %{
     __ rolq($dst$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Rotate Left by variable
+instruct rolL_rReg_Var_ndd(rRegL dst, rRegL src, rcx_RegI shift)
+%{
+  predicate(UseAPX && n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateLeft src shift));
+  format %{ "erolq    $dst, $src, $shift\t# rotate left(long ndd)" %}
+  ins_encode %{
+    __ erolq($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg_reg);
 %}
