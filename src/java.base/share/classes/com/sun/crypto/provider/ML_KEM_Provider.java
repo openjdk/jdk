@@ -38,10 +38,16 @@ import javax.crypto.DecapsulateException;
 public final class ML_KEM_Provider {
 
     static int name2int(String name) {
-        if (name.endsWith("512")) return 512;
-        else if (name.endsWith("768")) return 768;
-        else if (name.endsWith("1024")) return 1024;
-        else throw new ProviderException();
+        if (name.endsWith("512")) {
+            return 512;
+        } else if (name.endsWith("768")) {
+            return 768;
+        } else if (name.endsWith("1024")) {
+            return 1024;
+        } else {
+            // should not happen
+            throw new ProviderException("Unknown name " + name);
+        }
     }
 
     public static class KPG extends NamedKeyPairGenerator {
@@ -67,14 +73,15 @@ public final class ML_KEM_Provider {
             try {
                 kp = mlKem.generateKemKeyPair(seed, z);
             } catch (NoSuchAlgorithmException | DigestException e) {
-                throw new RuntimeException("internal error", e);
+                throw new ProviderException("provider error", e);
             } finally {
                 Arrays.fill(seed, (byte)0);
                 Arrays.fill(z, (byte)0);
             }
             return new byte[][] {
-                kp.encapsulationKey().keyBytes(),
-                kp.decapsulationKey().keyBytes() };
+                    kp.encapsulationKey().keyBytes(),
+                    kp.decapsulationKey().keyBytes()
+            };
         }
     }
 
@@ -136,16 +143,17 @@ public final class ML_KEM_Provider {
             ML_KEM.ML_KEM_EncapsulateResult mlKemEncapsulateResult = null;
             try {
                 mlKemEncapsulateResult = mlKem.encapsulate(
-                    new ML_KEM.ML_KEM_EncapsulationKey(encapsulationKey), randomBytes);
+                        new ML_KEM.ML_KEM_EncapsulationKey(encapsulationKey), randomBytes);
             } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-                throw new RuntimeException(e); // should not happen
+                throw new ProviderException("provider error", e); // should not happen
             } finally {
                 Arrays.fill(randomBytes, (byte) 0);
             }
 
             return new byte[][] {
                 mlKemEncapsulateResult.cipherText().encryptedBytes(),
-                mlKemEncapsulateResult.sharedSecret() };
+                mlKemEncapsulateResult.sharedSecret()
+            };
         }
 
         @Override
@@ -156,16 +164,18 @@ public final class ML_KEM_Provider {
             byte[] decapsulateResult;
             try {
                 decapsulateResult = mlKem.decapsulate(
-                    new ML_KEM.ML_KEM_DecapsulationKey(decapsulationKey), kpkeCipherText);
+                        new ML_KEM.ML_KEM_DecapsulationKey(decapsulationKey), kpkeCipherText);
             } catch (NoSuchAlgorithmException | InvalidKeyException | DecapsulateException e) {
-                throw new ProviderException(e); // should not happen
+                throw new ProviderException("provider error", e); // should not happen
             }
 
             return decapsulateResult;
         }
 
         @Override
-        public int implSecretSize(String name) {return ML_KEM.SECRET_SIZE;}
+        public int implSecretSize(String name) {
+            return ML_KEM.SECRET_SIZE;
+        }
 
         @Override
         public int implEncapsulationSize(String name) {
