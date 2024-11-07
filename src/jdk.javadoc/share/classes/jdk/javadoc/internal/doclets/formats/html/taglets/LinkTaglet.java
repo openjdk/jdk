@@ -249,13 +249,13 @@ public class LinkTaglet extends BaseTaglet {
                 }
             }
             if (refSignature.trim().startsWith("#") &&
-                    ! (utils.isPublic(containing) || utils.isLinkable(containing)) &&
-                    ! (utils.isPrivate(refMem) || utils.isPackagePrivate(refMem))) {
+                    ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
                 // Since the link is relative and the holder is not even being
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or
                 // inherits it automatically.
-                if (htmlWriter instanceof ClassWriter cw) {
+                if (utils.configuration.docEnv.isSelected(refMem) &&
+                        htmlWriter instanceof ClassWriter cw) {
                     containing = cw.getTypeElement();
                 } else if (!utils.isPublic(containing)) {
                     reportWarning.accept("doclet.link.see.reference_not_accessible",

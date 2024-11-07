@@ -33,11 +33,11 @@
  * @run main T5093723
  */
 
-import java.io.IOException;
-import java.nio.file.Path;
-
 import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
+
+import java.io.IOException;
+import java.nio.file.Path;
 
 
 public class T5093723 extends JavadocTester {
@@ -92,5 +92,13 @@ public class T5093723 extends JavadocTester {
                 false,
                 "<div class=\"block\"><a href=\"#method()\"><code>method()</code></a></div>",
                 "<div class=\"block\"><a href=\"#privateMethod()\"><code>privateMethod()</code></a></div>");
+
+        //check warning is emitted
+        checkOutput(Output.OUT, true,
+                "warning: reference not accessible:",
+                "/** {@link #method} */",
+                "/** {@link #publicMethod} */",
+                "/** {@link #protectedMethod} */",
+                "/** {@link #privateMethod} */");
     }
 }
