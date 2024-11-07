@@ -106,11 +106,17 @@ public class ML_DSA_Test {
             System.out.println(">> " + pname + " verify");
             for (var c : t.get("tests").asArray()) {
                 System.out.print(c.get("tcId").asString() + " ");
-                s.initVerify(pk);
-                s.update(toByteArray(c.get("message").asString()));
-                var out = s.verify(toByteArray(c.get("signature").asString()))
-                        == Boolean.parseBoolean(c.get("testPassed").asString());
-                Asserts.assertTrue(out);
+                // Only ML-DSA sigVer has negative tests
+                var expected = Boolean.parseBoolean(c.get("testPassed").asString());
+                var actual = true;
+                try {
+                    s.initVerify(pk);
+                    s.update(toByteArray(c.get("message").asString()));
+                    actual = s.verify(toByteArray(c.get("signature").asString()));
+                } catch (InvalidKeyException | SignatureException e) {
+                    actual = false;
+                }
+                Asserts.assertEQ(expected, actual);
             }
             System.out.println();
         }
