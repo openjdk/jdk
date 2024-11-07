@@ -35,6 +35,7 @@
 // utilities for C2's loop auto-vectorization.
 
 class VPointer;
+class XPointer;
 
 class VStatus : public StackObj {
 private:
@@ -475,6 +476,7 @@ private:
 
   // Array of cached pointers
   VPointer* _vpointers;
+  XPointer* _xpointers;
   int _vpointers_length;
 
   // Map bb_idx -> index in _vpointers. -1 if not mapped.
@@ -488,6 +490,7 @@ public:
     _vloop(vloop),
     _body(body),
     _vpointers(nullptr),
+    _xpointers(nullptr),
     _bb_idx_to_vpointer(arena,
                         vloop.estimated_body_length(),
                         vloop.estimated_body_length(),
@@ -496,6 +499,7 @@ public:
 
   void compute_vpointers();
   const VPointer& vpointer(const MemNode* mem) const;
+  const XPointer& xpointer(const MemNode* mem) const;
   NOT_PRODUCT( void print() const; )
 
 private:

@@ -197,6 +197,8 @@ void VLoopVPointers::count_vpointers() {
 void VLoopVPointers::allocate_vpointers_array() {
   uint bytes = _vpointers_length * sizeof(VPointer);
   _vpointers = (VPointer*)_arena->Amalloc(bytes);
+  uint bytes2 = _vpointers_length * sizeof(XPointer);
+  _xpointers = (XPointer*)_arena->Amalloc(bytes2);
 }
 
 void VLoopVPointers::compute_and_cache_vpointers() {
@@ -204,6 +206,9 @@ void VLoopVPointers::compute_and_cache_vpointers() {
   _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
     ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
+
+    MemPointerDecomposedFormParser::Callback empty_callback; // TODO rm?
+    ::new (&_xpointers[pointers_idx]) XPointer(mem, _vloop, empty_callback);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
     pointers_idx++;
   });
@@ -217,6 +222,14 @@ const VPointer& VLoopVPointers::vpointer(const MemNode* mem) const {
   return _vpointers[pointers_idx];
 }
 
+const XPointer& VLoopVPointers::xpointer(const MemNode* mem) const {
+  assert(mem != nullptr && _vloop.in_bb(mem), "only mem in loop");
+  int bb_idx = _body.bb_idx(mem);
+  int pointers_idx = _bb_idx_to_vpointer.at(bb_idx);
+  assert(0 <= pointers_idx && pointers_idx < _vpointers_length, "valid range");
+  return _xpointers[pointers_idx];
+}
+
 #ifndef PRODUCT
 void VLoopVPointers::print() const {
   tty->print_cr("\nVLoopVPointers::print:");
@@ -225,6 +238,10 @@ void VLoopVPointers::print() const {
     const VPointer& p = vpointer(mem);
     tty->print("  ");
     p.print();
+
+    const XPointer& xp = xpointer(mem);
+    tty->print("  ");
+    xp.print_on(tty);
   });
 }
 #endif
