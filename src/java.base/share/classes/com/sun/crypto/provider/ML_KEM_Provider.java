@@ -163,7 +163,7 @@ public final class ML_KEM_Provider {
         }
 
         @Override
-        public int implSecretSize(String name) {return ML_KEM.secretSize;}
+        public int implSecretSize(String name) {return ML_KEM.SECRET_SIZE;}
 
         @Override
         public int implEncapsulationSize(String name) {
