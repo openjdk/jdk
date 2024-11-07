@@ -35,6 +35,8 @@ import sun.security.provider.SHA3Parallel.Shake128Parallel;
 public final class ML_KEM {
 
     public static final int SECRET_SIZE = 32;
+    private static final String HASH_H_NAME = "SHA3-256";
+    private static final String HASH_G_NAME = "SHA3-512";
 
     private static final int ML_KEM_Q = 3329;
     private static final int ML_KEM_N = 256;
@@ -404,7 +406,7 @@ public final class ML_KEM {
                 mlKem_dv = 5;
             }
             default -> throw new IllegalArgumentException(
-                    "Bad size for ML_KEM-" + size);
+                    "Invalid size for ML_KEM-" + size);
         }
         mlKem_size = size;
         encapsulationSize = (mlKem_k * mlKem_du + mlKem_dv) * 32;
@@ -472,7 +474,7 @@ public final class ML_KEM {
     public Object checkPrivateKey(byte[] sk) throws InvalidKeyException {
         MessageDigest mlKemH;
         try {
-            mlKemH = MessageDigest.getInstance("SHA3-256");
+            mlKemH = MessageDigest.getInstance(HASH_H_NAME);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
@@ -497,7 +499,7 @@ public final class ML_KEM {
     public ML_KEM_KeyPair generateKemKeyPair(
         byte[] kem_d, byte[] kem_z)
         throws NoSuchAlgorithmException, DigestException {
-        var mlKemH = MessageDigest.getInstance("SHA3-256");
+        var mlKemH = MessageDigest.getInstance(HASH_H_NAME);
 
         //Generate K-PKE keys
         var kPkeKeyPair = generateK_PkeKeyPair(kem_d);
@@ -522,8 +524,8 @@ public final class ML_KEM {
     public ML_KEM_EncapsulateResult encapsulate(
             ML_KEM_EncapsulationKey encapsulationKey, byte[] randomMessage)
             throws NoSuchAlgorithmException, InvalidKeyException {
-        var mlKemH = MessageDigest.getInstance("SHA3-256");
-        var mlKemG = MessageDigest.getInstance("SHA3-512");
+        var mlKemH = MessageDigest.getInstance(HASH_H_NAME);
+        var mlKemG = MessageDigest.getInstance(HASH_G_NAME);
 
         mlKemH.update(encapsulationKey.keyBytes);
         mlKemG.update(randomMessage);
@@ -551,7 +553,7 @@ public final class ML_KEM {
 
         int encode12PolyLen = 12 * ML_KEM_N / 8;
         var decapsKeyBytes = decapsulationKey.keyBytes;
-        var mlKemG = MessageDigest.getInstance("SHA3-512");
+        var mlKemG = MessageDigest.getInstance(HASH_G_NAME);
         var mlKemJ = new SHAKE256(32);
 
         byte[] kPkePrivateKeyBytes = new byte[mlKem_k * encode12PolyLen];
@@ -604,7 +606,7 @@ public final class ML_KEM {
      */
     private K_PKE_KeyPair generateK_PkeKeyPair(byte[] seed)
             throws NoSuchAlgorithmException {
-        var mlKemG = MessageDigest.getInstance("SHA3-512");
+        var mlKemG = MessageDigest.getInstance(HASH_G_NAME);
         var mlKemJ = new SHAKE256(64 * mlKem_eta1);
 
         mlKemG.update(seed);
@@ -1148,8 +1150,8 @@ public final class ML_KEM {
         }
     }
 
-    // Adds the polynomials b and c to a in place, i.e. a will hold the sum.
-    // a is also returned so that this function can be used in an expression.
+    // Adds the polynomials b and c to a in place, i.e. 'a' will hold the sum.
+    // 'a' is also returned so that this function can be used in an expression.
     // The coefficients in all three polynomials are supposed to be
     // greater than -ML_KEM_Q and less than ML_KEM_Q.
     // The coefficients in the result are nonnegative and less than ML_KEM_Q.

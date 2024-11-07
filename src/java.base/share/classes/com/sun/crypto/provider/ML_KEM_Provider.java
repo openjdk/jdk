@@ -124,9 +124,11 @@ public final class ML_KEM_Provider {
     }
 
     public static class K extends NamedKEM {
+        private static final int SEED_SIZE = 32;
+
         @Override
         public byte[][] implEncapsulate(String name, byte[] encapsulationKey, Object ek, SecureRandom secureRandom) {
-            byte[] randomBytes = new byte[32];
+            byte[] randomBytes = new byte[SEED_SIZE];
             var r = secureRandom != null ? secureRandom : JCAUtil.getDefSecureRandom();
             r.nextBytes(randomBytes);
 
@@ -156,7 +158,7 @@ public final class ML_KEM_Provider {
                 decapsulateResult = mlKem.decapsulate(
                     new ML_KEM.ML_KEM_DecapsulationKey(decapsulationKey), kpkeCipherText);
             } catch (NoSuchAlgorithmException | InvalidKeyException | DecapsulateException e) {
-                throw new RuntimeException(e); // should not happen
+                throw new ProviderException(e); // should not happen
             }
 
             return decapsulateResult;
