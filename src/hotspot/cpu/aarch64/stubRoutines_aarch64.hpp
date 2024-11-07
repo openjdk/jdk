@@ -51,7 +51,7 @@ class aarch64 {
   friend class JVMCIVMStructs;
 #endif
 
-  // declare fields for arch-specific entries -- getters are not needed
+  // declare fields for arch-specific entries
 
 #define DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
   static address STUB_FIELD_NAME(field_name) ;
@@ -69,79 +69,36 @@ private:
 
  public:
 
-  static address vector_iota_indices() {
-    return _vector_iota_indices;
-  }
+  // declare getters for arch-specific entries
 
-  static address zero_blocks() {
-    return _zero_blocks;
-  }
+#define DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name) \
+  static address getter_name() { return STUB_FIELD_NAME(field_name) ; }
 
-  static address count_positives() {
-    return _count_positives;
-  }
+#define DEFINE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
 
-  static address count_positives_long() {
-      return _count_positives_long;
-  }
+  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT)
 
-  static address large_array_equals() {
-      return _large_array_equals;
-  }
+#undef DEFINE_ARCH_ENTRY_GETTER_INIT
+#undef DEFINE_ARCH_ENTRY_GETTER
 
   static address large_arrays_hashcode(BasicType eltype) {
     switch (eltype) {
     case T_BOOLEAN:
-      return _large_arrays_hashcode_boolean;
+      return large_arrays_hashcode_boolean();
     case T_BYTE:
-      return _large_arrays_hashcode_byte;
+      return large_arrays_hashcode_byte();
     case T_CHAR:
-      return _large_arrays_hashcode_char;
+      return large_arrays_hashcode_char();
     case T_SHORT:
-      return _large_arrays_hashcode_short;
+      return large_arrays_hashcode_short();
     case T_INT:
-      return _large_arrays_hashcode_int;
+      return large_arrays_hashcode_int();
     default:
       ShouldNotReachHere();
     }
 
     return nullptr;
-  }
-
-  static address compare_long_string_LL() {
-      return _compare_long_string_LL;
-  }
-
-  static address compare_long_string_LU() {
-      return _compare_long_string_LU;
-  }
-
-  static address compare_long_string_UL() {
-      return _compare_long_string_UL;
-  }
-
-  static address compare_long_string_UU() {
-      return _compare_long_string_UU;
-  }
-
-  static address string_indexof_linear_ul() {
-      return _string_indexof_linear_ul;
-  }
-
-  static address string_indexof_linear_ll() {
-      return _string_indexof_linear_ll;
-  }
-
-  static address string_indexof_linear_uu() {
-      return _string_indexof_linear_uu;
-  }
-
-  static address large_byte_array_inflate() {
-      return _large_byte_array_inflate;
-  }
-
-  static address spin_wait() {
-    return _spin_wait;
   }
 
   static bool complete() {
