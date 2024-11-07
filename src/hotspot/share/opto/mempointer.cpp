@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "opto/mempointer.hpp"
+#include "opto/addnode.hpp"
 #include "utilities/resourceHash.hpp"
 
 // Recursively parse the pointer expression with a DFS all-path traversal
@@ -300,6 +301,11 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, cons
 
   return false;
 #endif
+}
+
+MemPointerDecomposedForm::Base MemPointerDecomposedForm::Base::from_AddP(Node* pointer) {
+  AddPNode* adr = pointer->isa_AddP();
+  return (adr == nullptr) ? Base() : Base(true, adr->in(AddPNode::Base));
 }
 
 // Compute the aliasing between two MemPointerDecomposedForm. We use the "MemPointer Lemma" to

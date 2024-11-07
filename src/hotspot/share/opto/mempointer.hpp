@@ -479,25 +479,58 @@ public:
   // variables. It should be rare that we have more than 9 variables.
   static const int SUMMANDS_SIZE = 10;
 
-private:
-  Node* _pointer; // pointer node associated with this (sub)pointer
+  class Base : public StackObj {
+  private:
+    bool _is_known;
+    Node* _base;
 
+    Base(bool is_known, Node* base) : _is_known(is_known), _base(base) {}
+
+  public:
+    Base() : Base(false, nullptr) {}
+
+    static Base from_AddP(Node* pointer);
+    bool is_known() const { return _is_known; }
+    Node* get() const { assert(is_known(), "must be"); return _base; }
+
+#ifndef PRODUCT
+    void print_on(outputStream* st) const {
+      if (_is_known) {
+        if (_base == nullptr) {
+          tty->print("native");
+        } else {
+          tty->print("%d %s", _base->_idx, _base->Name());
+        }
+      } else {
+        tty->print("unknown");
+      }
+    }
+#endif
+  };
+
+private:
   MemPointerSummand _summands[SUMMANDS_SIZE];
   NoOverflowInt _con;
+  Base _base;
 
 public:
   // Empty
-  MemPointerDecomposedForm() : _pointer(nullptr), _con(NoOverflowInt::make_NaN()) {}
+  MemPointerDecomposedForm() : _con(NoOverflowInt::make_NaN()) {}
 
 private:
   // Default / trivial: pointer = 0 + 1 * pointer
-  MemPointerDecomposedForm(Node* pointer) : _pointer(pointer), _con(NoOverflowInt(0)) {
+  MemPointerDecomposedForm(Node* pointer) :
+    _con(NoOverflowInt(0)),
+    _base(Base::from_AddP(pointer))
+  {
     assert(pointer != nullptr, "pointer must be non-null");
     _summands[0] = MemPointerSummand(pointer, NoOverflowInt(1));
   }
 
-  MemPointerDecomposedForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt& con)
-    : _pointer(pointer), _con(con) {
+  MemPointerDecomposedForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt& con) :
+    _con(con),
+    _base(Base::from_AddP(pointer))
+  {
     assert(!_con.is_NaN(), "non-NaN constant");
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
     for (int i = 0; i < summands.length(); i++) {
@@ -530,9 +563,14 @@ public:
   }
 
   const NoOverflowInt con() const { return _con; }
+  const Base& base() const { return _base; }
 
 #ifndef PRODUCT
   void print_form_on(outputStream* st) const {
+    if (_con.is_NaN()) {
+      st->print_cr("empty");
+      return;
+    }
     _con.print_on(st);
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _summands[i];
@@ -544,11 +582,9 @@ public:
   }
 
   void print_on(outputStream* st) const {
-    if (_pointer == nullptr) {
-      st->print_cr("MemPointerDecomposedForm empty.");
-      return;
-    }
-    st->print("MemPointerDecomposedForm[%d %s: form = ", _pointer->_idx, _pointer->Name());
+    st->print("MemPointerDecomposedForm[base: ");
+    _base.print_on(st);
+    st->print(", form: ");
     print_form_on(st);
     st->print_cr("]");
   }

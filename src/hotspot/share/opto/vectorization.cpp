@@ -477,7 +477,9 @@ void XPointer::print_on(outputStream* st) const {
     return;
   }
 
-  st->print("size = %2d, form = ", _size);
+  st->print("size: %2d, base: ", _size);
+  _decomposed_form.base().print_on(st);
+  st->print(", form: ");
   _decomposed_form.print_form_on(st);
   st->print_cr("]");
 }

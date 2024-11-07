@@ -714,6 +714,12 @@ private:
   // Check that all variables are either the iv, or else invariants.
   // TODO why pre-loop
   static bool init_is_valid(const MemPointerDecomposedForm& decomposed_form, const VLoop& vloop) {
+    if (!decomposed_form.base().is_known()) {
+      // XPointer needs to know if it is native (off-heap) or object (on-heap).
+      assert(false, "TODO find me!");
+      return false;
+    }
+
     for (uint i = 0; i < MemPointerDecomposedForm::SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = decomposed_form.summands_at(i);
       Node* variable = summand.variable();
