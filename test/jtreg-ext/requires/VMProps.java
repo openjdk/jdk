@@ -143,7 +143,6 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
-        map.put("jlink.runtime.linkable", this::runtimeLinkable);
         map.put("jlink.packagedModules", this::packagedModules);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
@@ -731,31 +730,6 @@ public class VMProps implements Callable<Map<String, String>> {
                 return Boolean.TRUE.toString();
             } else {
                 return Boolean.FALSE.toString();
-            }
-        } catch (Throwable t) {
-            return Boolean.FALSE.toString();
-        }
-    }
-
-    private String runtimeLinkable() {
-        // jdk.jlink module has the following resource indicating a runtime-linkable
-        // image. It's the diff file for runtime linking of the java.base module.
-        String linkableRuntimeResource = "jdk/tools/jlink/internal/runtimelink/diff_java.base";
-        try {
-            ModuleFinder finder = ModuleFinder.ofSystem();
-            Optional<ModuleReference> ref = finder.find("jdk.jlink");
-            if (ref.isEmpty()) {
-                // No jdk.jlink in the current image
-                return Boolean.FALSE.toString();
-            }
-            try (ModuleReader reader = ref.get().open()) {
-                Optional<InputStream> inOpt = reader.open(linkableRuntimeResource);
-                if (inOpt.isPresent()) {
-                    inOpt.get().close();
-                    return Boolean.TRUE.toString();
-                } else {
-                    return Boolean.FALSE.toString();
-                }
             }
         } catch (Throwable t) {
             return Boolean.FALSE.toString();
