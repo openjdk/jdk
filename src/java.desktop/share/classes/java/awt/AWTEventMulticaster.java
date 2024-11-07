@@ -976,7 +976,7 @@ public class AWTEventMulticaster implements
     /**
      * Return true if the argument represents a binary tree that needs to be rebalanced.
      * <p>
-     * The criteria for when we "need" a rebalance is subjective. For now this method
+     * The criteria for when we need a rebalance is subjective. For now this method
      * checks up to 500 of the topmost nodes of a AWTEventMulticaster. If they all include
      * one leaf node, then this method returns true. This criteria will be met after
      * 500 iterations of {@link #addInternal(EventListener, EventListener)}.
@@ -1004,6 +1004,16 @@ public class AWTEventMulticaster implements
         return level > 500;
     }
 
+    /**
+     * Recursively create a balanced tree that includes a given range of EventListeners.
+     *
+     * @param array the array of the EventListeners to consult
+     * @param index0 the lowest index (inclusive) that the return value must include
+     * @param index1 the highest index (inclusive) that the return value must include.
+     *
+     * @return a balanced tree. If index0 equals index1 then this returns an EventListener from
+     * the array provided. Otherwise this returns an AWTEventMulticaster.
+     */
     private static EventListener rebalance(EventListener[] array, int index0, int index1) {
         if (index0 == index1)
             return array[index0];
