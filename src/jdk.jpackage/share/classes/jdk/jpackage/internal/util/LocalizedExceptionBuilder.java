@@ -24,18 +24,64 @@
  */
 package jdk.jpackage.internal.util;
 
-public class LocalizedExceptionBuilder extends LocalizedExceptionBuilderBase<LocalizedExceptionBuilder> {
+import java.util.function.BiFunction;
 
-    public static LocalizedExceptionBuilder buildLocalizedException(StringBundle l18n) {
-        return new LocalizedExceptionBuilder(l18n);
+public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
+
+    protected LocalizedExceptionBuilder(StringBundle l18n) {
+        this.l18n = l18n;
     }
 
-    private LocalizedExceptionBuilder(StringBundle l18n) {
-        super(l18n);
+    public static <R extends LocalizedExceptionBuilder<R>> R buildLocalizedException(StringBundle l18n) {
+        return new LocalizedExceptionBuilder<R>(l18n).thiz();
     }
 
-    @Override
-    protected LocalizedExceptionBuilder thiz() {
-        return this;
+    final public <T extends Exception> T create(BiFunction<String, Throwable, T> exceptionCtor) {
+        return exceptionCtor.apply(msg, cause);
     }
+
+    final public T format(boolean v) {
+        noFormat = !v;
+        return thiz();
+    }
+
+    final public T noformat() {
+        return format(false);
+    }
+
+    final public T message(String msgId, Object... args) {
+        msg = formatString(msgId, args);
+        return thiz();
+    }
+
+    final public T cause(Throwable v) {
+        cause = v;
+        return thiz();
+    }
+
+    final public T causeAndMessage(Throwable t) {
+        boolean oldNoFormat = noFormat;
+        return noformat().message(t.getMessage()).cause(t).format(oldNoFormat);
+    }
+
+    final protected String formatString(String keyId, Object... args) {
+        if (!noFormat) {
+            return l18n.format(keyId, args);
+        } else if (args.length == 0) {
+            return keyId;
+        } else {
+            throw new IllegalArgumentException("Formatting arguments not allowed in no format mode");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private T thiz() {
+        return (T)this;
+    }
+
+    private boolean noFormat;
+    private String msg;
+    private Throwable cause;
+
+    private final StringBundle l18n;
 }

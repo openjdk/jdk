@@ -169,7 +169,7 @@ final class LauncherBuilder {
         }
     }
 
-    static void verifyFileAssociation(FileAssociation src) throws ConfigException {
+    private static void verifyFileAssociation(FileAssociation src) throws ConfigException {
         if (Optional.ofNullable(src.mimeType()).isEmpty()) {
             throw buildConfigException()
                     .noformat()
