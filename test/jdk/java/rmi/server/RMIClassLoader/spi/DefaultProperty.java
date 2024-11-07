@@ -29,7 +29,11 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @modules java.rmi/java.rmi.server:open
+ * @modules java.rmi/java.rmi.server:+open
+ *          java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary ServiceConfiguration
  * @run main/othervm DefaultProperty
  */
