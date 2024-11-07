@@ -1748,7 +1748,6 @@ oop JavaThread::current_park_blocker() {
 // as applicable, and allowing for a native-only stack.
 void JavaThread::print_jni_stack() {
   assert(this == JavaThread::current(), "Can't print stack of other threads");
-  if (!has_last_Java_frame()) {
     ResourceMark rm(this);
     char* buf = NEW_RESOURCE_ARRAY_RETURN_NULL(char, O_BUFLEN);
     if (buf == nullptr) {
@@ -1764,9 +1763,9 @@ void JavaThread::print_jni_stack() {
       VMError::print_native_stack(tty, f, this, true /*print_source_info */,
                                   -1 /* max stack */, buf, O_BUFLEN);
     }
-  } else {
-    print_active_stack_on(tty);
-  }
+    if (!has_last_Java_frame()) {
+      print_active_stack_on(tty);
+    }
 }
 
 void JavaThread::print_stack_on(outputStream* st) {
