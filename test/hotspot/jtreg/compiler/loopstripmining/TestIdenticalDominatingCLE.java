@@ -25,7 +25,7 @@
  * @test
  * @bug 8340532
  * @summary C2: assert(is_OuterStripMinedLoop()) failed: invalid node class: IfTrue
- *
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:CompileOnly=TestIdenticalDominatingCLE::* -XX:CompileThreshold=100 -Xcomp -XX:-TieredCompilation
  *                   -XX:-RangeCheckElimination -XX:LoopMaxUnroll=0 TestIdenticalDominatingCLE
  *
