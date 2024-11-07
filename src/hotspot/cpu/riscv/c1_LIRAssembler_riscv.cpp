@@ -1402,9 +1402,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   }
   int pc_for_athrow_offset = __ offset();
   InternalAddress pc_for_athrow(__ pc());
-  __ relocate(pc_for_athrow.rspec(), [&] {
-    __ la(exceptionPC->as_register(), pc_for_athrow.target());
-  });
+  __ la(exceptionPC->as_register(), pc_for_athrow);
   add_call_info(pc_for_athrow_offset, info); // for exception handler
 
   __ verify_not_null_oop(x10);

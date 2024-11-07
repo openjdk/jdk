@@ -76,7 +76,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bfd">bafut</language>
 			<language type="bfq">bagada</language>
 			<language type="bg">bulgariska</language>
-			<language type="bgc" draft="contributed">hariyanvi</language>
+			<language type="bgc">hariyanvi</language>
 			<language type="bgn">västbaluchiska</language>
 			<language type="bho">bhojpuri</language>
 			<language type="bi">bislama</language>
@@ -85,6 +85,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bjn">banjariska</language>
 			<language type="bkm">bamekon</language>
 			<language type="bla">siksika</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengali</language>
 			<language type="bo">tibetanska</language>
@@ -217,7 +218,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gay">gayo</language>
 			<language type="gba">gbaya</language>
 			<language type="gbz">zoroastrisk dari</language>
-			<language type="gd">skotsk gäliska</language>
+			<language type="gd">skotsk gaeliska</language>
 			<language type="gez">etiopiska</language>
 			<language type="gil">gilbertiska</language>
 			<language type="gl">galiciska</language>
@@ -225,7 +226,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gmh">medelhögtyska</language>
 			<language type="gn">guaraní</language>
 			<language type="goh">fornhögtyska</language>
-			<language type="gom">Goa-konkani</language>
 			<language type="gon">gondi</language>
 			<language type="gor">gorontalo</language>
 			<language type="got">gotiska</language>
@@ -337,6 +337,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">kome</language>
 			<language type="kw">korniska</language>
 			<language type="kwk">kwakʼwala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirgiziska</language>
 			<language type="la">latin</language>
 			<language type="lad">ladino</language>
@@ -366,7 +367,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lua">luba-lulua</language>
 			<language type="lui">luiseño</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">lushai</language>
 			<language type="luy">luhya</language>
 			<language type="lv">lettiska</language>
@@ -635,6 +635,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="vi">vietnamesiska</language>
 			<language type="vls">västflamländska</language>
 			<language type="vmf">Main-frankiska</language>
+			<language type="vmw">makua</language>
 			<language type="vo">volapük</language>
 			<language type="vot">votiska</language>
 			<language type="vro">võru</language>
@@ -650,6 +651,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="xal">kalmuckiska</language>
 			<language type="xh">xhosa</language>
 			<language type="xmf">mingrelianska</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">lusoga</language>
 			<language type="yao">kiyao</language>
 			<language type="yap">japetiska</language>
@@ -680,7 +682,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Aghb">kaukasiska albanska</script>
 			<script type="Ahom">ahom</script>
 			<script type="Arab">arabiska</script>
-			<script type="Aran" draft="contributed">nastaliq</script>
+			<script type="Aran">nastaliq</script>
 			<script type="Armi">imperisk arameiska</script>
 			<script type="Armn">armeniska</script>
 			<script type="Avst">avestiska</script>
@@ -887,7 +889,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="017">Centralafrika</territory>
 			<territory type="018">södra Afrika</territory>
 			<territory type="019">Nord- och Sydamerika</territory>
-			<territory type="021">Norra Amerika</territory>
+			<territory type="021">norra Amerika</territory>
 			<territory type="029">Karibien</territory>
 			<territory type="030">Östasien</territory>
 			<territory type="034">Sydasien</territory>
@@ -1322,8 +1324,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="indian">indisk kalender</type>
 			<type key="calendar" type="islamic">islamisk kalender</type>
 			<type key="calendar" type="islamic-civil">islamisk civil kalender</type>
-			<type key="calendar" type="islamic-rgsa" draft="provisional">islamisk kalender, Saudi-Arabien</type>
-			<type key="calendar" type="islamic-tbla" draft="provisional">islamisk kalender, astronomisk</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">islamisk kalender, Saudi-Arabien</type>
+			<type key="calendar" type="islamic-tbla" draft="contributed">islamisk kalender, astronomisk</type>
 			<type key="calendar" type="islamic-umalqura">islamisk kalender, Umm al-Qura</type>
 			<type key="calendar" type="iso8601">ISO 8601-kalender</type>
 			<type key="calendar" type="japanese">japansk kalender</type>
@@ -1871,7 +1873,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern draft="contributed">{1} 'kl'. {0}</pattern>
+							<pattern>{1} 'kl'. {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
@@ -1879,7 +1881,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern draft="contributed">{1} 'kl'. {0}</pattern>
+							<pattern>{1} 'kl'. {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -1966,10 +1968,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">d MMM y G – d MMM d y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d" draft="contributed">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="G" draft="contributed">E d MMM y G – E d MMM y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d MMM y – E d MMM y G</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
@@ -2866,7 +2868,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="month-short">
-				<displayName>m</displayName>
+				<displayName>mån</displayName>
 				<relative type="-1">förra mån.</relative>
 				<relative type="0">denna mån.</relative>
 				<relative type="1">nästa mån.</relative>
@@ -2880,7 +2882,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
-				<displayName>mån</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">+{0} mån.</relativeTimePattern>
 					<relativeTimePattern count="other">+{0} mån.</relativeTimePattern>
@@ -2906,7 +2907,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relativePeriod>veckan för {0}</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>v</displayName>
+				<displayName>v.</displayName>
 				<relative type="-1">förra v.</relative>
 				<relative type="0">denna v.</relative>
 				<relative type="1">nästa v.</relative>
@@ -2933,10 +2934,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>vecka i månaden</displayName>
 			</field>
 			<field type="weekOfMonth-short">
-				<displayName>vk. i mån.</displayName>
+				<displayName>v. i mån.</displayName>
 			</field>
 			<field type="weekOfMonth-narrow">
-				<displayName>vk.i mån.</displayName>
+				<displayName>v i mån</displayName>
 			</field>
 			<field type="day">
 				<displayName>dag</displayName>
@@ -2955,6 +2956,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="day-short">
+				<displayName>d.</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} d</relativeTimePattern>
 					<relativeTimePattern count="other">om {0} d</relativeTimePattern>
@@ -2965,6 +2967,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="day-narrow">
+				<displayName>d</displayName>
 				<relative type="-1">igår</relative>
 				<relative type="0">idag</relative>
 				<relative type="1">imorgon</relative>
@@ -2980,14 +2983,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="dayOfYear">
 				<displayName>dag under året</displayName>
 			</field>
+			<field type="dayOfYear-short">
+				<displayName>d. under å.</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>d u å</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>veckodag</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>veckod.</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>vd</displayName>
 			</field>
 			<field type="weekdayOfMonth">
 				<displayName>veckodag i månad</displayName>
 			</field>
 			<field type="weekdayOfMonth-short">
 				<displayName>veckodag i mån.</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>vd i m</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">söndag förra veckan</relative>
@@ -3373,6 +3391,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0}tid</regionFormat>
 			<regionFormat type="daylight">{0} (sommartid)</regionFormat>
 			<regionFormat type="standard">{0} (normaltid)</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic draft="contributed">Honolulutid</generic>
+					<standard draft="contributed">Honolulunormaltid</standard>
+					<daylight draft="contributed">Honolulusommartid</daylight>
+				</short>
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>koordinerad universell tid</standard>
@@ -3455,9 +3481,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Kap Verde</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Julön</exemplarCity>
@@ -3562,17 +3585,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Hovd">
 				<exemplarCity>Chovd</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Tjojbalsan</exemplarCity>
-			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity>Maldiverna</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>Mazatlán</exemplarCity>
-			</zone>
-			<zone type="America/Mexico_City">
-				<exemplarCity>Mexiko City</exemplarCity>
 			</zone>
 			<zone type="Pacific/Noumea">
 				<exemplarCity>Nouméa</exemplarCity>
@@ -3600,12 +3617,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lissabon</exemplarCity>
-			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>Bukarest</exemplarCity>
@@ -3646,9 +3657,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Atlantic/St_Helena">
 				<exemplarCity>Sankt Helena</exemplarCity>
 			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
-			</zone>
 			<zone type="Asia/Damascus">
 				<exemplarCity>Damaskus</exemplarCity>
 			</zone>
@@ -3675,14 +3683,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midwayöarna</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic draft="contributed">Honolulutid</generic>
-					<standard draft="contributed">Honolulunormaltid</standard>
-					<daylight draft="contributed">Honolulusommartid</daylight>
-				</short>
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Asia/Tashkent">
 				<exemplarCity>Tasjkent</exemplarCity>
@@ -3957,13 +3957,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>kinesisk sommartid</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Tjojbalsantid</generic>
-					<standard>Tjojbalsan, normaltid</standard>
-					<daylight>Tjojbalsan, sommartid</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Julöns tid</standard>
@@ -4232,6 +4225,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Kamtjatkasommartid</daylight>
 				</long>
 			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>kazakstansk tid</standard>
+				</long>
+			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
 					<standard>östkazakstansk tid</standard>
@@ -4393,7 +4391,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Norfolköns tid</generic>
+					<generic>Norfolköns tid</generic>
 					<standard>Norfolköns normaltid</standard>
 					<daylight>Norfolköns sommartid</daylight>
 				</long>
@@ -4801,8 +4799,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 bn ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -6346,7 +6342,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>nano{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-12">
-				<unitPrefixPattern>pico{0}</unitPrefixPattern>
+				<unitPrefixPattern>piko{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-15">
 				<unitPrefixPattern>femto{0}</unitPrefixPattern>
@@ -6505,9 +6501,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>common</gender>
 				<displayName>kvadratkilometer</displayName>
 				<unitPattern count="one">{0} kvadratkilometer</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} kvadratkilometers</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kvadratkilometers</unitPattern>
 				<unitPattern count="other">{0} kvadratkilometer</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} kvadratkilometers</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kvadratkilometers</unitPattern>
 				<perUnitPattern>{0} per kvadratkilometer</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
@@ -6572,9 +6568,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} karats</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender draft="contributed">neuter</gender>
 				<displayName>milligram per deciliter</displayName>
 				<unitPattern count="one">{0} milligram per deciliter</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} milligram per deciliters</unitPattern>
 				<unitPattern count="other">{0} milligram per deciliter</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} milligram per deciliters</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>common</gender>
@@ -6769,11 +6768,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-quarter">
 				<gender>common</gender>
-				<displayName draft="contributed">kvartar</displayName>
-				<unitPattern count="one" draft="contributed">{0} kvart</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} kvarts</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} kvartar</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} kvarts</unitPattern>
+				<displayName>kvartar</displayName>
+				<unitPattern count="one">{0} kvart</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kvarts</unitPattern>
+				<unitPattern count="other">{0} kvartar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kvarts</unitPattern>
 			</unit>
 			<unit type="duration-month">
 				<gender>common</gender>
@@ -6889,7 +6888,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>common</gender>
 				<displayName>kilokalorier</displayName>
 				<unitPattern count="one">{0} kilokalori</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilokaloris</unitPattern>
 				<unitPattern count="other">{0} kilokalorier</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilokaloriers</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<gender>common</gender>
@@ -6900,10 +6901,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} kaloriers</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<gender draft="contributed">common</gender>
-				<displayName draft="contributed">kilokalorier</displayName>
-				<unitPattern count="one" draft="contributed">{0} kilokalori</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} kilokalorier</unitPattern>
+				<gender>common</gender>
+				<displayName>kilokalorier</displayName>
+				<unitPattern count="one">{0} kilokalori</unitPattern>
+				<unitPattern count="other">{0} kilokalorier</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>common</gender>
@@ -7152,6 +7153,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mil</unitPattern>
 				<unitPattern count="other" case="genitive">{0} mils</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<gender>common</gender>
+				<unitPattern count="one">{0} pkt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} punkts</unitPattern>
+				<unitPattern count="other">{0} pkt</unitPattern>
+				<unitPattern count="other" case="genitive">{0} punkters</unitPattern>
+			</unit>
 			<unit type="length-solar-radius">
 				<gender>common</gender>
 				<displayName>solradier</displayName>
@@ -7322,9 +7330,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} hästkrafter</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>common</gender>
 				<displayName>millimeter kvicksilver</displayName>
 				<unitPattern count="one">{0} millimeter kvicksilver</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} millimeter kvicksilvers</unitPattern>
 				<unitPattern count="other">{0} millimeter kvicksilver</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} millimeter kvicksilvers</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pund per kvadrattum</displayName>
@@ -7665,6 +7676,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} brittisk quart</unitPattern>
 				<unitPattern count="other">{0} brittiska quarts</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<gender>neuter</gender>
+				<displayName>ljus</displayName>
+				<unitPattern count="one">{0} ljus</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ljus</unitPattern>
+				<unitPattern count="other">{0} ljus</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ljus</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>common</gender>
+				<displayName>miljarddelar</displayName>
+				<unitPattern count="one">{0} miljarddel</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miljarddels</unitPattern>
+				<unitPattern count="other">{0} miljarddelar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} miljarddelars</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>common</gender>
+				<displayName>nätter</displayName>
+				<unitPattern count="one">{0} natt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} natts</unitPattern>
+				<unitPattern count="other">{0} nätter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} nätters</unitPattern>
+				<perUnitPattern>{0} per natt</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>kompassriktning</displayName>
 				<coordinateUnitPattern type="east">{0} öst</coordinateUnitPattern>
@@ -7800,10 +7836,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/år</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
-				<displayName draft="contributed">k</displayName>
-				<unitPattern count="one" draft="contributed">{0} k</unitPattern>
+				<displayName>k</displayName>
+				<unitPattern count="one">{0} k</unitPattern>
 				<unitPattern count="other">{0} k</unitPattern>
-				<perUnitPattern draft="contributed">{0}/k</perUnitPattern>
+				<perUnitPattern>{0}/k</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>mån</displayName>
@@ -8161,6 +8197,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} br. qt</unitPattern>
 				<unitPattern count="other">{0} br. qt</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ljus</displayName>
+				<unitPattern count="one">{0} ljus</unitPattern>
+				<unitPattern count="other">{0} ljus</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nätter</displayName>
+				<unitPattern count="one">{0} natt</unitPattern>
+				<unitPattern count="other">{0} nätter</unitPattern>
+				<perUnitPattern>{0}/natt</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>väderstreck</displayName>
 				<coordinateUnitPattern type="east">{0} Ö</coordinateUnitPattern>
@@ -8171,13 +8218,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="acceleration-g-force">
-				<displayName draft="contributed">G</displayName>
+				<displayName>G</displayName>
 				<unitPattern count="one">{0}G</unitPattern>
 				<unitPattern count="other">{0}G</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<unitPattern count="one" draft="contributed">{0}m/s²</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}m/s²</unitPattern>
+				<unitPattern count="one">{0}m/s²</unitPattern>
+				<unitPattern count="other">{0}m/s²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<unitPattern count="one">{0}varv</unitPattern>
@@ -8299,8 +8346,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}TB</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
-				<unitPattern count="one" draft="contributed">{0}Tb</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}Tb</unitPattern>
+				<unitPattern count="one">{0}Tb</unitPattern>
+				<unitPattern count="other">{0}Tb</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<unitPattern count="one">{0}GB</unitPattern>
@@ -8327,7 +8374,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<displayName draft="contributed">B</displayName>
+				<displayName>B</displayName>
 				<unitPattern count="one">{0}B</unitPattern>
 				<unitPattern count="other">{0}B</unitPattern>
 			</unit>
@@ -8348,8 +8395,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}å</unitPattern>
 			</unit>
 			<unit type="duration-quarter">
-				<unitPattern count="one" draft="contributed">{0}k</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}k</unitPattern>
+				<unitPattern count="one">{0}k</unitPattern>
+				<unitPattern count="other">{0}k</unitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>m</displayName>
@@ -8420,8 +8467,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<unitPattern count="one" draft="contributed">{0}kcal</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}kcal</unitPattern>
+				<unitPattern count="one">{0}kcal</unitPattern>
+				<unitPattern count="other">{0}kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<unitPattern count="one">{0}kJ</unitPattern>
@@ -8906,6 +8953,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}br.qt</unitPattern>
 				<unitPattern count="other">{0}br.qt</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ljs</displayName>
+				<unitPattern count="one">{0}ljs</unitPattern>
+				<unitPattern count="other">{0}ljs</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="one">{0}ppb</unitPattern>
+				<unitPattern count="other">{0}ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nttr</displayName>
+				<unitPattern count="one">{0}ntt</unitPattern>
+				<unitPattern count="other">{0}nttr</unitPattern>
+				<perUnitPattern>{0}/ntt</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>riktning</displayName>
 				<coordinateUnitPattern type="east">{0}Ö</coordinateUnitPattern>
@@ -9272,12 +9334,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</sampleName>
 		<sampleName item="foreignFull">
 			<nameField type="title">Prof. dr.</nameField>
-			<nameField type="given">Ann-Christine</nameField>
-			<nameField type="given-informal">Anki</nameField>
-			<nameField type="given2">Eva Sofia</nameField>
-			<nameField type="surname-prefix">van den</nameField>
-			<nameField type="surname-core">Karlsson</nameField>
-			<nameField type="surname2">Beck Strand</nameField>
+			<nameField type="given">Ada Cornelia</nameField>
+			<nameField type="given-informal">Neele</nameField>
+			<nameField type="given2">César Martín</nameField>
+			<nameField type="surname-prefix">von</nameField>
+			<nameField type="surname-core">Brühl</nameField>
+			<nameField type="surname2">González Domingo</nameField>
 			<nameField type="generation">jr.</nameField>
 			<nameField type="credentials">med. dr. fil. dr. jur. dr.</nameField>
 		</sampleName>

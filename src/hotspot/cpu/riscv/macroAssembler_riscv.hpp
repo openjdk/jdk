@@ -833,7 +833,6 @@ public:
                   compare_and_branch_insn insn,
                   compare_and_branch_label_insn neg_insn, bool is_far = false);
 
-  // la will use movptr instead of GOT when not in reach for auipc.
   void la(Register Rd, Label &label);
   void la(Register Rd, const address addr);
   void la(Register Rd, const address addr, int32_t &offset);
@@ -867,8 +866,10 @@ public:
   // patched to any 48-bit constant, i.e. address.
   // If common case supply additional temp register
   // to shorten the instruction sequence.
+  void movptr(Register Rd, const Address &addr, Register tmp = noreg);
   void movptr(Register Rd, address addr, Register tmp = noreg);
   void movptr(Register Rd, address addr, int32_t &offset, Register tmp = noreg);
+
  private:
   void movptr1(Register Rd, uintptr_t addr, int32_t &offset);
   void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
@@ -927,8 +928,9 @@ public:
 #define INSN(NAME)                                                                                 \
   void NAME(Register Rd, address dest) {                                                           \
     assert_cond(dest != nullptr);                                                                  \
-    int64_t distance = dest - pc();                                                                \
-    if (is_valid_32bit_offset(distance)) {                                                         \
+    if (CodeCache::contains(dest)) {                                                               \
+      int64_t distance = dest - pc();                                                              \
+      assert(is_valid_32bit_offset(distance), "Must be");                                          \
       auipc(Rd, (int32_t)distance + 0x800);                                                        \
       Assembler::NAME(Rd, Rd, ((int32_t)distance << 20) >> 20);                                    \
     } else {                                                                                       \
@@ -984,8 +986,9 @@ public:
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rd, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \
-    int64_t distance = dest - pc();                                                                \
-    if (is_valid_32bit_offset(distance)) {                                                         \
+    if (CodeCache::contains(dest)) {                                                               \
+      int64_t distance = dest - pc();                                                              \
+      assert(is_valid_32bit_offset(distance), "Must be");                                          \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rd, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -1045,8 +1048,9 @@ public:
   void NAME(Register Rs, address dest, Register temp = t0) {                                       \
     assert_cond(dest != nullptr);                                                                  \
     assert_different_registers(Rs, temp);                                                          \
-    int64_t distance = dest - pc();                                                                \
-    if (is_valid_32bit_offset(distance)) {                                                         \
+    if (CodeCache::contains(dest)) {                                                               \
+      int64_t distance = dest - pc();                                                              \
+      assert(is_valid_32bit_offset(distance), "Must be");                                          \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -1090,8 +1094,9 @@ public:
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \
-    int64_t distance = dest - pc();                                                                \
-    if (is_valid_32bit_offset(distance)) {                                                         \
+    if (CodeCache::contains(dest)) {                                                               \
+      int64_t distance = dest - pc();                                                              \
+      assert(is_valid_32bit_offset(distance), "Must be");                                          \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -1613,19 +1618,6 @@ public:
 private:
 
   void repne_scan(Register addr, Register value, Register count, Register tmp);
-
-  void ld_constant(Register dest, const Address &const_addr) {
-    if (NearCpool) {
-      ld(dest, const_addr);
-    } else {
-      InternalAddress target(const_addr.target());
-      relocate(target.rspec(), [&] {
-        int32_t offset;
-        la(dest, target.target(), offset);
-        ld(dest, Address(dest, offset));
-      });
-    }
-  }
 
   int bitset_to_regs(unsigned int bitset, unsigned char* regs);
   Address add_memory_helper(const Address dst, Register tmp);

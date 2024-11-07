@@ -24,12 +24,15 @@
 package jdk.test.lib.security;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.security.KeyStore;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.test.lib.security.DiffieHellmanGroup;
 
 /**
  * Common library for various security test helper functions.
@@ -147,6 +150,25 @@ public final class SecurityUtils {
         };
     }
 
+    /**
+     * Returns a DH predefined group for tests
+     */
+    public static DiffieHellmanGroup getTestDHGroup() {
+        return getTestDHGroup(2048);
+    }
+
+    /**
+     * Returns a DH predefined group for tests, depending on the specified prime size
+     */
+    public static DiffieHellmanGroup getTestDHGroup(int primeSize) {
+        return switch(primeSize) {
+            case 2048 -> DiffieHellmanGroup.ffdhe2048;
+            case 3072 -> DiffieHellmanGroup.ffdhe3072;
+            case 4096 -> DiffieHellmanGroup.ffdhe4096;
+            default -> throw new RuntimeException("Test DH group not defined for " + primeSize);
+        };
+    }
+
     private static void removeFromDSigPolicy(String rule, List<String> algs) {
         String value = Security.getProperty("jdk.xml.dsig.secureValidationPolicy");
         value = Arrays.stream(value.split(","))
@@ -163,6 +185,34 @@ public final class SecurityUtils {
            }
         }
         return false;
+    }
+
+    public static void inspectTlsBuffer(ByteBuffer buffer) throws IOException {
+        if (buffer == null || !buffer.hasRemaining()) {
+            return;
+        }
+
+        ByteBuffer packet = buffer.slice();
+        System.err.printf("---TLS Buffer Inspection. Bytes Remaining: %d---\n",
+                          packet.remaining());
+
+        for (int i = 1; packet.position() < packet.limit(); i++) {
+            byte contentType = packet.get();                   // pos: 0
+            byte majorVersion = packet.get();                  // pos: 1
+            byte minorVersion = packet.get();                  // pos: 2
+            int contentLen = getInt16(packet);                 // pos: 3, 4
+
+            System.err.printf(
+                "Flight %d: contentType: %d; majorVersion: %d; "
+                + "minorVersion: %d; contentLen: %d\n", i, (int) contentType,
+                (int) majorVersion, (int) minorVersion, contentLen);
+
+            packet.position(packet.position() + contentLen);
+        }
+    }
+
+    public static int getInt16(ByteBuffer m) throws IOException {
+        return ((m.get() & 0xFF) << 8) | (m.get() & 0xFF);
     }
 
     private SecurityUtils() {}

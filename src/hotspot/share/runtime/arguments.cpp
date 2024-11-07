@@ -85,6 +85,7 @@ char** Arguments::_jvm_flags_array              = nullptr;
 int    Arguments::_num_jvm_flags                = 0;
 char** Arguments::_jvm_args_array               = nullptr;
 int    Arguments::_num_jvm_args                 = 0;
+unsigned int Arguments::_addmods_count          = 0;
 char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
@@ -334,6 +335,10 @@ bool Arguments::is_internal_module_property(const char* property) {
     }
   }
   return false;
+}
+
+bool Arguments::is_add_modules_property(const char* key) {
+  return (strcmp(key, MODULE_PROPERTY_PREFIX ADDMODS) == 0);
 }
 
 // Return true if the key matches the --module-path property name ("jdk.module.path").
@@ -1765,7 +1770,6 @@ bool Arguments::sun_java_launcher_is_altjvm() {
 unsigned int addreads_count = 0;
 unsigned int addexports_count = 0;
 unsigned int addopens_count = 0;
-unsigned int addmods_count = 0;
 unsigned int patch_mod_count = 0;
 unsigned int enable_native_access_count = 0;
 
@@ -1791,7 +1795,7 @@ bool Arguments::check_vm_args_consistency() {
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
     if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
-      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
+      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
         return false;
       }
     }
@@ -1800,7 +1804,7 @@ bool Arguments::check_vm_args_consistency() {
 
 #if INCLUDE_JFR
   if (status && (FlightRecorderOptions || StartFlightRecording)) {
-    if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", addmods_count++)) {
+    if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", _addmods_count++)) {
       return false;
     }
   }
@@ -2236,7 +2240,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--add-modules=", &tail)) {
-      if (!create_numbered_module_property("jdk.module.addmods", tail, addmods_count++)) {
+      if (!create_numbered_module_property("jdk.module.addmods", tail, _addmods_count++)) {
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--enable-native-access=", &tail)) {
@@ -2323,7 +2327,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         FREE_C_HEAP_ARRAY(char, options);
 
         // java agents need module java.instrument
-        if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
+        if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", _addmods_count++)) {
           return JNI_ENOMEM;
         }
       }
@@ -2504,7 +2508,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_EINVAL;
         }
         // management agent in module jdk.management.agent
-        if (!create_numbered_module_property("jdk.module.addmods", "jdk.management.agent", addmods_count++)) {
+        if (!create_numbered_module_property("jdk.module.addmods", "jdk.management.agent", _addmods_count++)) {
           return JNI_ENOMEM;
         }
 #else

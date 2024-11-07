@@ -570,9 +570,12 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
     fake_oop->set_narrow_klass(nk);
   }
 
+  if (src_obj == nullptr) {
+    return;
+  }
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (src_obj != nullptr && !src_obj->fast_no_hash_check()) {
+  if (!src_obj->fast_no_hash_check()) {
     intptr_t src_hash = src_obj->identity_hash();
     if (UseCompactObjectHeaders) {
       fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));
@@ -584,6 +587,8 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
     DEBUG_ONLY(intptr_t archived_hash = fake_oop->identity_hash());
     assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
   }
+  // Strip age bits.
+  fake_oop->set_mark(fake_oop->mark().set_age(0));
 }
 
 class ArchiveHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {

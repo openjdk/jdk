@@ -251,7 +251,6 @@
   nonstatic_field(JavaThread,                  _cont_entry,                                   ContinuationEntry*)                    \
   nonstatic_field(JavaThread,                  _unlocked_inflated_monitor,                    ObjectMonitor*)                        \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
-  JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
                                                                                                                                      \
   nonstatic_field(ContinuationEntry,           _pin_count,                                    uint32_t)                              \
@@ -276,7 +275,7 @@
   nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
-  nonstatic_field(Klass,                       _bitmap,                                       uintx)                                 \
+  nonstatic_field(Klass,                       _secondary_supers_bitmap,                      uintx)                                 \
   nonstatic_field(Klass,                       _hash_slot,                                    uint8_t)                               \
   nonstatic_field(Klass,                       _misc_flags._flags,                            u1)                                    \
   nonstatic_field(Klass,                       _prototype_header,                             markWord)                              \

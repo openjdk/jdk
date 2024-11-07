@@ -213,7 +213,6 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   }
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
-  _use_secondary_supers_table = UseSecondarySupersTable;
   if (UseCompressedClassPointers) {
 #ifdef _LP64
     _narrow_klass_pointer_bits = CompressedKlassPointers::narrow_klass_pointer_bits();
@@ -285,7 +284,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
   st->print_cr("- compressed_oops:                %d", _compressed_oops);
   st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
-  st->print_cr("- use_secondary_supers_table:     %d", _use_secondary_supers_table);
   st->print_cr("- narrow_klass_pointer_bits:      %d", _narrow_klass_pointer_bits);
   st->print_cr("- narrow_klass_shift:             %d", _narrow_klass_shift);
   st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_X, _cloned_vtables_offset);
@@ -947,7 +945,7 @@ void FileMapInfo::extract_module_paths(const char* runtime_path, GrowableArray<c
     ClassLoaderExt::extract_jar_files_from_path(name, module_paths);
   }
   // module paths are stored in sorted order in the CDS archive.
-  module_paths->sort(ClassLoaderExt::compare_module_path_by_name);
+  module_paths->sort(ClassLoaderExt::compare_module_names);
 }
 
 bool FileMapInfo::check_module_paths() {
@@ -2527,11 +2525,6 @@ bool FileMapHeader::validate() {
   if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != UseCompressedClassPointers) {
     log_warning(cds)("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
                                "different from runtime, CDS will be disabled.");
-    return false;
-  }
-
-  if (! _use_secondary_supers_table && UseSecondarySupersTable) {
-    log_warning(cds)("The shared archive was created without UseSecondarySupersTable.");
     return false;
   }
 
