@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,4 +304,24 @@ TEST(power_of_2, log2i) {
   check_log2i_variants_for((jint)0);
   check_log2i_variants_for((uint)0);
   check_log2i_variants_for((jlong)0);
+}
+
+template <typename T> void test_ceil_log2() {
+  EXPECT_EQ(ceil_log2(T(1)), T(0)) << "value = " << T(1);
+  EXPECT_EQ(ceil_log2(T(2)), T(1)) << "value = " << T(2);
+  EXPECT_EQ(ceil_log2(T(3)), T(2)) << "value = " << T(3);
+  EXPECT_EQ(ceil_log2(T(4)), T(2)) << "value = " << T(4);
+  EXPECT_EQ(ceil_log2(T(5)), T(3)) << "value = " << T(5);
+  EXPECT_EQ(ceil_log2(T(127)), T(7)) << "value = " << T(127);
+}
+
+TEST(power_of_2, ceil_log2) {
+  test_ceil_log2<int8_t>();
+  test_ceil_log2<int16_t>();
+  test_ceil_log2<int32_t>();
+  test_ceil_log2<int64_t>();
+  test_ceil_log2<uint8_t>();
+  test_ceil_log2<uint16_t>();
+  test_ceil_log2<uint32_t>();
+  test_ceil_log2<uint64_t>();
 }

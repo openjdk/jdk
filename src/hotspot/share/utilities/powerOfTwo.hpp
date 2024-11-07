@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,8 @@ inline T next_power_of_2(T value)  {
 // Find log2 value greater than this input
 template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T ceil_log2(T value) {
+  assert(value > 0, "Invalid value");
+  if (value == 1) return 0;
   T ret;
   for (ret = 1; ((T)1 << ret) < value; ++ret);
   return ret;
