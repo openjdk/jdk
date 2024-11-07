@@ -640,12 +640,9 @@ void ShenandoahHeap::post_initialize() {
   _workers->threads_do(&init_gclabs);
 
   // gclab can not be initialized early during VM startup, as it can not determinate its max_size.
-  // Now, we will let WorkerThreads to initialize gclab when new worker is created.
+  // Now, we will let WorkerThreads to initialize gclab when new worker is created. Note that the
+  // safepoint workers will never evacuate anything, so have no need for gc labs.
   _workers->set_initialize_gclab();
-  if (_safepoint_workers != nullptr) {
-    _safepoint_workers->threads_do(&init_gclabs);
-    _safepoint_workers->set_initialize_gclab();
-  }
 
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers();)
 }
@@ -1214,9 +1211,44 @@ private:
   }
 };
 
+class ShenandoahRetireGCLABClosure : public ThreadClosure {
+private:
+  bool const _resize;
+public:
+  explicit ShenandoahRetireGCLABClosure(bool resize) : _resize(resize) {}
+  void do_thread(Thread* thread) override {
+    Thread* thread1;
+    PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
+    assert(gclab != nullptr, "GCLAB should be initialized for %s", thread1->name());
+    gclab->retire();
+    if (_resize && ShenandoahThreadLocalData::gclab_size(thread) > 0) {
+      ShenandoahThreadLocalData::set_gclab_size(thread, 0);
+    }
+
+    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+      PLAB* plab = ShenandoahThreadLocalData::plab(thread);
+      assert(plab != nullptr, "PLAB should be initialized for %s", thread1->name());
+
+      // There are two reasons to retire all plabs between old-gen evacuation passes.
+      //  1. We need to make the plab memory parsable by remembered-set scanning.
+      //  2. We need to establish a trustworthy UpdateWaterMark value within each old-gen heap region
+      ShenandoahGenerationalHeap::heap()->retire_plab(plab, thread);
+      if (_resize && ShenandoahThreadLocalData::plab_size(thread) > 0) {
+        ShenandoahThreadLocalData::set_plab_size(thread, 0);
+      }
+    }
+  }
+};
+
 void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
   ShenandoahEvacuationTask task(this, _collection_set, concurrent);
   workers()->run_task(&task);
+
+  if (!cancelled_gc()) {
+    // If GC was cancelled, we'll want to retain these GC labs for use in the degenerated cycle.
+    ShenandoahRetireGCLABClosure retire(ResizeTLAB);
+    workers()->threads_do(&retire);
+  }
 }
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
@@ -1373,31 +1405,11 @@ public:
   }
 };
 
-class ShenandoahRetireGCLABClosure : public ThreadClosure {
-private:
-  bool const _resize;
+class ShenandoahAssertNoLabs : public ThreadClosure {
 public:
-  ShenandoahRetireGCLABClosure(bool resize) : _resize(resize) {}
-  void do_thread(Thread* thread) {
-    PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
-    assert(gclab != nullptr, "GCLAB should be initialized for %s", thread->name());
-    gclab->retire();
-    if (_resize && ShenandoahThreadLocalData::gclab_size(thread) > 0) {
-      ShenandoahThreadLocalData::set_gclab_size(thread, 0);
-    }
-
-    if (ShenandoahHeap::heap()->mode()->is_generational()) {
-      PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-      assert(plab != nullptr, "PLAB should be initialized for %s", thread->name());
-
-      // There are two reasons to retire all plabs between old-gen evacuation passes.
-      //  1. We need to make the plab memory parsable by remembered-set scanning.
-      //  2. We need to establish a trustworthy UpdateWaterMark value within each old-gen heap region
-      ShenandoahGenerationalHeap::heap()->retire_plab(plab, thread);
-      if (_resize && ShenandoahThreadLocalData::plab_size(thread) > 0) {
-        ShenandoahThreadLocalData::set_plab_size(thread, 0);
-      }
-    }
+  void do_thread(Thread* thread) override {
+    assert(ShenandoahThreadLocalData::gclab(thread) == nullptr, "Thread should not have GCLAB");
+    assert(ShenandoahThreadLocalData::plab(thread) == nullptr, "Thread should not have PLAB");
   }
 };
 
@@ -1448,10 +1460,10 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     cl.do_thread(t);
   }
-  workers()->threads_do(&cl);
 
   if (safepoint_workers() != nullptr) {
-    safepoint_workers()->threads_do(&cl);
+    ShenandoahAssertNoLabs no_labs;
+    safepoint_workers()->threads_do(&no_labs);
   }
 }
 
