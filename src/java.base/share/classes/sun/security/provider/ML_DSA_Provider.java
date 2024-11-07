@@ -44,10 +44,16 @@ public class ML_DSA_Provider {
     public static Version version = Version.DRAFT;
 
     static int name2int(String name) {
-        if (name.endsWith("44")) return 2;
-        else if (name.endsWith("65")) return 3;
-        else if (name.endsWith("87")) return 5;
-        else throw new ProviderException();
+        if (name.endsWith("44")) {
+            return 2;
+        } else if (name.endsWith("65")) {
+            return 3;
+        } else if (name.endsWith("87")) {
+            return 5;
+        } else {
+            // should not happen
+            throw new ProviderException("Unknown name " + name);
+        }
     }
 
     public static class KPG extends NamedKeyPairGenerator {
@@ -70,7 +76,8 @@ public class ML_DSA_Provider {
             try {
                 return new byte[][]{
                         mlDsa.pkEncode(kp.publicKey()),
-                        mlDsa.skEncode(kp.privateKey())};
+                        mlDsa.skEncode(kp.privateKey())
+                };
             } finally {
                 kp.privateKey().destroy();
                 Arrays.fill(seed, (byte)0);
