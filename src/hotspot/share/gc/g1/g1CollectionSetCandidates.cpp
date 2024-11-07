@@ -32,16 +32,15 @@ G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config) :
   _candidates(4, mtGCCardSet),
   _card_set_mm(config, G1CollectedHeap::heap()->card_set_freelist_pool()),
   _card_set(config, &_card_set_mm),
-  _gc_efficiency(0.0) {
-
-}
+  _gc_efficiency(0.0)
+{ }
 
 void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
   G1CollectionSetCandidateInfo c(hr, hr->calc_gc_efficiency());
   add(c);
 }
 
-void G1CSetCandidateGroup::add(G1CollectionSetCandidateInfo &hr_info) {
+void G1CSetCandidateGroup::add(G1CollectionSetCandidateInfo& hr_info) {
   G1HeapRegion* hr = hr_info._r;
   assert(!hr->is_young(), "should be flagged as survivor region");
 
@@ -62,9 +61,9 @@ void G1CSetCandidateGroup::calculate_efficiency() {
 }
 
 void G1CSetCandidateGroup::clear() {
-    _card_set.clear();
-    _candidates.clear();
-  }
+  _card_set.clear();
+  _candidates.clear();
+}
 
 void G1CSetCandidateGroup::abandon() {
   for (G1CollectionSetCandidateInfo ci : _candidates) {
@@ -184,7 +183,7 @@ void G1CSetCandidateGroupList::remove_selected(uint count, uint num_regions) {
 }
 
 void G1CSetCandidateGroupList::remove(G1CSetCandidateGroupList* other) {
-  guarantee((uint)_groups.length() >= other->length(), "must be");
+  guarantee((uint)_groups.length() >= other->length(), "Other should be a subset of this list");
 
   if (other->length() == 0) {
     // Nothing to remove or nothing in the original set.
@@ -208,7 +207,7 @@ void G1CSetCandidateGroupList::remove(G1CSetCandidateGroupList* other) {
   _groups.swap(&new_list);
 
   verify();
-  assert(_groups.length() == new_length, "must be");
+  assert(_groups.length() == new_length, "Must be");
 }
 
 void G1CSetCandidateGroupList::sort_by_efficiency() {
@@ -341,7 +340,7 @@ void G1CollectionSetCandidates::remove(G1CSetCandidateGroupList* other) {
 
 
   for (G1CSetCandidateGroup* group : *other) {
-    assert(group->length() > 0, "Should not have empty groups! %u", group->length());
+    assert(group->length() > 0, "Should not have empty groups");
     // Regions in the same group have the same source (i.e from_marking or retained).
     G1HeapRegion* r = group->region_at(0);
     if (is_from_marking(r)) {
@@ -355,7 +354,7 @@ void G1CollectionSetCandidates::remove(G1CSetCandidateGroupList* other) {
   _retained_groups.remove(&other_retained_groups);
 
   other->iterate([&] (G1HeapRegion* r) {
-    assert(contains(r), "must contain region %u", r->hrm_index());
+    assert(contains(r), "Must contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Invalid;
   });
 
@@ -363,7 +362,7 @@ void G1CollectionSetCandidates::remove(G1CSetCandidateGroupList* other) {
 }
 
 void G1CollectionSetCandidates::add_retained_region_unsorted(G1HeapRegion* r) {
-  assert(!contains(r), "must not contain region %u", r->hrm_index());
+  assert(!contains(r), "Must not already contain region %u", r->hrm_index());
   _contains_map[r->hrm_index()] = CandidateOrigin::Retained;
 
   G1CSetCandidateGroup* gr = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config());
@@ -409,7 +408,6 @@ void G1CollectionSetCandidates::verify_helper(G1CSetCandidateGroupList* list, ui
   }
 }
 
-
 void G1CollectionSetCandidates::verify() {
   uint from_marking = 0;
 
@@ -439,8 +437,6 @@ void G1CollectionSetCandidates::verify() {
 
   FREE_C_HEAP_ARRAY(CandidateOrigin, verify_map);
 }
-
-
 #endif
 
 bool G1CollectionSetCandidates::contains(const G1HeapRegion* r) const {

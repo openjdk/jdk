@@ -106,7 +106,6 @@ public:
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
     G1MonotonicArenaMemoryStats _total;
-
     G1CollectionSetCandidates* candidates = g1h->collection_set()->candidates();
     for (G1CSetCandidateGroup* gr : candidates->from_marking_groups()) {
       _total.add(gr->card_set_memory_stats());
@@ -115,7 +114,6 @@ public:
     for (G1CSetCandidateGroup* gr : candidates->retained_groups()) {
       _total.add(gr->card_set_memory_stats());
     }
-
     g1h->set_collection_set_candidates_stats(_total);
   }
 };
@@ -681,7 +679,7 @@ public:
     size_t young_rs_length = g1h->young_regions_cardset()->occupied();
 
     // We only use young_rs_length statistics to estimate young regions length.
-    policy->record_young_rs_length(young_rs_length);
+    policy->record_card_rs_length(young_rs_length);
     policy->cset_regions_freed();
   }
 

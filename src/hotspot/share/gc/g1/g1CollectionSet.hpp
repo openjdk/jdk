@@ -187,7 +187,7 @@ class G1CollectionSet {
 
   void add_region_to_collection_set(G1HeapRegion* r);
 
-  double select_candidates_from_groups(double time_remaining_ms);
+  double select_candidates_from_marking(double time_remaining_ms);
 
   void select_candidates_from_retained(double time_remaining_ms);
 

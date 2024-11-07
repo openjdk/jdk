@@ -101,7 +101,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
-  size_t _young_rs_length;
+  size_t _card_rs_length;
 
   size_t _pending_cards_at_gc_start;
 
@@ -130,8 +130,8 @@ public:
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
 
-  void record_young_rs_length(size_t young_rs_length) {
-    _young_rs_length = young_rs_length;
+  void record_card_rs_length(size_t card_rs_length) {
+    _card_rs_length = card_rs_length;
   }
 
   double predict_base_time_ms(size_t pending_cards) const;
@@ -152,8 +152,6 @@ public:
   double predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
   // Non-copy time for a region is handling remembered sets and other time.
   double predict_region_non_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
-
-public:
 
   double predict_merge_scan_time(size_t card_rs_length) const;
   // Predict other time for count young regions.

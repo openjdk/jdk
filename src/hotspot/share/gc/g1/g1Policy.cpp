@@ -69,7 +69,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _reserve_regions(0),
   _young_gen_sizer(),
   _free_regions_at_end_of_collection(0),
-  _young_rs_length(0),
+  _card_rs_length(0),
   _pending_cards_at_gc_start(0),
   _concurrent_start_to_mixed(),
   _collection_set(nullptr),
@@ -527,7 +527,7 @@ double G1Policy::predict_retained_regions_evac_time() const {
                                retained_groups->num_regions());
 
   for (G1CSetCandidateGroup* group : *retained_groups) {
-    assert(group->length() == 1, "We should only have one region in group");
+    assert(group->length() == 1, "We should only have one region in a retained group");
     G1HeapRegion* r = group->region_at(0); // We only have one region per group.
     // We optimistically assume that any of these marking candidate regions will
     // be reclaimable the next gc, so just consider them as normal.
@@ -936,7 +936,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     _analytics->report_constant_other_time_ms(constant_other_time_ms(pause_time_ms));
 
     _analytics->report_pending_cards((double)pending_cards_at_gc_start(), is_young_only_pause);
-    _analytics->report_card_rs_length((double)_young_rs_length, is_young_only_pause);
+    _analytics->report_card_rs_length((double)_card_rs_length, is_young_only_pause);
     _analytics->report_code_root_rs_length((double)total_code_roots_scanned, is_young_only_pause);
   }
 

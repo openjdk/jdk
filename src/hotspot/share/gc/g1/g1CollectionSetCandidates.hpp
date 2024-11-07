@@ -73,7 +73,7 @@ public:
   }
 
   void add(G1HeapRegion* hr);
-  void add(G1CollectionSetCandidateInfo &hr_info);
+  void add(G1CollectionSetCandidateInfo& hr_info);
 
   uint length() const { return (uint)_candidates.length(); }
 

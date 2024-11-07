@@ -354,7 +354,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
     candidates()->verify();
 
     if (collector_state()->in_mixed_phase()) {
-      time_remaining_ms = select_candidates_from_groups(time_remaining_ms);
+      time_remaining_ms = select_candidates_from_marking(time_remaining_ms);
     } else {
       log_debug(gc, ergo, cset)("Do not add marking candidates to collection set due to pause type.");
     }
@@ -383,19 +383,7 @@ static void print_finish_message(const char* reason, bool from_marking) {
                             from_marking ? "marking" : "retained", reason);
 }
 
-double G1CollectionSet::select_candidates_from_groups(double time_remaining_ms) {
-  G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
-
-  G1CSetCandidateGroupList selected_groups;
-
-  uint min_old_cset_length = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
-  uint max_old_cset_length = MAX2(min_old_cset_length, _policy->calc_max_old_cset_length());
-  uint max_optional_regions = max_old_cset_length - min_old_cset_length;
-  bool check_time_remaining = _policy->use_adaptive_young_list_length();
-
-  double optional_threshold_ms = time_remaining_ms * _policy->optional_prediction_fraction();
-
-
+double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms) {
   uint num_expensive_regions = 0;
   uint num_inital_regions = 0;
   uint num_initial_groups = 0;
@@ -404,10 +392,21 @@ double G1CollectionSet::select_candidates_from_groups(double time_remaining_ms) 
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
 
+  double optional_threshold_ms = time_remaining_ms * _policy->optional_prediction_fraction();
+
+  uint min_old_cset_length = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
+  uint max_old_cset_length = MAX2(min_old_cset_length, _policy->calc_max_old_cset_length());
+  uint max_optional_regions = max_old_cset_length - min_old_cset_length;
+  bool check_time_remaining = _policy->use_adaptive_young_list_length();
+
+  G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
+
   log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
                             "Min %u regions, max %u regions, available %u regions"
                             "time remaining %1.2fms, optional threshold %1.2fms",
                             min_old_cset_length, max_old_cset_length, from_marking_groups->num_regions(), time_remaining_ms, optional_threshold_ms);
+
+  G1CSetCandidateGroupList selected_groups;
 
   for (G1CSetCandidateGroup* group : *from_marking_groups) {
     if (num_inital_regions + num_optional_regions >= max_old_cset_length) {
@@ -465,7 +464,6 @@ double G1CollectionSet::select_candidates_from_groups(double time_remaining_ms) 
   }
 
   // Remove selected groups from list of candidate groups.
-  guarantee(num_initial_groups > 0, "why would this happen");
   if (num_initial_groups > 0) {
     candidates()->remove(&selected_groups);
   }
@@ -484,13 +482,12 @@ double G1CollectionSet::select_candidates_from_groups(double time_remaining_ms) 
                             num_inital_regions, num_optional_regions,
                             predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms);
 
+  assert(selected_groups.num_regions() == num_inital_regions, "must be");
   assert(_optional_groups.num_regions() == num_optional_regions, "must be");
   return time_remaining_ms;
 }
 
 void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) {
-  G1CSetCandidateGroupList* retained_groups = &candidates()->retained_groups();
-
   uint num_initial_regions = 0;
   uint num_optional_regions = 0;
   uint num_expensive_regions = 0;
@@ -499,11 +496,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
 
-  uint min_regions = _policy->min_retained_old_cset_length();
-
-  G1CSetCandidateGroupList remove_from_retained;
-  G1CSetCandidateGroupList groups_to_abandon;
-
+  uint const min_regions = _policy->min_retained_old_cset_length();
   // We want to make sure that on the one hand we process the retained regions asap,
   // but on the other hand do not take too many of them as optional regions.
   // So we split the time budget into budget we will unconditionally take into the
@@ -512,10 +505,15 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
   double optional_time_remaining_ms = _policy->max_time_for_retaining();
   time_remaining_ms = MIN2(time_remaining_ms, optional_time_remaining_ms);
 
+  G1CSetCandidateGroupList* retained_groups = &candidates()->retained_groups();
+
   log_debug(gc, ergo, cset)("Start adding retained candidates to collection set. "
                             "Min %u regions, available %u, "
                             "time remaining %1.2fms, optional remaining %1.2fms",
-                            min_regions, retained_groups->length(), time_remaining_ms, optional_time_remaining_ms);
+                            min_regions, retained_groups->num_regions(), time_remaining_ms, optional_time_remaining_ms);
+
+  G1CSetCandidateGroupList remove_from_retained;
+  G1CSetCandidateGroupList groups_to_abandon;
 
   for (G1CSetCandidateGroup* group : *retained_groups) {
     assert(group->length() == 1, "Retained groups should have only 1 region");
@@ -596,7 +594,7 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
          "Should only be called when there are optional regions");
 
   uint num_groups_selected = 0;
-  double total_predicted_ms = 0.0;
+  double total_prediction_ms = 0.0;
   G1CSetCandidateGroupList selected;
   for (G1CSetCandidateGroup* group : _optional_groups) {
     double predicted_time_ms = group->predict_group_total_time_ms();
@@ -607,7 +605,7 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
       break;
     }
 
-    total_predicted_ms += predicted_time_ms;
+    total_prediction_ms += predicted_time_ms;
     time_remaining_ms -= predicted_time_ms;
 
     num_regions_selected += group->length();
@@ -623,22 +621,22 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
     _optional_groups.remove(&selected);
     candidates()->remove(&selected);
   }
-  return total_predicted_ms;
+  return total_prediction_ms;
 }
 
 uint G1CollectionSet::select_optional_collection_set_regions(double time_remaining_ms) {
-  assert(num_optional_regions() > 0,
+  uint optional_regions_count = num_optional_regions();
+  assert(optional_regions_count > 0,
          "Should only be called when there are optional regions");
 
-  uint optional_regions_count = num_optional_regions();
   uint num_regions_selected = 0;
 
-  double total_predicted_ms = select_candidates_from_optional_groups(time_remaining_ms, num_regions_selected);
+  double total_prediction_ms = select_candidates_from_optional_groups(time_remaining_ms, num_regions_selected);
 
-  time_remaining_ms -= total_predicted_ms;
+  time_remaining_ms -= total_prediction_ms;
 
   log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Total predicted time: %.3fms",
-                            num_regions_selected, optional_regions_count, total_predicted_ms);
+                            num_regions_selected, optional_regions_count, total_prediction_ms);
   return num_regions_selected;
 }
 
@@ -667,7 +665,7 @@ void G1CollectionSet::add_group_to_collection_set(G1CSetCandidateGroup* gr) {
 
 void G1CollectionSet::add_region_to_collection_set(G1HeapRegion* r) {
   _g1h->clear_region_attr(r);
-  assert(r->rem_set()->is_complete(), "Must be %u complete %d", r->hrm_index(), r->rem_set()->is_complete());
+  assert(r->rem_set()->is_complete(), "Remset for region %u complete", r->hrm_index());
   add_old_region(r);
 }
 
@@ -681,7 +679,6 @@ bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_ti
 
   uint num_regions_selected = select_optional_collection_set_regions(remaining_pause_time);
 
-  // FIXME: add a uniform way of dealing with this.
   _selected_groups_cur_length = collection_set_groups()->length();
   stop_incremental_building();
 
