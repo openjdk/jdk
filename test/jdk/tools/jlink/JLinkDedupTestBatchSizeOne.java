@@ -27,29 +27,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import jdk.test.lib.compiler.CompilerUtils;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import tests.JImageGenerator;
 
-/*
- * @test id=packaged_modules
- * @summary Make sure that modules can be linked using jlink
- * and deduplication works correctly when creating sub methods
- * @bug 8311591
- * @library /test/lib
- *          ../lib
- * @enablePreview
- * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink.plugin
- *          jdk.jlink/jdk.tools.jmod
- *          jdk.jlink/jdk.tools.jimage
- *          jdk.compiler
- * @build tests.* JLinkDedupTestBatchSizeOne jdk.test.lib.compiler.CompilerUtils
- * @requires jlink.packagedModules
- * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLinkDedupTestBatchSizeOne false
- */
 
 /*
- * @test id=linkable_jdk_runtimes
+ * @test
  * @summary Make sure that modules can be linked using jlink
  * and deduplication works correctly when creating sub methods
  * @bug 8311591
@@ -62,9 +45,8 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
- * @requires (jlink.runtime.linkable & !jlink.packagedModules)
  * @build tests.* JLinkDedupTestBatchSizeOne jdk.test.lib.compiler.CompilerUtils
- * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLinkDedupTestBatchSizeOne true
+ * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLinkDedupTestBatchSizeOne
  */
 public class JLinkDedupTestBatchSizeOne {
 
@@ -101,13 +83,10 @@ public class JLinkDedupTestBatchSizeOne {
     }
 
     public static void main(String[] args) throws Throwable {
-        if (args.length != 1) {
-            throw new AssertionError("Wrong number of arguments for the test!");
-        }
-        boolean linkableRuntime = Boolean.parseBoolean(args[0]);
+        boolean linkableRuntime = LinkableRuntimeImage.isLinkableRuntime();
         System.out.println("Running test on " +
-                               (linkableRuntime ? "a linkable JDK runtime" :
-                                   "packaged modules") + ".");
+                            (linkableRuntime ? "enabled" : "disabled") +
+                            " capability of linking from the run-time image.");
         compileAll(linkableRuntime);
         Path image = Paths.get("bug8311591");
 
