@@ -142,7 +142,7 @@ public:
   static address _verify_fpu_cntrl_wrd_entry;
   static address _d2i_wrapper;
   static address _d2l_wrapper;
-
+#endif
   static jint    _fpu_cntrl_wrd_std;
   static jint    _fpu_cntrl_wrd_24;
   static jint    _fpu_cntrl_wrd_trunc;
@@ -150,10 +150,12 @@ public:
   static jint    _fpu_subnormal_bias1[3];
   static jint    _fpu_subnormal_bias2[3];
 
+#if 0
  public:
   static address verify_fpu_cntrl_wrd_entry() { return _verify_fpu_cntrl_wrd_entry; }
   static address d2i_wrapper()                { return _d2i_wrapper; }
   static address d2l_wrapper()                { return _d2l_wrapper; }
+#endif
   static address addr_fpu_cntrl_wrd_std()     { return (address)&_fpu_cntrl_wrd_std;   }
   static address addr_fpu_cntrl_wrd_24()      { return (address)&_fpu_cntrl_wrd_24;    }
   static address addr_fpu_cntrl_wrd_trunc()   { return (address)&_fpu_cntrl_wrd_trunc; }
@@ -161,7 +163,6 @@ public:
   static address addr_fpu_subnormal_bias2()   { return (address)&_fpu_subnormal_bias2; }
 
   static jint    fpu_cntrl_wrd_std()          { return _fpu_cntrl_wrd_std; }
-#endif
 #endif // !LP64
 
  private:
