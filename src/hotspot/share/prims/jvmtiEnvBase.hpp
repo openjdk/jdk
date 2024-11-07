@@ -409,7 +409,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                 jmethodID* method_ptr, jlocation* location_ptr);
   jvmtiError get_frame_location(oop vthread_oop, jint depth,
                                 jmethodID* method_ptr, jlocation* location_ptr);
-  jvmtiError set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth);
+  jvmtiError set_or_clear_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth, bool set);
   jvmtiError get_object_monitor_usage(JavaThread* calling_thread,
                                       jobject object, jvmtiMonitorUsage* info_ptr);
   jvmtiError get_stack_trace(javaVFrame* jvf,
@@ -534,18 +534,20 @@ public:
 };
 
 // HandshakeClosure to set frame pop.
-class SetFramePopClosure : public JvmtiUnitedHandshakeClosure {
+class SetOrClearFramePopClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnv *_env;
   JvmtiThreadState* _state;
   jint _depth;
+  bool _set;
 
 public:
-  SetFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, jint depth)
-    : JvmtiUnitedHandshakeClosure("SetFramePopClosure"),
+  SetOrClearFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, jint depth, bool set)
+    : JvmtiUnitedHandshakeClosure("SetOrClearFramePopClosure"),
       _env(env),
       _state(state),
-      _depth(depth) {}
+      _depth(depth),
+      _set(set) {}
   void do_thread(Thread *target);
   void do_vthread(Handle target_h);
 };

@@ -77,7 +77,7 @@ vprint_message(FILE *fp, const char *prefix, const char *suffix,
     /* Convert to platform encoding (ignore errors, dangerous area) */
     (void)utf8ToPlatform(utf8buf, len, pbuf, (int)sizeof(pbuf));
 
-    (void)fprintf(fp, "%s%s%s", prefix, pbuf, suffix);
+    (void)fprintf(stdout, "%s%s%s", prefix, pbuf, suffix);
 }
 
 /* Print message in platform encoding (assume all input is UTF-8 safe)

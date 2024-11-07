@@ -34,6 +34,8 @@
 
 #define HANDLING_EVENT(node) ((node)->current_ei != 0)
 
+#define DEBUG_THREADNAME
+
 /*
  * Collection of info for properly handling co-located events.
  * If the ei field is non-zero, then one of the possible
@@ -416,6 +418,7 @@ insertThread(JNIEnv *env, ThreadList *list, jthread thread)
         node->is_vthread = is_vthread;
         node->instructionStepMode = JVMTI_DISABLE;
         node->eventBag = eventBag;
+        node->currentStep.track_notifies = JNI_TRUE;
         addNode(list, node);
 
 #ifdef DEBUG_THREADNAME
@@ -1872,6 +1875,20 @@ popFrameCompleteEvent(jthread thread)
       debugMonitorExit(popFrameProceedLock);
 }
 
+static jint
+getFrameCount(jthread thread)
+{
+    jint count = 0;
+    jvmtiError error;
+
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetFrameCount)
+                    (gdata->jvmti, thread, &count);
+    if (error != JVMTI_ERROR_NONE) {
+        EXIT_ERROR(error, "getting frame count");
+    }
+    return count;
+}
+
 /**
  * Pop one frame off the stack of thread.
  * popFrameEventLock is already held
@@ -1881,10 +1898,14 @@ popOneFrame(jthread thread)
 {
     jvmtiError error;
 
+    tty_message("popOneFrame: depth=%d", getFrameCount(thread));
     error = JVMTI_FUNC_PTR(gdata->jvmti,PopFrame)(gdata->jvmti, thread);
     if (error != JVMTI_ERROR_NONE) {
         return error;
     }
+
+    // Let stepControl know that we popped a frame.
+    stepControl_PopFrameCalled(thread);
 
     /* resume the popped thread so that the pop occurs and so we */
     /* will get the event (step or method entry) after the pop */
@@ -2636,8 +2657,13 @@ dumpThread(ThreadNode *node) {
 #endif
     // More fields can be printed here when needed. The amount of output is intentionally
     // kept small so it doesn't generate too much output.
-    tty_message("\tsuspendCount: %d", node->suspendCount);
+    tty_message("\tpending: %d", node->currentStep.pending);
+    tty_message("\tframeExited: %d", node->currentStep.frameExited);
+    tty_message("\tfromNative: %d", node->currentStep.fromNative);
+    tty_message("\tgranularity: %d", node->currentStep.granularity);
+    tty_message("\tdepth: %d", node->currentStep.depth);
 #if 0
+    tty_message("\tsuspendCount: %d", node->suspendCount);
     tty_message("\tsuspendAllCount: %d", suspendAllCount);
     tty_message("\tthreadState: 0x%x", getThreadState(node));
     tty_message("\ttoBeResumed: %d", node->toBeResumed);

@@ -163,6 +163,59 @@ hasLineNumbers(jmethodID method)
 }
 
 static jvmtiError
+notifyFramePop(jthread thread, StepRequest *step)
+{
+    jint currentDepth = getFrameCount(thread);
+
+#if 0
+    if (currentDepth <= 4 && isVThread(thread)) {
+        tty_message("notifyFramePop: ignoring exiting vthread currentDepth=%d", currentDepth);
+        printThreadInfo(thread);
+        printStackTrace(thread);
+        return JVMTI_ERROR_NONE;
+    }
+#endif
+
+    if (step->track_notifies && step->num_notifies > 0) {
+        // If we have any pending notifies, make sure we are not about to request a duplicate.
+        jint mostRecentNotifyDepth = step->notify_depth[step->num_notifies - 1];
+        tty_message("notifyFramePop: currentDepth = %d, notify_depth[%d] = %d",
+                    currentDepth, step->num_notifies - 1, mostRecentNotifyDepth );
+        if (mostRecentNotifyDepth == currentDepth) {
+            return JVMTI_ERROR_NONE;
+        }
+        // A new NotifyFramePop should always be at a deeper depth then the most recent.
+        if (mostRecentNotifyDepth > currentDepth) {
+            printThreadInfo(thread);
+            printStackTrace(thread);
+            JDI_ASSERT(mostRecentNotifyDepth < currentDepth);
+        }
+    }
+
+    jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,NotifyFramePop)
+        (gdata->jvmti, thread, 0);
+    if (error == JVMTI_ERROR_NONE) {
+        if (step->num_notifies == MAX_NOTIFY_FRAME_POPS) {
+            if (step->track_notifies) {
+                tty_message("notifyFramePop: MAX_NOTIFY_FRAME reached");
+                step->track_notifies = JNI_FALSE; // Once turned off, this is never turned back on.
+            }
+        }
+        if (step->track_notifies) {
+            JDI_ASSERT(step->num_notifies < MAX_NOTIFY_FRAME_POPS);
+            step->notify_depth[step->num_notifies] = currentDepth;
+            tty_message("notifyFramePop: pushed notify_depth[%d] = %d",
+                        step->num_notifies, currentDepth);
+            step->num_notifies++;
+            //threadControl_dumpThread(thread);
+            printThreadInfo(thread);
+            printStackTrace(thread);
+        }
+    }
+    return error;
+}
+
+static jvmtiError
 initState(JNIEnv *env, jthread thread, StepRequest *step)
 {
     jvmtiError error;
@@ -193,13 +246,12 @@ initState(JNIEnv *env, jthread thread, StepRequest *step)
      *
      * TO DO: explain the need for this notification.
      */
-    error = JVMTI_FUNC_PTR(gdata->jvmti,NotifyFramePop)
-                (gdata->jvmti, thread, 0);
+    error = notifyFramePop(thread, step);
     if (error == JVMTI_ERROR_OPAQUE_FRAME) {
         step->fromNative = JNI_TRUE;
         error = JVMTI_ERROR_NONE;
         /* continue without error */
-    } else if (error == JVMTI_ERROR_DUPLICATE) {
+    } else if (error == JVMTI_ERROR_DUPLICATE && !step->track_notifies) {
         error = JVMTI_ERROR_NONE;
         /* Already being notified, continue without error */
     } else if (error != JVMTI_ERROR_NONE) {
@@ -272,22 +324,37 @@ handleFramePopEvent(JNIEnv *env, EventInfo *evinfo,
         EXIT_ERROR(AGENT_ERROR_INVALID_THREAD, "getting step request");
     }
 
+    /*
+     * Note: current depth is reported as *before* the pending frame pop.
+     */
+    jint currentDepth;
+    jint fromDepth;
+    jint afterPopDepth;
+
+    currentDepth = getFrameCount(thread);
+    fromDepth = step->fromStackDepth;
+    afterPopDepth = currentDepth-1;
+
+    tty_message("handleFramePopEvent: BEGIN fromDepth=%d currentDepth=%d track_notifies=%d notify_depth[%d]=%d",
+                fromDepth, currentDepth, step->num_notifies - 1,
+                step->notify_depth[step->num_notifies - 1], step->track_notifies);
+    printThreadInfo(thread);
+
+    if (step->track_notifies) {
+        if (step->num_notifies == 0 ||
+            currentDepth != step->notify_depth[step->num_notifies - 1])
+        { 
+            printThreadInfo(thread);
+            printStackTrace(thread);
+        }
+        JDI_ASSERT(step->num_notifies > 0);
+        JDI_ASSERT(currentDepth == step->notify_depth[step->num_notifies - 1]);
+        step->num_notifies--;
+        tty_message("handleFramePopEvent: popped notify_depth[%d]=%d", step->num_notifies,
+                    step->notify_depth[step->num_notifies]);
+    }
+
     if (step->pending) {
-        /*
-         * Note: current depth is reported as *before* the pending frame
-         * pop.
-         */
-        jint currentDepth;
-        jint fromDepth;
-        jint afterPopDepth;
-
-        currentDepth = getFrameCount(thread);
-        fromDepth = step->fromStackDepth;
-        afterPopDepth = currentDepth-1;
-
-        LOG_STEP(("handleFramePopEvent: BEGIN fromDepth=%d, currentDepth=%d",
-                        fromDepth, currentDepth));
-
         /*
          * If we are exiting the original stepping frame, record that
          * fact here. Once the next step event comes in, we can safely
@@ -331,7 +398,7 @@ handleFramePopEvent(JNIEnv *env, EventInfo *evinfo,
              * step-over can be stopped.
              *
              */
-            LOG_STEP(("handleFramePopEvent: starting singlestep, depth==OVER"));
+            tty_message("handleFramePopEvent: starting singlestep, depth==OVER");
             enableStepping(thread);
         } else if (step->depth == JDWP_STEP_DEPTH(OUT) &&
                    fromDepth > afterPopDepth) {
@@ -339,7 +406,8 @@ handleFramePopEvent(JNIEnv *env, EventInfo *evinfo,
              * The original stepping frame is about to be popped. Step
              * until we reach the next safe place to stop.
              */
-            LOG_STEP(("handleFramePopEvent: starting singlestep, depth==OUT && fromDepth > afterPopDepth (%d>%d)",fromDepth, afterPopDepth));
+            tty_message("handleFramePopEvent: starting singlestep, depth==OUT && fromDepth > afterPopDepth (%d>%d)",
+                        fromDepth, afterPopDepth);
             enableStepping(thread);
         } else if (step->methodEnterHandlerNode != NULL) {
             /* We installed a method entry event handler as part of a step into operation. */
@@ -349,15 +417,17 @@ handleFramePopEvent(JNIEnv *env, EventInfo *evinfo,
                  * We've popped back to the original stepping frame without finding a place to stop.
                  * Resume stepping in the original frame.
                  */
-                LOG_STEP(("handleFramePopEvent: starting singlestep, have methodEnter handler && depth==INTO && fromDepth >= afterPopDepth (%d>=%d)", fromDepth, afterPopDepth));
+                tty_message("handleFramePopEvent: starting singlestep, have methodEnter handler && depth==INTO && fromDepth >= afterPopDepth (%d>=%d)", fromDepth, afterPopDepth);
                 enableStepping(thread);
                 (void)eventHandler_free(step->methodEnterHandlerNode);
                 step->methodEnterHandlerNode = NULL;
             } else {
-                LOG_STEP(("handleFramePopEvent: starting singlestep, have methodEnter handler && depth==INTO && fromDepth < afterPopDepth (%d<%d)", fromDepth, afterPopDepth));
+                tty_message("handleFramePopEvent: starting singlestep, have methodEnter handler && depth==INTO && fromDepth < afterPopDepth (%d<%d)", fromDepth, afterPopDepth);
             }
         }
-        LOG_STEP(("handleFramePopEvent: finished"));
+        tty_message("handleFramePopEvent: finished");
+    } else {
+        tty_message("handleFramePopEvent: not pending");
     }
 
     stepControl_unlock();
@@ -386,8 +456,24 @@ handleExceptionCatchEvent(JNIEnv *env, EventInfo *evinfo,
         jint currentDepth = getFrameCount(thread);
         jint fromDepth = step->fromStackDepth;
 
-        LOG_STEP(("handleExceptionCatchEvent: fromDepth=%d, currentDepth=%d",
-                        fromDepth, currentDepth));
+        tty_message("handleExceptionCatchEvent: fromDepth=%d, currentDepth=%d",
+                    fromDepth, currentDepth);
+
+        // Clear any NotifyFramePops that were skipped because of the exception. Note that
+        // cbFramePop filters out FRAME_POP events due to exceptions so we need to update
+        // the book keeping here instead of handleFramePopEvent().
+        if (step->track_notifies) {
+            while (step->num_notifies > 0) {
+                jint fromStackDepth = step->notify_depth[step->num_notifies - 1];
+                if (fromStackDepth > currentDepth) {
+                    step->num_notifies--;
+                    tty_message("handleExceptionCatchEvent: clearing notify_depth[%d] = %d",
+                                step->num_notifies, fromStackDepth);
+                } else {
+                    break; // Don't need to clear notifies done at or above this depth.
+                }
+            }
+        }
 
         /*
          * If we are exiting the original stepping frame, record that
@@ -515,6 +601,39 @@ completeStep(JNIEnv *env, jthread thread, StepRequest *step)
     }
 }
 
+/*
+ * PopFrame was called. Adjust our stack of NotifyFramePops if necessary since
+ * PopFrame won't generate a FramePop event.
+ */
+void
+stepControl_PopFrameCalled(jthread thread)
+{
+    stepControl_lock();
+
+    StepRequest *step = threadControl_getStepRequest(thread);
+    if (step == NULL) {
+        EXIT_ERROR(AGENT_ERROR_INVALID_THREAD, "getting step request");
+    }
+
+    if (step->track_notifies) {
+        jint depth = getFrameCount(thread) + 1; // depth that PopFrame was done at
+        if (step->num_notifies > 0) {
+            // Get depth of topmost NotifyFramePop.
+            jint notify_depth = step->notify_depth[step->num_notifies - 1];
+            tty_message("stepControl_PopFrameCalled: depth=%d notify_depth[%d]=%d",
+                        depth, step->num_notifies, notify_depth);
+            // If we just popped a frame that had a NotifyFramePop done for it, then clear it.
+            if (depth == notify_depth) {
+                step->num_notifies--;
+                tty_message("stepControl_PopFrameCalled: clearing notify_depth[%d]=%d",
+                            step->num_notifies, notify_depth);
+            }
+        }
+    }
+
+    stepControl_unlock();
+}
+
 jboolean
 stepControl_handleStep(JNIEnv *env, jthread thread,
                        jclass clazz, jmethodID method)
@@ -541,7 +660,8 @@ stepControl_handleStep(JNIEnv *env, jthread thread,
         goto done;
     }
 
-    LOG_STEP(("stepControl_handleStep: thread=%p", thread));
+    tty_message("stepControl_handleStep: thread=%p", thread);
+    printThreadInfo(thread);
 
     /*
      * We never filter step into instruction. It's always over on the
@@ -579,7 +699,26 @@ stepControl_handleStep(JNIEnv *env, jthread thread,
          * this code will be reached. Complete the step->
          */
         completed = JNI_TRUE;
-        LOG_STEP(("stepControl_handleStep: completed, fromDepth>currentDepth(%d>%d)", fromDepth, currentDepth));
+        // FIXME - The following should never happen. Can't do a NotifyFramePop on
+        // a hidden frame.
+        //
+        // One case where this might happen involves virtual threads. JVMTI events are disabled
+        // while executing in some virtual thread support code. This can cause a FramePop event
+        // to be missed, but JVMTI will have cleared it already. So we just need to update
+        // our bookkeeping to indicate that. 
+        if (step->track_notifies && step->num_notifies == 1) {
+          tty_message("stepControl_handleStep: clearning notify_depth[0] == %d", step->notify_depth[0]);
+          JDI_ASSERT(step->notify_depth[0] == fromDepth);
+          step->num_notifies = 0;
+          jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,ClearFramePop)
+              (gdata->jvmti, thread, currentDepth - fromDepth);
+          if (error != JVMTI_ERROR_NONE) {
+            printThreadInfo(thread);
+            printStackTrace(thread);
+            EXIT_ERROR(error, "clearning notify_depth[0]");
+          }
+        }
+        tty_message("stepControl_handleStep: completed, fromDepth>currentDepth(%d>%d)", fromDepth, currentDepth);
     } else if (fromDepth < currentDepth) {
         /* We have dropped into a called method. */
         if (   step->depth == JDWP_STEP_DEPTH(INTO)
@@ -613,9 +752,8 @@ stepControl_handleStep(JNIEnv *env, jthread thread,
             LOG_STEP(("stepControl_handleStep: NotifyFramePop (fromDepth=%d currentDepth=%d)",
                       fromDepth, currentDepth));
 
-            error = JVMTI_FUNC_PTR(gdata->jvmti,NotifyFramePop)
-                        (gdata->jvmti, thread, 0);
-            if (error == JVMTI_ERROR_DUPLICATE) {
+            error = notifyFramePop(thread, step);
+            if (error == JVMTI_ERROR_DUPLICATE && !step->track_notifies) {
                 error = JVMTI_ERROR_NONE;
             } else if (error != JVMTI_ERROR_NONE) {
                 EXIT_ERROR(error, "setting up notify frame pop");
@@ -802,8 +940,9 @@ stepControl_beginStep(JNIEnv *env, jthread thread, jint size, jint depth,
     jvmtiError error;
     jvmtiError error2;
 
-    LOG_STEP(("stepControl_beginStep: thread=%p,size=%d,depth=%d",
-              thread, size, depth));
+    tty_message("stepControl_beginStep: thread=%p,size=%d,depth=%d",
+              thread, size, depth);
+    printThreadInfo(thread);
 
     callback_lock();     /* for proper lock order in threadControl getLocks() */
     eventHandler_lock(); /* for proper lock order in threadControl getLocks() */
@@ -830,6 +969,8 @@ stepControl_beginStep(JNIEnv *env, jthread thread, jint size, jint depth,
             step->framePopHandlerNode = NULL;
             step->methodEnterHandlerNode = NULL;
             step->stepHandlerNode = node;
+            tty_message("stepControl_beginStep: clearing state num_notifies=%d pending=%d",
+                        step->num_notifies, step->pending);
             error = initState(env, thread, step);
             if (error == JVMTI_ERROR_NONE) {
                 initEvents(thread, step);
@@ -858,6 +999,17 @@ stepControl_beginStep(JNIEnv *env, jthread thread, jint size, jint depth,
     return error;
 }
 
+static jint
+getThreadState(jthread thread)
+{
+    jint state = 0;
+    jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadState)
+        (gdata->jvmti, thread, &state);
+    if (error != JVMTI_ERROR_NONE) {
+        EXIT_ERROR(error, "getting thread state");
+    }
+    return state;
+}
 
 static void
 clearStep(jthread thread, StepRequest *step)
@@ -877,15 +1029,110 @@ clearStep(jthread thread, StepRequest *step)
             (void)eventHandler_free(step->methodEnterHandlerNode);
             step->methodEnterHandlerNode = NULL;
         }
-        step->pending = JNI_FALSE;
 
         /*
          * Warning: Do not clear step->method, step->lineEntryCount,
          *          or step->lineEntries here, they will likely
          *          be needed on the next step.
          */
-
     }
+
+    if (step->pending && step->track_notifies) {
+        jvmtiError error;
+        jboolean needsSuspending; // true if we needed to suspend this thread
+        jint currentDepth;
+        jint state = getThreadState(thread) & 0x800008;
+        //jboolean has_frame_pops = (state & 0x8) != 0;
+        //jboolean interp_only = (state & 0x800000) != 0;
+
+        if (gdata->vmDead) {
+            return;  // FIXME - probably not needed
+        }
+
+        // The thread needs suspending if it is not the current thread and is
+        // not already suspended.
+        if (isSameObject(getEnv(), threadControl_currentThread(), thread)) {
+            needsSuspending = JNI_FALSE;
+        } else {
+            jint state = getThreadState(thread);
+            needsSuspending = ((state & JVMTI_THREAD_STATE_SUSPENDED) == 0);
+        }
+
+        if (needsSuspending) {
+            tty_message("clearStep: suspending thread");
+            // Don't use threadControl_suspendThread() here. It does a lot of
+            // locking, increasing the risk of deadlock issues. None of that
+            // locking is needed here.
+            error = JVMTI_FUNC_PTR(gdata->jvmti,SuspendThread)
+                (gdata->jvmti, thread);
+            if (error != JVMTI_ERROR_NONE) {
+                EXIT_ERROR(error, "suspending thread");
+            }
+        }
+
+         currentDepth = getFrameCount(thread);
+         tty_message("clearStep: ClearFramePop (state=0x%x fromDepth=%d currentDepth=%d)",
+                     state, step->fromStackDepth, currentDepth);
+         printThreadInfo(thread);
+
+         if (currentDepth == 0) {
+            // currentDepth can be 0 if we are exiting the thread while stepping is enabled.
+            // We should have already recieved the FramePop event and frameExited should be set.
+            threadControl_dumpThread(thread);
+            JDI_ASSERT(step->frameExited);
+            JDI_ASSERT(step->num_notifies == 0);
+        } else {
+            while (step->num_notifies > 0) {
+                step->num_notifies--;
+                jint fromStackDepth = step->notify_depth[step->num_notifies];
+                tty_message("clearStep: notify_depth[%d] = %d",
+                            step->num_notifies, fromStackDepth);
+                jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,ClearFramePop)
+                    (gdata->jvmti, thread, currentDepth - fromStackDepth);
+                if (error == JVMTI_ERROR_OPAQUE_FRAME) {
+                    // This can happen in the rare case where the thread was suspended at a
+                    // critical point in the method return code. The FRAME_POP was delivered
+                    // to the debug agent, but has not yet been processed. We can ignore
+                    // this error.
+                    if (needsSuspending) {
+                        tty_message("clearStep: ignore JVMTI_ERROR_OPAQUE_FRAME");
+                        error = JVMTI_ERROR_NONE;
+                    }
+                }
+                if (error != JVMTI_ERROR_NONE) {
+                    tty_message("JVMTI ERROR: currentDepth=%d fromStackDepth=%d",
+                                currentDepth, fromStackDepth);
+                    threadControl_dumpThread(thread);
+                    printThreadInfo(thread);
+                    printStackTrace(thread);
+                    EXIT_ERROR(error, "clearing frame pop");
+                }
+            }
+            jint state = getThreadState(thread) & 0x800008;
+            jboolean has_frame_pops = (state & 0x8) != 0;
+            //jboolean interp_only = (state & 0x800000) != 0;
+            tty_message("clearStep: state=0x%x", state);
+            if (has_frame_pops) {
+                tty_message("JVMTI ERROR: has_frame_pops");
+                threadControl_dumpThread(thread);
+                printThreadInfo(thread);
+                printStackTrace(thread);
+                EXIT_ERROR(AGENT_ERROR_INTERNAL, "clearing frame pop");
+            }
+            
+        }
+
+        if (needsSuspending) {
+            tty_message("clearStep: resuming thread");
+            error = JVMTI_FUNC_PTR(gdata->jvmti,ResumeThread)
+                (gdata->jvmti, thread);
+            if (error != JVMTI_ERROR_NONE) {
+                EXIT_ERROR(error, "resuming thread");
+            }
+        }
+    }
+
+    step->pending = JNI_FALSE;
 }
 
 jvmtiError

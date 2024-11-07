@@ -142,14 +142,9 @@ standard_logging_format(FILE *fp,
      *     OptionalKey1=Value1;OptionalKeyN=ValueN|MessageID:MessageText|#]\n"
      */
 
-    format="[#|%s|%s|%s|%s|%s|%s:%s|#]\n";
+    format="[#|%s:%s|#]\n";
 
     print_message(fp, "", "", format,
-            datetime,
-            level,
-            product,
-            module,
-            optional,
             messageID,
             message);
 }

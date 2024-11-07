@@ -29,6 +29,8 @@
 #include "eventFilter.h"
 #include "eventHandler.h"
 
+#define MAX_NOTIFY_FRAME_POPS 4
+
 typedef struct {
     /* Parameters */
     jint granularity;
@@ -48,11 +50,18 @@ typedef struct {
     HandlerNode *catchHandlerNode;
     HandlerNode *framePopHandlerNode;
     HandlerNode *methodEnterHandlerNode;
+
+    jboolean track_notifies;
+    int num_notifies;
+    jint notify_depth[MAX_NOTIFY_FRAME_POPS];
 } StepRequest;
 
 
 void stepControl_initialize(void);
 void stepControl_reset(void);
+
+void
+stepControl_PopFrameCalled(jthread thread);
 
 jboolean stepControl_handleStep(JNIEnv *env, jthread thread,
                                 jclass clazz, jmethodID method);

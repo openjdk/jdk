@@ -1,0 +1,217 @@
+diff --git a/src/hotspot/share/interpreter/interpreterRuntime.cpp b/src/hotspot/share/interpreter/interpreterRuntime.cpp
+index 525258b1ebd..f9aa72bd681 100644
+--- a/src/hotspot/share/interpreter/interpreterRuntime.cpp
++++ b/src/hotspot/share/interpreter/interpreterRuntime.cpp
+@@ -577,7 +577,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
+ 
+   // notify debugger of an exception catch
+   // (this is good for exceptions caught in native methods as well)
+-  if (JvmtiExport::can_post_on_exceptions()) {
++  if (JvmtiExport::can_post_on_exceptions() || JvmtiExport::can_post_frame_pop()) {
+     JvmtiExport::notice_unwind_due_to_exception(current, h_method(), handler_pc, h_exception(), (handler_pc != nullptr));
+   }
+ 
+diff --git a/src/hotspot/share/prims/jvmti.xml b/src/hotspot/share/prims/jvmti.xml
+index 0afbf56b3fc..ee4d65d7185 100644
+--- a/src/hotspot/share/prims/jvmti.xml
++++ b/src/hotspot/share/prims/jvmti.xml
+@@ -3084,6 +3084,49 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
+         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+           Thread was not suspended and was not the current thread.
+         </error>
++        <error id="JVMTI_ERROR_DUPLICATE">
++          There is already frame pop event request at the specified depth.
++        </error>
++      </errors>
++    </function>
++
++    <function id="ClearFramePop" num="67">
++      <synopsis>Clear Frame Pop</synopsis>
++      <description>
++        Clear frame pop request so that a <eventlink id="FramePop"></eventlink> event will not
++        be generated for the frame that is currently at <paramlink id="depth"></paramlink>
++        See the <eventlink id="FramePop"></eventlink> event for details.
++        <p/>
++        The specified thread must be suspended or must be the current thread.
++      </description>
++      <origin>jvmdi</origin>
++      <capabilities>
++        <required id="can_generate_frame_pop_events"></required>
++      </capabilities>
++      <parameters>
++        <param id="thread">
++          <jthread null="current" frame="depth" impl="noconvert"/>
++          <description>
++            The thread of the frame for which the frame pop event will be cleared.
++          </description>
++        </param>
++        <param id="depth">
++          <jframeID thread="thread"/>
++          <description>
++            The depth of the frame for which the frame pop event will be cleared.
++          </description>
++        </param>
++      </parameters>
++      <errors>
++        <error id="JVMTI_ERROR_OPAQUE_FRAME">
++          The frame at <code>depth</code> is executing a native method.
++        </error>
++        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
++          Thread was not suspended and was not the current thread.
++        </error>
++        <error id="JVMTI_ERROR_NOT_FOUND">
++          There is no frame pop event request at the specified depth.
++        </error>
+       </errors>
+     </function>
+ 
+diff --git a/src/hotspot/share/prims/jvmtiEnv.cpp b/src/hotspot/share/prims/jvmtiEnv.cpp
+index 097ce331540..3f8a1726e91 100644
+--- a/src/hotspot/share/prims/jvmtiEnv.cpp
++++ b/src/hotspot/share/prims/jvmtiEnv.cpp
+@@ -1800,12 +1800,40 @@ JvmtiEnv::NotifyFramePop(jthread thread, jint depth) {
+     return JVMTI_ERROR_THREAD_NOT_ALIVE;
+   }
+ 
+-  SetFramePopClosure op(this, state, depth);
++  SetOrClearFramePopClosure op(this, state, depth, true /* set */);
+   MutexLocker mu(current, JvmtiThreadState_lock);
+   JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
+   return op.result();
+ } /* end NotifyFramePop */
+ 
++// Threads_lock NOT held, java_thread not protected by lock
++// depth - pre-checked as non-negative
++jvmtiError
++JvmtiEnv::ClearFramePop(jthread thread, jint depth) {
++  ResourceMark rm;
++  JvmtiVTMSTransitionDisabler disabler(thread);
++  JavaThread* current = JavaThread::current();
++  ThreadsListHandle tlh(current);
++
++  JavaThread* java_thread = nullptr;
++  oop thread_obj = nullptr;
++  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current, &java_thread, &thread_obj);
++  if (err != JVMTI_ERROR_NONE) {
++    return err;
++  }
++
++  HandleMark hm(current);
++  Handle thread_handle(current, thread_obj);
++  JvmtiThreadState *state = JvmtiThreadState::state_for(java_thread, thread_handle);
++  if (state == nullptr) {
++    return JVMTI_ERROR_THREAD_NOT_ALIVE;
++  }
++
++  SetOrClearFramePopClosure op(this, state, depth, false /* clear */);
++  MutexLocker mu(current, JvmtiThreadState_lock);
++  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
++  return op.result();
++} /* end ClearFramePop */
+ 
+   //
+   // Force Early Return functions
+diff --git a/src/hotspot/share/prims/jvmtiEnvBase.cpp b/src/hotspot/share/prims/jvmtiEnvBase.cpp
+index 167ca557cde..2b11bd3b294 100644
+--- a/src/hotspot/share/prims/jvmtiEnvBase.cpp
++++ b/src/hotspot/share/prims/jvmtiEnvBase.cpp
+@@ -1325,7 +1325,7 @@ JvmtiEnvBase::get_frame_location(oop vthread_oop, jint depth,
+ }
+ 
+ jvmtiError
+-JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth) {
++JvmtiEnvBase::set_or_clear_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth, bool set) {
+   for (int d = 0; jvf != nullptr && d < depth; d++) {
+     jvf = jvf->java_sender();
+   }
+@@ -1337,7 +1337,19 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
+   }
+   assert(jvf->frame_pointer() != nullptr, "frame pointer mustn't be null");
+   int frame_number = (int)get_frame_count(jvf);
+-  state->env_thread_state((JvmtiEnvBase*)this)->set_frame_pop(frame_number);
++  JvmtiEnvThreadState* ets = state->env_thread_state((JvmtiEnvBase*)this);
++
++  if (set) {
++    if (ets->is_frame_pop(frame_number)) {
++      return JVMTI_ERROR_DUPLICATE;
++    }
++    ets->set_frame_pop(frame_number);
++  } else {
++    if (!ets->is_frame_pop(frame_number)) {
++      return JVMTI_ERROR_NOT_FOUND;
++    }
++    ets->clear_frame_pop(frame_number);
++  }
+   return JVMTI_ERROR_NONE;
+ }
+ 
+@@ -2449,7 +2461,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
+ }
+ 
+ void
+-SetFramePopClosure::do_thread(Thread *target) {
++SetOrClearFramePopClosure::do_thread(Thread *target) {
+   Thread* current = Thread::current();
+   ResourceMark rm(current); // vframes are resource allocated
+   JavaThread* java_thread = JavaThread::cast(target);
+@@ -2473,11 +2485,11 @@ SetFramePopClosure::do_thread(Thread *target) {
+                       RegisterMap::ProcessFrames::skip,
+                       RegisterMap::WalkContinuation::include);
+   javaVFrame* jvf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
+-  _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
++  _result = ((JvmtiEnvBase*)_env)->set_or_clear_frame_pop(_state, jvf, _depth, _set);
+ }
+ 
+ void
+-SetFramePopClosure::do_vthread(Handle target_h) {
++SetOrClearFramePopClosure::do_vthread(Handle target_h) {
+   Thread* current = Thread::current();
+   ResourceMark rm(current); // vframes are resource allocated
+ 
+@@ -2486,7 +2498,7 @@ SetFramePopClosure::do_vthread(Handle target_h) {
+     return;
+   }
+   javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
+-  _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
++  _result = ((JvmtiEnvBase*)_env)->set_or_clear_frame_pop(_state, jvf, _depth, _set);
+ }
+ 
+ void
+diff --git a/src/hotspot/share/prims/jvmtiEnvBase.hpp b/src/hotspot/share/prims/jvmtiEnvBase.hpp
+index c6891fdeb1f..9b685d409b8 100644
+--- a/src/hotspot/share/prims/jvmtiEnvBase.hpp
++++ b/src/hotspot/share/prims/jvmtiEnvBase.hpp
+@@ -409,7 +409,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
+                                 jmethodID* method_ptr, jlocation* location_ptr);
+   jvmtiError get_frame_location(oop vthread_oop, jint depth,
+                                 jmethodID* method_ptr, jlocation* location_ptr);
+-  jvmtiError set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth);
++  jvmtiError set_or_clear_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth, bool set);
+   jvmtiError get_object_monitor_usage(JavaThread* calling_thread,
+                                       jobject object, jvmtiMonitorUsage* info_ptr);
+   jvmtiError get_stack_trace(javaVFrame* jvf,
+@@ -534,18 +534,20 @@ class UpdateForPopTopFrameClosure : public JvmtiUnitedHandshakeClosure {
+ };
+ 
+ // HandshakeClosure to set frame pop.
+-class SetFramePopClosure : public JvmtiUnitedHandshakeClosure {
++class SetOrClearFramePopClosure : public JvmtiUnitedHandshakeClosure {
+ private:
+   JvmtiEnv *_env;
+   JvmtiThreadState* _state;
+   jint _depth;
++  bool _set;
+ 
+ public:
+-  SetFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, jint depth)
+-    : JvmtiUnitedHandshakeClosure("SetFramePopClosure"),
++  SetOrClearFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, jint depth, bool set)
++    : JvmtiUnitedHandshakeClosure("SetOrClearFramePopClosure"),
+       _env(env),
+       _state(state),
+-      _depth(depth) {}
++      _depth(depth),
++      _set(set) {}
+   void do_thread(Thread *target);
+   void do_vthread(Handle target_h);
+ };

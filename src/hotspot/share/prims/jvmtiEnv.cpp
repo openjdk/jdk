@@ -1800,12 +1800,40 @@ JvmtiEnv::NotifyFramePop(jthread thread, jint depth) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
 
-  SetFramePopClosure op(this, state, depth);
+  SetOrClearFramePopClosure op(this, state, depth, true /* set */);
   MutexLocker mu(current, JvmtiThreadState_lock);
   JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
 } /* end NotifyFramePop */
 
+// Threads_lock NOT held, java_thread not protected by lock
+// depth - pre-checked as non-negative
+jvmtiError
+JvmtiEnv::ClearFramePop(jthread thread, jint depth) {
+  ResourceMark rm;
+  JvmtiVTMSTransitionDisabler disabler(thread);
+  JavaThread* current = JavaThread::current();
+  ThreadsListHandle tlh(current);
+
+  JavaThread* java_thread = nullptr;
+  oop thread_obj = nullptr;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+
+  HandleMark hm(current);
+  Handle thread_handle(current, thread_obj);
+  JvmtiThreadState *state = JvmtiThreadState::state_for(java_thread, thread_handle);
+  if (state == nullptr) {
+    return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+
+  SetOrClearFramePopClosure op(this, state, depth, false /* clear */);
+  MutexLocker mu(current, JvmtiThreadState_lock);
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
+  return op.result();
+} /* end ClearFramePop */
 
   //
   // Force Early Return functions

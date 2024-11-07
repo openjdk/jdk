@@ -1332,7 +1332,7 @@ JvmtiEnvBase::get_frame_location(oop vthread_oop, jint depth,
 }
 
 jvmtiError
-JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth) {
+JvmtiEnvBase::set_or_clear_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth, bool set) {
   for (int d = 0; jvf != nullptr && d < depth; d++) {
     jvf = jvf->java_sender();
   }
@@ -1346,7 +1346,19 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
   }
   assert(jvf->frame_pointer() != nullptr, "frame pointer mustn't be null");
   int frame_number = (int)get_frame_count(jvf);
-  state->env_thread_state((JvmtiEnvBase*)this)->set_frame_pop(frame_number);
+  JvmtiEnvThreadState* ets = state->env_thread_state((JvmtiEnvBase*)this);
+
+  if (set) {
+    if (ets->is_frame_pop(frame_number)) {
+      return JVMTI_ERROR_DUPLICATE;
+    }
+    ets->set_frame_pop(frame_number);
+  } else {
+    if (!ets->is_frame_pop(frame_number)) {
+      return JVMTI_ERROR_NOT_FOUND;
+    }
+    ets->clear_frame_pop(frame_number);
+  }
   return JVMTI_ERROR_NONE;
 }
 
@@ -2457,7 +2469,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
 }
 
 void
-SetFramePopClosure::do_thread(Thread *target) {
+SetOrClearFramePopClosure::do_thread(Thread *target) {
   Thread* current = Thread::current();
   ResourceMark rm(current); // vframes are resource allocated
   JavaThread* java_thread = JavaThread::cast(target);
@@ -2481,11 +2493,11 @@ SetFramePopClosure::do_thread(Thread *target) {
                       RegisterMap::ProcessFrames::skip,
                       RegisterMap::WalkContinuation::include);
   javaVFrame* jvf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
-  _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
+  _result = ((JvmtiEnvBase*)_env)->set_or_clear_frame_pop(_state, jvf, _depth, _set);
 }
 
 void
-SetFramePopClosure::do_vthread(Handle target_h) {
+SetOrClearFramePopClosure::do_vthread(Handle target_h) {
   Thread* current = Thread::current();
   ResourceMark rm(current); // vframes are resource allocated
 
@@ -2494,7 +2506,7 @@ SetFramePopClosure::do_vthread(Handle target_h) {
     return;
   }
   javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
-  _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
+  _result = ((JvmtiEnvBase*)_env)->set_or_clear_frame_pop(_state, jvf, _depth, _set);
 }
 
 void

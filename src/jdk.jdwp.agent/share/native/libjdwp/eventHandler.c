@@ -785,10 +785,11 @@ cbFramePop(jvmtiEnv *jvmti_env, JNIEnv *env,
 
     /* JDWP does not return these events when popped due to an exception. */
     if ( wasPoppedByException ) {
+      tty_message("cbFramePop: due to exception thread=%p", thread);
         return;
     }
 
-    LOG_CB(("cbFramePop: thread=%p", thread));
+    tty_message("cbFramePop: thread=%p", thread);
 
     BEGIN_CALLBACK() {
         (void)memset(&info,0,sizeof(info));
@@ -799,7 +800,7 @@ cbFramePop(jvmtiEnv *jvmti_env, JNIEnv *env,
         event_callback(env, &info);
     } END_CALLBACK();
 
-    LOG_MISC(("END cbFramePop"));
+    tty_message("END cbFramePop");
 }
 
 /* Event callback for JVMTI_EVENT_EXCEPTION */
