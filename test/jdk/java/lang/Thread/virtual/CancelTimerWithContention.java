@@ -25,6 +25,7 @@
  * @test
  * @summary Test cancelling a timeout task for Object.wait(millis) when there is
  *     contention on the timer queue
+ * @requires vm.continuations
  * @key randomness
  * @run main/othervm
  *     -Djdk.virtualThreadScheduler.parallelism=2
