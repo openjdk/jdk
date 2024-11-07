@@ -317,7 +317,7 @@ bool ConnectionGraph::compute_escape() {
 
   // Propagate NSR (Not Scalar Replaceable) state.
   if (found_nsr_alloc) {
-    find_scalar_replaceable_allocs(jobj_worklist);
+    find_scalar_replaceable_allocs(jobj_worklist, reducible_merges);
   }
 
   // alloc_worklist will be processed in reverse push order.
@@ -3051,8 +3051,43 @@ bool ConnectionGraph::has_non_reducible_merge(FieldNode* field, Unique_Node_List
   return false;
 }
 
+void ConnectionGraph::revisit_reducible_phi_status(JavaObjectNode* jobj, Unique_Node_List& reducible_merges) {
+  assert(jobj != nullptr && !jobj->scalar_replaceable(), "jobj should be set as NSR before calling this function.");
+
+  // Look for 'phis' that refer to 'jobj' as the last
+  // remaining scalar replaceable input.
+  uint reducible_merges_cnt = reducible_merges.size();
+  for (uint i = 0; i < reducible_merges_cnt; i++) {
+    Node* phi = reducible_merges.at(i);
+
+    // This 'Phi' will be a 'good' if it still points to
+    // at least one scalar replaceable object. Note that 'obj'
+    // was/should be marked as NSR before calling this function.
+    bool good_phi = false;
+
+    for (uint j = 1; j < phi->req(); j++) {
+      JavaObjectNode* phi_in_obj = unique_java_object(phi->in(j));
+      if (phi_in_obj != nullptr && phi_in_obj->scalar_replaceable()) {
+        good_phi = true;
+        break;
+      }
+    }
+
+    if (!good_phi) {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Phi %d became non-reducible after node %d became NSR.", phi->_idx, jobj->ideal_node()->_idx);)
+      reducible_merges.remove(i);
+
+      // Decrement the index because the 'remove' call above actually
+      // moves the last entry of the list to position 'i'.
+      i--;
+
+      reducible_merges_cnt--;
+    }
+  }
+}
+
 // Propagate NSR (Not scalar replaceable) state.
-void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist) {
+void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist, Unique_Node_List &reducible_merges) {
   int jobj_length = jobj_worklist.length();
   bool found_nsr_alloc = true;
   while (found_nsr_alloc) {
@@ -3071,6 +3106,10 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
             // it is stored has NSR base.
             if ((base != null_obj) && !base->scalar_replaceable()) {
               set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored into field with NSR base"));
+              // Any merge that had only 'jobj' as scalar-replaceable will now be non-reducible,
+              // because there is no point in reducing a Phi that won't improve the number of SR
+              // objects.
+              revisit_reducible_phi_status(jobj, reducible_merges);
               found_nsr_alloc = true;
               break;
             }
