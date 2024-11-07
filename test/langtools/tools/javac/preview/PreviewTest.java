@@ -549,6 +549,12 @@ public class PreviewTest extends TestRunner {
                                   //no error/warning (already was on Preview after implements)
                                   public void test() {}
                               }
+                              private static class ImplicitReceiver extends NonPreview {
+                                  public void g() {
+                                      test(); //implicit this - error/warning
+                                      int i = FIELD; //implicit this - error/warning
+                                  }
+                              }
                               private void acceptRunnable(Runnable r) {}
                               private void accept(Accept<NonPreview> accept) {}
                               interface Accept<T> {
@@ -587,7 +593,9 @@ public class PreviewTest extends TestRunner {
                         "Test.java:29:16: compiler.err.is.preview: preview.api.Preview",
                         "Test.java:32:21: compiler.err.is.preview: test()",
                         "Test.java:36:21: compiler.err.is.preview: test()",
-                        "15 errors",
+                        "Test.java:40:13: compiler.err.is.preview: test()",
+                        "Test.java:41:21: compiler.err.is.preview: FIELD",
+                        "17 errors",
                         "1 warning");
 
         if (!log.equals(expected))
