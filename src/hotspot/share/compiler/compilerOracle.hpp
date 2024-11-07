@@ -86,6 +86,7 @@ NOT_PRODUCT(option(PrintIdeal, "PrintIdeal", Bool))  \
 NOT_PRODUCT(option(PrintIdealPhase, "PrintIdealPhase", Ccstrlist)) \
 NOT_PRODUCT(option(IGVPrintLevel, "IGVPrintLevel", Intx)) \
 NOT_PRODUCT(option(TraceAutoVectorization, "TraceAutoVectorization", Ccstrlist)) \
+NOT_PRODUCT(option(TraceMergeStores, "TraceMergeStores", Ccstrlist)) \
   option(Vectorize, "Vectorize", Bool) \
   option(CloneMapDebug, "CloneMapDebug", Bool) \
   option(IncrementalInlineForceCleanup, "IncrementalInlineForceCleanup", Bool) \

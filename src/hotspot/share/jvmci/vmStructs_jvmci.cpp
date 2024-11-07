@@ -272,7 +272,7 @@
   nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
-  nonstatic_field(Klass,                       _bitmap,                                       uintx)                                 \
+  nonstatic_field(Klass,                       _secondary_supers_bitmap,                      uintx)                                 \
   nonstatic_field(Klass,                       _hash_slot,                                    uint8_t)                               \
   nonstatic_field(Klass,                       _misc_flags._flags,                            u1)                                    \
                                                                                                                                      \

@@ -36,35 +36,47 @@ public class Verify {
 
     static String selfSignedCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICPjCCAaegAwIBAgIBADANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQ\n" +
-        "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA0MjcwMjI0MzJaFw0zMDA0MDcwMjI0MzJa\n" +
-        "MB8xCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMIGfMA0GCSqGSIb3DQEB\n" +
-        "AQUAA4GNADCBiQKBgQC4OTag24sTxL2tXTNuvpmUEtdxrYAZoFsslFQ60T+WD9wQ\n" +
-        "Jeiw87FSPsR2vxRuv0j8DNm2a4h7LNNIFcLurfNldbz5pvgZ7VqdbbUMPE9qP85n\n" +
-        "jgDl4woyRTSUeRI4A7O0CO6NpES21dtbdhroWQrEkHxpnrDPxsxrz5gf2m3gqwID\n" +
-        "AQABo4GJMIGGMB0GA1UdDgQWBBSCJd0hpl5PdAD9IZS+Hzng4lXLGzBHBgNVHSME\n" +
-        "QDA+gBSCJd0hpl5PdAD9IZS+Hzng4lXLG6EjpCEwHzELMAkGA1UEBhMCVVMxEDAO\n" +
-        "BgNVBAoTB0V4YW1wbGWCAQAwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAgQw\n" +
-        "DQYJKoZIhvcNAQEEBQADgYEAluy6HIjWcq009lTLmhp+Np6dxU78pInBK8RZkza0\n" +
-        "484qGaxFGD3UGyZkI5uWmsH2XuMbuox5khfIq6781gmkPBHXBIEtJN8eLusOHEye\n" +
-        "iE8h7WI+N3qa6Pj56WionMrioqC/3X+b06o147bbhx8U0vkYv/HyPaITOFfMXTdz\n" +
-        "Vjw=\n" +
+        "MIIDVzCCAj+gAwIBAgIUUM/RKxE2Rcc6zYLWLxNolpLnuiwwDQYJKoZIhvcNAQEL\n" +
+        "BQAwOzENMAsGA1UEAwwEUk9PVDEQMA4GA1UECgwHRXhhbXBsZTELMAkGA1UECAwC\n" +
+        "Q0ExCzAJBgNVBAYTAlVTMB4XDTI0MDYxOTA0NDc1N1oXDTM0MDYxOTA0NDc1N1ow\n" +
+        "OzENMAsGA1UEAwwEUk9PVDEQMA4GA1UECgwHRXhhbXBsZTELMAkGA1UECAwCQ0Ex\n" +
+        "CzAJBgNVBAYTAlVTMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAohRG\n" +
+        "eq8/CniUqWEtpm1gBp+PWENpYgeaALAUgFdBBa6ao7mESjxRG8teaNRcszmoL3Rl\n" +
+        "TH5hLycHA00G5qsALXo4Cj9wAGfR3LbA0HlTurdw3NNk76twQXZpuE19YNYQonbR\n" +
+        "Mm2sgTd2YcrNWmGpthgNiUaT837Yt7RCuurPo4zi1y6g/NJwyLtn775S86NrV5PT\n" +
+        "4vaBCsB5+eCm01CBgzBq3I0OY5oosopNUjmFL4LYccZZ2YAOUY0fvxfsMZD5EDcj\n" +
+        "KrgKBspjmolfn5g5lA5vdVthG2/TxTIdLss69+NsGS1RBkSKGiQNKnRnAB9/gHwc\n" +
+        "2ryHKJRMQrV+JGMjrQIDAQABo1MwUTAdBgNVHQ4EFgQUW6jZ+mcCEMAQTUzJH2F0\n" +
+        "TwMTOMswHwYDVR0jBBgwFoAUW6jZ+mcCEMAQTUzJH2F0TwMTOMswDwYDVR0TAQH/\n" +
+        "BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAB8T/EfVh602S1GJD2tJ1ck9TwutF\n" +
+        "2VSoSRKajMOabbwjzKEAeJ9rNcWiy60rSvDuL8i4IL52R7fHhlJaDg9FVjmkiWSO\n" +
+        "VPiIZuOyvUtsc9++AM741RK9OrEMETvAtbtEMU6du7LiFk2KcnDTHfcNihtM/TNZ\n" +
+        "1bzEKuSfQydBNPkO3Ftmveygj7QGX+Kgppp7RXXUFzySYxrlA1usgNhVXY/qhFiJ\n" +
+        "jhTU33iZgwiKxpY+zj/Gmk5sdOCEk7e1P06IB3eIopdRTMGJCeCBKyFyXND38kNC\n" +
+        "bTIPnuOdE73M2AW0LWuPv6UQZVBv5A82WMT9f8Hq9H2cHbuhgL/ozyFSWw==\n" +
         "-----END CERTIFICATE-----";
 
     static String crlIssuerCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "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
+        "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\n" +
+        "w8Xo1Fv3aNOygWdXdVDL79jkOJo2wO8yIe+J6Ig=\n" +
         "-----END CERTIFICATE-----";
 
     private static X509Certificate cert;
@@ -96,7 +108,7 @@ public class Verify {
 
         /*
          * Try to verify certificate with a provider that has a Signature
-         * implementation but not of the right algorithm (MD5withRSA).
+         * implementation but not of the right algorithm (SHA1withRSA).
          * Should fail with NoSuchAlgorithmException.
          */
         try {
