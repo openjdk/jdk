@@ -208,7 +208,7 @@
 // StubGenerator blobs in blob declaration order. This enum is
 // provided for use by client code to identify a specific blob. For a
 // blob declared with name <blob_name> the associated enum value is
-// StubGenBlobId::<blob_name>.
+// StubGenBlobId::<blob_name>_id.
 //
 // Global stub identifiers:
 //
@@ -218,7 +218,7 @@
 // arch-specific stubs. This enum is provided for use by client code
 // to identify a specific stub, independent of the blob it belongs to.
 // For a stub declared with name <stub_name> the associated enum value
-// is StubGenStubId::<stub_name>.
+// is StubGenStubId::<stub_name>_id.
 //
 // Blob-local stub identifiers:
 //
@@ -229,7 +229,7 @@
 // internal use by class StubRoutines to validate stub declarations.
 // For a stub declared with name <stub_name> belonging to blob
 // <blob_name> the associated enum value is
-// StubGenStubId::<blob_name>_<stub_name>.
+// StubGenStubId::<blob_name>_<stub_name>_id.
 //
 // Stub names and associated getters:
 //
@@ -259,7 +259,7 @@
 //
 // An enumeration enum platform_dependent_constants is generated in
 // the architecture specific StubRoutines header. For each blob named
-// <nnn> there an associated enum tag is generated which defines the
+// <nnn> an associated enum tag is generated which defines the
 // relevant size
 //
 //  _<nnn>_stubs_code_size      = <size>,
@@ -273,11 +273,11 @@
 //
 // Blob fields and associated getters:
 //
-// For each blob named <nnn> a field declaration will be generated:
-// static field address StubRoutines::_<nnn>_stubs_code and a
-// declarttion provided to initialised it to nullptr. A corresponding
-// getter method address StubRoutines::_<nnn>_stubs_code() will be
-// generated.
+// For each blob named <nnn> a private field declaration will be
+// generated: static field address StubRoutines::_<nnn>_stubs_code and
+// a declaration provided to initialise it to nullptr. A corresponding
+// public getter method address StubRoutines::_<nnn>_stubs_code() will
+// be generated.
 //
 // Blob initialization routines:
 //
@@ -299,15 +299,15 @@
 // class of SharedRuntime.
 //
 // For a generic stub named <nnn> the corresponding main entry usually
-// has the same name: static field address StubRoutines::_<nnn>.  An
-// associated getter is also generated again normally using the same
-// name: method address StubRoutines::<nnn>() e.g.
+// has the same name: static field address StubRoutines::_<nnn> modulo
+// an _ prefix.  An associated getter method is also generated, again
+// normally using the same name: address StubRoutines::<nnn>() e.g.
 //
 //  class StubRoutines {
 //    . . .
 //    static address _aescrypt_encryptBlock;
 //    . . .
-//    address aescrypt_encryptBlock() { return aescrypt_encryptBlock; }
+//    address aescrypt_encryptBlock() { return _aescrypt_encryptBlock; }
 //
 // Multiple fields and getters may be generated where a stub has more
 // than one entry point, each provided with their own unique field and
@@ -322,10 +322,10 @@
 //
 // CPU-specific stub entry points and associated getters:
 //
-// For an an arch-specific stub with name <nnn> belonging to
-// architecture <arch> field address StubRoutines::<arch>::_<nnn> is
-// generated to hold the entry address. An associated getter method
-// address StubRoutines::<arch>::<nnn>() is also generated e.g.
+// For an arch-specific stub with name <nnn> belonging to architecture
+// <arch> private field address StubRoutines::<arch>::_<nnn> is
+// generated to hold the entry address. An associated public getter
+// method address StubRoutines::<arch>::<nnn>() is also generated e.g.
 //
 //  class StubRoutines {
 //    . . .
@@ -343,16 +343,16 @@
 // -------------------------------------------------
 //
 // The formal declarations of blobs, stubs and entries provided below
-// can be used to schedule application of templates that either
+// are used to schedule application of template macros that either
 // declare or define the C++ code we need to manage those blobs, stubs
 // and entries.
 //
 // If you want to define a new stub or entry then you can do so by
 // adding suitable declarations within the scope of the relevant blob.
-// For a blob with name BLOB_NAME add your declarations to macro
-// STUBGEN_<BLOB_NAME>STUBS_DO). If a stub or entries are
-// arch-specific then add them to the arch-specific section of the
-// macro (or create on if needed).
+// For the blob with name BLOB_NAME add your declarations to macro
+// STUBGEN_<BLOB_NAME>STUBS_DO. If a stub or entries are arch-specific
+// then add them to the arch-specific section of the macro (create one
+// if needed).
 //
 // Note, the client macro STUBGEN_ALL_DO has only been split into
 // separate per-blob submacros, STUBGEN_<BLOB_NAME>_BLOBS_DO for
@@ -360,11 +360,12 @@
 // blob_specific sub-macros should not be called directly by client
 // code (in class StubRoutines and StubGenerator),
 //
-// A client is expected to pass template macros as arguments to
-// STUBGEN_ALL_DO which will be used to generate code for whatever C++
-// code elements are required to implement a declaration or definition
+// A client wishing to generate blob, stub or entry code elements is
+// expected to pass template macros as arguments to STUBGEN_ALL_DO
+// which will schedule code generation code for whatever C++ code
+// elements are required to implement a declaration or definition
 // relevant to each blob, stub or entry. Alternatively, a client can
-// operate on a subset of the declaratiosn by calling macros
+// operate on a subset of the declarations by calling macros
 // STUBGEN_BLOBS_DO, STUBGEN_STUBS_DO, STUBGEN_BLOBS_STUBS_DO,
 // STUBGEN_ENTRIES_DO and STUBGEN_ARCH_ENTRIES_DO.
 //
@@ -399,13 +400,13 @@
 //
 // repeat_stub is needed as an alternative to do_stub in the special
 // case where a series of stubs are generated with the same base name,
-// currently only for the lookup_secondary_supers_table_index stub. It
-// generates all the same code elements as do_stub. However, it also
-// bumps the current enum tag to accomomodate the multi-stub range and
-// generates extra numbered stub names for each stub in the multi-stub
-// range. It is not (yet) possible to use entry declarations to
-// associate either single entries or an array of entries with the
-// resulting series of stubs.
+// currently only for the 'lookup_secondary_supers_table_index' stub.
+// It generates all the same code elements as do_stub. However, it
+// also bumps the current enum tag to accomomodate the multi-stub
+// range and generates extra numbered stub names for each stub in the
+// multi-stub range. It is not (yet) possible to use entry
+// declarations to associate either single entries or an array of
+// entries with the resulting series of stubs.
 //
 // The do_entry templates receive 4 or 5 arguments
 //
@@ -433,19 +434,21 @@
 // names must be different to stub_name.
 //
 // getter_name is the name of a getter that is generated to allow
-// access to the field. It us normally, but not always, the same as
+// access to the field. It is normally, but not always, the same as
 // stub_name.
 //
 // init_function is the name of an function or method which should be
-// assigned to the field as a default value.
+// assigned to the field as a default value (n.b. fields declared
+// using do_entry are intialised to nullptr).
 //
 // Architecture-specific blob details need to be specified using the
 // do_arch_blob template
 //
 // do_arch_blob(blob_name, size)
 //
-// The do_arch_blob macro is used to define the size of the code
-// buffer into which blob-specific stub code is to be generated.
+// Currently, the do_arch_blob macro is only used to define the size
+// of the code buffer into which blob-specific stub code is to be
+// generated.
 //
 // Architecture-specific entries need to be declared using the
 // do_arch_entry template
@@ -455,24 +458,25 @@
 // do_arch_entry_init(arch, blob_name, stub_name, field_name,
 //                    getter_name, init_function)
 //
-// The only difference between these templates and the generix ones is
+// The only difference between these templates and the generic ones is
 // that they receive an extra argument which identifies the current
 // architecture e.g. x86, aarch64 etc.
 
 // Iterator macros to apply templates to all relevant blobs, stubs and
 // entries. Clients should use STUBGEN_ALL_DO, STUBGEN_BLOBS_DO,
-// STUBGEN_STUBS_DO, STUBGEN_ENTRIES_DO and STUBGEN_ARCH_ENTRIES_DO.
+// STUBGEN_STUBS_DO, STUBGEN_BLOBS_STUBS_DO, STUBGEN_ENTRIES_DO,
+// STUBGEN_ARCH_BLOBS_DO and STUBGEN_ARCH_ENTRIES_DO.
 //
 // n.b. Client macros appear after the STUBGEN_<BLOB_NAME>_BLOBS_DO
 // submacros which follow next. These submacros are not intended to be
 // called directly. They serve to define the main client macro
 // STUBGEN_ALL_DO and, from there, the other more specific client
-// macros. Multiple, 'per-blob; submacros are used to declare each
-// group of stubs and entries, because that makes it simpler to lookup
-// and update related elements. If you need to update these submacros
-// to change the list of stubs or entries be sure to locate stubs
-// within the correct blob and locate entry declarations immediately
-// after their associated stub declaration.
+// macros. n.b. multiple, 'per-blob' submacros are used to declare
+// each group of stubs and entries, because that makes it simpler to
+// lookup and update related elements. If you need to update these
+// submacros to change the list of stubs or entries be sure to locate
+// stubs within the correct blob and locate entry declarations
+// immediately after their associated stub declaration.
 
 #define STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                     \
                                  do_stub, repeat_stub,                  \

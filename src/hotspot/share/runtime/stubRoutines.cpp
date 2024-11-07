@@ -54,7 +54,7 @@ address UnsafeMemoryAccess::_common_exit_stub_pc                = nullptr;
 // use a template to generate the initializer for the blob names array
 
 #define DEFINE_BLOB_NAME(blob_name)             \
-  "StubRoutines " # blob_name " stubs",
+  # blob_name,
 
 const char* StubRoutines::_blob_names[] = {
   STUBGEN_BLOBS_DO(DEFINE_BLOB_NAME)
