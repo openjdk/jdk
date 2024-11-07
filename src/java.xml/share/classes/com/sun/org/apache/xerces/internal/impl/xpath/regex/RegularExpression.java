@@ -2016,7 +2016,7 @@ public class RegularExpression implements java.io.Serializable {
         int limit;
         int length;
         Match match;
-        private Semaphore inuse = new Semaphore(1, true);
+        private final Semaphore inuse = new Semaphore(1);
         ClosureContext[] closureContexts;
 
         private StringTarget stringTarget;
