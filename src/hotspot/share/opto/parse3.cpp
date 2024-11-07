@@ -406,7 +406,7 @@ void Parse::do_multianewarray() {
       // Fill-in it with values
       for (j = 0; j < ndimensions; j++) {
         Node *dims_elem = array_element_address(dims, intcon(j), T_INT);
-        store_to_memory(control(), dims_elem, length[j], T_INT, TypeAryPtr::INTS, MemNode::unordered);
+        store_to_memory(control(), dims_elem, length[j], T_INT, MemNode::unordered);
       }
     }
 

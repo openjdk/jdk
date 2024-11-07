@@ -552,20 +552,6 @@ class GraphKit : public Phase {
   // procedure must indicate that the store requires `release'
   // semantics, if the stored value is an object reference that might
   // point to a new object and may become externally visible.
-  Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
-                        const TypePtr* adr_type,
-                        MemNode::MemOrd mo,
-                        bool require_atomic_access = false,
-                        bool unaligned = false,
-                        bool mismatched = false,
-                        bool unsafe = false,
-                        int barrier_data = 0) {
-    // This version computes alias_index from an address type
-    assert(adr_type != nullptr, "use other store_to_memory factory");
-    return store_to_memory(ctl, adr, val, bt, mo, require_atomic_access, unaligned,
-                           mismatched, unsafe, barrier_data);
-  }
-  // This is the base version which is given alias index
   // Return the new StoreXNode
   Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
                         MemNode::MemOrd,
