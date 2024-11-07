@@ -482,8 +482,8 @@ public class AWTEventMulticaster implements
      * @param e the item event
      */
     public void inputMethodTextChanged(InputMethodEvent e) {
-        ((InputMethodListener)a).inputMethodTextChanged(e);
-        ((InputMethodListener)b).inputMethodTextChanged(e);
+       ((InputMethodListener)a).inputMethodTextChanged(e);
+       ((InputMethodListener)b).inputMethodTextChanged(e);
     }
 
     /**
@@ -492,8 +492,8 @@ public class AWTEventMulticaster implements
      * @param e the item event
      */
     public void caretPositionChanged(InputMethodEvent e) {
-        ((InputMethodListener)a).caretPositionChanged(e);
-        ((InputMethodListener)b).caretPositionChanged(e);
+       ((InputMethodListener)a).caretPositionChanged(e);
+       ((InputMethodListener)b).caretPositionChanged(e);
     }
 
     /**
@@ -966,11 +966,11 @@ public class AWTEventMulticaster implements
         if (a == null)  return b;
         if (b == null)  return a;
         AWTEventMulticaster n = new AWTEventMulticaster(a, b);
-        if (needsRebalance(n)) {
-            EventListener[] array = getListeners(n, EventListener.class);
-            return rebalance(array, 0, array.length - 1);
-        }
-        return n;
+        if (!needsRebalance(n))
+            return n;
+
+        EventListener[] array = getListeners(n, EventListener.class);
+        return rebalance(array, 0, array.length - 1);
     }
 
     /**
@@ -1007,7 +1007,7 @@ public class AWTEventMulticaster implements
     private static EventListener rebalance(EventListener[] array, int index0, int index1) {
         if (index0 == index1)
             return array[index0];
-        if (index0 == index1 -1)
+        if (index0 == index1 - 1)
             return new AWTEventMulticaster(array[index0], array[index1]);
         int mid = (index0 + index1)/2;
         return new AWTEventMulticaster(
@@ -1095,7 +1095,7 @@ public class AWTEventMulticaster implements
         if (l instanceof AWTEventMulticaster) {
             AWTEventMulticaster mc = (AWTEventMulticaster)l;
             return getListenerCount(mc.a, listenerType) +
-                    getListenerCount(mc.b, listenerType);
+             getListenerCount(mc.b, listenerType);
         }
         else {
             // Only count listeners of correct type
