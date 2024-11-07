@@ -614,7 +614,7 @@ public class ModuleWriter extends HtmlDocletWriter {
                                             .stream()
                                             .filter(e -> e.getKey().equals(javaBase))
                                             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-                    String aepPreviewText = resources.getText("doclet.Indirect_Exports_Preview_Summary");
+                    String aepPreviewText = resources.getText("doclet.Indirect_Exports_Summary");
                     ContentBuilder tableCaption = new ContentBuilder(
                             Text.of(aepPreviewText),
                             HtmlTree.SUP(links.createLink(previewRequiresTransitiveId,
