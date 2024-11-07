@@ -570,8 +570,8 @@
     NOT_LP64(                                                           \
       do_stub(initial, verify_fpu_cntrl_word)                           \
       do_arch_entry(x86, initial, verify_fpu_cntrl_word,                \
-                    verify_fpu_cntrl_word_entry_wrapper,                \
-                    verify_fpu_cntrl_word_entry_wrapper)                \
+                    verify_fpu_cntrl_wrd_entry,                         \
+                    verify_fpu_cntrl_wrd_entry)                         \
       do_stub(initial, d2i_wrapper)                                     \
       do_arch_entry(x86, initial, d2i_wrapper, d2i_wrapper,             \
                     d2i_wrapper)                                        \
