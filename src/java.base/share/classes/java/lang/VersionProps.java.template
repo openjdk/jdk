@@ -124,7 +124,12 @@ class VersionProps {
         props.put("java.vendor", VENDOR);
         props.put("java.vendor.url", VENDOR_URL);
         props.put("java.vendor.url.bug", VENDOR_URL_BUG);
-        props.put("java.vm.vendor", VENDOR_VM);
+
+        // java.vm.vendor was set by VM, replace the value if customized
+        // Default branding.conf value is "N/A", which did not affect java.vm.vendor
+        if (! VENDOR_VM.equals("N/A")) {
+            props.put("java.vm.vendor", VENDOR_VM);
+        }
     }
 
     private static int parseVersionNumber(String version, int prevIndex, int index) {

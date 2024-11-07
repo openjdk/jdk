@@ -110,9 +110,7 @@ class Abstract_VM_Version: AllStatic {
   static const char* vm_name();
   // Vendor
   static const char* vm_vendor();
-  static void override_vm_vendor(const char* vendor_override) {
-    _vendor_branding_override = os::strdup(vendor_override);
-  }
+  static void override_vm_vendor(const char* vendor_override);
 
   // VM version information string printed by launcher (java -version)
   static const char* vm_info_string();
