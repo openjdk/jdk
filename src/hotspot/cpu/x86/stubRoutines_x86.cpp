@@ -33,10 +33,26 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
+// define fields for arch-specific entries
+
+#define DEFINE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = nullptr;
+
+#define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
+
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+
+#undef DEFINE_ARCH_ENTRY_INIT
+#undef DEFINE_ARCH_ENTRY
+
+#if 0
 address StubRoutines::x86::_verify_mxcsr_entry = nullptr;
 address StubRoutines::x86::_upper_word_mask_addr = nullptr;
 address StubRoutines::x86::_shuffle_byte_flip_mask_addr = nullptr;
+#endif
 address StubRoutines::x86::_k256_adr = nullptr;
+#if 0
 address StubRoutines::x86::_vector_short_to_byte_mask = nullptr;
 address StubRoutines::x86::_vector_int_to_byte_mask = nullptr;
 address StubRoutines::x86::_vector_int_to_short_mask = nullptr;
@@ -61,9 +77,11 @@ address StubRoutines::x86::_vector_popcount_lut = nullptr;
 address StubRoutines::x86::_vector_count_leading_zeros_lut = nullptr;
 address StubRoutines::x86::_vector_32_bit_mask = nullptr;
 address StubRoutines::x86::_vector_64_bit_mask = nullptr;
+#endif
 #ifdef _LP64
 address StubRoutines::x86::_k256_W_adr = nullptr;
 address StubRoutines::x86::_k512_W_addr = nullptr;
+#if 0
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr_sha512 = nullptr;
 // Base64 masks
 address StubRoutines::x86::_encoding_table_base64 = nullptr;
@@ -87,7 +105,10 @@ address StubRoutines::x86::_compress_perm_table64 = nullptr;
 address StubRoutines::x86::_expand_perm_table32 = nullptr;
 address StubRoutines::x86::_expand_perm_table64 = nullptr;
 #endif
+#endif
+#if 0
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = nullptr;
+#endif
 
 const uint64_t StubRoutines::x86::_crc_by128_masks[] =
 {

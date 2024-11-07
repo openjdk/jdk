@@ -4264,29 +4264,28 @@ void StubGenerator::generate_compiler_stubs() {
 #endif // COMPILER2_OR_JVMCI
 }
 
-StubGenerator::StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
-    DEBUG_ONLY( _regs_in_thread = false; )
-    switch(kind) {
-    case Initial_stubs:
-      generate_initial_stubs();
-      break;
-     case Continuation_stubs:
-      generate_continuation_stubs();
-      break;
-    case Compiler_stubs:
-      generate_compiler_stubs();
-      break;
-    case Final_stubs:
-      generate_final_stubs();
-      break;
-    default:
-      fatal("unexpected stubs kind: %d", kind);
-      break;
-    };
+StubGenerator::StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code) {
+  switch(blob_id) {
+  case initial_id:
+    generate_initial_stubs();
+    break;
+  case continuation_id:
+    generate_continuation_stubs();
+    break;
+  case compiler_id:
+    generate_compiler_stubs();
+    break;
+  case final_id:
+    generate_final_stubs();
+    break;
+  default:
+    fatal("unexpected blob id: %d", blob_id);
+    break;
+  };
 }
 
-void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
-  StubGenerator g(code, kind);
+void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id) {
+  StubGenerator g(code, blob_id);
 }
 
 #undef __

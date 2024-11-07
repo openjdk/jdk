@@ -4057,27 +4057,27 @@ class StubGenerator: public StubCodeGenerator {
 
 
  public:
-  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
-    switch(kind) {
-    case Initial_stubs:
+  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code) {
+    switch(blob_id) {
+    case initial_id:
       generate_initial_stubs();
       break;
-     case Continuation_stubs:
+     case continuation_id:
       generate_continuation_stubs();
       break;
-    case Compiler_stubs:
+    case compiler_id:
       generate_compiler_stubs();
       break;
-    case Final_stubs:
+    case final_id:
       generate_final_stubs();
       break;
     default:
-      fatal("unexpected stubs kind: %d", kind);
+      fatal("unexpected blob id: %d", blob_id);
       break;
     };
   }
 }; // end class declaration
 
-void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
-  StubGenerator g(code, kind);
+void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id) {
+  StubGenerator g(code, blob_id);
 }

@@ -31,22 +31,55 @@
 
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
+// emit enum used to size per-blob code buffers
+
+#define DEFINE_BLOB_SIZE(blob_name, size) \
+  _ ## blob_name ## _code_size = size,
+
 enum platform_dependent_constants {
-  // simply increase sizes if too small (assembler will crash if too small)
-  _initial_stubs_code_size      = 20000 WINDOWS_ONLY(+1000),
-  _continuation_stubs_code_size =  1000 LP64_ONLY(+2000),
-  // AVX512 intrinsics add more code in 64-bit VM,
-  // Windows have more code to save/restore registers
-  _compiler_stubs_code_size     = 20000 LP64_ONLY(+47000) WINDOWS_ONLY(+2000),
-  _final_stubs_code_size        = 10000 LP64_ONLY(+20000) WINDOWS_ONLY(+2000) ZGC_ONLY(+20000)
+  STUBGEN_ARCH_BLOBS_DO(DEFINE_BLOB_SIZE)
 };
+
+#undef DEFINE_BLOB_SIZE
 
 class x86 {
  friend class StubGenerator;
  friend class VMStructs;
 
+  // declare fields for arch-specific entries
+
+#define DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  static address STUB_FIELD_NAME(field_name) ;
+
+#define DECLARE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name)
+
+private:
+  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY, DECLARE_ARCH_ENTRY_INIT)
+
+#undef DECLARE_ARCH_ENTRY_INIT
+#undef DECLARE_ARCH_ENTRY
+
+
+  // define getters for arch-specific entries
+
+#define DECLARE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name) \
+  static address getter_name() { return STUB_FIELD_NAME(field_name); }
+
+#define DECLARE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DECLARE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
+
+public:
+  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY_GETTER, DECLARE_ARCH_ENTRY_GETTER_INIT)
+
+#undef DECLARE_ARCH_ENTRY_GETTER_INIT
+#undef DECLARE_ARCH_GETTER_ENTRY
+
+
 #ifdef _LP64
+#if 0
  private:
+
   static address _get_previous_sp_entry;
 
   static address _f2i_fixup;
@@ -62,7 +95,9 @@ class x86 {
   static address _compress_perm_table64;
   static address _expand_perm_table32;
   static address _expand_perm_table64;
+#endif
 
+#if 0
  public:
 
   static address get_previous_sp_entry() {
@@ -100,9 +135,9 @@ class x86 {
   static address double_sign_flip() {
     return _double_sign_flip;
   }
-
+#endif
 #else // !LP64
-
+#if 0
  private:
   static address _verify_fpu_cntrl_wrd_entry;
   static address _d2i_wrapper;
@@ -126,6 +161,7 @@ class x86 {
   static address addr_fpu_subnormal_bias2()   { return (address)&_fpu_subnormal_bias2; }
 
   static jint    fpu_cntrl_wrd_std()          { return _fpu_cntrl_wrd_std; }
+#endif
 #endif // !LP64
 
  private:
@@ -133,9 +169,9 @@ class x86 {
 #ifdef _LP64
   static jint    _mxcsr_rz;
 #endif // _LP64
-
+#if 0
   static address _verify_mxcsr_entry;
-
+#endif
   // masks and table for CRC32
   static const uint64_t _crc_by128_masks[];
   static const juint    _crc_table[];
@@ -149,15 +185,16 @@ class x86 {
   static juint* _crc32c_table;
   // table for arrays_hashcode
   static const jint _arrays_hashcode_powers_of_31[];
-
+#if 0
   // upper word mask for sha1
   static address _upper_word_mask_addr;
   // byte flip mask for sha1
   static address _shuffle_byte_flip_mask_addr;
-
+#endif
   //k256 table for sha256
   static const juint _k256[];
   static address _k256_adr;
+#if 0
   static address _vector_short_to_byte_mask;
   static address _vector_float_sign_mask;
   static address _vector_float_sign_flip;
@@ -182,14 +219,18 @@ class x86 {
   static address _vector_reverse_byte_perm_mask_long;
   static address _vector_reverse_byte_perm_mask_int;
   static address _vector_reverse_byte_perm_mask_short;
+#endif
 #ifdef _LP64
   static juint _k256_W[];
   static address _k256_W_adr;
   static const julong _k512_W[];
   static address _k512_W_addr;
+  /*
   // byte flip mask for sha512
   static address _pshuffle_byte_flip_mask_addr_sha512;
+  */
   // Masks for base64
+#if 0
   static address _encoding_table_base64;
   static address _shuffle_base64;
   static address _avx2_shuffle_base64;
@@ -207,15 +248,20 @@ class x86 {
   static address _join_2_3_base64;
   static address _decoding_table_base64;
 #endif
+#endif
+#if 0
   // byte flip mask for sha256
   static address _pshuffle_byte_flip_mask_addr;
+#endif
 
  public:
   static address addr_mxcsr_std()        { return (address)&_mxcsr_std; }
 #ifdef _LP64
   static address addr_mxcsr_rz()        { return (address)&_mxcsr_rz; }
 #endif // _LP64
+#if 0
   static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
+#endif
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
 #ifdef _LP64
   static address crc_by128_masks_avx512_addr()  { return (address)_crc_by128_masks_avx512; }
@@ -223,9 +269,12 @@ class x86 {
   static address crc_table_avx512_addr()  { return (address)_crc_table_avx512; }
   static address crc32c_table_avx512_addr()  { return (address)_crc32c_table_avx512; }
 #endif // _LP64
+#if 0
   static address upper_word_mask_addr() { return _upper_word_mask_addr; }
   static address shuffle_byte_flip_mask_addr() { return _shuffle_byte_flip_mask_addr; }
+#endif
   static address k256_addr()      { return _k256_adr; }
+#if 0
   static address method_entry_barrier() { return _method_entry_barrier; }
 
   static address vector_short_to_byte_mask() {
@@ -322,9 +371,11 @@ class x86 {
   static address vector_popcount_lut() {
     return _vector_popcount_lut;
   }
+#endif
 #ifdef _LP64
   static address k256_W_addr()    { return _k256_W_adr; }
   static address k512_W_addr()    { return _k512_W_addr; }
+#if 0
   static address pshuffle_byte_flip_mask_addr_sha512() { return _pshuffle_byte_flip_mask_addr_sha512; }
   static address base64_encoding_table_addr() { return _encoding_table_base64; }
   static address base64_shuffle_addr() { return _shuffle_base64; }
@@ -347,7 +398,11 @@ class x86 {
   static address expand_perm_table32() { return _expand_perm_table32; }
   static address expand_perm_table64() { return _expand_perm_table64; }
 #endif
+#endif
+#if 0
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
+#endif
+
   static address arrays_hashcode_powers_of_31() { return (address)_arrays_hashcode_powers_of_31; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
 };
