@@ -26,6 +26,7 @@
  * @bug 8341834
  * @summary C2 compilation fails with "bad AD file" due to Replicate
  * @run main/othervm -XX:CompileCommand=compileonly,TestReplicateAtConv::test -Xcomp TestReplicateAtConv
+ * @run main/othervm -XX:CompileCommand=compileonly,TestReplicateAtConv::test -Xcomp -XX:MaxVectorSize=8 TestReplicateAtConv
  */
 
 public class TestReplicateAtConv {
