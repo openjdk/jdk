@@ -83,7 +83,6 @@ public final class XMouseInfoPeer implements MouseInfoPeer {
         return 0;
     }
 
-    @SuppressWarnings("deprecation")
     public boolean isWindowUnderMouse(Window w) {
         if (w == null) {
             return false;

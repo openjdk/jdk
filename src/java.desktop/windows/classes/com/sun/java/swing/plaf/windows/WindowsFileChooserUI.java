@@ -969,7 +969,6 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         return new DirectoryComboBoxRenderer();
     }
 
-    @SuppressWarnings("serial") // anonymous class
     private static JButton createToolButton(Action a, Icon defaultIcon, String toolTipText, String accessibleName) {
         final JButton result = new JButton(a);
 

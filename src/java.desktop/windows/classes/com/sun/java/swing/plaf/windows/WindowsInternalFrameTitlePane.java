@@ -289,7 +289,6 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         systemPopupMenu = new JPopupMenu();
         addSystemMenuItems(systemPopupMenu);
         enableActions();
-        @SuppressWarnings("serial") // anonymous class
         JLabel tmp = new JLabel(frame.getFrameIcon()) {
             protected void paintComponent(Graphics g) {
                 int x = 0;

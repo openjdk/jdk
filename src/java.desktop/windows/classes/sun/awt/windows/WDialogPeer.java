@@ -94,7 +94,6 @@ final class WDialogPeer extends WWindowPeer implements DialogPeer {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     void hide() {
         Dialog dlg = (Dialog)target;
         if (dlg.getModalityType() != Dialog.ModalityType.MODELESS) {

@@ -621,7 +621,6 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
         fc.add(interior, BorderLayout.CENTER);
 
-        @SuppressWarnings("serial") // anonymous class
         JPanel comboBoxPanel = new JPanel(new FlowLayout(FlowLayout.CENTER,
                                                          0, 0) {
             public void layoutContainer(Container target) {
@@ -733,7 +732,6 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         if (currentDirectory != null) {
             curDirName = currentDirectory.getPath();
         }
-        @SuppressWarnings("serial") // anonymous class
         JLabel tmp = new JLabel(curDirName) {
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
@@ -748,7 +746,6 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         interior.add(pathFieldPanel);
 
         // add the fileName field
-        @SuppressWarnings("serial") // anonymous class
         JTextField tmp2 = new JTextField() {
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();

@@ -204,7 +204,6 @@ class XFileDialogPeer extends XDialogPeer
         // After showing we should display 'user.dir' as current directory
         // if user didn't set directory programmatically
         pathField = new TextField(savedDir != null ? savedDir : userDir);
-        @SuppressWarnings("serial") // Anonymous class
         Choice tmp = new Choice() {
                 public Dimension getPreferredSize() {
                     return new Dimension(PATH_CHOICE_WIDTH, pathField.getPreferredSize().height);
@@ -785,7 +784,6 @@ class XFileDialogPeer extends XDialogPeer
     }
 
     // 03/02/2005 b5097243 Pressing 'ESC' on a file dlg does not dispose the dlg on Xtoolkit
-    @SuppressWarnings("deprecation")
     public void setVisible(boolean b){
         if (fileDialog == null) {
             init(target);
