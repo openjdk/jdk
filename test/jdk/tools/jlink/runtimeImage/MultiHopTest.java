@@ -27,25 +27,11 @@ import java.util.function.Predicate;
 import jdk.test.lib.process.OutputAnalyzer;
 import tests.Helper;
 
-/*
- * @test id=linkable_runtime
- * @summary Verify that a jlink using the run-time image cannot include jdk.jlink
- * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
- * @library ../../lib /test/lib
- * @enablePreview
- * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink.plugin
- *          jdk.jlink/jdk.tools.jimage
- * @build tests.* jdk.test.lib.process.OutputAnalyzer
- *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g MultiHopTest true
- */
 
 /*
- * @test id=default_build
+ * @test
  * @summary Verify that a jlink using the run-time image cannot include jdk.jlink
- * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.jimage
@@ -54,7 +40,7 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g MultiHopTest false
+ * @run main/othervm -Xmx1g MultiHopTest
  */
 public class MultiHopTest extends AbstractLinkableRuntimeTest {
 
@@ -100,12 +86,8 @@ public class MultiHopTest extends AbstractLinkableRuntimeTest {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Wrong number of passed arguments");
-        }
-        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         MultiHopTest test = new MultiHopTest();
-        test.run(isLinkableRuntime);
+        test.run();
     }
 
 }

@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageGenerator.JLinkTask;
@@ -50,7 +51,8 @@ public abstract class AbstractLinkableRuntimeTest {
 
     protected static final boolean DEBUG = true;
 
-    public void run(boolean isLinkableRuntime) throws Exception {
+    public void run() throws Exception {
+        boolean isLinkableRuntime = LinkableRuntimeImage.isLinkableRuntime();
         Helper helper = Helper.newHelper(isLinkableRuntime);
         if (helper == null) {
             System.err.println(AbstractLinkableRuntimeTest.class.getSimpleName() +

@@ -29,9 +29,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 import tests.Helper;
 
 /*
- * @test id=linkable_runtime
+ * @test
  * @summary Test --add-options jlink plugin when linking from the run-time image
- * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.jimage
@@ -40,32 +40,13 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g AddOptionsTest true
- */
-
-/*
- * @test id=default_build
- * @summary Test --add-options jlink plugin when linking from the run-time image
- * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
- * @library ../../lib /test/lib
- * @enablePreview
- * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink.plugin
- *          jdk.jlink/jdk.tools.jimage
- * @build tests.* jdk.test.lib.process.OutputAnalyzer
- *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g AddOptionsTest false
+ * @run main/othervm -Xmx1g AddOptionsTest
  */
 public class AddOptionsTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Wrong number of passed arguments");
-        }
-        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         AddOptionsTest test = new AddOptionsTest();
-        test.run(isLinkableRuntime);
+        test.run();
     }
 
     @Override

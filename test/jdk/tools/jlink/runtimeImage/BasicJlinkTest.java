@@ -28,24 +28,9 @@ import tests.Helper;
 
 
 /*
- * @test id=linkable_runtime
+ * @test
  * @summary Test basic linking from the run-time image
- * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
- * @library ../../lib /test/lib
- * @enablePreview
- * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink.plugin
- *          jdk.jlink/jdk.tools.jimage
- * @build tests.* jdk.test.lib.process.OutputAnalyzer
- *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g BasicJlinkTest true
- */
-
-/*
- * @test id=default_build
- * @summary Test basic linking from the run-time image
- * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.jimage
@@ -77,12 +62,8 @@ public class BasicJlinkTest extends AbstractLinkableRuntimeTest {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Wrong number of passed arguments");
-        }
-        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         BasicJlinkTest test = new BasicJlinkTest();
-        test.run(isLinkableRuntime);
+        test.run();
     }
 
 }

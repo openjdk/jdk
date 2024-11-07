@@ -35,27 +35,12 @@ import java.util.List;
 import tests.Helper;
 import tests.JImageGenerator;
 
-/*
- * @test id=linkable_runtime
- * @summary Compare packaged-modules jlink with a run-time image based jlink to
- *          produce the same result
- * @requires (jlink.packagedModules & jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
- * @library ../../lib /test/lib
- * @enablePreview
- * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink.plugin
- *          jdk.jlink/jdk.tools.jimage
- * @build tests.* jdk.test.lib.process.OutputAnalyzer
- *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g PackagedModulesVsRuntimeImageLinkTest true
- */
 
 /*
- * @test id=default_build
+ * @test
  * @summary Compare packaged-modules jlink with a run-time image based jlink to
  *          produce the same result
- * @requires (jlink.packagedModules & !jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (jlink.packagedModules & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.jimage
@@ -64,17 +49,13 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g PackagedModulesVsRuntimeImageLinkTest false
+ * @run main/othervm -Xmx1g PackagedModulesVsRuntimeImageLinkTest
  */
 public class PackagedModulesVsRuntimeImageLinkTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Wrong number of passed arguments");
-        }
-        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         PackagedModulesVsRuntimeImageLinkTest test = new PackagedModulesVsRuntimeImageLinkTest();
-        test.run(isLinkableRuntime);
+        test.run();
     }
 
     @Override

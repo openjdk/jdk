@@ -25,18 +25,14 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.spi.ToolProvider;
 
-/*
- * @test id=run-time-image-cap-yes
- * @summary Test jlink --help for capability output (true)
- * @requires (vm.compMode != "Xcomp" & jlink.runtime.linkable)
- * @run main/othervm -Duser.language=en JLinkHelpCapabilityTest true
- */
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 
 /*
- * @test id=run-time-image-cap-no
- * @summary Test jlink --help for capability output (false)
- * @requires (vm.compMode != "Xcomp" & !jlink.runtime.linkable)
- * @run main/othervm -Duser.language=en JLinkHelpCapabilityTest false
+ * @test
+ * @summary Test jlink --help for capability output
+ * @modules jdk.jlink/jdk.tools.jlink.internal
+ * @requires vm.compMode != "Xcomp"
+ * @run main/othervm -Duser.language=en JLinkHelpCapabilityTest
  */
 public class JLinkHelpCapabilityTest {
     static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
@@ -45,7 +41,7 @@ public class JLinkHelpCapabilityTest {
         );
 
     public static void main(String[] args) throws Exception {
-        boolean runtimeLinkCap = Boolean.parseBoolean(args[0]);
+        boolean runtimeLinkCap = LinkableRuntimeImage.isLinkableRuntime();
         String capabilities = String.format("Linking from run-time image %s",
                                             runtimeLinkCap ? "enabled" : "disabled");
         {

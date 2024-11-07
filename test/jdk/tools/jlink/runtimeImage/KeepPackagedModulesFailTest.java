@@ -29,10 +29,10 @@ import tests.Helper;
 
 
 /*
- * @test id=linkable_runtime
+ * @test
  * @summary Verify that jlink with an empty module path, but trying to use
  *          --keep-packaged-modules fails as expected.
- * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.jimage
@@ -41,33 +41,13 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g KeepPackagedModulesFailTest true
- */
-
-/*
- * @test id=default_build
- * @summary Verify that jlink with an empty module path, but trying to use
- *          --keep-packaged-modules fails as expected.
- * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
- * @library ../../lib /test/lib
- * @enablePreview
- * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink.plugin
- *          jdk.jlink/jdk.tools.jimage
- * @build tests.* jdk.test.lib.process.OutputAnalyzer
- *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g KeepPackagedModulesFailTest false
+ * @run main/othervm -Xmx1g KeepPackagedModulesFailTest
  */
 public class KeepPackagedModulesFailTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Wrong number of passed arguments");
-        }
-        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         KeepPackagedModulesFailTest test = new KeepPackagedModulesFailTest();
-        test.run(isLinkableRuntime);
+        test.run();
     }
 
     @Override

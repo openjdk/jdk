@@ -28,27 +28,12 @@ import java.util.List;
 import tests.Helper;
 import tests.JImageValidator;
 
-/*
- * @test id=linkable_runtime
- * @summary Test disabled SystemModulesPlugin in run-time image link mode. Expect
- *          generated classes to not be there.
- * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
- * @library ../../lib /test/lib
- * @enablePreview
- * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink.plugin
- *          jdk.jlink/jdk.tools.jimage
- * @build tests.* jdk.test.lib.process.OutputAnalyzer
- *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g SystemModulesTest2 true
- */
 
 /*
- * @test id=default_build
+ * @test
  * @summary Test disabled SystemModulesPlugin in run-time image link mode. Expect
  *          generated classes to not be there.
- * @requires (!jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.jimage
@@ -57,17 +42,13 @@ import tests.JImageValidator;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g SystemModulesTest2 false
+ * @run main/othervm -Xmx1g SystemModulesTest2
  */
 public class SystemModulesTest2 extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Wrong number of passed arguments");
-        }
-        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
         SystemModulesTest2 test = new SystemModulesTest2();
-        test.run(isLinkableRuntime);
+        test.run();
     }
 
     @Override
