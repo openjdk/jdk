@@ -8269,6 +8269,34 @@ instruct umodL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div, rFlagsReg c
 // Shift Left by one, two, three
 instruct salI_rReg_immI2(rRegI dst, immI2 shift, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
+  match(Set dst (LShiftI dst shift));
+  effect(KILL cr);
+
+  format %{ "sall    $dst, $shift" %}
+  ins_encode %{
+    __ sall($dst$$Register, $shift$$constant);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Shift Left by one, two, three
+instruct salI_rReg_immI2_ndd(rRegI dst, rRegI src, immI2 shift)
+%{
+  predicate(UseAPX);
+  match(Set dst (LShiftI src shift));
+
+  format %{ "esall    $dst, $src, $shift\t# int(ndd)" %}
+  ins_encode %{
+    __ esall($dst$$Register, $src$$Register, $shift$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Shift Left by 8-bit immediate
+instruct salI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
+%{
+  predicate(!UseAPX);
   match(Set dst (LShiftI dst shift));
   effect(KILL cr);
 
@@ -8280,14 +8308,14 @@ instruct salI_rReg_immI2(rRegI dst, immI2 shift, rFlagsReg cr)
 %}
 
 // Shift Left by 8-bit immediate
-instruct salI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
+instruct salI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift)
 %{
-  match(Set dst (LShiftI dst shift));
-  effect(KILL cr);
+  predicate(UseAPX);
+  match(Set dst (LShiftI src shift));
 
-  format %{ "sall    $dst, $shift" %}
+  format %{ "esall    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
-    __ sall($dst$$Register, $shift$$constant);
+    __ esall($dst$$Register, $src$$Register, $shift$$constant, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8308,13 +8336,26 @@ instruct salI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 // Shift Left by variable
 instruct salI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %{
-  predicate(!VM_Version::supports_bmi2());
+  predicate(!UseAPX && !VM_Version::supports_bmi2());
   match(Set dst (LShiftI dst shift));
   effect(KILL cr);
 
   format %{ "sall    $dst, $shift" %}
   ins_encode %{
     __ sall($dst$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Shift Left by variable
+instruct salI_rReg_CL_ndd(rRegI dst, rRegI src, rcx_RegI shift)
+%{
+  predicate(UseAPX && !VM_Version::supports_bmi2());
+  match(Set dst (LShiftI src shift));
+
+  format %{ "esall    $dst, $src, $shift\t# int (ndd)" %}
+  ins_encode %{
+    __ esall($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -8517,6 +8558,34 @@ instruct shrI_mem_rReg(rRegI dst, memory src, rRegI shift)
 // Shift Left by one, two, three
 instruct salL_rReg_immI2(rRegL dst, immI2 shift, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
+  match(Set dst (LShiftL dst shift));
+  effect(KILL cr);
+
+  format %{ "salq    $dst, $shift" %}
+  ins_encode %{
+    __ salq($dst$$Register, $shift$$constant);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Shift Left by one, two, three
+instruct salL_rReg_immI2_ndd(rRegL dst, rRegL src, immI2 shift)
+%{
+  predicate(UseAPX);
+  match(Set dst (LShiftL src shift));
+
+  format %{ "esalq    $dst, $src, $shift\t# int (ndd)" %}
+  ins_encode %{
+    __ esalq($dst$$Register, $dst$$Register, $shift$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Shift Left by 8-bit immediate
+instruct salL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
+%{
+  predicate(!UseAPX);
   match(Set dst (LShiftL dst shift));
   effect(KILL cr);
 
@@ -8528,14 +8597,14 @@ instruct salL_rReg_immI2(rRegL dst, immI2 shift, rFlagsReg cr)
 %}
 
 // Shift Left by 8-bit immediate
-instruct salL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
+instruct salL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift)
 %{
-  match(Set dst (LShiftL dst shift));
-  effect(KILL cr);
+  predicate(UseAPX);
+  match(Set dst (LShiftL src shift));
 
-  format %{ "salq    $dst, $shift" %}
+  format %{ "esalq    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
-    __ salq($dst$$Register, $shift$$constant);
+    __ esalq($dst$$Register, $src$$Register, $shift$$constant, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8556,13 +8625,26 @@ instruct salL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 // Shift Left by variable
 instruct salL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %{
-  predicate(!VM_Version::supports_bmi2());
+  predicate(!UseAPX && !VM_Version::supports_bmi2());
   match(Set dst (LShiftL dst shift));
   effect(KILL cr);
 
   format %{ "salq    $dst, $shift" %}
   ins_encode %{
     __ salq($dst$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Shift Left by variable
+instruct salL_rReg_CL_ndd(rRegL dst, rRegL src, rcx_RegI shift)
+%{
+  predicate(UseAPX && !VM_Version::supports_bmi2());
+  match(Set dst (LShiftL src shift));
+
+  format %{ "esalq    $dst, $src, $shift\t# int (ndd)" %}
+  ins_encode %{
+    __ esalq($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg_reg);
 %}
