@@ -45,45 +45,8 @@ public class InflaterClose {
     private static final byte[] compressedData = compress();
 
     /**
-     * Closes Inflater just once and then expects that the close() was called once and so was end()
-     */
-    @Test
-    public void testCloseOnce() throws Exception {
-        final Inflater simpleInflater = new Inflater();
-        final String inflated = closeOnceAfterInflating(simpleInflater);
-        assertValidInflatedData(inflated, simpleInflater.getClass());
-
-        final OverrideClose overriddenClose = new OverrideClose();
-        final String ocInflatedData = closeOnceAfterInflating(overriddenClose);
-        assertValidInflatedData(ocInflatedData, overriddenClose.getClass());
-        // make sure close() was called once
-        assertEquals(1, overriddenClose.numTimesCloseCalled, "close() was expected to be" +
-                " called once, but was called " + overriddenClose.numTimesCloseCalled +
-                " time(s) on " + overriddenClose.getClass());
-
-        final OverrideEnd overriddenEnd = new OverrideEnd();
-        final String oeInflatedData = closeOnceAfterInflating(overriddenEnd);
-        assertValidInflatedData(oeInflatedData, overriddenEnd.getClass());
-        // make sure end() was called once
-        assertEquals(1, overriddenEnd.numTimesEndCalled, "end() was expected to be" +
-                " called once, but was called " + overriddenEnd.numTimesEndCalled +
-                " time(s) on " + overriddenEnd.getClass());
-
-        final OverrideCloseAndEnd overriddenCloseAndEnd = new OverrideCloseAndEnd();
-        final String oceInflatedData = closeOnceAfterInflating(overriddenCloseAndEnd);
-        assertValidInflatedData(oceInflatedData, overriddenCloseAndEnd.getClass());
-        // make sure end() and close() were called once each
-        assertEquals(1, overriddenCloseAndEnd.numTimesEndCalled, "end() was expected to be" +
-                " called once, but was called " + overriddenCloseAndEnd.numTimesEndCalled +
-                " time(s) on " + overriddenCloseAndEnd.getClass());
-        assertEquals(1, overriddenCloseAndEnd.numTimesCloseCalled, "close() was expected to be" +
-                " called once, but was called " + overriddenCloseAndEnd.numTimesCloseCalled +
-                " time(s) on " + overriddenCloseAndEnd.getClass());
-    }
-
-    /**
-     * Closes the Inflater more than once and then expects close() to be called that many times
-     * but end() just once
+     * Closes the Inflater multiple times and then expects close() and end() to be called that
+     * many times.
      */
     @Test
     public void testCloseMultipleTimes() throws Exception {
@@ -103,18 +66,19 @@ public class InflaterClose {
         final OverrideEnd overriddenEnd = new OverrideEnd();
         final String oeInflatedData = closeMultipleTimesAfterInflating(numTimes, overriddenEnd);
         assertValidInflatedData(oeInflatedData, overriddenEnd.getClass());
-        // make sure end was called *only once*
-        assertEquals(1, overriddenEnd.numTimesEndCalled, "end() was expected to be called once," +
-                " but was called " + overriddenEnd.numTimesEndCalled + " time(s) on " +
+        // make sure end was called called numTimes
+        assertEquals(numTimes, overriddenEnd.numTimesEndCalled, "end() was expected to be called " +
+                numTimes + ", but was called " + overriddenEnd.numTimesEndCalled + " time(s) on " +
                 overriddenEnd.getClass().getName());
 
         final OverrideCloseAndEnd overriddenCloseAndEnd = new OverrideCloseAndEnd();
         final String oceInflatedData = closeMultipleTimesAfterInflating(numTimes,
                 overriddenCloseAndEnd);
         assertValidInflatedData(oceInflatedData, overriddenCloseAndEnd.getClass());
-        // make sure end was called only once but close was called numTimes
-        assertEquals(1, overriddenCloseAndEnd.numTimesEndCalled, "end() was expected to be" +
-                " called once, but was called " + overriddenCloseAndEnd.numTimesEndCalled +
+        // make sure end was called called numTimes
+        assertEquals(numTimes, overriddenCloseAndEnd.numTimesEndCalled, "end() was expected" +
+                " to be called " + numTimes + ", but was called " +
+                overriddenCloseAndEnd.numTimesEndCalled +
                 " time(s) on " + overriddenCloseAndEnd.getClass().getName());
         assertEquals(numTimes, overriddenCloseAndEnd.numTimesCloseCalled, "close() was expected" +
                 " to be called " + numTimes + ", but was called " +
@@ -164,8 +128,7 @@ public class InflaterClose {
 
     /**
      * Calls end() on the Inflater first and then calls close(). Verifies that close() was called
-     * just once and end() too was called just once. This check ensures that the latter call to
-     * close() doesn't end up calling end() again.
+     * just once and end() twice.
      */
     @Test
     public void testEndThenClose() throws Exception {
@@ -184,34 +147,25 @@ public class InflaterClose {
         final OverrideEnd overriddenEnd = new OverrideEnd();
         final String oeInflatedData = inflateThenEndThenClose(overriddenEnd);
         assertValidInflatedData(oeInflatedData, overriddenEnd.getClass());
-        // make sure end was called *only once* (through the explicit end call)
-        // and close() didn't call it again internally
-        assertEquals(1, overriddenEnd.numTimesEndCalled, "end() was expected to be called once," +
+        // make sure end was called twice (once through the explicit end call and
+        // once through close())
+        assertEquals(2, overriddenEnd.numTimesEndCalled, "end() was expected to be called twice," +
                 " but was called " + overriddenEnd.numTimesEndCalled + " time(s) on "
                 + overriddenEnd.getClass().getName());
 
         final OverrideCloseAndEnd overriddenCloseAndEnd = new OverrideCloseAndEnd();
         final String oceInflatedData = inflateThenEndThenClose(overriddenCloseAndEnd);
         assertValidInflatedData(oceInflatedData, overriddenCloseAndEnd.getClass());
-        // make sure end was called *only once* (through the explicit end call) and close()
-        // didn't call it again internally
-        assertEquals(1, overriddenCloseAndEnd.numTimesEndCalled, "end() was expected to be called" +
-                " once, but was called " + overriddenCloseAndEnd.numTimesEndCalled +
+        // make sure end was called twice (once through the explicit end call and
+        // once through close())
+        assertEquals(2, overriddenCloseAndEnd.numTimesEndCalled, "end() was expected to be called" +
+                " twice, but was called " + overriddenCloseAndEnd.numTimesEndCalled +
                 " time(s) on " + overriddenCloseAndEnd.getClass().getName());
         assertEquals(1, overriddenCloseAndEnd.numTimesCloseCalled, "close() was expected to be" +
                 " called once, but was called " + overriddenClose.numTimesCloseCalled +
                 " time(s) on " + overriddenCloseAndEnd.getClass().getName());
     }
 
-
-    private String closeOnceAfterInflating(final Inflater inflater) throws DataFormatException {
-        final byte[] inflatedData;
-        // inflate() then close
-        try (final Inflater inflt = inflater) {
-            inflatedData = inflate(inflt, compressedData);
-        }
-        return new String(inflatedData, US_ASCII);
-    }
 
     private String closeMultipleTimesAfterInflating(final int numTimes, final Inflater inflater)
             throws DataFormatException {
