@@ -7014,6 +7014,7 @@ Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldNam
   assert(field_klass->is_loaded(), "should be loaded");
   const TypePtr* adr_type = C->alias_type(field)->adr_type();
   Node *adr = basic_plus_adr(fromObj, fromObj, offset);
+  assert(adr_type->ptr() == C->get_alias_index(_gvn.type(adr)->isa_ptr()));
   BasicType bt = field->layout_type();
 
   // Build the resultant type of the load

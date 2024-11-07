@@ -220,6 +220,8 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     Node* off = phase->MakeConX(field->offset_in_bytes());
     Node* next_src = phase->transform(new AddPNode(base_src,base_src,off));
     Node* next_dest = phase->transform(new AddPNode(base_dest,base_dest,off));
+    assert(adr_type->ptr() == phase->C->get_alias_index(phase->type(next_src)->isa_ptr()));
+    assert(adr_type->ptr() == phase->C->get_alias_index(phase->type(next_dest)->isa_ptr()));
     BasicType bt = field->layout_type();
 
     const Type *type;
