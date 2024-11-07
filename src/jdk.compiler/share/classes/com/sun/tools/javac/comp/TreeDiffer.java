@@ -28,6 +28,9 @@ package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.TypeTag;
+import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.jvm.PoolConstant;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAnnotatedType;
 import com.sun.tools.javac.tree.JCTree.JCAnnotation;
@@ -107,10 +110,10 @@ import java.util.Objects;
 
 /** A visitor that compares two lambda bodies for structural equality. */
 public class TreeDiffer extends TreeScanner {
-
-    public TreeDiffer(
-            Collection<? extends Symbol> symbols, Collection<? extends Symbol> otherSymbols) {
+    public TreeDiffer(Types types,
+                      Collection<? extends Symbol> symbols, Collection<? extends Symbol> otherSymbols) {
         this.equiv = equiv(symbols, otherSymbols);
+        this.types = types;
     }
 
     private static Map<Symbol, Symbol> equiv(
@@ -127,6 +130,7 @@ public class TreeDiffer extends TreeScanner {
     private JCTree parameter;
     private boolean result;
     private Map<Symbol, Symbol> equiv = new HashMap<>();
+    final Types types;
 
     public boolean scan(JCTree tree, JCTree parameter) {
         if (tree == null || parameter == null) {
@@ -197,13 +201,24 @@ public class TreeDiffer extends TreeScanner {
                 return;
             }
         }
-        result = tree.sym == that.sym;
+        result = scanSymbol(symbol, otherSymbol);
+    }
+
+    private boolean scanSymbol(Symbol symbol, Symbol otherSymbol) {
+        if (symbol instanceof PoolConstant.Dynamic dms && otherSymbol instanceof PoolConstant.Dynamic other_dms) {
+            return dms.bsmKey(types).equals(other_dms.bsmKey(types));
+        }
+        else {
+            return symbol == otherSymbol;
+        }
     }
 
     @Override
     public void visitSelect(JCFieldAccess tree) {
         JCFieldAccess that = (JCFieldAccess) parameter;
-        result = scan(tree.selected, that.selected) && tree.sym == that.sym;
+
+        result = scan(tree.selected, that.selected) &&
+                scanSymbol(tree.sym, that.sym);
     }
 
     @Override
@@ -328,14 +343,7 @@ public class TreeDiffer extends TreeScanner {
 
     @Override
     public void visitClassDef(JCClassDecl tree) {
-        JCClassDecl that = (JCClassDecl) parameter;
-        result =
-                scan(tree.mods, that.mods)
-                        && tree.name == that.name
-                        && scan(tree.typarams, that.typarams)
-                        && scan(tree.extending, that.extending)
-                        && scan(tree.implementing, that.implementing)
-                        && scan(tree.defs, that.defs);
+        result = false;
     }
 
     @Override
@@ -667,14 +675,18 @@ public class TreeDiffer extends TreeScanner {
         JCVariableDecl that = (JCVariableDecl) parameter;
         result =
                 scan(tree.mods, that.mods)
-                        && tree.name == that.name
                         && scan(tree.nameexpr, that.nameexpr)
                         && scan(tree.vartype, that.vartype)
                         && scan(tree.init, that.init);
-        if (!result) {
-            return;
+
+        if (tree.sym.owner.type.hasTag(TypeTag.CLASS)) {
+            // field names are important!
+            result &= tree.name == that.name;
         }
-        equiv.put(tree.sym, that.sym);
+
+        if (result) {
+            equiv.put(tree.sym, that.sym);
+        }
     }
 
     @Override

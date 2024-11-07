@@ -84,6 +84,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bjn">บันจาร์</language>
 			<language type="bkm">กม</language>
 			<language type="bla">สิกสิกา</language>
+			<language type="blo">อานี</language>
 			<language type="bm">บัมบารา</language>
 			<language type="bn">บังกลา</language>
 			<language type="bo">ทิเบต</language>
@@ -225,7 +226,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gmh">เยอรมันสูงกลาง</language>
 			<language type="gn">กัวรานี</language>
 			<language type="goh">เยอรมันสูงโบราณ</language>
-			<language type="gom">กอนกานีของกัว</language>
 			<language type="gon">กอนดิ</language>
 			<language type="gor">กอรอนทาโล</language>
 			<language type="got">โกธิก</language>
@@ -336,6 +336,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">โกมิ</language>
 			<language type="kw">คอร์นิช</language>
 			<language type="kwk">ควักวาลา</language>
+			<language type="kxv">กูวี</language>
 			<language type="ky">คีร์กีซ</language>
 			<language type="la">ละติน</language>
 			<language type="lad">ลาดิโน</language>
@@ -573,7 +574,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">โคเมอเรีย</language>
 			<language type="syc">ซีเรียแบบดั้งเดิม</language>
 			<language type="syr">ซีเรีย</language>
-			<language type="szl" draft="contributed">ไซลีเซีย</language>
+			<language type="szl">ไซลีเซีย</language>
 			<language type="ta">ทมิฬ</language>
 			<language type="tce">ทัชโชนใต้</language>
 			<language type="tcy">ตูลู</language>
@@ -633,6 +634,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="vi">เวียดนาม</language>
 			<language type="vls">เฟลมิชตะวันตก</language>
 			<language type="vmf">เมน-ฟรานโกเนีย</language>
+			<language type="vmw">มากัววา</language>
 			<language type="vo">โวลาพึค</language>
 			<language type="vot">โวทิก</language>
 			<language type="vro">โวโร</language>
@@ -648,6 +650,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="xal">คัลมืยค์</language>
 			<language type="xh">คะห์โอซา</language>
 			<language type="xmf">เมเกรเลีย</language>
+			<language type="xnr">กังกรี</language>
 			<language type="xog">โซกา</language>
 			<language type="yao">เย้า</language>
 			<language type="yap">ยัป</language>
@@ -1405,7 +1408,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
 			<parseLenient sample=".">[.․﹒．。︒｡]</parseLenient>
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-﹣－‑‒ −⁻₋ ➖]</parseLenient>
@@ -2268,6 +2271,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d–d MMM</greatestDifference>
 							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
@@ -3081,6 +3085,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>เวลา{0}</regionFormat>
 			<regionFormat type="daylight">เวลาออมแสง{0}</regionFormat>
 			<regionFormat type="standard">เวลามาตรฐาน{0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>โฮโนลูลู</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>เวลาสากลเชิงพิกัด</standard>
@@ -3818,9 +3825,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>อูลานบาตอร์</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>ชอยบาลซาน</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>มาเก๊า</exemplarCity>
 			</zone>
@@ -4220,9 +4224,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>นอม</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>โฮโนลูลู</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>แองเคอเรจ</exemplarCity>
 			</zone>
@@ -4607,13 +4608,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>เวลาออมแสงจีน</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>เวลาชอยปาลชาน</generic>
-					<standard>เวลามาตรฐานชอยปาลชาน</standard>
-					<daylight>เวลาฤดูร้อนชอยปาลชาน</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>เวลาเกาะคริสต์มาส</standard>
@@ -4862,6 +4856,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">เวลาคัมชัตคา</generic>
 					<standard draft="contributed">เวลาเปโตรปัฟลอฟสค์-คัมชัตสกี</standard>
 					<daylight draft="contributed">เวลาฤดูร้อนเปโตรปัฟลอฟสค์-คัมชัตสกี</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>เวลาคาซัคสถาน</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -5380,7 +5379,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -6779,6 +6777,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ควอร์ตอังกฤษ</displayName>
 				<unitPattern count="other">{0} ควอร์ตอังกฤษ</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>แสง</displayName>
+				<unitPattern count="other">{0} แสง</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>ส่วนต่อพันล้าน</displayName>
+				<unitPattern count="other">{0} ส่วนต่อพันล้าน</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>คืน</displayName>
+				<unitPattern count="other">{0} คืน</unitPattern>
+				<perUnitPattern>{0}/คืน</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>สี่ทิศหลัก</displayName>
 				<coordinateUnitPattern type="east">{0}ตะวันออก</coordinateUnitPattern>
@@ -7498,6 +7509,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>หยิบมือ</displayName>
 				<unitPattern count="other">{0} หยิบมือ</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>แสง</displayName>
+				<unitPattern count="other">{0} แสง</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>ส่วน/พันล้าน</displayName>
+				<unitPattern count="other">{0} สตพล.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>คืน</displayName>
+				<unitPattern count="other">{0} คืน</unitPattern>
+				<perUnitPattern>{0}/คืน</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ทิศหลัก</displayName>
 				<coordinateUnitPattern type="east">{0} ตอ</coordinateUnitPattern>
@@ -8077,6 +8101,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-quart-imperial">
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>แสง</displayName>
+				<unitPattern count="other">{0}แสง</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>สตพล.</displayName>
+				<unitPattern count="other">{0}สตพล.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>คืน</displayName>
+				<unitPattern count="other">{0}คืน</unitPattern>
+				<perUnitPattern>{0}/คืน</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ทิศ</displayName>

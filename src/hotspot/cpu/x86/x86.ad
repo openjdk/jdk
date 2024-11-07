@@ -2138,10 +2138,13 @@ bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType
     case Op_StoreVectorScatterMasked:
       return true;
 
-    case Op_MaxV:
-    case Op_MinV:
     case Op_UMinV:
     case Op_UMaxV:
+      if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
+        return false;
+      } // fallthrough
+    case Op_MaxV:
+    case Op_MinV:
       if (is_subword_type(bt) && !VM_Version::supports_avx512bw()) {
         return false; // Implementation limitation
       }
@@ -2509,11 +2512,12 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     address_visited.test_set(m->_idx); // Flag as address_visited
     Node *adr = m->in(AddPNode::Address);
 
-    // Intel can handle 2 adds in addressing mode
+    // Intel can handle 2 adds in addressing mode, with one of them using an immediate offset.
     // AtomicAdd is not an addressing expression.
     // Cheap to find it by looking for screwy base.
     if (adr->is_AddP() &&
         !adr->in(AddPNode::Base)->is_top() &&
+        !adr->in(AddPNode::Offset)->is_Con() &&
         LP64_ONLY( off->get_long() == (int) (off->get_long()) && ) // immL32
         // Are there other uses besides address expressions?
         !is_visited(adr)) {
@@ -6564,10 +6568,10 @@ instruct vector_uminmaxq_reg(vec dst, vec a, vec b, vec xtmp1, vec xtmp2) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_uminmax_reg_masked(vec dst, vec src1, vec src2, kReg mask) %{
-  match(Set dst (UMinV (Binary src1 src2) mask));
-  match(Set dst (UMaxV (Binary src1 src2) mask));
-  format %{ "vector_uminmax_masked $dst, $src1, $src2, $mask\t! umin/max masked operation" %}
+instruct vector_uminmax_reg_masked(vec dst, vec src2, kReg mask) %{
+  match(Set dst (UMinV (Binary dst src2) mask));
+  match(Set dst (UMaxV (Binary dst src2) mask));
+  format %{ "vector_uminmax_masked $dst, $dst, $src2, $mask\t! umin/max masked operation" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -6578,16 +6582,16 @@ instruct vector_uminmax_reg_masked(vec dst, vec src1, vec src2, kReg mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_uminmax_mem_masked(vec dst, vec src1, memory src2, kReg mask) %{
-  match(Set dst (UMinV (Binary src1 (LoadVector src2)) mask));
-  match(Set dst (UMaxV (Binary src1 (LoadVector src2)) mask));
+instruct vector_uminmax_mem_masked(vec dst, memory src2, kReg mask) %{
+  match(Set dst (UMinV (Binary dst (LoadVector src2)) mask));
+  match(Set dst (UMaxV (Binary dst (LoadVector src2)) mask));
   format %{ "vector_uminmax_masked $dst, $dst, $src2, $mask\t! umin/max masked operation" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
     int opc = this->ideal_Opcode();
     __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $src1$$XMMRegister, $src2$$Address, true, vlen_enc);
+                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

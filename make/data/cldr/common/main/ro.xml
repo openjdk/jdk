@@ -69,6 +69,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bin">bini</language>
 			<language type="bkm">kom</language>
 			<language type="bla">siksika</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengaleză</language>
 			<language type="bo">tibetană</language>
@@ -288,6 +289,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komi</language>
 			<language type="kw">cornică</language>
 			<language type="kwk">kwakʼwala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kârgâză</language>
 			<language type="la">latină</language>
 			<language type="lad">ladino</language>
@@ -298,9 +300,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">lezghian</language>
 			<language type="lg">ganda</language>
 			<language type="li">limburgheză</language>
-			<language type="lij" draft="contributed">liguriană</language>
+			<language type="lij">liguriană</language>
 			<language type="lil">lillooet</language>
 			<language type="lkt">lakota</language>
+			<language type="lmo">lombardă</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laoțiană</language>
 			<language type="lol">mongo</language>
@@ -313,7 +316,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lua">luba-lulua</language>
 			<language type="lui">luiseno</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">mizo</language>
 			<language type="luy">luyia</language>
 			<language type="lv">letonă</language>
@@ -494,6 +496,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">comoreză</language>
 			<language type="syc">siriacă clasică</language>
 			<language type="syr">siriacă</language>
+			<language type="szl">sileziană</language>
 			<language type="ta">tamilă</language>
 			<language type="tce">tutchone de sud</language>
 			<language type="te">telugu</language>
@@ -540,10 +543,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="und">limbă necunoscută</language>
 			<language type="ur">urdu</language>
 			<language type="uz">uzbecă</language>
-			<language type="vai">vai</language>
 			<language type="ve">venda</language>
-			<language type="vec" draft="contributed">venetă</language>
+			<language type="vec">venetă</language>
 			<language type="vi">vietnameză</language>
+			<language type="vmw">makhuwa</language>
 			<language type="vo">volapuk</language>
 			<language type="vot">votică</language>
 			<language type="vun">vunjo</language>
@@ -557,6 +560,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">chineză wu</language>
 			<language type="xal">calmucă</language>
 			<language type="xh">xhosa</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">soga</language>
 			<language type="yao">yao</language>
 			<language type="yap">yapeză</language>
@@ -1409,7 +1413,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2875,6 +2879,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Ora din {0}</regionFormat>
 			<regionFormat type="daylight">Ora de vară din {0}</regionFormat>
 			<regionFormat type="standard">Ora standard din {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Timpul universal coordonat</standard>
@@ -2912,9 +2919,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Capul Verde</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Praga</exemplarCity>
@@ -3056,12 +3060,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lisabona</exemplarCity>
 			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
-			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>București</exemplarCity>
 			</zone>
@@ -3133,9 +3131,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beulah, Dakota de Nord</exemplarCity>
@@ -3402,13 +3397,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Ora de vară a Chinei</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Ora din Choibalsan</generic>
-					<standard>Ora standard din Choibalsan</standard>
-					<daylight>Ora de vară din Choibalsan</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Ora din Insula Christmas</standard>
@@ -3670,6 +3658,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">Ora din Petropavlovsk-Kamciațki</generic>
 					<standard draft="contributed">Ora standard din Petropavlovsk-Kamciațki</standard>
 					<daylight draft="contributed">Ora de vară din Petropavlovsk-Kamciațki</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Ora din Kazahstan</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -5802,7 +5795,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="acceleration-g-force">
 				<gender>feminine</gender>
 				<unitPattern count="one">{0} forță g</unitPattern>
-				<unitPattern count="one" case="genitive">{0} forță g</unitPattern>
+				<unitPattern count="one" case="genitive">unei forțe g</unitPattern>
 				<unitPattern count="few">{0} forță g</unitPattern>
 				<unitPattern count="few" case="genitive">{0} forță g</unitPattern>
 				<unitPattern count="other">{0} forță g</unitPattern>
@@ -5957,10 +5950,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} de carate</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>neuter</gender>
 				<displayName>miligrame pe decilitru</displayName>
 				<unitPattern count="one">{0} miligram pe decilitru</unitPattern>
+				<unitPattern count="one" case="genitive">unui miligram pe decilitru</unitPattern>
 				<unitPattern count="few">{0} miligrame pe decilitru</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miligrame pe decilitru</unitPattern>
 				<unitPattern count="other">{0} de miligrame pe decilitru</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de miligrame pe decilitru</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>masculine</gender>
@@ -6345,10 +6342,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} de volți</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
+				<gender>feminine</gender>
 				<displayName>kilocalorii</displayName>
 				<unitPattern count="one">{0} kilocalorie</unitPattern>
+				<unitPattern count="one" case="genitive">unei kilocalorii</unitPattern>
 				<unitPattern count="few">{0} kilocalorii</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilocalorii</unitPattern>
 				<unitPattern count="other">{0} de kilocalorii</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilocalorii</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<gender>feminine</gender>
@@ -6483,6 +6484,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="graphics-em">
 				<gender>masculine</gender>
 				<displayName>em tipografic</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="one" case="genitive">unui em</unitPattern>
+				<unitPattern count="few">{0} em</unitPattern>
+				<unitPattern count="few" case="genitive">{0} em</unitPattern>
+				<unitPattern count="other">{0} de em</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<gender>masculine</gender>
@@ -6695,10 +6702,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} de mile scandinave</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<gender>neuter</gender>
 				<displayName>puncte</displayName>
 				<unitPattern count="one">{0} punct tipografic</unitPattern>
+				<unitPattern count="one" case="genitive">unui punct tipografic</unitPattern>
 				<unitPattern count="few">{0} puncte tipografice</unitPattern>
+				<unitPattern count="few" case="genitive">{0} puncte tipografice</unitPattern>
 				<unitPattern count="other">{0} de puncte tipografice</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de puncte tipografice</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>raze solare</displayName>
@@ -6914,10 +6925,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de cai putere</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>masculine</gender>
 				<displayName>milimetri coloană de mercur</displayName>
 				<unitPattern count="one">{0} milimetru coloană de mercur</unitPattern>
+				<unitPattern count="one" case="genitive">unui milimetru coloană de mercur</unitPattern>
 				<unitPattern count="few">{0} milimetri coloană de mercur</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milimetri coloană de mercur</unitPattern>
 				<unitPattern count="other">{0} de milimetri coloană de mercur</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de milimetri coloană de mercur</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>livre pe inch pătrat</displayName>
@@ -7329,6 +7344,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} quart imperial</unitPattern>
 				<unitPattern count="few">{0} quarte imperiale</unitPattern>
 				<unitPattern count="other">{0} de quarte imperiale</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<gender>feminine</gender>
+				<displayName>lumină</displayName>
+				<unitPattern count="one">{0} lumină</unitPattern>
+				<unitPattern count="one" case="genitive">{0} lumină</unitPattern>
+				<unitPattern count="few">{0} lumină</unitPattern>
+				<unitPattern count="few" case="genitive">{0} lumină</unitPattern>
+				<unitPattern count="other">{0} lumină</unitPattern>
+				<unitPattern count="other" case="genitive">{0} lumină</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>feminine</gender>
+				<displayName>părți pe miliard</displayName>
+				<unitPattern count="one">{0} parte pe miliard</unitPattern>
+				<unitPattern count="one" case="genitive">unei părți pe miliard</unitPattern>
+				<unitPattern count="few">{0} părți pe miliard</unitPattern>
+				<unitPattern count="few" case="genitive">{0} părți pe miliard</unitPattern>
+				<unitPattern count="other">{0} de părți pe miliard</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de părți pe miliard</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>feminine</gender>
+				<displayName>noapte</displayName>
+				<unitPattern count="one">{0}/noapte</unitPattern>
+				<unitPattern count="one" case="genitive">unei nopți</unitPattern>
+				<unitPattern count="few">{0} nopți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} nopți</unitPattern>
+				<unitPattern count="other">{0} de nopți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de nopți</unitPattern>
+				<perUnitPattern>{0}/noapte</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>punct cardinal</displayName>
@@ -7742,6 +7788,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} qt imp.</unitPattern>
 				<unitPattern count="other">{0} qt imp.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>lumină</displayName>
+				<unitPattern count="one">{0} lumină</unitPattern>
+				<unitPattern count="few">{0} lumină</unitPattern>
+				<unitPattern count="other">{0} lumină</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>părți/miliard</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nopți</displayName>
+				<unitPattern count="one">{0} noapte</unitPattern>
+				<unitPattern count="few">{0} nopți</unitPattern>
+				<unitPattern count="other">{0} de nopți</unitPattern>
+				<perUnitPattern>{0}/noapte</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>direcție</displayName>
 				<coordinateUnitPattern type="west">{0}V</coordinateUnitPattern>
@@ -7920,6 +7982,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} qt im</unitPattern>
 				<unitPattern count="other">{0} qt im</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>lumină</displayName>
+				<unitPattern count="one">{0} lumină</unitPattern>
+				<unitPattern count="few">{0} lumină</unitPattern>
+				<unitPattern count="other">{0} lumină</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>părți/miliard</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nopți</displayName>
+				<unitPattern count="one">{0} noapte</unitPattern>
+				<unitPattern count="few">{0} nopți</unitPattern>
+				<unitPattern count="other">{0} de nopți</unitPattern>
+				<perUnitPattern>{0}/noapte</perUnitPattern>
+			</unit>
 		</unitLength>
 	</units>
 	<listPatterns>
@@ -7954,8 +8032,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="compatibility">{0} – compatibilitate</characterLabelPattern>
 		<characterLabelPattern type="enclosed">{0} – încadrate</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} – set extins</characterLabelPattern>
-		<characterLabelPattern type="facing-left" draft="contributed">{0} orientate spre stânga</characterLabelPattern>
-		<characterLabelPattern type="facing-right" draft="contributed">{0} orientate spre dreapta</characterLabelPattern>
+		<characterLabelPattern type="facing-left">{0} orientate spre stânga</characterLabelPattern>
+		<characterLabelPattern type="facing-right">{0} orientate spre dreapta</characterLabelPattern>
 		<characterLabelPattern type="historic">{0} – istorice</characterLabelPattern>
 		<characterLabelPattern type="miscellaneous">{0} – diverse</characterLabelPattern>
 		<characterLabelPattern type="other">{0} – altele</characterLabelPattern>
