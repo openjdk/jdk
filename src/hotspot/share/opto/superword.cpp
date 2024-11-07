@@ -48,11 +48,50 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
 {
 }
 
+// Collect ignored loop nodes during XPointer parsing.
 class SuperWordUnrollingAnalysisIgnoredNodes : public MemPointerDecomposedFormParser::Callback {
 private:
-  // TODO
+  const VLoop&     _vloop;
+  const Node_List& _body;
+  bool*            _ignored;
+
 public:
-  virtual void callback(Node* n) override { assert(false, "TODO"); }
+  SuperWordUnrollingAnalysisIgnoredNodes(const VLoop& vloop) :
+    _vloop(vloop),
+    _body(_vloop.lpt()->_body),
+    _ignored(NEW_RESOURCE_ARRAY(bool, _body.size()))
+  {
+    for (uint i = 0; i < _body.size(); i++) {
+      _ignored[i] = false;
+    }
+  }
+
+  virtual void callback(Node* n) override { set_ignored(n); }
+
+  void set_ignored(uint i) {
+    assert(i < _body.size(), "must be in bounds");
+    _ignored[i] = true;
+  }
+
+  void set_ignored(Node* n) {
+    // Only consider nodes in the loop.
+    Node* ctrl = _vloop.phase()->get_ctrl(n);
+    if (_vloop.lpt()->is_member(_vloop.phase()->get_loop(ctrl))) {
+      // Find the index in the loop.
+      for (uint j = 0; j < _body.size(); j++) {
+        if (n == _body.at(j)) {
+          set_ignored(j);
+          return;
+        }
+      }
+      assert(false, "must find");
+    }
+  }
+
+  bool is_ignored(uint i) const {
+    assert(i < _vloop.lpt()->_body.size(), "must be in bounds");
+    return _ignored[i];
+  }
 };
 
 void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor) {
@@ -61,16 +100,8 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
   Node* cl_exit         = vloop.cl_exit();
   PhaseIdealLoop* phase = vloop.phase();
 
-  SuperWordUnrollingAnalysisIgnoredNodes ignored_nodes;
+  SuperWordUnrollingAnalysisIgnoredNodes ignored_nodes(vloop);
   bool is_slp = true;
-  size_t ignored_size = lpt->_body.size();
-  int *ignored_loop_nodes = NEW_RESOURCE_ARRAY(int, ignored_size);
-  Node_Stack nstack((int)ignored_size);
-
-  // First clear the entries
-  for (uint i = 0; i < lpt->_body.size(); i++) {
-    ignored_loop_nodes[i] = -1;
-  }
 
   int max_vector = Matcher::max_vector_size_auto_vectorization(T_BYTE);
 
@@ -85,7 +116,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       n->is_IfTrue() ||
       n->is_CountedLoop() ||
       (n == cl_exit)) {
-      ignored_loop_nodes[i] = n->_idx;
+      ignored_nodes.set_ignored(i);
       continue;
     }
 
@@ -93,7 +124,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       IfNode *iff = n->as_If();
       if (iff->_fcnt != COUNT_UNKNOWN && iff->_prob != PROB_UNKNOWN) {
         if (lpt->is_loop_exit(iff)) {
-          ignored_loop_nodes[i] = n->_idx;
+          ignored_nodes.set_ignored(i);
           continue;
         }
       }
@@ -111,7 +142,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
 
     // This must happen after check of phi/if
     if (n->is_Phi() || n->is_If()) {
-      ignored_loop_nodes[i] = n->_idx;
+      ignored_nodes.set_ignored(i);
       continue;
     }
 
@@ -129,7 +160,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       bt = n->bottom_type()->basic_type();
     }
     if (is_java_primitive(bt) == false) {
-      ignored_loop_nodes[i] = n->_idx;
+      ignored_nodes.set_ignored(i);
       continue;
     }
 
@@ -141,31 +172,15 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       // save a queue of post process nodes
       if (n_ctrl != nullptr && lpt->is_member(phase->get_loop(n_ctrl))) {
         // Process the memory expression
-        int stack_idx = 0;
-        bool have_side_effects = true;
-        if (adr->is_AddP() == false) {
-          nstack.push(adr, stack_idx++);
+        if (!adr->is_AddP()) {
+          n->dump();
+          adr->dump();
+          assert(false, "what is this?");
+          ignored_nodes.set_ignored(adr);
         } else {
-          // Mark the components of the memory operation in nstack
-          VPointer p1(current, vloop, &nstack);
-          have_side_effects = p1.node_stack()->is_nonempty();
-
+          // Mark the internal nodes of the address expression in ignored_nodes.
           XPointer xp(current, vloop, ignored_nodes);
           NOT_PRODUCT( xp.print_on(tty); )
-        }
-
-        // Process the pointer stack
-        while (have_side_effects) {
-          Node* pointer_node = nstack.node();
-          for (uint j = 0; j < lpt->_body.size(); j++) {
-            Node* cur_node = lpt->_body.at(j);
-            if (cur_node == pointer_node) {
-              ignored_loop_nodes[j] = cur_node->_idx;
-              break;
-            }
-          }
-          nstack.pop();
-          have_side_effects = nstack.is_nonempty();
         }
       }
     }
@@ -176,7 +191,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
     // description can use
     bool flag_small_bt = false;
     for (uint i = 0; i < lpt->_body.size(); i++) {
-      if (ignored_loop_nodes[i] != -1) continue;
+      if (ignored_nodes.is_ignored(i)) continue;
 
       BasicType bt;
       Node* n = lpt->_body.at(i);
