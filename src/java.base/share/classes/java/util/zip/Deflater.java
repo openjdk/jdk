@@ -870,11 +870,12 @@ public class Deflater implements AutoCloseable {
     }
 
     /**
-     * Closes the compressor and discards any unprocessed input.
-     *
-     * This method should be called when the compressor is no longer
-     * being used. Once this method is called, further operations using
-     * this Deflater may throw an exception.
+     * Closes and releases the resources held by this {@code Deflater}
+     * and discards any unprocessed input.
+     * <p>
+     * If this method is invoked multiple times, the subsequent calls are treated as a no-op.
+     * Several other methods defined by this class will throw an {@link IllegalStateException}
+     * if invoked on a closed {@code Deflater}.
      *
      * @see #close()
      */
@@ -891,29 +892,22 @@ public class Deflater implements AutoCloseable {
     }
 
     /**
-     * Releases resources held by this compressor and discards any unprocessed input.
-     * This method should be called when the compressor is no longer needed.
+     * Closes and releases the resources held by this {@code Deflater}
+     * and discards any unprocessed input.
      *
-     * @implNote This method calls the {@link #end()} method. This method is a no-op
-     * if this compressor has already been previously closed, either through {@code close()}
-     * or {@code end()}
+     * @implSpec This method calls the {@link #end()} method.
      * @since 24
      */
     @Override
     public void close() {
-        synchronized (zsRef) {
-            // check if we are already closed to avoid calling end() more than once
-            if (zsRef.address() == 0) {
-                return;
-            }
-        }
         end();
     }
 
     private void ensureOpen() {
         assert Thread.holdsLock(zsRef);
-        if (zsRef.address() == 0)
-            throw new NullPointerException("Deflater has been closed");
+        if (zsRef.address() == 0) {
+            throw new IllegalStateException("Deflater has been closed");
+        }
     }
 
     /**
