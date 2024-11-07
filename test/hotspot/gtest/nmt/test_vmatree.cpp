@@ -423,7 +423,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     expect_equivalent_form(expected, tree);
   }
 
-  { // Holes in the address range are acceptable
+  { // Holes in the address range are acceptable and untouched
     testrange expected[]{
         { 0,  50,          mtGC, si, State::Reserved},
         {50,  75,        mtNone, si, State::Released},
@@ -435,6 +435,21 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     tree.reserve_mapping(0, 50, class_shared);
     tree.reserve_mapping(75, 25, class_shared);
     tree.set_tag(0, 80, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Check that even with a 'hole' consisting of an actual region, the released regions stay untouched
+    testrange expected[]{
+        { 0,  50, mtNone, si, State::Released},
+        {50,  75,   mtGC, si, State::Reserved},
+        {75, 100, mtNone, si, State::Released}
+    };
+    VMATree tree;
+    Tree::RegionData class_shared(si, mtClassShared);
+    tree.reserve_mapping(0, 100, class_shared);
+    tree.release_mapping(0, 50);
+    tree.release_mapping(75, 25);
+    tree.set_tag(0, 100, mtGC);
     expect_equivalent_form(expected, tree);
   }
 }
