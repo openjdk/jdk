@@ -6760,7 +6760,7 @@ instruct incI_rReg_ndd(rRegI dst, rRegI src, immI_1 val)
 
   format %{ "eincl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ eincrementl($dst$$Register, $src$$Register, true);
+    __ eincrementl($dst$$Register, $src$$Register, true, $val$$constant);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -6800,7 +6800,7 @@ instruct decI_rReg_ndd(rRegI dst, rRegI src, immI_M1 val)
 
   format %{ "edecl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ edecrementl($dst$$Register, $src$$Register, true);
+    __ edecrementl($dst$$Register, $src$$Register, true, $val$$constant);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -6972,7 +6972,7 @@ instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val)
 
   format %{ "eincq    $dst, $src\t# long" %}
   ins_encode %{
-    __ eincrementq($dst$$Register, $src$$Register, true);
+    __ eincrementq($dst$$Register, $src$$Register, true, $val$$constant);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7012,7 +7012,7 @@ instruct decL_rReg_ndd(rRegL dst, rRegL src, immL_M1 val)
 
   format %{ "edecq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ edecrementq($dst$$Register, $src$$Register, true);
+    __ edecrementq($dst$$Register, $src$$Register, true, $val$$constant);
   %}
   ins_pipe(ialu_reg);
 %}
