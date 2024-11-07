@@ -1193,7 +1193,7 @@ class LockNode : public AbstractLockNode {
   static const TypeFunc *_lock_type_tf;
 public:
 
-  static const TypeFunc *lock_type() {
+  static inline const TypeFunc *lock_type() {
     assert(_lock_type_tf != nullptr, "should be initialized");
     return _lock_type_tf;
   }
