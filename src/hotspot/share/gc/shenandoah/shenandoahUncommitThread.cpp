@@ -32,7 +32,7 @@
 #include "utilities/events.hpp"
 
 ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
-  : _heap(heap), _lock(Mutex::safepoint - 2, "ShenandoahUncommit_lock, true") {
+  : _heap(heap), _lock(Mutex::safepoint - 2, "ShenandoahUncommit_lock", true) {
   set_name("Shenandoah Uncommit Thread");
   create_and_start();
 }
