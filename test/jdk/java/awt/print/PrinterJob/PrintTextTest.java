@@ -118,7 +118,7 @@ public class PrintTextTest {
 
         font = getPhysicalFont();
         AffineTransform rotTx = AffineTransform.getRotateInstance(0.15);
-        rotTx.translate(60,0);
+        rotTx.translate(60, 0);
         name = "Page " + page++;
         pt = new PrintText(name, font, rotTx, false, preferredSize);
         pane.addTab(name, pt);
@@ -284,9 +284,9 @@ public class PrintTextTest {
 
         @Override
         public int print(Graphics g, PageFormat pf, int pageIndex) {
-            Graphics2D g2d = (Graphics2D)g;
-            g2d.translate(pf.getImageableX(),  pf.getImageableY());
-            g.drawString(page+" "+orient(pf),50,20);
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.translate(pf.getImageableX(), pf.getImageableY());
+            g.drawString(page + " " + orient(pf), 50, 20);
             g.translate(0, 25);
             paint(g);
             return PAGE_EXISTS;
@@ -322,13 +322,13 @@ public class PrintTextTest {
 
             String s;
             int LS = 30;
-            int ix=10, iy=LS+10;
+            int ix = 10, iy = LS + 10;
             g.setColor(Color.BLACK);
 
             s = "drawString(String str, int x, int y)";
             g.drawString(s, ix, iy);
             if (!textFont.isTransformed()) {
-                g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
+                g.drawLine(ix, iy + 1, ix + fm.stringWidth(s), iy + 1);
             }
 
             iy += LS;
@@ -339,7 +339,7 @@ public class PrintTextTest {
             s = "\tdrawChars(\t\r\nchar[], int off, int len, int x, int y\t)";
             g.drawChars(s.toCharArray(), 0, s.length(), ix, iy);
             if (!textFont.isTransformed()) {
-                g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
+                g.drawLine(ix, iy + 1, ix + fm.stringWidth(s), iy + 1);
             }
 
             iy += LS;
@@ -357,11 +357,11 @@ public class PrintTextTest {
             s = "drawString(String s, float x, float y)";
             g2d.drawString(s, (float) ix, (float) iy);
             if (!textFont.isTransformed()) {
-                g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
+                g.drawLine(ix, iy + 1, ix + fm.stringWidth(s), iy + 1);
             }
 
             iy += LS;
-            s = "drawString(AttributedCharacterIterator iterator, "+
+            s = "drawString(AttributedCharacterIterator iterator, " +
                 "float x, float y)";
             g2d.drawString(getIterator(s), (float) ix, (float) iy);
 
@@ -371,7 +371,7 @@ public class PrintTextTest {
             g2d.drawGlyphVector(gv, ix, iy);
             Point2D adv = gv.getGlyphPosition(gv.getNumGlyphs());
             if (!textFont.isTransformed()) {
-                g.drawLine(ix, iy+1, ix+(int)adv.getX(), iy+1);
+                g.drawLine(ix, iy + 1, ix + (int) adv.getX(), iy + 1);
             }
 
             iy += LS;
@@ -385,34 +385,34 @@ public class PrintTextTest {
                 double gx = gp.getX();
                 double gy = gp.getY();
                 if (i % 2 == 0) {
-                    gy+=5;
+                    gy += 5;
                 } else {
-                    gy-=5;
+                    gy -= 5;
                 }
                 gp.setLocation(gx, gy);
                 gv.setGlyphPosition(i, gp);
             }
             g2d.drawGlyphVector(gv, ix, iy);
             if (!textFont.isTransformed()) {
-                g.drawLine(ix, iy+1, ix+(int)adv.getX(), iy+1);
+                g.drawLine(ix, iy + 1, ix + (int) adv.getX(), iy + 1);
             }
 
-            iy +=LS;
+            iy += LS;
             s = "drawString: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
             g.drawString(s, ix, iy);
             if (!textFont.isTransformed()) {
-                g.drawLine(ix, iy+1, ix+fm.stringWidth(s), iy+1);
+                g.drawLine(ix, iy + 1, ix + fm.stringWidth(s), iy + 1);
             }
 
             iy += LS;
             s = "TextLayout 1: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
             TextLayout tl = new TextLayout(s, new HashMap<>(), frc);
-            tl.draw(g2d,  ix, iy);
+            tl.draw(g2d, ix, iy);
 
             iy += LS;
             s = "TextLayout 2: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
             tl = new TextLayout(s, f, frc);
-            tl.draw(g2d,  ix, iy);
+            tl.draw(g2d, ix, iy);
         }
     }
 
@@ -445,16 +445,16 @@ public class PrintTextTest {
             g.setColor(Color.BLACK);
             int y = 20;
             float origSize = 7f;
-            for (int i=0;i<11;i++) {
-                float size = origSize+(i*0.1f);
-                g2d.translate(0, size+6);
+            for (int i = 0; i < 11; i++) {
+                float size = origSize + (i * 0.1f);
+                g2d.translate(0, size + 6);
                 Font f = textFont.deriveFont(size);
                 g2d.setFont(f);
                 FontMetrics fontMetrics = g2d.getFontMetrics();
                 int stringWidth = fontMetrics.stringWidth(text);
-                g.drawLine(0, y+1, stringWidth, y+1);
+                g.drawLine(0, y + 1, stringWidth, y + 1);
                 g.drawString(text, 0, y);
-                y +=10;
+                y += 10;
             }
         }
     }
