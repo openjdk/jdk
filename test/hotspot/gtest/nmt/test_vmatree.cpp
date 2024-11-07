@@ -303,7 +303,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     VMATree::position previous_to = 0;
     for (int i = 0; i < len; i++) {
       testrange expect = expected[i];
-      assert(previous_to == 0 || previous_to < expect.from, "the expected list must be sorted");
+      assert(previous_to == 0 || previous_to <= expect.from, "the expected list must be sorted");
       previous_to = expect.to;
 
       VMATree::VMATreap::Range found = tree.tree().find_enclosing_range(expect.from);
