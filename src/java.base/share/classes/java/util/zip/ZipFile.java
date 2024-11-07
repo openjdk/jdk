@@ -1798,7 +1798,7 @@ public class ZipFile implements ZipConstants, Closeable {
                                     metaVersions = new HashMap<>();
                                 metaVersions.computeIfAbsent(hashCode, _ -> new BitSet()).set(version);
                             } catch (Exception e) {
-                                throw new IllegalArgumentException(e);
+                                zerror("invalid CEN header (bad entry name or comment)");
                             }
                         }
                     }

@@ -23,88 +23,145 @@
 
 /*
  * @test
+ * @bug 8342458
+ * @library /test/lib
  * @summary Testing ClassFile LDC instructions.
  * @run junit LDCTest
  */
-import java.lang.constant.ClassDesc;
 
-import static java.lang.classfile.ClassFile.ACC_PUBLIC;
-import static java.lang.classfile.ClassFile.ACC_STATIC;
-import static java.lang.constant.ConstantDescs.*;
-import java.lang.constant.MethodTypeDesc;
-
-import java.lang.classfile.*;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.LongEntry;
 import java.lang.classfile.constantpool.StringEntry;
-import java.lang.reflect.AccessFlag;
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Test;
-import static helpers.TestConstants.MTD_VOID;
-import static java.lang.classfile.Opcode.*;
 import java.lang.classfile.instruction.ConstantInstruction;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.DynamicConstantDesc;
+import java.lang.constant.MethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
+import java.util.List;
+
+import jdk.test.lib.ByteCodeLoader;
+import org.junit.jupiter.api.Test;
+
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.Opcode.*;
+import static java.lang.constant.ConstantDescs.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class LDCTest {
     @Test
-    void testLDCisConvertedToLDCW() throws Exception {
+    void loadConstantGeneralTest() throws Exception {
+        var otherCp = ConstantPoolBuilder.of();
+        var narrowString131 = otherCp.stringEntry("string131");
+        assertTrue(narrowString131.index() <= 0xFF);
+        for (int i = 0; i < 0xFF; i++) {
+            var unused = otherCp.intEntry(i);
+        }
+        var wideString0 = otherCp.stringEntry("string0");
+        assertTrue(wideString0.index() > 0xFF);
+
         var cc = ClassFile.of();
-        byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
-            cb.withFlags(AccessFlag.PUBLIC);
-            cb.withVersion(52, 0);
-            cb.withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                      .withCode(codeb -> codeb.aload(0)
-                                              .invokespecial(CD_Object, "<init>", MTD_VOID, false)
-                                              .return_()
-                      )
-              )
+        var cd = ClassDesc.of("MyClass");
+        MethodTypeDesc bsmType = MethodTypeDesc.of(CD_double, CD_MethodHandles_Lookup, CD_String, CD_Class);
+        byte[] bytes = cc.build(cd, cb -> cb
+                .withFlags(AccessFlag.PUBLIC)
+                .withVersion(JAVA_11_VERSION, 0) // condy support required
+                .withMethodBody("bsm", bsmType, ACC_STATIC, cob -> cob
+                    .dconst_1()
+                    .dreturn())
+                .withMethodBody("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
+                        ACC_PUBLIC | ACC_STATIC, c0 -> {
+                            ConstantPoolBuilder cpb = cb.constantPool();
+                            LongEntry l42 = cpb.longEntry(42);
+                            assertTrue(l42.index() <= 0xFF);
+                            for (int i = 0; i <= 256 / 2 + 2; i++) { // two entries per String
+                                StringEntry s = cpb.stringEntry("string" + i);
+                            }
+                            var wideCondy = cpb.constantDynamicEntry(DynamicConstantDesc.of(MethodHandleDesc.ofMethod(
+                                    DirectMethodHandleDesc.Kind.STATIC, cd, "bsm", bsmType)));
+                            assertTrue(wideCondy.index() > 0xFF);
+                            var s0 = cpb.stringEntry("string0");
+                            assertTrue(s0.index() <= 0xFF);
+                            // use line number to match case numbers; pop ensures verification passes
+                            c0.ldc("string0").pop() // regular ldc
+                              .ldc(wideString0).pop() // adaption - narrowed
+                              .with(ConstantInstruction.ofLoad(LDC, wideString0)).pop() // adaption
+                              .with(ConstantInstruction.ofLoad(LDC_W, wideString0)).pop() // adaption - narrowed
+                              .with(ConstantInstruction.ofLoad(LDC_W, s0)).pop() // explicit ldc_w - local
+                              .ldc("string131").pop() // ldc_w
+                              .ldc(narrowString131).pop() // adaption - widened
+                              .with(ConstantInstruction.ofLoad(LDC, narrowString131)).pop() // adaption - widened
+                              .with(ConstantInstruction.ofLoad(LDC_W, narrowString131)).pop() // adaption
+                              .ldc("string50").pop()
+                              .ldc(l42).pop2() // long cases
+                              .loadConstant(l42.longValue()).pop2()
+                              .loadConstant(Long.valueOf(l42.longValue())).pop2()
+                              .loadConstant(-0.0f).pop() // floating cases
+                              .loadConstant(-0.0d).pop2()
+                              .loadConstant(0.0f).pop() // intrinsic cases
+                              .loadConstant(0.0d).pop2()
+                              .ldc(wideCondy).pop2() // no wrong "widening" of condy
+                              .return_();
+                        }));
 
-              .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
-                          ACC_PUBLIC | ACC_STATIC,
-                          mb -> mb.withCode(c0 -> {
-                                  ConstantPoolBuilder cpb = cb.constantPool();
-                                  for (int i = 0; i <= 256/2 + 2; i++) { // two entries per String
-                                      StringEntry s = cpb.stringEntry("string" + i);
-                                  }
-                                  c0.ldc("string0")
-                                    .ldc("string131")
-                                    .ldc("string50")
-                                    .loadConstant(-0.0f)
-                                    .loadConstant(-0.0d)
-                                    //non-LDC test cases
-                                    .loadConstant(0.0f)
-                                    .loadConstant(0.0d)
-                                    .return_();
-                              }));
-        });
-
-        var model = cc.parse(bytes);
-        var code = model.elementStream()
-                .filter(e -> e instanceof MethodModel)
-                .map(e -> (MethodModel) e)
-                .filter(e -> e.methodName().stringValue().equals("main"))
-                .flatMap(MethodModel::elementStream)
-                .filter(e -> e instanceof CodeModel)
-                .map(e -> (CodeModel) e)
+        var cm = cc.parse(bytes);
+        var code = cm.elementStream()
+                .<CodeAttribute>mapMulti((ce, sink) -> {
+                    if (ce instanceof MethodModel mm && mm.methodName().equalsString("main")) {
+                        sink.accept(mm.findAttribute(Attributes.code()).orElseThrow());
+                    }
+                })
                 .findFirst()
                 .orElseThrow();
-        var opcodes = code.elementList().stream()
-                          .filter(e -> e instanceof Instruction)
-                          .map(e -> (Instruction)e)
-                          .toList();
+        var instructions = code.elementList().stream()
+                .<ConstantInstruction>mapMulti((ce, sink) -> {
+                    if (ce instanceof ConstantInstruction i) {
+                        sink.accept(i);
+                    }
+                })
+                .toList();
 
-        assertEquals(opcodes.size(), 8);
-        assertEquals(opcodes.get(0).opcode(), LDC);
-        assertEquals(opcodes.get(1).opcode(), LDC_W);
-        assertEquals(opcodes.get(2).opcode(), LDC);
+        assertIterableEquals(List.of(
+                LDC, // string0
+                LDC,
+                LDC,
+                LDC,
+                LDC_W,
+                LDC_W, // string131
+                LDC_W,
+                LDC_W,
+                LDC_W,
+                LDC, // string50
+                LDC2_W, // long cases
+                LDC2_W,
+                LDC2_W,
+                LDC_W, // floating cases
+                LDC2_W,
+                FCONST_0, // intrinsic cases
+                DCONST_0,
+                LDC2_W // wide condy
+        ), instructions.stream().map(Instruction::opcode).toList());
+
+        int longCaseStart = 10;
+        for (int longCaseIndex = longCaseStart; longCaseIndex < longCaseStart + 3; longCaseIndex++) {
+            var message = "Case " + longCaseIndex;
+            assertEquals(42, (long) instructions.get(longCaseIndex).constantValue(), message);
+        }
+
+        int floatingCaseStart = longCaseStart + 3;
         assertEquals(
-                Float.floatToRawIntBits((float)((ConstantInstruction)opcodes.get(3)).constantValue()),
+                Float.floatToRawIntBits((float) instructions.get(floatingCaseStart).constantValue()),
                 Float.floatToRawIntBits(-0.0f));
         assertEquals(
-                Double.doubleToRawLongBits((double)((ConstantInstruction)opcodes.get(4)).constantValue()),
+                Double.doubleToRawLongBits((double) instructions.get(floatingCaseStart + 1).constantValue()),
                 Double.doubleToRawLongBits(-0.0d));
-        assertEquals(opcodes.get(5).opcode(), FCONST_0);
-        assertEquals(opcodes.get(6).opcode(), DCONST_0);
-        assertEquals(opcodes.get(7).opcode(), RETURN);
-    }
 
-    // TODO test for explicit LDC_W?
+        assertDoesNotThrow(() -> ByteCodeLoader.load("MyClass", bytes), "Invalid LDC bytecode generated");
+    }
 }

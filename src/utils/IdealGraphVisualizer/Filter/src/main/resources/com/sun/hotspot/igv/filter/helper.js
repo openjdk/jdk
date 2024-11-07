@@ -57,6 +57,11 @@ function hasAnyNode(selector) {
     return new AnySelector(selector);
 }
 
+// Select the nodes for which the given property is defined.
+function hasProperty(property) {
+    return new MatcherSelector(new Properties.InvertPropertyMatcher(new Properties.RegexpPropertyMatcher(property, "")));
+}
+
 // Select the nodes whose given property matches a given regular expression.
 function matches(property, regexp) {
     return new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp));
