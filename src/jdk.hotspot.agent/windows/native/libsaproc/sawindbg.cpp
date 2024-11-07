@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ class AutoJavaString {
   const char* m_buf;
 
 public:
-  // check env->ExceptionOccurred() after ctor
+  // check env->ExceptionCheck() after ctor
   AutoJavaString(JNIEnv* env, jstring str)
     : m_env(env), m_str(str), m_buf(str == nullptr ? nullptr : env->GetStringUTFChars(str, nullptr)) {
   }
@@ -122,7 +122,7 @@ class AutoJavaByteArray {
   jint releaseMode;
 
 public:
-  // check env->ExceptionOccurred() after ctor
+  // check env->ExceptionCheck() after ctor
   AutoJavaByteArray(JNIEnv* env, jbyteArray byteArray, jint releaseMode = JNI_ABORT)
     : env(env), byteArray(byteArray),
       bytePtr(env->GetByteArrayElements(byteArray, nullptr)),
@@ -164,8 +164,8 @@ static jmethodID addThread_ID                   = 0;
 static jmethodID createClosestSymbol_ID         = 0;
 static jmethodID setThreadIntegerRegisterSet_ID = 0;
 
-#define CHECK_EXCEPTION_(value) if (env->ExceptionOccurred()) { return value; }
-#define CHECK_EXCEPTION if (env->ExceptionOccurred()) { return; }
+#define CHECK_EXCEPTION_(value) if (env->ExceptionCheck()) { return value; }
+#define CHECK_EXCEPTION if (env->ExceptionCheck()) { return; }
 
 #define THROW_NEW_DEBUGGER_EXCEPTION_(str, value) { \
                           throwNewDebuggerException(env, str); return value; }
@@ -399,8 +399,11 @@ static bool setImageAndSymbolPath(JNIEnv* env, jobject obj) {
   IDebugSymbols* ptrIDebugSymbols = (IDebugSymbols*)env->GetLongField(obj, ptrIDebugSymbols_ID);
   CHECK_EXCEPTION_(false);
 
-  ptrIDebugSymbols->SetImagePath(imagePath);
-  ptrIDebugSymbols->SetSymbolPath(symbolPath);
+  COM_VERIFY_OK_(ptrIDebugSymbols->SetImagePath(imagePath),
+                 "Windbg Error: SetImagePath failed!", false);
+  COM_VERIFY_OK_(ptrIDebugSymbols->SetSymbolPath(symbolPath),
+                 "Windbg Error: SetSymbolPath failed!", false);
+
   return true;
 }
 
@@ -829,6 +832,8 @@ JNIEXPORT jstring JNICALL Java_sun_jvm_hotspot_debugger_windbg_WindbgDebuggerLoc
   return res;
 }
 
+#define SYMBOL_BUFSIZE 512
+
 /*
  * Class:     sun_jvm_hotspot_debugger_windbg_WindbgDebuggerLocal
  * Method:    lookupByName0
@@ -852,10 +857,22 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_windbg_WindbgDebuggerLocal
   if (ptrIDebugSymbols->GetOffsetByName(name, &offset) != S_OK) {
     return (jlong) 0;
   }
+
+  // See JDK-8311993: WinDbg intermittently returns offset of "module!class::`vftable'" symbol
+  // when requested for decorated "class" or "class*" (i.e. "??_7class@@6B@"/"??_7class*@@6B@").
+  // As a workaround check if returned symbol contains requested symbol.
+  ULONG64 disp = 0L;
+  char buf[SYMBOL_BUFSIZE];
+  memset(buf, 0, sizeof(buf));
+  if (ptrIDebugSymbols->GetNameByOffset(offset, buf, sizeof(buf), 0, &disp) == S_OK) {
+    if (strstr(buf, name) == nullptr) {
+      return (jlong)0;
+    }
+  }
+
   return (jlong) offset;
 }
 
-#define SYMBOL_BUFSIZE 512
 /*
  * Class:     sun_jvm_hotspot_debugger_windbg_WindbgDebuggerLocal
  * Method:    lookupByAddress0

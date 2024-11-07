@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.jfr.Event;
@@ -143,28 +144,43 @@ public class TestOrdered {
     }
 
     private static Path makeUnorderedRecording() throws Exception {
-        CyclicBarrier barrier = new CyclicBarrier(THREAD_COUNT + 1);
+        while (true) {
+            CyclicBarrier barrier = new CyclicBarrier(THREAD_COUNT + 1);
+            try (Recording r = new Recording()) {
+                r.start();
+                List<Emitter> emitters = new ArrayList<>();
+                for (int i = 0; i < THREAD_COUNT; i++) {
+                    Emitter e = new Emitter(barrier);
+                    e.start();
+                    emitters.add(e);
+                }
+                // Thread buffers should now have one event each
+                barrier.await();
+                // Add another event to each thread buffer, so
+                // events are bound to come out of order when they
+                // are flushed
+                for (Emitter e : emitters) {
+                    e.join();
+                }
+                r.stop();
+                Path p = Utils.createTempFile("recording", ".jfr");
+                r.dump(p);
+                // Order is only guaranteed within a segment.
+                int segments = countSegments(p);
+                if (segments < 2) {
+                    return p;
+                }
+                System.out.println("File contains more than one segment (" + segments + "). Retrying.");
+            }
+        }
+    }
 
-        try (Recording r = new Recording()) {
-            r.start();
-            List<Emitter> emitters = new ArrayList<>();
-            for (int i = 0; i < THREAD_COUNT; i++) {
-                Emitter e = new Emitter(barrier);
-                e.start();
-                emitters.add(e);
-            }
-            // Thread buffers should now have one event each
-            barrier.await();
-            // Add another event to each thread buffer, so
-            // events are bound to come out of order when they
-            // are flushed
-            for (Emitter e : emitters) {
-                e.join();
-            }
-            r.stop();
-            Path p = Utils.createTempFile("recording", ".jfr");
-            r.dump(p);
-            return p;
+    private static int countSegments(Path file) throws Exception {
+        AtomicInteger segments = new AtomicInteger();
+        try (EventStream es = EventStream.openFile(file)) {
+            es.onFlush(segments::incrementAndGet);
+            es.start();
+            return segments.get();
         }
     }
 }

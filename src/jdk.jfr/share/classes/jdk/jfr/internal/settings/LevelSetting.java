@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.jfr.internal.Type;
 @MetadataDefinition
 @Label("Level")
 @Name(Type.SETTINGS_PREFIX + "Level")
-public class LevelSetting extends JDKSettingControl {
+public final class LevelSetting extends JDKSettingControl {
     private final PlatformEventType eventType;
     private final List<String> levels;
     private String value;
@@ -47,30 +47,29 @@ public class LevelSetting extends JDKSettingControl {
     public LevelSetting(PlatformEventType eventType, String[] levels) {
         this.eventType = Objects.requireNonNull(eventType);
         this.levels = Arrays.asList(Objects.requireNonNull(levels));
+        this.value = levels[0];
     }
 
     @Override
     public String combine(Set<String> values) {
-        int maxIndex = 0;
+        int maxIndex = 0; // index 0 contains the default value
         for (String value : values) {
-            maxIndex = Math.max(maxIndex, indexOf(value));
+            maxIndex = Math.max(maxIndex, levels.indexOf(value));
         }
         return levels.get(maxIndex);
     }
 
     @Override
     public void setValue(String value) {
-        this.value = value;
-        this.eventType.setLevel(indexOf(value));
+        int index = levels.indexOf(value);
+        if (index != -1) {
+            this.eventType.setLevel(index);
+            this.value = value;
+        }
     }
 
     @Override
     public String getValue() {
         return value;
-    }
-
-    private int indexOf(String value) {
-        int index = levels.indexOf(value);
-        return index < 0 ? 0 : index;
     }
 }

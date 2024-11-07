@@ -27,6 +27,16 @@ package sun.font;
 
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
+
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import static java.lang.foreign.MemorySegment.NULL;
+import java.lang.foreign.StructLayout;
+import java.lang.foreign.ValueLayout;
+import static java.lang.foreign.ValueLayout.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
@@ -37,7 +47,6 @@ import sun.java2d.Disposer;
 import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.RenderQueue;
 import sun.java2d.pipe.hw.AccelGraphicsConfig;
-import jdk.internal.misc.Unsafe;
 
 /**
 
@@ -62,8 +71,6 @@ free native memory resources.
  */
 
 public final class StrikeCache {
-
-    static final Unsafe unsafe = Unsafe.getUnsafe();
 
     static ReferenceQueue<Object> refQueue = Disposer.getQueue();
 
@@ -98,40 +105,159 @@ public final class StrikeCache {
     static boolean cacheRefTypeWeak;
 
     /*
-     * Native sizes and offsets for glyph cache
-     * There are 10 values.
+     * Native sizes and accessors for glyph cache structure.
+     * There are 10 values. Also need native address size and a long which
+     * references a memory address for a "null" glyph image.
      */
-    static int nativeAddressSize;
-    static int glyphInfoSize;
-    static int xAdvanceOffset;
-    static int yAdvanceOffset;
-    static int boundsOffset;
-    static int widthOffset;
-    static int heightOffset;
-    static int rowBytesOffset;
-    static int topLeftXOffset;
-    static int topLeftYOffset;
-    static int pixelDataOffset;
-    static int cacheCellOffset;
-    static int managedOffset;
-    static long invisibleGlyphPtr;
+    static final int nativeAddressSize = (int)ValueLayout.ADDRESS.byteSize();
+    static final long invisibleGlyphPtr = getInvisibleGlyphPtr(); // a singleton.
 
-    /* Native method used to return information used for unsafe
-     * access to native data.
-     * return values as follows:-
-     * arr[0] = size of an address/pointer.
-     * arr[1] = size of a GlyphInfo
-     * arr[2] = offset of advanceX
-     * arr[3] = offset of advanceY
-     * arr[4] = offset of width
-     * arr[5] = offset of height
-     * arr[6] = offset of rowBytes
-     * arr[7] = offset of topLeftX
-     * arr[8] = offset of topLeftY
-     * arr[9] = offset of pixel data.
-     * arr[10] = address of a GlyphImageRef representing the invisible glyph
-     */
-    static native void getGlyphCacheDescription(long[] infoArray);
+    static native long getInvisibleGlyphPtr();
+
+    public static final StructLayout GlyphImageLayout = MemoryLayout.structLayout(
+        JAVA_FLOAT.withName("xAdvance"), // 0+4=4,
+        JAVA_FLOAT.withName("yAdvance"), // 4+4=8,
+        JAVA_CHAR.withName("width"),     // 8+2=10,
+        JAVA_CHAR.withName("height"),    // 10+2=12
+        JAVA_CHAR.withName("rowBytes"),  // 12+2=14
+        JAVA_BYTE.withName("managed"),   // 14+1=15
+        MemoryLayout.paddingLayout(1),   // 15+1=16
+        JAVA_FLOAT.withName("topLeftX"), // 16+4=20
+        JAVA_FLOAT.withName("topLeftY"), // 20+4=24
+        ADDRESS.withName("cellInfo"),    // 24+8=32
+        ADDRESS.withName("image")        // 32+8=40
+     );
+
+   private static final long GLYPHIMAGESIZE = GlyphImageLayout.byteSize();
+
+   private static VarHandle getVarHandle(StructLayout struct, String name) {
+        VarHandle h = struct.varHandle(PathElement.groupElement(name));
+        /* insert 0 offset so don't need to pass arg every time */
+        return MethodHandles.insertCoordinates(h, 1, 0L).withInvokeExactBehavior();
+    }
+
+    private static final VarHandle xAdvanceHandle = getVarHandle(GlyphImageLayout, "xAdvance");
+    private static final VarHandle yAdvanceHandle = getVarHandle(GlyphImageLayout, "yAdvance");
+    private static final VarHandle widthHandle    = getVarHandle(GlyphImageLayout, "width");
+    private static final VarHandle heightHandle   = getVarHandle(GlyphImageLayout, "height");
+    private static final VarHandle rowBytesHandle = getVarHandle(GlyphImageLayout, "rowBytes");
+    private static final VarHandle managedHandle  = getVarHandle(GlyphImageLayout, "managed");
+    private static final VarHandle topLeftXHandle = getVarHandle(GlyphImageLayout, "topLeftX");
+    private static final VarHandle topLeftYHandle = getVarHandle(GlyphImageLayout, "topLeftY");
+    private static final VarHandle cellInfoHandle = getVarHandle(GlyphImageLayout, "cellInfo");
+    private static final VarHandle imageHandle    = getVarHandle(GlyphImageLayout, "image");
+
+    @SuppressWarnings("restricted")
+    static final float getGlyphXAdvance(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        return (float)xAdvanceHandle.get(seg);
+    }
+
+    @SuppressWarnings("restricted")
+    static final void setGlyphXAdvance(long ptr, float val) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        xAdvanceHandle.set(seg, val);
+    }
+
+    @SuppressWarnings("restricted")
+    static final float getGlyphYAdvance(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        return (float)yAdvanceHandle.get(seg);
+    }
+
+    @SuppressWarnings("restricted")
+    static final char getGlyphWidth(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        return (char)widthHandle.get(seg);
+    }
+
+    @SuppressWarnings("restricted")
+    static final char getGlyphHeight(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        return (char)heightHandle.get(seg);
+    }
+
+    @SuppressWarnings("restricted")
+    static final char getGlyphRowBytes(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        return (char)rowBytesHandle.get(seg);
+    }
+
+    @SuppressWarnings("restricted")
+    static final byte getGlyphManaged(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        return (byte)managedHandle.get(seg);
+    }
+
+    @SuppressWarnings("restricted")
+    static final float getGlyphTopLeftX(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        return (float)topLeftXHandle.get(seg);
+    }
+
+    @SuppressWarnings("restricted")
+    static final float getGlyphTopLeftY(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        return (float)topLeftYHandle.get(seg);
+    }
+
+    @SuppressWarnings("restricted")
+    static final long getGlyphCellInfo(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        return ((MemorySegment)cellInfoHandle.get(seg)).address();
+    }
+
+    @SuppressWarnings("restricted")
+    static final void setGlyphCellInfo(long ptr, long val) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        MemorySegment segval = MemorySegment.ofAddress(val);
+        cellInfoHandle.set(seg, segval);
+    }
+
+    @SuppressWarnings("restricted")
+    static final long getGlyphImagePtr(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        return ((MemorySegment)imageHandle.get(seg)).address();
+    }
+
+    @SuppressWarnings("restricted")
+    static final MemorySegment getGlyphPixelData(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        char hgt = (char)heightHandle.get(seg);
+        char rb = (char)rowBytesHandle.get(seg);
+        MemorySegment pixelData = (MemorySegment)imageHandle.get(seg);
+        pixelData = pixelData.reinterpret(rb * hgt);
+        return pixelData;
+    }
+
+    @SuppressWarnings("restricted")
+    static final byte[] getGlyphPixelBytes(long ptr) {
+        MemorySegment seg = MemorySegment.ofAddress(ptr);
+        seg = seg.reinterpret(GLYPHIMAGESIZE);
+        char hgt = (char)heightHandle.get(seg);
+        char rb = (char)rowBytesHandle.get(seg);
+        MemorySegment pixelData = (MemorySegment)imageHandle.get(seg);
+        int sz = rb * hgt;
+        pixelData = pixelData.reinterpret(sz);
+        return pixelData.toArray(ValueLayout.JAVA_BYTE);
+    }
+
+    static final byte getPixelByte(MemorySegment pixelData, long index) {
+       return pixelData.getAtIndex(JAVA_BYTE, index);
+    }
 
     static {
         initStatic();
@@ -139,24 +265,6 @@ public final class StrikeCache {
 
     @SuppressWarnings("removal")
     private static void initStatic() {
-
-        long[] nativeInfo = new long[13];
-        getGlyphCacheDescription(nativeInfo);
-        //Can also get address size from Unsafe class :-
-        //nativeAddressSize = unsafe.addressSize();
-        nativeAddressSize = (int)nativeInfo[0];
-        glyphInfoSize     = (int)nativeInfo[1];
-        xAdvanceOffset    = (int)nativeInfo[2];
-        yAdvanceOffset    = (int)nativeInfo[3];
-        widthOffset       = (int)nativeInfo[4];
-        heightOffset      = (int)nativeInfo[5];
-        rowBytesOffset    = (int)nativeInfo[6];
-        topLeftXOffset    = (int)nativeInfo[7];
-        topLeftYOffset    = (int)nativeInfo[8];
-        pixelDataOffset   = (int)nativeInfo[9];
-        invisibleGlyphPtr = nativeInfo[10];
-        cacheCellOffset = (int) nativeInfo[11];
-        managedOffset = (int) nativeInfo[12];
 
         if (nativeAddressSize < 4) {
             throw new InternalError("Unexpected address size for font data: " +
@@ -324,7 +432,7 @@ public final class StrikeCache {
                 ArrayList<Long> gids = null;
 
                 for (int i = 0; i < glyphPtrs.length; i++) {
-                    if (glyphPtrs[i] != 0 && unsafe.getByte(glyphPtrs[i] + managedOffset) == 0) {
+                    if ((glyphPtrs[i] != 0) && getGlyphManaged(glyphPtrs[i]) == 0) {
 
                         if (gids == null) {
                             gids = new ArrayList<Long>();
@@ -350,8 +458,7 @@ public final class StrikeCache {
                 ArrayList<Long> gids = null;
 
                 for (int i=0; i < glyphPtrs.length; i++) {
-                    if (glyphPtrs[i] != 0
-                            && unsafe.getByte(glyphPtrs[i] + managedOffset) == 0) {
+                    if ((glyphPtrs[i] != 0) && getGlyphManaged(glyphPtrs[i]) == 0) {
 
                         if (gids == null) {
                             gids = new ArrayList<Long>();

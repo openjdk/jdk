@@ -218,7 +218,8 @@ public:
 
 static void test_basics(size_t commit_limit, bool is_micro) {
   MetaspaceGtestContext context(commit_limit);
-  MetaspaceArenaTestHelper helper(context, is_micro ? Metaspace::ReflectionMetaspaceType : Metaspace::StandardMetaspaceType, false);
+  const Metaspace::MetaspaceType type = is_micro ? Metaspace::ClassMirrorHolderMetaspaceType : Metaspace::StandardMetaspaceType;
+  MetaspaceArenaTestHelper helper(context, type, false);
 
   helper.allocate_from_arena_with_tests(1);
   helper.allocate_from_arena_with_tests(128);
@@ -278,11 +279,11 @@ TEST_VM(metaspace, MetaspaceArena_test_enlarge_in_place_standard_nc) {
 }
 
 TEST_VM(metaspace, MetaspaceArena_test_enlarge_in_place_micro_c) {
-  test_chunk_enlargment_simple(Metaspace::ReflectionMetaspaceType, true);
+  test_chunk_enlargment_simple(Metaspace::ClassMirrorHolderMetaspaceType, true);
 }
 
 TEST_VM(metaspace, MetaspaceArena_test_enlarge_in_place_micro_nc) {
-  test_chunk_enlargment_simple(Metaspace::ReflectionMetaspaceType, false);
+  test_chunk_enlargment_simple(Metaspace::ClassMirrorHolderMetaspaceType, false);
 }
 
 // Test chunk enlargement:
@@ -291,11 +292,6 @@ TEST_VM(metaspace, MetaspaceArena_test_enlarge_in_place_micro_nc) {
 //  Here, we give it an ideal policy which should enable the initial chunk to grow unmolested
 //  until finish.
 TEST_VM(metaspace, MetaspaceArena_test_enlarge_in_place_2) {
-
-  if (Settings::use_allocation_guard()) {
-    return;
-  }
-
   // Note: internally, chunk in-place enlargement is disallowed if growing the chunk
   //  would cause the arena to claim more memory than its growth policy allows. This
   //  is done to prevent the arena to grow too fast.
@@ -337,11 +333,6 @@ TEST_VM(metaspace, MetaspaceArena_test_enlarge_in_place_2) {
 //  test that in place enlargement correctly fails if growing the chunk would bring us
 //  beyond the max. size of a chunk.
 TEST_VM(metaspace, MetaspaceArena_test_failing_to_enlarge_in_place_max_chunk_size) {
-
-  if (Settings::use_allocation_guard()) {
-    return;
-  }
-
   MetaspaceGtestContext context;
 
   for (size_t first_allocation_size = 1; first_allocation_size <= MAX_CHUNK_WORD_SIZE / 2; first_allocation_size *= 2) {
@@ -372,11 +363,6 @@ TEST_VM(metaspace, MetaspaceArena_test_failing_to_enlarge_in_place_max_chunk_siz
 //  test that in place enlargement correctly fails if growing the chunk would cause more
 //  than doubling its size
 TEST_VM(metaspace, MetaspaceArena_test_failing_to_enlarge_in_place_doubling_chunk_size) {
-
-  if (Settings::use_allocation_guard()) {
-    return;
-  }
-
   MetaspaceGtestContext context;
   MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
 
@@ -399,9 +385,6 @@ TEST_VM(metaspace, MetaspaceArena_test_failing_to_enlarge_in_place_doubling_chun
 // Allocate, deallocate, then allocate the same block again. The second allocate should
 // reuse the deallocated block.
 TEST_VM(metaspace, MetaspaceArena_deallocate) {
-  if (Settings::use_allocation_guard()) {
-    return;
-  }
   for (size_t s = 2; s <= MAX_CHUNK_WORD_SIZE; s *= 2) {
     MetaspaceGtestContext context;
     MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
@@ -452,8 +435,8 @@ static void test_recover_from_commit_limit_hit() {
   // The first MetaspaceArena mimicks a micro loader. This will fill the free
   //  chunk list with very small chunks. We allocate from them in an interleaved
   //  way to cause fragmentation.
-  MetaspaceArenaTestHelper helper1(context, Metaspace::ReflectionMetaspaceType, false);
-  MetaspaceArenaTestHelper helper2(context, Metaspace::ReflectionMetaspaceType, false);
+  MetaspaceArenaTestHelper helper1(context, Metaspace::ClassMirrorHolderMetaspaceType, false);
+  MetaspaceArenaTestHelper helper2(context, Metaspace::ClassMirrorHolderMetaspaceType, false);
 
   // This MetaspaceArena should hit the limit. We use BootMetaspaceType here since
   // it gets a large initial chunk which is committed
@@ -505,10 +488,6 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
                                    bool test_in_place_enlargement)
 {
 
-  if (Settings::use_allocation_guard()) {
-    return;
-  }
-
   // From a MetaspaceArena in a clean room allocate tiny amounts;
   // watch it grow. Used/committed/capacity should not grow in
   // large jumps. Also, different types of MetaspaceArena should
@@ -517,7 +496,9 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
   MetaspaceGtestContext context;
   MetaspaceArenaTestHelper smhelper(context, type, is_class, "Grower");
 
-  MetaspaceArenaTestHelper smhelper_harrasser(context, Metaspace::ReflectionMetaspaceType, true, "Harasser");
+  const Metaspace::MetaspaceType other_type =
+         (type == Metaspace::StandardMetaspaceType) ? Metaspace::ClassMirrorHolderMetaspaceType : Metaspace::StandardMetaspaceType;
+  MetaspaceArenaTestHelper smhelper_harrasser(context, other_type, true, "Harasser");
 
   size_t used = 0, committed = 0, capacity = 0;
   const size_t alloc_words = 16;
@@ -639,16 +620,6 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
 }
 
 // these numbers have to be in sync with arena policy numbers (see memory/metaspace/arenaGrowthPolicy.cpp)
-TEST_VM(metaspace, MetaspaceArena_growth_refl_c_inplace) {
-  test_controlled_growth(Metaspace::ReflectionMetaspaceType, true,
-                         word_size_for_level(CHUNK_LEVEL_1K), true);
-}
-
-TEST_VM(metaspace, MetaspaceArena_growth_refl_c_not_inplace) {
-  test_controlled_growth(Metaspace::ReflectionMetaspaceType, true,
-                         word_size_for_level(CHUNK_LEVEL_1K), false);
-}
-
 TEST_VM(metaspace, MetaspaceArena_growth_anon_c_inplace) {
   test_controlled_growth(Metaspace::ClassMirrorHolderMetaspaceType, true,
                          word_size_for_level(CHUNK_LEVEL_1K), true);
@@ -681,16 +652,6 @@ TEST_VM(metaspace, MetaspaceArena_growth_boot_c_not_inplace) {
                          word_size_for_level(CHUNK_LEVEL_1M), false);
 }
 */
-
-TEST_VM(metaspace, MetaspaceArena_growth_refl_nc_inplace) {
-  test_controlled_growth(Metaspace::ReflectionMetaspaceType, false,
-                         word_size_for_level(CHUNK_LEVEL_2K), true);
-}
-
-TEST_VM(metaspace, MetaspaceArena_growth_refl_nc_not_inplace) {
-  test_controlled_growth(Metaspace::ReflectionMetaspaceType, false,
-                         word_size_for_level(CHUNK_LEVEL_2K), false);
-}
 
 TEST_VM(metaspace, MetaspaceArena_growth_anon_nc_inplace) {
   test_controlled_growth(Metaspace::ClassMirrorHolderMetaspaceType, false,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.function.Supplier;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Hidden;
+import jdk.internal.vm.annotation.JvmtiHideEvents;
 
 /**
  * A one-shot delimited continuation.
@@ -305,6 +306,7 @@ public class Continuation {
     @Hidden
     @DontInline
     @IntrinsicCandidate
+    @JvmtiHideEvents
     private static void enter(Continuation c, boolean isContinue) {
         // This method runs in the "entry frame".
         // A yield jumps to this method's caller as if returning from this method.
@@ -316,6 +318,7 @@ public class Continuation {
     }
 
     @Hidden
+    @JvmtiHideEvents
     private void enter0() {
         target.run();
     }
@@ -340,6 +343,7 @@ public class Continuation {
      * @throws IllegalStateException if not currently in the given {@code scope},
      */
     @Hidden
+    @JvmtiHideEvents
     public static boolean yield(ContinuationScope scope) {
         Continuation cont = JLA.getContinuation(currentCarrierThread());
         Continuation c;
@@ -352,6 +356,7 @@ public class Continuation {
     }
 
     @Hidden
+    @JvmtiHideEvents
     private boolean yield0(ContinuationScope scope, Continuation child) {
         preempted = false;
 
@@ -427,6 +432,7 @@ public class Continuation {
      * Pins the current continuation (enters a critical section).
      * This increments an internal semaphore that, when greater than 0, pins the continuation.
      */
+    @IntrinsicCandidate
     public static native void pin();
 
     /**
@@ -434,6 +440,7 @@ public class Continuation {
      * This decrements an internal semaphore that, when equal 0, unpins the current continuation
      * if pinned with {@link #pin()}.
      */
+    @IntrinsicCandidate
     public static native void unpin();
 
     /**

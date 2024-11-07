@@ -174,6 +174,8 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
       }
     }
 
+    // NB: the string following "source: " is not really a proper file name, but rather
+    // a truncated URI referring to a file. It must be decoded after reading.
 #ifdef _WINDOWS
     // "file:/C:/dir/foo.jar" -> "C:/dir/foo.jar"
     stream->print(" source: %s", cfs->source() + 6);
@@ -258,11 +260,22 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
     if (field_entries != nullptr) {
       for (int i = 0; i < field_entries->length(); i++) {
         ResolvedFieldEntry* rfe = field_entries->adr_at(i);
-        if (rfe->is_resolved(Bytecodes::_getstatic) ||
-            rfe->is_resolved(Bytecodes::_putstatic) ||
-            rfe->is_resolved(Bytecodes::_getfield) ||
+        if (rfe->is_resolved(Bytecodes::_getfield) ||
             rfe->is_resolved(Bytecodes::_putfield)) {
           list.at_put(rfe->constant_pool_index(), true);
+          print = true;
+        }
+      }
+    }
+
+    Array<ResolvedMethodEntry>* method_entries = cp->cache()->resolved_method_entries();
+    if (method_entries != nullptr) {
+      for (int i = 0; i < method_entries->length(); i++) {
+        ResolvedMethodEntry* rme = method_entries->adr_at(i);
+        if (rme->is_resolved(Bytecodes::_invokevirtual) ||
+            rme->is_resolved(Bytecodes::_invokespecial) ||
+            rme->is_resolved(Bytecodes::_invokeinterface)) {
+          list.at_put(rme->constant_pool_index(), true);
           print = true;
         }
       }
@@ -276,7 +289,9 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
       if (list.at(i)) {
         constantTag cp_tag = cp->tag_at(i).value();
         assert(cp_tag.value() == JVM_CONSTANT_Class ||
-               cp_tag.value() == JVM_CONSTANT_Fieldref, "sanity");
+               cp_tag.value() == JVM_CONSTANT_Fieldref ||
+               cp_tag.value() == JVM_CONSTANT_Methodref||
+               cp_tag.value() == JVM_CONSTANT_InterfaceMethodref, "sanity");
         stream->print(" %d", i);
       }
     }

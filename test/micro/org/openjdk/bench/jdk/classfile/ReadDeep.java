@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,11 +101,11 @@ public class ReadDeep extends AbstractCorpusBenchmark {
         for (byte[] bytes : classes) {
             int[] count = new int[1];
             ClassModel cm = cc.parse(bytes);
-            cm.forEachElement(ce -> {
+            cm.forEach(ce -> {
                 if (ce instanceof MethodModel mm) {
-                    mm.forEachElement(me -> {
+                    mm.forEach(me -> {
                         if (me instanceof CodeModel xm) {
-                            xm.forEachElement(xe -> {
+                            xm.forEach(xe -> {
                                 if (xe instanceof LoadInstruction) {
                                     ++count[0];
                                 }

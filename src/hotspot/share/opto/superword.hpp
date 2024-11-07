@@ -25,6 +25,7 @@
 #define SHARE_OPTO_SUPERWORD_HPP
 
 #include "opto/vectorization.hpp"
+#include "opto/vtransform.hpp"
 #include "utilities/growableArray.hpp"
 
 //
@@ -367,6 +368,10 @@ public:
   Node* same_inputs_at_index_or_null(const Node_List* pack, const int index) const;
   VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
 
+  Node_List* pack_input_at_index_or_null(const Node_List* pack, const int index) const {
+    return strided_pack_input_at_index_or_null(pack, index, 1, 0);
+  }
+
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
 public:
@@ -599,13 +604,6 @@ private:
 
   DEBUG_ONLY(void verify_packs() const;)
 
-  bool schedule_and_apply();
-  bool apply(Node_List& memops_schedule);
-  void apply_memops_reordering_with_schedule(Node_List& memops_schedule);
-  bool apply_vectorization();
-  // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
-  Node* vector_opd(Node_List* p, int opd_idx);
-
   // Can code be generated for the pack, restricted to size nodes?
   bool implemented(const Node_List* pack, const uint size) const;
   // Find the maximal implemented size smaller or equal to the packs size
@@ -625,16 +623,9 @@ private:
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx) const;
 
-  // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
-  BasicType longer_type_for_conversion(Node* n) const;
-
   bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
-  static LoadNode::ControlDependency control_dependency(Node_List* p);
-
-  // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
-  void determine_mem_ref_and_aw_for_main_loop_alignment();
-  void adjust_pre_loop_limit_to_align_main_loop_vectors();
+  bool schedule_and_apply() const;
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

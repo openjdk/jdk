@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class G1HeapRegion;
 
 // Determines the regions in the heap that should be part of the compaction and
 // distributes them among the compaction queues in round-robin fashion.
-class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
+class G1DetermineCompactionQueueClosure : public G1HeapRegionClosure {
   G1CollectedHeap* _g1h;
   G1FullCollector* _collector;
   uint _cur_worker;
@@ -62,7 +62,7 @@ public:
 
 class G1FullGCPrepareTask : public G1FullGCTask {
   volatile bool     _has_free_compaction_targets;
-  HeapRegionClaimer _hrclaimer;
+  G1HeapRegionClaimer _hrclaimer;
 
   void set_has_free_compaction_targets();
 
@@ -74,7 +74,7 @@ public:
   bool has_free_compaction_targets();
 
 private:
-  class G1CalculatePointersClosure : public HeapRegionClosure {
+  class G1CalculatePointersClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1FullCollector* _collector;
     G1CMBitMap* _bitmap;

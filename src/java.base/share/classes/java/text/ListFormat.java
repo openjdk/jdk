@@ -356,7 +356,7 @@ public final class ListFormat extends Format {
     public String format(List<String> input) {
         Objects.requireNonNull(input);
 
-        return format(input, new StringBuffer(),
+        return format(input, StringBufFactory.of(),
                 DontCareFieldPosition.INSTANCE).toString();
     }
 
@@ -381,6 +381,18 @@ public final class ListFormat extends Format {
         Objects.requireNonNull(obj);
         Objects.requireNonNull(toAppendTo);
 
+        return format(obj, StringBufFactory.of(toAppendTo)).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(Object obj, StringBuf toAppendTo, FieldPosition pos) {
+        Objects.requireNonNull(obj);
+        Objects.requireNonNull(toAppendTo);
+
+        return format(obj, toAppendTo);
+    }
+
+    private StringBuf format(Object obj, StringBuf toAppendTo) {
         if (obj instanceof Object[] objs) {
             return generateMessageFormat(objs).format(objs, toAppendTo, DontCareFieldPosition.INSTANCE);
         } else if (obj instanceof List<?> objs) {

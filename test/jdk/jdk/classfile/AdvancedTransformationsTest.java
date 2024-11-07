@@ -77,7 +77,7 @@ class AdvancedTransformationsTest {
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
             var cc = ClassFile.of();
             var clm = cc.parse(in.readAllBytes());
-            cc.verify(cc.transform(clm, (clb, cle) -> {
+            cc.verify(cc.transformClass(clm, (clb, cle) -> {
                 if (cle instanceof MethodModel mm) {
                     clb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel com) {
@@ -85,10 +85,10 @@ class AdvancedTransformationsTest {
                             mb.transformCode(com, new CodeTransform() {
                                 @Override
                                 public void atStart(CodeBuilder builder) {
-                                    builder.allocateLocal(TypeKind.ReferenceType);
-                                    builder.allocateLocal(TypeKind.LongType);
-                                    builder.allocateLocal(TypeKind.IntType);
-                                    builder.allocateLocal(TypeKind.DoubleType);
+                                    builder.allocateLocal(TypeKind.REFERENCE);
+                                    builder.allocateLocal(TypeKind.LONG);
+                                    builder.allocateLocal(TypeKind.INT);
+                                    builder.allocateLocal(TypeKind.DOUBLE);
                                 }
                                 @Override
                                 public void accept(CodeBuilder builder, CodeElement element) {
@@ -303,7 +303,7 @@ class AdvancedTransformationsTest {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return ClassFile.of().transform(target,
+        return ClassFile.of().transformClass(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {
@@ -324,7 +324,7 @@ class AdvancedTransformationsTest {
                                                 var storeStack = new ArrayDeque<StoreInstruction>();
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                    storeStack.push(StoreInstruction.of(TypeKind.REFERENCE, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
                                                     var tk = TypeKind.from(pt);
                                                     storeStack.push(StoreInstruction.of(tk, slot));
@@ -334,7 +334,7 @@ class AdvancedTransformationsTest {
 
                                                 //inlined target locals must be shifted based on the actual instrumentor locals
                                                 codeBuilder.block(inlinedBlockBuilder -> inlinedBlockBuilder
-                                                        .transform(targetCodeModel, CodeLocalsShifter.of(mm.flags(), mm.methodTypeSymbol())
+                                                    .transform(targetCodeModel, CodeLocalsShifter.of(mm.flags(), mm.methodTypeSymbol())
                                                         .andThen(CodeRelabeler.of())
                                                         .andThen((innerBuilder, shiftedTargetCode) -> {
                                                             //returns must be replaced with jump to the end of the inlined method

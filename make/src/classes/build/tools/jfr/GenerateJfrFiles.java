@@ -668,7 +668,7 @@ public class GenerateJfrFiles {
             out.write("  // add named struct members also.");
             out.write("  struct {");
             out.write("    jfrNativeEventSetting pad[NUMBER_OF_RESERVED_EVENTS];");
-            for (TypeElement t : metadata.getEventsAndStructs()) {
+            for (TypeElement t : metadata.getEvents()) {
                 out.write("    jfrNativeEventSetting " + t.name + ";");
             }
             out.write("  } ev;");

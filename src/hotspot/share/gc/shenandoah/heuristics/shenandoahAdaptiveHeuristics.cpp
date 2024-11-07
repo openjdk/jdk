@@ -97,7 +97,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
                      byte_size_in_proper_unit(min_garbage), proper_unit_for_byte_size(min_garbage));
 
   // Better select garbage-first regions
-  QuickSort::sort<RegionData>(data, (int)size, compare_by_garbage, false);
+  QuickSort::sort(data, size, compare_by_garbage);
 
   size_t cur_cset = 0;
   size_t cur_garbage = 0;
@@ -242,7 +242,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   double avg_cycle_time = _gc_time_history->davg() + (_margin_of_error_sd * _gc_time_history->dsd());
   double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
-  if (avg_cycle_time > allocation_headroom / avg_alloc_rate) {
+  if (avg_cycle_time * avg_alloc_rate > allocation_headroom) {
     log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
                  avg_cycle_time * 1000,
                  byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),

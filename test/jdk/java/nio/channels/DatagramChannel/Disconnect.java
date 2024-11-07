@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.io.IOException;
+
 import jdk.test.lib.net.IPSupport;
 
 public class Disconnect {
@@ -42,25 +43,35 @@ public class Disconnect {
 
         // test with default protocol family
         try (DatagramChannel dc = DatagramChannel.open()) {
-            test(dc);
-            test(dc);
+            InetAddress lo = InetAddress.getLoopbackAddress();
+            System.out.println("Testing with default family and " + lo);
+            test(dc, lo);
+            test(dc, lo);
         }
 
         if (IPSupport.hasIPv4()) {
             // test with IPv4 only
             try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)) {
-                test(dc);
-                test(dc);
+                InetAddress lo4 = InetAddress.ofLiteral("127.0.0.1");
+                System.out.println("Testing with INET family and " + lo4);
+                test(dc, lo4);
+                test(dc, lo4);
             }
         }
 
         if (IPSupport.hasIPv6()) {
             // test with IPv6 only
             try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET6)) {
-                test(dc);
-                test(dc);
+                InetAddress lo6 = InetAddress.ofLiteral("::1");
+                System.out.println("Testing with INET6 family and " + lo6);
+                test(dc, lo6);
+                test(dc, lo6);
             }
         }
+    }
+
+    static int getLocalPort(DatagramChannel ch) throws IOException {
+        return ((InetSocketAddress) ch.getLocalAddress()).getPort();
     }
 
     /**
@@ -68,17 +79,25 @@ public class Disconnect {
      * a second or subsequent time with the same DatagramChannel instance to check
      * that disconnect works as expected.
      */
-    static void test(DatagramChannel dc) throws IOException {
+    static void test(DatagramChannel dc, InetAddress lo) throws IOException {
         try (DatagramChannel server = DatagramChannel.open()) {
-            server.bind(new InetSocketAddress(0));
+            server.bind(new InetSocketAddress(lo, 0));
 
-            InetAddress lh = InetAddress.getLocalHost();
-            dc.connect(new InetSocketAddress(lh, server.socket().getLocalPort()));
+            SocketAddress dcbound = dc.getLocalAddress();
+            dc.connect(new InetSocketAddress(lo, server.socket().getLocalPort()));
+            System.out.println("dc bound to " + dcbound + " and connected from " +
+                    dc.getLocalAddress() + " to " + dc.getRemoteAddress());
 
             dc.write(ByteBuffer.wrap("hello".getBytes()));
 
-            ByteBuffer bb = ByteBuffer.allocate(100);
-            server.receive(bb);
+            if (getLocalPort(dc) != getLocalPort(server)) {
+                ByteBuffer bb = ByteBuffer.allocate(100);
+                server.receive(bb);
+            } else {
+                // some systems may allow dc and server to bind to the same port.
+                // when that happen the datagram may never be received
+                System.out.println("Server and clients are bound to the same port: skipping receive");
+            }
 
             dc.disconnect();
 

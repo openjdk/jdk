@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -36,12 +37,20 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.LongFunction;
 import java.util.stream.IntStream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardOpenOption.*;
 
 /*
  * @test
@@ -711,6 +720,19 @@ public class EqualsCompareTest {
                 return IntStream.of(from, from + 1, from + 2, to / 2 - 1, to / 2, to / 2 + 1, to - 2, to - 1, to)
                         .filter(i -> i >= from && i <= to)
                         .distinct().toArray();
+        }
+    }
+
+    @Test
+    void testHashCode() throws IOException {
+        byte[] bytes = "hello world".getBytes(UTF_8);
+        Path path = Files.createTempFile("", "");
+        Files.write(path, bytes);
+        try (FileChannel fc = FileChannel.open(path, READ, DELETE_ON_CLOSE)) {
+            MappedByteBuffer one = fc.map(FileChannel.MapMode.READ_ONLY, 0, bytes.length);
+            ByteBuffer two = ByteBuffer.wrap(bytes);
+            Assert.assertEquals(one, two);
+            Assert.assertEquals(one.hashCode(), two.hashCode());
         }
     }
 }

@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8194743
+ * @bug 8334252
  * @summary Test lambda declared in early construction context
  * @enablePreview
  */

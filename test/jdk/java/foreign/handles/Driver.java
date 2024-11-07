@@ -24,6 +24,6 @@
 /*
  * @test
  * @build invoker_module/* lookup_module/*
- * @run testng/othervm --enable-native-access=invoker_module
+ * @run testng/othervm --illegal-native-access=deny --enable-native-access=invoker_module
  *                     lookup_module/handle.lookup.MethodHandleLookup
  */

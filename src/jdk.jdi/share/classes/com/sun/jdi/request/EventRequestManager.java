@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,8 +261,8 @@ public interface EventRequestManager extends Mirror {
      * }</pre>
      *
      * @param thread the thread in which to step
-     * @param depth the step depth
      * @param size the step size
+     * @param depth the step depth
      * @return the created {@link StepRequest}
      * @throws DuplicateRequestException if there is already a pending
      * step request for the specified thread.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,10 +148,6 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   if (!m.is_forwarded()) {
     return copy_unmarked_to_survivor_space<promote_immediately>(o, m);
   } else {
-    // Ensure any loads from the forwardee follow all changes that precede
-    // the release-cmpxchg that performed the forwarding, possibly in some
-    // other thread.
-    OrderAccess::acquire();
     // Return the already installed forwardee.
     return m.forwardee();
   }
@@ -253,13 +249,12 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   // Copy obj
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(o), cast_from_oop<HeapWord*>(new_obj), new_obj_size);
 
-  // Parallel GC claims with a release - so other threads might access this object
-  // after claiming and they should see the "completed" object.
-  ContinuationGCSupport::transform_stack_chunk(new_obj);
-
   // Now we have to CAS in the header.
-  // Make copy visible to threads reading the forwardee.
-  oop forwardee = o->forward_to_atomic(new_obj, test_mark, memory_order_release);
+  // Because the forwarding is done with memory_order_relaxed there is no
+  // ordering with the above copy.  Clients that get the forwardee must not
+  // examine its contents without other synchronization, since the contents
+  // may not be up to date for them.
+  oop forwardee = o->forward_to_atomic(new_obj, test_mark, memory_order_relaxed);
   if (forwardee == nullptr) {  // forwardee is null when forwarding is successful
     // We won any races, we "own" this object.
     assert(new_obj == o->forwardee(), "Sanity");
@@ -272,6 +267,8 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       assert(young_space()->contains(new_obj), "Attempt to push non-promoted obj");
     }
 
+    ContinuationGCSupport::transform_stack_chunk(new_obj);
+
     // Do the size comparison first with new_obj_size, which we
     // already have. Hopefully, only a few objects are larger than
     // _min_array_size_for_chunking, and most of them will be arrays.
@@ -279,9 +276,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     if (new_obj_size > _min_array_size_for_chunking &&
         new_obj->is_objArray() &&
         PSChunkLargeArrays) {
-      // we'll chunk it
-      push_depth(ScannerTask(PartialArrayScanTask(o)));
-      TASKQUEUE_STATS_ONLY(++_arrays_chunked; ++_array_chunk_pushes);
+      push_objArray(o, new_obj);
     } else {
       // we'll just push its contents
       push_contents(new_obj);
@@ -295,9 +290,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     return new_obj;
   } else {
     // We lost, someone else "owns" this object.
-    // Ensure loads from the forwardee follow all changes that preceded the
-    // release-cmpxchg that performed the forwarding in another thread.
-    OrderAccess::acquire();
 
     assert(o->is_forwarded(), "Object must be forwarded if the cas failed.");
     assert(o->forwardee() == forwardee, "invariant");
@@ -328,9 +320,9 @@ inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
 }
 
 inline void PSPromotionManager::process_popped_location_depth(ScannerTask task) {
-  if (task.is_partial_array_task()) {
+  if (task.is_partial_array_state()) {
     assert(PSChunkLargeArrays, "invariant");
-    process_array_chunk(task.to_partial_array_task());
+    process_array_chunk(task.to_partial_array_state());
   } else {
     if (task.is_narrow_oop_ptr()) {
       assert(UseCompressedOops, "Error");
@@ -347,7 +339,7 @@ inline bool PSPromotionManager::steal_depth(int queue_num, ScannerTask& t) {
 
 #if TASKQUEUE_STATS
 void PSPromotionManager::record_steal(ScannerTask task) {
-  if (task.is_partial_array_task()) {
+  if (task.is_partial_array_state()) {
     ++_array_chunk_steals;
   }
 }

@@ -25,8 +25,10 @@
 #ifndef SHARE_CDS_ARCHIVEUTILS_HPP
 #define SHARE_CDS_ARCHIVEUTILS_HPP
 
+#include "cds/cds_globals.hpp"
 #include "cds/serializeClosure.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
@@ -247,7 +249,67 @@ public:
 
 class ArchiveUtils {
 public:
+  static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
+
+  // offset must represent an object of type T in the mapped shared space. Return
+  // a direct pointer to this object.
+  template <typename T> T static from_offset(u4 offset) {
+    T p = (T)(SharedBaseAddress + offset);
+    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    return p;
+  }
+
+  // p must be an archived object. Get its offset from SharedBaseAddress
+  template <typename T> static u4 to_offset(T p) {
+    uintx pn = (uintx)p;
+    uintx base = (uintx)SharedBaseAddress;
+    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    assert(pn > base, "sanity"); // No valid object is stored at 0 offset from SharedBaseAddress
+    uintx offset = pn - base;
+    assert(offset <= MAX_SHARED_DELTA, "range check");
+    return static_cast<u4>(offset);
+  }
+};
+
+class HeapRootSegments {
+private:
+  size_t _base_offset;
+  size_t _count;
+  int _roots_count;
+  int _max_size_in_bytes;
+  int _max_size_in_elems;
+
+public:
+  size_t base_offset() { return _base_offset; }
+  size_t count() { return _count; }
+  int roots_count() { return _roots_count; }
+  int max_size_in_bytes() { return _max_size_in_bytes; }
+  int max_size_in_elems() { return _max_size_in_elems; }
+
+  size_t size_in_bytes(size_t seg_idx);
+  int size_in_elems(size_t seg_idx);
+  size_t segment_offset(size_t seg_idx);
+
+  // Trivial copy assignments are allowed to copy the entire object representation.
+  // We also inline this class into archive header. Therefore, it is important to make
+  // sure any gaps in object representation are initialized to zeroes. This is why
+  // constructors memset before doing field assignments.
+  HeapRootSegments() {
+    memset(this, 0, sizeof(*this));
+  }
+  HeapRootSegments(size_t base_offset, int roots_count, int max_size_in_bytes, int max_size_in_elems) {
+    memset(this, 0, sizeof(*this));
+    _base_offset = base_offset;
+    _count = (roots_count + max_size_in_elems - 1) / max_size_in_elems;
+    _roots_count = roots_count;
+    _max_size_in_bytes = max_size_in_bytes;
+    _max_size_in_elems = max_size_in_elems;
+  }
+
+  // This class is trivially copyable and assignable.
+  HeapRootSegments(const HeapRootSegments&) = default;
+  HeapRootSegments& operator=(const HeapRootSegments&) = default;
 };
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP

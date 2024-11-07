@@ -39,45 +39,57 @@ import java.io.IOException;
  * processing should not continue.
  */
 public final class StreamBarrier implements Closeable {
-
+    private final HiddenWait lock = new HiddenWait();
     private boolean activated = false;
     private boolean used = false;
     private long end = Long.MAX_VALUE;
 
     // Blocks thread until barrier is deactivated
-    public synchronized void check() {
-        while (activated) {
-            try {
-                this.wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+    public void check() {
+        synchronized (lock) {
+            while (activated) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }
 
-    public synchronized void setStreamEnd(long timestamp) {
-        end = timestamp;
+    public void setStreamEnd(long timestamp) {
+        synchronized(lock) {
+            end = timestamp;
+        }
     }
 
-    public synchronized long getStreamEnd() {
-        return end;
+    public long getStreamEnd() {
+        synchronized(lock) {
+            return end;
+        }
     }
 
-    public synchronized void activate() {
-        activated = true;
-        used = true;
+    public void activate() {
+        synchronized (lock) {
+            activated = true;
+            used = true;
+        }
     }
 
     @Override
     public synchronized void close() throws IOException {
-        activated = false;
-        this.notifyAll();
+        synchronized (lock) {
+            activated = false;
+            lock.notifyAll();
+        }
     }
 
     /**
      * Returns {@code true) if barrier is, or has been, in active state, {@code false) otherwise.
      */
-    public synchronized boolean used() {
-        return used;
+    public boolean used() {
+        synchronized (lock) {
+            return used;
+        }
     }
 }

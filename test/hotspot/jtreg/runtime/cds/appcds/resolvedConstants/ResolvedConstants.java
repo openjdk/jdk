@@ -54,6 +54,8 @@ public class ResolvedConstants {
                        "-cp", appJar,
                        "-Xlog:cds+resolve=trace");
         CDSTestUtils.createArchiveAndCheck(opts)
+          // Class References ---
+
             // Always resolve reference when a class references itself
             .shouldMatch("cds,resolve.*archived klass.* ResolvedConstantsApp app => ResolvedConstantsApp app")
 
@@ -70,6 +72,8 @@ public class ResolvedConstants {
             // class yet (i.e., there's no initiaited class entry for System in the app loader's dictionary)
             .shouldMatch("cds,resolve.*reverted klass.* ResolvedConstantsApp .*java/lang/System")
 
+          // Field References ---
+
             // Always resolve references to fields in the current class or super class(es)
             .shouldMatch("cds,resolve.*archived field.* ResolvedConstantsBar => ResolvedConstantsBar.b:I")
             .shouldMatch("cds,resolve.*archived field.* ResolvedConstantsBar => ResolvedConstantsBar.a:I")
@@ -80,11 +84,45 @@ public class ResolvedConstants {
             .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsFoo    ResolvedConstantsBar.a:I")
             .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsFoo    ResolvedConstantsBar.b:I")
 
-
             // Do not resolve field references to unrelated classes
             .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsApp    ResolvedConstantsBar.a:I")
             .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsApp    ResolvedConstantsBar.b:I")
 
+          // Method References ---
+
+            // Should resolve references to own constructor
+            .shouldMatch("cds,resolve.*archived method .* ResolvedConstantsApp ResolvedConstantsApp.<init>:")
+            // Should resolve references to super constructor
+            .shouldMatch("cds,resolve.*archived method .* ResolvedConstantsApp java/lang/Object.<init>:")
+
+            // Should resolve interface methods in VM classes
+            .shouldMatch("cds,resolve.*archived interface method .* ResolvedConstantsApp java/lang/Runnable.run:")
+
+            // Should resolve references to own non-static method (private or public)
+            .shouldMatch("archived method.*: ResolvedConstantsBar ResolvedConstantsBar.doBar:")
+            .shouldMatch("archived method.*: ResolvedConstantsApp ResolvedConstantsApp.privateInstanceCall:")
+            .shouldMatch("archived method.*: ResolvedConstantsApp ResolvedConstantsApp.publicInstanceCall:")
+
+            // Should not resolve references to static method
+            .shouldNotMatch(" archived method CP entry.*: ResolvedConstantsApp ResolvedConstantsApp.staticCall:")
+
+            // Should resolve references to method in super type
+            .shouldMatch(" archived method CP entry.*: ResolvedConstantsBar ResolvedConstantsFoo.doBar:")
+
+            // App class cannot resolve references to methods in boot classes:
+            //    When the app class loader tries to resolve a class X that's normally loaded by
+            //    the boot loader, it's possible for the app class loader to get a different copy of
+            //    X (by using MethodHandles.Lookup.defineClass(), etc). Therefore, let's be on
+            //    the side of safety and revert all such references.
+            //
+            //    This will be addressed in JDK-8315737.
+            .shouldMatch("reverted method.*: ResolvedConstantsApp java/io/PrintStream.println:")
+            .shouldMatch("reverted method.*: ResolvedConstantsBar java/lang/Class.getName:")
+
+            // Should not resolve methods in unrelated classes.
+            .shouldMatch("reverted method.*: ResolvedConstantsApp ResolvedConstantsBar.doit:")
+
+          // End ---
             ;
     }
 }
@@ -92,7 +130,11 @@ public class ResolvedConstants {
 class ResolvedConstantsApp implements Runnable {
     public static void main(String args[]) {
         System.out.println("Hello ResolvedConstantsApp");
-        Object a = new ResolvedConstantsApp();
+        ResolvedConstantsApp app = new ResolvedConstantsApp();
+        ResolvedConstantsApp.staticCall();
+        app.privateInstanceCall();
+        app.publicInstanceCall();
+        Object a = app;
         ((Runnable)a).run();
 
         ResolvedConstantsFoo foo = new ResolvedConstantsFoo();
@@ -101,6 +143,10 @@ class ResolvedConstantsApp implements Runnable {
         bar.b ++;
         bar.doit();
     }
+    private static void staticCall() {}
+    private void privateInstanceCall() {}
+    public void publicInstanceCall() {}
+
     public void run() {}
 }
 
@@ -124,5 +170,7 @@ class ResolvedConstantsBar extends ResolvedConstantsFoo {
         System.out.println("b = " + b);
 
         doBar(this);
+
+        ((ResolvedConstantsFoo)this).doBar(this);
     }
 }

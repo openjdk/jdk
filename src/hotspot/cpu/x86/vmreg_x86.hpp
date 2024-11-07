@@ -28,7 +28,8 @@
 #include "register_x86.hpp"
 
 inline bool is_Register() {
-  return (unsigned int) value() < (unsigned int) ConcreteRegisterImpl::max_gpr;
+  int uarch_max_gpr = Register::max_slots_per_register * Register::available_gp_registers();
+  return (unsigned int) value() < (unsigned int) uarch_max_gpr;
 }
 
 inline bool is_FloatRegister() {

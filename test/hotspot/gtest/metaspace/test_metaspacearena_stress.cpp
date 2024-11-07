@@ -106,15 +106,13 @@ class MetaspaceArenaTestBed : public CHeapObj<mtInternal> {
     // - alignment/padding of allocations
     // - inside used counter contains blocks in free list
     // - free block list splinter threshold
-    // - if +MetaspaceGuardAllocations, guard costs
 
     // Since what we deallocated may have been given back to us in a following allocation,
     // we only know fore sure we allocated what we did not give back.
     const size_t at_least_allocated = _alloc_count.total_size() - _dealloc_count.total_size();
 
     // At most we allocated this:
-    const size_t max_word_overhead_per_alloc =
-        4 + (metaspace::Settings::use_allocation_guard() ? 4 : 0);
+    constexpr size_t max_word_overhead_per_alloc = 4;
     const size_t at_most_allocated = _alloc_count.total_size() + max_word_overhead_per_alloc * _alloc_count.count();
 
     ASSERT_LE(at_least_allocated, in_use_stats._used_words - stats._free_blocks_word_size);
@@ -229,7 +227,7 @@ class MetaspaceArenaTest {
   void create_random_test_bed_at(int slotindex) {
     SizeRange allocation_range(1, 100); // randomize too?
     const ArenaGrowthPolicy* growth_policy = ArenaGrowthPolicy::policy_for_space_type(
-        (fifty_fifty() ? Metaspace::StandardMetaspaceType : Metaspace::ReflectionMetaspaceType),
+        (fifty_fifty() ? Metaspace::StandardMetaspaceType : Metaspace::ClassMirrorHolderMetaspaceType),
          fifty_fifty());
     create_new_test_bed_at(slotindex, growth_policy, allocation_range);
    }
