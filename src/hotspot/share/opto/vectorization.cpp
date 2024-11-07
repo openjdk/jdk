@@ -282,7 +282,7 @@ void VLoopDependencyGraph::construct() {
         if (n1->is_Load() && n2->is_Load()) { continue; }
 
         const XPointer& p2 = _vpointers.xpointer(n2);
-        if (!p1.never_overlaps_with(p2)) {
+        if (!p1.never_overlaps_with(p2, _vloop)) {
           // Possibly overlapping memory
           memory_pred_edges.append(_body.bb_idx(n2));
         }
@@ -485,12 +485,25 @@ int VPointer::cmp_for_sort(const VPointer** p1, const VPointer** p2) {
   return 0; // equal
 }
 
-bool XPointer::never_overlaps_with(const XPointer& other) const {
+bool XPointer::never_overlaps_with(const XPointer& other, const VLoop& vloop) const {
   const MemPointerDecomposedForm& s1 = decomposed_form();
   const MemPointerDecomposedForm& s2 = other.decomposed_form();
-  //const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA _trace ));
+  const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA vloop.mptrace() ));
+
   // TODO
-  return false;
+  bool is_never_overlap = false;
+
+#ifndef PRODUCT
+  if (vloop.mptrace().is_trace_overlap()) {
+    tty->print("Never Overlap: %s, aliasing: ", is_never_overlap ? "true" : "false");
+    //tty->print("Never Overlap: %s, because size = %d and aliasing = ",
+    //           is_adjacent ? "true" : "false", size);
+    aliasing.print_on(tty);
+    tty->cr();
+  }
+#endif
+
+  return is_never_overlap;
 }
 
 #ifndef PRODUCT

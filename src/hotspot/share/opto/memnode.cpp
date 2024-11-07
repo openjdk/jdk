@@ -2933,7 +2933,8 @@ bool MergePrimitiveStores::is_adjacent_pair(const StoreNode* use_store, const St
 #ifndef PRODUCT
   const TraceMemPointer trace(is_trace_pointer(),
                               is_trace_aliasing(),
-                              is_trace_adjacency());
+                              is_trace_adjacency(),
+                              true);
 #endif
   const MemPointer pointer_use(use_store NOT_PRODUCT( COMMA trace ));
   const MemPointer pointer_def(def_store NOT_PRODUCT( COMMA trace ));

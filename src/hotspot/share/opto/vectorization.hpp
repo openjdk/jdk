@@ -87,6 +87,7 @@ private:
   CountedLoopEndNode* _pre_loop_end; // cache access to pre-loop for main loops only
 
   NOT_PRODUCT(VTrace _vtrace;)
+  NOT_PRODUCT(TraceMemPointer _mptrace; )
 
   static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
   static constexpr char const* FAILURE_UNROLL_ONLY        = "loop only wants to be unrolled";
@@ -104,7 +105,18 @@ public:
     _cl        (nullptr),
     _cl_exit   (nullptr),
     _iv        (nullptr),
-    _pre_loop_end (nullptr) {}
+    _pre_loop_end (nullptr)
+#ifndef PRODUCT
+    COMMA
+    _mptrace(TraceMemPointer(
+      _vtrace.is_trace(TraceAutoVectorizationTag::POINTER),
+      _vtrace.is_trace(TraceAutoVectorizationTag::ALIASING),
+      _vtrace.is_trace(TraceAutoVectorizationTag::ADJACENCY),
+      _vtrace.is_trace(TraceAutoVectorizationTag::OVERLAP)
+    ))
+#endif
+    {}
+
   NONCOPYABLE(VLoop);
 
   IdealLoopTree* lpt()        const { return _lpt; };
@@ -135,7 +147,8 @@ public:
   static bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
 
 #ifndef PRODUCT
-  const VTrace& vtrace()      const { return _vtrace; }
+  const VTrace& vtrace()           const { return _vtrace; }
+  const TraceMemPointer& mptrace() const { return _mptrace; }
 
   bool is_trace_preconditions() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::PRECONDITIONS);
@@ -163,10 +176,6 @@ public:
 
   bool is_trace_vpointers() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
-  }
-
-  bool is_trace_pointer_analysis() const {
-    return _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
 #endif
 
@@ -681,8 +690,6 @@ private:
   const jint _size;
   const bool _is_valid;
 
-  //NOT_PRODUCT( const TraceMemPointer& _trace; )
-
 public:
   // Default constructor, e.g. for GrowableArray.
   XPointer() :
@@ -697,9 +704,11 @@ public:
     _is_valid(init_is_valid(_decomposed_form, vloop))
   {
 #ifndef PRODUCT
-    if (vloop.is_trace_pointer_analysis()) {
+    if (vloop.mptrace().is_trace_pointer()) {
+      tty->print_cr("XPointer::XPointer:");
+      tty->print("mem: "); mem->dump();
       print_on(tty);
-      mem->dump();
+      mem->in(MemNode::Address)->dump_bfs(7, 0, "d");
     }
 #endif
   }
@@ -709,7 +718,7 @@ public:
   const MemPointerDecomposedForm& decomposed_form() const { return _decomposed_form; }
 
   // Aliasing
-  bool never_overlaps_with(const XPointer& other) const;
+  bool never_overlaps_with(const XPointer& other, const VLoop& vloop) const;
 
   NOT_PRODUCT( void print_on(outputStream* st) const; )
 

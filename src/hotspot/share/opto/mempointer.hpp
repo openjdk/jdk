@@ -345,22 +345,27 @@
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
 private:
+  // TODO rename and possibly extend, also rename tags
   const bool _is_trace_pointer;
   const bool _is_trace_aliasing;
   const bool _is_trace_adjacency;
+  const bool _is_trace_overlap;
 
 public:
   TraceMemPointer(const bool is_trace_pointer,
                   const bool is_trace_aliasing,
-                  const bool is_trace_adjacency) :
+                  const bool is_trace_adjacency,
+                  const bool is_trace_overlap) :
     _is_trace_pointer(  is_trace_pointer),
     _is_trace_aliasing( is_trace_aliasing),
-    _is_trace_adjacency(is_trace_adjacency)
+    _is_trace_adjacency(is_trace_adjacency),
+    _is_trace_overlap(is_trace_overlap)
     {}
 
   bool is_trace_pointer()   const { return _is_trace_pointer; }
   bool is_trace_aliasing()  const { return _is_trace_aliasing; }
   bool is_trace_adjacency() const { return _is_trace_adjacency; }
+  bool is_trace_overlap()   const { return _is_trace_overlap; }
 };
 #endif
 
