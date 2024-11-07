@@ -135,7 +135,7 @@ public class PrintTextTest {
 
         font = new Font(Font.DIALOG, Font.PLAIN, 18);
         scaleTx = AffineTransform.getScaleInstance(-1.25, 1.25);
-        scaleTx.translate(-preferredSize/1.25, 0);
+        scaleTx.translate(-preferredSize / 1.25, 0);
         name = "Page " + page++;
         pt = new PrintText(name, font, scaleTx, false, preferredSize);
         pane.addTab(name, pt);
@@ -144,7 +144,7 @@ public class PrintTextTest {
 
         font = new Font(Font.DIALOG, Font.PLAIN, 18);
         scaleTx = AffineTransform.getScaleInstance(1.25, -1.25);
-        scaleTx.translate(0, -preferredSize/1.25);
+        scaleTx.translate(0, -preferredSize / 1.25);
         name = "Page " + page++;
         pt = new PrintText(name, font, scaleTx, false, preferredSize);
         pane.addTab(name, pt);
@@ -217,6 +217,7 @@ public class PrintTextTest {
         PassFailJFrame.builder()
             .title("PrintTextTest")
             .instructions(INSTRUCTIONS)
+            .testTimeOut(10)
             .columns(60)
             .testUI(f)
             .build()
@@ -247,7 +248,7 @@ public class PrintTextTest {
                         physicalFont = f;
                         return f;
                     }
-             }
+            }
         }
         physicalFont = new Font(Font.DIALOG, Font.PLAIN, 18);
         return physicalFont;
@@ -380,7 +381,7 @@ public class PrintTextTest {
             gv = f.createGlyphVector(frc, s);
             int ng = gv.getNumGlyphs();
             adv = gv.getGlyphPosition(ng);
-            for (int i=0; i<ng; i++) {
+            for (int i = 0; i < ng; i++) {
                 Point2D gp = gv.getGlyphPosition(i);
                 double gx = gp.getX();
                 double gy = gp.getY();
