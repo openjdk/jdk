@@ -786,7 +786,7 @@ public final class TKit {
                         baseDir, format(comm.common), format(comm.unique1), format(comm.unique2)));
             } else if (!comm.unique1.isEmpty()) {
                 error(String.format(
-                        "assertDirectoryContentEquals%s: Expected %s. Unexpected %s",
+                        "assertDirectoryContentEquals(%s): Expected %s. Unexpected %s",
                         baseDir, format(comm.common), format(comm.unique1)));
             } else if (!comm.unique2.isEmpty()) {
                 error(String.format(
@@ -818,10 +818,18 @@ public final class TKit {
             }
         }
 
-        public DirectoryContentVerifier removeAll(Path ... paths) {
+        public DirectoryContentVerifier removeAll(Collection<Path> paths) {
             Set<Path> newContent = new HashSet<>(content);
-            newContent.removeAll(List.of(paths));
+            newContent.removeAll(paths);
             return new DirectoryContentVerifier(baseDir, newContent);
+        }
+
+        public DirectoryContentVerifier removeAll(Path ... paths) {
+            return removeAll(List.of(paths));
+        }
+
+        public Set<Path> items() {
+            return content;
         }
 
         private DirectoryContentVerifier(Path baseDir, Set<Path> contents) {

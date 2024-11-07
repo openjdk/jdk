@@ -211,7 +211,6 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   }
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
-  _use_secondary_supers_table = UseSecondarySupersTable;
   _max_heap_size = MaxHeapSize;
   _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
@@ -274,7 +273,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
   st->print_cr("- compressed_oops:                %d", _compressed_oops);
   st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
-  st->print_cr("- use_secondary_supers_table:     %d", _use_secondary_supers_table);
   st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_X, _cloned_vtables_offset);
   st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_X, _serialized_data_offset);
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
@@ -2488,11 +2486,6 @@ bool FileMapHeader::validate() {
   if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != UseCompressedClassPointers) {
     log_info(cds)("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
                                "different from runtime, CDS will be disabled.");
-    return false;
-  }
-
-  if (! _use_secondary_supers_table && UseSecondarySupersTable) {
-    log_warning(cds)("The shared archive was created without UseSecondarySupersTable.");
     return false;
   }
 
