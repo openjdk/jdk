@@ -629,8 +629,6 @@ void OptoRuntime::new_array_Type_init() {
   _new_array_tf = TypeFunc::make(domain, range);
 }
 
-
-
 const TypeFunc *OptoRuntime::multianewarray_Type(int ndim) {
   // create input type (domain)
   const int nargs = ndim + 1;
