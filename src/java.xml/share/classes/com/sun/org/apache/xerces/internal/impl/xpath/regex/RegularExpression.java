@@ -23,6 +23,7 @@ package com.sun.org.apache.xerces.internal.impl.xpath.regex;
 import java.text.CharacterIterator;
 import java.util.Locale;
 import java.util.Stack;
+import java.util.concurrent.Semaphore;
 
 import com.sun.org.apache.xerces.internal.util.IntStack;
 
@@ -2015,7 +2016,7 @@ public class RegularExpression implements java.io.Serializable {
         int limit;
         int length;
         Match match;
-        private volatile boolean inuse = true;
+        private Semaphore inuse = new Semaphore(1, true);
         ClosureContext[] closureContexts;
 
         private StringTarget stringTarget;
@@ -2028,8 +2029,6 @@ public class RegularExpression implements java.io.Serializable {
         }
 
         private void resetCommon(int nofclosures) {
-            assert (inuse == true);
-
             this.length = this.limit-this.start;
             this.match = null;
             if (this.closureContexts == null || this.closureContexts.length != nofclosures) {
@@ -2085,25 +2084,12 @@ public class RegularExpression implements java.io.Serializable {
         }
 
         boolean claim() {
-            if (inuse) {
-                return false;
-            }
-            synchronized (this) {
-                if (inuse) {
-                    return false;
-                } else {
-                    inuse = true;
-                    return true;
-                }
-            }
+            return inuse.tryAcquire();
         }
 
         void release() {
-            assert (inuse == true);
-            inuse = false;
+            inuse.release();
         }
-
-        boolean inUse() { return inuse; }
     }
 
     /**
