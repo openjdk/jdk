@@ -773,6 +773,7 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 # jdk_jfr
 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-all
+jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 
