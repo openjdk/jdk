@@ -1198,10 +1198,6 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
     return nullptr;
   }
 
-  // Set stream verification to false for the null class loader.  Verifier::should_verify_for() will
-  // change it to true for -Xverify:all if given.
-  stream->set_verify(false);
-
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   Handle protection_domain;
   ClassLoadInfo cl_info(protection_domain);

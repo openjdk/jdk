@@ -5312,11 +5312,10 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   assert(0 == _access_flags.as_int(), "invariant");
 
   // Figure out whether we can skip format checking (matching classic VM behavior)
-  _need_verify = Verifier::should_verify_for(_loader_data->class_loader(),
-                                             stream->need_verify());
+  _need_verify = Verifier::should_verify_for(_loader_data->class_loader());
 
   // synch back verification state to stream to check for truncation.
-  stream->set_verify(_need_verify);
+  stream->set_check_truncation(_need_verify);
 
   parse_stream(stream, CHECK);
 
