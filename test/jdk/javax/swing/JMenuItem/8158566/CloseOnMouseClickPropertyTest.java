@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,15 @@
  * questions.
  */
 
+import java.io.File;
+import java.awt.image.BufferedImage;
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import javax.swing.JCheckBoxMenuItem;
+import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -40,6 +44,7 @@ import javax.swing.UIManager;
  * @key headful
  * @bug 8158566 8160879 8160977 8158566
  * @summary Provide a Swing property which modifies MenuItemUI behaviour
+ * @run main/othervm/timeout=600 CloseOnMouseClickPropertyTest
  */
 
 public class CloseOnMouseClickPropertyTest {
@@ -51,6 +56,8 @@ public class CloseOnMouseClickPropertyTest {
 
     private static JFrame frame;
     private static JMenu menu;
+    private static Robot robot;
+    private static boolean isShowing;
 
     private static TestItem[] TEST_ITEMS = {
         new TestItem(TestType.CHECK_BOX_MENU_ITEM, true, true),
@@ -86,49 +93,61 @@ public class CloseOnMouseClickPropertyTest {
     };
 
     public static void main(String[] args) throws Exception {
-
+        robot = new Robot();
+        robot.setAutoDelay(100);
         for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
             UIManager.setLookAndFeel(info.getClassName());
+            System.out.println("L&F " + info.getClassName());
             for (TestItem testItem : TEST_ITEMS) {
+                System.out.println("testItem " + testItem);
                 test(testItem);
             }
         }
     }
 
     private static void test(TestItem item) throws Exception {
+        try {
+            SwingUtilities.invokeAndWait(() -> createAndShowGUI(item));
+            robot.waitForIdle();
+            robot.delay(1000);
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
-        SwingUtilities.invokeAndWait(() -> createAndShowGUI(item));
-        robot.waitForIdle();
+            Point point = getClickPoint(true);
+            robot.mouseMove(point.x, point.y);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
+            robot.delay(500);
 
-        Point point = getClickPoint(true);
-        robot.mouseMove(point.x, point.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
+            point = getClickPoint(false);
+            robot.mouseMove(point.x, point.y);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
+            robot.delay(500);
 
-        point = getClickPoint(false);
-        robot.mouseMove(point.x, point.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-
-        SwingUtilities.invokeAndWait(() -> {
-            JMenuItem menuItem = menu.getItem(0);
-            boolean isShowing = menuItem.isShowing();
-            frame.dispose();
+            SwingUtilities.invokeAndWait(() -> {
+                JMenuItem menuItem = menu.getItem(0);
+                isShowing = menuItem.isShowing();
+            });
             if (isShowing ^ item.doNotCloseOnMouseClick()) {
+                Rectangle bounds = frame.getBounds();
+                BufferedImage img = new BufferedImage(bounds.width, bounds.height, TYPE_INT_RGB);
+                ImageIO.write(img, "png", new File("CloseOnMouseClickPropertyTest.png"));
                 throw new RuntimeException("Property is not taken into account!");
             }
-        });
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
 
     private static void createAndShowGUI(TestItem testItem) {
 
         frame = new JFrame();
         frame.setSize(300, 300);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JMenuBar menuBar = new JMenuBar();
         menu = new JMenu("Menu");
