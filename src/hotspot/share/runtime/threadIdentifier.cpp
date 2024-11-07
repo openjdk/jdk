@@ -30,11 +30,9 @@
 static const int64_t INITIAL_TID = 3;
 static volatile int64_t next_thread_id = INITIAL_TID;
 
-#ifdef ASSERT
 int64_t ThreadIdentifier::initial() {
   return INITIAL_TID;
 }
-#endif
 
 int64_t ThreadIdentifier::unsafe_offset() {
   return reinterpret_cast<int64_t>(&next_thread_id);

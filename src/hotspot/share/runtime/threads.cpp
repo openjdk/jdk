@@ -166,7 +166,10 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                           string,
                           CHECK);
 
-  assert(thread->lock_id() == ThreadIdentifier::initial(), "invariant");
+  DEBUG_ONLY(int64_t main_thread_tid = java_lang_Thread::thread_id(thread_oop());)
+  assert(main_thread_tid == ThreadIdentifier::initial(), "");
+  assert(main_thread_tid == thread->lock_id(), "");
+  JFR_ONLY(assert(JFR_JVM_THREAD_ID(thread) == static_cast<traceid>(main_thread_tid), "initial tid mismatch");)
 
   // Set thread status to running since main thread has
   // been started and running.
@@ -537,15 +540,16 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Set the lock_id now since we will run Java code before the Thread instance
   // is even created. The same value will be assigned to the Thread instance on init.
   main_thread->set_lock_id(ThreadIdentifier::next());
-  assert(main_thread->lock_id() == ThreadIdentifier::initial(), "invariant");
 
-  if (!main_thread->set_as_starting_thread()) {
+  if (!Thread::set_as_starting_thread(main_thread)) {
     vm_shutdown_during_initialization(
                                       "Failed necessary internal allocation. Out of swap space");
     main_thread->smr_delete();
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return JNI_ENOMEM;
   }
+
+  JFR_ONLY(Jfr::initialize_main_thread(main_thread);)
 
   // Enable guard page *after* os::create_main_thread(), otherwise it would
   // crash Linux VM, see notes in os_linux.cpp.
