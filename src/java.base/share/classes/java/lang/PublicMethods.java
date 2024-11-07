@@ -105,17 +105,12 @@ final class PublicMethods {
                                String name, // may not be interned
                                Class<?>[] ptypes) {
             // check for matching param types length, then name, then param type equality
-            if (method.getParameterCount() == ptypes.length
-                    && method.getName().equals(name)) {
-                Class<?>[] classes = reflectionFactory.getExecutableSharedParameterTypes(method);
-                for (int i = 0; i < ptypes.length; i++) {
-                    if (ptypes[i] != classes[i]) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            return false;
+            return method.getParameterCount() == ptypes.length &&
+                   method.getName().equals(name) &&
+                   Arrays.equals(
+                       reflectionFactory.getExecutableSharedParameterTypes(method),
+                       ptypes
+                   );
         }
 
         @Override
