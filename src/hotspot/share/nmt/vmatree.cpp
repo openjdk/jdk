@@ -227,7 +227,10 @@ void VMATree::print_on(outputStream* out) {
 }
 #endif
 
-VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
+VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, const MemTag tag) {
+  position from = start;
+  size_t remsize = size;
+
   VMATreap::Range range = _tree.find_enclosing_range(from);
   assert(range.start != nullptr && range.end != nullptr,
          "Setting a memory tag must be done within existing range");
@@ -237,22 +240,22 @@ VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
     return SummaryDiff();
   }
 
-  position end = MIN2(from + size, pos(range.end));
+  position end = MIN2(from + remsize, pos(range.end));
 
   StateType type = out_state(range.start).type();
   SummaryDiff diff;
-  // Ignore any released ranges, these must be mtNone and have no stack.
+  // Ignore any released ranges, these must be mtNone and have no stack
   if (type != StateType::Released) {
     RegionData new_data = RegionData(out_state(range.start).stack(), tag);
     SummaryDiff result = register_mapping(from, end, type, new_data);
     diff.add(result);
   }
 
-  size = size - (end - from);
+  remsize = remsize - (end - from);
   from = end;
 
   // If end < from + sz then there are multiple ranges for which to set the flag.
-  while (end < from + size) {
+  while (end < from + remsize) {
     // Using register_mapping may invalidate the already found range, so we must
     // use find_enclosing_range repeatedly
     range = _tree.find_enclosing_range(from);
@@ -261,14 +264,14 @@ VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
     if (range.start == nullptr || range.end == nullptr) {
       break;
     }
-    end = MIN2(from + size, pos(range.end));
+    end = MIN2(from + remsize, pos(range.end));
     StateType type = out_state(range.start).type();
     if (type != StateType::Released) {
       RegionData new_data = RegionData(out_state(range.start).stack(), tag);
       SummaryDiff result = register_mapping(from, end, type, new_data);
       diff.add(result);
     }
-    size = size - (end - from);
+    remsize = remsize - (end - from);
     from = end;
   }
 
