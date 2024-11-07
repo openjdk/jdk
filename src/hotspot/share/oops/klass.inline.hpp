@@ -37,6 +37,13 @@ inline oop Klass::klass_holder() const {
   return class_loader_data()->holder();
 }
 
+inline void Klass::keep_alive() const {
+  // Resolving the holder (a WeakHandle) will keep the klass alive until the next safepoint.
+  // Making the klass's CLD handle oops (e.g. the java_mirror), safe to store in the object
+  // graph and its roots (e.g. Handles).
+  static_cast<void>(klass_holder());
+}
+
 inline bool Klass::is_non_strong_hidden() const {
   return is_hidden() && class_loader_data()->has_class_mirror_holder();
 }
@@ -70,6 +77,7 @@ inline void Klass::set_prototype_header(markWord header) {
   _prototype_header = header;
 }
 
+// Loading the java_mirror does not keep its holder alive. See Klass::keep_alive().
 inline oop Klass::java_mirror() const {
   return _java_mirror.resolve();
 }

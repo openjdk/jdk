@@ -947,7 +947,7 @@ private:
   DEBUG_ONLY(static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);)
  private:
   DEBUG_ONLY(static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);)
-  static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
+  static void get_assertion_predicates(ParsePredicateSuccessProj* parse_predicate_proj, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                        CountedLoopNode* remaining_loop_head,
@@ -1672,7 +1672,7 @@ private:
   IfProjNode* clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
                                                        Deoptimization::DeoptReason reason, bool slow_loop);
   void clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
-                                                     Deoptimization::DeoptReason reason, IfProjNode* old_predicate_proj,
+                                                     Deoptimization::DeoptReason reason, ParsePredicateSuccessProj* old_parse_predicate_proj,
                                                      ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
                                                      ParsePredicateSuccessProj* slow_loop_parse_predicate_proj);
   IfProjNode* clone_assertion_predicate_for_unswitched_loops(IfNode* template_assertion_predicate, IfProjNode* predicate,
