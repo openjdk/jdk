@@ -40,8 +40,8 @@ final class I18N {
     static String format(String key, Object ... args) {
         return BUNDLE.format(key, args);
     }
-    
-    static LocalizedExceptionBuilder buildLocalizedException() {
+
+    static LocalizedExceptionBuilder<?> buildLocalizedException() {
         return LocalizedExceptionBuilder.buildLocalizedException(BUNDLE);
     }
 

@@ -25,7 +25,7 @@
 
 package jdk.jpackage.internal.model;
 
-import jdk.jpackage.internal.util.LocalizedExceptionBuilderBase;
+import jdk.jpackage.internal.util.LocalizedExceptionBuilder;
 import jdk.jpackage.internal.util.StringBundle;
 
 public class ConfigException extends Exception {
@@ -63,7 +63,7 @@ public class ConfigException extends Exception {
         return build(i18n).causeAndMessage(t);
     }
 
-    public static class Builder extends LocalizedExceptionBuilderBase<Builder> {
+    public static class Builder extends LocalizedExceptionBuilder<Builder> {
 
         public Builder advice(String adviceId, Object ... args) {
             advice = formatString(adviceId, args);
@@ -78,11 +78,6 @@ public class ConfigException extends Exception {
             return create(this::create);
         }
 
-        @Override
-        protected Builder thiz() {
-            return this;
-        }
-        
         private ConfigException create(String msg, Throwable cause) {
             return new ConfigException(msg, advice, cause);
         }
