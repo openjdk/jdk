@@ -31,7 +31,6 @@ import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -123,14 +122,11 @@ public abstract class AbstractAlgorithmConstraints
                         "Wildcard pattern must start with 'TLS_'");
             }
 
-            Pattern p = patternCache.get(pattern);
-
-            if (p == null) {
-                p = Pattern.compile(pattern.replace("*", ".*"));
-                patternCache.put(pattern, p);
-            }
-
-            return p.matcher(algorithm).matches();
+            return patternCache.computeIfAbsent(
+                            pattern,
+                            p -> Pattern.compile(p.replace("*", ".*")))
+                    .matcher(algorithm)
+                    .matches();
         }
 
         return false;
