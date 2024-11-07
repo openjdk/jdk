@@ -197,6 +197,10 @@ public class AnnotationsTest {
     }
 
     public static class IfOSTestSuite extends TestSuiteExecutionRecorder {
+        public IfOSTestSuite(int a, String b) {
+            super(a, b);
+        }
+
         @Test(ifOS = OperatingSystem.LINUX)
         public void testNoArgs() {
             recordTestCase();
@@ -221,30 +225,54 @@ public class AnnotationsTest {
             recordTestCase(v);
         }
 
+        @Parameters(ifOS = OperatingSystem.LINUX)
+        public static Collection<Object[]> input() {
+            return Set.of(new Object[][] {
+                {7, null},
+            });
+        }
+        
+        @Parameters(ifNotOS = {OperatingSystem.LINUX, OperatingSystem.MACOS})
+        public static Collection<Object[]> input2() {
+            return Set.of(new Object[][] {
+                {10, "hello"},
+            });
+        }
+        
+        @Parameters(ifNotOS = OperatingSystem.LINUX)
+        public static Collection<Object[]> input3() {
+            return Set.of(new Object[][] {
+                {15, "bye"},
+            });
+        }
+
         public static Set<String> getExpectedTestDescs() {
             switch (TestBuilderConfig.getDefault().getOperatingSystem()) {
                 case LINUX -> {
                     return Set.of(
-                            "IfOSTestSuite().testNoArgs()",
-                            "IfOSTestSuite().testVarArgs()",
-                            "IfOSTestSuite().testVarArgs(foo)",
-                            "IfOSTestSuite().testVarArgs(foo, bar)"
+                            "IfOSTestSuite(7, null).testNoArgs()",
+                            "IfOSTestSuite(7, null).testVarArgs()",
+                            "IfOSTestSuite(7, null).testVarArgs(foo)",
+                            "IfOSTestSuite(7, null).testVarArgs(foo, bar)"
                     );
                 }
 
                 case MACOS -> {
                     return Set.of(
-                            "IfOSTestSuite().testNoArgs2()",
-                            "IfOSTestSuite().testVarArgs()",
-                            "IfOSTestSuite().testVarArgs(foo, bar)"
+                            "IfOSTestSuite(15, bye).testNoArgs2()",
+                            "IfOSTestSuite(15, bye).testVarArgs()",
+                            "IfOSTestSuite(15, bye).testVarArgs(foo, bar)"
                     );
                 }
 
                 case WINDOWS -> {
                     return Set.of(
-                            "IfOSTestSuite().testDates(2034-05-05)",
-                            "IfOSTestSuite().testDates(2056-07-11)",
-                            "IfOSTestSuite().testNoArgs2()"
+                            "IfOSTestSuite(15, bye).testDates(2034-05-05)",
+                            "IfOSTestSuite(15, bye).testDates(2056-07-11)",
+                            "IfOSTestSuite(15, bye).testNoArgs2()",
+                            "IfOSTestSuite(10, hello).testDates(2034-05-05)",
+                            "IfOSTestSuite(10, hello).testDates(2056-07-11)",
+                            "IfOSTestSuite(10, hello).testNoArgs2()"                            
                     );
                 }
 

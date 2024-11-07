@@ -55,10 +55,6 @@ import static jdk.jpackage.test.MethodCall.mapArgs;
 
 final class TestMethodSupplier {
 
-    TestMethodSupplier() {
-        this(OperatingSystem.current());
-    }
-
     TestMethodSupplier(OperatingSystem os) {
         Objects.requireNonNull(os);
         this.os = os;
