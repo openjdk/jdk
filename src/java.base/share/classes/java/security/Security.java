@@ -423,6 +423,7 @@ public final class Security {
      *
      * @return the value of the specified property.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @deprecated This method used to return the value of a proprietary
      * property in the master file of the "SUN" Cryptographic Service
      * Provider in order to determine how to parse algorithm-specific
@@ -657,6 +658,7 @@ public final class Security {
      *         if the filter is not in the required format
      * @throws NullPointerException if filter is {@code null}
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see #getProviders(java.util.Map)
      * @since 1.3
      */
@@ -734,6 +736,7 @@ public final class Security {
      *         if the filter is not in the required format
      * @throws NullPointerException if filter is {@code null}
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see #getProviders(java.lang.String)
      * @since 1.3
      */

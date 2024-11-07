@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -724,12 +724,12 @@ public class PlainView extends View implements TabExpander {
     /**
      * Repaint the given line range.
      *
-     * @param host the component hosting the view (used to call repaint)
-     * @param a  the region allocated for the view to render into
      * @param line0 the starting line number to repaint.  This must
      *   be a valid line number in the model.
      * @param line1 the ending line number to repaint.  This must
      *   be a valid line number in the model.
+     * @param a  the region allocated for the view to render into
+     * @param host the component hosting the view (used to call repaint)
      * @since 1.4
      */
     protected void damageLineRange(int line0, int line1, Shape a, Component host) {

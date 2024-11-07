@@ -50,7 +50,6 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/x/xBarrierSetRuntime.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "gc/z/zThreadLocalData.hpp"
@@ -132,6 +131,7 @@
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
   static_field(CompilerToVM::Data,             dtan,                                   address)                                      \
+  static_field(CompilerToVM::Data,             dtanh,                                  address)                                      \
   static_field(CompilerToVM::Data,             dexp,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog10,                                 address)                                      \
@@ -248,7 +248,6 @@
   nonstatic_field(JavaThread,                  _cont_entry,                                   ContinuationEntry*)                    \
   nonstatic_field(JavaThread,                  _unlocked_inflated_monitor,                    ObjectMonitor*)                        \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
-  JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
                                                                                                                                      \
   nonstatic_field(ContinuationEntry,           _pin_count,                                    uint32_t)                              \
@@ -273,7 +272,7 @@
   nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
-  nonstatic_field(Klass,                       _bitmap,                                       uintx)                                 \
+  nonstatic_field(Klass,                       _secondary_supers_bitmap,                      uintx)                                 \
   nonstatic_field(Klass,                       _hash_slot,                                    uint8_t)                               \
   nonstatic_field(Klass,                       _misc_flags._flags,                            u1)                                    \
                                                                                                                                      \
@@ -832,21 +831,13 @@
   declare_function(os::javaTimeMillis)                                    \
   declare_function(os::javaTimeNanos)                                     \
                                                                           \
-  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_oop_field_preloaded))                      \
-  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded))                 \
-  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded))              \
-  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded))                 \
-  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded))            \
-  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded))         \
-  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_oop_array))                                \
-  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::clone))                                                    \
-                                                                                                                      \
   ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded))                      \
   ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded))                 \
   ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded))              \
   ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_store_good))           \
   ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::no_keepalive_load_barrier_on_weak_oop_field_preloaded))    \
   ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::no_keepalive_load_barrier_on_phantom_oop_field_preloaded)) \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing))  \
   ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing))        \
   ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing))                  \
   ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing))               \

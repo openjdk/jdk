@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ class SystemDictionaryShared: public SystemDictionary {
     RunTimeSharedDictionary _unregistered_dictionary;
     LambdaProxyClassDictionary _lambda_proxy_class_dictionary;
 
-    const RunTimeLambdaProxyClassInfo* lookup_lambda_proxy_class(LambdaProxyClassKey* key) {
+    const RunTimeLambdaProxyClassInfo* lookup_lambda_proxy_class(RunTimeLambdaProxyClassKey* key) {
       return _lambda_proxy_class_dictionary.lookup(key, key->hash(), 0);
     }
 

@@ -51,6 +51,7 @@
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
+#include "klass.inline.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -652,7 +653,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
       !secondary_supers()->is_shared()) {
     MetadataFactory::free_array<Klass*>(loader_data, secondary_supers());
   }
-  set_secondary_supers(nullptr);
+  set_secondary_supers(nullptr, SECONDARY_SUPERS_BITMAP_EMPTY);
 
   deallocate_interfaces(loader_data, super(), local_interfaces(), transitive_interfaces());
   set_transitive_interfaces(nullptr);
@@ -1413,21 +1414,12 @@ GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slo
     // Must share this for correct bootstrapping!
     set_secondary_supers(Universe::the_empty_klass_array(), Universe::the_empty_klass_bitmap());
     return nullptr;
-  } else if (num_extra_slots == 0) {
-    // The secondary super list is exactly the same as the transitive interfaces, so
-    // let's use it instead of making a copy.
-    // Redefine classes has to be careful not to delete this!
-    if (!UseSecondarySupersTable) {
-      set_secondary_supers(interfaces);
-      return nullptr;
-    } else if (num_extra_slots == 0 && interfaces->length() <= 1) {
-      // We will reuse the transitive interfaces list if we're certain
-      // it's in hash order.
-      uintx bitmap = compute_secondary_supers_bitmap(interfaces);
-      set_secondary_supers(interfaces, bitmap);
-      return nullptr;
-    }
-    // ... fall through if that didn't work.
+  } else if (num_extra_slots == 0 && interfaces->length() <= 1) {
+    // We will reuse the transitive interfaces list if we're certain
+    // it's in hash order.
+    uintx bitmap = compute_secondary_supers_bitmap(interfaces);
+    set_secondary_supers(interfaces, bitmap);
+    return nullptr;
   }
   // Copy transitive interfaces to a temporary growable array to be constructed
   // into the secondary super list with extra slots.
@@ -2452,11 +2444,11 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 #endif
 #if INCLUDE_CDS
   // For "old" classes with methods containing the jsr bytecode, the _methods array will
-  // be rewritten during runtime (see Rewriter::rewrite_jsrs()). So setting the _methods to
-  // be writable. The length check on the _methods is necessary because classes which
-  // don't have any methods share the Universe::_the_empty_method_array which is in the RO region.
-  if (_methods != nullptr && _methods->length() > 0 &&
-      !can_be_verified_at_dumptime() && methods_contain_jsr_bytecode()) {
+  // be rewritten during runtime (see Rewriter::rewrite_jsrs()) but they cannot be safely
+  // checked here with ByteCodeStream. All methods that can't be verified are made writable.
+  // The length check on the _methods is necessary because classes which don't have any
+  // methods share the Universe::_the_empty_method_array which is in the RO region.
+  if (_methods != nullptr && _methods->length() > 0 && !can_be_verified_at_dumptime()) {
     // To handle jsr bytecode, new Method* maybe stored into _methods
     it->push(&_methods, MetaspaceClosure::_writable);
   } else {
@@ -2696,21 +2688,6 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
     }
   }
   return true;
-}
-
-bool InstanceKlass::methods_contain_jsr_bytecode() const {
-  Thread* thread = Thread::current();
-  for (int i = 0; i < _methods->length(); i++) {
-    methodHandle m(thread, _methods->at(i));
-    BytecodeStream bcs(m);
-    while (!bcs.is_last_bytecode()) {
-      Bytecodes::Code opcode = bcs.next();
-      if (opcode == Bytecodes::_jsr || opcode == Bytecodes::_jsr_w) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 #endif // INCLUDE_CDS
 
@@ -3541,20 +3518,20 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"trans. interfaces: "); transitive_interfaces()->print_value_on(st); st->cr();
 
   st->print(BULLET"secondary supers: "); secondary_supers()->print_value_on(st); st->cr();
-  if (UseSecondarySupersTable) {
-    st->print(BULLET"hash_slot:         %d", hash_slot()); st->cr();
-    st->print(BULLET"bitmap:            " UINTX_FORMAT_X_0, _bitmap); st->cr();
-  }
+
+  st->print(BULLET"hash_slot:         %d", hash_slot()); st->cr();
+  st->print(BULLET"secondary bitmap: " UINTX_FORMAT_X_0, _secondary_supers_bitmap); st->cr();
+
   if (secondary_supers() != nullptr) {
     if (Verbose) {
-      bool is_hashed = UseSecondarySupersTable && (_bitmap != SECONDARY_SUPERS_BITMAP_FULL);
+      bool is_hashed = (_secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_FULL);
       st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
       for (int i = 0; i < _secondary_supers->length(); i++) {
         ResourceMark rm; // for external_name()
         Klass* secondary_super = _secondary_supers->at(i);
         st->print(BULLET"%2d:", i);
         if (is_hashed) {
-          int home_slot = compute_home_slot(secondary_super, _bitmap);
+          int home_slot = compute_home_slot(secondary_super, _secondary_supers_bitmap);
           int distance = (i - home_slot) & SECONDARY_SUPERS_TABLE_MASK;
           st->print(" dist:%02d:", distance);
         }

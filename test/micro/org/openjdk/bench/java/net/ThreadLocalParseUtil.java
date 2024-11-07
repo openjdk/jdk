@@ -48,7 +48,7 @@ import static java.lang.invoke.MethodType.methodType;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 1, jvmArgsAppend = "--add-exports=java.base/sun.net.www=ALL-UNNAMED")
+@Fork(value = 1, jvmArgs = "--add-exports=java.base/sun.net.www=ALL-UNNAMED")
 public class ThreadLocalParseUtil {
 
     private static final MethodHandle MH_DECODE;

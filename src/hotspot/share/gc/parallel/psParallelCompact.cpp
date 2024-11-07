@@ -60,6 +60,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -1911,18 +1912,14 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
   size_t cur_region;
   for (cur_region = beg_region; cur_region < new_top_region; ++cur_region) {
     const RegionData* const c = sd.region(cur_region);
-    if (!c->completed()) {
-      log_warning(gc)("region " SIZE_FORMAT " not filled: destination_count=%u",
-                      cur_region, c->destination_count());
-    }
+    assert(c->completed(), "region %zu not filled: destination_count=%u",
+           cur_region, c->destination_count());
   }
 
   for (cur_region = new_top_region; cur_region < old_top_region; ++cur_region) {
     const RegionData* const c = sd.region(cur_region);
-    if (!c->available()) {
-      log_warning(gc)("region " SIZE_FORMAT " not empty: destination_count=%u",
-                      cur_region, c->destination_count());
-    }
+    assert(c->available(), "region %zu not empty: destination_count=%u",
+           cur_region, c->destination_count());
   }
 }
 #endif  // #ifdef ASSERT

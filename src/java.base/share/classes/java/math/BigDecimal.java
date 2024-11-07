@@ -3109,13 +3109,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since 1.5
      */
     public BigDecimal stripTrailingZeros() {
-        if (intCompact == 0 || (intVal != null && intVal.signum() == 0)) {
-            return BigDecimal.ZERO;
-        } else if (intCompact != INFLATED) {
-            return createAndStripZerosToMatchScale(intCompact, scale, Long.MIN_VALUE);
-        } else {
-            return createAndStripZerosToMatchScale(intVal, scale, Long.MIN_VALUE);
-        }
+        return intCompact == 0 || (intVal != null && intVal.signum() == 0)
+                ? BigDecimal.ZERO
+                : stripZerosToMatchScale(intVal, intCompact, scale, Long.MIN_VALUE);
     }
 
     // Comparison Operations
@@ -5220,28 +5216,115 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
+     * {@code FIVE_TO_2_TO[n] == 5^(2^n)}
+     */
+    private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[16 + 1];
+
+    static {
+        BigInteger pow = FIVE_TO_2_TO[0] = BigInteger.valueOf(5L);
+        for (int i = 1; i < FIVE_TO_2_TO.length; i++)
+            FIVE_TO_2_TO[i] = pow = pow.multiply(pow);
+    }
+
+    /**
+     * @param n a non-negative integer
+     * @return {@code 5^(2^n)}
+     */
+    private static BigInteger fiveToTwoToThe(int n) {
+        int i = Math.min(n, FIVE_TO_2_TO.length - 1);
+        BigInteger pow = FIVE_TO_2_TO[i];
+        for (; i < n; i++)
+            pow = pow.multiply(pow);
+
+        return pow;
+    }
+
+    private static final double LOG_5_OF_2 = 0.43067655807339306; // double closest to log5(2)
+
+    /**
      * Remove insignificant trailing zeros from this
      * {@code BigInteger} value until the preferred scale is reached or no
      * more zeros can be removed.  If the preferred scale is less than
      * Integer.MIN_VALUE, all the trailing zeros will be removed.
+     * Assumes {@code intVal != 0}.
      *
      * @return new {@code BigDecimal} with a scale possibly reduced
      * to be closed to the preferred scale.
      * @throws ArithmeticException if scale overflows.
      */
     private static BigDecimal createAndStripZerosToMatchScale(BigInteger intVal, int scale, long preferredScale) {
+        // avoid overflow of scale - preferredScale
+        preferredScale = Math.clamp(preferredScale, Integer.MIN_VALUE - 1L, Integer.MAX_VALUE);
+        int powsOf2 = intVal.getLowestSetBit();
+        // scale - preferredScale >= remainingZeros >= max{n : (intVal % 10^n) == 0 && n <= scale - preferredScale}
+        // a multiple of 10^n must be a multiple of 2^n
+        long remainingZeros = Math.min(scale - preferredScale, powsOf2);
+        if (remainingZeros <= 0L)
+            return valueOf(intVal, scale, 0);
+
+        final int sign = intVal.signum;
+        if (sign < 0)
+            intVal = intVal.negate(); // speed up computation of shiftRight() and bitLength()
+
+        intVal = intVal.shiftRight(powsOf2); // remove powers of 2
+        // Let k = max{n : (intVal % 5^n) == 0}, m = max{n : 5^n <= intVal}, so m >= k.
+        // Let b = intVal.bitLength(). It can be shown that
+        // | b * LOG_5_OF_2 - b log5(2) | < 2^(-21) (fp viz. real arithmetic),
+        // which entails m <= maxPowsOf5 <= m + 1, where maxPowsOf5 is as below.
+        // Hence, maxPowsOf5 >= k.
+        long maxPowsOf5 = Math.round(intVal.bitLength() * LOG_5_OF_2);
+        remainingZeros = Math.min(remainingZeros, maxPowsOf5);
+
         BigInteger[] qr; // quotient-remainder pair
-        while (intVal.compareMagnitude(BigInteger.TEN) >= 0
-               && scale > preferredScale) {
-            if (intVal.testBit(0))
-                break; // odd number cannot end in 0
-            qr = intVal.divideAndRemainder(BigInteger.TEN);
-            if (qr[1].signum() != 0)
-                break; // non-0 remainder
-            intVal = qr[0];
-            scale = checkScale(intVal,(long) scale - 1); // could Overflow
+        // Remove 5^(2^i) from the factors of intVal, until 5^remainingZeros < 5^(2^i).
+        // Let z = max{n >= 0 : ((intVal * 2^powsOf2) % 10^n) == 0 && n <= scale - preferredScale},
+        // then the condition min(scale - preferredScale, powsOf2) >= remainingZeros >= z
+        // and the values ((intVal * 2^powsOf2) / 10^z) and (scale - z)
+        // are preserved invariants after each iteration.
+        // Note that if intVal % 5^(2^i) != 0, the loop condition will become false.
+        for (int i = 0; remainingZeros >= 1L << i; i++) {
+            final int exp = 1 << i;
+            qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
+            if (qr[1].signum != 0) { // non-0 remainder
+                remainingZeros = exp - 1;
+            } else {
+                intVal = qr[0];
+                scale = checkScale(intVal, (long) scale - exp); // could Overflow
+                remainingZeros -= exp;
+                powsOf2 -= exp;
+            }
         }
-        return valueOf(intVal, scale, 0);
+
+        // bitLength(remainingZeros) == min{n >= 0 : 5^(2^n) > 5^remainingZeros}
+        // so, while the loop condition is true,
+        // the invariant i == max{n : 5^(2^n) <= 5^remainingZeros},
+        // which is equivalent to i == bitLength(remainingZeros) - 1,
+        // is preserved at the beginning of each iteration.
+        // Note that the loop stops exactly when remainingZeros == 0.
+        // Using the same definition of z for the first loop, the invariants
+        // min(scale - preferredScale, powsOf2) >= remainingZeros >= z,
+        // ((intVal * 2^powsOf2) / 10^z) and (scale - z)
+        // are preserved in this loop as well, so, when the loop ends,
+        // remainingZeros == 0 implies z == 0, hence (intVal * 2^powsOf2) and scale
+        // have the correct values to return.
+        for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1; i >= 0; i--) {
+            final int exp = 1 << i;
+            qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
+            if (qr[1].signum != 0) { // non-0 remainder
+                remainingZeros = exp - 1;
+            } else {
+                intVal = qr[0];
+                scale = checkScale(intVal, (long) scale - exp); // could Overflow
+                remainingZeros -= exp;
+                powsOf2 -= exp;
+
+                if (remainingZeros < exp >> 1) // else i == bitLength(remainingZeros) already
+                    i = BigInteger.bitLengthForLong(remainingZeros);
+            }
+        }
+
+        intVal = intVal.shiftLeft(powsOf2); // restore remaining powers of 2
+        return valueOf(sign >= 0 ? intVal : intVal.negate(), scale, 0);
     }
 
     /**
@@ -5249,31 +5332,27 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code long} value until the preferred scale is reached or no
      * more zeros can be removed.  If the preferred scale is less than
      * Integer.MIN_VALUE, all the trailing zeros will be removed.
+     * Assumes {@code compactVal != 0 && compactVal != INFLATED}.
      *
      * @return new {@code BigDecimal} with a scale possibly reduced
      * to be closed to the preferred scale.
      * @throws ArithmeticException if scale overflows.
      */
     private static BigDecimal createAndStripZerosToMatchScale(long compactVal, int scale, long preferredScale) {
-        while (Math.abs(compactVal) >= 10L && scale > preferredScale) {
-            if ((compactVal & 1L) != 0L)
-                break; // odd number cannot end in 0
-            long r = compactVal % 10L;
-            if (r != 0L)
-                break; // non-0 remainder
-            compactVal /= 10;
-            scale = checkScale(compactVal, (long) scale - 1); // could Overflow
+        while (compactVal % 10L == 0L && scale > preferredScale) {
+            compactVal /= 10L;
+            scale = checkScale(compactVal, scale - 1L); // could Overflow
         }
         return valueOf(compactVal, scale);
     }
 
-    private static BigDecimal stripZerosToMatchScale(BigInteger intVal, long intCompact, int scale, int preferredScale) {
-        if(intCompact!=INFLATED) {
-            return createAndStripZerosToMatchScale(intCompact, scale, preferredScale);
-        } else {
-            return createAndStripZerosToMatchScale(intVal==null ? INFLATED_BIGINT : intVal,
-                                                   scale, preferredScale);
-        }
+    /**
+     * Assumes {@code intVal != 0 && intCompact != 0}.
+     */
+    private static BigDecimal stripZerosToMatchScale(BigInteger intVal, long intCompact, int scale, long preferredScale) {
+        return intCompact != INFLATED
+            ? createAndStripZerosToMatchScale(intCompact, scale, preferredScale)
+            : createAndStripZerosToMatchScale(intVal == null ? INFLATED_BIGINT : intVal, scale, preferredScale);
     }
 
     /*

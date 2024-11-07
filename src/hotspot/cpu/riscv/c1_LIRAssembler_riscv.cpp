@@ -838,10 +838,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       __ decode_heap_oop(dest->as_register());
     }
 
-    if (!(UseZGC && !ZGenerational)) {
-      // Load barrier has not yet been applied, so ZGC can't verify the oop here
-      __ verify_oop(dest->as_register());
-    }
+    __ verify_oop(dest->as_register());
   }
 }
 
@@ -1405,11 +1402,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   }
   int pc_for_athrow_offset = __ offset();
   InternalAddress pc_for_athrow(__ pc());
-  __ relocate(pc_for_athrow.rspec(), [&] {
-    int32_t offset;
-    __ la(exceptionPC->as_register(), pc_for_athrow.target(), offset);
-    __ addi(exceptionPC->as_register(), exceptionPC->as_register(), offset);
-  });
+  __ la(exceptionPC->as_register(), pc_for_athrow);
   add_call_info(pc_for_athrow_offset, info); // for exception handler
 
   __ verify_not_null_oop(x10);
