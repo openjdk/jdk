@@ -987,21 +987,21 @@ public class AWTEventMulticaster implements
     private static boolean needsRebalance(AWTEventMulticaster l) {
         int level = 0;
         while (true) {
-            level++;
+            if (++level > 500)
+                return true;
             if (l.a instanceof AWTEventMulticaster aMulti) {
                 if (l.b instanceof AWTEventMulticaster) {
                     // we reached a node where both children are AWTEventMulticaster: let's assume
                     // the current node marks the start of a well-balanced subtree
-                    break;
+                    return false;
                 }
                 l = aMulti;
             } else if (l.b instanceof AWTEventMulticaster bMulti) {
                 l = bMulti;
             } else {
-                break;
+                return false;
             }
         }
-        return level > 500;
     }
 
     /**
