@@ -51,10 +51,10 @@ class Joiners {
         private static final VarHandle FIRST_EXCEPTION =
                 MhUtil.findVarHandle(MethodHandles.lookup(), "firstException", Throwable.class);
 
-        private volatile Throwable firstException;
-
         // list of forked subtasks, only accessed by owner thread
         private final List<Subtask<T>> subtasks = new ArrayList<>();
+
+        private volatile Throwable firstException;
 
         @Override
         public boolean onFork(Subtask<? extends T> subtask) {
@@ -176,6 +176,7 @@ class Joiners {
      */
     static class AllSubtasks<T> implements Joiner<T, Stream<Subtask<T>>> {
         private final Predicate<Subtask<? extends T>> isDone;
+
         // list of forked subtasks, only accessed by owner thread
         private final List<Subtask<T>> subtasks = new ArrayList<>();
 

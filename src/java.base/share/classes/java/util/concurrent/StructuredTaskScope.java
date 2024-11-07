@@ -83,9 +83,16 @@ import jdk.internal.javac.PreviewFeature;
  * <p> If both subtasks complete successfully then the {@code join} method completes
  * normally and the task uses the {@link Subtask#get() Subtask.get()} method to get
  * the result of each subtask. If one of the subtasks fails then the other subtask is
- * cancelled (this will interrupt the thread executing the other subtask) and the {@code
- * join} method throws {@link FailedException} with the exception from the failed subtask
- * as the {@linkplain Throwable#getCause() cause}.
+ * cancelled (this will {@linkplain Thread#interrupt() interrupt} the thread executing the
+ * other subtask) and the {@code join} method throws {@link FailedException} with the
+ * exception from the failed subtask as the {@linkplain Throwable#getCause() cause}.
+ *
+ * <p> To allow for cancellation, subtasks must be coded so that they finish as soon as
+ * possible when interrupted. Subtasks that do not respond to interrupt, e.g. block on
+ * methods that are not interruptible, may delay the closing of a scope indefinitely. The
+ * {@link #close() close} method always waits for threads executing subtasks to finish,
+ * even if the scope is cancelled, so execution cannot continue beyond the {@code close}
+ * method until the interrupted threads finish.
  *
  * <p> In the example, the subtasks produce results of different types ({@code String} and
  * {@code Integer}). In other cases the subtasks may all produce results of the same type.
@@ -114,13 +121,6 @@ import jdk.internal.javac.PreviewFeature;
  * FailedException} with the exception from the failed subtask as the cause. Other {@code
  * Joiner} implementations may cancel the scope for other reasons.
  *
- * <p> To allow for cancellation, subtasks must be coded so that they finish as soon as
- * possible when interrupted. Subtasks that do not respond to interrupt, e.g. block on
- * methods that are not interruptible, may delay the closing of a scope indefinitely. The
- * {@link #close() close} method always waits for threads executing subtasks to finish,
- * even if the scope is cancelled, so execution cannot continue beyond the {@code close}
- * method until the interrupted threads finish.
- *
  * <p> Now consider another example that splits into two subtasks. In this example,
  * each subtask produces a {@code String} result and the task is only interested in
  * the result from the first subtask to complete successfully. The example uses {@link
@@ -129,7 +129,7 @@ import jdk.internal.javac.PreviewFeature;
  * complete successfully. The type parameter in the example is "{@code String}" so that
  * only subtasks that return a {@code String} can be forked.
  * {@snippet lang=java :
- *    // @link substring="open" target="#open(Policy)" :
+ *    // @link substring="open" target="#open(Joiner)" :
  *    try (var scope = StructuredTaskScope.open(Joiner.<String>anySuccessfulResultOrThrow())) {
  *
  *        scope.fork(callable1);
@@ -677,7 +677,10 @@ public sealed interface StructuredTaskScope<T, R>
          * completed successfully or failed with an exception. If the {@code test} method
          * returns {@code true} then <a href="StructuredTaskScope.html#Cancallation">
          * the scope is cancelled</a>. The {@code test} method must be thread safe as it
-         * may be invoked concurrently from several threads.
+         * may be invoked concurrently from several threads. If the {@code test} method
+         * completes with an exception or error, then the thread that executed the subtask
+         * invokes the {@linkplain Thread.UncaughtExceptionHandler uncaught exception handler}
+         * with the exception or error before the thread terminates.
          *
          * <p> The joiner's {@link #result()} method returns the stream of all subtasks,
          * in fork order. The stream may contain subtasks that have completed

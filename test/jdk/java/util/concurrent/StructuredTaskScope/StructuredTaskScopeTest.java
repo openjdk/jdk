@@ -945,7 +945,7 @@ class StructuredTaskScopeTest {
         };
         var excRef = new AtomicReference<Throwable>();
         Thread.UncaughtExceptionHandler uhe = (t, e) -> excRef.set(e);
-        ThreadFactory factory = Thread.ofPlatform()
+        ThreadFactory factory = Thread.ofVirtual()
                 .uncaughtExceptionHandler(uhe)
                 .factory();
         try (var scope = StructuredTaskScope.open(joiner, cf -> cf.withThreadFactory(factory))) {
@@ -1437,6 +1437,53 @@ class StructuredTaskScopeTest {
     }
 
     /**
+     * Test Test Joiner.allUntil(Predicate) where the Predicate's test method throws.
+     */
+    @Test
+    void testAllUntil5() throws Exception {
+        var joiner = Joiner.allUntil(_ -> { throw new FooException(); });
+        var excRef = new AtomicReference<Throwable>();
+        Thread.UncaughtExceptionHandler uhe = (t, e) -> excRef.set(e);
+        ThreadFactory factory = Thread.ofVirtual()
+                .uncaughtExceptionHandler(uhe)
+                .factory();
+        try (var scope = StructuredTaskScope.open(joiner, cf -> cf.withThreadFactory(factory))) {
+            scope.fork(() -> "foo");
+            scope.join();
+            assertInstanceOf(FooException.class, excRef.get());
+        }
+    }
+
+    /**
+     * Test Joiner default methods.
+     */
+    @Test
+    void testJoinerDefaultMethods() throws Exception {
+        try (var scope = StructuredTaskScope.open(new CancelAfterOneJoiner<String>())) {
+
+            // need subtasks to test default methods
+            var subtask1 = scope.fork(() -> "foo");
+            while (!scope.isCancelled()) {
+                Thread.sleep(20);
+            }
+            var subtask2 = scope.fork(() -> "bar");
+            scope.join();
+
+            assertEquals(Subtask.State.SUCCESS, subtask1.state());
+            assertEquals(Subtask.State.UNAVAILABLE, subtask2.state());
+
+            // Joiner that does not override default methods
+            Joiner<Object, Void> joiner = () -> null;
+            assertThrows(NullPointerException.class, () -> joiner.onFork(null));
+            assertThrows(NullPointerException.class, () -> joiner.onComplete(null));
+            assertThrows(IllegalArgumentException.class, () -> joiner.onFork(subtask1));
+            assertFalse(joiner.onFork(subtask2));
+            assertFalse(joiner.onComplete(subtask1));
+            assertThrows(IllegalArgumentException.class, () -> joiner.onComplete(subtask2));
+        }
+    }
+
+    /**
      * Test the Config function apply method throwing an exception.
      */
     @Test
@@ -1478,35 +1525,6 @@ class StructuredTaskScopeTest {
         };
         try (var scope = StructuredTaskScope.open(Joiner.awaitAll(), testConfig)) {
             // do nothing
-        }
-    }
-
-    /**
-     * Test Joiner default methods.
-     */
-    @Test
-    void testJoinerDefaultMethods() throws Exception {
-        try (var scope = StructuredTaskScope.open(new CancelAfterOneJoiner<String>())) {
-
-            // need subtasks to test default methods
-            var subtask1 = scope.fork(() -> "foo");
-            while (!scope.isCancelled()) {
-                Thread.sleep(20);
-            }
-            var subtask2 = scope.fork(() -> "bar");
-            scope.join();
-
-            assertEquals(Subtask.State.SUCCESS, subtask1.state());
-            assertEquals(Subtask.State.UNAVAILABLE, subtask2.state());
-
-            // Joiner that does not override default methods
-            Joiner<Object, Void> joiner = () -> null;
-            assertThrows(NullPointerException.class, () -> joiner.onFork(null));
-            assertThrows(NullPointerException.class, () -> joiner.onComplete(null));
-            assertThrows(IllegalArgumentException.class, () -> joiner.onFork(subtask1));
-            assertFalse(joiner.onFork(subtask2));
-            assertFalse(joiner.onComplete(subtask1));
-            assertThrows(IllegalArgumentException.class, () -> joiner.onComplete(subtask2));
         }
     }
 
