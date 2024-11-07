@@ -503,6 +503,9 @@ class SuperWord : public ResourceObj {
   const VPointer& vpointer(const MemNode* mem) const {
     return _vloop_analyzer.vpointers().vpointer(mem);
   }
+  const XPointer& xpointer(const MemNode* mem) const {
+    return _vloop_analyzer.vpointers().xpointer(mem);
+  }
 
 #ifndef PRODUCT
   // TraceAutoVectorization and TraceSuperWord
@@ -563,8 +566,17 @@ private:
   bool SLP_extract();
 
   // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
+  class MemOp : public StackObj {
+  private:
+    const MemNode* _mem;
+    const XPointer* _xpointer;
+  public:
+    // Empty, for GrowableArray
+    MemOp() : _mem(nullptr), _xpointer(nullptr) {}
+    MemOp(const MemNode* mem, const XPointer* xpointer) : _mem(mem), _xpointer(xpointer) {}
+  };
   void create_adjacent_memop_pairs();
-  void collect_valid_vpointers(GrowableArray<const VPointer*>& vpointers);
+  void collect_valid_memops(GrowableArray<MemOp>& memops);
   void create_adjacent_memop_pairs_in_all_groups(const GrowableArray<const VPointer*>& vpointers);
   static int find_group_end(const GrowableArray<const VPointer*>& vpointers, int group_start);
   void create_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, int group_end);

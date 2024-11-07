@@ -505,9 +505,9 @@ bool SuperWord::SLP_extract() {
 // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
 void SuperWord::create_adjacent_memop_pairs() {
   ResourceMark rm;
-  GrowableArray<const VPointer*> vpointers;
+  GrowableArray<MemOp> memops;
 
-  collect_valid_vpointers(vpointers);
+  collect_valid_memops(memops);
 
   // Sort the VPointers. This does 2 things:
   //  - Separate the VPointer into groups: all memops that have the same opcode and the same
@@ -516,7 +516,8 @@ void SuperWord::create_adjacent_memop_pairs() {
   //    if they are in the same group. This decreases the work.
   //  - Sort by offset inside the groups. This decreases the work needed to determine adjacent
   //    memops inside a group.
-  vpointers.sort(VPointer::cmp_for_sort);
+  assert(false, "TODO");
+  //vpointers.sort(VPointer::cmp_for_sort);
 
 #ifndef PRODUCT
   if (is_trace_superword_adjacent_memops()) {
@@ -524,7 +525,7 @@ void SuperWord::create_adjacent_memop_pairs() {
   }
 #endif
 
-  create_adjacent_memop_pairs_in_all_groups(vpointers);
+  //create_adjacent_memop_pairs_in_all_groups(vpointers);
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
@@ -535,13 +536,13 @@ void SuperWord::create_adjacent_memop_pairs() {
 }
 
 // Collect all memops vpointers that could potentially be vectorized.
-void SuperWord::collect_valid_vpointers(GrowableArray<const VPointer*>& vpointers) {
+void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) {
   for_each_mem([&] (const MemNode* mem, int bb_idx) {
-    const VPointer& p = vpointer(mem);
-    if (p.valid() &&
+    const XPointer& p = xpointer(mem);
+    if (p.is_valid() &&
         !mem->is_LoadStore() &&
         is_java_primitive(mem->memory_type())) {
-      vpointers.append(&p);
+      memops.append(MemOp(mem, &p));
     }
   });
 }
