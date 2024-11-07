@@ -127,7 +127,8 @@ public final class ML_KEM_Provider {
         @Override
         public byte[][] implEncapsulate(String name, byte[] encapsulationKey, Object ek, SecureRandom secureRandom) {
             byte[] randomBytes = new byte[32];
-            secureRandom.nextBytes(randomBytes);
+            var r = secureRandom != null ? secureRandom : JCAUtil.getDefSecureRandom();
+            r.nextBytes(randomBytes);
 
             ML_KEM mlKem = new ML_KEM(name2int(name));
             ML_KEM.ML_KEM_EncapsulateResult mlKemEncapsulateResult = null;

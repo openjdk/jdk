@@ -78,6 +78,8 @@ import static sun.security.util.SecurityProviderConstants.*;
  *
  * - DHKEM
  *
+ * - ML-KEM
+ *
  */
 
 public final class SunJCE extends Provider {
@@ -87,7 +89,7 @@ public final class SunJCE extends Provider {
 
     private static final String info = "SunJCE Provider " +
     "(implements RSA, DES, Triple DES, AES, Blowfish, ARCFOUR, RC2, PBE, "
-    + "Diffie-Hellman, HMAC, ChaCha20)";
+    + "Diffie-Hellman, HMAC, ChaCha20, DHKEM, and ML-KEM)";
 
     /* Are we debugging? -- for developers */
     static final boolean debug = false;
