@@ -288,7 +288,7 @@ IfProjNode* PhaseIdealLoop::clone_parse_predicate_to_unswitched_loop(ParsePredic
 // cloned predicates.
 void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
                                                                    Deoptimization::DeoptReason reason,
-                                                                   IfProjNode* old_predicate_proj,
+                                                                   ParsePredicateSuccessProj* old_parse_predicate_proj,
                                                                    ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
                                                                    ParsePredicateSuccessProj* slow_loop_parse_predicate_proj) {
   assert(fast_loop_parse_predicate_proj->in(0)->is_ParsePredicate() &&
@@ -297,17 +297,15 @@ void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree
   // and doing loop unrolling. Push the original predicates on a list to later process them in reverse order to keep the
   // original predicate order.
   Unique_Node_List list;
-  get_assertion_predicates(old_predicate_proj, list);
+  get_assertion_predicates(old_parse_predicate_proj, list);
 
   Node_List to_process;
-  IfNode* iff = old_predicate_proj->in(0)->as_If();
-  IfProjNode* uncommon_proj = iff->proj_out(1 - old_predicate_proj->as_Proj()->_con)->as_IfProj();
   // Process in reverse order such that 'create_new_if_for_predicate' can be used in
   // 'clone_assertion_predicate_for_unswitched_loops' and the original order is maintained.
   for (int i = list.size() - 1; i >= 0; i--) {
     Node* predicate = list.at(i);
     assert(predicate->in(0)->is_If(), "must be If node");
-    iff = predicate->in(0)->as_If();
+    IfNode* iff = predicate->in(0)->as_If();
     assert(predicate->is_Proj() && predicate->as_Proj()->is_IfProj(), "predicate must be a projection of an if node");
     IfProjNode* predicate_proj = predicate->as_IfProj();
 
@@ -337,34 +335,14 @@ void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree
 }
 
 // Put all Assertion Predicate projections on a list, starting at 'predicate' and going up in the tree. If 'get_opaque'
-// is set, then the OpaqueTemplateAssertionPredicate nodes of the Assertion Predicates are put on the list instead of
-// the projections.
-void PhaseIdealLoop::get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque) {
-  ParsePredicateNode* parse_predicate = predicate->in(0)->as_ParsePredicate();
-  ProjNode* uncommon_proj = parse_predicate->proj_out(1 - predicate->as_Proj()->_con);
-  Node* rgn = uncommon_proj->unique_ctrl_out();
-  assert(rgn->is_Region() || rgn->is_Call(), "must be a region or call uct");
-  predicate = parse_predicate->in(0);
-  while (predicate != nullptr && predicate->is_Proj() && predicate->in(0)->is_If()) {
-    IfNode* iff = predicate->in(0)->as_If();
-    uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
-    if (uncommon_proj->unique_ctrl_out() != rgn) {
-      break;
-    }
-    Node* bol = iff->in(1);
-    assert(!bol->is_OpaqueInitializedAssertionPredicate(), "should not find an Initialized Assertion Predicate");
-    if (bol->is_OpaqueTemplateAssertionPredicate()) {
-      assert(assertion_predicate_has_loop_opaque_node(iff), "must find OpaqueLoop* nodes");
-      if (get_opaque) {
-        // Collect the OpaqueTemplateAssertionPredicateNode.
-        list.push(bol);
-      } else {
-        // Collect the predicate projection.
-        list.push(predicate);
-      }
-    }
-    predicate = predicate->in(0)->in(0);
-  }
+// is set, then the OpaqueTemplateAssertionPredicateNode nodes of the Assertion Predicates are put on the list instead
+// of the projections.
+void PhaseIdealLoop::get_assertion_predicates(ParsePredicateSuccessProj* parse_predicate_proj, Unique_Node_List& list,
+                                              const bool get_opaque) {
+  Deoptimization::DeoptReason deopt_reason = parse_predicate_proj->in(0)->as_ParsePredicate()->deopt_reason();
+  PredicateBlockIterator predicate_iterator(parse_predicate_proj, deopt_reason);
+  TemplateAssertionPredicateCollector template_assertion_predicate_collector(list, get_opaque);
+  predicate_iterator.for_each(template_assertion_predicate_collector);
 }
 
 // Clone an Assertion Predicate for an unswitched loop. OpaqueLoopInit and OpaqueLoopStride nodes are cloned and uncommon
