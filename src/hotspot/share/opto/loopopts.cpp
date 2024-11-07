@@ -3242,7 +3242,7 @@ void PhaseIdealLoop::remove_cmpi_loop_exit(IfNode* if_cmp, IdealLoopTree *loop) 
   assert(if_cmp->in(1)->in(1)->Opcode() == Op_CmpI &&
          stay_in_loop(lp_proj, loop)->is_If() &&
          stay_in_loop(lp_proj, loop)->in(1)->in(1)->Opcode() == Op_CmpU, "inserted cmpi before cmpu");
-  Node *con = makecon(lp_proj->is_IfTrue() ? TypeInt::ONE : TypeInt::ZERO);
+  Node* con = makecon(lp_proj->is_IfTrue() ? TypeInt::ONE : TypeInt::ZERO);
   if_cmp->set_req(1, con);
 }
 
