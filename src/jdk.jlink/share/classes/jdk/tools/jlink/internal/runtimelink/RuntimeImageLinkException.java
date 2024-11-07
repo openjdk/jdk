@@ -25,6 +25,8 @@
 
 package jdk.tools.jlink.internal.runtimelink;
 
+import java.util.Objects;
+
 /**
  * Exception thrown when linking from the run-time image
  */
@@ -41,8 +43,8 @@ public class RuntimeImageLinkException extends RuntimeException {
     private final Reason reason;
 
     public RuntimeImageLinkException(String file, Reason reason) {
-        this.file = file;
-        this.reason = reason;
+        this.file = Objects.requireNonNull(file);
+        this.reason = Objects.requireNonNull(reason);
     }
 
     public String getFile() {

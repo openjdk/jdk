@@ -127,9 +127,6 @@ public class JRTArchive implements Archive {
             collectFiles();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } catch (RuntimeImageLinkException e) {
-            // populate modified files exception
-            throw e;
         }
         return files.stream().map(JRTFile::toEntry);
     }
