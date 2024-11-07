@@ -180,7 +180,6 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
         } else {
           // Mark the internal nodes of the address expression in ignored_nodes.
           XPointer xp(current, vloop, ignored_nodes);
-          NOT_PRODUCT( xp.print_on(tty); )
         }
       }
     }

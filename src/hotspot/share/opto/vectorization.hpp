@@ -688,13 +688,19 @@ public:
   XPointer(const MemNode* mem, const VLoop& vloop, Callback& adr_node_callback) :
     _decomposed_form(init_decomposed_form(mem, adr_node_callback)),
     _size(mem->memory_size()),
-    _is_valid(init_is_valid(_decomposed_form, vloop)) {}
+    _is_valid(init_is_valid(_decomposed_form, vloop))
+  {
+#ifndef PRODUCT
+    if (vloop.is_trace_pointer_analysis()) {
+      print_on(tty);
+      mem->dump();
+    }
+#endif
+  }
 
   // Accessors
   bool is_valid() const { return _is_valid; }
 
-  // TODO
-  // if (vloop.is_trace_pointer_analysis()) {
   NOT_PRODUCT( void print_on(outputStream* st) const; )
 
 private:
