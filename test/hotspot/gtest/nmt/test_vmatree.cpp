@@ -427,12 +427,14 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     testrange expected[]{
         { 0,  50,          mtGC, si, State::Reserved},
         {50,  75,          mtGC, si, State::Released},
-        {75, 100, mtClassShared, si, State::Reserved}
+        {75,  80,          mtGC, si, State::Reserved},
+        {80, 100, mtClassShared, si, State::Reserved}
     };
     VMATree tree;
     Tree::RegionData class_shared(si, mtClassShared);
-    tree.reserve_mapping(0, 100, class_shared);
-    tree.set_tag(0, 75, mtGC);
+    tree.reserve_mapping(0, 50, class_shared);
+    tree.reserve_mapping(75, 25, class_shared);
+    tree.set_tag(0, 80, mtGC);
     expect_equivalent_form(expected, tree);
   }
 }
