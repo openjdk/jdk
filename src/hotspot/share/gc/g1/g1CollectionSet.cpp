@@ -292,10 +292,9 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
 
   size_t pending_cards = _policy->pending_cards_at_gc_start();
-  size_t young_rs_length = _g1h->young_regions_cardset()->occupied();
 
-  log_trace(gc, ergo, cset)("Start choosing CSet. Pending cards: %zu rs_length %zu target pause time: %1.2fms",
-                            pending_cards, young_rs_length, target_pause_time_ms);
+  log_trace(gc, ergo, cset)("Start choosing CSet. Pending cards: %zu target pause time: %1.2fms",
+                            pending_cards, target_pause_time_ms);
 
   // The young list is laid with the survivor regions from the previous
   // pause are appended to the RHS of the young list, i.e.
