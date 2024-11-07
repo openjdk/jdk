@@ -78,6 +78,7 @@ public:
 
 #ifndef _LP64
 
+  static jint    _fpu_cntrl_wrd_std;
   static jint    _fpu_cntrl_wrd_24;
   static jint    _fpu_cntrl_wrd_trunc;
 
