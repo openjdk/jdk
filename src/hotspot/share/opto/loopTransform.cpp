@@ -2960,7 +2960,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 
       // Kill the eliminated test
       C->set_major_progress();
-      Node *kill_con = intcon(1-flip);
+      Node* kill_con = intcon(1-flip);
       _igvn.replace_input_of(iff, 1, kill_con);
       // Find surviving projection
       assert(iff->is_If(), "");
