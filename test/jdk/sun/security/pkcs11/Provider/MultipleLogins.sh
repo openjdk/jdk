@@ -27,6 +27,7 @@
 # @library /test/lib/
 # @build jdk.test.lib.util.ForceGC
 #        jdk.test.lib.Platform
+#        jdk.test.lib.Utils
 # @run shell MultipleLogins.sh
 
 # set a few environment variables so that the shell-script can run stand-alone
