@@ -173,8 +173,8 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       if (n_ctrl != nullptr && lpt->is_member(phase->get_loop(n_ctrl))) {
         // Process the memory expression
         if (!adr->is_AddP()) {
-          n->dump();
-          adr->dump();
+          NOT_PRODUCT( n->dump(); )
+          NOT_PRODUCT( adr->dump(); )
           assert(false, "what is this?");
           ignored_nodes.set_ignored(adr);
         } else {
