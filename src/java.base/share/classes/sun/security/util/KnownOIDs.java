@@ -179,6 +179,11 @@ public enum KnownOIDs {
     SHA3_384withRSA("2.16.840.1.101.3.4.3.15", "SHA3-384withRSA"),
     SHA3_512withRSA("2.16.840.1.101.3.4.3.16", "SHA3-512withRSA"),
 
+    // ML-DSA
+    ML_DSA_44("2.16.840.1.101.3.4.3.17", "ML-DSA-44"),
+    ML_DSA_65("2.16.840.1.101.3.4.3.18", "ML-DSA-65"),
+    ML_DSA_87("2.16.840.1.101.3.4.3.19", "ML-DSA-87"),
+
     // RSASecurity
     // PKCS1 1.2.840.113549.1.1.*
     PKCS1("1.2.840.113549.1.1", "RSA") { // RSA KeyPairGenerator and KeyFactory
@@ -318,11 +323,6 @@ public enum KnownOIDs {
         @Override
         boolean registerNames() { return false; }
     },
-
-    // PQC
-    ML_DSA_44("1.3.6.1.4.1.2.267.12.4.4", "ML-DSA-44"),
-    ML_DSA_65("1.3.6.1.4.1.2.267.12.6.5", "ML-DSA-65"),
-    ML_DSA_87("1.3.6.1.4.1.2.267.12.8.7", "ML-DSA-87"),
 
     // Teletrust 1.3.36.*
     brainpoolP160r1("1.3.36.3.3.2.8.1.1.1"),
