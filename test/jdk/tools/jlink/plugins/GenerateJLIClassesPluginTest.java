@@ -70,16 +70,13 @@ public class GenerateJLIClassesPluginTest {
                            (isLinkableRuntime ? "enabled" : "disabled") +
                            " capability of linking from the run-time image.");
         System.out.println("DEBUG: default module-path, 'jmods', " +
-                           (hasPackagedModules() ? "" : "NOT ") +
+                           (Helper.jdkHasPackagedModules() ? "" : "NOT ") +
                            "present.");
         helper = Helper.newHelper(isLinkableRuntime);
         if (helper == null) {
+            // In case of no linkable run-time image and also no packaged
+            // modules, helper will be null.
             System.err.println("Test not run");
-            return;
-        }
-        if (!isLinkableRuntime && !hasPackagedModules()) {
-            System.err.println("Neither packaged modules present, nor a linkable" +
-                               " run-time image. Test not run");
             return;
         }
     }
@@ -193,7 +190,4 @@ public class GenerateJLIClassesPluginTest {
                 .collect(Collectors.toList());
     }
 
-    private static boolean hasPackagedModules() {
-        return Path.of(System.getProperty("java.home"), "jmods").toFile().exists();
-    }
 }

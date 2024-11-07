@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import jdk.tools.jlink.internal.TaskHelper;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 import jdk.tools.jlink.plugin.PluginException;
@@ -36,36 +37,15 @@ import tests.JImageGenerator;
 import tests.JImageValidator;
 import tests.Result;
 
-/*
- * @test id=packaged_modules
- * @bug 8152143 8152704 8155649 8165804 8185841 8176841 8190918
- *      8179071 8202537 8221432 8222098 8251317 8258794 8265315
- *      8296248 8306116 8174269 8333582
- * @summary IncludeLocalesPlugin tests
- * @author Naoto Sato
- * @requires (jlink.packagedModules & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
- * @library ../../lib
- * @enablePreview
- * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink.internal.plugins
- *          jdk.jlink/jdk.tools.jlink.plugin
- *          jdk.jlink/jdk.tools.jmod
- *          jdk.jlink/jdk.tools.jimage
- *          jdk.compiler
- * @build tests.*
- * @build tools.jlink.plugins.GetAvailableLocales
- * @run main/othervm/timeout=180 -Xmx1g IncludeLocalesPluginTest false
- */
 
 /*
- * @test id=linkable_jdk_runtimes
+ * @test
  * @bug 8152143 8152704 8155649 8165804 8185841 8176841 8190918
  *      8179071 8202537 8221432 8222098 8251317 8258794 8265315
  *      8296248 8306116 8174269
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
- * @requires (jlink.runtime.linkable & !jlink.packagedModules & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib
  * @enablePreview
  * @modules java.base/jdk.internal.jimage
@@ -77,7 +57,7 @@ import tests.Result;
  *          jdk.compiler
  * @build tests.*
  * @build tools.jlink.plugins.GetAvailableLocales
- * @run main/othervm/timeout=180 -Xmx1g IncludeLocalesPluginTest true
+ * @run main/othervm/timeout=180 -Xmx1g IncludeLocalesPluginTest
  */
 public class IncludeLocalesPluginTest {
 
@@ -435,20 +415,18 @@ public class IncludeLocalesPluginTest {
     };
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            throw new RuntimeException("Usage: " +
-                                       IncludeLocalesPluginTest.class.getSimpleName() +
-                                       " {true,false}");
-        }
-        boolean isLinkableRuntime = Boolean.parseBoolean(args[0]);
+        boolean isLinkableRuntime = LinkableRuntimeImage.isLinkableRuntime();
         System.out.println("Running test on " +
-                           (isLinkableRuntime ? "linkable JDK runtime." : "packaged modules."));
+                           (isLinkableRuntime ? "enabled" : "disabled") +
+                           " capability of linking from the run-time image.");
+        System.out.println("Default module-path, 'jmods', " +
+                           (Helper.jdkHasPackagedModules() ? "" : "NOT ") +
+                           "present.");
 
         helper = Helper.newHelper(isLinkableRuntime);
         if (helper == null) {
             throw new RuntimeException("Helper could not be initialized");
         }
-        helper.generateDefaultModules();
 
         for (Object[] data : testData) {
             // create image for each test data
@@ -456,14 +434,12 @@ public class IncludeLocalesPluginTest {
             if (data[INCLUDE_LOCALES_OPTION].toString().isEmpty()) {
                 System.out.println("Invoking jlink with no --include-locales option");
                 result = JImageGenerator.getJLinkTask()
-                    .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods((String) data[ADDMODS_OPTION])
                     .call();
             } else {
                 System.out.println("Invoking jlink with \"" + data[INCLUDE_LOCALES_OPTION] + "\"");
                 result = JImageGenerator.getJLinkTask()
-                    .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods((String) data[ADDMODS_OPTION])
                     .option((String) data[INCLUDE_LOCALES_OPTION])

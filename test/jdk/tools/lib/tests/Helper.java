@@ -72,12 +72,16 @@ public class Helper {
     }
 
     public static Helper newHelper(boolean linkableRuntime) throws IOException {
-        if (!linkableRuntime && !Files.exists(JDK_HOME.resolve("jmods"))) {
+        if (!linkableRuntime && !jdkHasPackagedModules()) {
             // Skip test if the jmods directory is missing (e.g. exploded image)
             System.err.println("Test not run, NO jmods directory");
             return null;
         }
         return new Helper(JDK_HOME, linkableRuntime);
+    }
+
+    public static boolean jdkHasPackagedModules() {
+        return Files.exists(JDK_HOME.resolve("jmods"));
     }
 
     private Helper(Path jdkHome, boolean linkableRuntime) throws IOException {
