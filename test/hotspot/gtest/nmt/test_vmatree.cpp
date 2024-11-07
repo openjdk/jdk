@@ -423,7 +423,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     expect_equivalent_form(expected, tree);
   }
 
-  {
+  { // Holes in the address range are acceptable
     testrange expected[]{
         { 0,  50,          mtGC, si, State::Reserved},
         {50,  75,          mtGC, si, State::Released},
