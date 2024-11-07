@@ -123,7 +123,6 @@ public class ML_DSA_Provider {
         }
     }
 
-    // TODO: check key in initSign and initVerify?
     public static class SIG extends NamedSignature {
         public SIG() {
             super("ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
