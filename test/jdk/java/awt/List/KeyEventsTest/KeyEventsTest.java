@@ -40,16 +40,16 @@ import java.awt.event.KeyListener;
 import jdk.test.lib.Platform;
 
 /*
-*  @test
-*  @key headful
-*  @bug 6190768 6190778
-*  @requires os.family != "mac"
-*  @summary Tests that triggering events on AWT list by pressing CTRL + HOME,
-*           CTRL + END, PG-UP, PG-DOWN similar Motif behavior
-*  @library /test/lib
-*  @build jdk.test.lib.Platform
-*  @run main KeyEventsTest
-*/
+ * @test
+ * @key headful
+ * @bug 6190768 6190778
+ * @requires os.family != "mac"
+ * @summary Tests that triggering events on AWT list by pressing CTRL + HOME,
+ *          CTRL + END, PG-UP, PG-DOWN similar Motif behavior
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main KeyEventsTest
+ */
 
 public class KeyEventsTest {
     TestState currentState;
@@ -262,10 +262,7 @@ public class KeyEventsTest {
 
     private void doTest() throws Exception {
 
-        boolean isWin = false;
-        if (Platform.isWindows()) {
-            isWin = true;
-        }
+        boolean isWin = Platform.isWindows();
 
         System.out.println("multiple? selectedMoved? ?scrollMoved keyID? template? action?");
         test(new TestState(false, false, false, KeyEvent.VK_PAGE_UP, isWin?false:false));
