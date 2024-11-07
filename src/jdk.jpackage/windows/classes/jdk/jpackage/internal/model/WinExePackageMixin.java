@@ -24,39 +24,13 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import static java.util.stream.Collectors.toMap;
-import jdk.jpackage.internal.resources.ResourceLocator;
-import jdk.jpackage.internal.util.DynamicProxy;
+import java.nio.file.Path;
 
-public interface WinLauncher extends Launcher, WinLauncherMixin {
+public interface WinExePackageMixin {
 
-    @Override
-    default String executableSuffix() {
-        return ".exe";
-    }
+    WinMsiPackage msiPackage();
 
-    @Override
-    default InputStream executableResource() {
-        return ResourceLocator.class.getResourceAsStream(
-                isConsole() ? "jpackageapplauncher.exe" : "jpackageapplauncherw.exe");
-    }
+    Path icon();
 
-    @Override
-    default Map<String, String> extraAppImageFileData() {
-        return Optional.ofNullable(shortcuts()).orElseGet(Set::of).stream().collect(
-                toMap(WinShortcut::name, v -> Boolean.toString(true)));
-    }
-
-    @Override
-    default String defaultIconResourceName() {
-        return "JavaApp.ico";
-    }
-
-    public static WinLauncher create(Launcher launcher, WinLauncherMixin mixin) {
-        return DynamicProxy.createProxyFromPieces(WinLauncher.class, launcher, mixin);
-    }
+    record Stub(WinMsiPackage msiPackage, Path icon) implements WinExePackageMixin {}
 }

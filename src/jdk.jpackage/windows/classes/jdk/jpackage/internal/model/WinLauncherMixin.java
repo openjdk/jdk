@@ -24,39 +24,30 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import static java.util.stream.Collectors.toMap;
-import jdk.jpackage.internal.resources.ResourceLocator;
-import jdk.jpackage.internal.util.DynamicProxy;
 
-public interface WinLauncher extends Launcher, WinLauncherMixin {
+public interface WinLauncherMixin {
 
-    @Override
-    default String executableSuffix() {
-        return ".exe";
+    boolean isConsole();
+
+    enum WinShortcut {
+        WIN_SHORTCUT_DESKTOP("shortcut"),
+        WIN_SHORTCUT_START_MENU("menu"),
+        ;
+
+        WinShortcut(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        private final String name;
     }
 
-    @Override
-    default InputStream executableResource() {
-        return ResourceLocator.class.getResourceAsStream(
-                isConsole() ? "jpackageapplauncher.exe" : "jpackageapplauncherw.exe");
-    }
+    Set<WinShortcut> shortcuts();
 
-    @Override
-    default Map<String, String> extraAppImageFileData() {
-        return Optional.ofNullable(shortcuts()).orElseGet(Set::of).stream().collect(
-                toMap(WinShortcut::name, v -> Boolean.toString(true)));
-    }
-
-    @Override
-    default String defaultIconResourceName() {
-        return "JavaApp.ico";
-    }
-
-    public static WinLauncher create(Launcher launcher, WinLauncherMixin mixin) {
-        return DynamicProxy.createProxyFromPieces(WinLauncher.class, launcher, mixin);
+    record Stub(boolean isConsole, Set<WinShortcut> shortcuts) implements WinLauncherMixin {
     }
 }

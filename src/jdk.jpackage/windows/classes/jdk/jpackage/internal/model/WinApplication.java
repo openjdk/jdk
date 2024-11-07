@@ -24,15 +24,15 @@
  */
 package jdk.jpackage.internal.model;
 
+import jdk.jpackage.internal.util.DynamicProxy;
+
 public interface WinApplication extends Application {
 
     default DottedVersion winVersion() {
         return DottedVersion.lazy(version());
     }
 
-    final class Stub extends Application.Proxy<Application> implements WinApplication {
-        public Stub(Application app) {
-            super(app);
-        }
+    public static WinApplication create(Application app) {
+        return DynamicProxy.createProxyFromPieces(WinApplication.class, app);
     }
 }

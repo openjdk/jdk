@@ -35,6 +35,7 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MsiVersion;
 import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.model.WinMsiPackageMixin;
 
 final class WinMsiPackageBuilder {
 
@@ -61,8 +62,7 @@ final class WinMsiPackageBuilder {
                     .create();
         }
 
-        return new WinMsiPackage.Stub(
-                pkg,
+        return WinMsiPackage.create(pkg, new WinMsiPackageMixin.Stub(
                 withInstallDirChooser,
                 withShortcutPrompt,
                 helpURL,
@@ -71,7 +71,7 @@ final class WinMsiPackageBuilder {
                 isSystemWideInstall,
                 Optional.ofNullable(upgradeCode).orElseGet(() -> upgradeCode(pkg.app())),
                 productCode(pkg.app(), pkg.version()),
-                serviceInstaller);
+                serviceInstaller));
     }
 
     private static UUID upgradeCode(Application app) {

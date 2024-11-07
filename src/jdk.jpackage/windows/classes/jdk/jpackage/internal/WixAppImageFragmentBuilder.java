@@ -61,7 +61,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import static jdk.jpackage.internal.util.CollectionUtils.toCollection;
-import jdk.jpackage.internal.model.WinLauncher.WinShortcut;
+import jdk.jpackage.internal.model.WinLauncherMixin.WinShortcut;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.FileAssociation;

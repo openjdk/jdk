@@ -45,8 +45,9 @@ import static jdk.jpackage.internal.WinAppImageBuilder.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinLauncher;
-import static jdk.jpackage.internal.model.WinLauncher.WinShortcut.WIN_SHORTCUT_DESKTOP;
-import static jdk.jpackage.internal.model.WinLauncher.WinShortcut.WIN_SHORTCUT_START_MENU;
+import static jdk.jpackage.internal.model.WinLauncherMixin.WinShortcut.WIN_SHORTCUT_DESKTOP;
+import static jdk.jpackage.internal.model.WinLauncherMixin.WinShortcut.WIN_SHORTCUT_START_MENU;
+import jdk.jpackage.internal.model.WinLauncherMixin;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 final class WinFromParams {
@@ -71,9 +72,9 @@ final class WinFromParams {
                     }
                 }).map(Map.Entry::getKey).collect(toSet());
 
-            return new WinLauncher.Stub(launcher, isConsole, shortcuts);
+            return WinLauncher.create(launcher, new WinLauncherMixin.Stub(isConsole, shortcuts));
         }), APPLICATION_LAYOUT).create();
-        return new WinApplication.Stub(app);
+        return WinApplication.create(app);
     }
 
     private static WinMsiPackage createWinMsiPackage(Map<String, ? super Object> params) throws ConfigException, IOException {

@@ -24,39 +24,31 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import static java.util.stream.Collectors.toMap;
-import jdk.jpackage.internal.resources.ResourceLocator;
-import jdk.jpackage.internal.util.DynamicProxy;
+import java.nio.file.Path;
+import java.util.UUID;
 
-public interface WinLauncher extends Launcher, WinLauncherMixin {
+public interface WinMsiPackageMixin {
 
-    @Override
-    default String executableSuffix() {
-        return ".exe";
-    }
+    boolean withInstallDirChooser();
 
-    @Override
-    default InputStream executableResource() {
-        return ResourceLocator.class.getResourceAsStream(
-                isConsole() ? "jpackageapplauncher.exe" : "jpackageapplauncherw.exe");
-    }
+    boolean withShortcutPrompt();
 
-    @Override
-    default Map<String, String> extraAppImageFileData() {
-        return Optional.ofNullable(shortcuts()).orElseGet(Set::of).stream().collect(
-                toMap(WinShortcut::name, v -> Boolean.toString(true)));
-    }
+    String helpURL();
 
-    @Override
-    default String defaultIconResourceName() {
-        return "JavaApp.ico";
-    }
+    String updateURL();
 
-    public static WinLauncher create(Launcher launcher, WinLauncherMixin mixin) {
-        return DynamicProxy.createProxyFromPieces(WinLauncher.class, launcher, mixin);
-    }
+    String startMenuGroupName();
+
+    boolean isSystemWideInstall();
+
+    UUID upgradeCode();
+
+    UUID productCode();
+
+    Path serviceInstaller();
+
+    record Stub(boolean withInstallDirChooser, boolean withShortcutPrompt,
+            String helpURL, String updateURL, String startMenuGroupName,
+            boolean isSystemWideInstall, UUID upgradeCode, UUID productCode,
+            Path serviceInstaller) implements WinMsiPackageMixin {}
 }

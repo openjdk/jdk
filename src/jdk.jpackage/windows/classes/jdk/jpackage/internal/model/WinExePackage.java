@@ -26,45 +26,25 @@ package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_EXE;
+import jdk.jpackage.internal.util.DynamicProxy;
 
-public interface WinExePackage extends Package {
+public interface WinExePackage extends Package, WinExePackageMixin {
 
-    WinMsiPackage msiPackage();
-
-    Path icon();
-
-    final class Stub extends Package.Proxy<Package> implements WinExePackage {
-
-        public Stub(WinMsiPackage msiPackage, Path icon) throws ConfigException {
-            super(createExePackage(msiPackage));
-            this.msiPackage = msiPackage;
-            this.icon = icon;
-        }
-
-        @Override
-        public WinMsiPackage msiPackage() {
-            return msiPackage;
-        }
-
-        @Override
-        public Path icon() {
-            return icon;
-        }
-
-        private static Package createExePackage(Package pkg) {
-            return new Package.Stub(
-                    pkg.app(),
-                    WIN_EXE,
-                    pkg.packageName(),
-                    pkg.description(),
-                    pkg.version(),
-                    pkg.aboutURL(),
-                    pkg.licenseFile(),
-                    pkg.predefinedAppImage(),
-                    pkg.relativeInstallDir());
-        }
-
-        private final WinMsiPackage msiPackage;
-        private final Path icon;
+    public static WinExePackage create(WinMsiPackage msiPackage, Path icon) {
+        return DynamicProxy.createProxyFromPieces(WinExePackage.class, createExePackage(
+                msiPackage), new WinExePackageMixin.Stub(msiPackage, icon));
+    }
+    
+    private static Package createExePackage(WinMsiPackage pkg) {
+        return new Package.Stub(
+                pkg.app(),
+                WIN_EXE,
+                pkg.packageName(),
+                pkg.description(),
+                pkg.version(),
+                pkg.aboutURL(),
+                pkg.licenseFile(),
+                pkg.predefinedAppImage(),
+                pkg.relativeInstallDir());
     }
 }
