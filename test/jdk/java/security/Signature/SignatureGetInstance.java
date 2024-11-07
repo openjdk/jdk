@@ -27,7 +27,8 @@
  * @summary Ensure the BC provider-reselection workaround in Signature class
  *     functions correctly
  * @modules java.base/sun.security.util
- * @run main/othervm SignatureGetInstance
+ * @run main/othervm SignatureGetInstance default
+ * @run main/othervm SignatureGetInstance SHA-256
  */
 import java.security.*;
 import java.security.interfaces.*;
@@ -37,8 +38,12 @@ import sun.security.util.SignatureUtil;
 public class SignatureGetInstance {
 
     private static final String SIGALG = "RSASSA-PSS";
+    private static PSSParameterSpec pssParamSpec;
 
     public static void main(String[] args) throws Exception {
+        String mdName = args[0];
+        pssParamSpec = "default".equals(mdName) ? PSSParameterSpec.DEFAULT :
+                new PSSParameterSpec(mdName, "MGF1", new MGF1ParameterSpec(mdName), 20, 1);
         Provider testProvider = new TestProvider();
         // put test provider before SunRsaSign provider
         Security.insertProviderAt(testProvider, 1);
@@ -85,7 +90,7 @@ public class SignatureGetInstance {
     private static void testDblInit(PrivateKey key1, PublicKey key2,
             boolean shouldPass, String expectedProvName) throws Exception {
         Signature sig = Signature.getInstance(SIGALG);
-        SignatureUtil.initSignWithParam(sig, key1, PSSParameterSpec.DEFAULT, null);
+        SignatureUtil.initSignWithParam(sig, key1, pssParamSpec, null);
         try {
             sig.initVerify(key2);
             if (!shouldPass) {
@@ -108,7 +113,7 @@ public class SignatureGetInstance {
         } else {
             sig = Signature.getInstance(SIGALG, provName);
         }
-        AlgorithmParameterSpec params = PSSParameterSpec.DEFAULT;
+        AlgorithmParameterSpec params = pssParamSpec;
         boolean doSign = (key instanceof PrivateKey);
         try {
             if (doSign) {

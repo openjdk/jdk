@@ -29,7 +29,6 @@
 
 #include "memory/allStatic.hpp"
 #include "nmt/memTag.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -138,13 +137,5 @@ class NMTUtil : AllStatic {
   static S _strings[mt_number_of_tags];
 };
 
-// Same as MutexLocker but can be used during VM init.
-// Performs no action if given a null mutex or with detached threads.
-class NmtVirtualMemoryLocker: public ConditionalMutexLocker {
-public:
-    NmtVirtualMemoryLocker() :
-            ConditionalMutexLocker(NmtVirtualMemory_lock, Thread::current_or_null_safe() != nullptr, Mutex::_no_safepoint_check_flag) {
-    }
-};
 
 #endif // SHARE_NMT_NMTCOMMON_HPP
