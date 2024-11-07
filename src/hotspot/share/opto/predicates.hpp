@@ -1043,7 +1043,7 @@ class TemplateAssertionPredicateCollector : public PredicateVisitor {
 // from the updated templates. The old Initialized Assertion Predicates are killed.
 class UpdateStrideForAssertionPredicates : public PredicateVisitor {
   Node* const _new_stride;
-  PhaseIdealLoop* _phase;
+  PhaseIdealLoop* const _phase;
 
   void replace_opaque_stride_input(const TemplateAssertionPredicate& template_assertion_predicate) const;
   IfTrueNode* initialize_from_updated_template(const TemplateAssertionPredicate& template_assertion_predicate) const;
