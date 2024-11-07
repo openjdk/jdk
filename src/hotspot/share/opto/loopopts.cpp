@@ -2904,7 +2904,7 @@ Node* PhaseIdealLoop::short_circuit_if(IfNode* iff, ProjNode* live_proj) {
   guarantee(live_proj != nullptr, "null projection");
   int proj_con = live_proj->_con;
   assert(proj_con == 0 || proj_con == 1, "false or true projection");
-  Node *con = intcon(proj_con);
+  Node* con = intcon(proj_con);
   if (iff) {
     iff->set_req(1, con);
   }
