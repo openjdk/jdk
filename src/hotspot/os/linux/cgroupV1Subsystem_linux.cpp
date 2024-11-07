@@ -50,7 +50,7 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   stringStream ss;
   if (_root != nullptr && cgroup_path != nullptr) {
     ss.print_raw(_mount_point);
-    if (strcmp(_root, "/") == 0 || !is_read_only()) {
+    if (strcmp(_root, "/") == 0) {
       // host processes / containers w/private cgroup namespace
       if (strcmp(cgroup_path,"/") != 0) {
         // hosts only
@@ -209,9 +209,11 @@ bool CgroupV1Subsystem::is_containerized() {
   // containerized iff all required controllers are mounted
   // read-only. See OSContainer::is_containerized() for
   // the full logic.
-  // (all v1 controllers are initialized with a single combined read-only flag)
   //
-  return _memory->controller()->is_read_only();
+  return _memory->controller()->is_read_only() &&
+         _cpu->controller()->is_read_only() &&
+         _cpuacct->is_read_only() &&
+         _cpuset->is_read_only();
 }
 
 /* memory_usage_in_bytes

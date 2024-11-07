@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Red Hat, Inc.
+ * Copyright (c) 2022, 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class CgroupV1SubsystemControllerTest {
     public void testCgPathEqualsRoot() {
         String root = "/machine.slice/libpod-7145e2e7dbeab5aa96bd79beed79eda286a2d299a0ee386e704cad9f53a70979.scope";
         String mountPoint = "/somemount";
-        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint, true);
+        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint);
         ctrl.setPath("/machine.slice/libpod-7145e2e7dbeab5aa96bd79beed79eda286a2d299a0ee386e704cad9f53a70979.scope");
         assertEquals(mountPoint, ctrl.path());
     }
@@ -57,7 +57,7 @@ public class CgroupV1SubsystemControllerTest {
     public void testCgPathNonEmptyRoot() {
         String root = "/";
         String mountPoint = "/sys/fs/cgroup/memory";
-        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint, false);
+        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint);
         String cgroupPath = "/subpath";
         ctrl.setPath(cgroupPath);
         String expectedPath = mountPoint + cgroupPath;
@@ -71,41 +71,32 @@ public class CgroupV1SubsystemControllerTest {
     public void testCgPathSubstring() {
         String root = "/foo/bar/baz";
         String mountPoint = "/sys/fs/cgroup/memory";
-        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint, false);
+        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint);
         String cgroupPath = "/foo/bar/baz/some";
         ctrl.setPath(cgroupPath);
-        String expectedPath = mountPoint + cgroupPath;
+        String expectedPath = mountPoint;
         assertEquals(expectedPath, ctrl.path());
-        ctrl = new CgroupV1SubsystemController(root, mountPoint, true);
-        ctrl.setPath(cgroupPath);
-        assertEquals(mountPoint, ctrl.path());
     }
 
     @Test
     public void testCgPathPrefixRoot() {
         String root = "/a";
         String mountPoint = "/sys/fs/cgroup/memory";
-        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint, false);
+        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint);
         String cgroupPath = "/a/b";
         ctrl.setPath(cgroupPath);
-        String expectedPath = mountPoint + cgroupPath;
+        String expectedPath = mountPoint;
         assertEquals(expectedPath, ctrl.path());
-        ctrl = new CgroupV1SubsystemController(root, mountPoint, true);
-        ctrl.setPath(cgroupPath);
-        assertEquals(mountPoint, ctrl.path());
     }
 
     @Test
     public void testCgPathFallbackToMountPoint() {
         String root = "/system.slice/garden.service/garden/good/2f57368b-0eda-4e52-64d8-af5c";
         String mountPoint = "/sys/fs/cgroup/cpu,cpuacct";
-        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint, false);
+        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint);
         String cgroupPath = "/system.slice/garden.service/garden/bad/2f57368b-0eda-4e52-64d8-af5c";
         ctrl.setPath(cgroupPath);
-        String expectedPath = mountPoint + cgroupPath;
+        String expectedPath = mountPoint;
         assertEquals(expectedPath, ctrl.path());
-        ctrl = new CgroupV1SubsystemController(root, mountPoint, true);
-        ctrl.setPath(cgroupPath);
-        assertEquals(mountPoint, ctrl.path());
     }
 }

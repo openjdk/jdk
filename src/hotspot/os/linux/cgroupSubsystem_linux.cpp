@@ -103,27 +103,23 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
    *
    */
   assert(is_cgroup_v1(&cg_type_flags), "Cgroup v1 expected");
-  bool all_controllers_read_only = true;
-  for (int n = 0; n < CG_INFO_LENGTH && all_controllers_read_only; n++) {
-    all_controllers_read_only &= cg_infos[n]._read_only;
-  }
   for (int i = 0; i < CG_INFO_LENGTH; i++) {
     CgroupInfo info = cg_infos[i];
     if (info._data_complete) { // pids controller might have incomplete data
       if (strcmp(info._name, "memory") == 0) {
-        memory = new CgroupV1MemoryController(CgroupV1Controller(info._root_mount_path, info._mount_path, all_controllers_read_only));
+        memory = new CgroupV1MemoryController(CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only));
         memory->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpuset") == 0) {
-        cpuset = new CgroupV1Controller(info._root_mount_path, info._mount_path, all_controllers_read_only);
+        cpuset = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only);
         cpuset->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpu") == 0) {
-        cpu = new CgroupV1CpuController(CgroupV1Controller(info._root_mount_path, info._mount_path, all_controllers_read_only));
+        cpu = new CgroupV1CpuController(CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only));
         cpu->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpuacct") == 0) {
-        cpuacct = new CgroupV1Controller(info._root_mount_path, info._mount_path, all_controllers_read_only);
+        cpuacct = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only);
         cpuacct->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "pids") == 0) {
-        pids = new CgroupV1Controller(info._root_mount_path, info._mount_path, all_controllers_read_only);
+        pids = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only);
         pids->set_subsystem_path(info._cgroup_path);
       }
     } else {

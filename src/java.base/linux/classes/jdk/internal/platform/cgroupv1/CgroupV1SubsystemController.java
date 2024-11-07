@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package jdk.internal.platform.cgroupv1;
 
 import java.lang.System.Logger.Level;
-
 import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupSubsystemController;
 
@@ -38,18 +37,16 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
     String root;
     String mountPoint;
     String path;
-    boolean isContainerized = false;
 
-    public CgroupV1SubsystemController(String root, String mountPoint, boolean isContainerized) {
+    public CgroupV1SubsystemController(String root, String mountPoint) {
         this.root = root;
         this.mountPoint = mountPoint;
-        this.isContainerized = isContainerized;
     }
 
     public void setPath(String cgroupPath) {
         if (root != null && cgroupPath != null) {
             String path = mountPoint;
-            if (root.equals("/") || !isContainerized) {
+            if (root.equals("/")) {
                 // host processes / containers w/private cgroup namespace
                 if (!cgroupPath.equals("/")) {
                     // hosts only

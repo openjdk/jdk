@@ -40,7 +40,6 @@ public class CgroupInfo {
     private final boolean enabled;
     private String mountPoint;
     private String mountRoot;
-    private String mountOptions;
     private String cgroupPath;
 
     private CgroupInfo(String name, int hierarchyId, boolean enabled) {
@@ -75,14 +74,6 @@ public class CgroupInfo {
 
     public void setMountRoot(String mountRoot) {
         this.mountRoot = mountRoot;
-    }
-
-    public String getMountOptions() {
-        return mountOptions;
-    }
-
-    public void setMountOptions(String mountOptions) {
-        this.mountOptions = mountOptions;
     }
 
     public String getCgroupPath() {

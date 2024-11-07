@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Red Hat Inc.
+ * Copyright (c) 2020, 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -473,17 +473,12 @@ public class TestCgroupSubsystemFactory {
         assertEquals(cpuInfo.getCgroupPath(), "/system.slice/garden.service/garden/bad/2f57368b-0eda-4e52-64d8-af5c");
         String expectedMountPoint = "/sys/fs/cgroup/cpu,cpuacct";
         assertEquals(expectedMountPoint, cpuInfo.getMountPoint());
-        CgroupV1SubsystemController cgroupv1MemoryController = new CgroupV1SubsystemController(cpuInfo.getMountRoot(), cpuInfo.getMountPoint(), false);
+        CgroupV1SubsystemController cgroupv1MemoryController = new CgroupV1SubsystemController(cpuInfo.getMountRoot(), cpuInfo.getMountPoint());
         cgroupv1MemoryController.setPath(cpuInfo.getCgroupPath());
         String actualPath = cgroupv1MemoryController.path();
         assertNotNull("Controller path should not have been null", actualPath);
-        String expectedPath = expectedMountPoint + cpuInfo.getCgroupPath();
-        assertEquals("Should be equal to mount point plus cgroup path in host mode", expectedPath, actualPath);
-        // set readonly=true and repeat
-        cgroupv1MemoryController = new CgroupV1SubsystemController(cpuInfo.getMountRoot(), cpuInfo.getMountPoint(), true);
-        cgroupv1MemoryController.setPath(cpuInfo.getCgroupPath());
-        actualPath = cgroupv1MemoryController.path();
-        assertEquals("Should be equal to mount point in container mode", expectedMountPoint, actualPath);
+        String expectedPath = expectedMountPoint;
+        assertEquals("Should be equal to the mount point path", expectedPath, actualPath);
     }
 
     @Test

@@ -75,9 +75,8 @@ public class CgroupSubsystemFactory {
     private static final Pattern MOUNTINFO_PATTERN = Pattern.compile(
         "^[^\\s]+\\s+[^\\s]+\\s+[^\\s]+\\s+" + // (1), (2), (3)
         "([^\\s]+)\\s+([^\\s]+)\\s+" +         // (4), (5)     - group 1, 2: root, mount point
-        "([^\\s]+)\\s+" +                      // (6)          - group 3: mount options
-        "[^-]*-\\s+" +                         // (7), (8)
-        "([^\\s]+)\\s+" +                      // (9)          - group 4: filesystem type
+        "[^-]+-\\s+" +                         // (6), (7), (8)
+        "([^\\s]+)\\s+" +                      // (9)          - group 3: filesystem type
         ".*$");                                // (10), (11)
 
     static CgroupMetrics create() {
@@ -310,8 +309,7 @@ public class CgroupSubsystemFactory {
         if (lineMatcher.matches()) {
             String mountRoot = lineMatcher.group(1);
             String mountPath = lineMatcher.group(2);
-            String mountOptions = lineMatcher.group(3);
-            String fsType = lineMatcher.group(4);
+            String fsType = lineMatcher.group(3);
             if (fsType.equals("cgroup")) {
                 Path p = Paths.get(mountPath);
                 String[] controllerNames = p.getFileName().toString().split(",");
@@ -324,7 +322,7 @@ public class CgroupSubsystemFactory {
                         case PIDS_CTRL:
                         case BLKIO_CTRL: {
                             CgroupInfo info = infos.get(controllerName);
-                            setMountPoints(info, mountPath, mountRoot, mountOptions);
+                            setMountPoints(info, mountPath, mountRoot);
                             cgroupv1ControllerFound = true;
                             break;
                         }
@@ -338,7 +336,7 @@ public class CgroupSubsystemFactory {
                     // All controllers have the same mount point and root mount
                     // for unified hierarchy.
                     for (CgroupInfo info: infos.values()) {
-                        setMountPoints(info, mountPath, mountRoot, mountOptions);
+                        setMountPoints(info, mountPath, mountRoot);
                     }
                 }
                 cgroupv2ControllerFound = true;
@@ -347,15 +345,19 @@ public class CgroupSubsystemFactory {
         return cgroupv1ControllerFound || cgroupv2ControllerFound;
     }
 
-    private static void setMountPoints(CgroupInfo info, String mountPath, String mountRoot, String mountOptions) {
-        if (info.getMountPoint() == null || !info.getMountPoint().startsWith("/sys/fs/cgroup")) {
+    private static void setMountPoints(CgroupInfo info, String mountPath, String mountRoot) {
+        if (info.getMountPoint() != null) {
             // On some systems duplicate controllers get mounted in addition to
             // the main cgroup controllers (which are under /sys/fs/cgroup). In that
             // case pick the main one and discard others as the limits
             // are associated with the ones in /sys/fs/cgroup.
+            if (!info.getMountPoint().startsWith("/sys/fs/cgroup")) {
+                info.setMountPoint(mountPath);
+                info.setMountRoot(mountRoot);
+            }
+        } else {
             info.setMountPoint(mountPath);
             info.setMountRoot(mountRoot);
-            info.setMountOptions(mountOptions);
         }
     }
 
