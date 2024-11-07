@@ -521,7 +521,7 @@ public class BasicScrollBarUI
      * Creates a keyboard focus listener.
      * @return a keyboard focus listener
      */
-    protected KeyboardFocusListener createKeyboardFocusListener(){
+    protected KeyboardFocusListener createKeyboardFocusListener() {
         return new KeyboardFocusListener();
     }
 
