@@ -219,6 +219,11 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_L, "AddL");
     }
 
+    public static final String ADD_P = PREFIX + "ADD_P" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_P, "AddP");
+    }
+
     public static final String ADD_VD = VECTOR_PREFIX + "ADD_VD" + POSTFIX;
     static {
         vectorNode(ADD_VD, "AddVD", TYPE_DOUBLE);
