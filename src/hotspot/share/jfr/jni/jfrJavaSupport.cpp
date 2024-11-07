@@ -343,6 +343,8 @@ static void write_specialized_field(JfrJavaArguments* args, const Handle& h_oop,
     case T_BOOLEAN:
     case T_CHAR:
     case T_SHORT:
+      Unimplemented();
+      break;
     case T_INT:
       write_int_field(h_oop, fd, args->param(1).get_jint());
       break;
@@ -374,8 +376,14 @@ static void read_specialized_field(JavaValue* result, const Handle& h_oop, field
 
   switch(fd->field_type()) {
     case T_BOOLEAN:
+      result->set_jint(h_oop->bool_field(fd->offset()));
+      break;
     case T_CHAR:
+      result->set_jint(h_oop->char_field(fd->offset()));
+      break;
     case T_SHORT:
+      result->set_jint(h_oop->short_field(fd->offset()));
+      break;
     case T_INT:
       result->set_jint(h_oop->int_field(fd->offset()));
       break;
