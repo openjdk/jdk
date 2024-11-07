@@ -467,8 +467,8 @@ public final class KDF {
             throws NoSuchAlgorithmException,
                    InvalidAlgorithmParameterException {
         Throwable cause = e.getCause();
-        if (cause instanceof InvalidAlgorithmParameterException) {
-            throw (InvalidAlgorithmParameterException) cause;
+        if (cause instanceof InvalidAlgorithmParameterException iape) {
+            throw iape;
         }
         throw e;
     }
@@ -686,7 +686,8 @@ public final class KDF {
         if (hasOne) throw new InvalidAlgorithmParameterException(
                 "The KDFParameters supplied could not be used in combination "
                 + "with the supplied algorithm for the selected Provider");
-        else throw new NoSuchAlgorithmException();
+        else throw new NoSuchAlgorithmException(
+                "No available provider supports the specified algorithm");
     }
 
     private static boolean checkSpiNonNull(Delegate d) {

@@ -309,6 +309,9 @@ public class HKDFExhaustiveTest {
     Utils.runAndCheckException(
         () -> KDF.getInstance(KDF_ALGORITHMS[0], new TestKDFParams(), SUNJCE),
         InvalidAlgorithmParameterException.class);
+    Utils.runAndCheckException(
+        () -> KDF.getInstance(KDF_ALGORITHMS[0], new TestKDFParams(), SUNJCE_PROVIDER),
+        InvalidAlgorithmParameterException.class);
 
     // getInstance(String algorithm, KDFParameters kdfParameters, Provider provider)
     Utils.runAndCheckException(
