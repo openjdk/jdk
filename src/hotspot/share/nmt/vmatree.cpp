@@ -237,11 +237,17 @@ VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
     return SummaryDiff();
   }
 
-  StateType type = out_state(range.start).type();
-  RegionData new_data = RegionData(out_state(range.start).stack(), tag);
-
   position end = MIN2(from + size, pos(range.end));
-  SummaryDiff diff = register_mapping(from, end, type, new_data);
+
+  StateType type = out_state(range.start).type();
+  SummaryDiff diff;
+  // Ignore any released ranges, these must be mtNone and have no stack.
+  if (type != StateType::Released) {
+    RegionData new_data = RegionData(out_state(range.start).stack(), tag);
+    SummaryDiff result = register_mapping(from, end, type, new_data);
+    diff.add(result);
+  }
+
   size = size - (end - from);
   from = end;
 
@@ -257,9 +263,11 @@ VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
     }
     end = MIN2(from + size, pos(range.end));
     StateType type = out_state(range.start).type();
-    RegionData new_data = RegionData(out_state(range.start).stack(), tag);
-    SummaryDiff result = register_mapping(from, end, type, new_data);
-    diff.add(result);
+    if (type != StateType::Released) {
+      RegionData new_data = RegionData(out_state(range.start).stack(), tag);
+      SummaryDiff result = register_mapping(from, end, type, new_data);
+      diff.add(result);
+    }
     size = size - (end - from);
     from = end;
   }

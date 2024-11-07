@@ -426,7 +426,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
   { // Holes in the address range are acceptable
     testrange expected[]{
         { 0,  50,          mtGC, si, State::Reserved},
-        {50,  75,          mtGC, si, State::Released},
+        {50,  75,        mtNone, si, State::Released},
         {75,  80,          mtGC, si, State::Reserved},
         {80, 100, mtClassShared, si, State::Reserved}
     };
