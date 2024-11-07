@@ -150,10 +150,6 @@ private:
     return node->val().out;
   }
 
-  static position pos(const TreapNode* node) {
-    return node->key();
-  }
-
   // AddressState saves the necessary information for performing online summary accounting.
   struct AddressState {
     position address;

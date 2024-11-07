@@ -228,6 +228,7 @@ void VMATree::print_on(outputStream* out) {
 #endif
 
 VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, const MemTag tag) {
+  auto pos = [](TreapNode* n) { return n->key(); };
   position from = start;
   size_t remsize = size;
 
