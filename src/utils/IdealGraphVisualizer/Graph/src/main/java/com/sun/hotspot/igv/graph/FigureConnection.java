@@ -121,6 +121,14 @@ public class FigureConnection implements Connection {
         return outputSlot;
     }
 
+    public Figure getFromFigure() {
+        return outputSlot.getFigure();
+    }
+
+    public Figure getToFigure() {
+        return inputSlot.getFigure();
+    }
+
     @Override
     public Cluster getFromCluster() {
         return getFrom().getVertex().getCluster();
