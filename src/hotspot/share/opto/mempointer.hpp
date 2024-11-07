@@ -568,15 +568,30 @@ private:
   MemPointerDecomposedForm _decomposed_form;
 
 public:
-  MemPointerDecomposedFormParser(const MemNode* mem) : _mem(mem), _con(NoOverflowInt(0)) {
-    _decomposed_form = parse_decomposed_form();
+  class Callback : public StackObj {
+  public:
+    virtual void callback(Node* n) { /* do nothing by default */ }
+  };
+
+  MemPointerDecomposedFormParser(const MemNode* mem) :
+    _mem(mem), _con(NoOverflowInt(0))
+  {
+   Callback empty_callback;
+    _decomposed_form = parse_decomposed_form(empty_callback);
+  }
+
+  MemPointerDecomposedFormParser(const MemNode* mem, Callback& adr_node_callback) :
+    _mem(mem), _con(NoOverflowInt(0))
+  {
+    _decomposed_form = parse_decomposed_form(adr_node_callback);
   }
 
   const MemPointerDecomposedForm& decomposed_form() const { return _decomposed_form; }
 
 private:
-  MemPointerDecomposedForm parse_decomposed_form();
-  void parse_sub_expression(const MemPointerSummand& summand);
+  MemPointerDecomposedForm parse_decomposed_form(Callback& adr_node_callback);
+
+  void parse_sub_expression(const MemPointerSummand& summand, Callback& adr_node_callback);
 
   bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;
 };

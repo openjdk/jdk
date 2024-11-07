@@ -48,12 +48,20 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
 {
 }
 
+class SuperWordUnrollingAnalysisIgnoredNodes : public MemPointerDecomposedFormParser::Callback {
+private:
+  // TODO
+public:
+  virtual void callback(Node* n) override { assert(false, "TODO"); }
+};
+
 void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor) {
   IdealLoopTree* lpt    = vloop.lpt();
   CountedLoopNode* cl   = vloop.cl();
   Node* cl_exit         = vloop.cl_exit();
   PhaseIdealLoop* phase = vloop.phase();
 
+  SuperWordUnrollingAnalysisIgnoredNodes ignored_nodes;
   bool is_slp = true;
   size_t ignored_size = lpt->_body.size();
   int *ignored_loop_nodes = NEW_RESOURCE_ARRAY(int, ignored_size);
@@ -142,10 +150,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
           VPointer p1(current, vloop, &nstack);
           have_side_effects = p1.node_stack()->is_nonempty();
 
-          XPointer xp(current, vloop, [&] (Node* n) {
-            NOT_PRODUCT( n->dump(); )
-            assert(false, "TODO");
-          });
+          XPointer xp(current, vloop, ignored_nodes);
           NOT_PRODUCT( xp.print_on(tty); )
         }
 

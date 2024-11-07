@@ -671,6 +671,8 @@ private:
 // TODO
 class XPointer : public ArenaObj {
 private:
+  typedef MemPointerDecomposedFormParser::Callback Callback;
+
   const MemPointerDecomposedForm _decomposed_form;
   const jint _size;
   const bool _is_valid;
@@ -683,7 +685,7 @@ public:
     _is_valid(false) {}
 
   template<typename Callback>
-  XPointer(const MemNode* mem, const VLoop& vloop, Callback adr_node_callback) :
+  XPointer(const MemNode* mem, const VLoop& vloop, Callback& adr_node_callback) :
     _decomposed_form(init_decomposed_form(mem, adr_node_callback)),
     _size(mem->memory_size()),
     _is_valid(init_is_valid(_decomposed_form, vloop)) {}
@@ -696,11 +698,10 @@ public:
   NOT_PRODUCT( void print_on(outputStream* st) const; )
 
 private:
-  template<typename Callback>
-  static const MemPointerDecomposedForm init_decomposed_form(const MemNode* mem, Callback adr_node_callback) {
+  static const MemPointerDecomposedForm init_decomposed_form(const MemNode* mem, Callback& adr_node_callback) {
     assert(mem->is_Store() || mem->is_Load(), "only stores and loads are supported");
     ResourceMark rm;
-    MemPointerDecomposedFormParser parser(mem);
+    MemPointerDecomposedFormParser parser(mem, adr_node_callback);
     return parser.decomposed_form();
   }
 
