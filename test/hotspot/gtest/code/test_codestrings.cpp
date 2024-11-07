@@ -45,7 +45,8 @@ static const char* replace_addr_expr(const char* str)
     std::basic_string<char> tmp1 = std::regex_replace(str, std::regex("0x[0-9a-fA-F]+"), "<addr>");
     // Padding: aarch64
     std::basic_string<char> tmp2 = std::regex_replace(tmp1, std::regex("\\s+<addr>:\\s+\\.inst\\t<addr> ; undefined"), "");
-    std::basic_string<char> tmp3 = std::regex_replace(tmp2, std::regex(",\\s+.*\\+[0-9]+\\s+<addr>"), "<addr>");
+    std::basic_string<char> tmp3 = std::regex_replace(tmp2, std::regex(",\\s+.*\\s+<addr>"), "<addr>");
+    std::basic_string<char> tmp3 = std::regex_replace(tmp2, std::regex(", <addr> = .*"), "<addr>");
     std::basic_string<char> tmp4 = std::regex_replace(tmp3, std::regex("\\s+<addr>:\\s+udf\\t#0"), "");
     // Padding: riscv
     std::basic_string<char> tmp5  = std::regex_replace(tmp4, std::regex("\\s+<addr>:\\s+unimp"), "");
