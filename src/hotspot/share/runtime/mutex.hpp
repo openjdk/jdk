@@ -104,6 +104,9 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 #ifndef PRODUCT
   bool    _allow_vm_block;
 #endif
+  static Mutex** _mutex_array;
+  static int _num_mutex;
+
 #ifdef ASSERT
   Rank    _rank;                 // rank (to avoid/detect potential deadlocks)
   Mutex*  _next;                 // Used by a Thread to link up owned locks
@@ -117,8 +120,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
     return _skip_rank_check;
   }
 
-  static Mutex** _mutex_array;
-  static int _num_mutex;
 
 
 public:
