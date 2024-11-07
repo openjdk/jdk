@@ -178,8 +178,6 @@ public enum KnownOIDs {
     SHA3_256withRSA("2.16.840.1.101.3.4.3.14", "SHA3-256withRSA"),
     SHA3_384withRSA("2.16.840.1.101.3.4.3.15", "SHA3-384withRSA"),
     SHA3_512withRSA("2.16.840.1.101.3.4.3.16", "SHA3-512withRSA"),
-
-    // ML-DSA
     ML_DSA_44("2.16.840.1.101.3.4.3.17", "ML-DSA-44"),
     ML_DSA_65("2.16.840.1.101.3.4.3.18", "ML-DSA-65"),
     ML_DSA_87("2.16.840.1.101.3.4.3.19", "ML-DSA-87"),
