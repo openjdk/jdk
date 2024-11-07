@@ -179,6 +179,11 @@ public enum KnownOIDs {
     SHA3_384withRSA("2.16.840.1.101.3.4.3.15", "SHA3-384withRSA"),
     SHA3_512withRSA("2.16.840.1.101.3.4.3.16", "SHA3-512withRSA"),
 
+    // kems 2.16.840.1.101.3.4.4.*
+    ML_KEM_512("2.16.840.1.101.3.4.4.1", "ML-KEM-512"),
+    ML_KEM_768("2.16.840.1.101.3.4.4.2", "ML-KEM-768"),
+    ML_KEM_1024("2.16.840.1.101.3.4.4.3", "ML-KEM-1024"),
+
     // RSASecurity
     // PKCS1 1.2.840.113549.1.1.*
     PKCS1("1.2.840.113549.1.1", "RSA") { // RSA KeyPairGenerator and KeyFactory
@@ -312,11 +317,6 @@ public enum KnownOIDs {
     SHA384withECDSA("1.2.840.10045.4.3.3"),
     SHA512withECDSA("1.2.840.10045.4.3.4"),
     SpecifiedSHA2withECDSA("1.2.840.10045.4.3"),
-
-    // PQC
-    ML_KEM_512("1.3.6.1.4.1.22554.5.6.1", "ML-KEM-512"),
-    ML_KEM_768("1.3.6.1.4.1.22554.5.6.2", "ML-KEM-768"),
-    ML_KEM_1024("1.3.6.1.4.1.22554.5.6.3", "ML-KEM-1024"),
 
     // X9.42 1.2.840.10046.2.*
     X942_DH("1.2.840.10046.2.1", "DiffieHellman") { // unused by JDK providers
