@@ -169,6 +169,28 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseByteReverseInstructions, false);
     }
   }
+
+  // Power7 and later.
+  if (PowerArchitecturePPC64 > 6) {
+    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+      FLAG_SET_ERGO(UsePopCountInstruction, true);
+    }
+  }
+
+  if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
+    FLAG_SET_ERGO(ConditionalMoveLimit, 0);
+  }
+
+  if (OptimizeFill) {
+    warning("OptimizeFill is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptimizeFill, false);
+  }
+
+  if (OptoScheduling) {
+    // The OptoScheduling information is not maintained in ppd.ad.
+    warning("OptoScheduling is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptoScheduling, false);
+  }
 #endif
 
   // Create and print feature-string.
