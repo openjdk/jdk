@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.Events;
  * @summary Test leak profiler with Shenandoah
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
- * @run main/othervm -XX:TLABSize=2k jdk.jfr.event.oldobject.TestShenandoah
+ * @run main/othervm  -XX:TLABSize=2k -XX:+UseShenandoahGC jdk.jfr.event.oldobject.TestShenandoah
  */
 public class TestShenandoah {
 

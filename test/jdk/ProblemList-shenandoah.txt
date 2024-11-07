@@ -49,7 +49,6 @@ jdk/jfr/event/oldobject/TestParallel.java               8342951     generic-all
 jdk/jfr/event/oldobject/TestReferenceChainLimit.java    8342951     generic-all
 jdk/jfr/event/oldobject/TestSanityDefault.java          8342951     generic-all
 jdk/jfr/event/oldobject/TestSerial.java                 8342951     generic-all
-jdk/jfr/event/oldobject/TestShenandoah.java             8342951     generic-all
 jdk/jfr/event/oldobject/TestThreadLocalLeak.java        8342951     generic-all
 jdk/jfr/event/oldobject/TestZ.java                      8342951     generic-all
 jdk/jfr/jcmd/TestJcmdDump.java                          8342951     generic-all
