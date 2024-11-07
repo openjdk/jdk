@@ -53,8 +53,6 @@ public class PEMEncoderTest {
     public static void main(String[] args) throws Exception {
         PEMEncoder encoder = PEMEncoder.of();
 
-        //System.out.println("first");
-        //PEMEncoder.of().encode(PEMData.getEntry("ecsecp384"));
         PEMData.entryList.remove(PEMData.getEntry("rsaOpenSSL"));
         keymap = generateObjKeyMap(PEMData.entryList);
         System.out.println("Same instance Encoder test:");
@@ -94,7 +92,7 @@ public class PEMEncoderTest {
                     keymap.put(entry.name(), pemd.withDecryption(
                         entry.password()).decode(entry.pem()));
                 } else {
-                    keymap.put(entry.name(), pemd.decode(entry.pem()));
+                    keymap.put(entry.name(), pemd.decode(entry.pem(), entry.clazz()));
                 }
             } catch (Exception e) {
                 System.err.println("Verify PEMDecoderTest passes before debugging this test.");

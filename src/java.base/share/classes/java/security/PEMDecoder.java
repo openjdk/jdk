@@ -125,23 +125,30 @@ public final class PEMDecoder {
                         new X509EncodedKeySpec(decoder.decode(pem.pem()));
                     yield (getKeyFactory(spec.getAlgorithm())).
                         generatePublic(spec);
-
                 }
                 case PEMRecord.PRIVATE_KEY -> {
                     PKCS8Key p8key = new PKCS8Key(decoder.decode(pem.pem()));
-                    PrivateKey priKey;
                     KeyFactory kf = getKeyFactory(p8key.getAlgorithm());
-                    priKey = kf.generatePrivate(
+                    DEREncodable d;
+
+                    d = kf.generatePrivate(
                         new PKCS8EncodedKeySpec(p8key.getEncoded(),
                             p8key.getAlgorithm()));
-                    // If there is a public key, it's an OAS.
-                    if (p8key.getPubKeyEncoded() != null) {
+                    // If a public key is available in the private key encoding.
+                    if (d instanceof PKCS8Key p8 &&
+                        p8.getPubKeyEncoded() != null) {
+                        X509EncodedKeySpec spec = new X509EncodedKeySpec(
+                            p8.getPubKeyEncoded(), p8.getAlgorithm());
+                        yield new KeyPair(getKeyFactory(p8.getAlgorithm()).
+                            generatePublic(spec), p8);
+                    } else if (p8key.getPubKeyEncoded() != null) {
                         X509EncodedKeySpec spec = new X509EncodedKeySpec(
                             p8key.getPubKeyEncoded(), p8key.getAlgorithm());
                         yield new KeyPair(getKeyFactory(p8key.getAlgorithm()).
-                            generatePublic(spec), priKey);
+                            generatePublic(spec), (PrivateKey) d);
+                    } else {
+                        yield d;
                     }
-                    yield priKey;
                 }
                 case PEMRecord.ENCRYPTED_PRIVATE_KEY -> {
                     if (password == null) {

@@ -157,7 +157,6 @@ public final class PEMEncoder {
                     throw new IllegalArgumentException("KeyPair does not " +
                         "contain PublicKey.");
                 }
-
                 if (kp.getPrivate() == null) {
                     throw new IllegalArgumentException("KeyPair does not " +
                         "contain PrivateKey.");
@@ -174,7 +173,7 @@ public final class PEMEncoder {
                     yield pemEncoded(new PEMRecord(
                         PEMRecord.ENCRYPTED_PRIVATE_KEY, epki.getEncoded()));
                 } catch (IOException e) {
-                    throw new SecurityException(e);
+                    throw new IllegalArgumentException(e);
                 }
             }
             case X509Certificate c -> {

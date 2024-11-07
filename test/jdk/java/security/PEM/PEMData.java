@@ -28,6 +28,7 @@ import java.security.DEREncodable;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.*;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -35,7 +36,7 @@ import java.util.regex.Pattern;
  * Library class for PEMEncoderTest and PEMDecoderTest
  */
 class PEMData {
-    public static final Entry ecprivpem = new Entry("ecprivpem",
+    public static final Entry ecsecp256 = new Entry("ecsecp256",
         """
         -----BEGIN PRIVATE KEY-----
         MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgkW3Jx561NlEgBnut
@@ -44,7 +45,7 @@ class PEMData {
         -----END PRIVATE KEY-----
         """, ECPrivateKey.class);
 
-    public static final Entry privpem = new Entry("privpem",
+    public static final Entry rsapriv = new Entry("rsapriv",
         """
         -----BEGIN PRIVATE KEY-----
         MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAOtjMnCzPy4jCeZb
@@ -64,7 +65,7 @@ class PEMData {
         -----END PRIVATE KEY-----
         """, RSAPrivateKey.class);
 
-    public static final Entry privpembc = new Entry("privpembc",
+    public static final Entry rsaprivbc = new Entry("rsaprivbc",
         """
         -----BEGIN PRIVATE KEY-----
         MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAOtjMnCzPy4jCeZb
@@ -84,14 +85,14 @@ class PEMData {
         -----END PRIVATE KEY-----
         """, RSAPrivateKey.class);
 
-    public static final Entry privec25519pem = new Entry("privpemed25519",
+    public static final Entry ec25519priv = new Entry("ed25519priv",
         """
         -----BEGIN PRIVATE KEY-----
         MC4CAQAwBQYDK2VwBCIEIFFZsmD+OKk67Cigc84/2fWtlKsvXWLSoMJ0MHh4jI4I
         -----END PRIVATE KEY-----
         """, EdECPrivateKey.class);
 
-    public static final Entry pubrsapem = new Entry("pubrsapem",
+    public static final Entry rsapub = new Entry("rsapub",
         """
         -----BEGIN PUBLIC KEY-----
         MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDrYzJwsz8uIwnmWznTr5r1N45e
@@ -101,7 +102,7 @@ class PEMData {
         -----END PUBLIC KEY-----
         """, RSAPublicKey.class);
 
-    public static final Entry pubrsapembc = new Entry("pubrsapembc",
+    public static final Entry rsapubbc = new Entry("rsapubbc",
         """
         -----BEGIN PUBLIC KEY-----
         MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDrYzJwsz8uIwnmWznTr5r1N45e
@@ -111,7 +112,7 @@ class PEMData {
         -----END PUBLIC KEY-----
         """, RSAPublicKey.class);
 
-    public static final Entry pubecpem = new Entry("pubecpem", """
+    public static final Entry ecsecp256pub = new Entry("ecsecp256pub", """
         -----BEGIN PUBLIC KEY-----
         MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEi/kRGOL7wCPTN4KJ2ppeSt5UYB6u
         cPjjuKDtFTXbguOIFDdZ65O/8HTUqS/sVzRF+dg7H3/tkQ/36KdtuADbwQ==
@@ -191,7 +192,7 @@ class PEMData {
         -----END RSA PRIVATE KEY-----
         """, RSAPrivateKey.class);
 
-    private static final Entry encEdECKey = new Entry("encEdECKey",
+    private static final Entry ed25519ep8 = new Entry("ed25519ep8",
         """
         -----BEGIN ENCRYPTED PRIVATE KEY-----
         MIGqMGYGCSqGSIb3DQEFDTBZMDgGCSqGSIb3DQEFDDArBBRyYnoNyrcqvubzch00
@@ -202,8 +203,8 @@ class PEMData {
         """, EdECPrivateKey.class, "fish".toCharArray());
 
     // This is not meant to be decrypted and to stay as an EKPI
-    private static final Entry encEdECKeyEKPI = new Entry("encEdECKeyEPKI",
-        encEdECKey.pem(), EncryptedPrivateKeyInfo.class, null);
+    private static final Entry ed25519ekpi = new Entry("ed25519ekpi",
+        ed25519ep8.pem(), EncryptedPrivateKeyInfo.class, null);
 
     private static final Entry rsaCert = new Entry("rsaCert",
         """
@@ -279,11 +280,28 @@ class PEMData {
         -----END PRIVATE KEY-----
         """, ECPrivateKey.class);
 
-    public record Entry(String name, String pem, Class clazz, char[] password) {
+    public record Entry(String name, String pem, Class clazz, char[] password,
+                        byte[] der) {
+
+        public Entry(String name, String pem, Class clazz, char[] password,
+            byte[] der) {
+            this.name = name;
+            this.pem = pem;
+            this.clazz = clazz;
+            this.password = password;
+            if (pem != null && pem.length() > 0) {
+                String[] pemtext = pem.split("-----");
+                this.der = Base64.getMimeDecoder().decode(pemtext[2]);
+            } else {
+                this.der = null;
+            }
+        }
+        Entry(String name, String pem, Class clazz, char[] password) {
+            this(name, pem, clazz, password, null);
+        }
 
         Entry(String name, String pem, Class clazz) {
-            this(name, pem, clazz, null);
-
+            this(name, pem, clazz, null, null);
         }
 
         public Entry newClass(String name, Class c) {
@@ -336,17 +354,18 @@ class PEMData {
     static List<Entry> failureEntryList = new ArrayList<>();
 
     static {
-        pubList.add(pubrsapem);
-        pubList.add(pubrsapembc);
-        pubList.add(pubecpem.makeCR("pubecpem-r"));
-        pubList.add(pubecpem.makeCRLF("pubecpem-rn"));
-        privList.add(privpem);
-        privList.add(privpembc);
-        privList.add(ecprivpem);
+        pubList.add(rsapub);
+        pubList.add(rsapubbc);
+        pubList.add(ecsecp256pub.makeCR("ecsecp256pub-r"));
+        pubList.add(ecsecp256pub.makeCRLF("ecsecp256pub-rn"));
+        privList.add(rsapriv);
+        privList.add(rsaprivbc);
+        privList.add(ecsecp256);
         privList.add(ecsecp384);
-        privList.add(privec25519pem);
-        privList.add(encEdECKeyEKPI);  // The non-EKPI version needs decryption
+        privList.add(ec25519priv);
+        privList.add(ed25519ekpi);  // The non-EKPI version needs decryption
         privList.add(rsaOpenSSL);
+        privList.add(ecsecp384);
         oasList.add(oasrfc8410);
         oasList.add(oasbcpem);
 
@@ -358,7 +377,7 @@ class PEMData {
         entryList.addAll(oasList);
         entryList.addAll(certList);
 
-        encryptedList.add(encEdECKey);
+        encryptedList.add(ed25519ep8);
 
         passList.addAll(entryList);
         passList.addAll(encryptedList);

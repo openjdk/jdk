@@ -64,7 +64,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     /* The algorithm information (name, parameters, etc). */
     protected AlgorithmId algid;
 
-    /* The key bytes in octet form for the algorithm subclasses to decode */
+    /* The private key OctetString for the algorithm subclasses to decode */
     protected byte[] privKeyMaterial;
 
     /* The pkcs8 encoding of this key(s). Created on demand. */
@@ -73,11 +73,15 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     /* The encoded x509 public key for v2 */
     protected byte[] pubKeyEncoded = null;
 
+    /* ASN.1 Attributes */
+    protected byte[] attributes;
+
+    /* PKCS8 version of the PEM */
+    protected int version;
+
     /* The version for this key */
     private static final int V1 = 0;
     private static final int V2 = 1;
-    private byte[] attributes;
-    private int version;
 
     /**
      * Default constructor. Constructors in subclasses that create a new key
@@ -140,8 +144,8 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
             }
 
             // OPTIONAL Context tag 0 for Attributes for PKCS8 v1 & v2
-            // Uses 0xA0 constructed define-length or 0x80 constructed
-            // indefinite.
+            // Uses 0xA0 context-specific/constructed or 0x80
+            // context-specific/primitive.
             DerValue v = val.data.getDerValue();
             if (v.isContextSpecific((byte)0)) {
                 attributes = v.getDataBytes();  // Save DER sequence
@@ -298,8 +302,8 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
             try {
                 encodedKey = generateEncoding();
             } catch (IOException e) {
-                e.printStackTrace();
                 // encodedKey is still null
+                throw new SecurityException(e);
             }
         }
         return encodedKey;
@@ -307,25 +311,27 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
 
     private byte[] generateEncoding() throws IOException {
         DerOutputStream out = new DerOutputStream();
-        out.putInteger((pubKeyEncoded == null) ? 0 : 1);
+        out.putInteger(version);
         algid.encode(out);
         out.putOctetString(privKeyMaterial);
 
-        if (attributes != null) {
-            out.writeImplicit(
-                DerValue.createTag((byte) (DerValue.TAG_CONTEXT |
-                    DerValue.TAG_CONSTRUCT), false, (byte) 0),
-                new DerOutputStream().putOctetString(attributes));
+        if (version == V2) {
+            if (attributes != null) {
+                out.writeImplicit(
+                    DerValue.createTag((byte) (DerValue.TAG_CONTEXT |
+                        DerValue.TAG_CONSTRUCT), false, (byte) 0),
+                    new DerOutputStream().putOctetString(attributes));
 
-        }
+            }
 
-        if (pubKeyEncoded != null) {
-            X509Key x = (X509Key) X509Key.parseKey(pubKeyEncoded);
-            DerOutputStream pubOut = new DerOutputStream();
-            pubOut.putUnalignedBitString(x.getKey());
-            out.writeImplicit(
-                DerValue.createTag(DerValue.TAG_CONTEXT, false, (byte) 1),
-                pubOut);
+            if (pubKeyEncoded != null) {
+                X509Key x = (X509Key) X509Key.parseKey(pubKeyEncoded);
+                DerOutputStream pubOut = new DerOutputStream();
+                pubOut.putUnalignedBitString(x.getKey());
+                out.writeImplicit(
+                    DerValue.createTag(DerValue.TAG_CONTEXT, false,
+                        (byte) 1), pubOut);
+            }
         }
 
         DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);

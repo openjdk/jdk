@@ -26,6 +26,7 @@
 /*
  * @test
  * @bug 8298420
+ * @modules java.base/sun.security.pkcs
  * @summary Testing basic PEM API decodings
  * @enablePreview
  */
@@ -44,9 +45,6 @@ public class PEMDecoderTest {
 
     static HexFormat hex = HexFormat.of();
 
-    PEMDecoderTest() {
-    }
-
     public static void main(String[] args) throws IOException {
         System.out.println("Decoder test:");
         PEMData.entryList.forEach(PEMDecoderTest::test);
@@ -57,34 +55,40 @@ public class PEMDecoderTest {
         System.out.println("Decoder test with OAS:");
         testTwoKeys();
         System.out.println("Decoder test RSA PEM setting RSAKey.class returned:");
-        test(PEMData.getEntry("privpem"), RSAKey.class);
+        test(PEMData.getEntry("rsapriv"), RSAKey.class);
         System.out.println("Decoder test failures:");
         PEMData.failureEntryList.forEach(PEMDecoderTest::testFailure);
-        System.out.println("Decoder test ECpriv PEM asking for ECPublicKey.class returned:");
-        testFailure(PEMData.getEntry("ecprivpem"), ECPublicKey.class);
-        System.out.println("Decoder test RSApriv PEM setting P8EKS.class returned:");
-        testClass(PEMData.getEntry("privpem"), RSAPrivateKey.class);
-        System.out.println("Decoder test RSApriv P1 PEM asking for RSAPublicKey.class returned:");
+        System.out.println("Decoder test ecsecp256 PEM asking for ECPublicKey.class returned:");
+        testFailure(PEMData.getEntry("ecsecp256"), ECPublicKey.class);
+        System.out.println("Decoder test rsapriv PEM setting P8EKS.class returned:");
+        testClass(PEMData.getEntry("rsapriv"), RSAPrivateKey.class);
+        System.out.println("Decoder test rsaOpenSSL P1 PEM asking for RSAPublicKey.class returned:");
         testFailure(PEMData.getEntry(PEMData.privList, "rsaOpenSSL"), RSAPublicKey.class);
-        System.out.println("Decoder test RSApriv PEM asking X509EKS.class returned:");
-        testClass(PEMData.getEntry("privpem"), X509EncodedKeySpec.class, false);
+        System.out.println("Decoder test rsapriv PEM asking X509EKS.class returned:");
+        testClass(PEMData.getEntry("rsapriv"), X509EncodedKeySpec.class, false);
         System.out.println("Decoder test RSAcert PEM asking X509EKS.class returned:");
         testClass(PEMData.getEntry("rsaCert"), X509EncodedKeySpec.class, false);
         System.out.println("Decoder test OAS RFC PEM asking PrivateKey.class returned:");
         testClass(PEMData.getEntry("oasrfc8410"), PrivateKey.class, true);
         testClass(PEMData.getEntry("oasrfc8410"), PublicKey.class, true);
-        System.out.println("Decoder test encEdECkey:");
-        testFailure(PEMData.pubecpem.makeNoCRLF("pubecpem-no"));
+        System.out.println("Decoder test ecsecp256:");
+        testFailure(PEMData.ecsecp256pub.makeNoCRLF("pubecpem-no"));
         System.out.println("Decoder test RSAcert with decryption Decoder:");
         PEMDecoder d = PEMDecoder.of().withDecryption("123".toCharArray());
         d.decode(PEMData.getEntry("rsaCert").pem());
-        System.out.println("Decoder test ECpriv with decryption Decoder:");
-        PrivateKey pkey = (PrivateKey) d.decode(PEMData.getEntry("ecprivpem").pem());
-        System.out.println("Decoder test ECpriv to P8EKS:");
-        PKCS8EncodedKeySpec p8 = d.decode(PEMData.getEntry("ecprivpem").pem(),
+        System.out.println("Decoder test ecsecp256 with decryption Decoder:");
+        PrivateKey pkey = ((KeyPair)d.decode(PEMData.getEntry("ecsecp256").pem())).getPrivate();
+        System.out.println("Decoder test ecsecp256 to P8EKS:");
+        PKCS8EncodedKeySpec p8 = d.decode(PEMData.getEntry("ecsecp256").pem(),
             PKCS8EncodedKeySpec.class);
-        System.out.println("first");
-        PEMDecoder.of().decode(PEMData.getEntry("ecsecp384").pem());
+
+        System.out.println("Checking if decode() returns the same encoding:");
+        PEMData.privList.forEach(PEMDecoderTest::testDERCheck);
+        PEMData.oasList.forEach(PEMDecoderTest::testDERCheck);
+
+        System.out.println("Signature/Verify:");
+        PEMData.privList.forEach(PEMDecoderTest::testSignature);
+        PEMData.oasList.forEach(PEMDecoderTest::testSignature);
     }
 
     static void testFailure(PEMData.Entry entry) {
@@ -163,8 +167,13 @@ public class PEMDecoderTest {
      * Perform the decoding test with the given decoder, on the given pem, and
      * expect the clazz to be returned.
      */
-    static DEREncodable test(String pem, Class clazz, PEMDecoder decoder) throws IOException {
-        var pk = decoder.decode(pem);
+    static DEREncodable test(String pem, Class clazz, PEMDecoder decoder)
+        throws IOException {
+        DEREncodable pk = decoder.decode(pem);
+
+        if (pk instanceof KeyPair kp) {
+            pk = kp.getPrivate();
+        }
 
         // Check that clazz matches what pk returned.
         if (pk.getClass().equals(clazz)) {
@@ -188,14 +197,14 @@ public class PEMDecoderTest {
     static void testTwoKeys() throws IOException {
         PublicKey p1, p2;
         PEMDecoder pd = PEMDecoder.of();
-        p1 = pd.decode(PEMData.pubrsapem.pem(), RSAPublicKey.class);
-        p2 = pd.decode(PEMData.pubrsapem.pem(), RSAPublicKey.class);
+        p1 = pd.decode(PEMData.rsapub.pem(), RSAPublicKey.class);
+        p2 = pd.decode(PEMData.rsapub.pem(), RSAPublicKey.class);
         if (!Arrays.equals(p1.getEncoded(), p2.getEncoded())) {
             System.err.println("These two should have matched:");
             System.err.println(hex.parseHex(new String(p1.getEncoded())));
             System.err.println(hex.parseHex(new String(p2.getEncoded())));
-            throw new AssertionError("Two decoding of the same key failed to" +
-                " match: ");
+            throw new AssertionError("Two decoding of the same" +
+                " key failed to match: ");
         }
     }
 
@@ -203,13 +212,95 @@ public class PEMDecoderTest {
         var pk = PEMDecoder.of().decode(entry.pem(), clazz);
     }
 
-    static void testClass(PEMData.Entry entry, Class clazz, boolean pass) throws RuntimeException {
+    static void testClass(PEMData.Entry entry, Class clazz, boolean pass)
+        throws RuntimeException {
         try {
             testClass(entry, clazz);
         } catch (Exception e) {
             if (pass) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    // Run test with a given Entry
+    static void testDERCheck(PEMData.Entry entry) {
+        if (entry.name().equals("rsaOpenSSL") ||  // PKCS1 data
+            entry.name().equals("ed25519ekpi")) {
+            return;
+        }
+
+        PKCS8EncodedKeySpec p8 = PEMDecoder.of().decode(entry.pem(),
+                PKCS8EncodedKeySpec.class);
+        int result = Arrays.compare(entry.der(), p8.getEncoded());
+        if (result != 0) {
+            System.err.println("Compare error with " + entry.name() + "(" +
+                result + ")");
+            System.err.println("Expected DER: " + HexFormat.of().
+                formatHex(entry.der()));
+            System.err.println("Returned DER: " + HexFormat.of().
+                formatHex(p8.getEncoded()));
+                throw new AssertionError("Failed to match " +
+                "expected DER");
+        }
+        System.out.println("PASS (" + entry.name() + ")");
+        System.out.flush();
+    }
+
+    /**
+     * Run decoded keys through Signature to make sure they are valid keys
+     */
+    static void testSignature(PEMData.Entry entry) {
+        Signature s;
+        byte[] data = "12345678".getBytes();
+        PrivateKey privateKey;
+
+        DEREncodable d = PEMDecoder.of().decode(entry.pem());
+        switch (d) {
+            case PrivateKey p -> privateKey = p;
+            case KeyPair kp -> privateKey = kp.getPrivate();
+            case EncryptedPrivateKeyInfo e -> {
+                System.out.println("SKIP: EncryptedPrivateKeyInfo " +
+                    entry.name());
+                return;
+            }
+            default -> throw new AssertionError("Private key " +
+                "should not be null");
+        }
+
+        String algorithm = switch(privateKey.getAlgorithm()) {
+            case "EC" -> "SHA256withECDSA";
+            case "EdDSA" -> "EdDSA";
+            case null -> {
+                System.out.println("Algorithm is null " +
+                    entry.name());
+                throw new AssertionError("PrivateKey algorithm" +
+                    "should not be null");
+            }
+            default -> "SHA256with" + privateKey.getAlgorithm();
+        };
+
+        try {
+            if (d instanceof PrivateKey) {
+                s = Signature.getInstance(algorithm);
+                s.initSign(privateKey);
+                s.update(data);
+                s.sign();
+                System.out.println("PASS (Sign): " + entry.name());
+            } else if (d instanceof KeyPair) {
+                s = Signature.getInstance(algorithm);
+                s.initSign(privateKey);
+                s.update(data);
+                byte[] sig = s.sign();
+                s.initVerify(((KeyPair)d).getPublic());
+                s.verify(sig);
+                System.out.println("PASS (Sign/Verify): " + entry.name());
+            } else {
+                System.out.println("SKIP: " + entry.name());
+            }
+        } catch (Exception e) {
+            System.out.println("FAIL: " + entry.name());
+            throw new AssertionError(e);
         }
     }
 }

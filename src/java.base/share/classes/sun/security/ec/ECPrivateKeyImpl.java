@@ -40,6 +40,7 @@ import sun.security.ec.point.MutablePoint;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.PKCS8Key;
+import sun.security.x509.X509Key;
 
 /**
  * Key implementation for EC private keys.
@@ -165,6 +166,9 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         return params;
     }
 
+    /**
+     * Parse the ASN.1 of the privateKey Octet
+     */
     private void parseKeyBits() throws InvalidKeyException {
         // Parse private key material from PKCS8Key.decode()
         try {
@@ -184,9 +188,23 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             while (data.available() != 0) {
                 DerValue value = data.getDerValue();
                 if (value.isContextSpecific((byte) 0)) {
-                    // ignore for now
-                } else if (value.isContextSpecific((byte) 1)) {
-                    // ignore for now
+                    attributes = value.getDataBytes();  // Save DER sequence
+                    if (data.available() == 0) {
+                        return;
+                    }
+                    value = data.getDerValue();
+                }
+                if (value.isContextSpecific((byte) 1)) {
+                    DerValue bits = value.withTag(DerValue.tag_BitString);
+                    //byte[] bytes = bits.getBitString();
+                    //BitArray bitArray = new BitArray(bytes[0] * 8 - 2, bytes, 3);
+                    BitArray bitArray = bits.data.getUnalignedBitString();
+                    pubKeyEncoded = new X509Key(algid,
+                        bitArray).getEncoded();
+/*
+                    pubKeyEncoded = new X509Key(algid,
+                        bits.getUnalignedBitString()).getEncoded();
+ */
                 } else {
                     throw new InvalidKeyException("Unexpected value: " + value);
                 }
