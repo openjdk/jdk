@@ -217,7 +217,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     private static native String getLocalHostname();
     private static native int getJvmPID();
 
-    @SuppressWarnings("deprecation")
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
 
