@@ -31,7 +31,7 @@ import com.sun.jmx.defaults.ServiceName;
 import com.sun.jmx.mbeanserver.Util;
 
 /**
- * Represents  the MBean server from the management point of view.
+ * Represents the MBean server from the management point of view.
  * The MBeanServerDelegate MBean emits the MBeanServerNotifications when
  * an MBean is registered/unregistered in the MBean server.
  *
