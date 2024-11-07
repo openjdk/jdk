@@ -273,7 +273,7 @@ void VLoopDependencyGraph::construct() {
       MemNode* n1 = slice_nodes.at(j);
       memory_pred_edges.clear();
 
-      const VPointer& p1 = _vpointers.vpointer(n1);
+      const XPointer& p1 = _vpointers.xpointer(n1);
       // For all memory nodes before it, check if we need to add a memory edge.
       for (int k = slice_nodes.length() - 1; k > j; k--) {
         MemNode* n2 = slice_nodes.at(k);
@@ -281,8 +281,8 @@ void VLoopDependencyGraph::construct() {
         // Ignore Load-Load dependencies:
         if (n1->is_Load() && n2->is_Load()) { continue; }
 
-        const VPointer& p2 = _vpointers.vpointer(n2);
-        if (!VPointer::not_equal(p1.cmp(p2))) {
+        const XPointer& p2 = _vpointers.xpointer(n2);
+        if (!p1.never_overlaps_with(p2)) {
           // Possibly overlapping memory
           memory_pred_edges.append(_body.bb_idx(n2));
         }
@@ -483,6 +483,14 @@ int VPointer::cmp_for_sort(const VPointer** p1, const VPointer** p2) {
   RETURN_CMP_VALUE_IF_NOT_EQUAL(a->offset_in_bytes(), b->offset_in_bytes());
   RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->_idx,       b->mem()->_idx);
   return 0; // equal
+}
+
+bool XPointer::never_overlaps_with(const XPointer& other) const {
+  const MemPointerDecomposedForm& s1 = decomposed_form();
+  const MemPointerDecomposedForm& s2 = other.decomposed_form();
+  //const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA _trace ));
+  // TODO
+  return false;
 }
 
 #ifndef PRODUCT

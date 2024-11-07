@@ -681,6 +681,8 @@ private:
   const jint _size;
   const bool _is_valid;
 
+  //NOT_PRODUCT( const TraceMemPointer& _trace; )
+
 public:
   // Default constructor, e.g. for GrowableArray.
   XPointer() :
@@ -704,6 +706,10 @@ public:
 
   // Accessors
   bool is_valid() const { return _is_valid; }
+  const MemPointerDecomposedForm& decomposed_form() const { return _decomposed_form; }
+
+  // Aliasing
+  bool never_overlaps_with(const XPointer& other) const;
 
   NOT_PRODUCT( void print_on(outputStream* st) const; )
 
