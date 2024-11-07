@@ -32,7 +32,6 @@ import sun.security.provider.NamedKeyPairGenerator;
 
 import java.security.*;
 import java.util.Arrays;
-import java.util.Map;
 
 import javax.crypto.DecapsulateException;
 
