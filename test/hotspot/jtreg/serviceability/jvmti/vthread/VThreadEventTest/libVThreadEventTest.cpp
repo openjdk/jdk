@@ -62,14 +62,12 @@ void JNICALL VirtualThreadMount(jvmtiEnv* jvmti, ...) {
   if (count < verification_count) return;
 
   for (int idx = 0; idx < verification_count; idx++) {
-    char *methodName = nullptr;
-
-    err = jvmti->GetMethodName(frameInfo[idx].method, &methodName, nullptr, nullptr);
-    check_jvmti_status(jni, err, "event handler: error in JVMTI GetMethodName call");
-
+    char* methodName = get_method_name(jvmti, jni, frameInfo[idx].method);
     if (strcmp(methodName, expected_methods[idx]) != 0) {
+      deallocate(jvmti, jni, methodName);
       return;
     }
+    deallocate(jvmti, jni, methodName);
   }
   thread_mount_cnt++;
 }
@@ -98,14 +96,12 @@ void JNICALL VirtualThreadUnmount(jvmtiEnv* jvmti, ...) {
   if (count < verification_count) return;
 
   for (int idx = 0; idx < verification_count; idx++) {
-    char *methodName = nullptr;
-
-    err = jvmti->GetMethodName(frameInfo[idx].method, &methodName, nullptr, nullptr);
-    check_jvmti_status(jni, err, "event handler: error in JVMTI GetMethodName call");
-
+    char* methodName = get_method_name(jvmti, jni, frameInfo[idx].method);
     if (strcmp(methodName, expected_methods[idx]) != 0) {
+      deallocate(jvmti, jni, methodName);
       return;
     }
+    deallocate(jvmti, jni, methodName);
   }
   thread_unmount_cnt++;
 }
