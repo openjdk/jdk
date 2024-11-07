@@ -35,26 +35,22 @@ import java.util.concurrent.TimeUnit;
 
 /*
  * @test
- * @bug 8069362
+ * @bug 8069361
  * @key headful
  * @summary SunGraphics2D.getDefaultTransform() does not include scale factor
  * @run main/timeout=300 ScaledTransform
  */
 public class ScaledTransform {
 
-    private static volatile CountDownLatch painted = null;
-    private static volatile boolean passed = false;
+    private static volatile CountDownLatch painted;
+    private static volatile boolean passed;
     private static volatile Dialog dialog;
-    private static volatile long startTime = 0;
-    private static volatile long endTime = 0;
+    private static volatile long startTime;
+    private static volatile long endTime;
 
     public static void main(String[] args) throws Exception {
         GraphicsEnvironment ge = GraphicsEnvironment.
                 getLocalGraphicsEnvironment();
-
-        if (ge.isHeadlessInstance()) {
-            return;
-        }
 
         for (GraphicsDevice gd : ge.getScreenDevices()) {
             System.out.println("Screen = " + gd);
@@ -89,12 +85,10 @@ public class ScaledTransform {
     }
 
     private static void showDialog(final GraphicsConfiguration gc) {
+        System.out.println("Creating dialog for gc=" + gc + " with tx=" + gc.getDefaultTransform());
+        dialog = new Dialog((Frame) null, "ScaledTransform", true, gc);
+        dialog.setSize(300, 100);
 
-        System.out.println("Creating dialog for gc="+gc+" with tx="+gc.getDefaultTransform());
-
-        dialog = new Dialog((Frame) null, "Test", true, gc);
-
-        dialog.setSize(100, 100);
         Panel panel = new Panel() {
 
             @Override
@@ -109,8 +103,8 @@ public class ScaledTransform {
                 } else {
                     passed = true;
                 }
-                painted.countDown();
                 endTime = System.currentTimeMillis();
+                painted.countDown();
                 System.out.println("Painted panel");
             }
         };
@@ -120,9 +114,9 @@ public class ScaledTransform {
 
     private static void disposeDialog() {
        if (dialog != null) {
-            System.out.println("Disposing dialog");
-            dialog.setVisible(false);
-            dialog.dispose();
+           System.out.println("Disposing dialog");
+           dialog.setVisible(false);
+           dialog.dispose();
        }
     }
 }
