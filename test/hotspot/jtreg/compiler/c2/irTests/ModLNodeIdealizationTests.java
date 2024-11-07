@@ -30,22 +30,22 @@ import compiler.lib.ir_framework.*;
  * @bug 8267265
  * @summary Test that Ideal transformations of DivINode* are being performed as expected.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.ModINodeIdealizationTests
+ * @run driver compiler.c2.irTests.ModLNodeIdealizationTests
  */
-public class ModINodeIdealizationTests {
+public class ModLNodeIdealizationTests {
     public static void main(String[] args) {
         TestFramework.run();
     }
 
     @Run(test = {"constant", "constantAgain"})
     public void runMethod() {
-        int a = RunInfo.getRandom().nextInt();
+        long a = RunInfo.getRandom().nextLong();
         a = (a == 0) ? 2 : a;
-        int b = RunInfo.getRandom().nextInt();
+        long b = RunInfo.getRandom().nextLong();
         b = (b == 0) ? 2 : b;
 
-        int min = Integer.MIN_VALUE;
-        int max = Integer.MAX_VALUE;
+        long min = Long.MIN_VALUE;
+        long max = Long.MAX_VALUE;
 
         assertResult(0, 0, true);
         assertResult(a, b, false);
@@ -54,7 +54,7 @@ public class ModINodeIdealizationTests {
     }
 
     @DontCompile
-    public void assertResult(int a, int b, boolean shouldThrow) {
+    public void assertResult(long a, long b, boolean shouldThrow) {
         try {
             Asserts.assertEQ(a % a, constant(a));
             Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
@@ -66,17 +66,17 @@ public class ModINodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.MOD_I})
+    @IR(failOn = {IRNode.MOD_L})
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x % x => 0
-    public int constant(int x) {
+    public long constant(long x) {
         return x % x;
     }
 
     @Test
-    @IR(failOn = {IRNode.MOD_I})
+    @IR(failOn = {IRNode.MOD_L})
     // Checks x % 1 => 0
-    public int constantAgain(int x) {
+    public long constantAgain(long x) {
         return x % 1;
     }
 }
