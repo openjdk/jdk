@@ -59,8 +59,10 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * {@snippet id="compdecomp" lang="java" class="Snippets" region="DeflaterInflaterExample"}
  *
  * @apiNote
- * To release resources used by this {@code Inflater}, the {@link #close()} method
- * should be used. Subclasses are responsible for the cleanup of resources
+ * The {@code Inflater} cleans up its resources in its {@link #end()} method. To facilitate
+ * usage with try-with-resources, this class implements {@link AutoCloseable}. The
+ * {@link #close()} method of this class calls {@code end()} to clean up its
+ * resources. Subclasses are responsible for the cleanup of resources
  * acquired by the subclass. Subclasses that override {@link #finalize()} in order
  * to perform cleanup should be modified to use alternative cleanup mechanisms such
  * as {@link java.lang.ref.Cleaner} and remove the overriding {@code finalize} method.
