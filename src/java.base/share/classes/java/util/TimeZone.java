@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -592,15 +592,6 @@ public abstract class TimeZone implements Serializable, Cloneable {
             defaultZone != null && id.equals(defaultZone.getID())) {
             // delegate to default TZ which is effectively immutable
             return defaultZone.toZoneId();
-        }
-        // derive it ourselves
-        if (ZoneInfoFile.useOldMapping() && id.length() == 3) {
-            if ("EST".equals(id))
-                return ZoneId.of("America/New_York");
-            if ("MST".equals(id))
-                return ZoneId.of("America/Denver");
-            if ("HST".equals(id))
-                return ZoneId.of("America/Honolulu");
         }
         return ZoneId.of(id, ZoneId.SHORT_IDS);
     }

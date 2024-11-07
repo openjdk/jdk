@@ -356,13 +356,13 @@ abstract class HttpConnection implements Closeable {
         }
     }
 
-    BiPredicate<String,String> contextRestricted(HttpRequestImpl request, HttpClient client) {
+    BiPredicate<String,String> contextRestricted(HttpRequestImpl request) {
         if (!isTunnel() && request.isConnect()) {
             // establishing a proxy tunnel
             assert request.proxy() == null;
-            return Utils.PROXY_TUNNEL_RESTRICTED(client);
+            return Utils.PROXY_TUNNEL_RESTRICTED();
         } else {
-            return Utils.CONTEXT_RESTRICTED(client);
+            return Utils.ACCEPT_ALL;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,22 +76,18 @@ class Field extends AccessibleObject implements Member {
     private final boolean             trustedFinal;
     // Generics and annotations support
     private final transient String    signature;
-    // generic info repository; lazily initialized
-    private transient volatile FieldRepository genericInfo;
     private final byte[]              annotations;
-    // Cached field accessor created without override
-    @Stable
-    private FieldAccessor fieldAccessor;
-    // Cached field accessor created with override
-    @Stable
-    private FieldAccessor overrideFieldAccessor;
-    // For sharing of FieldAccessors. This branching structure is
-    // currently only two levels deep (i.e., one root Field and
-    // potentially many Field objects pointing to it.)
-    //
-    // If this branching structure would ever contain cycles, deadlocks can
-    // occur in annotation code.
-    private Field               root;
+
+    /**
+     * Fields are mutable due to {@link AccessibleObject#setAccessible(boolean)}.
+     * Thus, we return a new copy of a root each time a field is returned.
+     * Some lazily initialized immutable states can be stored on root and shared to the copies.
+     */
+    private Field root;
+    private transient volatile FieldRepository genericInfo;
+    private @Stable FieldAccessor fieldAccessor; // access control enabled
+    private @Stable FieldAccessor overrideFieldAccessor; // access control suppressed
+    // End shared states
 
     // Generics infrastructure
 
@@ -107,16 +103,17 @@ class Field extends AccessibleObject implements Member {
     // Accessor for generic info repository
     private FieldRepository getGenericInfo() {
         var genericInfo = this.genericInfo;
-        // lazily initialize repository if necessary
         if (genericInfo == null) {
-            // create and cache generic info repository
-            genericInfo = FieldRepository.make(getGenericSignature(),
-                                               getFactory());
+            var root = this.root;
+            if (root != null) {
+                genericInfo = root.getGenericInfo();
+            } else {
+                genericInfo = FieldRepository.make(getGenericSignature(), getFactory());
+            }
             this.genericInfo = genericInfo;
         }
-        return genericInfo; //return cached repository
+        return genericInfo;
     }
-
 
     /**
      * Package-private constructor
@@ -162,6 +159,7 @@ class Field extends AccessibleObject implements Member {
         // Might as well eagerly propagate this if already present
         res.fieldAccessor = fieldAccessor;
         res.overrideFieldAccessor = overrideFieldAccessor;
+        res.genericInfo = genericInfo;
 
         return res;
     }
