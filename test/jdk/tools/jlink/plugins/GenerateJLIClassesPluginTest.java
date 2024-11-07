@@ -38,29 +38,15 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageValidator;
 import tests.Result;
 
-/*
- * @test id=packaged_modules
- * @bug 8252919 8327499
- * @library ../../lib
- * @summary Test --generate-jli-classes plugin
- * @enablePreview
- * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink.internal.plugins
- *          jdk.jlink/jdk.tools.jmod
- *          jdk.jlink/jdk.tools.jimage
- * @requires jlink.packagedModules
- * @build tests.*
- * @run testng/othervm -DlinkableRuntime=false GenerateJLIClassesPluginTest
- */
 
 /*
- * @test id=linkable_jdk_runtimes
+ * @test
  * @bug 8252919 8327499
  * @library ../../lib
  * @summary Test --generate-jli-classes plugin
@@ -70,26 +56,32 @@ import tests.Result;
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
- * @requires (jlink.runtime.linkable & !jlink.packagedModules)
  * @build tests.*
- * @run testng/othervm -DlinkableRuntime=true GenerateJLIClassesPluginTest
+ * @run testng/othervm GenerateJLIClassesPluginTest
  */
 public class GenerateJLIClassesPluginTest {
 
-    private static final String LINKABLE_RUNTIME_PROP = "linkableRuntime";
     private static Helper helper;
 
     @BeforeTest
     public static void setup() throws Exception {
-        boolean isLinkableRuntime = Boolean.getBoolean(LINKABLE_RUNTIME_PROP);
-        System.out.println("Tests run on " +
-                           (isLinkableRuntime ? "linkable JDK runtime." : "packaged modules."));
+        boolean isLinkableRuntime = LinkableRuntimeImage.isLinkableRuntime();
+        System.out.println("DEBUG: Tests run on " +
+                           (isLinkableRuntime ? "enabled" : "disabled") +
+                           " capability of linking from the run-time image.");
+        System.out.println("DEBUG: default module-path, 'jmods', " +
+                           (hasPackagedModules() ? "" : "NOT ") +
+                           "present.");
         helper = Helper.newHelper(isLinkableRuntime);
         if (helper == null) {
             System.err.println("Test not run");
             return;
         }
-        helper.generateDefaultModules();
+        if (!isLinkableRuntime && !hasPackagedModules()) {
+            System.err.println("Neither packaged modules present, nor a linkable" +
+                               " run-time image. Test not run");
+            return;
+        }
     }
 
     @Test
@@ -100,7 +92,6 @@ public class GenerateJLIClassesPluginTest {
         String fileString = "[SPECIES_RESOLVE] java.lang.invoke.BoundMethodHandle$Species_" + species + " (salvaged)\n";
         Files.write(baseFile, fileString.getBytes(Charset.defaultCharset()));
         Result result = JImageGenerator.getJLinkTask()
-                .modulePath(helper.defaultModulePath())
                 .output(helper.createNewImageDir("generate-jli-file"))
                 .option("--generate-jli-classes=@" + baseFile.toString())
                 .addMods("java.base")
@@ -126,7 +117,6 @@ public class GenerateJLIClassesPluginTest {
             fileString = "[LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeVirtual L_L (success)\n";
             Files.write(failFile, fileString.getBytes(Charset.defaultCharset()));
             Result result = JImageGenerator.getJLinkTask()
-                    .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir("invalid-signature"))
                     .option("--generate-jli-classes=@" + failFile.toString())
                     .addMods("java.base")
@@ -139,7 +129,6 @@ public class GenerateJLIClassesPluginTest {
     @Test
     public static void nonExistentTraceFile() throws IOException {
         Result result = JImageGenerator.getJLinkTask()
-                .modulePath(helper.defaultModulePath())
                 .output(helper.createNewImageDir("non-existent-tracefile"))
                 .option("--generate-jli-classes=@NON_EXISTENT_FILE")
                 .addMods("java.base")
@@ -155,7 +144,6 @@ public class GenerateJLIClassesPluginTest {
         Path invokersTrace = Files.createTempFile("invokers", "trace");
         Files.writeString(invokersTrace, fileString, Charset.defaultCharset());
         Result result = JImageGenerator.getJLinkTask()
-                .modulePath(helper.defaultModulePath())
                 .output(helper.createNewImageDir("jli-invokers"))
                 .option("--generate-jli-classes=@" + invokersTrace.toString())
                 .addMods("java.base")
@@ -203,5 +191,9 @@ public class GenerateJLIClassesPluginTest {
         return species.stream()
                 .map(s -> "/java.base/java/lang/invoke/BoundMethodHandle$Species_" + s + ".class")
                 .collect(Collectors.toList());
+    }
+
+    private static boolean hasPackagedModules() {
+        return Path.of(System.getProperty("java.home"), "jmods").toFile().exists();
     }
 }
