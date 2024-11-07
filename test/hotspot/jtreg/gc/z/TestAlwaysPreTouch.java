@@ -25,13 +25,13 @@ package gc.z;
 
 /*
  * @test TestAlwaysPreTouch
- * @requires vm.gc.ZGenerational
+ * @requires vm.gc.Z
  * @summary Test ZGC parallel pre-touch
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xlog:gc* -XX:-AlwaysPreTouch -Xms128M -Xmx128M gc.z.TestAlwaysPreTouch
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xlog:gc* -XX:+AlwaysPreTouch -XX:ParallelGCThreads=1 -Xms2M -Xmx128M gc.z.TestAlwaysPreTouch
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xlog:gc* -XX:+AlwaysPreTouch -XX:ParallelGCThreads=8 -Xms2M -Xmx128M gc.z.TestAlwaysPreTouch
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xlog:gc* -XX:+AlwaysPreTouch -XX:ParallelGCThreads=1 -Xms128M -Xmx128M gc.z.TestAlwaysPreTouch
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xlog:gc* -XX:+AlwaysPreTouch -XX:ParallelGCThreads=8 -Xms128M -Xmx128M gc.z.TestAlwaysPreTouch
+ * @run main/othervm -XX:+UseZGC -Xlog:gc* -XX:-AlwaysPreTouch -Xms128M -Xmx128M gc.z.TestAlwaysPreTouch
+ * @run main/othervm -XX:+UseZGC -Xlog:gc* -XX:+AlwaysPreTouch -XX:ParallelGCThreads=1 -Xms2M -Xmx128M gc.z.TestAlwaysPreTouch
+ * @run main/othervm -XX:+UseZGC -Xlog:gc* -XX:+AlwaysPreTouch -XX:ParallelGCThreads=8 -Xms2M -Xmx128M gc.z.TestAlwaysPreTouch
+ * @run main/othervm -XX:+UseZGC -Xlog:gc* -XX:+AlwaysPreTouch -XX:ParallelGCThreads=1 -Xms128M -Xmx128M gc.z.TestAlwaysPreTouch
+ * @run main/othervm -XX:+UseZGC -Xlog:gc* -XX:+AlwaysPreTouch -XX:ParallelGCThreads=8 -Xms128M -Xmx128M gc.z.TestAlwaysPreTouch
  */
 
 public class TestAlwaysPreTouch {

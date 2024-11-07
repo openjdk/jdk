@@ -1558,7 +1558,7 @@ address StubGenerator::generate_sha256_implCompress(bool multi_block, const char
 
 address StubGenerator::generate_sha512_implCompress(bool multi_block, const char *name) {
   assert(VM_Version::supports_avx2(), "");
-  assert(VM_Version::supports_bmi2(), "");
+  assert(VM_Version::supports_bmi2() || VM_Version::supports_sha512(), "");
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", name);
   address start = __ pc();
@@ -1568,22 +1568,24 @@ address StubGenerator::generate_sha512_implCompress(bool multi_block, const char
   Register ofs = c_rarg2;
   Register limit = c_rarg3;
 
-  const XMMRegister msg = xmm0;
-  const XMMRegister state0 = xmm1;
-  const XMMRegister state1 = xmm2;
-  const XMMRegister msgtmp0 = xmm3;
-  const XMMRegister msgtmp1 = xmm4;
-  const XMMRegister msgtmp2 = xmm5;
-  const XMMRegister msgtmp3 = xmm6;
-  const XMMRegister msgtmp4 = xmm7;
-
-  const XMMRegister shuf_mask = xmm8;
-
   __ enter();
 
-  __ sha512_AVX2(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
-  buf, state, ofs, limit, rsp, multi_block, shuf_mask);
+  if (VM_Version::supports_sha512()) {
+      __ sha512_update_ni_x1(state, buf, ofs, limit, multi_block);
+  } else {
+    const XMMRegister msg = xmm0;
+    const XMMRegister state0 = xmm1;
+    const XMMRegister state1 = xmm2;
+    const XMMRegister msgtmp0 = xmm3;
+    const XMMRegister msgtmp1 = xmm4;
+    const XMMRegister msgtmp2 = xmm5;
+    const XMMRegister msgtmp3 = xmm6;
+    const XMMRegister msgtmp4 = xmm7;
 
+    const XMMRegister shuf_mask = xmm8;
+    __ sha512_AVX2(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
+      buf, state, ofs, limit, rsp, multi_block, shuf_mask);
+  }
   __ vzeroupper();
   __ leave();
   __ ret(0);
@@ -3829,10 +3831,10 @@ address StubGenerator::generate_lookup_secondary_supers_table_stub(u1 super_klas
       r_sub_klass   = rsi,
       result        = rdi;
 
-  __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                   rdx, rcx, rbx, r11, // temps
-                                   result,
-                                   super_klass_index);
+  __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                         rdx, rcx, rbx, r11, // temps
+                                         result,
+                                         super_klass_index);
   __ ret(0);
 
   return start;
@@ -4029,6 +4031,8 @@ void StubGenerator::generate_compiler_stubs() {
   generate_ghash_stubs();
 
   generate_chacha_stubs();
+
+  generate_sha3_stubs();
 
 #ifdef COMPILER2
   if ((UseAVX == 2) && EnableX86ECoreOpts) {

@@ -2187,7 +2187,7 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
 
-  ld(r_bitmap, in_bytes(Klass::bitmap_offset()), r_sub_klass);
+  ld(r_bitmap, in_bytes(Klass::secondary_supers_bitmap_offset()), r_sub_klass);
 
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
@@ -2651,7 +2651,19 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   // flag == NE indicates failure
   bind(success);
   inc_held_monitor_count(temp);
+#ifdef ASSERT
+  // Check that unlocked label is reached with flag == EQ.
+  Label flag_correct;
+  beq(flag, flag_correct);
+  stop("compiler_fast_lock_object: Flag != EQ");
+#endif
   bind(failure);
+#ifdef ASSERT
+  // Check that slow_path label is reached with flag == NE.
+  bne(flag, flag_correct);
+  stop("compiler_fast_lock_object: Flag != NE");
+  bind(flag_correct);
+#endif
 }
 
 void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
@@ -2701,17 +2713,12 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   bind(object_has_monitor);
   STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
   addi(current_header, current_header, -(int)markWord::monitor_value); // monitor
-  ld(temp,             in_bytes(ObjectMonitor::owner_offset()), current_header);
-
-  // In case of LM_LIGHTWEIGHT, we may reach here with (temp & ObjectMonitor::ANONYMOUS_OWNER) != 0.
-  // This is handled like owner thread mismatches: We take the slow path.
-  cmpd(flag, temp, R16_thread);
-  bne(flag, failure);
 
   ld(displaced_header, in_bytes(ObjectMonitor::recursions_offset()), current_header);
-
   addic_(displaced_header, displaced_header, -1);
   blt(CCR0, notRecursive); // Not recursive if negative after decrement.
+
+  // Recursive unlock
   std(displaced_header, in_bytes(ObjectMonitor::recursions_offset()), current_header);
   if (flag == CCR0) { // Otherwise, flag is already EQ, here.
     crorc(CCR0, Assembler::equal, CCR0, Assembler::equal); // Set CCR0 EQ
@@ -2729,7 +2736,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty.
+  // Check if the entry lists are empty (EntryList first - by convention).
   ld(temp,             in_bytes(ObjectMonitor::EntryList_offset()), current_header);
   ld(displaced_header, in_bytes(ObjectMonitor::cxq_offset()), current_header);
   orr(temp, temp, displaced_header); // Will be 0 if both are 0.
@@ -2739,20 +2746,32 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   // Check if there is a successor.
   ld(temp, in_bytes(ObjectMonitor::succ_offset()), current_header);
   cmpdi(flag, temp, 0);
-  bne(flag, success);  // If so we are done.
+  // Invert equal bit
+  crnand(flag, Assembler::equal, flag, Assembler::equal);
+  beq(flag, success);  // If there is a successor we are done.
 
   // Save the monitor pointer in the current thread, so we can try
   // to reacquire the lock in SharedRuntime::monitor_exit_helper().
   std(current_header, in_bytes(JavaThread::unlocked_inflated_monitor_offset()), R16_thread);
-
-  crxor(flag, Assembler::equal, flag, Assembler::equal); // Set flag = NE => slow path
-  b(failure);
+  b(failure); // flag == NE
 
   // flag == EQ indicates success, decrement held monitor count
   // flag == NE indicates failure
   bind(success);
   dec_held_monitor_count(temp);
+#ifdef ASSERT
+  // Check that unlocked label is reached with flag == EQ.
+  Label flag_correct;
+  beq(flag, flag_correct);
+  stop("compiler_fast_unlock_object: Flag != EQ");
+#endif
   bind(failure);
+#ifdef ASSERT
+  // Check that slow_path label is reached with flag == NE.
+  bne(flag, flag_correct);
+  stop("compiler_fast_unlock_object: Flag != NE");
+  bind(flag_correct);
+#endif
 }
 
 void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister flag, Register obj, Register box,
@@ -3053,7 +3072,6 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     bind(not_recursive);
 
-    Label set_eq_unlocked;
     const Register t2 = tmp2;
 
     // Set owner to null.
@@ -3065,7 +3083,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty.
+    // Check if the entry lists are empty (EntryList first - by convention).
     ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
     ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
     orr(t, t, t2);
@@ -3075,17 +3093,14 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // Check if there is a successor.
     ld(t, in_bytes(ObjectMonitor::succ_offset()), monitor);
     cmpdi(CCR0, t, 0);
-    bne(CCR0, set_eq_unlocked); // If so we are done.
+    // Invert equal bit
+    crnand(flag, Assembler::equal, flag, Assembler::equal);
+    beq(CCR0, unlocked); // If there is a successor we are done.
 
     // Save the monitor pointer in the current thread, so we can try
     // to reacquire the lock in SharedRuntime::monitor_exit_helper().
     std(monitor, in_bytes(JavaThread::unlocked_inflated_monitor_offset()), R16_thread);
-
-    crxor(CCR0, Assembler::equal, CCR0, Assembler::equal); // Set flag = NE => slow path
-    b(slow_path);
-
-    bind(set_eq_unlocked);
-    crorc(CCR0, Assembler::equal, CCR0, Assembler::equal); // Set flag = EQ => fast path
+    b(slow_path); // flag == NE
   }
 
   bind(unlocked);
@@ -4603,23 +4618,6 @@ void MacroAssembler::zap_from_to(Register low, int before, Register high, int af
 }
 
 #endif // !PRODUCT
-
-void SkipIfEqualZero::skip_to_label_if_equal_zero(MacroAssembler* masm, Register temp,
-                                                  const bool* flag_addr, Label& label) {
-  int simm16_offset = masm->load_const_optimized(temp, (address)flag_addr, R0, true);
-  assert(sizeof(bool) == 1, "PowerPC ABI");
-  masm->lbz(temp, simm16_offset, temp);
-  masm->cmpwi(CCR0, temp, 0);
-  masm->beq(CCR0, label);
-}
-
-SkipIfEqualZero::SkipIfEqualZero(MacroAssembler* masm, Register temp, const bool* flag_addr) : _masm(masm), _label() {
-  skip_to_label_if_equal_zero(masm, temp, flag_addr, _label);
-}
-
-SkipIfEqualZero::~SkipIfEqualZero() {
-  _masm->bind(_label);
-}
 
 void MacroAssembler::cache_wb(Address line) {
   assert(line.index() == noreg, "index should be noreg");

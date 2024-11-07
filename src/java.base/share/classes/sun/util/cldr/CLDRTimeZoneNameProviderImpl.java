@@ -151,10 +151,11 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
             return;
         }
 
+        var lpa = ((CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(Type.CLDR));
+
         // Check parent locales first
         if (!exists(names, index)) {
-            var cands = ((CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(Type.CLDR))
-                    .getCandidateLocales("", locale);
+            var cands = lpa.getCandidateLocales("", locale);
             for (int i = 1; i < cands.size() ; i++) {
                 var loc = cands.get(i);
                 String[] parentNames = super.getDisplayNameArray(id, loc);
@@ -167,6 +168,14 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                     }
                 }
             }
+        }
+
+        // Check canonical id
+        var canonName =
+            lpa.canonicalTZID(id).map(canonId -> getDisplayNameArray(canonId, locale)[index]);
+        if (canonName.isPresent()) {
+            names[index] = canonName.get();
+            return;
         }
 
         // Type Fallback

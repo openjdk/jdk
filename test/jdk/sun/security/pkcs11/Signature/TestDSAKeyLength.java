@@ -62,7 +62,8 @@ public class TestDSAKeyLength extends PKCS11Test {
 
     @Override
     public void main(Provider provider) throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", "SUN");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA",
+                System.getProperty("test.provider.name", "SUN"));
         kpg.initialize(2048, new SecureRandom());
         KeyPair pair = kpg.generateKeyPair();
 

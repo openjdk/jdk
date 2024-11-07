@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,7 @@ public class VM {
   private ReversePtrs  revPtrs;
   private VMRegImpl    vmregImpl;
   private int          reserveForAllocationPrefetch;
+  private int          labAlignmentReserve;
 
   // System.getProperties from debuggee VM
   private Properties   sysProps;
@@ -138,12 +139,12 @@ public class VM {
   private Flag[] commandLineFlags;
   private Map<String, Flag> flagsMap;
 
-  private static Type intType;
-  private static Type uintType;
-  private static Type intxType;
-  private static Type uintxType;
-  private static Type sizetType;
-  private static Type uint64tType;
+  private static CIntegerType intType;
+  private static CIntegerType uintType;
+  private static CIntegerType intxType;
+  private static CIntegerType uintxType;
+  private static CIntegerType sizetType;
+  private static CIntegerType uint64tType;
   private static CIntegerType boolType;
   private Boolean sharingEnabled;
   private Boolean compressedOopsEnabled;
@@ -432,16 +433,28 @@ public class VM {
        vmRelease = CStringUtilities.getString(releaseAddr);
        Address vmInternalInfoAddr = vmVersion.getAddressField("_s_internal_vm_info_string").getValue();
        vmInternalInfo = CStringUtilities.getString(vmInternalInfoAddr);
-
-       Type threadLocalAllocBuffer = db.lookupType("ThreadLocalAllocBuffer");
-       CIntegerType intType = (CIntegerType) db.lookupType("int");
-       CIntegerField reserveForAllocationPrefetchField = threadLocalAllocBuffer.getCIntegerField("_reserve_for_allocation_prefetch");
-       reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
     } catch (Exception exp) {
        throw new RuntimeException("can't determine target's VM version : " + exp.getMessage());
     }
 
     checkVMVersion(vmRelease);
+
+    // Initialize common primitive types
+    intType = (CIntegerType) db.lookupType("int");
+    uintType = (CIntegerType) db.lookupType("uint");
+    intxType = (CIntegerType) db.lookupType("intx");
+    uintxType = (CIntegerType) db.lookupType("uintx");
+    sizetType = (CIntegerType) db.lookupType("size_t");
+    uint64tType = (CIntegerType) db.lookupType("uint64_t");
+    boolType = (CIntegerType) db.lookupType("bool");
+
+    Type threadLocalAllocBuffer = db.lookupType("ThreadLocalAllocBuffer");
+    CIntegerField reserveForAllocationPrefetchField = threadLocalAllocBuffer.getCIntegerField("_reserve_for_allocation_prefetch");
+    reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
+
+    Type collectedHeap = db.lookupType("CollectedHeap");
+    CIntegerField labAlignmentReserveField = collectedHeap.getCIntegerField("_lab_alignment_reserve");
+    labAlignmentReserve = (int)labAlignmentReserveField.getCInteger(sizetType);
 
     invocationEntryBCI = db.lookupIntConstant("InvocationEntryBci").intValue();
 
@@ -492,14 +505,6 @@ public class VM {
     Flags_VALUE_ORIGIN_MASK = db.lookupIntConstant("JVMFlag::VALUE_ORIGIN_MASK").intValue();
     Flags_WAS_SET_ON_COMMAND_LINE = db.lookupIntConstant("JVMFlag::WAS_SET_ON_COMMAND_LINE").intValue();
     oopSize  = db.lookupIntConstant("oopSize").intValue();
-
-    intType = db.lookupType("int");
-    uintType = db.lookupType("uint");
-    intxType = db.lookupType("intx");
-    uintxType = db.lookupType("uintx");
-    sizetType = db.lookupType("size_t");
-    uint64tType = db.lookupType("uint64_t");
-    boolType = (CIntegerType) db.lookupType("bool");
 
     minObjAlignmentInBytes = getObjectAlignmentInBytes();
     if ((minObjAlignmentInBytes & (minObjAlignmentInBytes - 1)) != 0) {
@@ -927,6 +932,10 @@ public class VM {
 
   public int getReserveForAllocationPrefetch() {
     return reserveForAllocationPrefetch;
+  }
+
+  public int getLabAlignmentReserve() {
+    return labAlignmentReserve;
   }
 
   public boolean isSharingEnabled() {
