@@ -292,6 +292,12 @@ public:
   static jint    _verify_oop_count;
 
 public:
+  // this is used by x86_64 to expose string index stubs to the opto
+  // library as a target to a call planted before back end lowering.
+  // all other arches plant the call to the stub during back end
+  // lowering and use arch-specific entries. we really need to
+  // rationalise this at some point.
+
   static address _string_indexof_array[4];
 
   /* special case: stub employs array of entries */
@@ -302,14 +308,18 @@ public:
 
   static bool is_stub_code(address addr)                   { return contains(addr); }
 
-  static bool contains(address addr) {
-    return
-      (_initial_stubs_code      != nullptr && _initial_stubs_code->blob_contains(addr))  ||
-      (_continuation_stubs_code != nullptr && _continuation_stubs_code->blob_contains(addr)) ||
-      (_compiler_stubs_code     != nullptr && _compiler_stubs_code->blob_contains(addr)) ||
-      (_final_stubs_code        != nullptr && _final_stubs_code->blob_contains(addr)) ;
-  }
+  // generate code to implement method contains
 
+#define CHECK_ADDRESS_IN_BLOB(blob_name) \
+  blob = STUBGEN_BLOB_FIELD_NAME(blob_name); \
+  if (blob != nullptr && blob->blob_contains(addr)) { return true; }
+
+  static bool contains(address addr) {
+    BufferBlob *blob;
+    STUBGEN_BLOBS_DO(CHECK_ADDRESS_IN_BLOB)
+    return false;
+  }
+#undef CHECK_ADDRESS_IN_BLOB
 // define getters for stub code blobs
 
 #define DEFINE_BLOB_GETTER(blob_name) \
