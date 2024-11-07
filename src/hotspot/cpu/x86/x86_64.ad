@@ -8867,12 +8867,24 @@ instruct rolI_rReg_Var_ndd(rRegI dst, rRegI src, rcx_RegI shift)
 // Rotate Right by constant.
 instruct rorI_immI8_legacy(rRegI dst, immI8 shift, rFlagsReg cr)
 %{
-  predicate(!VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  predicate(!UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateRight dst shift));
   effect(KILL cr);
   format %{ "rorl    $dst, $shift" %}
   ins_encode %{
     __ rorl($dst$$Register, $shift$$constant);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Rotate Right by constant.
+instruct rorI_immI8_ndd(rRegI dst, rRegI src, immI8 shift)
+%{
+  predicate(UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateRight src shift));
+  format %{ "erorl    $dst, $src, $shift\t# rotate right (int ndd)" %}
+  ins_encode %{
+    __ erorl($dst$$Register, $src$$Register, $shift$$constant, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8904,12 +8916,24 @@ instruct rorI_mem_immI8(rRegI dst, memory src, immI8 shift)
 // Rotate Right by variable
 instruct rorI_rReg_Var(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %{
-  predicate(n->bottom_type()->basic_type() == T_INT);
+  predicate(!UseAPX && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateRight dst shift));
   effect(KILL cr);
   format %{ "rorl    $dst, $shift" %}
   ins_encode %{
     __ rorl($dst$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Rotate Right by variable
+instruct rorI_rReg_Var_ndd(rRegI dst, rRegI src, rcx_RegI shift)
+%{
+  predicate(UseAPX && n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateRight src shift));
+  format %{ "erorl    $dst, $src, $shift\t# rotate right(int ndd)" %}
+  ins_encode %{
+    __ erorl($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -8992,12 +9016,24 @@ instruct rolL_rReg_Var_ndd(rRegL dst, rRegL src, rcx_RegI shift)
 // Rotate Right by constant.
 instruct rorL_immI8_legacy(rRegL dst, immI8 shift, rFlagsReg cr)
 %{
-  predicate(!VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  predicate(!UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateRight dst shift));
   effect(KILL cr);
   format %{ "rorq    $dst, $shift" %}
   ins_encode %{
     __ rorq($dst$$Register, $shift$$constant);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Rotate Right by constant.
+instruct rorL_immI8_ndd(rRegL dst, rRegL src, immI8 shift)
+%{
+  predicate(UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateRight src shift));
+  format %{ "erorq    $dst, $src, $shift\t# rotate right(long ndd)" %}
+  ins_encode %{
+    __ erorq($dst$$Register, $src$$Register, $shift$$constant, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -9029,12 +9065,24 @@ instruct rorL_mem_immI8(rRegL dst, memory src, immI8 shift)
 // Rotate Right by variable
 instruct rorL_rReg_Var(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %{
-  predicate(n->bottom_type()->basic_type() == T_LONG);
+  predicate(!UseAPX && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateRight dst shift));
   effect(KILL cr);
   format %{ "rorq    $dst, $shift" %}
   ins_encode %{
     __ rorq($dst$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Rotate Right by variable
+instruct rorL_rReg_Var_ndd(rRegL dst, rRegL src, rcx_RegI shift)
+%{
+  predicate(UseAPX && n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateRight src shift));
+  format %{ "erorq    $dst, $src, $shift\t# rotate right(long ndd)" %}
+  ins_encode %{
+    __ erorq($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg_reg);
 %}
