@@ -295,13 +295,17 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     State state;
   };
 
-  // Take a list of testranges and check that those and only those are found in the tree.
+  // Take a sorted list of testranges and check that those and only those are found in the tree.
   auto expect_equivalent_form = [&](auto& expected, VMATree& tree) {
     // With auto& our arrays do not deteriorate to pointers but are kept as testrange[N]
     // so this actually works!
     int len = sizeof(expected) / sizeof(testrange);
+    VMATree::position previous_to = 0;
     for (int i = 0; i < len; i++) {
       testrange expect = expected[i];
+      assert(previous_to == 0 || previous_to < expect.from, "the expected list must be sorted");
+      previous_to = expect.to;
+
       VMATree::VMATreap::Range found = tree.tree().find_enclosing_range(expect.from);
       ASSERT_NE(nullptr, found.start);
       ASSERT_NE(nullptr, found.end);
@@ -314,7 +318,11 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
       // Same stack
       EXPECT_EQ(expect.stack, found.start->val().out.stack());
       EXPECT_EQ(expect.stack, found.end->val().in.stack());
+      // Same state
+      EXPECT_EQ(expect.state, found.start->val().out.type());
+      EXPECT_EQ(expect.state, found.end->val().in.type());
     }
+    // expected must cover all nodes
     EXPECT_EQ(len+1, tree.tree().size());
   };
   NCS::StackIndex si = NCS::StackIndex();
@@ -412,6 +420,19 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     tree.reserve_mapping(0, 100, gc);
     tree.reserve_mapping(100, 100, compiler);
     tree.set_tag(75, 50, mtClass);
+    expect_equivalent_form(expected, tree);
+  }
+
+  {
+    testrange expected[]{
+        { 0,  50,          mtGC, si, State::Reserved},
+        {50,  75,          mtGC, si, State::Released},
+        {75, 100, mtClassShared, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData class_shared(si, mtClassShared);
+    tree.reserve_mapping(0, 100, class_shared);
+    tree.set_tag(0, 75, mtGC);
     expect_equivalent_form(expected, tree);
   }
 }
