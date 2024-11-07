@@ -5671,13 +5671,24 @@ instruct countLeadingZerosL_bsr(rRegI dst, rRegL src, rFlagsReg cr) %{
 %}
 
 instruct countTrailingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
-  predicate(UseCountTrailingZerosInstruction);
+  predicate(!UseAPX && UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosI src));
   effect(KILL cr);
 
   format %{ "tzcntl    $dst, $src\t# count trailing zeros (int)" %}
   ins_encode %{
     __ tzcntl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosI_nf(rRegI dst, rRegI src) %{
+  predicate(!UseAPX && UseCountTrailingZerosInstruction);
+  match(Set dst (CountTrailingZerosI src));
+
+  format %{ "etzcntl    $dst, $src\t# count trailing zeros (int nf)" %}
+  ins_encode %{
+    __ etzcntl($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -5715,13 +5726,24 @@ instruct countTrailingZerosI_bsf(rRegI dst, rRegI src, rFlagsReg cr) %{
 %}
 
 instruct countTrailingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
-  predicate(UseCountTrailingZerosInstruction);
+  predicate(!UseAPX && UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosL src));
   effect(KILL cr);
 
   format %{ "tzcntq    $dst, $src\t# count trailing zeros (long)" %}
   ins_encode %{
     __ tzcntq($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosL_nf(rRegI dst, rRegL src, rFlagsReg cr) %{
+  predicate(UseAPX && UseCountTrailingZerosInstruction);
+  match(Set dst (CountTrailingZerosL src));
+
+  format %{ "etzcntq    $dst, $src\t# count trailing zeros (long nf)" %}
+  ins_encode %{
+    __ etzcntq($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
