@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8076026 8273244
+ * @bug 7021614 8076026 8273244 8321500
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -345,4 +345,70 @@ DocComment[DOC_COMMENT, pos:1
   block tags: empty
 ]
 */
+
+    /**
+     * <a name1="{@literal value}" name2='@foo' name3="abc
+     *@notag &lt;Noref&gt; {@literal xyz}">
+     */
+    void tags_in_attr() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    StartElement[START_ELEMENT, pos:1
+      name:a
+      attributes: 3
+        Attribute[ATTRIBUTE, pos:4
+          name: name1
+          vkind: DOUBLE
+          value: 1
+            Literal[LITERAL, pos:11, value]
+        ]
+        Attribute[ATTRIBUTE, pos:29
+          name: name2
+          vkind: SINGLE
+          value: 1
+            Text[TEXT, pos:36, @foo]
+        ]
+        Attribute[ATTRIBUTE, pos:42
+          name: name3
+          vkind: DOUBLE
+          value: 6
+            Text[TEXT, pos:49, abc|@notag_]
+            Entity[ENTITY, pos:60, lt]
+            Text[TEXT, pos:64, Noref]
+            Entity[ENTITY, pos:69, gt]
+            Text[TEXT, pos:73, _]
+            Literal[LITERAL, pos:74, xyz]
+        ]
+    ]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * <a name1="{@literal value}" name2='@foo' name3="abc
+     * @see Ref {@literal xyz}
+     */
+    void unclosed_attr() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 4
+    Erroneous[ERRONEOUS, pos:1
+      code: compiler.err.dc.malformed.html
+      body: <
+    ]
+    Text[TEXT, pos:2, a_name1="]
+    Literal[LITERAL, pos:11, value]
+    Text[TEXT, pos:27, "_name2='@foo'_name3="abc]
+  body: empty
+  block tags: 1
+    See[SEE, pos:54
+      reference: 2
+        Reference[REFERENCE, pos:59, Ref]
+        Literal[LITERAL, pos:63, xyz]
+    ]
+]
+*/
+
 }
