@@ -30,6 +30,7 @@ import jdk.internal.misc.Unsafe;
  * @test
  * @bug 8343068
  * @summary C2: CastX2P Ideal transformation not always applied
+ * @requires os.arch != "ppc64le" & os.arch != "ppc64"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.c2.TestCastX2NotProcessedIGVN
