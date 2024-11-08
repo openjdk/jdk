@@ -354,15 +354,11 @@ Node* IdealLoopTree::reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_id
   Node* inv1_c = phase->get_ctrl(inv1);
   Node* n_inv1;
   if (neg_inv1) {
-    Node* zero;
     if (is_int) {
-      zero = phase->_igvn.intcon(0);
-      n_inv1 = new SubINode(zero, inv1);
+      n_inv1 = new SubINode(phase->intcon(0), inv1);
     } else {
-      zero = phase->_igvn.longcon(0L);
-      n_inv1 = new SubLNode(zero, inv1);
+      n_inv1 = new SubLNode(phase->longcon(0L), inv1);
     }
-    phase->set_ctrl(zero, phase->C->root());
     phase->register_new_node(n_inv1, inv1_c);
   } else {
     n_inv1 = inv1;

@@ -190,7 +190,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 
     if (x->is_Con()) {
       // Constant's control is always root.
-      set_ctrl(x, C->root());
+      set_root_as_ctrl(x);
       continue;
     }
     // The occasional new node
@@ -4624,7 +4624,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     assert(first_ur != nullptr, "must have successfully terminated chain traversal");
 
     Node* identity_scalar = ReductionNode::make_identity_con_scalar(_igvn, sopc, bt);
-    set_ctrl(identity_scalar, C->root());
+    set_root_as_ctrl(identity_scalar);
     VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector_length, bt);
     register_new_node(identity_vector, C->root());
     assert(vec_t == identity_vector->vect_type(), "matching vector type");

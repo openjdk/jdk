@@ -3144,7 +3144,7 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
   // make counted loop exit test always fail
   ConINode* zero = igvn->intcon(0);
   if (iloop != nullptr) {
-    iloop->set_ctrl(zero, igvn->C->root());
+    iloop->set_root_as_ctrl(zero);
   }
   igvn->replace_input_of(cle, 1, zero);
   // replace outer loop end with CountedLoopEndNode with formers' CLE's exit test
@@ -6855,31 +6855,31 @@ void PhaseIdealLoop::rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_
 
 ConINode* PhaseIdealLoop::intcon(jint i) {
   ConINode* node = _igvn.intcon(i);
-  set_ctrl(node, C->root());
+  set_root_as_ctrl(node);
   return node;
 }
 
 ConLNode *PhaseIdealLoop::longcon(jlong i) {
   ConLNode* node = _igvn.longcon(i);
-  set_ctrl(node, C->root());
+  set_root_as_ctrl(node);
   return node;
 }
 
 ConNode *PhaseIdealLoop::makecon(const Type* t) {
   ConNode* node = _igvn.makecon(t);
-  set_ctrl(node, C->root());
+  set_root_as_ctrl(node);
   return node;
 }
 
 ConNode* PhaseIdealLoop::integercon(jlong l, BasicType bt) {
   ConNode* node = _igvn.integercon(l, bt);
-  set_ctrl(node, C->root());
+  set_root_as_ctrl(node);
   return node;
 }
 
 ConNode *PhaseIdealLoop::zerocon(BasicType bt) {
   ConNode* node = _igvn.zerocon(bt);
-  set_ctrl(node, C->root());
+  set_root_as_ctrl(node);
   return node;
 }
 
