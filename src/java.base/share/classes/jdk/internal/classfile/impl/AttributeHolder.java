@@ -24,10 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Arrays;
-
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributeMapper;
+import java.util.Arrays;
 
 public class AttributeHolder {
     private static final Attribute<?>[] EMPTY_ATTRIBUTE_ARRAY = {};

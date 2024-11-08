@@ -264,6 +264,7 @@ jaxp_JTREG_PROBLEM_LIST += $(TOPDIR)/test/jaxp/ProblemList.txt
 langtools_JTREG_PROBLEM_LIST += $(TOPDIR)/test/langtools/ProblemList.txt
 hotspot_JTREG_PROBLEM_LIST += $(TOPDIR)/test/hotspot/jtreg/ProblemList.txt
 lib-test_JTREG_PROBLEM_LIST += $(TOPDIR)/test/lib-test/ProblemList.txt
+docs_JTREG_PROBLEM_LIST += $(TOPDIR)/test/docs/ProblemList.txt
 
 ################################################################################
 # Parse test selection
@@ -603,7 +604,7 @@ define SetupRunMicroTestBody
     $1_JMH_JVM_ARGS += $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)
   endif
 
-  $1_MICRO_VM_OPTIONS := -jvmArgs $(call ShellQuote,$$($1_JMH_JVM_ARGS))
+  $1_MICRO_VM_OPTIONS := -jvmArgsPrepend $(call ShellQuote,$$($1_JMH_JVM_ARGS))
 
   ifneq ($$(MICRO_ITER), )
     $1_MICRO_ITER := -i $$(MICRO_ITER)
@@ -739,6 +740,11 @@ define SetupRunJtregTestBody
   # Only the problem list for the current test root should be used.
   $1_JTREG_PROBLEM_LIST := $$(filter $$($1_TEST_ROOT)%, $$($1_JTREG_PROBLEM_LIST))
 
+  # Pass along the path to the tidy html checker
+  ifneq ($$(TIDY), )
+    $1_JTREG_BASIC_OPTIONS += -Dtidy=$$(TIDY)
+  endif
+
   ifneq ($(TEST_JOBS), 0)
     $$(eval $$(call SetJtregValue,$1,JTREG_JOBS,$$(TEST_JOBS)))
   else
@@ -847,11 +853,7 @@ define SetupRunJtregTestBody
   endif
 
   ifneq ($$(findstring -XX:+UseZGC, $$(JTREG_ALL_OPTIONS)), )
-    ifneq ($$(findstring -XX:-ZGenerational, $$(JTREG_ALL_OPTIONS)), )
-      JTREG_AUTO_PROBLEM_LISTS += ProblemList-zgc.txt
-    else
-      JTREG_AUTO_PROBLEM_LISTS += ProblemList-generational-zgc.txt
-    endif
+    JTREG_AUTO_PROBLEM_LISTS += ProblemList-zgc.txt
   endif
 
   ifneq ($$(JTREG_EXTRA_PROBLEM_LISTS), )
@@ -867,6 +869,8 @@ define SetupRunJtregTestBody
   endif
 
   $1_JTREG_BASIC_OPTIONS += -e:TEST_IMAGE_DIR=$(TEST_IMAGE_DIR)
+
+  $1_JTREG_BASIC_OPTIONS += -e:DOCS_JDK_IMAGE_DIR=$$(DOCS_JDK_IMAGE_DIR)
 
   ifneq ($$(JTREG_FAILURE_HANDLER_OPTIONS), )
     $1_JTREG_LAUNCHER_OPTIONS += -Djava.library.path="$(JTREG_FAILURE_HANDLER_DIR)"

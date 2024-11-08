@@ -26,6 +26,9 @@
 #include "jni.h"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "sanitizers/ub.hpp"
+
+#include <limits>
 
 // This file contains copies of the fdlibm routines used by
 // StrictMath. It turns out that it is almost always required to use
@@ -110,10 +113,13 @@ ln2_hi  =  6.93147180369123816490e-01,        /* 3fe62e42 fee00000 */
 
 static double zero = 0.0;
 
+ATTRIBUTE_NO_UBSAN
 static double __ieee754_log(double x) {
   double hfsq,f,s,z,R,w,t1,t2,dk;
   int k,hx,i,j;
   unsigned lx;
+
+  static_assert(std::numeric_limits<double>::is_iec559, "IEEE 754 required");
 
   hx = high(x);               /* high word of x */
   lx = low(x);                /* low  word of x */
@@ -204,10 +210,13 @@ ivln10     =  4.34294481903251816668e-01, /* 0x3FDBCB7B, 0x1526E50E */
   log10_2hi  =  3.01029995663611771306e-01, /* 0x3FD34413, 0x509F6000 */
   log10_2lo  =  3.69423907715893078616e-13; /* 0x3D59FEF3, 0x11F12B36 */
 
+ATTRIBUTE_NO_UBSAN
 static double __ieee754_log10(double x) {
   double y,z;
   int i,k,hx;
   unsigned lx;
+
+  static_assert(std::numeric_limits<double>::is_iec559, "IEEE 754 required");
 
   hx = high(x);       /* high word of x */
   lx = low(x);        /* low word of x */
@@ -440,12 +449,15 @@ bp[] = {1.0, 1.5,},
         ivln2_h  =  1.44269502162933349609e+00, /* 0x3FF71547, 0x60000000 =24b 1/ln2*/
         ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 
+ATTRIBUTE_NO_UBSAN
 static double __ieee754_pow(double x, double y) {
   double z,ax,z_h,z_l,p_h,p_l;
   double y1,t1,t2,r,s,t,u,v,w;
   int i0,i1,i,j,k,yisint,n;
   int hx,hy,ix,iy;
   unsigned lx,ly;
+
+  static_assert(std::numeric_limits<double>::is_iec559, "IEEE 754 required");
 
   i0 = ((*(int*)&one)>>29)^1; i1=1-i0;
   hx = high(x); lx = low(x);

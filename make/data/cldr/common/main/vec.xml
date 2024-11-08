@@ -12,6 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="aa">afar</language>
 			<language type="ab">abcazo</language>
 			<language type="ace">acineze</language>
 			<language type="ada">adangme</language>
@@ -42,27 +43,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="az">azerbaijan</language>
 			<language type="az" alt="short">azero</language>
 			<language type="ba">bashkir</language>
+			<language type="bal">baluci</language>
 			<language type="ban">balineze</language>
 			<language type="bas">basa</language>
 			<language type="be">beloruso</language>
 			<language type="bem">benba</language>
+			<language type="bew">betawi</language>
 			<language type="bez">bena</language>
 			<language type="bg">bùlgaro</language>
 			<language type="bgc">harianvi</language>
+			<language type="bgn">baluci osidentale</language>
 			<language type="bho">bojpuri</language>
 			<language type="bi">bizlama</language>
 			<language type="bin">bini</language>
 			<language type="bla">siksika</language>
+			<language type="blo">anii</language>
+			<language type="blt">tai dam</language>
 			<language type="bm">banbara</language>
 			<language type="bn">bangla</language>
 			<language type="bo">tibetan</language>
 			<language type="br">brètone</language>
 			<language type="brx">bodo</language>
 			<language type="bs">boznìago</language>
+			<language type="bss">akos</language>
 			<language type="bug">bugineze</language>
 			<language type="byn">blin</language>
 			<language type="ca">catalan</language>
+			<language type="cad">cado</language>
 			<language type="cay">cayuga</language>
+			<language type="cch">atsam</language>
 			<language type="ccp">ciakma</language>
 			<language type="ce">cecen</language>
 			<language type="ceb">sebuan</language>
@@ -74,6 +83,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="chp">cìpejan</language>
 			<language type="chr">cerokee</language>
 			<language type="chy">ceyen</language>
+			<language type="cic">cìcasow</language>
 			<language type="ckb">curdo sentrale</language>
 			<language type="ckb" alt="variant">curdo sorani</language>
 			<language type="clc">cìlcotin</language>
@@ -158,7 +168,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hi">hindi</language>
 			<language type="hi_Latn" alt="variant">hingleze</language>
 			<language type="hil">hiligheno</language>
-			<language type="hmn">hmong</language>
+			<language type="hmn">mong</language>
+			<language type="hnj">mong novo</language>
 			<language type="hr">croà</language>
 			<language type="hsb">alto sorabo</language>
 			<language type="ht">haitian</language>
@@ -171,6 +182,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="iba">iban</language>
 			<language type="ibb">ibibio</language>
 			<language type="id">indonezian</language>
+			<language type="ie">interlengue</language>
 			<language type="ig">igbo</language>
 			<language type="ii">yi de Sichuan</language>
 			<language type="ikt">inuktitut canadeze osidentale</language>
@@ -186,6 +198,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="jmc">machame</language>
 			<language type="jv">javaneze</language>
 			<language type="ka">jeorjan</language>
+			<language type="kaa">caracalpago</language>
 			<language type="kab">cabil</language>
 			<language type="kac">kachin</language>
 			<language type="kaj">jju</language>
@@ -194,6 +207,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kcg">tyap</language>
 			<language type="kde">makonde</language>
 			<language type="kea">caoverdian</language>
+			<language type="ken">keniang</language>
 			<language type="kfo">koro</language>
 			<language type="kgp">kaingang</language>
 			<language type="kha">khasi</language>
@@ -204,7 +218,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kkj">kako</language>
 			<language type="kl">groelandeze</language>
 			<language type="kln">kalenjin</language>
-			<language type="km">kmer</language>
+			<language type="km">canbojan</language>
 			<language type="kmb">kinbundu</language>
 			<language type="kn">canareze</language>
 			<language type="ko">corean</language>
@@ -223,9 +237,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kv">komi</language>
 			<language type="kw">còrnego</language>
 			<language type="kwk">Kwakwala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirghizo</language>
 			<language type="la">latin</language>
-			<language type="lad">ladin</language>
+			<language type="lad">judezmo</language>
 			<language type="lag">langi</language>
 			<language type="lb">lusenburgheze</language>
 			<language type="lez">lezghian</language>
@@ -234,6 +249,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lij">lìguro</language>
 			<language type="lil">liluet</language>
 			<language type="lkt">lacota</language>
+			<language type="lld">ladin</language>
 			<language type="lmo">lonbardo</language>
 			<language type="ln">lingala</language>
 			<language type="lo">lao</language>
@@ -242,10 +258,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lrc">luri setentrionale</language>
 			<language type="lsm">samia</language>
 			<language type="lt">lituan</language>
+			<language type="ltg">letgalian</language>
 			<language type="lu">luba katanga</language>
 			<language type="lua">luba lulua</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
+			<language type="luo">doluó</language>
 			<language type="lus">mizo</language>
 			<language type="luy">luja</language>
 			<language type="lv">lètone</language>
@@ -259,9 +276,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mer">meru</language>
 			<language type="mfe">maurisian</language>
 			<language type="mg">malgaso</language>
-			<language type="mgh">makùa</language>
+			<language type="mgh">meeto</language>
 			<language type="mgo">meta</language>
 			<language type="mh">marshaleze</language>
+			<language type="mhn">mòcheno</language>
 			<language type="mi">maori</language>
 			<language type="mic">micmac</language>
 			<language type="min">minangkabau</language>
@@ -315,8 +333,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ojw">ojibwa osidentale</language>
 			<language type="oka">okanagan</language>
 			<language type="om">oromo</language>
-			<language type="or">orìa</language>
+			<language type="or">orija</language>
 			<language type="os">osètego</language>
+			<language type="osa">osage</language>
 			<language type="pa">punjabi</language>
 			<language type="pag">pangasinan</language>
 			<language type="pam">panpanga</language>
@@ -332,6 +351,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pt_BR">portogheze braziłian</language>
 			<language type="pt_PT">portogheze europèo</language>
 			<language type="qu">cuechua</language>
+			<language type="quc">kish</language>
 			<language type="raj">rajastani</language>
 			<language type="rap">rapanui</language>
 			<language type="rar">rarotongan</language>
@@ -357,6 +377,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="scn">sisilian</language>
 			<language type="sco">scoseze</language>
 			<language type="sd">sindi</language>
+			<language type="sdh">curdo meridionale</language>
 			<language type="se">sami setentrionale</language>
 			<language type="seh">sena</language>
 			<language type="ses">koyraboro seni</language>
@@ -364,10 +385,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="shi">tashelit</language>
 			<language type="shn">shan</language>
 			<language type="si">singaleze</language>
+			<language type="sid">sidamo</language>
 			<language type="sk">zlovaco</language>
+			<language type="skr">saraiki</language>
 			<language type="sl">zloven</language>
 			<language type="slh">lushootseed meridionale</language>
 			<language type="sm">samoan</language>
+			<language type="sma">sami meridionale</language>
+			<language type="smj">sami de’l Lule</language>
 			<language type="smn">sami inarian</language>
 			<language type="sms">sami skolt</language>
 			<language type="sn">shona</language>
@@ -377,15 +402,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sr">serbo</language>
 			<language type="srn">sranan tongo</language>
 			<language type="ss">zwati</language>
+			<language type="ssy">saho</language>
 			<language type="st">soto meridionale</language>
 			<language type="str">salish streto</language>
 			<language type="su">sundaneze</language>
 			<language type="suk">sukuma</language>
 			<language type="sv">zvedeze</language>
-			<language type="sw">swahili</language>
-			<language type="sw_CD">swahili de’l Congo</language>
+			<language type="sw">suaili</language>
+			<language type="sw_CD">suaili de’l Congo</language>
 			<language type="swb">comorian</language>
 			<language type="syr">sirìago</language>
+			<language type="szl">silezian</language>
 			<language type="ta">tamil</language>
 			<language type="tce">tutchone meridionale</language>
 			<language type="te">telugo</language>
@@ -407,6 +434,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tpi">tok pisin</language>
 			<language type="tr">turco</language>
 			<language type="trv">taroko</language>
+			<language type="trw">torwali</language>
 			<language type="ts">tsonga</language>
 			<language type="tt">tàtaro</language>
 			<language type="ttm">tutchone setentrionale</language>
@@ -423,20 +451,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="und">lengua desconoscùa</language>
 			<language type="ur">urdu</language>
 			<language type="uz">uzbego</language>
-			<language type="vai">vai</language>
 			<language type="ve">venda</language>
 			<language type="vec">veneto</language>
 			<language type="vi">vietnameze</language>
+			<language type="vmw">macùa</language>
 			<language type="vo">volapük</language>
 			<language type="vun">vunjo</language>
 			<language type="wa">valon</language>
 			<language type="wae">walser</language>
 			<language type="wal">wolaita</language>
 			<language type="war">waray</language>
+			<language type="wbp">warlpiri</language>
 			<language type="wo">wolof</language>
 			<language type="wuu">wu</language>
 			<language type="xal">kalmik</language>
 			<language type="xh">xhosa</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">soga</language>
 			<language type="yav">yangben</language>
 			<language type="ybb">yenba</language>
@@ -444,6 +474,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yo">yoruba</language>
 			<language type="yrl">nengatu</language>
 			<language type="yue">cantoneze</language>
+			<language type="za">zuan</language>
 			<language type="zgh">tamazight standard de’l Maroco</language>
 			<language type="zh">sineze</language>
 			<language type="zh" alt="menu">sineze mandarin</language>
@@ -484,6 +515,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Cpmn">sipro minòego</script>
 			<script type="Cprt">siprioto</script>
 			<script type="Cyrl">sirìlego</script>
+			<script type="Cyrs">zlavo de cieza antigo</script>
 			<script type="Deva">devanàgari</script>
 			<script type="Diak">dives akuru</script>
 			<script type="Dogr">dogri</script>
@@ -493,6 +525,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Elba">elbasan</script>
 			<script type="Elym">elimàego</script>
 			<script type="Ethi">etiòpego</script>
+			<script type="Gara">garay</script>
 			<script type="Geor">jeorjan</script>
 			<script type="Glag">glagolìtego</script>
 			<script type="Gong">gunjala</script>
@@ -501,6 +534,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Gran">granta</script>
 			<script type="Grek">grego</script>
 			<script type="Gujr">gujarati</script>
+			<script type="Gukh">gurung khema</script>
 			<script type="Guru">gurmuki</script>
 			<script type="Hanb">han co bopomofo</script>
 			<script type="Hang">hangul</script>
@@ -531,9 +565,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Kits">kitan celo</script>
 			<script type="Knda">kanada</script>
 			<script type="Kore">corean</script>
+			<script type="Krai">kirat rai</script>
 			<script type="Kthi">kaiti</script>
 			<script type="Lana">lana</script>
 			<script type="Laoo">lao</script>
+			<script type="Latf">latin fraktur</script>
+			<script type="Latg">latin gaèlego</script>
 			<script type="Latn">latin</script>
 			<script type="Lepc">lepcha</script>
 			<script type="Limb">linbu</script>
@@ -567,6 +604,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Nshu">nushu</script>
 			<script type="Ogam">ogam</script>
 			<script type="Olck">ol ciki</script>
+			<script type="Onao">ol onal</script>
 			<script type="Orkh">orcon</script>
 			<script type="Orya">orija</script>
 			<script type="Osge">osage</script>
@@ -599,8 +637,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Sora">sora sonpeng</script>
 			<script type="Soyo">soyonbo</script>
 			<script type="Sund">sundaneze</script>
+			<script type="Sunu">sunuwar</script>
 			<script type="Sylo">syloti nagri</script>
 			<script type="Syrc">sirìago</script>
+			<script type="Syre">sirìago estrànjelo</script>
+			<script type="Syrj">sirìago osidentale</script>
+			<script type="Syrn">sirìago orientale</script>
 			<script type="Tagb">tagbanwa</script>
 			<script type="Takr">takri</script>
 			<script type="Tale">tai le</script>
@@ -616,7 +658,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Tibt">tibetan</script>
 			<script type="Tirh">tiruta</script>
 			<script type="Tnsa">tangsa</script>
+			<script type="Todr">todhri</script>
 			<script type="Toto">toto</script>
+			<script type="Tutg">tigalari</script>
 			<script type="Ugar">ugarìtego</script>
 			<script type="Vaii">vai</script>
 			<script type="Vith">beita kukju</script>
@@ -841,7 +885,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MV">Maldive</territory>
 			<territory type="MW">Malawi</territory>
 			<territory type="MX">Mèsego</territory>
-			<territory type="MY">Malezia</territory>
+			<territory type="MY">Malèizia</territory>
 			<territory type="MZ">Mozanbigo</territory>
 			<territory type="NA">Namibia</territory>
 			<territory type="NC">Nova Caledonia</territory>
@@ -967,30 +1011,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="RIGIK">volapuk clàsego</variant>
 		</variants>
 		<keys>
-			<key type="cf">Formà moneda</key>
-			<key type="currency">Moneda</key>
-			<key type="hc">Sistema ore (12/24)</key>
-			<key type="lb">Stile de cao de linea</key>
-			<key type="ms">Sistema de mezurasion</key>
+			<key type="calendar">lunaro</key>
+			<key type="cf">formà moneda</key>
+			<key type="collation">òrdane</key>
+			<key type="currency">moneda</key>
+			<key type="hc">sistema ore (12/24)</key>
+			<key type="lb">stile de cao de linea</key>
+			<key type="ms">sistema de mezurasion</key>
 			<key type="numbers">Nùmari</key>
 		</keys>
 		<types>
-			<type key="calendar" type="gregorian">calendaro gregorian</type>
-			<type key="calendar" type="iso8601">calendaro ISO-8601</type>
-			<type key="cf" type="account">Formà moneda contàbile</type>
-			<type key="cf" type="standard">Formà moneda standard</type>
-			<type key="collation" type="search">Reserca jenèrega</type>
+			<type key="calendar" type="buddhist">lunaro budista</type>
+			<type key="calendar" type="chinese">lunaro sineze</type>
+			<type key="calendar" type="coptic">lunaro còptego</type>
+			<type key="calendar" type="dangi">lunaro dangi</type>
+			<type key="calendar" type="ethiopic">lunaro etiòpego</type>
+			<type key="calendar" type="ethiopic-amete-alem">lunaro etiòpego (amete alem)</type>
+			<type key="calendar" type="gregorian">lunaro gregorian</type>
+			<type key="calendar" type="hebrew">lunaro ebràego</type>
+			<type key="calendar" type="islamic">lunaro izlàmego</type>
+			<type key="calendar" type="islamic-civil">lunaro izlàmego (tabular)</type>
+			<type key="calendar" type="islamic-umalqura">lunaro izlàmego (Umm al-Qura)</type>
+			<type key="calendar" type="iso8601">lunaro ISO-8601</type>
+			<type key="calendar" type="japanese">lunaro japoneze</type>
+			<type key="calendar" type="persian">lunaro persian</type>
+			<type key="calendar" type="roc">lunaro mìnguo</type>
+			<type key="cf" type="account">formà moneda contàbile</type>
+			<type key="cf" type="standard">formà moneda standard</type>
+			<type key="collation" type="ducet">òrdane predefenìo Unicode</type>
+			<type key="collation" type="search">reserca jenèrega</type>
 			<type key="collation" type="standard">òrdane standard</type>
-			<type key="hc" type="h11">Sistema a 12 ore (0–11)</type>
-			<type key="hc" type="h12">Sistema a 12 ore (1–12)</type>
-			<type key="hc" type="h23">Sistema a 24 ore (0–23)</type>
-			<type key="hc" type="h24">Sistema a 12 ore (1–24)</type>
-			<type key="lb" type="loose">Cao de linea opsionale</type>
-			<type key="lb" type="normal">Cao de linea normale</type>
-			<type key="lb" type="strict">Cao de linea forsà</type>
-			<type key="ms" type="metric">Sistema mètrego</type>
-			<type key="ms" type="uksystem">Sistema inperiale</type>
-			<type key="ms" type="ussystem">Sistema meregan</type>
+			<type key="hc" type="h11">sistema a 12 ore (0–11)</type>
+			<type key="hc" type="h12">sistema a 12 ore (1–12)</type>
+			<type key="hc" type="h23">sistema a 24 ore (0–23)</type>
+			<type key="hc" type="h24">sistema a 12 ore (1–24)</type>
+			<type key="lb" type="loose">cao de linea opsionale</type>
+			<type key="lb" type="normal">cao de linea normale</type>
+			<type key="lb" type="strict">cao de linea forsà</type>
+			<type key="ms" type="metric">sistema mètrego</type>
+			<type key="ms" type="uksystem">sistema inperiale</type>
+			<type key="ms" type="ussystem">sistema meregan</type>
 			<type key="numbers" type="arab">Nùmari in indo àrabo</type>
 			<type key="numbers" type="arabext">Nùmari estendesti in indo àrabo</type>
 			<type key="numbers" type="armn">Nùmari in armen</type>
@@ -1034,8 +1094,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">mètrego</measurementSystemName>
-			<measurementSystemName type="UK">britànego</measurementSystemName>
-			<measurementSystemName type="US">meregan</measurementSystemName>
+			<measurementSystemName type="UK">inperiale</measurementSystemName>
+			<measurementSystemName type="US">de i Stadi Unìi</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">Lengua: {0}</codePattern>
@@ -1249,7 +1309,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="9">set</month>
 							<month type="10">oto</month>
 							<month type="11">nov</month>
-							<month type="12">des</month>
+							<month type="12">dez</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">jenaro</month>
@@ -1263,10 +1323,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="9">setenbre</month>
 							<month type="10">otobre</month>
 							<month type="11">novenbre</month>
-							<month type="12">desenbre</month>
+							<month type="12">dezenbre</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">jen</month>
+							<month type="2">feb</month>
+							<month type="3">mar</month>
+							<month type="4">apr</month>
+							<month type="5">maj</month>
+							<month type="6">jug</month>
+							<month type="7">luj</month>
+							<month type="8">ago</month>
+							<month type="9">set</month>
+							<month type="10">oto</month>
+							<month type="11">nov</month>
+							<month type="12">dez</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">J</month>
 							<month type="2">F</month>
@@ -1280,6 +1354,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10">O</month>
 							<month type="11">N</month>
 							<month type="12">D</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">jenaro</month>
+							<month type="2">febraro</month>
+							<month type="3">marso</month>
+							<month type="4">aprile</month>
+							<month type="5">majo</month>
+							<month type="6">jugno</month>
+							<month type="7">lujo</month>
+							<month type="8">agosto</month>
+							<month type="9">setenbre</month>
+							<month type="10">otobre</month>
+							<month type="11">novenbre</month>
+							<month type="12">dezenbre</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1442,6 +1530,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">w'ª' 'setemana' 'de''l' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="h">h – h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -1584,85 +1679,623 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">l’ano pasà</relative>
 				<relative type="0">‘st’ano</relative>
 				<relative type="1">l’ano che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} ano</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} ani</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} ano</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} ani</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} ano</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} ani</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} ano</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} ani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="year-narrow">
-				<displayName>a</displayName>
+				<relative type="-1">ano pasà</relative>
+				<relative type="0">‘st’ano</relative>
+				<relative type="1">ano che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} ano</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} ani</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} ano</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} ani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter">
 				<displayName>trimestre</displayName>
+				<relative type="-1">el trimestre pasà</relative>
+				<relative type="0">‘sto trimestre</relative>
+				<relative type="1">el trimestre che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} trimestre</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} trimestri</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} trimestre</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} trimestri</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter-short">
 				<displayName>trim</displayName>
+				<relative type="-1">el trim pasà</relative>
+				<relative type="0">‘sto trim</relative>
+				<relative type="1">el trim che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} trim</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} trim</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} trim</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} trim</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
-				<displayName>t</displayName>
+				<relative type="-1">trim pasà</relative>
+				<relative type="0">‘sto trim</relative>
+				<relative type="1">trim che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} trim</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} trim</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} trim</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} trim</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month">
 				<displayName>meze</displayName>
 				<relative type="-1">el meze pasà</relative>
 				<relative type="0">‘sto meze</relative>
 				<relative type="1">el meze che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} meze</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} mezi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} meze</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} mezi</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month-short">
-				<displayName>mez</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} meze</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} mezi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} meze</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} mezi</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month-narrow">
-				<displayName>m</displayName>
+				<displayName>meze</displayName>
+				<relative type="-1">meze pasà</relative>
+				<relative type="0">‘sto meze</relative>
+				<relative type="1">meze che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} meze</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} mezi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} meze</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} mezi</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="week">
 				<displayName>setemana</displayName>
 				<relative type="-1">la setemana pasada</relative>
 				<relative type="0">‘sta setemana</relative>
 				<relative type="1">la setemana che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} setemana</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} setemane</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che la ze {0} setemana</relativeTimePattern>
+					<relativeTimePattern count="other">che le ze {0} setemane</relativeTimePattern>
+				</relativeTime>
 				<relativePeriod>la setemana de’l {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>set</displayName>
+				<relative type="-1">la set pasada</relative>
+				<relative type="0">‘sta set</relative>
+				<relative type="1">la set che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} set</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} set</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che la ze {0} set</relativeTimePattern>
+					<relativeTimePattern count="other">che le ze {0} set</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>la set de’l {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
-				<displayName>s</displayName>
+				<relative type="-1">set pasada</relative>
+				<relative type="0">‘sta set</relative>
+				<relative type="1">set che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} set</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} set</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che la ze {0} set</relativeTimePattern>
+					<relativeTimePattern count="other">che le ze {0} set</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>la set de’l {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>setemana de’l meze</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>set/meze</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>set/meze</displayName>
 			</field>
 			<field type="day">
 				<displayName>dì</displayName>
 				<relative type="-1">jeri</relative>
 				<relative type="0">uncó</relative>
 				<relative type="1">doman</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} dì</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} dì</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} dì</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} dì</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} dì</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} dì</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} dì</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} dì</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="day-narrow">
 				<displayName>d</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} dì</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} dì</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} dì</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} dì</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>dì de l’ano</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>dì/ano</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>dì/ano</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>dì de la setemana</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>dì/set</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>dì/set</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>dì de’l meze</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>dì/meze</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>dì/meze</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">doménega pasada</relative>
+				<relative type="0">‘sta doménega</relative>
+				<relative type="1">doménega che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} doménega</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} doméneghe</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che la ze {0} doménega</relativeTimePattern>
+					<relativeTimePattern count="other">che le ze {0} doméneghe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">dom pasada</relative>
+				<relative type="0">‘sta dom</relative>
+				<relative type="1">dom che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} dom</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} dom</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che la ze {0} dom</relativeTimePattern>
+					<relativeTimePattern count="other">che le ze {0} dom</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1">dom pasada</relative>
+				<relative type="0">‘sta dom</relative>
+				<relative type="1">dom che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} dom</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} dom</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che la ze {0} dom</relativeTimePattern>
+					<relativeTimePattern count="other">che le ze {0} dom</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1">luni pasà</relative>
+				<relative type="0">‘sto luni</relative>
+				<relative type="1">luni che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} luni</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} luni</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} luni</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} luni</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1">lun pasà</relative>
+				<relative type="0">‘sto lun</relative>
+				<relative type="1">lun che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} lun</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} lun</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} lun</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} lun</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">lun pasà</relative>
+				<relative type="0">‘sto lun</relative>
+				<relative type="1">lun che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} lun</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} lun</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} lun</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} lun</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">marti pasà</relative>
+				<relative type="0">‘sto marti</relative>
+				<relative type="1">marti che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} marti</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} marti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} marti</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} marti</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">mar pasà</relative>
+				<relative type="0">‘sto mar</relative>
+				<relative type="1">mar che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} mar</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} mar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} mar</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} mar</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">mar pasà</relative>
+				<relative type="0">‘sto mar</relative>
+				<relative type="1">mar che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} mar</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} mar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} mar</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} mar</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">mèrcore pasà</relative>
+				<relative type="0">‘sto mèrcore</relative>
+				<relative type="1">mèrcore che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} mèrcore</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} mèrcore</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} mèrcore</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} mèrcore</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">mèr pasà</relative>
+				<relative type="0">‘sto mèr</relative>
+				<relative type="1">mèr che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} mèr</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} mèr</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} mèr</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} mèr</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">mèr pasà</relative>
+				<relative type="0">‘sto mèr</relative>
+				<relative type="1">mèr che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} mèr</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} mèr</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} mèr</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} mèr</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">zoba pasà</relative>
+				<relative type="0">‘sto zoba</relative>
+				<relative type="1">zoba che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} zoba</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} zoba</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} zoba</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} zoba</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">zob pasà</relative>
+				<relative type="0">‘sto zob</relative>
+				<relative type="1">zob che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} zob</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} zob</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} zob</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} zob</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1">zob pasà</relative>
+				<relative type="0">‘sto zob</relative>
+				<relative type="1">zob che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} zob</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} zob</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} zob</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} zob</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1">vènare pasà</relative>
+				<relative type="0">‘sto vènare</relative>
+				<relative type="1">vènare che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} vènare</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} vènare</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} vènare</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} vènare</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">vèn pasà</relative>
+				<relative type="0">‘sto vèn</relative>
+				<relative type="1">vèn che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} vèn</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} vèn</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} vèn</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} vèn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">vèn pasà</relative>
+				<relative type="0">‘sto vèn</relative>
+				<relative type="1">vèn che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} vèn</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} vèn</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} vèn</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} vèn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1">sabo pasà</relative>
+				<relative type="0">‘sto sabo</relative>
+				<relative type="1">sabo che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} sabo</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} sabi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} sabo</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} sabi</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">sab pasà</relative>
+				<relative type="0">‘sto sab</relative>
+				<relative type="1">sab che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} sab</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} sab</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} sab</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} sab</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">sab pasà</relative>
+				<relative type="0">‘sto sab</relative>
+				<relative type="1">sab che vien</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} sab</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} sab</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} sab</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} sab</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="dayperiod">
 				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
 				<displayName>ora</displayName>
+				<relative type="0">‘sta ora</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} ora</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} ore</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che la ze {0} ora</relativeTimePattern>
+					<relativeTimePattern count="other">che le ze {0} ore</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<relative type="0">‘sta ora</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} ora</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} ore</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che la ze {0} ora</relativeTimePattern>
+					<relativeTimePattern count="other">che le ze {0} ore</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="hour-narrow">
 				<displayName>o</displayName>
+				<relative type="0">‘sta o</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} o</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} o</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che la ze {0} o</relativeTimePattern>
+					<relativeTimePattern count="other">che le ze {0} o</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName>menuto</displayName>
+				<relative type="0">‘sto menuto</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} menuto</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} menuti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} menuto</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} menuti</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute-short">
 				<displayName>men</displayName>
+				<relative type="0">‘sto men</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} men</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} men</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} men</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} men</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute-narrow">
 				<displayName>m</displayName>
+				<relative type="0">‘sto m</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} m</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} m</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} m</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} m</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second">
 				<displayName>segondo</displayName>
+				<relative type="0">deso</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} segondo</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} segondi</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} segondo</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} segondi</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second-short">
 				<displayName>seg</displayName>
+				<relative type="0">deso</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} seg</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} seg</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} seg</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} seg</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second-narrow">
 				<displayName>s</displayName>
+				<relative type="0">deso</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tenpo {0} s</relativeTimePattern>
+					<relativeTimePattern count="other">tenpo {0} s</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">che’l ze {0} s</relativeTimePattern>
+					<relativeTimePattern count="other">che i ze {0} s</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="zone">
-				<displayName>fuzoraro</displayName>
+				<displayName>fuzorario</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>fuzorario</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>fuzorario</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
@@ -1805,9 +2438,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Cao Verdo</exemplarCity>
 			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
-			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Ìzola de Nadale</exemplarCity>
 			</zone>
@@ -1948,6 +2578,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Amman">
 				<exemplarCity>Aman</exemplarCity>
 			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity>Biskek</exemplarCity>
+			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Pnom Pen</exemplarCity>
 			</zone>
@@ -1975,6 +2608,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Aqtau">
 				<exemplarCity>Aktàu</exemplarCity>
 			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity>Oural</exemplarCity>
+			</zone>
 			<zone type="Asia/Atyrau">
 				<exemplarCity>Atyràu</exemplarCity>
 			</zone>
@@ -1986,6 +2622,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>Kizilorda</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity>Almati</exemplarCity>
 			</zone>
 			<zone type="Asia/Vientiane">
 				<exemplarCity>Vientian</exemplarCity>
@@ -2143,6 +2782,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Belgrade">
 				<exemplarCity>Belgrado</exemplarCity>
 			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity>Kaliningrado</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity>Mosca</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity>Volgogrado</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrahan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Uliànosk</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity>Yekaterinburgo</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity>Novokuznietsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity>Kraznayarsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity>Cita</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity>Hàndiga</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity>Sacalin</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity>Ust-Gnera</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity>Zrédnekolimsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity>Kamciatka</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity>Anàdyr</exemplarCity>
+			</zone>
 			<zone type="Asia/Riyadh">
 				<exemplarCity>Riad</exemplarCity>
 			</zone>
@@ -2188,8 +2872,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Lome">
 				<exemplarCity>Lomé</exemplarCity>
 			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity>Dusanbé</exemplarCity>
+			</zone>
 			<zone type="Pacific/Fakaofo">
 				<exemplarCity>Atolo Fakaofo</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity>Azgabad</exemplarCity>
 			</zone>
 			<zone type="Africa/Tunis">
 				<exemplarCity>Tùnezi</exemplarCity>
@@ -2272,6 +2962,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Samarkand">
 				<exemplarCity>Samarcanda</exemplarCity>
 			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity>Taskent</exemplarCity>
+			</zone>
 			<zone type="Europe/Vatican">
 				<exemplarCity>Vategan</exemplarCity>
 			</zone>
@@ -2336,30 +3029,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>Ora de’l nord mèrega sentrale</generic>
-					<standard>Ora normale de’l nord mèrega sentrale</standard>
-					<daylight>Ora d’istà de’l nord mèrega sentrale</daylight>
+					<generic>Ora de’l nord Amèrega sentrale</generic>
+					<standard>Ora normale de’l nord Amèrega sentrale</standard>
+					<daylight>Ora d’istà de’l nord Amèrega sentrale</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>Ora de’l nord mèrega orientale</generic>
-					<standard>Ora normale de’l nord mèrega orientale</standard>
-					<daylight>Ora d’istà de’l nord mèrega orientale</daylight>
+					<generic>Ora de’l nord Amèrega orientale</generic>
+					<standard>Ora normale de’l nord Amèrega orientale</standard>
+					<daylight>Ora d’istà de’l nord Amèrega orientale</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>Ora de’l nord mèrega de le montagne</generic>
-					<standard>Ora normale de’l nord mèrega de le montagne</standard>
-					<daylight>Ora d’istà de’l nord mèrega de le montagne</daylight>
+					<generic>Ora de’l nord Amèrega de le montagne</generic>
+					<standard>Ora normale de’l nord Amèrega de le montagne</standard>
+					<daylight>Ora d’istà de’l nord Amèrega de le montagne</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>Ora de’l nord mèrega de’l Pasìfego</generic>
-					<standard>Ora normale de’l nord mèrega de’l Pasìfego</standard>
-					<daylight>Ora d’istà de’l nord mèrega de’l Pasìfego</daylight>
+					<generic>Ora de’l Pasìfego</generic>
+					<standard>Ora normale de’l Pasìfego</standard>
+					<daylight>Ora d’istà de’l Pasìfego</daylight>
 				</long>
 			</metazone>
 			<metazone type="Apia">
@@ -2399,9 +3092,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
-					<generic>Ora de’l nord mèrega de l’Atlàntego</generic>
-					<standard>Ora normale de’l nord mèrega de l’Atlàntego</standard>
-					<daylight>Ora d’istà de’l nord mèrega de l’Atlàntego</daylight>
+					<generic>Ora de l’Atlàntego</generic>
+					<standard>Ora normale de l’Atlàntego</standard>
+					<daylight>Ora d’istà de l’Atlàntego</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
@@ -2506,13 +3199,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Ora de la Sina</generic>
 					<standard>Ora normale de la Sina</standard>
 					<daylight>Ora d’istà de la Sina</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Ora de Choibalsan</generic>
-					<standard>Ora normale de Choibalsan</standard>
-					<daylight>Ora d’istà de Choibalsan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -2751,6 +3437,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Ora de’l Japon</generic>
 					<standard>Ora normale de’l Japon</standard>
 					<daylight>Ora d’istà de’l Japon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Ora de’l Kazakistan</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3174,14 +3865,100 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimal>,</decimal>
 			<group> </group>
 		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="one">mile</pattern>
+					<pattern type="1000" count="other">0 mila</pattern>
+					<pattern type="10000" count="one">00 mila</pattern>
+					<pattern type="10000" count="other">00 mila</pattern>
+					<pattern type="100000" count="one">000 mila</pattern>
+					<pattern type="100000" count="other">000 mila</pattern>
+					<pattern type="1000000" count="one">0 milion</pattern>
+					<pattern type="1000000" count="other">0 milioni</pattern>
+					<pattern type="10000000" count="one">00 milioni</pattern>
+					<pattern type="10000000" count="other">00 milioni</pattern>
+					<pattern type="100000000" count="one">000 milioni</pattern>
+					<pattern type="100000000" count="other">000 milioni</pattern>
+					<pattern type="1000000000" count="one">0 miliardo</pattern>
+					<pattern type="1000000000" count="other">0 miliardi</pattern>
+					<pattern type="10000000000" count="one">00 miliardi</pattern>
+					<pattern type="10000000000" count="other">00 miliardi</pattern>
+					<pattern type="100000000000" count="one">000 miliardi</pattern>
+					<pattern type="100000000000" count="other">000 miliardi</pattern>
+					<pattern type="1000000000000" count="one">0 bilion</pattern>
+					<pattern type="1000000000000" count="other">0 bilioni</pattern>
+					<pattern type="10000000000000" count="one">00 bilioni</pattern>
+					<pattern type="10000000000000" count="other">00 bilioni</pattern>
+					<pattern type="100000000000000" count="one">000 bilioni</pattern>
+					<pattern type="100000000000000" count="other">000 bilioni</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" count="one">0</pattern>
+					<pattern type="1000" count="other">0 mila</pattern>
+					<pattern type="10000" count="one">00 mila</pattern>
+					<pattern type="10000" count="other">00 mila</pattern>
+					<pattern type="100000" count="one">000 mila</pattern>
+					<pattern type="100000" count="other">000 mila</pattern>
+					<pattern type="1000000" count="one">0 mln</pattern>
+					<pattern type="1000000" count="other">0 mln</pattern>
+					<pattern type="10000000" count="one">00 mln</pattern>
+					<pattern type="10000000" count="other">00 mln</pattern>
+					<pattern type="100000000" count="one">000 mln</pattern>
+					<pattern type="100000000" count="other">000 mln</pattern>
+					<pattern type="1000000000" count="one">0 mld</pattern>
+					<pattern type="1000000000" count="other">0 mld</pattern>
+					<pattern type="10000000000" count="one">00 mld</pattern>
+					<pattern type="10000000000" count="other">00 mld</pattern>
+					<pattern type="100000000000" count="one">000 mld</pattern>
+					<pattern type="100000000000" count="other">000 mld</pattern>
+					<pattern type="1000000000000" count="one">0 bln</pattern>
+					<pattern type="1000000000000" count="other">0 bln</pattern>
+					<pattern type="10000000000000" count="one">00 bln</pattern>
+					<pattern type="10000000000000" count="other">00 bln</pattern>
+					<pattern type="100000000000000" count="one">000 bln</pattern>
+					<pattern type="100000000000000" count="other">000 bln</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="one">0</pattern>
+					<pattern type="1000" count="other">0</pattern>
+					<pattern type="10000" count="one">0</pattern>
+					<pattern type="10000" count="other">0</pattern>
+					<pattern type="100000" count="one">0</pattern>
+					<pattern type="100000" count="other">0</pattern>
+					<pattern type="1000000" count="one">0 mln ¤</pattern>
+					<pattern type="1000000" count="other">0 mln ¤</pattern>
+					<pattern type="10000000" count="one">00 mln ¤</pattern>
+					<pattern type="10000000" count="other">00 mln ¤</pattern>
+					<pattern type="100000000" count="one">000 mln ¤</pattern>
+					<pattern type="100000000" count="other">000 mln ¤</pattern>
+					<pattern type="1000000000" count="one">0 mld ¤</pattern>
+					<pattern type="1000000000" count="other">0 mld ¤</pattern>
+					<pattern type="10000000000" count="one">00 mld ¤</pattern>
+					<pattern type="10000000000" count="other">00 mld ¤</pattern>
+					<pattern type="100000000000" count="one">000 mld ¤</pattern>
+					<pattern type="100000000000" count="other">000 mld ¤</pattern>
+					<pattern type="1000000000000" count="one">0 bln ¤</pattern>
+					<pattern type="1000000000000" count="other">0 bln ¤</pattern>
+					<pattern type="10000000000000" count="one">00 bln ¤</pattern>
+					<pattern type="10000000000000" count="other">00 bln ¤</pattern>
+					<pattern type="100000000000000" count="one">000 bln ¤</pattern>
+					<pattern type="100000000000000" count="other">000 bln ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
 			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
-			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
@@ -4004,9 +4781,812 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>dezi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>senti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>mili{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>micro{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nano{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>pico{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>femto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ato{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>zepto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>jocto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-27">
+				<unitPrefixPattern>ronto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-30">
+				<unitPrefixPattern>cuecto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>deca{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>eto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>exa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>zeta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>jota{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern>rona{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern>cueta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>jobi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} par {1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}–{1}</compoundUnitPattern>
+			</compoundUnit>
+			<unit type="acceleration-g-force">
+				<displayName>forsa g</displayName>
+				<unitPattern count="one">{0} de forsa g</unitPattern>
+				<unitPattern count="other">{0} de forsa g</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>metri par segondo cuadrài</displayName>
+				<unitPattern count="one">{0} metro par segondo cuadrà</unitPattern>
+				<unitPattern count="other">{0} metri par segondo cuadrài</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<displayName>kilòmetri cuadrài</displayName>
+				<unitPattern count="one">{0} kilòmetro cuadrà</unitPattern>
+				<unitPattern count="other">{0} kilòmetri cuadrài</unitPattern>
+				<perUnitPattern>{0} par kilòmetro cuadrà</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>ètari</displayName>
+				<unitPattern count="one">{0} ètaro</unitPattern>
+				<unitPattern count="other">{0} ètari</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>metri cuadrài</displayName>
+				<unitPattern count="one">{0} metro cuadrà</unitPattern>
+				<unitPattern count="other">{0} metri cuadrài</unitPattern>
+				<perUnitPattern>{0} par metro cuadrà</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>sentìmetri cuadrài</displayName>
+				<unitPattern count="one">{0} sentìmetro cuadrà</unitPattern>
+				<unitPattern count="other">{0} sentìmetri cuadrài</unitPattern>
+				<perUnitPattern>{0} par sentìmetro cuadrà</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>miji cuadrài</displayName>
+				<unitPattern count="one">{0} mijo cuadrà</unitPattern>
+				<unitPattern count="other">{0} miji cuadrài</unitPattern>
+				<perUnitPattern>{0} par mijo cuadrà</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName>acri</displayName>
+				<unitPattern count="one">{0} acro</unitPattern>
+				<unitPattern count="other">{0} acri</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>jarde cuadràe</displayName>
+				<unitPattern count="one">{0} jarda cuadrada</unitPattern>
+				<unitPattern count="other">{0} jarde cuadràe</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>pie cuadrài</displayName>
+				<unitPattern count="one">{0} pie cuadrà</unitPattern>
+				<unitPattern count="other">{0} pie cuadrài</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>dedoni cuadrài</displayName>
+				<unitPattern count="one">{0} dedon cuadrà</unitPattern>
+				<unitPattern count="other">{0} dedoni cuadrài</unitPattern>
+				<perUnitPattern>{0} par dedon cuadrà</perUnitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>sègoli</displayName>
+				<unitPattern count="one">{0} sègolo</unitPattern>
+				<unitPattern count="other">{0} sègoli</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>dezeni</displayName>
+				<unitPattern count="one">{0} dezenio</unitPattern>
+				<unitPattern count="other">{0} dezeni</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ani</displayName>
+				<unitPattern count="one">{0} ano</unitPattern>
+				<unitPattern count="other">{0} ani</unitPattern>
+				<perUnitPattern>{0} par ano</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>trimestri</displayName>
+				<unitPattern count="one">{0} trimestre</unitPattern>
+				<unitPattern count="other">{0} trimestri</unitPattern>
+				<perUnitPattern>{0} par trimestre</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>mezi</displayName>
+				<unitPattern count="one">{0} meze</unitPattern>
+				<unitPattern count="other">{0} mezi</unitPattern>
+				<perUnitPattern>{0} par meze</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>setemane</displayName>
+				<unitPattern count="one">{0} setemana</unitPattern>
+				<unitPattern count="other">{0} setemane</unitPattern>
+				<perUnitPattern>{0} par setemana</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>dì</displayName>
+				<unitPattern count="one">{0} dì</unitPattern>
+				<unitPattern count="other">{0} dì</unitPattern>
+				<perUnitPattern>{0} par dì</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>ore</displayName>
+				<unitPattern count="one">{0} ora</unitPattern>
+				<unitPattern count="other">{0} ore</unitPattern>
+				<perUnitPattern>{0} par ora</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>menuti</displayName>
+				<unitPattern count="one">{0} menuto</unitPattern>
+				<unitPattern count="other">{0} menuti</unitPattern>
+				<perUnitPattern>{0} par menuto</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>segondi</displayName>
+				<unitPattern count="one">{0} segondo</unitPattern>
+				<unitPattern count="other">{0} segondi</unitPattern>
+				<perUnitPattern>{0} par segondo</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>milisegondi</displayName>
+				<unitPattern count="one">{0} milisegondo</unitPattern>
+				<unitPattern count="other">{0} milisegondi</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>microsegondi</displayName>
+				<unitPattern count="one">{0} microsegondo</unitPattern>
+				<unitPattern count="other">{0} microsegondi</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>nanosegondi</displayName>
+				<unitPattern count="one">{0} nanosegondo</unitPattern>
+				<unitPattern count="other">{0} nanosegondi</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>ampere</displayName>
+				<unitPattern count="one">{0} ampere</unitPattern>
+				<unitPattern count="other">{0} ampere</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>miliampere</displayName>
+				<unitPattern count="one">{0} miliampere</unitPattern>
+				<unitPattern count="other">{0} miliampere</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<unitPattern count="one">{0} ohm</unitPattern>
+				<unitPattern count="other">{0} ohm</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<unitPattern count="one">{0} volt</unitPattern>
+				<unitPattern count="other">{0} volt</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>kilocalorìe</displayName>
+				<unitPattern count="one">{0} kilocalorìa</unitPattern>
+				<unitPattern count="other">{0} kilocalorìe</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>calorìe</displayName>
+				<unitPattern count="one">{0} calorìa</unitPattern>
+				<unitPattern count="other">{0} calorìe</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>kilojoule</displayName>
+				<unitPattern count="one">{0} kilojoule</unitPattern>
+				<unitPattern count="other">{0} kilojoule</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<unitPattern count="one">{0} joule</unitPattern>
+				<unitPattern count="other">{0} joule</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>kilowattora</displayName>
+				<unitPattern count="one">{0} kilowattora</unitPattern>
+				<unitPattern count="other">{0} kilowattora</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>eletronvolt</displayName>
+				<unitPattern count="one">{0} eletronvolt</unitPattern>
+				<unitPattern count="other">{0} eletronvolt</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>unidà tèrmeghe britàneghe</displayName>
+				<unitPattern count="one">{0} unidà tèrmega britànega</unitPattern>
+				<unitPattern count="other">{0} unidà tèrmeghe britàneghe</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>unidà tèrmeghe de i Stadi Unìi</displayName>
+				<unitPattern count="one">{0} unidà tèrmega de i Stadi Unìi</unitPattern>
+				<unitPattern count="other">{0} unidà tèrmeghe de i Stadi Unìi</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>gigahertz</displayName>
+				<unitPattern count="one">{0} gigahertz</unitPattern>
+				<unitPattern count="other">{0} gigahertz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>megahertz</displayName>
+				<unitPattern count="one">{0} megahertz</unitPattern>
+				<unitPattern count="other">{0} megahertz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>kilohertz</displayName>
+				<unitPattern count="one">{0} kilohertz</unitPattern>
+				<unitPattern count="other">{0} kilohertz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>hertz</displayName>
+				<unitPattern count="one">{0} hertz</unitPattern>
+				<unitPattern count="other">{0} hertz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>eme tipogràfega</displayName>
+				<unitPattern count="one">{0} eme tipogràfega</unitPattern>
+				<unitPattern count="other">{0} eme tipogràfeghe</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>pixel</displayName>
+				<unitPattern count="one">{0} pixel</unitPattern>
+				<unitPattern count="other">{0} pixel</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>megapixel</displayName>
+				<unitPattern count="one">{0} megapixel</unitPattern>
+				<unitPattern count="other">{0} megapixel</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>pixel par sentìmetro</displayName>
+				<unitPattern count="one">{0} pixel par sentìmetro</unitPattern>
+				<unitPattern count="other">{0} pixel par sentìmetro</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>pixel par dedon</displayName>
+				<unitPattern count="one">{0} pixel par dedon</unitPattern>
+				<unitPattern count="other">{0} pixel par dedon</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>raji de la tera</displayName>
+				<unitPattern count="one">{0} rajo de la tera</unitPattern>
+				<unitPattern count="other">{0} raji de la tera</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>kilòmetri</displayName>
+				<unitPattern count="one">{0} kilòmetro</unitPattern>
+				<unitPattern count="other">{0} kilòmetri</unitPattern>
+				<perUnitPattern>{0} par kilòmetro</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>metri</displayName>
+				<unitPattern count="one">{0} metro</unitPattern>
+				<unitPattern count="other">{0} metri</unitPattern>
+				<perUnitPattern>{0} par metro</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>dezìmetri</displayName>
+				<unitPattern count="one">{0} dezìmetro</unitPattern>
+				<unitPattern count="other">{0} dezìmetri</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>sentìmetri</displayName>
+				<unitPattern count="one">{0} sentìmetro</unitPattern>
+				<unitPattern count="other">{0} sentìmetri</unitPattern>
+				<perUnitPattern>{0} par sentìmetro</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>milìmetri</displayName>
+				<unitPattern count="one">{0} milìmetro</unitPattern>
+				<unitPattern count="other">{0} milìmetri</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>micròmetri</displayName>
+				<unitPattern count="one">{0} micròmetro</unitPattern>
+				<unitPattern count="other">{0} micròmetri</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>nanòmetri</displayName>
+				<unitPattern count="one">{0} nanòmetro</unitPattern>
+				<unitPattern count="other">{0} nanòmetri</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>picòmetri</displayName>
+				<unitPattern count="one">{0} picòmetro</unitPattern>
+				<unitPattern count="other">{0} picòmetri</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>miji</displayName>
+				<unitPattern count="one">{0} mijo</unitPattern>
+				<unitPattern count="other">{0} miji</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName>jarde</displayName>
+				<unitPattern count="one">{0} jarda</unitPattern>
+				<unitPattern count="other">{0} jarde</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName>pie</displayName>
+				<unitPattern count="one">{0} pie</unitPattern>
+				<unitPattern count="other">{0} pie</unitPattern>
+				<perUnitPattern>{0} par pie</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName>dedon</displayName>
+				<unitPattern count="one">{0} dedon</unitPattern>
+				<unitPattern count="other">{0} dedoni</unitPattern>
+				<perUnitPattern>{0} par dedon</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>parseg</displayName>
+				<unitPattern count="one">{0} parseg</unitPattern>
+				<unitPattern count="other">{0} parseg</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>ani luze</displayName>
+				<unitPattern count="one">{0} ano luze</unitPattern>
+				<unitPattern count="other">{0} ani luze</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>unidà astronòmeghe</displayName>
+				<unitPattern count="one">{0} unidà astronòmega</unitPattern>
+				<unitPattern count="other">{0} unidà astronòmeghe</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>furlong</displayName>
+				<unitPattern count="one">{0} furlong</unitPattern>
+				<unitPattern count="other">{0} furlong</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>brasi</displayName>
+				<unitPattern count="one">{0} braso</unitPattern>
+				<unitPattern count="other">{0} brasi</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>miji nàuteghi</displayName>
+				<unitPattern count="one">{0} mijo nàutego</unitPattern>
+				<unitPattern count="other">{0} miji nàuteghi</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>miji scandìnavi</displayName>
+				<unitPattern count="one">{0} mijo scandìnavo</unitPattern>
+				<unitPattern count="other">{0} miji scandìnavi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>ponti</displayName>
+				<unitPattern count="one">{0} ponto</unitPattern>
+				<unitPattern count="other">{0} ponti</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>raji solari</displayName>
+				<unitPattern count="one">{0} rajo solar</unitPattern>
+				<unitPattern count="other">{0} raji solari</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>tonelàe</displayName>
+				<unitPattern count="one">{0} tonelada</unitPattern>
+				<unitPattern count="other">{0} tonelàe</unitPattern>
+			</unit>
+			<unit type="mass-kilogram">
+				<displayName>kilogrami</displayName>
+				<unitPattern count="one">{0} kilogramo</unitPattern>
+				<unitPattern count="other">{0} kilogrami</unitPattern>
+				<perUnitPattern>{0} par kilogramo</perUnitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>grami</displayName>
+				<unitPattern count="one">{0} gramo</unitPattern>
+				<unitPattern count="other">{0} grami</unitPattern>
+				<perUnitPattern>{0} par gramo</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>miligrami</displayName>
+				<unitPattern count="one">{0} miligramo</unitPattern>
+				<unitPattern count="other">{0} miligrami</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>microgrami</displayName>
+				<unitPattern count="one">{0} microgramo</unitPattern>
+				<unitPattern count="other">{0} microgrami</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>tonelàe curte</displayName>
+				<unitPattern count="one">{0} tonelada curta</unitPattern>
+				<unitPattern count="other">{0} tonelàe curte</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>stone</displayName>
+				<unitPattern count="one">{0} stone</unitPattern>
+				<unitPattern count="other">{0} stone</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<displayName>libre</displayName>
+				<unitPattern count="one">{0} libra</unitPattern>
+				<unitPattern count="other">{0} libre</unitPattern>
+				<perUnitPattern>{0} par libra</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<displayName>onse</displayName>
+				<unitPattern count="one">{0} onsa</unitPattern>
+				<unitPattern count="other">{0} onse</unitPattern>
+				<perUnitPattern>{0} par onsa</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>onse troy</displayName>
+				<unitPattern count="one">{0} onsa troy</unitPattern>
+				<unitPattern count="other">{0} onse troy</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>karati</displayName>
+				<unitPattern count="one">{0} karato</unitPattern>
+				<unitPattern count="other">{0} karati</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>dalton</displayName>
+				<unitPattern count="one">{0} dalton</unitPattern>
+				<unitPattern count="other">{0} dalton</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>mase terestri</displayName>
+				<unitPattern count="one">{0} masa terestre</unitPattern>
+				<unitPattern count="other">{0} mase terestri</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>mase solari</displayName>
+				<unitPattern count="one">{0} masa solar</unitPattern>
+				<unitPattern count="other">{0} mase solari</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>grani</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="other">{0} grani</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>gigawatt</displayName>
+				<unitPattern count="one">{0} gigawatt</unitPattern>
+				<unitPattern count="other">{0} gigawatt</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>megawatt</displayName>
+				<unitPattern count="one">{0} megawatt</unitPattern>
+				<unitPattern count="other">{0} megawatt</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName>kilowatt</displayName>
+				<unitPattern count="one">{0} kilowatt</unitPattern>
+				<unitPattern count="other">{0} kilowatt</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<unitPattern count="one">{0} watt</unitPattern>
+				<unitPattern count="other">{0} watt</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>miliwatt</displayName>
+				<unitPattern count="one">{0} miliwatt</unitPattern>
+				<unitPattern count="other">{0} miliwatt</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>cavali vapor</displayName>
+				<unitPattern count="one">{0} cavalo vapor</unitPattern>
+				<unitPattern count="other">{0} cavali vapor</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>milìmetri de mercurio</displayName>
+				<unitPattern count="one">{0} milìmetro de mercurio</unitPattern>
+				<unitPattern count="other">{0} milìmetri de mercurio</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>libre par dedon cuadrà</displayName>
+				<unitPattern count="one">{0} libra par dedon cuadrà</unitPattern>
+				<unitPattern count="other">{0} libre par dedon cuadrà</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<displayName>dedoni de mercurio</displayName>
+				<unitPattern count="one">{0} dedon de mercurio</unitPattern>
+				<unitPattern count="other">{0} dedoni de mercurio</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<displayName>milibar</displayName>
+				<unitPattern count="one">{0} milibar</unitPattern>
+				<unitPattern count="other">{0} milibar</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atmosfere</displayName>
+				<unitPattern count="one">{0} atmosfera</unitPattern>
+				<unitPattern count="other">{0} atmosfere</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>pascal</displayName>
+				<unitPattern count="one">{0} pascal</unitPattern>
+				<unitPattern count="other">{0} pascal</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>etopascal</displayName>
+				<unitPattern count="one">{0} etopascal</unitPattern>
+				<unitPattern count="other">{0} etopascal</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kilopascal</displayName>
+				<unitPattern count="one">{0} kilopascal</unitPattern>
+				<unitPattern count="other">{0} kilopascal</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>megapascal</displayName>
+				<unitPattern count="one">{0} megapascal</unitPattern>
+				<unitPattern count="other">{0} megapascal</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName>kilòmetri par ora</displayName>
+				<unitPattern count="one">{0} kilòmetro par ora</unitPattern>
+				<unitPattern count="other">{0} kilòmetri par ora</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<displayName>metri par segondo</displayName>
+				<unitPattern count="one">{0} metro par segondo</unitPattern>
+				<unitPattern count="other">{0} metri par segondo</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>miji par ora</displayName>
+				<unitPattern count="one">{0} mijo par ora</unitPattern>
+				<unitPattern count="other">{0} miji par ora</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>gropi</displayName>
+				<unitPattern count="one">{0} gropo</unitPattern>
+				<unitPattern count="other">{0} gropi</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>kilòmetri cubi</displayName>
+				<unitPattern count="one">{0} kilòmetro cubo</unitPattern>
+				<unitPattern count="other">{0} kilòmetri cubi</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>metri cubi</displayName>
+				<unitPattern count="one">{0} metro cubo</unitPattern>
+				<unitPattern count="other">{0} metri cubi</unitPattern>
+				<perUnitPattern>{0} par metro cubo</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>sentìmetri cubi</displayName>
+				<unitPattern count="one">{0} sentìmetro cubo</unitPattern>
+				<unitPattern count="other">{0} sentìmetri cubi</unitPattern>
+				<perUnitPattern>{0} par sentìmetro cubo</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>miji cùbeghi</displayName>
+				<unitPattern count="one">{0} mijo cùbego</unitPattern>
+				<unitPattern count="other">{0} miji cùbeghi</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>jarde cùbeghe</displayName>
+				<unitPattern count="one">{0} jarda cùbega</unitPattern>
+				<unitPattern count="other">{0} jarde cùbeghe</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>pie cùbeghi</displayName>
+				<unitPattern count="one">{0} pie cùbego</unitPattern>
+				<unitPattern count="other">{0} pie cùbeghi</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>dedoni cùbeghi</displayName>
+				<unitPattern count="one">{0} dedon cùbego</unitPattern>
+				<unitPattern count="other">{0} dedoni cùbeghi</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>megalitri</displayName>
+				<unitPattern count="one">{0} megalitro</unitPattern>
+				<unitPattern count="other">{0} megalitri</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>etòlitri</displayName>
+				<unitPattern count="one">{0} etòlitro</unitPattern>
+				<unitPattern count="other">{0} etòlitri</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>litri</displayName>
+				<unitPattern count="one">{0} litro</unitPattern>
+				<unitPattern count="other">{0} litri</unitPattern>
+				<perUnitPattern>{0} par litro</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>dezìlitri</displayName>
+				<unitPattern count="one">{0} dezìlitro</unitPattern>
+				<unitPattern count="other">{0} dezìlitri</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>sentìlitri</displayName>
+				<unitPattern count="one">{0} sentìlitro</unitPattern>
+				<unitPattern count="other">{0} sentìlitri</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>milìlitri</displayName>
+				<unitPattern count="one">{0} milìlitro</unitPattern>
+				<unitPattern count="other">{0} milìlitri</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>pinte mètreghe</displayName>
+				<unitPattern count="one">{0} pinta mètrega</unitPattern>
+				<unitPattern count="other">{0} pinte mètreghe</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>cìcare mètreghe</displayName>
+				<unitPattern count="one">{0} cìcara mètrega</unitPattern>
+				<unitPattern count="other">{0} cìcare mètreghe</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>acro pie</displayName>
+				<unitPattern count="one">{0} acro pie</unitPattern>
+				<unitPattern count="other">{0} acro pie</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>stari</displayName>
+				<unitPattern count="one">{0} staro</unitPattern>
+				<unitPattern count="other">{0} stari</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>galoni</displayName>
+				<unitPattern count="one">{0} galon</unitPattern>
+				<unitPattern count="other">{0} galoni</unitPattern>
+				<perUnitPattern>{0} par galon</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>galoni inperiali</displayName>
+				<unitPattern count="one">{0} galon inperiale</unitPattern>
+				<unitPattern count="other">{0} galoni inperiali</unitPattern>
+				<perUnitPattern>{0} par galon inperiale</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>cuarti</displayName>
+				<unitPattern count="one">{0} cuarto</unitPattern>
+				<unitPattern count="other">{0} cuarti</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>pinte</displayName>
+				<unitPattern count="one">{0} pinta</unitPattern>
+				<unitPattern count="other">{0} pinte</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>cìcare</displayName>
+				<unitPattern count="one">{0} cìcara</unitPattern>
+				<unitPattern count="other">{0} cìcare</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>onse lìcuide</displayName>
+				<unitPattern count="one">{0} onsa lìcuida</unitPattern>
+				<unitPattern count="other">{0} onse lìcuide</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>onse lìcuide inperiali</displayName>
+				<unitPattern count="one">{0} onsa lìcuida inperiale</unitPattern>
+				<unitPattern count="other">{0} onse lìcuide inperiali</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>guciari</displayName>
+				<unitPattern count="one">{0} guciaro</unitPattern>
+				<unitPattern count="other">{0} guciari</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>guciareti</displayName>
+				<unitPattern count="one">{0} guciareto</unitPattern>
+				<unitPattern count="other">{0} guciareti</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>barili</displayName>
+				<unitPattern count="one">{0} barile</unitPattern>
+				<unitPattern count="other">{0} barili</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>guciareti da dolse</displayName>
+				<unitPattern count="one">{0} guciareto da dolse</unitPattern>
+				<unitPattern count="other">{0} guciareti da dolse</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>guciareti da dolse inperiali</displayName>
+				<unitPattern count="one">{0} guciareto da dolse inperiale</unitPattern>
+				<unitPattern count="other">{0} guciareti da dolse inperiali</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>jose</displayName>
+				<unitPattern count="one">{0} josa</unitPattern>
+				<unitPattern count="other">{0} jose</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dracme lìcuide</displayName>
+				<unitPattern count="one">{0} dracma lìcuida</unitPattern>
+				<unitPattern count="other">{0} dracme lìcuide</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>mezureti</displayName>
+				<unitPattern count="one">{0} mezureto</unitPattern>
+				<unitPattern count="other">{0} mezureti</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>spìseghi</displayName>
+				<unitPattern count="one">{0} spìsego</unitPattern>
+				<unitPattern count="other">{0} spìseghi</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>cuarti inperiali</displayName>
+				<unitPattern count="one">{0} cuarto inperiale</unitPattern>
+				<unitPattern count="other">{0} cuarti inperiali</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noti</displayName>
+				<unitPattern count="one">{0} note</unitPattern>
+				<unitPattern count="other">{0} noti</unitPattern>
+				<perUnitPattern>{0} par note</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ponto cardinale</displayName>
 				<coordinateUnitPattern type="east">{0} est</coordinateUnitPattern>
@@ -4016,9 +5596,858 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="acceleration-g-force">
+				<displayName>fg</displayName>
+				<unitPattern count="one">{0} fg</unitPattern>
+				<unitPattern count="other">{0} fg</unitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>ha</displayName>
+			</unit>
+			<unit type="area-acre">
+				<displayName>ac</displayName>
+			</unit>
+			<unit type="duration-century">
+				<displayName>sèg</displayName>
+				<unitPattern count="one">{0} sèg</unitPattern>
+				<unitPattern count="other">{0} sèg</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>dezeni</displayName>
+				<unitPattern count="one">{0} dezenio</unitPattern>
+				<unitPattern count="other">{0} dezeni</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ani</displayName>
+				<unitPattern count="one">{0} ano</unitPattern>
+				<unitPattern count="other">{0} ani</unitPattern>
+				<perUnitPattern>{0}/ano</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>trim</displayName>
+				<unitPattern count="one">{0} trim</unitPattern>
+				<unitPattern count="other">{0} trim</unitPattern>
+				<perUnitPattern>{0}/trim</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>mezi</displayName>
+				<unitPattern count="one">{0} meze</unitPattern>
+				<unitPattern count="other">{0} mezi</unitPattern>
+				<perUnitPattern>{0}/meze</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>set</displayName>
+				<unitPattern count="one">{0} set</unitPattern>
+				<unitPattern count="other">{0} set</unitPattern>
+				<perUnitPattern>{0}/set</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>dì</displayName>
+				<unitPattern count="one">{0} dì</unitPattern>
+				<unitPattern count="other">{0} dì</unitPattern>
+				<perUnitPattern>{0}/dì</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>ore</displayName>
+				<unitPattern count="one">{0} ora</unitPattern>
+				<unitPattern count="other">{0} ore</unitPattern>
+				<perUnitPattern>{0}/ora</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>men</displayName>
+				<unitPattern count="one">{0} men</unitPattern>
+				<unitPattern count="other">{0} men</unitPattern>
+				<perUnitPattern>{0}/men</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>seg</displayName>
+				<unitPattern count="one">{0} seg</unitPattern>
+				<unitPattern count="other">{0} seg</unitPattern>
+				<perUnitPattern>{0}/seg</perUnitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>A</displayName>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>Ω</displayName>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>V</displayName>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>J</displayName>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} BTU</unitPattern>
+				<unitPattern count="other">{0} BTU</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>thm</displayName>
+				<unitPattern count="one">{0} thm</unitPattern>
+				<unitPattern count="other">{0} thm</unitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>m</displayName>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>g</displayName>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>tc</displayName>
+				<unitPattern count="one">{0} tc</unitPattern>
+				<unitPattern count="other">{0} tc</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>kt</displayName>
+				<unitPattern count="one">{0} kt</unitPattern>
+				<unitPattern count="other">{0} kt</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gr</displayName>
+				<unitPattern count="one">{0} gr</unitPattern>
+				<unitPattern count="other">{0} gr</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName>W</displayName>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>mmHg</displayName>
+				<unitPattern count="one">{0} mmHg</unitPattern>
+				<unitPattern count="other">{0} mmHg</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>Ml</displayName>
+				<unitPattern count="one">{0} Ml</unitPattern>
+				<unitPattern count="other">{0} Ml</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hl</displayName>
+				<unitPattern count="one">{0} hl</unitPattern>
+				<unitPattern count="other">{0} hl</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>l</displayName>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>dl</displayName>
+				<unitPattern count="one">{0} dl</unitPattern>
+				<unitPattern count="other">{0} dl</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>cl</displayName>
+				<unitPattern count="one">{0} cl</unitPattern>
+				<unitPattern count="other">{0} cl</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>ml</displayName>
+				<unitPattern count="one">{0} ml</unitPattern>
+				<unitPattern count="other">{0} ml</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>ptm</displayName>
+				<unitPattern count="one">{0} ptm</unitPattern>
+				<unitPattern count="other">{0} ptm</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>cìcm</displayName>
+				<unitPattern count="one">{0} cìcm</unitPattern>
+				<unitPattern count="other">{0} cìcm</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ac⋅ft</displayName>
+				<unitPattern count="one">{0} ac⋅ft</unitPattern>
+				<unitPattern count="other">{0} ac⋅ft</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>gal</displayName>
+				<unitPattern count="one">{0} gal</unitPattern>
+				<unitPattern count="other">{0} gal</unitPattern>
+				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>gal inp</displayName>
+				<unitPattern count="one">{0} gal inp</unitPattern>
+				<unitPattern count="other">{0} gal inp</unitPattern>
+				<perUnitPattern>{0}/gal inp</perUnitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>pnt</displayName>
+				<unitPattern count="one">{0} pnt</unitPattern>
+				<unitPattern count="other">{0} pnt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>cìc</displayName>
+				<unitPattern count="one">{0} cìc</unitPattern>
+				<unitPattern count="other">{0} cìc</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0} fl oz</unitPattern>
+				<unitPattern count="other">{0} fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>fl oz inp</displayName>
+				<unitPattern count="one">{0} fl oz inp</unitPattern>
+				<unitPattern count="other">{0} fl oz inp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dsp</displayName>
+				<unitPattern count="one">{0} dsp</unitPattern>
+				<unitPattern count="other">{0} dsp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dsp inp</displayName>
+				<unitPattern count="one">{0} dsp inp</unitPattern>
+				<unitPattern count="other">{0} dsp inp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>js</displayName>
+				<unitPattern count="one">{0} js</unitPattern>
+				<unitPattern count="other">{0} js</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>fl dr</displayName>
+				<unitPattern count="one">{0} fl dr</unitPattern>
+				<unitPattern count="other">{0} fl dr</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>mzr</displayName>
+				<unitPattern count="one">{0} mzr</unitPattern>
+				<unitPattern count="other">{0} mzr</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>sps</displayName>
+				<unitPattern count="one">{0} sps</unitPattern>
+				<unitPattern count="other">{0} sps</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt inp</displayName>
+				<unitPattern count="one">{0} qt inp</unitPattern>
+				<unitPattern count="other">{0} qt inp</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noti</displayName>
+				<unitPattern count="one">{0} note</unitPattern>
+				<unitPattern count="other">{0} noti</unitPattern>
+				<perUnitPattern>{0}/note</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ponto</displayName>
 			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="acceleration-g-force">
+				<displayName>fg</displayName>
+				<unitPattern count="one">{0}fg</unitPattern>
+				<unitPattern count="other">{0}fg</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<unitPattern count="one">{0}m/s²</unitPattern>
+				<unitPattern count="other">{0}m/s²</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<unitPattern count="one">{0}km²</unitPattern>
+				<unitPattern count="other">{0}km²</unitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>ha</displayName>
+				<unitPattern count="one">{0}ha</unitPattern>
+				<unitPattern count="other">{0}ha</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<unitPattern count="one">{0}m²</unitPattern>
+				<unitPattern count="other">{0}m²</unitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<unitPattern count="one">{0}cm²</unitPattern>
+				<unitPattern count="other">{0}cm²</unitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<unitPattern count="one">{0}mi²</unitPattern>
+				<unitPattern count="other">{0}mi²</unitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName>ac</displayName>
+				<unitPattern count="one">{0}ac</unitPattern>
+				<unitPattern count="other">{0}ac</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<unitPattern count="one">{0}yd²</unitPattern>
+				<unitPattern count="other">{0}yd²</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<unitPattern count="one">{0}ft²</unitPattern>
+				<unitPattern count="other">{0}ft²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<unitPattern count="one">{0}in²</unitPattern>
+				<unitPattern count="other">{0}in²</unitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<unitPattern count="one">{0}dunam</unitPattern>
+				<unitPattern count="other">{0}dunam</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>sèg</displayName>
+				<unitPattern count="one">{0}sèg</unitPattern>
+				<unitPattern count="other">{0}sèg</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>dezeni</displayName>
+				<unitPattern count="one">{0}dezenio</unitPattern>
+				<unitPattern count="other">{0}dezeni</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ani</displayName>
+				<unitPattern count="one">{0}ano</unitPattern>
+				<unitPattern count="other">{0}ani</unitPattern>
+				<perUnitPattern>{0}/ano</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>trim</displayName>
+				<unitPattern count="one">{0}trim</unitPattern>
+				<unitPattern count="other">{0}trim</unitPattern>
+				<perUnitPattern>{0}/trim</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>mezi</displayName>
+				<unitPattern count="one">{0}meze</unitPattern>
+				<unitPattern count="other">{0}mezi</unitPattern>
+				<perUnitPattern>{0}/meze</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>set</displayName>
+				<unitPattern count="one">{0}set</unitPattern>
+				<unitPattern count="other">{0}set</unitPattern>
+				<perUnitPattern>{0}/set</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>dì</displayName>
+				<unitPattern count="one">{0}dì</unitPattern>
+				<unitPattern count="other">{0}dì</unitPattern>
+				<perUnitPattern>{0}/dì</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>o</displayName>
+				<unitPattern count="one">{0}o</unitPattern>
+				<unitPattern count="other">{0}o</unitPattern>
+				<perUnitPattern>{0}/o</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>m</displayName>
+				<unitPattern count="one">{0}m</unitPattern>
+				<unitPattern count="other">{0}m</unitPattern>
+				<perUnitPattern>{0}/m</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>s</displayName>
+				<unitPattern count="one">{0}s</unitPattern>
+				<unitPattern count="other">{0}s</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<unitPattern count="one">{0}ms</unitPattern>
+				<unitPattern count="other">{0}ms</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<unitPattern count="one">{0}μs</unitPattern>
+				<unitPattern count="other">{0}μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<unitPattern count="one">{0}ns</unitPattern>
+				<unitPattern count="other">{0}ns</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>A</displayName>
+				<unitPattern count="one">{0}A</unitPattern>
+				<unitPattern count="other">{0}A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<unitPattern count="one">{0}mA</unitPattern>
+				<unitPattern count="other">{0}mA</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>Ω</displayName>
+				<unitPattern count="one">{0}Ω</unitPattern>
+				<unitPattern count="other">{0}Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>V</displayName>
+				<unitPattern count="one">{0}V</unitPattern>
+				<unitPattern count="other">{0}V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<unitPattern count="one">{0}kcal</unitPattern>
+				<unitPattern count="other">{0}kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<unitPattern count="one">{0}cal</unitPattern>
+				<unitPattern count="other">{0}cal</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<unitPattern count="one">{0}kJ</unitPattern>
+				<unitPattern count="other">{0}kJ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>J</displayName>
+				<unitPattern count="one">{0}J</unitPattern>
+				<unitPattern count="other">{0}J</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<unitPattern count="one">{0}kWh</unitPattern>
+				<unitPattern count="other">{0}kWh</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<unitPattern count="one">{0}eV</unitPattern>
+				<unitPattern count="other">{0}eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">{0}BTU</unitPattern>
+				<unitPattern count="other">{0}BTU</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>thm</displayName>
+				<unitPattern count="one">{0}thm</unitPattern>
+				<unitPattern count="other">{0}thm</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<unitPattern count="one">{0}GHz</unitPattern>
+				<unitPattern count="other">{0}GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<unitPattern count="one">{0}MHz</unitPattern>
+				<unitPattern count="other">{0}MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<unitPattern count="one">{0}kHz</unitPattern>
+				<unitPattern count="other">{0}kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<unitPattern count="one">{0}Hz</unitPattern>
+				<unitPattern count="other">{0}Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0}em</unitPattern>
+				<unitPattern count="other">{0}em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<unitPattern count="one">{0}px</unitPattern>
+				<unitPattern count="other">{0}px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<unitPattern count="one">{0}MP</unitPattern>
+				<unitPattern count="other">{0}MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<unitPattern count="one">{0}ppcm</unitPattern>
+				<unitPattern count="other">{0}ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<unitPattern count="one">{0}ppi</unitPattern>
+				<unitPattern count="other">{0}ppi</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="one">{0}R⊕</unitPattern>
+				<unitPattern count="other">{0}R⊕</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<unitPattern count="one">{0}km</unitPattern>
+				<unitPattern count="other">{0}km</unitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>m</displayName>
+				<unitPattern count="one">{0}m</unitPattern>
+				<unitPattern count="other">{0}m</unitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<unitPattern count="one">{0}dm</unitPattern>
+				<unitPattern count="other">{0}dm</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<unitPattern count="one">{0}cm</unitPattern>
+				<unitPattern count="other">{0}cm</unitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<unitPattern count="one">{0}mm</unitPattern>
+				<unitPattern count="other">{0}mm</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<unitPattern count="one">{0}μm</unitPattern>
+				<unitPattern count="other">{0}μm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<unitPattern count="one">{0}nm</unitPattern>
+				<unitPattern count="other">{0}nm</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<unitPattern count="one">{0}pm</unitPattern>
+				<unitPattern count="other">{0}pm</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<unitPattern count="one">{0}mi</unitPattern>
+				<unitPattern count="other">{0}mi</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<unitPattern count="one">{0}yd</unitPattern>
+				<unitPattern count="other">{0}yd</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<unitPattern count="one">{0}ft</unitPattern>
+				<unitPattern count="other">{0}ft</unitPattern>
+			</unit>
+			<unit type="length-inch">
+				<unitPattern count="one">{0}in</unitPattern>
+				<unitPattern count="other">{0}in</unitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<unitPattern count="one">{0}pc</unitPattern>
+				<unitPattern count="other">{0}pc</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<unitPattern count="one">{0}ly</unitPattern>
+				<unitPattern count="other">{0}ly</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<unitPattern count="one">{0}au</unitPattern>
+				<unitPattern count="other">{0}au</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<unitPattern count="one">{0}fur</unitPattern>
+				<unitPattern count="other">{0}fur</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<unitPattern count="one">{0}fth</unitPattern>
+				<unitPattern count="other">{0}fth</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<unitPattern count="one">{0}nmi</unitPattern>
+				<unitPattern count="other">{0}nmi</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<unitPattern count="one">{0}smi</unitPattern>
+				<unitPattern count="other">{0}smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<unitPattern count="one">{0}pt</unitPattern>
+				<unitPattern count="other">{0}pt</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<unitPattern count="one">{0}R☉</unitPattern>
+				<unitPattern count="other">{0}R☉</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<unitPattern count="one">{0}t</unitPattern>
+				<unitPattern count="other">{0}t</unitPattern>
+			</unit>
+			<unit type="mass-kilogram">
+				<unitPattern count="one">{0}kg</unitPattern>
+				<unitPattern count="other">{0}kg</unitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>g</displayName>
+				<unitPattern count="one">{0}g</unitPattern>
+				<unitPattern count="other">{0}g</unitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<unitPattern count="one">{0}mg</unitPattern>
+				<unitPattern count="other">{0}mg</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<unitPattern count="one">{0}μg</unitPattern>
+				<unitPattern count="other">{0}μg</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>tc</displayName>
+				<unitPattern count="one">{0}tc</unitPattern>
+				<unitPattern count="other">{0}tc</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<unitPattern count="one">{0}st</unitPattern>
+				<unitPattern count="other">{0}st</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<unitPattern count="one">{0}lb</unitPattern>
+				<unitPattern count="other">{0}lb</unitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<unitPattern count="one">{0}oz</unitPattern>
+				<unitPattern count="other">{0}oz</unitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<unitPattern count="one">{0}oz t</unitPattern>
+				<unitPattern count="other">{0}oz t</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>kt</displayName>
+				<unitPattern count="one">{0}kt</unitPattern>
+				<unitPattern count="other">{0}kt</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<unitPattern count="one">{0}Da</unitPattern>
+				<unitPattern count="other">{0}Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<unitPattern count="one">{0}M⊕</unitPattern>
+				<unitPattern count="other">{0}M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<unitPattern count="one">{0}M☉</unitPattern>
+				<unitPattern count="other">{0}M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gr</displayName>
+				<unitPattern count="one">{0}gr</unitPattern>
+				<unitPattern count="other">{0}gr</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<unitPattern count="one">{0}GW</unitPattern>
+				<unitPattern count="other">{0}GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<unitPattern count="one">{0}MW</unitPattern>
+				<unitPattern count="other">{0}MW</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<unitPattern count="one">{0}kW</unitPattern>
+				<unitPattern count="other">{0}kW</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName>W</displayName>
+				<unitPattern count="one">{0}W</unitPattern>
+				<unitPattern count="other">{0}W</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<unitPattern count="one">{0}mW</unitPattern>
+				<unitPattern count="other">{0}mW</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<unitPattern count="one">{0}hp</unitPattern>
+				<unitPattern count="other">{0}hp</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>mmHg</displayName>
+				<unitPattern count="one">{0}mmHg</unitPattern>
+				<unitPattern count="other">{0}mmHg</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<unitPattern count="one">{0}psi</unitPattern>
+				<unitPattern count="other">{0}psi</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<unitPattern count="one">{0}inHg</unitPattern>
+				<unitPattern count="other">{0}inHg</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<unitPattern count="one">{0}bar</unitPattern>
+				<unitPattern count="other">{0}bar</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<unitPattern count="one">{0}mbar</unitPattern>
+				<unitPattern count="other">{0}mbar</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<unitPattern count="one">{0}atm</unitPattern>
+				<unitPattern count="other">{0}atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<unitPattern count="one">{0}Pa</unitPattern>
+				<unitPattern count="other">{0}Pa</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="one">{0}hPa</unitPattern>
+				<unitPattern count="other">{0}hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<unitPattern count="one">{0}kPa</unitPattern>
+				<unitPattern count="other">{0}kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<unitPattern count="one">{0}MPa</unitPattern>
+				<unitPattern count="other">{0}MPa</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<unitPattern count="one">{0}km/h</unitPattern>
+				<unitPattern count="other">{0}km/h</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<unitPattern count="one">{0}m/s</unitPattern>
+				<unitPattern count="other">{0}m/s</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<unitPattern count="one">{0}mi/h</unitPattern>
+				<unitPattern count="other">{0}mi/h</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<unitPattern count="one">{0}kn</unitPattern>
+				<unitPattern count="other">{0}kn</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<unitPattern count="one">{0}km³</unitPattern>
+				<unitPattern count="other">{0}km³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<unitPattern count="one">{0}m³</unitPattern>
+				<unitPattern count="other">{0}m³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<unitPattern count="one">{0}cm³</unitPattern>
+				<unitPattern count="other">{0}cm³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<unitPattern count="one">{0}mi³</unitPattern>
+				<unitPattern count="other">{0}mi³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<unitPattern count="one">{0}yd³</unitPattern>
+				<unitPattern count="other">{0}yd³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<unitPattern count="one">{0}ft³</unitPattern>
+				<unitPattern count="other">{0}ft³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<unitPattern count="one">{0}in³</unitPattern>
+				<unitPattern count="other">{0}in³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>Ml</displayName>
+				<unitPattern count="one">{0}Ml</unitPattern>
+				<unitPattern count="other">{0}Ml</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hl</displayName>
+				<unitPattern count="one">{0}hl</unitPattern>
+				<unitPattern count="other">{0}hl</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>l</displayName>
+				<unitPattern count="one">{0}l</unitPattern>
+				<unitPattern count="other">{0}l</unitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>dl</displayName>
+				<unitPattern count="one">{0}dl</unitPattern>
+				<unitPattern count="other">{0}dl</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>cl</displayName>
+				<unitPattern count="one">{0}cl</unitPattern>
+				<unitPattern count="other">{0}cl</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>ml</displayName>
+				<unitPattern count="one">{0}ml</unitPattern>
+				<unitPattern count="other">{0}ml</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>ptm</displayName>
+				<unitPattern count="one">{0}ptm</unitPattern>
+				<unitPattern count="other">{0}ptm</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>cìcm</displayName>
+				<unitPattern count="one">{0}cìcm</unitPattern>
+				<unitPattern count="other">{0}cìcm</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ac⋅ft</displayName>
+				<unitPattern count="one">{0}ac⋅ft</unitPattern>
+				<unitPattern count="other">{0}ac⋅ft</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<unitPattern count="one">{0}bu</unitPattern>
+				<unitPattern count="other">{0}bu</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>gal</displayName>
+				<unitPattern count="one">{0}gal</unitPattern>
+				<unitPattern count="other">{0}gal</unitPattern>
+				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>gal inp</displayName>
+				<unitPattern count="one">{0}gal inp</unitPattern>
+				<unitPattern count="other">{0}gal inp</unitPattern>
+				<perUnitPattern>{0}/gal inp</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<unitPattern count="one">{0}qt</unitPattern>
+				<unitPattern count="other">{0}qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>pnt</displayName>
+				<unitPattern count="one">{0}pnt</unitPattern>
+				<unitPattern count="other">{0}pnt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>cìc</displayName>
+				<unitPattern count="one">{0}cìc</unitPattern>
+				<unitPattern count="other">{0}cìc</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0}fl oz</unitPattern>
+				<unitPattern count="other">{0}fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>fl oz inp</displayName>
+				<unitPattern count="one">{0}fl oz inp</unitPattern>
+				<unitPattern count="other">{0}fl oz inp</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<unitPattern count="one">{0}tbsp</unitPattern>
+				<unitPattern count="other">{0}tbsp</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<unitPattern count="one">{0}tsp</unitPattern>
+				<unitPattern count="other">{0}tsp</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<unitPattern count="one">{0}bbl</unitPattern>
+				<unitPattern count="other">{0}bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dsp</displayName>
+				<unitPattern count="one">{0}dsp</unitPattern>
+				<unitPattern count="other">{0}dsp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dsp inp</displayName>
+				<unitPattern count="one">{0}dsp inp</unitPattern>
+				<unitPattern count="other">{0}dsp inp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>js</displayName>
+				<unitPattern count="one">{0}js</unitPattern>
+				<unitPattern count="other">{0}js</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>fl dr</displayName>
+				<unitPattern count="one">{0}fl dr</unitPattern>
+				<unitPattern count="other">{0}fl dr</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>mzr</displayName>
+				<unitPattern count="one">{0}mzr</unitPattern>
+				<unitPattern count="other">{0}mzr</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>sps</displayName>
+				<unitPattern count="one">{0}sps</unitPattern>
+				<unitPattern count="other">{0}sps</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt inp</displayName>
+				<unitPattern count="one">{0}qt inp</unitPattern>
+				<unitPattern count="other">{0}qt inp</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noti</displayName>
+				<unitPattern count="one">{0}note</unitPattern>
+				<unitPattern count="other">{0}noti</unitPattern>
+				<perUnitPattern>{0}/note</perUnitPattern>
+			</unit>
 		</unitLength>
 	</units>
 	<listPatterns>
@@ -4040,4 +6469,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr>sì:s</yesstr>
+			<nostr>nò:n</nostr>
+		</messages>
+	</posix>
 </ldml>

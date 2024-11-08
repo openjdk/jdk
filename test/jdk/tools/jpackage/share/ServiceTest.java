@@ -44,13 +44,13 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Launcher as service packaging test
- * @library ../helpers
- * @key jpackagePlatformPackage
+ * @library /test/jdk/tools/jpackage/helpers
+ * @library /test/lib
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
+ * @build jtreg.SkippedException
+ * @key jpackagePlatformPackage
  * @compile ServiceTest.java
  * @run main/othervm/timeout=360 -Xmx512m
- *  --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
  *  jdk.jpackage.test.Main
  *  --jpt-run=ServiceTest
  */
