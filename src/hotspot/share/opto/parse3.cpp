@@ -131,7 +131,8 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   int offset = field->offset_in_bytes();
   const TypePtr* adr_type = C->alias_type(field)->adr_type();
   Node *adr = basic_plus_adr(obj, obj, offset);
-  assert(adr_type->ptr() == C->get_alias_index(_gvn.type(adr)->isa_ptr()));
+  assert(adr_type->ptr() == C->get_alias_index(_gvn.type(adr)->isa_ptr()),
+    "slice of address and input slice don't match");
 
   // Build the resultant type of the load
   const Type *type;
@@ -205,7 +206,8 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   int offset = field->offset_in_bytes();
   const TypePtr* adr_type = C->alias_type(field)->adr_type();
   Node* adr = basic_plus_adr(obj, obj, offset);
-  assert(adr_type->ptr() == C->get_alias_index(_gvn.type(adr)->isa_ptr()));
+  assert(adr_type->ptr() == C->get_alias_index(_gvn.type(adr)->isa_ptr()),
+    "slice of address and input slice don't match");
   BasicType bt = field->layout_type();
   // Value to be stored
   Node* val = type2size[bt] == 1 ? pop() : pop_pair();
