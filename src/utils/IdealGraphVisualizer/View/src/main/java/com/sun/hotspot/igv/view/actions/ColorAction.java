@@ -92,16 +92,11 @@ public final class ColorAction extends ModelAwareAction {
 
         try {
             // Set Look and Feel
-            //UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-            //UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
-            //UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+            SwingUtilities.updateComponentTreeUI(selectedColorButton);
 
-            // Set a default font to avoid NullPointerException with certain Look and Feels
             Font defaultFont = new Font("Dialog", Font.PLAIN, 12);
-            UIManager.put("Button.font", defaultFont);
             UIManager.put("ColorChooser.font", defaultFont);
-            UIManager.put("TabbedPane.font", defaultFont); // if tabbed panes are used
 
             // Initialize components with the custom Look and Feel
             initializeComponents();
@@ -109,19 +104,12 @@ public final class ColorAction extends ModelAwareAction {
             // Update the UI for the button and color chooser to apply the new Look and Feel
             SwingUtilities.updateComponentTreeUI(selectedColorButton);
             SwingUtilities.updateComponentTreeUI(colorChooser);
-
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
+        } catch (Exception ignored) {
         } finally {
             try {
                 // Restore the original Look and Feel for the rest of the application
                 UIManager.setLookAndFeel(originalLookAndFeel);
-
-                // Do not update `selectedColorButton` and `colorChooser` back to the original LAF
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            } catch (Exception ignored) {}
         }
     }
     private void initializeComponents() {
