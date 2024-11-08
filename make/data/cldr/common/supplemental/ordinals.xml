@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2022 Unicode, Inc.
+Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -57,7 +57,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
             <pluralRule count="many">n % 10 = 6 or n % 10 = 9 or n % 10 = 0 and n != 0 @integer 6, 9, 10, 16, 19, 20, 26, 29, 30, 36, 39, 40, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
             <pluralRule count="other"> @integer 0~5, 7, 8, 11~15, 17, 18, 21, 101, 1001, …</pluralRule>
         </pluralRules>
-        <pluralRules locales="it sc scn vec">
+        <pluralRules locales="it lld sc scn vec">
             <pluralRule count="many">n = 11,8,80,800 @integer 8, 11, 80, 800</pluralRule>
             <pluralRule count="other"> @integer 0~7, 9, 10, 12~17, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
@@ -82,6 +82,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
             <pluralRule count="one">n = 1..4 or n % 100 = 1..4,21..24,41..44,61..64,81..84 @integer 1~4, 21~24, 41~44, 61~64, 101, 1001, …</pluralRule>
             <pluralRule count="many">n = 5 or n % 100 = 5 @integer 5, 105, 205, 305, 405, 505, 605, 705, 1005, …</pluralRule>
             <pluralRule count="other"> @integer 0, 6~20, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
+        </pluralRules>
+
+        <!-- 4: zero,one,few,other -->
+
+        <pluralRules locales="blo">
+            <pluralRule count="zero">i = 0 @integer 0</pluralRule>
+            <pluralRule count="one">i = 1 @integer 1</pluralRule>
+            <pluralRule count="few">i = 2,3,4,5,6 @integer 2~6</pluralRule>
+            <pluralRule count="other"> @integer 7~22, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
 
         <!-- 4: one,two,few,other -->
@@ -127,15 +136,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
             <pluralRule count="few">i % 10 = 3,4 or i % 1000 = 100,200,300,400,500,600,700,800,900 @integer 3, 4, 13, 14, 23, 24, 33, 34, 43, 44, 53, 54, 63, 64, 73, 74, 100, 1003, …</pluralRule>
             <pluralRule count="many">i = 0 or i % 10 = 6 or i % 100 = 40,60,90 @integer 0, 6, 16, 26, 36, 40, 46, 56, 106, 1006, …</pluralRule>
             <pluralRule count="other"> @integer 9, 10, 19, 29, 30, 39, 49, 59, 69, 79, 109, 1000, 10000, 100000, 1000000, …</pluralRule>
-        </pluralRules>
-
-        <!-- 4: zero,one,few,other -->
-
-        <pluralRules locales="blo">
-            <pluralRule count="zero">i = 0 @integer 0</pluralRule>
-            <pluralRule count="one">i = 1 @integer 1</pluralRule>
-            <pluralRule count="few">i = 2,3,4,5,6 @integer 2~6</pluralRule>
-            <pluralRule count="other"> @integer 7~19, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
 
         <!-- 5: one,two,few,many,other -->

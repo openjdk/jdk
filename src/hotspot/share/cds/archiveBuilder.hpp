@@ -321,7 +321,7 @@ public:
   }
 
 public:
-  static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
+  static const uintx MAX_SHARED_DELTA = ArchiveUtils::MAX_SHARED_DELTA;;
 
   // The address p points to an object inside the output buffer. When the archive is mapped
   // at the requested address, what's the offset of this object from _requested_static_archive_bottom?
@@ -330,6 +330,9 @@ public:
   // Same as buffer_to_offset, except that the address p points to either (a) an object
   // inside the output buffer, or (b), an object in the currently mapped static archive.
   uintx any_to_offset(address p) const;
+
+  // The reverse of buffer_to_offset()
+  address offset_to_buffered_address(u4 offset) const;
 
   template <typename T>
   u4 buffer_to_offset_u4(T p) const {
@@ -341,6 +344,11 @@ public:
   u4 any_to_offset_u4(T p) const {
     uintx offset = any_to_offset((address)p);
     return to_offset_u4(offset);
+  }
+
+  template <typename T>
+  T offset_to_buffered(u4 offset) const {
+    return (T)offset_to_buffered_address(offset);
   }
 
 public:

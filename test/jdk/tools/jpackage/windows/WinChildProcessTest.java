@@ -25,12 +25,10 @@
  * @bug 8325203
  * @summary Test that Jpackage windows executable application kills the launched 3rd party application
  *          when System.exit(0) is invoked along with terminating java program.
- * @library ../helpers
- * @library /test/lib
+ * @library /test/jdk/tools/jpackage/helpers
  * @requires os.family == "windows"
  * @build jdk.jpackage.test.*
  * @build WinChildProcessTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinChildProcessTest
  *

@@ -413,9 +413,9 @@ void MetaspaceShared::write_method_handle_intrinsics() {
 // of these xxx::serialize() functions inside MetaspaceShared::serialize(), which
 // is called AFTER we made the decision to map the archive.
 //
-// However, some of the "seralized" data are used to decide whether an archive should
+// However, some of the "serialized" data are used to decide whether an archive should
 // be mapped or not (e.g., for checking if the -Djdk.module.main property is compatible
-// with the archive). The xxx::seralize() functions for these data must be put inside
+// with the archive). The xxx::serialize() functions for these data must be put inside
 // MetaspaceShared::early_serialize(). Such functions must not produce side effects that
 // assume we will always decides to map the archive.
 
