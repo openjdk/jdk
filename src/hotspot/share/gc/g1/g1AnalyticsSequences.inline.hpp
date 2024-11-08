@@ -34,6 +34,7 @@ bool G1PhaseDependentSeq::enough_samples_to_use_mixed_seq() const {
 
 G1PhaseDependentSeq::G1PhaseDependentSeq(int length) :
   _young_only_seq(length),
+  _initial_value(0.0),
   _mixed_seq(length)
 { }
 
@@ -42,7 +43,7 @@ TruncatedSeq* G1PhaseDependentSeq::seq_raw(bool use_young_only_phase_seq) {
 }
 
 void G1PhaseDependentSeq::set_initial(double value) {
-  _young_only_seq.add(value);
+  _initial_value = value;
 }
 
 void G1PhaseDependentSeq::add(double value, bool for_young_only_phase) {
@@ -51,8 +52,12 @@ void G1PhaseDependentSeq::add(double value, bool for_young_only_phase) {
 
 double G1PhaseDependentSeq::predict(const G1Predictions* predictor, bool use_young_only_phase_seq) const {
   if (use_young_only_phase_seq || !enough_samples_to_use_mixed_seq()) {
+    if (_young_only_seq.num() == 0) {
+      return _initial_value;
+    }
     return predictor->predict(&_young_only_seq);
   } else {
+    assert(_mixed_seq.num() > 0, "must not ask this with no samples");
     return predictor->predict(&_mixed_seq);
   }
 }
