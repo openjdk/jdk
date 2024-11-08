@@ -26,10 +26,7 @@ package com.sun.hotspot.igv.view.actions;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import com.sun.hotspot.igv.view.widgets.FigureWidget;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import javax.swing.*;
@@ -138,16 +135,22 @@ public final class ColorAction extends ModelAwareAction {
         colorChooser.setPreviewPanel(recentColorsPanel);
     }
 
+    // Variables to store the dialog position
+    private Point dialogLoc = null;
+
     public void performAction(DiagramViewModel model) {
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
             // Create the dialog with an OK button to select the color
-            JDialog dialog = JColorChooser.createDialog(
+            final JDialog[] dialogHolder = new JDialog[1];
+            dialogHolder[0] = JColorChooser.createDialog(
                     null,
                     "Choose a Color",
                     true,
                     colorChooser,
                     e -> {
+                        // Save the current location
+                        dialogLoc = dialogHolder[0].getLocation();
                         // OK button action
                         Color selectedColor = selectedColorButton.getBackground();
                         if (selectedColor != null) {
@@ -156,7 +159,12 @@ public final class ColorAction extends ModelAwareAction {
                     },
                     null // Cancel button action
             );
-            dialog.setVisible(true);
+
+            // Set the dialog's position if previously saved
+            if (dialogLoc != null) {
+                dialogHolder[0].setLocation(dialogLoc);
+            }
+            dialogHolder[0].setVisible(true);
         }
     }
 
