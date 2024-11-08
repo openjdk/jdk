@@ -32,6 +32,7 @@ import java.security.ProviderException;
 import java.util.Arrays;
 import java.util.Objects;
 
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.Math.min;
@@ -99,6 +100,7 @@ public abstract class SHA3 extends DigestBase {
 
     private void implCompressCheck(byte[] b, int ofs) {
         Objects.requireNonNull(b);
+        Preconditions.checkIndex(ofs + blockSize - 1, b.length, Preconditions.AIOOBE_FORMATTER);
     }
 
     /**

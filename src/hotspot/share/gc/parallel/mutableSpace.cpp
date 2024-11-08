@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/shared/pretouchTask.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -217,15 +218,16 @@ void MutableSpace::object_iterate(ObjectClosure* cl) {
     // When promotion-failure occurs during Young GC, eden/from space is not cleared,
     // so we can encounter objects with "forwarded" markword.
     // They are essentially dead, so skipping them
-    if (!obj->is_forwarded()) {
+    if (obj->is_forwarded()) {
+      assert(!obj->is_self_forwarded(), "must not be self-forwarded");
+      // It is safe to use the forwardee here. Parallel GC only uses
+      // header-based forwarding during promotion. Full GC doesn't
+      // use the object header for forwarding at all.
+      p += obj->forwardee()->size();
+    } else {
       cl->do_object(obj);
+      p += obj->size();
     }
-#ifdef ASSERT
-    else {
-      assert(obj->forwardee() != obj, "must not be self-forwarded");
-    }
-#endif
-    p += obj->size();
   }
 }
 

@@ -25,12 +25,12 @@
 
 package java.lang.classfile.attribute;
 
-import java.util.List;
-
 import java.lang.classfile.Annotation;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,7 +216,9 @@ public final class JavaAppDesc {
                         components[0].length() - 1);
                 desc.setWithMainClass(true);
             }
-            desc.setClassName(components[0]);
+            if (!components[0].isEmpty()) {
+                desc.setClassName(components[0]);
+            }
             if (components.length == 2) {
                 desc.setModuleVersion(components[1]);
             }

@@ -263,7 +263,7 @@ public final class Module implements AnnotatedElement {
 
     /**
      * Returns {@code true} if this module can access
-     * <a href="foreign/package-summary.html#restricted"><em>restricted</em></a> methods.
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/RestrictedMethods.html#restricted"><em>restricted</em></a> methods.
      *
      * @return {@code true} if this module can access <em>restricted</em> methods.
      * @since 22

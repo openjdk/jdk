@@ -31,7 +31,7 @@ import java.util.Random;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Fork(value = 3, jvmArgsAppend = "-XX:-UseSuperWord")
+@Fork(value = 3, jvmArgs = "-XX:-UseSuperWord")
 @Warmup(time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(time = 1, timeUnit = TimeUnit.SECONDS)
 public class BasicRules {

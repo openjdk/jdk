@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8176841 8202537 8244245 8265315 8284840 8296248 8306116
+ * @bug 8176841 8202537 8244245 8265315 8284840 8296248 8306116 8333582
  * @summary Tests java.time classes deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
@@ -141,7 +141,7 @@ public class TestUnicodeExtension {
             },
 
             {RG_GB, null, null, ISO, null,
-            "Thursday 10 August 2017, 15:15:00 Pacific Daylight Time"
+            "Thursday, 10 August 2017, 15:15:00 Pacific Daylight Time"
             },
 
             // DecimalStyle
@@ -231,7 +231,7 @@ public class TestUnicodeExtension {
             },
 
             {RG_GB, null, null, null, null,
-            "Thursday 10 August 2017, 15:15:00 Pacific Daylight Time"
+            "Thursday, 10 August 2017, 15:15:00 Pacific Daylight Time"
             },
 
             // DecimalStyle
@@ -340,11 +340,12 @@ public class TestUnicodeExtension {
 
         };
     }
+
     @DataProvider(name="shortTZID")
     Object[][] shortTZID() {
         return new Object[][] {
             // LDML's short ID, Expected Zone,
-            // Based on timezone.xml from CLDR v44
+            // Based on timezone.xml from CLDR v46
             {"adalv", "Europe/Andorra"},
             {"aedxb", "Asia/Dubai"},
             {"afkbl", "Asia/Kabul"},
@@ -354,6 +355,7 @@ public class TestUnicodeExtension {
             {"amevn", "Asia/Yerevan"},
             {"ancur", "America/Curacao"},
             {"aolad", "Africa/Luanda"},
+            {"aqams", "Pacific/Auckland"},
             {"aqcas", "Antarctica/Casey"},
             {"aqdav", "Antarctica/Davis"},
             {"aqddu", "Antarctica/DumontDUrville"},
@@ -384,6 +386,7 @@ public class TestUnicodeExtension {
             {"audrw", "Australia/Darwin"},
             {"aueuc", "Australia/Eucla"},
             {"auhba", "Australia/Hobart"},
+            {"aukns", "Australia/Hobart"},
             {"auldc", "Australia/Lindeman"},
             {"auldh", "Australia/Lord_Howe"},
             {"aumel", "Australia/Melbourne"},
@@ -428,15 +431,20 @@ public class TestUnicodeExtension {
             {"bzbze", "America/Belize"},
             {"cacfq", "America/Creston"},
             {"caedm", "America/Edmonton"},
+            {"caffs", "America/Winnipeg"},
             {"cafne", "America/Fort_Nelson"},
             {"caglb", "America/Glace_Bay"},
             {"cagoo", "America/Goose_Bay"},
             {"cahal", "America/Halifax"},
             {"caiql", "America/Iqaluit"},
             {"camon", "America/Moncton"},
+            {"camtr", "America/Toronto"},
+            {"canpg", "America/Toronto"},
+            {"capnt", "America/Iqaluit"},
             {"careb", "America/Resolute"},
             {"careg", "America/Regina"},
             {"casjf", "America/St_Johns"},
+            {"cathu", "America/Toronto"},
             {"cator", "America/Toronto"},
             {"cavan", "America/Vancouver"},
             {"cawnp", "America/Winnipeg"},
@@ -448,6 +456,7 @@ public class TestUnicodeExtension {
             {"cayev", "America/Inuvik"},
             {"cayxy", "America/Whitehorse"},
             {"cayyn", "America/Swift_Current"},
+            {"cayzf", "America/Edmonton"},
             {"cayzs", "America/Coral_Harbour"},
             {"cccck", "Indian/Cocos"},
             {"cdfbm", "Africa/Lubumbashi"},
@@ -461,11 +470,14 @@ public class TestUnicodeExtension {
             {"clpuq", "America/Punta_Arenas"},
             {"clscl", "America/Santiago"},
             {"cmdla", "Africa/Douala"},
+            {"cnckg", "Asia/Shanghai"},
+            {"cnhrb", "Asia/Shanghai"},
+            {"cnkhg", "Asia/Urumqi"},
             {"cnsha", "Asia/Shanghai"},
             {"cnurc", "Asia/Urumqi"},
             {"cobog", "America/Bogota"},
             {"crsjo", "America/Costa_Rica"},
-            {"cst6cdt", "CST6CDT"},
+            {"cst6cdt", "America/Chicago"},
             {"cuhav", "America/Havana"},
             {"cvrai", "Atlantic/Cape_Verde"},
             {"cxxch", "Indian/Christmas"},
@@ -488,7 +500,7 @@ public class TestUnicodeExtension {
             {"esceu", "Africa/Ceuta"},
             {"eslpa", "Atlantic/Canary"},
             {"esmad", "Europe/Madrid"},
-            {"est5edt", "EST5EDT"},
+            {"est5edt", "America/New_York"},
             {"etadd", "Africa/Addis_Ababa"},
             {"fihel", "Europe/Helsinki"},
             {"fimhq", "Europe/Mariehamn"},
@@ -500,6 +512,7 @@ public class TestUnicodeExtension {
             {"fotho", "Atlantic/Faeroe"},
             {"frpar", "Europe/Paris"},
             {"galbv", "Africa/Libreville"},
+            {"gaza", "Asia/Gaza"},
             {"gazastrp", "Asia/Gaza"},
             {"gblon", "Europe/London"},
             {"gdgnd", "America/Grenada"},
@@ -588,7 +601,7 @@ public class TestUnicodeExtension {
             {"mkskp", "Europe/Skopje"},
             {"mlbko", "Africa/Bamako"},
             {"mmrgn", "Asia/Rangoon"},
-            {"mncoq", "Asia/Choibalsan"},
+            {"mncoq", "Asia/Ulaanbaatar"},
             {"mnhvd", "Asia/Hovd"},
             {"mnuln", "Asia/Ulaanbaatar"},
             {"momfm", "Asia/Macau"},
@@ -596,14 +609,14 @@ public class TestUnicodeExtension {
             {"mqfdf", "America/Martinique"},
             {"mrnkc", "Africa/Nouakchott"},
             {"msmni", "America/Montserrat"},
-            {"mst7mdt", "MST7MDT"},
+            {"mst7mdt", "America/Denver"},
             {"mtmla", "Europe/Malta"},
             {"muplu", "Indian/Mauritius"},
             {"mvmle", "Indian/Maldives"},
             {"mwblz", "Africa/Blantyre"},
             {"mxchi", "America/Chihuahua"},
-            {"mxcun", "America/Cancun"},
             {"mxcjs", "America/Ciudad_Juarez"},
+            {"mxcun", "America/Cancun"},
             {"mxhmo", "America/Hermosillo"},
             {"mxmam", "America/Matamoros"},
             {"mxmex", "America/Mexico_City"},
@@ -612,6 +625,7 @@ public class TestUnicodeExtension {
             {"mxmzt", "America/Mazatlan"},
             {"mxoji", "America/Ojinaga"},
             {"mxpvr", "America/Bahia_Banderas"},
+            {"mxstis", "America/Tijuana"},
             {"mxtij", "America/Tijuana"},
             {"mykch", "Asia/Kuching"},
             {"mykul", "Asia/Kuala_Lumpur"},
@@ -643,7 +657,7 @@ public class TestUnicodeExtension {
             {"pmmqc", "America/Miquelon"},
             {"pnpcn", "Pacific/Pitcairn"},
             {"prsju", "America/Puerto_Rico"},
-            {"pst8pdt", "PST8PDT"},
+            {"pst8pdt", "America/Los_Angeles"},
             {"ptfnc", "Atlantic/Madeira"},
             {"ptlis", "Europe/Lisbon"},
             {"ptpdl", "Atlantic/Azores"},
@@ -718,9 +732,12 @@ public class TestUnicodeExtension {
             {"twtpe", "Asia/Taipei"},
             {"tzdar", "Africa/Dar_es_Salaam"},
             {"uaiev", "Europe/Kiev"},
+            {"uaozh", "Europe/Kiev"},
             {"uasip", "Europe/Simferopol"},
+            {"uauzh", "Europe/Kiev"},
             {"ugkla", "Africa/Kampala"},
             {"umawk", "Pacific/Wake"},
+            {"umjon", "Pacific/Honolulu"},
             {"ummdy", "Pacific/Midway"},
             {"usadk", "America/Adak"},
             {"usaeg", "America/Indiana/Marengo"},
@@ -737,8 +754,9 @@ public class TestUnicodeExtension {
             {"uslax", "America/Los_Angeles"},
             {"uslui", "America/Louisville"},
             {"usmnm", "America/Menominee"},
-            {"usmtm", "America/Metlakatla"},
             {"usmoc", "America/Kentucky/Monticello"},
+            {"usmtm", "America/Metlakatla"},
+            {"usnavajo", "America/Denver"},
             {"usndcnt", "America/North_Dakota/Center"},
             {"usndnsl", "America/North_Dakota/New_Salem"},
             {"usnyc", "America/New_York"},
@@ -806,7 +824,7 @@ public class TestUnicodeExtension {
             {Locale.US, FormatStyle.LONG, "MMMM d, y, h:mm:ss\u202fa z"},
             {Locale.US, FormatStyle.MEDIUM, "MMM d, y, h:mm:ss\u202fa"},
             {Locale.US, FormatStyle.SHORT, "M/d/yy, h:mm\u202fa"},
-            {RG_GB, FormatStyle.FULL, "EEEE d MMMM y, HH:mm:ss zzzz"},
+            {RG_GB, FormatStyle.FULL, "EEEE, d MMMM y, HH:mm:ss zzzz"},
             {RG_GB, FormatStyle.LONG, "d MMMM y, HH:mm:ss z"},
             {RG_GB, FormatStyle.MEDIUM, "d MMM y, HH:mm:ss"},
             {RG_GB, FormatStyle.SHORT, "dd/MM/y, HH:mm"},
