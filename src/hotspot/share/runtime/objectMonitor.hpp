@@ -65,10 +65,10 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   bool is_vthread()         const { return _thread == nullptr; }
   uint8_t state()           const { return TState; }
   ObjectMonitor* monitor()  const { return _monitor; }
-  bool is_monitorenter()    const { return !_is_wait; }
   bool is_wait()            const { return _is_wait; }
   bool notified()           const { return _notified; }
   bool at_reenter()         const { return _at_reenter; }
+  bool at_monitorenter()    const { return !_is_wait || _at_reenter || _notified; }
   oop vthread() const;
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);

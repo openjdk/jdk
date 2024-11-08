@@ -173,7 +173,7 @@ inline void stackChunkOopDesc::set_preempted(bool value) {
 
 inline ObjectMonitor* stackChunkOopDesc::current_pending_monitor() const {
   ObjectWaiter* waiter = object_waiter();
-  if (waiter != nullptr && (waiter->is_monitorenter() || (waiter->is_wait() && (waiter->at_reenter() || waiter->notified())))) {
+  if (waiter != nullptr && waiter->at_monitorenter()) {
     return waiter->monitor();
   }
   return nullptr;
@@ -181,7 +181,10 @@ inline ObjectMonitor* stackChunkOopDesc::current_pending_monitor() const {
 
 inline ObjectMonitor* stackChunkOopDesc::current_waiting_monitor() const {
   ObjectWaiter* waiter = object_waiter();
-  return waiter != nullptr && waiter->is_wait() ? waiter->monitor() : nullptr;
+  if (waiter != nullptr && waiter->is_wait()) {
+    return waiter->monitor();
+  }
+  return nullptr;
 }
 
 inline bool stackChunkOopDesc::has_lockstack() const         { return is_flag(FLAG_HAS_LOCKSTACK); }
