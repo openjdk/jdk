@@ -41,7 +41,10 @@ public class TLSCipherSuiteWildCardMatchingDisablePartsOfCipherSuite extends
 
     private static final String SECURITY_PROPERTY = "jdk.tls.disabledAlgorithms";
     private static final String TEST_ALGORITHMS =
-            "TLS_RSA_*, TLS_ECDH*WITH_AES_256_GCM_*, TLS_*_anon_WITH_AES_*_SHA";
+            "TLS_RSA_*,"
+                    + " TLS_ECDH*WITH_AES_256_GCM_*,"
+                    + " TLS_*_anon_WITH_AES_*_SHA,"
+                    + " TLS_.*"; // This pattern should not disable anything
     private static final String[] CIPHER_SUITES = new String[] {
             "TLS_RSA_WITH_AES_256_GCM_SHA384",
             "TLS_RSA_WITH_AES_128_GCM_SHA256",
