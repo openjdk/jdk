@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,6 @@
  */
 
 import java.lang.foreign.Arena;
-
-import jdk.internal.foreign.MemorySessionImpl;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +35,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
+import jdk.internal.foreign.MemorySessionImpl;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.*;
 
 public class TestMemorySession {
 
@@ -317,6 +316,70 @@ public class TestMemorySession {
         Thread otherThread = new Thread();
         boolean isCloseableByOther = sessionImpl.isCloseable() && !"ConfinedSession".equals(sessionImpl.getClass().getSimpleName());
         assertEquals(sessionImpl.isCloseableBy(otherThread), isCloseableByOther);
+    }
+
+    /**
+     * Test that a thread failing to acquire a scope will not observe it as alive afterwards.
+     */
+    @Test
+    public void testAcquireCloseRace() throws InterruptedException {
+        int iteration = 1000;
+        AtomicInteger lock = new AtomicInteger();
+        boolean[] result = new boolean[1];
+        lock.set(-2);
+        MemorySessionImpl[] scopes = new MemorySessionImpl[iteration];
+        for (int i = 0; i < iteration; i++) {
+            scopes[i] = MemorySessionImpl.toMemorySession(Arena.ofShared());
+        }
+
+        // This thread tries to close the scopes
+        Thread t1 = new Thread(() -> {
+            for (int i = 0; i < iteration; i++) {
+                MemorySessionImpl scope = scopes[i];
+                while (true) {
+                    try {
+                        scope.close();
+                        break;
+                    } catch (IllegalStateException e) {}
+                }
+                // Keep the 2 threads operating on the same scope
+                int k = lock.getAndAdd(1) + 1;
+                while (k != i * 2) {
+                    Thread.onSpinWait();
+                    k = lock.get();
+                }
+            }
+        });
+
+        // This thread tries to acquire the scopes, then check if it is alive after an acquire failure
+        Thread t2 = new Thread(() -> {
+            for (int i = 0; i < iteration; i++) {
+                MemorySessionImpl scope = scopes[i];
+                while (true) {
+                    try {
+                        scope.acquire0();
+                    } catch (IllegalStateException e) {
+                        if (scope.isAlive()) {
+                            result[0] = true;
+                        }
+                        break;
+                    }
+                    scope.release0();
+                }
+                // Keep the 2 threads operating on the same scope
+                int k = lock.getAndAdd(1) + 1;
+                while (k != i * 2) {
+                    Thread.onSpinWait();
+                    k = lock.get();
+                }
+            }
+        });
+
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        assertFalse(result[0]);
     }
 
     private void waitSomeTime() {
