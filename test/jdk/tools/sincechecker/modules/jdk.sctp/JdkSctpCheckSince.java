@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8343442
- * @summary Test for `@since` in jdk.net module
+ * @summary Test for `@since` in jdk.sctp module
  * @library /test/lib /test/jdk/tools/sincechecker
- * @run main SinceChecker jdk.net
+ * @run main SinceChecker jdk.sctp
  */
