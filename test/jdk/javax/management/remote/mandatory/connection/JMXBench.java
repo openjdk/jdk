@@ -425,6 +425,7 @@ public class JMXBench {
                                            new String [] { "long" }
                                           );
                 t.stop();
+                System.out.println("invokeResult class = " + invokeResult.getClass());
                 System.out.println("invokeResult = " + invokeResult);
                 
                 t = new Timer(id + " invoke(Threading.getThreadInfo(long)) 2");
