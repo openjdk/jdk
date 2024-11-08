@@ -943,9 +943,9 @@ public abstract class PathGraphics extends ProxyGraphics2D {
          * and we can avoid penalising the more common case - although
          * this is already a minority case.
          * If we do use "drawString" on each character, we need to use a
-         * font without advance transform, since the font advance transform
-         * will already be reflected in the glyph positions, and we do not
-         * want to apply the advance twice.
+         * font without translation transform, since the font translation
+         * transform will already be reflected in the glyph positions, and
+         * we do not want to apply the translation twice.
          */
         if (numGlyphs > 10 && printGlyphVector(g, x, y)) {
             return true;
