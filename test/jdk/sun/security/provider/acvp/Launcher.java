@@ -21,6 +21,7 @@
  * questions.
  */
 import jdk.test.lib.json.JSONValue;
+import jtreg.SkippedException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,6 +70,8 @@ public class Launcher {
 
     private static final Provider PROVIDER;
 
+    private static int count = 0;
+
     static {
         var provProp = System.getProperty("test.acvp.provider");
         if (provProp != null) {
@@ -104,6 +107,12 @@ public class Launcher {
                             .endsWith("internalProjection.json"))
                     .forEach(Launcher::run);
         }
+
+        if (count > 0) {
+            System.out.println("Test completed: " + count);
+        } else {
+            throw new SkippedException("No supported test found");
+        }
     }
 
     static void run(Path test) {
@@ -121,11 +130,21 @@ public class Launcher {
             }
             System.out.println(">>> Testing " + test + "...");
             switch (alg) {
-                case "ML-DSA" -> ML_DSA_Test.run(kat, PROVIDER);
-                case "ML-KEM" -> ML_KEM_Test.run(kat, PROVIDER);
-                case "SHA2-256", "SHA2-224", "SHA3-256", "SHA3-224"
-                    -> SHA_Test.run(kat, PROVIDER);
-                default -> System.out.println("Skipped unsupported algorithm: " + alg);
+                case "ML-DSA" -> {
+                    ML_DSA_Test.run(kat, PROVIDER);
+                    count++;
+                }
+                case "ML-KEM" -> {
+                    ML_KEM_Test.run(kat, PROVIDER);
+                    count++;
+                }
+                case "SHA2-256", "SHA2-224", "SHA3-256", "SHA3-224" -> {
+                    SHA_Test.run(kat, PROVIDER);
+                    count++;
+                }
+                default -> {
+                    System.out.println("Skipped unsupported algorithm: " + alg);
+                }
             }
         } catch (RuntimeException re) {
             throw re;
