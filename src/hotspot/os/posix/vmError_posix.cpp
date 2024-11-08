@@ -85,7 +85,7 @@ static void crash_handler(int sig, siginfo_t* info, void* context) {
   // Needed because asserts may happen in error handling too.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
   if ((sig == SIGSEGV || sig == SIGBUS) && info != nullptr && info->si_addr == g_assert_poison) {
-    if (handle_assert_poison_fault(context, info->si_addr)) {
+    if (handle_assert_poison_fault(context)) {
       return;
     }
   }

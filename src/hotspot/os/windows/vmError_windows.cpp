@@ -67,10 +67,10 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
 void VMError::reporting_started() {}
 void VMError::interrupt_reporting_thread() {}
 
-void VMError::raise_fail_fast(void* exrecord, void* context) {
+void VMError::raise_fail_fast(const void* exrecord, const void* context) {
   DWORD flags = (exrecord == nullptr) ? FAIL_FAST_GENERATE_EXCEPTION_ADDRESS : 0;
-  RaiseFailFastException(static_cast<PEXCEPTION_RECORD>(exrecord),
-                         static_cast<PCONTEXT>(context),
-                         flags);
+  PEXCEPTION_RECORD exception_record = static_cast<PEXCEPTION_RECORD>(const_cast<void*>(exrecord));
+  PCONTEXT ctx = static_cast<PCONTEXT>(const_cast<void*>(context));
+  RaiseFailFastException(exception_record, ctx, flags);
   ::abort();
 }
