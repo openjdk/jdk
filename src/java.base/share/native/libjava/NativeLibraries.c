@@ -58,15 +58,6 @@ static jboolean initIDs(JNIEnv *env)
     return JNI_TRUE;
 }
 
-static void buildJniFunctionName(const char *sym, const char *cname,
-                                 char *jniEntryName) {
-    strcpy(jniEntryName, sym);
-    if (cname != NULL) {
-        strcat(jniEntryName, "_");
-        strcat(jniEntryName, cname);
-    }
-}
-
 /*
  * Support for finding JNI_On(Un)Load_<lib_name> if it exists.
  * If cname == NULL then just find normal JNI_On(Un)Load entry point
@@ -101,7 +92,11 @@ static void *findJniFunction(JNIEnv *env, void *handle,
             JNU_ThrowOutOfMemoryError(env, NULL);
             goto done;
         }
-        buildJniFunctionName(syms[i], cname, jniFunctionName);
+        strcpy(jniFunctionName, syms[i]);
+        if (cname != NULL) {
+            strcat(jniFunctionName, "_");
+            strcat(jniFunctionName, cname);
+        }
         entryName = JVM_FindLibraryEntry(handle, jniFunctionName);
         free(jniFunctionName);
         if(entryName) {
