@@ -28,7 +28,6 @@
 
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "utilities/rbTree.hpp"
-// #include "nmt/nmtTreap.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include <cstdint>
@@ -135,13 +134,11 @@ private:
   };
 
 public:
-  using VMATreap = RBTreeCHeap<position, IntervalChange, PositionComparator>;
-  using TreapNode = VMATreap::RBNode;
-  // using VMATreap = TreapCHeap<position, IntervalChange, PositionComparator>;
-  // using TreapNode = VMATreap::TreapNode;
+  using VMARBTree = RBTreeCHeap<position, IntervalChange, PositionComparator>;
+  using RBNode = VMARBTree::RBNode;
 
 private:
-  VMATreap _tree;
+  VMARBTree _tree;
 
   // AddressState saves the necessary information for performing online summary accounting.
   struct AddressState {

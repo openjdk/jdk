@@ -65,12 +65,12 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
 
   stream->print_cr("Memory map of %s", file->_descriptive_name);
   stream->cr();
-  VMATree::TreapNode* prev = nullptr;
+  VMATree::RBNode* prev = nullptr;
 #ifdef ASSERT
-  VMATree::TreapNode* broken_start = nullptr;
-  VMATree::TreapNode* broken_end = nullptr;
+  VMATree::RBNode* broken_start = nullptr;
+  VMATree::RBNode* broken_end = nullptr;
 #endif
-  file->_tree.visit_in_order([&](VMATree::TreapNode* current) {
+  file->_tree.visit_in_order([&](VMATree::RBNode* current) {
     if (prev == nullptr) {
       // Must be first node.
       prev = current;
