@@ -4092,7 +4092,7 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
   RegSet regs;
 #ifdef _LP64
   regs += RegSet::of(rax, rcx, rdx);
-#ifndef WINDOWS
+#ifndef _WINDOWS
   regs += RegSet::of(rsi, rdi);
 #endif
   regs += RegSet::range(r8, r11);
@@ -4109,7 +4109,7 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 
 XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
   int num_xmm_registers = XMMRegister::available_xmm_registers();
-#if defined(WINDOWS) && defined(_LP64)
+#if defined(_WINDOWS) && defined(_LP64)
   XMMRegSet result = XMMRegSet::range(xmm0, xmm5);
   if (num_xmm_registers > 16) {
      result += XMMRegSet::range(xmm16, as_XMMRegister(num_xmm_registers - 1));
@@ -4660,13 +4660,13 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 }
 
 
-void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
-                                                   Register super_klass,
-                                                   Register temp_reg,
-                                                   Register temp2_reg,
-                                                   Label* L_success,
-                                                   Label* L_failure,
-                                                   bool set_cond_codes) {
+void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
+                                                          Register super_klass,
+                                                          Register temp_reg,
+                                                          Register temp2_reg,
+                                                          Label* L_success,
+                                                          Label* L_failure,
+                                                          bool set_cond_codes) {
   assert_different_registers(sub_klass, super_klass, temp_reg);
   if (temp2_reg != noreg)
     assert_different_registers(sub_klass, super_klass, temp_reg, temp2_reg);
@@ -4752,7 +4752,128 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
-#ifdef _LP64
+#ifndef _LP64
+
+// 32-bit x86 only: always use the linear search.
+void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
+                                                   Register super_klass,
+                                                   Register temp_reg,
+                                                   Register temp2_reg,
+                                                   Label* L_success,
+                                                   Label* L_failure,
+                                                   bool set_cond_codes) {
+  check_klass_subtype_slow_path_linear
+    (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, set_cond_codes);
+}
+
+#else // _LP64
+
+void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
+                                                   Register super_klass,
+                                                   Register temp_reg,
+                                                   Register temp2_reg,
+                                                   Label* L_success,
+                                                   Label* L_failure,
+                                                   bool set_cond_codes) {
+  assert(set_cond_codes == false, "must be false on 64-bit x86");
+  check_klass_subtype_slow_path
+    (sub_klass, super_klass, temp_reg, temp2_reg, noreg, noreg,
+     L_success, L_failure);
+}
+
+void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
+                                                   Register super_klass,
+                                                   Register temp_reg,
+                                                   Register temp2_reg,
+                                                   Register temp3_reg,
+                                                   Register temp4_reg,
+                                                   Label* L_success,
+                                                   Label* L_failure) {
+  if (UseSecondarySupersTable) {
+    check_klass_subtype_slow_path_table
+      (sub_klass, super_klass, temp_reg, temp2_reg, temp3_reg, temp4_reg,
+       L_success, L_failure);
+  } else {
+    check_klass_subtype_slow_path_linear
+      (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, /*set_cond_codes*/false);
+  }
+}
+
+Register MacroAssembler::allocate_if_noreg(Register r,
+                                  RegSetIterator<Register> &available_regs,
+                                  RegSet &regs_to_push) {
+  if (!r->is_valid()) {
+    r = *available_regs++;
+    regs_to_push += r;
+  }
+  return r;
+}
+
+void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
+                                                         Register super_klass,
+                                                         Register temp_reg,
+                                                         Register temp2_reg,
+                                                         Register temp3_reg,
+                                                         Register result_reg,
+                                                         Label* L_success,
+                                                         Label* L_failure) {
+  // NB! Callers may assume that, when temp2_reg is a valid register,
+  // this code sets it to a nonzero value.
+  bool temp2_reg_was_valid = temp2_reg->is_valid();
+
+  RegSet temps = RegSet::of(temp_reg, temp2_reg, temp3_reg);
+
+  Label L_fallthrough;
+  int label_nulls = 0;
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
+
+  BLOCK_COMMENT("check_klass_subtype_slow_path_table");
+
+  RegSetIterator<Register> available_regs
+    = (RegSet::of(rax, rcx, rdx, r8) + r9 + r10 + r11 + r12 - temps - sub_klass - super_klass).begin();
+
+  RegSet pushed_regs;
+
+  temp_reg = allocate_if_noreg(temp_reg, available_regs, pushed_regs);
+  temp2_reg = allocate_if_noreg(temp2_reg, available_regs, pushed_regs);
+  temp3_reg = allocate_if_noreg(temp3_reg, available_regs, pushed_regs);
+  result_reg = allocate_if_noreg(result_reg, available_regs, pushed_regs);
+  Register temp4_reg = allocate_if_noreg(noreg, available_regs, pushed_regs);
+
+  assert_different_registers(sub_klass, super_klass, temp_reg, temp2_reg, temp3_reg, result_reg);
+
+  {
+
+    int register_push_size = pushed_regs.size() * Register::max_slots_per_register * VMRegImpl::stack_slot_size;
+    int aligned_size = align_up(register_push_size, StackAlignmentInBytes);
+    subptr(rsp, aligned_size);
+    push_set(pushed_regs, 0);
+
+    lookup_secondary_supers_table_var(sub_klass,
+                                      super_klass,
+                                      temp_reg, temp2_reg, temp3_reg, temp4_reg, result_reg);
+    cmpq(result_reg, 0);
+
+    // Unspill the temp. registers:
+    pop_set(pushed_regs, 0);
+    // Increment SP but do not clobber flags.
+    lea(rsp, Address(rsp, aligned_size));
+  }
+
+  if (temp2_reg_was_valid) {
+    movq(temp2_reg, 1);
+  }
+
+  jcc(Assembler::notEqual, *L_failure);
+
+  if (L_success != &L_fallthrough) {
+    jmp(*L_success);
+  }
+
+  bind(L_fallthrough);
+}
 
 // population_count variant for running without the POPCNT
 // instruction, which was introduced with SSE4.2 in 2008.
@@ -4799,14 +4920,44 @@ do {                                                                 \
   assert(result         == rdi || result      == noreg, "mismatch"); \
 } while(0)
 
-void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
-                                                   Register r_super_klass,
-                                                   Register temp1,
-                                                   Register temp2,
-                                                   Register temp3,
-                                                   Register temp4,
-                                                   Register result,
-                                                   u1 super_klass_slot) {
+// Versions of salq and rorq that don't need count to be in rcx
+
+void MacroAssembler::salq(Register dest, Register count) {
+  if (count == rcx) {
+    Assembler::salq(dest);
+  } else {
+    assert_different_registers(rcx, dest);
+    xchgq(rcx, count);
+    Assembler::salq(dest);
+    xchgq(rcx, count);
+  }
+}
+
+void MacroAssembler::rorq(Register dest, Register count) {
+  if (count == rcx) {
+    Assembler::rorq(dest);
+  } else {
+    assert_different_registers(rcx, dest);
+    xchgq(rcx, count);
+    Assembler::rorq(dest);
+    xchgq(rcx, count);
+  }
+}
+
+// Return true: we succeeded in generating this code
+//
+// At runtime, return 0 in result if r_super_klass is a superclass of
+// r_sub_klass, otherwise return nonzero. Use this if you know the
+// super_klass_slot of the class you're looking for. This is always
+// the case for instanceof and checkcast.
+void MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
+                                                         Register r_super_klass,
+                                                         Register temp1,
+                                                         Register temp2,
+                                                         Register temp3,
+                                                         Register temp4,
+                                                         Register result,
+                                                         u1 super_klass_slot) {
   assert_different_registers(r_sub_klass, r_super_klass, temp1, temp2, temp3, temp4, result);
 
   Label L_fallthrough, L_success, L_failure;
@@ -4823,7 +4974,7 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   xorq(result, result); // = 0
 
-  movq(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+  movq(r_bitmap, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
   movq(r_array_index, r_bitmap);
 
   // First check the bitmap to see if super_klass might be present. If
@@ -4896,6 +5047,122 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   }
 }
 
+// At runtime, return 0 in result if r_super_klass is a superclass of
+// r_sub_klass, otherwise return nonzero. Use this version of
+// lookup_secondary_supers_table() if you don't know ahead of time
+// which superclass will be searched for. Used by interpreter and
+// runtime stubs. It is larger and has somewhat greater latency than
+// the version above, which takes a constant super_klass_slot.
+void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
+                                                       Register r_super_klass,
+                                                       Register temp1,
+                                                       Register temp2,
+                                                       Register temp3,
+                                                       Register temp4,
+                                                       Register result) {
+  assert_different_registers(r_sub_klass, r_super_klass, temp1, temp2, temp3, temp4, result);
+  assert_different_registers(r_sub_klass, r_super_klass, rcx);
+  RegSet temps = RegSet::of(temp1, temp2, temp3, temp4);
+
+  Label L_fallthrough, L_success, L_failure;
+
+  BLOCK_COMMENT("lookup_secondary_supers_table {");
+
+  RegSetIterator<Register> available_regs = (temps - rcx).begin();
+
+  // FIXME. Once we are sure that all paths reaching this point really
+  // do pass rcx as one of our temps we can get rid of the following
+  // workaround.
+  assert(temps.contains(rcx), "fix this code");
+
+  // We prefer to have our shift count in rcx. If rcx is one of our
+  // temps, use it for slot. If not, pick any of our temps.
+  Register slot;
+  if (!temps.contains(rcx)) {
+    slot = *available_regs++;
+  } else {
+    slot = rcx;
+  }
+
+  const Register r_array_index = *available_regs++;
+  const Register r_bitmap      = *available_regs++;
+
+  // The logic above guarantees this property, but we state it here.
+  assert_different_registers(r_array_index, r_bitmap, rcx);
+
+  movq(r_bitmap, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
+  movq(r_array_index, r_bitmap);
+
+  // First check the bitmap to see if super_klass might be present. If
+  // the bit is zero, we are certain that super_klass is not one of
+  // the secondary supers.
+  movb(slot, Address(r_super_klass, Klass::hash_slot_offset()));
+  xorl(slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1)); // slot ^ 63 === 63 - slot (mod 64)
+  salq(r_array_index, slot);
+
+  testq(r_array_index, r_array_index);
+  // We test the MSB of r_array_index, i.e. its sign bit
+  jcc(Assembler::positive, L_failure);
+
+  const Register r_array_base = *available_regs++;
+
+  // Get the first array index that can contain super_klass into r_array_index.
+  population_count(r_array_index, r_array_index, /*temp2*/r_array_base, /*temp3*/slot);
+
+  // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
+
+  // We will consult the secondary-super array.
+  movptr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+
+  // We're asserting that the first word in an Array<Klass*> is the
+  // length, and the second word is the first word of the data. If
+  // that ever changes, r_array_base will have to be adjusted here.
+  assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
+  assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
+
+  cmpq(r_super_klass, Address(r_array_base, r_array_index, Address::times_8));
+  jccb(Assembler::equal, L_success);
+
+  // Restore slot to its true value
+  xorl(slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1)); // slot ^ 63 === 63 - slot (mod 64)
+
+  // Linear probe. Rotate the bitmap so that the next bit to test is
+  // in Bit 1.
+  rorq(r_bitmap, slot);
+
+  // Is there another entry to check? Consult the bitmap.
+  btq(r_bitmap, 1);
+  jccb(Assembler::carryClear, L_failure);
+
+  // Calls into the stub generated by lookup_secondary_supers_table_slow_path.
+  // Arguments: r_super_klass, r_array_base, r_array_index, r_bitmap.
+  // Kills: r_array_length.
+  // Returns: result.
+  lookup_secondary_supers_table_slow_path(r_super_klass,
+                                          r_array_base,
+                                          r_array_index,
+                                          r_bitmap,
+                                          /*temp1*/result,
+                                          /*temp2*/slot,
+                                          &L_success,
+                                          nullptr);
+
+  bind(L_failure);
+  movq(result, 1);
+  jmpb(L_fallthrough);
+
+  bind(L_success);
+  xorq(result, result); // = 0
+
+  bind(L_fallthrough);
+  BLOCK_COMMENT("} lookup_secondary_supers_table");
+
+  if (VerifySecondarySupers) {
+    verify_secondary_supers_table(r_sub_klass, r_super_klass, result,
+                                  temp1, temp2, temp3);
+  }
+}
+
 void MacroAssembler::repne_scanq(Register addr, Register value, Register count, Register limit,
                                  Label* L_success, Label* L_failure) {
   Label L_loop, L_fallthrough;
@@ -4935,8 +5202,6 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     r_array_length = temp1,
     r_sub_klass    = noreg,
     result         = noreg;
-
-  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
 
   Label L_fallthrough;
   int label_nulls = 0;
@@ -5033,8 +5298,6 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
       r_array_length = temp2,
       r_array_base   = temp3,
       r_bitmap       = noreg;
-
-  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
 
   BLOCK_COMMENT("verify_secondary_supers_table {");
 

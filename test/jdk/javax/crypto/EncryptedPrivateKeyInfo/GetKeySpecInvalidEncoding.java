@@ -28,6 +28,8 @@
  * methods with scenarios where the decrypted bytes are not
  * encoded correctly per PKCS#8 standard.
  * @author Valerie Peng
+ * @run main/othervm -DcipherAlg=PBEWithMD5AndDES GetKeySpecInvalidEncoding
+ * @run main/othervm -DcipherAlg=PBEWithSHA1AndDESede GetKeySpecInvalidEncoding
  */
 import java.util.*;
 import java.nio.*;
@@ -39,12 +41,13 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 public class GetKeySpecInvalidEncoding {
-    private static final String cipherAlg = "PBEWithMD5AndDES";
+    private static String cipherAlg;
     private static final char[] passwd = { 'p','a','s','s', 'w', 'd' };
     private static AlgorithmParameters GOOD_PARAMS;
 
     static {
         try {
+            cipherAlg = System.getProperty("cipherAlg");
             PBEParameterSpec goodParamSpec =
                 new PBEParameterSpec(new byte[8], 6);
             GOOD_PARAMS = AlgorithmParameters.getInstance

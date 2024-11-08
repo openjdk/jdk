@@ -472,8 +472,11 @@ private:
   // Adjust scalar_replaceable state after Connection Graph is built.
   void adjust_scalar_replaceable_state(JavaObjectNode* jobj, Unique_Node_List &reducible_merges);
 
+  // Reevaluate Phis reducible status after 'obj' became NSR.
+  void revisit_reducible_phi_status(JavaObjectNode* jobj, Unique_Node_List& reducible_merges);
+
   // Propagate NSR (Not scalar replaceable) state.
-  void find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist);
+  void find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist, Unique_Node_List &reducible_merges);
 
   // Optimize ideal graph.
   void optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklist,
