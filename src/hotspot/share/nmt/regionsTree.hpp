@@ -29,6 +29,8 @@
 #include "nmt/vmatree.hpp"
 #include "nmt/vmtCommon.hpp"
 
+// RegionsTree extends VMATree to add some more specific API and also defines a helper
+// for processing the tree nodes in a shorter and more menaingful way.
 class RegionsTree : public VMATree {
  private:
   NativeCallStackStorage _ncs_storage;
@@ -87,7 +89,7 @@ class RegionsTree : public VMATree {
     });
   }
 
-  template<typename F> // F == bool(*)(CommittedMemoryRegion&)
+  template<typename F>
   void visit_committed_regions(position start, size_t size, F func) {
     size_t end = start + size + 1;
     size_t comm_size = 0;
@@ -114,7 +116,7 @@ class RegionsTree : public VMATree {
     });
   }
 
-  template<typename F> // F == bool(*)(ReservedMemoryRegion&)
+  template<typename F>
   void visit_reserved_regions(F func) {
     NodeHelper begin_node, prev;
     size_t rgn_size = 0;
