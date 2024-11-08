@@ -476,7 +476,7 @@ public class TagletWriter {
 
     // Test if element is the same as or belongs to the current page element
     private boolean isDifferentTypeElement(Element element) {
-        if (element.getKind().isClass() || element.getKind().isInterface()) {
+        if (element.getKind().isDeclaredType()) {
             return element != getCurrentPageElement();
         } else if (element.getKind() == ElementKind.OTHER) {
             return false;
