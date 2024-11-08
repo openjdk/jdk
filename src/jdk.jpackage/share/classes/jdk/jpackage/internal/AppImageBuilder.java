@@ -94,7 +94,7 @@ final class AppImageBuilder {
 
     private AppImageBuilder(Application app, List<Path> excludeCopyDirs,
             LauncherCallback launcherCallback) {
-        this(app, app.asApplicationLayout(), excludeCopyDirs, launcherCallback, false);
+        this(app, app.asApplicationLayout(), excludeCopyDirs, launcherCallback, true);
     }
 
     private AppImageBuilder(Package pkg, List<Path> excludeCopyDirs,

@@ -104,10 +104,6 @@ final class PackageBuilder {
         return this;
     }
 
-    boolean isNameDefault() {
-        return name == null;
-    }
-
     PackageBuilder fileName(Path v) {
         fileName = v;
         return this;

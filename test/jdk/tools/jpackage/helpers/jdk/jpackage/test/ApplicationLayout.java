@@ -114,8 +114,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 lib.resolve("app"),
                 lib.resolve("runtime"),
                 lib.resolve("runtime"),
-                lib,
                 lib.resolve("app/mods"),
+                lib,
                 lib
         );
     }
