@@ -90,7 +90,17 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         if (getFigure().getProperties().get("extra_label") != null) {
             LabelWidget extraLabelWidget = labelWidgets.get(labelWidgets.size() - 1);
             extraLabelWidget.setFont(Diagram.FONT.deriveFont(Font.ITALIC));
-            extraLabelWidget.setForeground(selected ? getTextColor() : Color.DARK_GRAY);
+            if (selected) {
+                extraLabelWidget.setForeground(getTextColor());
+            } else {
+                Color bg = figure.getColor();
+                double brightness = bg.getRed() * 0.21 + bg.getGreen() * 0.72 + bg.getBlue() * 0.07;
+                if (brightness < 150) {
+                    extraLabelWidget.setForeground(Color.LIGHT_GRAY);
+                } else {
+                    extraLabelWidget.setForeground(Color.DARK_GRAY);
+                }
+            }
         }
     }
 
@@ -113,7 +123,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             LayoutFactory.SerialAlignment.LEFT_TOP :
             LayoutFactory.SerialAlignment.CENTER;
         middleWidget.setLayout(LayoutFactory.createVerticalFlowLayout(textAlign, 0));
-        middleWidget.setBackground(f.getColor());
         middleWidget.setOpaque(true);
         middleWidget.getActions().addAction(new DoubleClickAction(this));
         middleWidget.setCheckClipping(false);
@@ -143,13 +152,13 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             textWidget.addChild(lw);
             lw.setLabel(displayString);
             lw.setFont(Diagram.FONT);
-            lw.setForeground(getTextColor());
             lw.setAlignment(LabelWidget.Alignment.CENTER);
             lw.setVerticalAlignment(LabelWidget.VerticalAlignment.CENTER);
             lw.setBorder(BorderFactory.createEmptyBorder());
             lw.setCheckClipping(false);
         }
         formatExtraLabel(false);
+        refreshColor();
 
         if (getFigure().getWarning() != null) {
             ImageWidget warningWidget = new ImageWidget(scene, warningSign);
@@ -186,6 +195,9 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
 
     public void refreshColor() {
         middleWidget.setBackground(figure.getColor());
+        for (LabelWidget lw : labelWidgets) {
+            lw.setForeground(getTextColor());
+        }
     }
 
     @Override
