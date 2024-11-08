@@ -93,12 +93,16 @@ public class T5093723 extends JavadocTester {
                 "<div class=\"block\"><a href=\"#method()\"><code>method()</code></a></div>",
                 "<div class=\"block\"><a href=\"#privateMethod()\"><code>privateMethod()</code></a></div>");
 
-        //check warning is emitted
         checkOutput(Output.OUT, true,
-                "warning: reference not accessible:",
-                "/** {@link #method} */",
+                "warning: reference not accessible: privateMethod()",
+                "/** {@link #privateMethod} */",
+                "warning: reference not accessible: method()",
+                "/** {@link #method} */");
+
+        checkOutput(Output.OUT, false,
+                "warning: reference not accessible: publicMethod()",
+                "warning: reference not accessible: protectedMethod()",
                 "/** {@link #publicMethod} */",
-                "/** {@link #protectedMethod} */",
-                "/** {@link #privateMethod} */");
+                "/** {@link #protectedMethod} */");
     }
 }
