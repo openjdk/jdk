@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8342075
+ * @bug 8342075 8343855
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm  -Djdk.internal.httpclient.debug=true
