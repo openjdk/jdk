@@ -196,24 +196,6 @@ IfTrueNode* TemplateAssertionPredicate::initialize(PhaseIdealLoop* phase, Node* 
   return success_proj;
 }
 
-// Replace the input to OpaqueLoopStrideNode with 'new_stride' and leave the other nodes unchanged.
-void TemplateAssertionPredicate::replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const {
-  TemplateAssertionExpression expression(opaque_node());
-  expression.replace_opaque_stride_input(new_stride, igvn);
-}
-
-// Create a new Initialized Assertion Predicate from this template at 'new_control' and return the success projection
-// of the newly created Initialized Assertion Predicate.
-IfTrueNode* TemplateAssertionPredicate::initialize(PhaseIdealLoop* phase, Node* new_control) const {
-  assert(phase->assertion_predicate_has_loop_opaque_node(head()),
-         "must find OpaqueLoop* nodes for Template Assertion Predicate");
-  InitializedAssertionPredicateCreator initialized_assertion_predicate(phase);
-  IfTrueNode* success_proj = initialized_assertion_predicate.create_from_template(head(), new_control);
-  assert(!phase->assertion_predicate_has_loop_opaque_node(success_proj->in(0)->as_If()),
-         "Initialized Assertion Predicates do not have OpaqueLoop* nodes in the bool expression anymore");
-  return success_proj;
-}
-
 // Initialized Assertion Predicates always have the dedicated OpaqueInitiailizedAssertionPredicate node to identify
 // them.
 bool InitializedAssertionPredicate::is_predicate(Node* node) {
@@ -769,19 +751,6 @@ IfTrueNode* InitializedAssertionPredicateCreator::create_from_template(IfNode* t
       template_assertion_expression.clone_and_fold_opaque_loop_nodes(new_control, _phase);
   return create_control_nodes(new_control, template_assertion_predicate->Opcode(), assertion_expression,
                               template_assertion_predicate->assertion_predicate_type());
-}
-
-// Create a new Initialized Assertion Predicate from 'template_assertion_predicate' by cloning it but omitting the
-// OpaqueLoop*Notes (i.e. taking their inputs instead).
-IfTrueNode* InitializedAssertionPredicateCreator::create_from_template(IfNode* template_assertion_predicate,
-                                                                       Node* new_control) {
-  OpaqueTemplateAssertionPredicateNode* template_opaque =
-      template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate();
-  TemplateAssertionExpression template_assertion_expression(template_opaque);
-  OpaqueInitializedAssertionPredicateNode* assertion_expression =
-      template_assertion_expression.clone_and_fold_opaque_loop_nodes(new_control, _phase);
-  return create_control_nodes(new_control, template_assertion_predicate->Opcode(), assertion_expression
-                              NOT_PRODUCT(COMMA template_assertion_predicate->assertion_predicate_type()));
 }
 
 // Create a new Initialized Assertion Predicate directly without a template.
