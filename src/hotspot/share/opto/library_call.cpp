@@ -7014,7 +7014,7 @@ Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldNam
   assert(field_klass->is_loaded(), "should be loaded");
   const TypePtr* adr_type = C->alias_type(field)->adr_type();
   Node *adr = basic_plus_adr(fromObj, fromObj, offset);
-  assert(adr_type->ptr() == C->get_alias_index(_gvn.type(adr)->isa_ptr()),
+  assert(C->get_alias_index(adr_type) == C->get_alias_index(_gvn.type(adr)->isa_ptr()),
     "slice of address and input slice don't match");
   BasicType bt = field->layout_type();
 
