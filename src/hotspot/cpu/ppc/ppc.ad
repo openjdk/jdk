@@ -5496,11 +5496,26 @@ instruct loadP2X(iRegLdst dst, memoryAlg4 mem) %{
 // Load compressed klass pointer.
 instruct loadNKlass(iRegNdst dst, memory mem) %{
   match(Set dst (LoadNKlass mem));
+  predicate(!UseCompactObjectHeaders);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "LWZ     $dst, $mem \t// compressed klass ptr" %}
   size(4);
   ins_encode( enc_lwz(dst, mem) );
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct loadNKlassCompactHeaders(iRegNdst dst, memory mem) %{
+  match(Set dst (LoadNKlass mem));
+  predicate(UseCompactObjectHeaders);
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "load_narrow_klass_compact $dst, $mem \t// compressed class ptr" %}
+  size(8);
+  ins_encode %{
+    assert($mem$$index$$Register == R0, "must not have indexed address: %s[%s]", $mem$$base$$Register.name(), $mem$$index$$Register.name());
+    __ load_narrow_klass_compact_c2($dst$$Register, $mem$$base$$Register, $mem$$disp);
+  %}
   ins_pipe(pipe_class_memory);
 %}
 

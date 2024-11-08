@@ -23,9 +23,15 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/serial/serialArguments.hpp"
 #include "gc/serial/serialHeap.hpp"
+
+void SerialArguments::initialize_heap_flags_and_sizes() {
+  GenArguments::initialize_heap_flags_and_sizes();
+  FullGCForwarding::initialize_flags(MaxHeapSize);
+}
 
 CollectedHeap* SerialArguments::create_heap() {
   return new SerialHeap();
