@@ -717,6 +717,7 @@ public:
   bool is_valid() const { return _is_valid; }
   const MemPointerDecomposedForm& decomposed_form() const { return _decomposed_form; }
   jint size() const { return _size; }
+  jint con_value() const { return _decomposed_form.con().value(); }
 
   // Aliasing
   bool never_overlaps_with(const XPointer& other, const VLoop& vloop) const;

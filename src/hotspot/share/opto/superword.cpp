@@ -564,7 +564,7 @@ void SuperWord::create_adjacent_memop_pairs() {
 
 // Collect all memops that could potentially be vectorized.
 void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) {
-  for_each_mem([&] (const MemNode* mem, int bb_idx) {
+  for_each_mem([&] (MemNode* mem, int bb_idx) {
     const XPointer& p = xpointer(mem);
     if (p.is_valid() &&
         !mem->is_LoadStore() &&
@@ -613,52 +613,52 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
   }
 #endif
 
-  const MemNode* first = memops.at(group_start).mem();
+  MemNode* first = memops.at(group_start).mem();
   const int element_size = data_size(first);
 
-//  // For each ref in group: find others that can be paired:
-//  for (int i = group_start; i < group_end; i++) {
-//    const VPointer* p1 = vpointers.at(i);
-//    MemNode* mem1 = p1->mem();
-//
-//    bool found = false;
-//    // For each ref in group with larger or equal offset:
-//    for (int j = i + 1; j < group_end; j++) {
-//      const VPointer* p2 = vpointers.at(j);
-//      MemNode* mem2 = p2->mem();
-//      assert(mem1 != mem2, "look only at pair of different memops");
-//
-//      // Check for correct distance.
-//      assert(data_size(mem1) == element_size, "all nodes in group must have the same element size");
-//      assert(data_size(mem2) == element_size, "all nodes in group must have the same element size");
-//      assert(p1->offset_in_bytes() <= p2->offset_in_bytes(), "must be sorted by offset");
-//      if (p1->offset_in_bytes() + element_size > p2->offset_in_bytes()) { continue; }
-//      if (p1->offset_in_bytes() + element_size < p2->offset_in_bytes()) { break; }
-//
-//      // Only allow nodes from same origin idx to be packed (see CompileCommand Option Vectorize)
-//      if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
-//
-//      if (!can_pack_into_pair(mem1, mem2)) { continue; }
-//
-//#ifndef PRODUCT
-//      if (is_trace_superword_adjacent_memops()) {
-//        if (found) {
-//          tty->print_cr(" WARNING: multiple pairs with the same node. Ignored pairing:");
-//        } else {
-//          tty->print_cr(" pair:");
-//        }
-//        tty->print("  ");
-//        p1->print();
-//        tty->print("  ");
-//        p2->print();
-//      }
-//#endif
-//
-//      if (!found) {
-//        _pairset.add_pair(mem1, mem2);
-//      }
-//    }
-//  }
+  // For each ref in group: find others that can be paired:
+  for (int i = group_start; i < group_end; i++) {
+    const XPointer& p1  = memops.at(i).xpointer();
+    MemNode* mem1 = memops.at(i).mem();
+
+    bool found = false;
+    // For each ref in group with larger or equal offset:
+    for (int j = i + 1; j < group_end; j++) {
+      const XPointer& p2  = memops.at(j).xpointer();
+      MemNode* mem2 = memops.at(j).mem();
+      assert(mem1 != mem2, "look only at pair of different memops");
+
+      // Check for correct distance.
+      assert(data_size(mem1) == element_size, "all nodes in group must have the same element size");
+      assert(data_size(mem2) == element_size, "all nodes in group must have the same element size");
+      assert(p1.con_value() <= p2.con_value(), "must be sorted by offset");
+      if (p1.con_value() + element_size > p2.con_value()) { continue; }
+      if (p1.con_value() + element_size < p2.con_value()) { break; }
+
+      // Only allow nodes from same origin idx to be packed (see CompileCommand Option Vectorize)
+      if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
+
+      if (!can_pack_into_pair(mem1, mem2)) { continue; }
+
+#ifndef PRODUCT
+      if (is_trace_superword_adjacent_memops()) {
+        if (found) {
+          tty->print_cr(" WARNING: multiple pairs with the same node. Ignored pairing:");
+        } else {
+          tty->print_cr(" pair:");
+        }
+        tty->print("  ");
+        p1.print_on(tty);
+        tty->print("  ");
+        p2.print_on(tty);
+      }
+#endif
+
+      if (!found) {
+        _pairset.add_pair(mem1, mem2);
+      }
+    }
+  }
 }
 
 void VLoopMemorySlices::find_memory_slices() {

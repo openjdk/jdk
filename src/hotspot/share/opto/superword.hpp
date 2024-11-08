@@ -568,15 +568,15 @@ private:
   // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
   class MemOp : public StackObj {
   private:
-    const MemNode* _mem;
+    MemNode* _mem;
     const XPointer* _xpointer;
 
   public:
     // Empty, for GrowableArray
     MemOp() : _mem(nullptr), _xpointer(nullptr) {}
-    MemOp(const MemNode* mem, const XPointer* xpointer) : _mem(mem), _xpointer(xpointer) {}
+    MemOp(MemNode* mem, const XPointer* xpointer) : _mem(mem), _xpointer(xpointer) {}
 
-    const MemNode* mem() const { return _mem; }
+    MemNode* mem() const { return _mem; }
     const XPointer& xpointer() const { return *_xpointer; }
 
     static int cmp_by_group(MemOp* a, MemOp* b);
