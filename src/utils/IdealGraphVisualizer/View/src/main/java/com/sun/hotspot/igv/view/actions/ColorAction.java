@@ -88,9 +88,13 @@ public final class ColorAction extends ModelAwareAction {
         String originalLookAndFeel = UIManager.getLookAndFeel().getClass().getName();
 
         try {
-            // Set Look and Feel
+            // Set Look and Feel specifically for selected components
             UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-            SwingUtilities.updateComponentTreeUI(selectedColorButton);
+
+            // Create a panel for color chooser and apply the LAF to it
+            JPanel customLAFPanel = new JPanel();
+            customLAFPanel.add(selectedColorButton);
+            customLAFPanel.add(colorChooser);
 
             Font defaultFont = new Font("Dialog", Font.PLAIN, 12);
             UIManager.put("ColorChooser.font", defaultFont);
@@ -98,9 +102,9 @@ public final class ColorAction extends ModelAwareAction {
             // Initialize components with the custom Look and Feel
             initializeComponents();
 
-            // Update the UI for the button and color chooser to apply the new Look and Feel
-            SwingUtilities.updateComponentTreeUI(selectedColorButton);
-            SwingUtilities.updateComponentTreeUI(colorChooser);
+            // Update only specific components to the Metal LAF
+            SwingUtilities.updateComponentTreeUI(customLAFPanel);
+
         } catch (Exception ignored) {
         } finally {
             try {
@@ -109,6 +113,7 @@ public final class ColorAction extends ModelAwareAction {
             } catch (Exception ignored) {}
         }
     }
+
     private void initializeComponents() {
         selectedColorButton.setPreferredSize(new Dimension(3 * 32, 32));
         selectedColorButton.setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, Color.BLACK));
