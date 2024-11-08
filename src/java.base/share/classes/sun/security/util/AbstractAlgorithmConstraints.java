@@ -124,7 +124,9 @@ public abstract class AbstractAlgorithmConstraints
 
             return patternCache.computeIfAbsent(
                             pattern,
-                            p -> Pattern.compile(p.replace("*", ".*")))
+                            p -> Pattern.compile(
+                                    "^\\Q" + p.replace("*", "\\E.*\\Q") + "\\E$"
+                            ))
                     .matcher(algorithm)
                     .matches();
         }
