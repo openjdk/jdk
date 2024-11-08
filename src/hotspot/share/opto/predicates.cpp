@@ -23,7 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/node.hpp"
 #include "opto/predicates.hpp"
@@ -32,6 +34,7 @@
 // Walk over all Initialized Assertion Predicates and return the entry into the first Initialized Assertion Predicate
 // (i.e. not belonging to an Initialized Assertion Predicate anymore)
 Node* AssertionPredicatesWithHalt::find_entry(Node* start_proj) {
+  assert(start_proj != nullptr, "should not be null");
   Node* entry = start_proj;
   while (AssertionPredicateWithHalt::is_predicate(entry)) {
     entry = entry->in(0)->in(0);
@@ -39,19 +42,25 @@ Node* AssertionPredicatesWithHalt::find_entry(Node* start_proj) {
   return entry;
 }
 
+// An Assertion Predicate has always a true projection on the success path.
+bool may_be_assertion_predicate_if(const Node* node) {
+  assert(node != nullptr, "should not be null");
+  return node->is_IfTrue() && RegularPredicate::may_be_predicate_if(node->as_IfProj());
+}
+
 bool AssertionPredicateWithHalt::is_predicate(const Node* maybe_success_proj) {
-  if (maybe_success_proj == nullptr || !maybe_success_proj->is_IfProj() || !maybe_success_proj->in(0)->is_If()) {
+  if (!may_be_assertion_predicate_if(maybe_success_proj)) {
     return false;
   }
   return has_assertion_predicate_opaque(maybe_success_proj) && has_halt(maybe_success_proj);
 }
 
-// Check if the If node of `predicate_proj` has an Opaque4 (Template Assertion Predicate) or an
-// OpaqueInitializedAssertionPredicate (Initialized Assertion Predicate) node as input.
+// Check if the If node of `predicate_proj` has an OpaqueTemplateAssertionPredicate (Template Assertion Predicate) or
+// an OpaqueInitializedAssertionPredicate (Initialized Assertion Predicate) node as input.
 bool AssertionPredicateWithHalt::has_assertion_predicate_opaque(const Node* predicate_proj) {
   IfNode* iff = predicate_proj->in(0)->as_If();
   Node* bol = iff->in(1);
-  return bol->is_Opaque4() || bol->is_OpaqueInitializedAssertionPredicate();
+  return bol->is_OpaqueTemplateAssertionPredicate() || bol->is_OpaqueInitializedAssertionPredicate();
 }
 
 // Check if the other projection (UCT projection) of `success_proj` has a Halt node as output.
@@ -106,8 +115,9 @@ bool RegularPredicateWithUCT::is_predicate(const Node* node, Deoptimization::Deo
 }
 
 // A Regular Predicate must have an If or a RangeCheck node, while the If should not be a zero trip guard check.
+// Note that this method can be called during IGVN, so we also need to check that the If is not top.
 bool RegularPredicate::may_be_predicate_if(const Node* node) {
-  if (node->is_IfProj()) {
+  if (node->is_IfProj() && node->in(0)->is_If()) {
     const IfNode* if_node = node->in(0)->as_If();
     const int opcode_if = if_node->Opcode();
     if ((opcode_if == Op_If && !if_node->is_zero_trip_guard())
@@ -128,22 +138,51 @@ bool RuntimePredicate::is_predicate(Node* node, Deoptimization::DeoptReason deop
   return RegularPredicateWithUCT::is_predicate(node, deopt_reason);
 }
 
-// A Template Assertion Predicate has an If/RangeCheckNode and either an UCT or a halt node depending on where it
-// was created.
+// Rewire any non-CFG nodes dependent on this Template Assertion Predicate (i.e. with a control input to this
+// Template Assertion Predicate) to the 'target_predicate' based on the 'data_in_loop_body' check.
+void TemplateAssertionPredicate::rewire_loop_data_dependencies(IfTrueNode* target_predicate,
+                                                               const NodeInLoopBody& data_in_loop_body,
+                                                               PhaseIdealLoop* phase) const {
+  for (DUIterator i = _success_proj->outs(); _success_proj->has_out(i); i++) {
+    Node* output = _success_proj->out(i);
+    if (!output->is_CFG() && data_in_loop_body.check(output)) {
+      phase->igvn().replace_input_of(output, 0, target_predicate);
+      --i; // account for the just deleted output
+    }
+  }
+}
+
+
+// Template Assertion Predicates always have the dedicated OpaqueTemplateAssertionPredicate to identify them.
 bool TemplateAssertionPredicate::is_predicate(Node* node) {
-  if (!RegularPredicate::may_be_predicate_if(node)) {
+  if (!may_be_assertion_predicate_if(node)) {
     return false;
   }
   IfNode* if_node = node->in(0)->as_If();
-  if (if_node->in(1)->is_Opaque4()) {
-    return RegularPredicateWithUCT::has_valid_uncommon_trap(node) || AssertionPredicateWithHalt::has_halt(node);
-  }
-  return false;
+  return if_node->in(1)->is_OpaqueTemplateAssertionPredicate();
 }
 
-// Initialized Assertion Predicates always have the dedicated opaque node and a halt node.
+// Clone this Template Assertion Predicate and replace the OpaqueLoopInitNode with the provided 'new_opaque_init' node.
+IfTrueNode* TemplateAssertionPredicate::clone_and_replace_init(Node* new_control, OpaqueLoopInitNode* new_opaque_init,
+                                                               PhaseIdealLoop* phase) const {
+  assert(PhaseIdealLoop::assertion_predicate_has_loop_opaque_node(_if_node),
+         "must find OpaqueLoop* nodes for Template Assertion Predicate");
+  TemplateAssertionExpression template_assertion_expression(opaque_node());
+  OpaqueTemplateAssertionPredicateNode* new_opaque_node =
+      template_assertion_expression.clone_and_replace_init(new_opaque_init, new_control, phase);
+  AssertionPredicateIfCreator assertion_predicate_if_creator(phase);
+  IfTrueNode* success_proj = assertion_predicate_if_creator.create_for_template(new_control, _if_node->Opcode(),
+                                                                                new_opaque_node NOT_PRODUCT(COMMA
+                                                                                _if_node->assertion_predicate_type()));
+  assert(PhaseIdealLoop::assertion_predicate_has_loop_opaque_node(success_proj->in(0)->as_If()),
+         "Template Assertion Predicates must have OpaqueLoop* nodes in the bool expression");
+  return success_proj;
+}
+
+// Initialized Assertion Predicates always have the dedicated OpaqueInitiailizedAssertionPredicate node to identify
+// them.
 bool InitializedAssertionPredicate::is_predicate(Node* node) {
-  if (!AssertionPredicateWithHalt::is_predicate(node)) {
+  if (!may_be_assertion_predicate_if(node)) {
     return false;
   }
   IfNode* if_node = node->in(0)->as_If();
@@ -229,29 +268,29 @@ class ReplaceInitAndStrideStrategy : public TransformStrategyForOpaqueLoopNodes 
   }
 };
 
-// Creates an identical clone of this Template Assertion Expression (i.e.cloning all nodes from the Opaque4Node to and
-// including the OpaqueLoop* nodes). The cloned nodes are rewired to reflect the same graph structure as found for this
-// Template Assertion Expression. The cloned nodes get 'new_ctrl' as ctrl. There is no other update done for the cloned
-// nodes. Return the newly cloned Opaque4Node.
-Opaque4Node* TemplateAssertionExpression::clone(Node* new_ctrl, PhaseIdealLoop* phase) {
+// Creates an identical clone of this Template Assertion Expression (i.e.cloning all nodes from the
+// OpaqueTemplateAssertionPredicate to and including the OpaqueLoop* nodes). The cloned nodes are rewired to reflect the
+// same graph structure as found for this Template Assertion Expression. The cloned nodes get 'new_ctrl' as ctrl. There
+// is no other update done for the cloned nodes. Return the newly cloned OpaqueTemplateAssertionPredicate.
+OpaqueTemplateAssertionPredicateNode* TemplateAssertionExpression::clone(Node* new_ctrl, PhaseIdealLoop* phase) {
   CloneStrategy clone_init_and_stride_strategy(phase, new_ctrl);
   return clone(clone_init_and_stride_strategy, new_ctrl, phase);
 }
 
 // Same as clone() but instead of cloning the OpaqueLoopInitNode, we replace it with the provided 'new_init' node.
-Opaque4Node* TemplateAssertionExpression::clone_and_replace_init(Node* new_init, Node* new_ctrl,
-                                                                 PhaseIdealLoop* phase) {
+OpaqueTemplateAssertionPredicateNode*
+TemplateAssertionExpression::clone_and_replace_init(Node* new_init, Node* new_ctrl, PhaseIdealLoop* phase) {
   ReplaceInitAndCloneStrideStrategy replace_init_and_clone_stride_strategy(new_init, new_ctrl, phase);
   return clone(replace_init_and_clone_stride_strategy, new_ctrl, phase);
 }
 
 // Same as clone() but instead of cloning the OpaqueLoopInit and OpaqueLoopStride node, we replace them with the provided
 // 'new_init' and 'new_stride' nodes, respectively.
-Opaque4Node* TemplateAssertionExpression::clone_and_replace_init_and_stride(Node* new_init, Node* new_stride,
-                                                                            Node* new_ctrl,
-                                                                            PhaseIdealLoop* phase) {
+OpaqueTemplateAssertionPredicateNode*
+TemplateAssertionExpression::clone_and_replace_init_and_stride(Node* new_control, Node* new_init, Node* new_stride,
+                                                               PhaseIdealLoop* phase) {
   ReplaceInitAndStrideStrategy replace_init_and_stride_strategy(new_init, new_stride);
-  return clone(replace_init_and_stride_strategy, new_ctrl, phase);
+  return clone(replace_init_and_stride_strategy, new_control, phase);
 }
 
 // Class to collect data nodes from a source to target nodes by following the inputs of the source node recursively.
@@ -332,20 +371,21 @@ class DataNodesOnPathsToTargets : public StackObj {
 };
 
 // Clones this Template Assertion Expression and applies the given strategy to transform the OpaqueLoop* nodes.
-Opaque4Node* TemplateAssertionExpression::clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy,
-                                                Node* new_ctrl, PhaseIdealLoop* phase) {
+OpaqueTemplateAssertionPredicateNode*
+TemplateAssertionExpression::clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* new_ctrl,
+                                   PhaseIdealLoop* phase) {
   ResourceMark rm;
   auto is_opaque_loop_node = [](const Node* node) {
     return node->is_Opaque1();
   };
   DataNodesOnPathsToTargets data_nodes_on_path_to_targets(TemplateAssertionExpressionNode::is_maybe_in_expression,
                                                           is_opaque_loop_node);
-  const Unique_Node_List& collected_nodes = data_nodes_on_path_to_targets.collect(_opaque4_node);
+  const Unique_Node_List& collected_nodes = data_nodes_on_path_to_targets.collect(_opaque_node);
   DataNodeGraph data_node_graph(collected_nodes, phase);
   const OrigToNewHashtable& orig_to_new = data_node_graph.clone_with_opaque_loop_transform_strategy(transform_strategy, new_ctrl);
-  assert(orig_to_new.contains(_opaque4_node), "must exist");
-  Node* opaque4_clone = *orig_to_new.get(_opaque4_node);
-  return opaque4_clone->as_Opaque4();
+  assert(orig_to_new.contains(_opaque_node), "must exist");
+  Node* opaque_node_clone = *orig_to_new.get(_opaque_node);
+  return opaque_node_clone->as_OpaqueTemplateAssertionPredicate();
 }
 
 // Check if this node belongs a Template Assertion Expression (including OpaqueLoop* nodes).
@@ -367,87 +407,299 @@ bool TemplateAssertionExpressionNode::is_in_expression(Node* node) {
 }
 
 bool TemplateAssertionExpressionNode::is_template_assertion_predicate(Node* node) {
-  return node->is_If() && node->in(1)->is_Opaque4();
+  return node->is_If() && node->in(1)->is_OpaqueTemplateAssertionPredicate();
 }
 
-InitializedAssertionPredicateCreator::InitializedAssertionPredicateCreator(IfNode* template_assertion_predicate, Node* new_init,
-                                                                           Node* new_stride, PhaseIdealLoop* phase)
-    : _template_assertion_predicate(template_assertion_predicate),
-      _new_init(new_init),
-      _new_stride(new_stride),
-      _phase(phase) {}
+// This class creates the Assertion Predicate expression to be used for a Template or Initialized Assertion Predicate.
+class AssertionPredicateExpressionCreator : public StackObj {
+  PhaseIdealLoop* const _phase;
+  const jint _stride;
+  const int _scale;
+  Node* const _offset;
+  Node* const _range;
+  const bool _upper;
 
-// Create an Initialized Assertion Predicate at the provided control from the _template_assertion_predicate.
-// We clone the Template Assertion Expression and replace:
-// - Opaque4 with OpaqueInitializedAssertionPredicate
-// - OpaqueLoop*Nodes with _new_init and _new_stride, respectively.
+ public:
+  AssertionPredicateExpressionCreator(const int stride, const int scale, Node* offset, Node* range,
+                                      PhaseIdealLoop* phase)
+      : _phase(phase),
+        _stride(stride),
+        _scale(scale),
+        _offset(offset),
+        _range(range),
+        _upper((_stride > 0) != (_scale > 0)) {} // Make sure rc_predicate() chooses the "scale*init + offset" case.
+
+  // Create the expression for a Template Assertion Predicate with an OpaqueTemplateAssertionPredicate node.
+  OpaqueTemplateAssertionPredicateNode* create_for_template(Node* new_control, Node* operand, bool& does_overflow) const {
+    BoolNode* bool_for_expression =  _phase->rc_predicate(new_control, _scale, _offset, operand, nullptr,
+                                                          _stride, _range, _upper, does_overflow);
+    return create_opaque_node(new_control, bool_for_expression);
+  }
+
+ private:
+  OpaqueTemplateAssertionPredicateNode* create_opaque_node(Node* new_control, BoolNode* bool_for_expression) const {
+    OpaqueTemplateAssertionPredicateNode* new_expression = new OpaqueTemplateAssertionPredicateNode(bool_for_expression);
+    _phase->C->add_template_assertion_predicate_opaq(new_expression);
+    _phase->register_new_node(new_expression, new_control);
+    return new_expression;
+  }
+
+ public:
+  // Create the expression for an Initialized Assertion Predicate with an OpaqueInitializedAssertionPredicate node.
+  OpaqueInitializedAssertionPredicateNode* create_for_initialized(Node* new_control, Node* operand,
+                                                                  bool& does_overflow) const {
+    BoolNode* bool_for_expression = _phase->rc_predicate(new_control, _scale, _offset, operand, nullptr,
+                                                         _stride, _range, _upper, does_overflow);
+    return create_opaque_initialized_assertion_predicate_node(new_control, bool_for_expression);
+  }
+
+ private:
+  OpaqueInitializedAssertionPredicateNode* create_opaque_initialized_assertion_predicate_node(
+      Node* new_control, BoolNode* bool_for_expression) const {
+    OpaqueInitializedAssertionPredicateNode* new_expression =
+        new OpaqueInitializedAssertionPredicateNode(bool_for_expression, _phase->C);
+    _phase->register_new_node(new_expression, new_control);
+    return new_expression;
+  }
+};
+
+// Creates an If with a success and a fail path with the given assertion_expression. The only difference to
+// create_for_initialized() is that we use a template specific Halt message on the fail path.
+IfTrueNode* AssertionPredicateIfCreator::create_for_template(Node* new_control, const int if_opcode,
+                                                             Node* assertion_expression NOT_PRODUCT(COMMA
+                                                             const AssertionPredicateType assertion_predicate_type)) {
+  const char* halt_message = "Template Assertion Predicates are always removed before code generation";
+  return create(new_control, if_opcode, assertion_expression, halt_message NOT_PRODUCT(COMMA assertion_predicate_type));
+}
+
+// Creates an If with a success and a fail path with the given assertion_expression. The only difference to
+// create_for_template() is that we use a initialized specific Halt message on the fail path.
+IfTrueNode* AssertionPredicateIfCreator::create_for_initialized(Node* new_control, const int if_opcode,
+                                                                Node* assertion_expression NOT_PRODUCT(COMMA
+                                                                const AssertionPredicateType assertion_predicate_type)) {
+  const char* halt_message = "Initialized Assertion Predicate cannot fail";
+  return create(new_control, if_opcode, assertion_expression, halt_message NOT_PRODUCT(COMMA assertion_predicate_type));
+}
+
+// Creates the If node for an Assertion Predicate with a success path and a fail path having a Halt node:
 //
-//             /         init                 stride
-//             |           |                    |
-//             |  OpaqueLoopInitNode  OpaqueLoopStrideNode                      /       _new_init    _new_stride
-//  Template   |                 \     /                                        |              \     /
-//  Assertion  |                   ...                               Assertion  |                ...
-//  Expression |                    |                                Expression |                 |
-//             |                   Bool                                         |              new Bool
-//             |                    |                                           |                 |
-//             \                 Opaque4           ======>          control     \  OpaqueInitializedAssertionPredicate
-//                                  |                                      \      /
-//                                 If                                       new If
-//                               /    \                                     /    \
-//                         success     fail path                   new success   new Halt
-//                           proj    (Halt or UCT)                     proj
+//      new_control   assertion_expression
+//                \   /
+//                 If
+//               /    \
+//        success     fail path
+//           proj      with Halt
 //
-IfTrueNode* InitializedAssertionPredicateCreator::create(Node* control) {
-  IdealLoopTree* loop = _phase->get_loop(control);
-  OpaqueInitializedAssertionPredicateNode* assertion_expression = create_assertion_expression(control);
-  IfNode* if_node = create_if_node(control, assertion_expression, loop);
-  create_fail_path(if_node, loop);
+IfTrueNode* AssertionPredicateIfCreator::create(Node* new_control, const int if_opcode, Node* assertion_expression,
+                                                const char* halt_message NOT_PRODUCT(COMMA
+                                                const AssertionPredicateType assertion_predicate_type)) {
+  assert(assertion_expression->is_OpaqueTemplateAssertionPredicate() ||
+         assertion_expression->is_OpaqueInitializedAssertionPredicate(), "not a valid assertion expression");
+  IdealLoopTree* loop = _phase->get_loop(new_control);
+  IfNode* if_node = create_if_node(new_control, if_opcode, assertion_expression, loop
+                                   NOT_PRODUCT(COMMA assertion_predicate_type));
+  create_fail_path(if_node, loop, halt_message);
   return create_success_path(if_node, loop);
 }
 
-// Create a new Assertion Expression to be used as bool input for the Initialized Assertion Predicate IfNode.
-OpaqueInitializedAssertionPredicateNode* InitializedAssertionPredicateCreator::create_assertion_expression(Node* control) {
-  Opaque4Node* template_opaque = _template_assertion_predicate->in(1)->as_Opaque4();
-  TemplateAssertionExpression template_assertion_expression(template_opaque);
-  Opaque4Node* tmp_opaque = template_assertion_expression.clone_and_replace_init_and_stride(_new_init, _new_stride,
-                                                                                            control, _phase);
-  OpaqueInitializedAssertionPredicateNode* assertion_expression =
-      new OpaqueInitializedAssertionPredicateNode(tmp_opaque->in(1)->as_Bool(), _phase->C);
-  _phase->register_new_node(assertion_expression, control);
-  return assertion_expression;
-}
-
-IfNode* InitializedAssertionPredicateCreator::create_if_node(Node* control,
-                                                             OpaqueInitializedAssertionPredicateNode* assertion_expression,
-                                                             IdealLoopTree* loop) {
-  const int if_opcode = _template_assertion_predicate->Opcode();
-  NOT_PRODUCT(const AssertionPredicateType assertion_predicate_type = _template_assertion_predicate->assertion_predicate_type();)
-  IfNode* if_node = if_opcode == Op_If ?
-      new IfNode(control, assertion_expression, PROB_MAX, COUNT_UNKNOWN NOT_PRODUCT(COMMA assertion_predicate_type)) :
-      new RangeCheckNode(control, assertion_expression, PROB_MAX, COUNT_UNKNOWN NOT_PRODUCT(COMMA assertion_predicate_type));
-  _phase->register_control(if_node, loop, control);
+IfNode* AssertionPredicateIfCreator::create_if_node(Node* new_control, const int if_opcode, Node* assertion_expression,
+                                                    IdealLoopTree* loop NOT_PRODUCT(COMMA
+                                                    const AssertionPredicateType assertion_predicate_type)) {
+  IfNode* if_node;
+  if (if_opcode == Op_If) {
+    if_node = new IfNode(new_control, assertion_expression, PROB_MAX, COUNT_UNKNOWN
+                         NOT_PRODUCT(COMMA assertion_predicate_type));
+  } else {
+    assert(if_opcode == Op_RangeCheck, "must be range check");
+    if_node = new RangeCheckNode(new_control, assertion_expression, PROB_MAX, COUNT_UNKNOWN
+                                 NOT_PRODUCT(COMMA assertion_predicate_type));
+  }
+  _phase->register_control(if_node, loop, new_control);
   return if_node;
 }
 
-IfTrueNode* InitializedAssertionPredicateCreator::create_success_path(IfNode* if_node, IdealLoopTree* loop) {
+IfTrueNode* AssertionPredicateIfCreator::create_success_path(IfNode* if_node, IdealLoopTree* loop) {
   IfTrueNode* success_proj = new IfTrueNode(if_node);
   _phase->register_control(success_proj, loop, if_node);
   return success_proj;
 }
 
-void InitializedAssertionPredicateCreator::create_fail_path(IfNode* if_node, IdealLoopTree* loop) {
+void AssertionPredicateIfCreator::create_fail_path(IfNode* if_node, IdealLoopTree* loop, const char* halt_message) {
   IfFalseNode* fail_proj = new IfFalseNode(if_node);
   _phase->register_control(fail_proj, loop, if_node);
-  create_halt_node(fail_proj, loop);
+  create_halt_node(fail_proj, loop, halt_message);
 }
 
-void InitializedAssertionPredicateCreator::create_halt_node(IfFalseNode* fail_proj, IdealLoopTree* loop) {
+void AssertionPredicateIfCreator::create_halt_node(IfFalseNode* fail_proj, IdealLoopTree* loop,
+                                                   const char* halt_message) {
   StartNode* start_node = _phase->C->start();
   Node* frame = new ParmNode(start_node, TypeFunc::FramePtr);
   _phase->register_new_node(frame, start_node);
-  Node* halt = new HaltNode(fail_proj, frame, "Initialized Assertion Predicate cannot fail");
+  Node* halt = new HaltNode(fail_proj, frame, halt_message);
   _phase->igvn().add_input_to(_phase->C->root(), halt);
   _phase->register_control(halt, loop, fail_proj);
+}
+
+// Creates an init and last value Template Assertion Predicate connected together from a Parse Predicate with an UCT on
+// the failing path. Returns the success projection of the last value Template Assertion Predicate.
+IfTrueNode* TemplateAssertionPredicateCreator::create_with_uncommon_trap(
+    Node* new_control, ParsePredicateSuccessProj* parse_predicate_success_proj,
+    const Deoptimization::DeoptReason deopt_reason, const int if_opcode) {
+  OpaqueLoopInitNode* opaque_init = create_opaque_init(new_control);
+  bool does_overflow;
+  OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression =
+      create_for_init_value(new_control, opaque_init, does_overflow);
+  IfTrueNode* template_predicate_success_proj =
+      create_if_node_with_uncommon_trap(template_assertion_predicate_expression, parse_predicate_success_proj,
+                                        deopt_reason, if_opcode, does_overflow
+                                        NOT_PRODUCT(COMMA AssertionPredicateType::InitValue));
+  template_assertion_predicate_expression = create_for_last_value(template_predicate_success_proj, opaque_init,
+                                                                  does_overflow);
+  return create_if_node_with_uncommon_trap(template_assertion_predicate_expression, parse_predicate_success_proj,
+                                           deopt_reason, if_opcode, does_overflow
+                                           NOT_PRODUCT(COMMA AssertionPredicateType::LastValue));
+}
+
+OpaqueLoopInitNode* TemplateAssertionPredicateCreator::create_opaque_init(Node* new_control) {
+  OpaqueLoopInitNode* opaque_init = new OpaqueLoopInitNode(_phase->C, _loop_head->init_trip());
+  _phase->register_new_node(opaque_init, new_control);
+  return opaque_init;
+}
+
+OpaqueTemplateAssertionPredicateNode*
+TemplateAssertionPredicateCreator::create_for_init_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
+                                                         bool& does_overflow) const {
+  AssertionPredicateExpressionCreator expression_creator(_loop_head->stride_con(), _scale, _offset, _range, _phase);
+  return expression_creator.create_for_template(new_control, opaque_init, does_overflow);
+}
+
+IfTrueNode* TemplateAssertionPredicateCreator::create_if_node_with_uncommon_trap(
+    OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression,
+    ParsePredicateSuccessProj* parse_predicate_success_proj, const Deoptimization::DeoptReason deopt_reason,
+    const int if_opcode, const bool does_overflow
+    NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type)) {
+  IfTrueNode* success_proj = _phase->create_new_if_for_predicate(parse_predicate_success_proj, nullptr, deopt_reason,
+                                                                 does_overflow ? Op_If : if_opcode, false
+                                                                 NOT_PRODUCT(COMMA assertion_predicate_type));
+  _phase->igvn().replace_input_of(success_proj->in(0), 1, template_assertion_predicate_expression);
+  return success_proj;
+}
+
+OpaqueTemplateAssertionPredicateNode*
+TemplateAssertionPredicateCreator::create_for_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
+                                                         bool& does_overflow) const {
+  Node* last_value = create_last_value(new_control, opaque_init);
+  AssertionPredicateExpressionCreator expression_creator(_loop_head->stride_con(), _scale, _offset, _range, _phase);
+  return expression_creator.create_for_template(new_control, last_value, does_overflow);
+}
+
+Node* TemplateAssertionPredicateCreator::create_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init) const {
+  Node* init_stride = _loop_head->stride();
+  Node* opaque_stride = new OpaqueLoopStrideNode(_phase->C, init_stride);
+  _phase->register_new_node(opaque_stride, new_control);
+  Node* last_value = new SubINode(opaque_stride, init_stride);
+  _phase->register_new_node(last_value, new_control);
+  last_value = new AddINode(opaque_init, last_value);
+  _phase->register_new_node(last_value, new_control);
+  // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv phi
+  last_value = new CastIINode(new_control, last_value, _loop_head->phi()->bottom_type());
+  _phase->register_new_node(last_value, new_control);
+  return last_value;
+}
+
+IfTrueNode* TemplateAssertionPredicateCreator::create_if_node_with_halt(
+    Node* new_control, OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression, bool does_overflow
+    NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type)) {
+  AssertionPredicateIfCreator assertion_predicate_if_creator(_phase);
+  return assertion_predicate_if_creator.create_for_template(new_control, does_overflow ? Op_If : Op_RangeCheck,
+                                                            template_assertion_predicate_expression
+                                                            NOT_PRODUCT(COMMA assertion_predicate_type));
+}
+
+// Creates an init and last value Template Assertion Predicate connected together with a Halt node on the failing path.
+// Returns the success projection of the last value Template Assertion Predicate latter.
+IfTrueNode* TemplateAssertionPredicateCreator::create_with_halt(Node* new_control) {
+  OpaqueLoopInitNode* opaque_init = create_opaque_init(new_control);
+  bool does_overflow;
+  OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression =
+      create_for_init_value(new_control, opaque_init, does_overflow);
+  IfTrueNode* template_predicate_success_proj =
+      create_if_node_with_halt(new_control, template_assertion_predicate_expression, does_overflow
+                               NOT_PRODUCT(COMMA AssertionPredicateType::InitValue));
+  template_assertion_predicate_expression = create_for_last_value(template_predicate_success_proj, opaque_init,
+                                                                  does_overflow);
+  return create_if_node_with_halt(template_predicate_success_proj, template_assertion_predicate_expression,
+                                  does_overflow NOT_PRODUCT(COMMA AssertionPredicateType::LastValue));
+}
+
+InitializedAssertionPredicateCreator::InitializedAssertionPredicateCreator(PhaseIdealLoop* phase)
+    : _phase(phase) {}
+
+// Create an Initialized Assertion Predicate from the provided template_assertion_predicate at 'new_control'.
+// We clone the Template Assertion Expression and replace:
+// - OpaqueTemplateAssertionPredicateNode with OpaqueInitializedAssertionPredicate
+// - OpaqueLoop*Nodes with new_init and _ew_stride, respectively.
+//
+//             /         init                 stride
+//             |           |                    |
+//             |  OpaqueLoopInitNode  OpaqueLoopStrideNode                        /        new_init    new_stride
+//  Template   |                 \     /                                          |              \     /
+//  Assertion  |                   ...                                 Assertion  |                ...
+//  Expression |                    |                                  Expression |                 |
+//             |                   Bool                                           |              new Bool
+//             |                    |                                             |                 |
+//             \      OpaqueTemplateAssertionPredicate    ===>    new_control     \  OpaqueInitializedAssertionPredicate
+//                                  |                                        \      /
+//                                 If                                         new If
+//                               /    \                                       /    \
+//                         success     fail path                     new success   new Halt
+//                           proj    (Halt or UCT)                       proj
+//
+IfTrueNode* InitializedAssertionPredicateCreator::create_from_template(IfNode* template_assertion_predicate,
+                                                                       Node* new_control, Node* new_init,
+                                                                       Node* new_stride) {
+  OpaqueInitializedAssertionPredicateNode* assertion_expression =
+      create_assertion_expression_from_template(template_assertion_predicate, new_control, new_init, new_stride);
+  return create_control_nodes(new_control, template_assertion_predicate->Opcode(), assertion_expression
+                              NOT_PRODUCT(COMMA template_assertion_predicate->assertion_predicate_type()));
+}
+
+// Create a new Initialized Assertion Predicate directly without a template.
+IfTrueNode* InitializedAssertionPredicateCreator::create(Node* operand, Node* new_control, const jint stride,
+                                                         const int scale, Node* offset, Node* range NOT_PRODUCT(COMMA
+                                                         AssertionPredicateType assertion_predicate_type)) {
+  AssertionPredicateExpressionCreator expression_creator(stride, scale, offset, range, _phase);
+  bool does_overflow;
+  OpaqueInitializedAssertionPredicateNode* assertion_expression =
+      expression_creator.create_for_initialized(new_control, operand, does_overflow);
+  return create_control_nodes(new_control, does_overflow ? Op_If : Op_RangeCheck, assertion_expression
+                              NOT_PRODUCT(COMMA assertion_predicate_type));
+}
+
+// Creates the CFG nodes for the Initialized Assertion Predicate.
+IfTrueNode* InitializedAssertionPredicateCreator::create_control_nodes(
+    Node* new_control, const int if_opcode, OpaqueInitializedAssertionPredicateNode* assertion_expression
+    NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type)) {
+  AssertionPredicateIfCreator assertion_predicate_if_creator(_phase);
+  return assertion_predicate_if_creator.create_for_initialized(new_control, if_opcode, assertion_expression
+                                                               NOT_PRODUCT(COMMA assertion_predicate_type));
+}
+
+// Create a new Assertion Expression based from the given template to be used as bool input for the Initialized
+// Assertion Predicate IfNode.
+OpaqueInitializedAssertionPredicateNode*
+InitializedAssertionPredicateCreator::create_assertion_expression_from_template(IfNode* template_assertion_predicate,
+                                                                                Node* new_control, Node* new_init,
+                                                                                Node* new_stride) {
+  OpaqueTemplateAssertionPredicateNode* template_opaque =
+      template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate();
+  TemplateAssertionExpression template_assertion_expression(template_opaque);
+  OpaqueTemplateAssertionPredicateNode* tmp_opaque =
+      template_assertion_expression.clone_and_replace_init_and_stride(new_control, new_init, new_stride, _phase);
+  OpaqueInitializedAssertionPredicateNode* assertion_expression =
+      new OpaqueInitializedAssertionPredicateNode(tmp_opaque->in(1)->as_Bool(), _phase->C);
+  _phase->register_new_node(assertion_expression, new_control);
+  return assertion_expression;
 }
 
 #ifndef PRODUCT
@@ -492,3 +744,42 @@ void Predicates::dump_for_loop(LoopNode* loop_node) {
   dump_at(loop_node->skip_strip_mined()->in(LoopNode::EntryControl));
 }
 #endif // NOT PRODUCT
+
+// Keep track of whether we are in the correct Predicate Block where Template Assertion Predicates can be found.
+// The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
+void CreateAssertionPredicatesVisitor::visit(const ParsePredicate& parse_predicate) {
+  Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
+  if (deopt_reason == Deoptimization::Reason_predicate ||
+      deopt_reason == Deoptimization::Reason_profile_predicate) {
+    _has_hoisted_check_parse_predicates = true;
+  }
+}
+
+void CreateAssertionPredicatesVisitor::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
+  if (!_has_hoisted_check_parse_predicates) {
+    // Only process if we are in the correct Predicate Block.
+    return;
+  }
+  if (_clone_template) {
+    _new_control = clone_template_and_replace_init_input(template_assertion_predicate);
+  }
+  _new_control = initialize_from_template(template_assertion_predicate);
+}
+
+// Create an Initialized Assertion Predicate from the provided Template Assertion Predicate.
+IfTrueNode* CreateAssertionPredicatesVisitor::initialize_from_template(
+const TemplateAssertionPredicate& template_assertion_predicate) const {
+  IfNode* template_head = template_assertion_predicate.head();
+  IfTrueNode* initialized_predicate = _phase->create_initialized_assertion_predicate(template_head, _init, _stride,
+                                                                                     _new_control);
+  template_assertion_predicate.rewire_loop_data_dependencies(initialized_predicate, _node_in_loop_body, _phase);
+  return initialized_predicate;
+}
+
+// Clone the provided 'template_assertion_predicate' and set '_init' as new input for the OpaqueLoopInitNode.
+IfTrueNode* CreateAssertionPredicatesVisitor::clone_template_and_replace_init_input(
+    const TemplateAssertionPredicate& template_assertion_predicate) {
+  OpaqueLoopInitNode* opaque_init = new OpaqueLoopInitNode(_phase->C, _init);
+  _phase->register_new_node(opaque_init, _new_control);
+  return template_assertion_predicate.clone_and_replace_init(_new_control, opaque_init, _phase);
+}

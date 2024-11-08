@@ -491,7 +491,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   Node* ndel_stack[StackBufferSize];
   InternalTable* table = get_table();
   assert(start_idx < stop_idx, "Must be");
-  assert(stop_idx <= _table->_size, "Must be");
+  assert(stop_idx <= _table->_size, "stop_idx %zu larger than table size %zu", stop_idx, _table->_size);
   // Here manual do critical section since we don't want to take the cost of
   // locking the bucket if there is nothing to delete. But we can have
   // concurrent single deletes. The _invisible_epoch can only be used by the
@@ -1185,7 +1185,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   do_scan_for_range(FUNC& scan_f, size_t start_idx, size_t stop_idx, InternalTable* table)
 {
   assert(start_idx < stop_idx, "Must be");
-  assert(stop_idx <= table->_size, "Must be");
+  assert(stop_idx <= table->_size, "stop_idx %zu larger than table size %zu", stop_idx, table->_size);
 
   for (size_t bucket_it = start_idx; bucket_it < stop_idx; ++bucket_it) {
     Bucket* bucket = table->get_bucket(bucket_it);

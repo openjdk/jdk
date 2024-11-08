@@ -191,12 +191,7 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, i
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
-  ExternalAddress target((address)Interpreter::dispatch_table());
-  relocate(target.rspec(), [&] {
-    int32_t offset;
-    la(xdispatch, target.target(), offset);
-    addi(xdispatch, xdispatch, offset);
-  });
+  la(xdispatch, ExternalAddress((address)Interpreter::dispatch_table()));
 }
 
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
@@ -421,13 +416,13 @@ void InterpreterMacroAssembler::jump_from_interpreted(Register method) {
     // interp_only_mode if these events CAN be enabled.
     lwu(t0, Address(xthread, JavaThread::interp_only_mode_offset()));
     beqz(t0, run_compiled_code);
-    ld(t0, Address(method, Method::interpreter_entry_offset()));
-    jr(t0);
+    ld(t1, Address(method, Method::interpreter_entry_offset()));
+    jr(t1);
     bind(run_compiled_code);
   }
 
-  ld(t0, Address(method, Method::from_interpreted_offset()));
-  jr(t0);
+  ld(t1, Address(method, Method::from_interpreted_offset()));
+  jr(t1);
 }
 
 // The following two routines provide a hook so that an implementation

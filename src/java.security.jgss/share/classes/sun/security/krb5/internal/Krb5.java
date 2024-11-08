@@ -320,9 +320,6 @@ public class Krb5 {
     public static final Debug DEBUG = Debug.of("krb5", GetPropertyAction
             .privilegedGetProperty("sun.security.krb5.debug"));
 
-    public static final sun.security.util.HexDumpEncoder hexDumper =
-        new sun.security.util.HexDumpEncoder();
-
     static {
         errMsgList = new Hashtable<Integer,String> ();
         errMsgList.put(KDC_ERR_NONE, "No error");
