@@ -829,6 +829,7 @@ public final class ML_KEM {
     private short[] centeredBinomialDistribution(int eta, byte[] input) {
         if (eta == 2) return centeredBinomialDistribution2(input);
         if (eta == 3) return centeredBinomialDistribution3(input);
+        // Below for arbitrary eta, not used in ML-KEM
         short[] result = new short[ML_KEM_N];
         int index = 0;
         int shift = 8;
@@ -859,10 +860,13 @@ public final class ML_KEM {
 
     private short[] centeredBinomialDistribution2(byte[] input) {
         short[] result = new short[ML_KEM_N];
+        // A 64-bit number divided into 16 4-bits, representing all 4-bit
+        // patterns of input with values are CBD samples in [-2, 2].
         long bits = 0x0112f001f001eff0L;
         int j = 0;
 
         for (int i = 0; i < input.length; i++) {
+            // One byte has 2 4-bit sequences, each producing a sample
             int a = input[i];
             int shift1 = (a << 2) & 0x3c;
             int shift2 = (a >> 2) & 0x3c;
@@ -875,10 +879,15 @@ public final class ML_KEM {
 
     private short[] centeredBinomialDistribution3(byte[] input) {
         short[] result = new short[ML_KEM_N];
+        // A 32-bit number divided into 8 4-bits, representing all 3-bits
+        // patterns (one half of a 6-bit input) with values in [0, 3].
         int bits = 0x01121223;
         int j = 0;
 
         for (int i = 0; i < input.length; i += 3) {
+            // Every 3 bytes has 24 bits that produce 4 6-bit sequences.
+            // We'll calculate values for both halves of each sequence and
+            // do teh subtraction to get the sample
             int a1 = input[i];
             int a2 = input[i + 1];
             int a3 = input[i + 2];
