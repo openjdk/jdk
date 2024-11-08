@@ -201,12 +201,19 @@ void C1_MacroAssembler::try_allocate(
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len, t1, t2);
-  load_const_optimized(t1, (intx)markWord::prototype().value());
-  std(t1, oopDesc::mark_offset_in_bytes(), obj);
-  store_klass(obj, klass);
+
+  if (UseCompactObjectHeaders) {
+    ld(t1, in_bytes(Klass::prototype_header_offset()), klass);
+    std(t1, oopDesc::mark_offset_in_bytes(), obj);
+  } else {
+    load_const_optimized(t1, (intx)markWord::prototype().value());
+    std(t1, oopDesc::mark_offset_in_bytes(), obj);
+    store_klass(obj, klass);
+  }
+
   if (len->is_valid()) {
     stw(len, arrayOopDesc::length_offset_in_bytes(), obj);
-  } else if (UseCompressedClassPointers) {
+  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
     // Otherwise length is in the class gap.
     store_klass_gap(obj);
   }
