@@ -193,6 +193,7 @@ private:
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
+  size_t  _early_serialized_data_offset;          // Data accessed using {ReadClosure,WriteClosure}::serialize()
   size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
   bool _has_non_jar_in_classpath;                 // non-jar file entry exists in classpath
   unsigned int _common_app_classpath_prefix_size; // size of the common prefix of app class paths
@@ -261,6 +262,7 @@ public:
   uintx max_heap_size()                    const { return _max_heap_size; }
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
+  char* early_serialized_data()            const { return from_mapped_offset(_early_serialized_data_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
   const char* jvm_ident()                  const { return _jvm_ident; }
   char* requested_base_address()           const { return _requested_base_address; }
@@ -283,6 +285,7 @@ public:
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
+  void set_early_serialized_data(char* p)        { set_as_offset(p, &_early_serialized_data_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_root_segments(HeapRootSegments segments) { _heap_root_segments = segments; }
@@ -396,6 +399,8 @@ public:
 
   char* cloned_vtables()                      const { return header()->cloned_vtables(); }
   void  set_cloned_vtables(char* p)           const { header()->set_cloned_vtables(p); }
+  char* early_serialized_data()               const { return header()->early_serialized_data(); }
+  void  set_early_serialized_data(char* p)    const { header()->set_early_serialized_data(p); }
   char* serialized_data()                     const { return header()->serialized_data(); }
   void  set_serialized_data(char* p)          const { header()->set_serialized_data(p); }
 
