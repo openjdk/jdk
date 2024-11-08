@@ -25,6 +25,7 @@ package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.view.EditorTopComponent;
+import com.sun.hotspot.igv.view.widgets.FigureWidget;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -82,20 +83,22 @@ public final class ColorAction extends ModelAwareAction {
             Color.WHITE
     ));
 
-    private static final JButton selectedColorButton = new JButton();
+    private static final JButton selectedColorButton = new JButton("Preview");
     private static final JColorChooser colorChooser = new JColorChooser(Color.WHITE);
 
     ColorAction() {
-        selectedColorButton.setPreferredSize(new Dimension(32, 32));
+        selectedColorButton.setPreferredSize(new Dimension(3 * 32, 32));
         selectedColorButton.setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, Color.BLACK));
         selectedColorButton.setOpaque(true);
         selectedColorButton.setBackground(Color.WHITE);
+        selectedColorButton.setForeground(Color.BLACK); // Set text color
 
         // Add a ChangeListener to react to color selection changes
         colorChooser.getSelectionModel().addChangeListener(e -> {
             Color selectedColor = colorChooser.getColor();
             if (selectedColor != null) {
                 selectedColorButton.setBackground(selectedColor);
+                selectedColorButton.setForeground(FigureWidget.getTextColor(selectedColor));
             }
         });
 
@@ -138,7 +141,10 @@ public final class ColorAction extends ModelAwareAction {
             colorButton.setOpaque(true);
             colorButton.setPreferredSize(new Dimension(16, 16));
             colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-            colorButton.addActionListener(e -> selectedColorButton.setBackground(color));
+            colorButton.addActionListener(e -> {
+                selectedColorButton.setBackground(color);
+                selectedColorButton.setForeground(FigureWidget.getTextColor(color));
+            });
             panel.add(colorButton);
         }
         panel.add(selectedColorButton, 0);

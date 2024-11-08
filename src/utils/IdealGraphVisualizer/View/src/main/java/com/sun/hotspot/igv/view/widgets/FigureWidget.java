@@ -90,17 +90,20 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         if (getFigure().getProperties().get("extra_label") != null) {
             LabelWidget extraLabelWidget = labelWidgets.get(labelWidgets.size() - 1);
             extraLabelWidget.setFont(Diagram.FONT.deriveFont(Font.ITALIC));
-            if (selected) {
-                extraLabelWidget.setForeground(getTextColor());
-            } else {
-                Color bg = figure.getColor();
-                double brightness = bg.getRed() * 0.21 + bg.getGreen() * 0.72 + bg.getBlue() * 0.07;
-                if (brightness < 150) {
-                    extraLabelWidget.setForeground(Color.LIGHT_GRAY);
-                } else {
-                    extraLabelWidget.setForeground(Color.DARK_GRAY);
-                }
-            }
+            extraLabelWidget.setForeground(getTextColorHelper(figure.getColor(), !selected));
+        }
+    }
+
+    public static Color getTextColor(Color color) {
+        return getTextColorHelper(color, false);
+    }
+
+    private static Color getTextColorHelper(Color bg, boolean useGrey) {
+        double brightness = bg.getRed() * 0.21 + bg.getGreen() * 0.72 + bg.getBlue() * 0.07;
+        if (brightness < 150) {
+            return useGrey ? Color.LIGHT_GRAY : Color.WHITE;
+        } else {
+            return useGrey ? Color.DARK_GRAY : Color.BLACK;
         }
     }
 
@@ -196,7 +199,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
     public void refreshColor() {
         middleWidget.setBackground(figure.getColor());
         for (LabelWidget lw : labelWidgets) {
-            lw.setForeground(getTextColor());
+            lw.setForeground(getTextColor(figure.getColor()));
         }
     }
 
@@ -236,16 +239,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
 
     public Figure getFigure() {
         return figure;
-    }
-
-    private Color getTextColor() {
-        Color bg = figure.getColor();
-        double brightness = bg.getRed() * 0.21 + bg.getGreen() * 0.72 + bg.getBlue() * 0.07;
-        if (brightness < 150) {
-            return Color.WHITE;
-        } else {
-            return Color.BLACK;
-        }
     }
 
     @Override
