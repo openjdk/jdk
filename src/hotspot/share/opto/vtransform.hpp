@@ -235,6 +235,9 @@ private:
   const VPointer& vpointer(const MemNode* mem) const {
     return _vloop_analyzer.vpointers().vpointer(mem);
   }
+  const XPointer& xpointer(const MemNode* mem) const {
+    return _vloop_analyzer.vpointers().xpointer(mem);
+  }
 
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
   void determine_mem_ref_and_aw_for_main_loop_alignment();

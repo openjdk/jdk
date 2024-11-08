@@ -681,26 +681,54 @@ private:
   VStatus setup_submodules_helper();
 };
 
-// TODO
+// XPointer adapts the MemPointerDecomposedForm to the use in a loop:
+//
+//   pointer = SUM(summands) + con
+//
+// We define invar_summands as all summands, except those where the variable is
+// the base of the memory object or the loop iv. We can thus write:
+//
+//   pointer = base + SUM(invar_summands) + iv_scale * iv + con
+//
+// We check that all variables in invar_summands are pre-loop invariant. This is
+// important when we need to memory align a pointer using the pre-loop limit.
+// For heap objects the base is the memory object base, and for off-heap/native
+// memory we set base to nullptr. If we find a summand where the variable is the
+// iv, we set iv_scale to the corresponding scale. If there is no such summand,
+// then we know that the pointer does not depend on the iv, since otherwise there
+// would have to be a summand where its variable it main-loop variant.
+//
 class XPointer : public ArenaObj {
 private:
   typedef MemPointerDecomposedFormParser::Callback Callback;
 
   const MemPointerDecomposedForm _decomposed_form;
   const jint _size;
-  const bool _is_valid;
+
+  // Derived, for quicker use.
+  Node* _base;
+  const jint  _iv_scale;
+  const jint  _con_value;
+
+  const bool _is_valid; // TODO any accessor should assert if not valid!
 
 public:
   // Default constructor, e.g. for GrowableArray.
   XPointer() :
     _decomposed_form(),
     _size(0),
+    _base(nullptr),
+    _iv_scale(0),
+    _con_value(0),
     _is_valid(false) {}
 
   template<typename Callback>
   XPointer(const MemNode* mem, const VLoop& vloop, Callback& adr_node_callback) :
     _decomposed_form(init_decomposed_form(mem, adr_node_callback)),
     _size(mem->memory_size()),
+    _base(init_base(_decomposed_form)),
+    _iv_scale(init_iv_scale(_decomposed_form, vloop)),
+    _con_value(init_con_value(_decomposed_form)),
     _is_valid(init_is_valid(_decomposed_form, vloop))
   {
 #ifndef PRODUCT
@@ -717,7 +745,10 @@ public:
   bool is_valid() const { return _is_valid; }
   const MemPointerDecomposedForm& decomposed_form() const { return _decomposed_form; }
   jint size() const { return _size; }
-  jint con_value() const { return _decomposed_form.con().value(); }
+  Node* base() const { return _base; }
+  jint iv_scale() const { return _iv_scale; }
+  jint con_value() const { return _con_value; }
+  // TODO for each in invar_summands - maybe make it static so we can use it during init?
 
   // Aliasing
   // TODO refactor together with MemPointer - should be shared code. Maybe the _size needs to be in ...Form?
@@ -732,6 +763,27 @@ private:
     ResourceMark rm;
     MemPointerDecomposedFormParser parser(mem, adr_node_callback);
     return parser.decomposed_form();
+  }
+
+  static Node* init_base(const MemPointerDecomposedForm& decomposed_form) {
+    if (!decomposed_form.base().is_known()) { return nullptr; }
+    return decomposed_form.base().get();
+  }
+
+  static jint init_iv_scale(const MemPointerDecomposedForm& decomposed_form, const VLoop& vloop) {
+    for (uint i = 0; i < MemPointerDecomposedForm::SUMMANDS_SIZE; i++) {
+      const MemPointerSummand& summand = decomposed_form.summands_at(i);
+      Node* variable = summand.variable();
+      if (variable == vloop.iv()) {
+        return summand.scale().value();
+      }
+    }
+    // No summand with variable == iv.
+    return 0;
+  }
+
+  static jint init_con_value(const MemPointerDecomposedForm& decomposed_form) {
+    return decomposed_form.con().value(); // TODO can this fail - else simplify.
   }
 
   // Check that all variables are either the iv, or else invariants.

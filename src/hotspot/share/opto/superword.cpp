@@ -2710,6 +2710,26 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
 
+  // TODO start
+
+  const XPointer& p = xpointer(align_to_ref);
+  assert(p.is_valid(), "sanity");
+
+  // For the main-loop, we want the address of align_to_ref to be memory aligned
+  // with some alignment width (aw, a power of 2). When we enter the main-loop,
+  // we know that:
+  //   iv = iv_main_loop_enter = limit_pre_loop
+  //
+  // We want to adjust the pre-loop limit by executing some adjust_pre_iter many
+  // extra iterations, and with that acheive alignment of the address.
+  //
+  // The adress has been decomposed by VPointer:
+  //
+  //   pointer = base + SUM(invar_summands) + iv_scale * iv + con
+  //
+
+  // TODO end
+
   const VPointer& align_to_ref_p = vpointer(align_to_ref);
   assert(align_to_ref_p.valid(), "sanity");
 
