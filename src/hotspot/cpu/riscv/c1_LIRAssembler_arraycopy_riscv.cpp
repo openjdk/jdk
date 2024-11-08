@@ -333,8 +333,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   const char *name = nullptr;
   address entry = StubRoutines::select_arraycopy_function(basic_type, aligned, disjoint, name, false);
 
-  CodeBlob *cb = CodeCache::find_blob(entry);
-  if (cb != nullptr) {
+  if (CodeCache::contains(entry)) {
     __ far_call(RuntimeAddress(entry));
   } else {
     const int args_num = 3;

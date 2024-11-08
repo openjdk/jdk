@@ -24,6 +24,7 @@
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -44,6 +45,7 @@ import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -69,6 +71,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
+import javax.swing.border.Border;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
@@ -181,21 +184,23 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *
  * <p id="jtregTagsForTest">
  * Add the following jtreg tags before the test class declaration
- * {@snippet :
+ * <pre><code>
  * /*
- *  * @test
+ *  * &#64;test
  *  * @summary Sample manual test
  *  * @library /java/awt/regtesthelpers
  *  * @build PassFailJFrame
  *  * @run main/manual SampleManualTest
- * }
- * and the closing comment tag <code>*&#47;</code>.
+ *  *&#47;
+ * </code></pre>
  * <p>
  * The {@code @library} tag points to the location of the
  * {@code PassFailJFrame} class in the source code;
  * the {@code @build} tag makes jtreg compile the {@code PassFailJFrame} class,
  * and finally the {@code @run} tag specifies it is a manual
  * test and the class to run.
+ * <p>
+ * Don't forget to update the name of the class to run in the {@code @run} tag.
  *
  * <h2 id="usingBuilder">Using {@code Builder}</h2>
  * Use methods of the {@link Builder Builder} class to set or change
@@ -287,9 +292,15 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  */
 public final class PassFailJFrame {
 
-    private static final String TITLE = "Test Instruction Frame";
+    /** A default title for the instruction frame. */
+    private static final String TITLE = "Test Instructions";
+
+    /** A default test timeout. */
     private static final long TEST_TIMEOUT = 5;
+
+    /** A default number of rows for displaying the test instructions. */
     private static final int ROWS = 10;
+    /** A default number of columns for displaying the test instructions. */
     private static final int COLUMNS = 40;
 
     /**
@@ -302,7 +313,7 @@ public final class PassFailJFrame {
      */
     private static final String FAILURE_REASON = "Failure Reason:\n";
     /**
-     * The failure reason message when the user didn't provide one.
+     * The failure reason message when the user doesn't provide one.
      */
     private static final String EMPTY_REASON = "(no reason provided)";
 
@@ -655,6 +666,8 @@ public final class PassFailJFrame {
                                                        boolean addLogArea,
                                                        int logAreaRows) {
         JPanel main = new JPanel(new BorderLayout());
+        main.setBorder(createFrameBorder());
+
         timeoutHandlerPanel = new TimeoutHandlerPanel(testTimeOut);
         main.add(timeoutHandlerPanel, BorderLayout.NORTH);
 
@@ -664,7 +677,7 @@ public final class PassFailJFrame {
         text.setEditable(false);
 
         JPanel textPanel = new JPanel(new BorderLayout());
-        textPanel.setBorder(createEmptyBorder(4, 0, 0, 0));
+        textPanel.setBorder(createEmptyBorder(GAP, 0, GAP, 0));
         textPanel.add(new JScrollPane(text), BorderLayout.CENTER);
 
         main.add(textPanel, BorderLayout.CENTER);
@@ -681,7 +694,8 @@ public final class PassFailJFrame {
             timeoutHandlerPanel.stop();
         });
 
-        JPanel buttonsPanel = new JPanel();
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER,
+                                                        GAP, 0));
         buttonsPanel.add(btnPass);
         buttonsPanel.add(btnFail);
 
@@ -692,10 +706,12 @@ public final class PassFailJFrame {
         if (addLogArea) {
             logArea = new JTextArea(logAreaRows, columns);
             logArea.setEditable(false);
+            logArea.setBorder(createTextBorder());
 
             Box buttonsLogPanel = Box.createVerticalBox();
 
             buttonsLogPanel.add(buttonsPanel);
+            buttonsLogPanel.add(Box.createVerticalStrut(GAP));
             buttonsLogPanel.add(new JScrollPane(logArea));
 
             main.add(buttonsLogPanel, BorderLayout.SOUTH);
@@ -713,7 +729,7 @@ public final class PassFailJFrame {
         JTextArea text = new JTextArea(instructions, rows, columns);
         text.setLineWrap(true);
         text.setWrapStyleWord(true);
-        text.setBorder(createEmptyBorder(4, 4, 4, 4));
+        text.setBorder(createTextBorder());
         return text;
     }
 
@@ -733,6 +749,29 @@ public final class PassFailJFrame {
         styles.addRule("code { font-size: inherit }");
 
         return text;
+    }
+
+    /** A default gap between components. */
+    private static final int GAP = 4;
+
+    /**
+     * Creates a default border for frames or dialogs.
+     * It uses the default gap of {@value GAP}.
+     *
+     * @return the border for frames and dialogs
+     */
+    private static Border createFrameBorder() {
+        return createEmptyBorder(GAP, GAP, GAP, GAP);
+    }
+
+    /**
+     * Creates a border set to text area.
+     * It uses the default gap of {@value GAP}.
+     *
+     * @return the border for text area
+     */
+    private static Border createTextBorder() {
+        return createEmptyBorder(GAP, GAP, GAP, GAP);
     }
 
 
@@ -1086,26 +1125,30 @@ public final class PassFailJFrame {
      * Requests the description of the test failure reason from the tester.
      */
     private static void requestFailureReason() {
-        final JDialog dialog = new JDialog(frame, "Test Failure ", true);
-        dialog.setTitle("Failure reason");
-        JPanel jPanel = new JPanel(new BorderLayout());
-        JTextArea jTextArea = new JTextArea(5, 20);
+        final JDialog dialog = new JDialog(frame, "Failure reason", true);
+
+        JTextArea reason = new JTextArea(5, 20);
+        reason.setBorder(createTextBorder());
 
         JButton okButton = new JButton("OK");
         okButton.addActionListener((ae) -> {
-            String text = jTextArea.getText();
+            String text = reason.getText();
             setFailureReason(FAILURE_REASON
                              + (!text.isEmpty() ? text : EMPTY_REASON));
             dialog.setVisible(false);
         });
 
-        jPanel.add(new JScrollPane(jTextArea), BorderLayout.CENTER);
-
-        JPanel okayBtnPanel = new JPanel();
+        JPanel okayBtnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER,
+                                                        GAP, 0));
+        okayBtnPanel.setBorder(createEmptyBorder(GAP, 0, 0, 0));
         okayBtnPanel.add(okButton);
 
-        jPanel.add(okayBtnPanel, BorderLayout.SOUTH);
-        dialog.add(jPanel);
+        JPanel main = new JPanel(new BorderLayout());
+        main.setBorder(createFrameBorder());
+        main.add(new JScrollPane(reason), BorderLayout.CENTER);
+        main.add(okayBtnPanel, BorderLayout.SOUTH);
+
+        dialog.add(main);
         dialog.setLocationRelativeTo(frame);
         dialog.pack();
         dialog.setVisible(true);
@@ -1790,9 +1833,41 @@ public final class PassFailJFrame {
             return new PassFailJFrame(this);
         }
 
+        /**
+         * Returns the file name of the test, if the {@code test.file} property
+         * is defined, concatenated with {@code " - "} which serves as a prefix
+         * to the default instruction frame title;
+         * or an empty string if the {@code test.file} property is not defined.
+         *
+         * @return the prefix to the default title:
+         *         either the file name of the test or an empty string
+         *
+         * @see <a href="https://openjdk.org/jtreg/tag-spec.html#testvars">jtreg
+         * test-specific system properties and environment variables</a>
+         */
+        private static String getTestFileNamePrefix() {
+            String testFile = System.getProperty("test.file");
+            if (testFile == null) {
+                return "";
+            }
+
+            return Paths.get(testFile).getFileName().toString()
+                   + " - ";
+        }
+
+        /**
+         * Validates the state of the builder and
+         * expands parameters that have no assigned values
+         * to their default values.
+         *
+         * @throws IllegalStateException if no instructions are provided,
+         *              or if {@code PositionWindows} implementation is
+         *              provided but neither window creator nor
+         *              test window list are set
+         */
         private void validate() {
             if (title == null) {
-                title = TITLE;
+                title = getTestFileNamePrefix() + TITLE;
             }
 
             if (instructions == null || instructions.isEmpty()) {

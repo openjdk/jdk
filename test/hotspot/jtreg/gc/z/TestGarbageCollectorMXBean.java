@@ -25,12 +25,12 @@ package gc.z;
 
 /**
  * @test TestGarbageCollectorMXBean
- * @requires vm.gc.ZGenerational
+ * @requires vm.gc.Z
  * @summary Test ZGC garbage collector MXBean
  * @modules java.management
  * @requires vm.compMode != "Xcomp"
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xms256M -Xmx512M -Xlog:gc gc.z.TestGarbageCollectorMXBean 256 512
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xms512M -Xmx512M -Xlog:gc gc.z.TestGarbageCollectorMXBean 512 512
+ * @run main/othervm -XX:+UseZGC -Xms256M -Xmx512M -Xlog:gc gc.z.TestGarbageCollectorMXBean 256 512
+ * @run main/othervm -XX:+UseZGC -Xms512M -Xmx512M -Xlog:gc gc.z.TestGarbageCollectorMXBean 512 512
  */
 
 import java.lang.management.ManagementFactory;

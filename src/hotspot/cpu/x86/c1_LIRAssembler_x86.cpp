@@ -1333,10 +1333,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     }
 #endif
 
-    if (!(UseZGC && !ZGenerational)) {
-      // Load barrier has not yet been applied, so ZGC can't verify the oop here
-      __ verify_oop(dest->as_register());
-    }
+    __ verify_oop(dest->as_register());
   }
 }
 
@@ -1578,6 +1575,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
     add_debug_info_for_null_check_here(op->stub()->info());
+    // init_state needs acquire, but x86 is TSO, and so we are already good.
     __ cmpb(Address(op->klass()->as_register(),
                     InstanceKlass::init_state_offset()),
                     InstanceKlass::fully_initialized);

@@ -70,6 +70,14 @@
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
                                                                             \
+  develop(bool, StressBailout, false,                                       \
+          "Perform bailouts randomly at C2 failing() checks")               \
+                                                                            \
+  develop(uint, StressBailoutMean, 100000,                                  \
+          "The expected number of failing() checks made until "             \
+          "a random bailout.")                                              \
+          range(1, max_juint)                                               \
+                                                                            \
   develop(intx, OptoPrologueNops, 0,                                        \
           "Insert this many extra nop instructions "                        \
           "in the prologue of every nmethod")                               \
@@ -359,9 +367,6 @@
   product(bool, MergeStores, true, DIAGNOSTIC,                              \
           "Optimize stores by combining values into larger store")          \
                                                                             \
-  develop(bool, TraceMergeStores, false,                                    \
-          "Trace creation of merged stores")                                \
-                                                                            \
   product_pd(bool, OptoBundling,                                            \
           "Generate nops to fill i-cache lines")                            \
                                                                             \
@@ -414,7 +419,7 @@
                                                                             \
   product(intx, LoopOptsCount, 43,                                          \
           "Set level of loop optimization for tier 1 compiles")             \
-          range(5, 43)                                                      \
+          range(5, max_jint)                                                \
                                                                             \
   product(bool, OptimizeUnstableIf, true, DIAGNOSTIC,                       \
           "Optimize UnstableIf traps")                                      \

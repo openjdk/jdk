@@ -1695,6 +1695,14 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       worklist.push(cmp);
     }
   }
+  if (use->Opcode() == Op_AddX) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_CastX2P) {
+        worklist.push(u);
+      }
+    }
+  }
 }
 
 /**

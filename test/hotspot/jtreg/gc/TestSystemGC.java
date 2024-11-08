@@ -58,21 +58,12 @@ package gc;
  */
 
 /*
- * @test id=ZSinglegen
- * @requires vm.gc.ZSinglegen
+ * @test id=Z
+ * @requires vm.gc.Z
  * @comment ZGC will not start when LargePages cannot be allocated, therefore
  *          we do not run such configuration.
  * @summary Runs System.gc() with different flags.
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational gc.TestSystemGC
- */
-
-/*
- * @test id=ZGenerational
- * @requires vm.gc.ZGenerational
- * @comment ZGC will not start when LargePages cannot be allocated, therefore
- *          we do not run such configuration.
- * @summary Runs System.gc() with different flags.
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational gc.TestSystemGC
+ * @run main/othervm -XX:+UseZGC gc.TestSystemGC
  */
 
 public class TestSystemGC {
