@@ -668,13 +668,20 @@ public class JavacParser implements Parser {
         if (pos != null) {
             deferredLintHandler.report(lint -> {
                 if (lint.isEnabled(Lint.LintCategory.DANGLING_DOC_COMMENTS) &&
-                        (c.getStyle() != Comment.CommentStyle.JAVADOC_LINE ||
-                                c.getPos().getStartPosition() != 0)) {
+                        !shebang(c, pos)) {
                     log.warning(Lint.LintCategory.DANGLING_DOC_COMMENTS,
                             pos, Warnings.DanglingDocComment);
                 }
             });
         }
+    }
+
+    /** Returns true for a comment that acts similarly to shebang in UNIX */
+    private boolean shebang(Comment c, JCDiagnostic.DiagnosticPosition pos) {
+        var src = log.currentSource();
+        return c.getStyle() == Comment.CommentStyle.JAVADOC_LINE &&
+                c.getPos().getStartPosition() == 0 &&
+                src.getLineNumber(pos.getEndPosition(src.getEndPosTable())) == 1;
     }
 
     /**

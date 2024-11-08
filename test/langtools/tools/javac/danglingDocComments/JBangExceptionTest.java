@@ -29,6 +29,9 @@
  *
  * @compile/ref=empty.out -XDrawDiagnostics JBangException2.java
  * @compile/ref=JBangException2.enabled.out -XDrawDiagnostics -Xlint:dangling-doc-comments JBangException2.java
+ *
+ * @compile/ref=empty.out -XDrawDiagnostics JBangException3.java
+ * @compile/ref=JBangException3.enabled.out -XDrawDiagnostics -Xlint:dangling-doc-comments JBangException3.java
  */
 
 // The classes being tested reside in files separate from this one because
