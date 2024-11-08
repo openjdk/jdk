@@ -43,7 +43,7 @@ class ClassFileStream: public ResourceObj {
   const u1* const _buffer_end;   // Buffer top (one past last element)
   mutable const u1* _current;    // Current buffer position
   const char* const _source;     // Source of stream (directory name, ZIP/JAR archive name)
-  bool _check_truncation;        // True if we should check truncation of stream bytes.
+  bool _need_verify;             // True if we need to verify and check truncation of stream bytes.
   bool _from_boot_loader_modules_image;  // True if this was created by ClassPathImageEntry.
   void truncated_file_error(TRAPS) const ;
 
@@ -52,12 +52,9 @@ class ClassFileStream: public ResourceObj {
   const char* clone_source() const;
 
  public:
-  constexpr static bool verify = true;
-
   ClassFileStream(const u1* buffer,
                   int length,
                   const char* source,
-                  bool check_truncation = verify,
                   bool from_boot_loader_modules_image = false);
 
   virtual const ClassFileStream* clone() const;
@@ -76,8 +73,8 @@ class ClassFileStream: public ResourceObj {
     return (juint)(_current - _buffer_start);
   }
   const char* source() const { return _source; }
-  bool check_truncation() const { return _check_truncation; }
-  void set_check_truncation(bool flag) { _check_truncation = flag; }
+  bool need_verify() const { return _need_verify; }
+  void set_need_verify(bool flag) { _need_verify = flag; }
   bool from_boot_loader_modules_image() const { return _from_boot_loader_modules_image; }
 
   void check_truncated_file(bool b, TRAPS) const {
@@ -97,7 +94,7 @@ class ClassFileStream: public ResourceObj {
     return *_current++;
   }
   u1 get_u1(TRAPS) const {
-    if (_check_truncation) {
+    if (_need_verify) {
       guarantee_more(1, CHECK_0);
     } else {
       assert(1 <= _buffer_end - _current, "buffer overflow");
@@ -112,7 +109,7 @@ class ClassFileStream: public ResourceObj {
     return res;
   }
   u2 get_u2(TRAPS) const {
-    if (_check_truncation) {
+    if (_need_verify) {
       guarantee_more(2, CHECK_0);
     } else {
       assert(2 <= _buffer_end - _current, "buffer overflow");
@@ -136,7 +133,7 @@ class ClassFileStream: public ResourceObj {
 
   // Skip length elements from stream
   void skip_u1(int length, TRAPS) const {
-    if (_check_truncation) {
+    if (_need_verify) {
       guarantee_more(length, CHECK);
     }
     skip_u1_fast(length);

@@ -35,13 +35,12 @@ void ClassFileStream::truncated_file_error(TRAPS) const {
 ClassFileStream::ClassFileStream(const u1* buffer,
                                  int length,
                                  const char* source,
-                                 bool check_truncation,
                                  bool from_boot_loader_modules_image) :
   _buffer_start(buffer),
   _buffer_end(buffer + length),
   _current(buffer),
   _source(source),
-  _check_truncation(check_truncation),
+  _need_verify(true),  // may be reset by ClassFileParser when this stream is parsed.
   _from_boot_loader_modules_image(from_boot_loader_modules_image) {
     assert(buffer != nullptr, "caller should throw NPE");
 }
@@ -70,6 +69,5 @@ const ClassFileStream* ClassFileStream::clone() const {
   return new ClassFileStream(new_buffer_start,
                              length(),
                              clone_source(),
-                             check_truncation(),
                              from_boot_loader_modules_image());
 }

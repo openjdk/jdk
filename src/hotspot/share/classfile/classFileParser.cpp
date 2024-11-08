@@ -5315,7 +5315,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _need_verify = Verifier::should_verify_for(_loader_data->class_loader());
 
   // synch back verification state to stream to check for truncation.
-  stream->set_check_truncation(_need_verify);
+  stream->set_need_verify(_need_verify);
 
   parse_stream(stream, CHECK);
 

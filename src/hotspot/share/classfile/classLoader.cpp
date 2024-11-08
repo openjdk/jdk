@@ -297,8 +297,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
         // Resource allocated
         return new ClassFileStream(buffer,
                                    checked_cast<int>(st.st_size),
-                                   _dir,
-                                   ClassFileStream::verify);
+                                   _dir);
       }
     }
   }
@@ -366,8 +365,7 @@ ClassFileStream* ClassPathZipEntry::open_stream(JavaThread* current, const char*
   // Resource allocated
   return new ClassFileStream(buffer,
                              filesize,
-                             _zip_name,
-                             ClassFileStream::verify);
+                             _zip_name);
 }
 
 DEBUG_ONLY(ClassPathImageEntry* ClassPathImageEntry::_singleton = nullptr;)
@@ -449,7 +447,6 @@ ClassFileStream* ClassPathImageEntry::open_stream_for_loader(JavaThread* current
     return new ClassFileStream((u1*)data,
                                checked_cast<int>(size),
                                _name,
-                               ClassFileStream::verify,
                                true); // from_boot_loader_modules_image
   }
 
