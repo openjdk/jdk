@@ -585,7 +585,12 @@ public class ModuleWriter extends HtmlDocletWriter {
                     new TableHeader(contents.fromLabel, contents.packagesLabel);
             if (display(indirectPackages)) {
                 ModuleElement javaBase = this.utils.elementUtils.getModuleElement("java.base");
-                if (javaBase != null && indirectPackages.keySet().contains(javaBase)) {
+                boolean hasRequiresTransitiveJavaBase =
+                        ElementFilter.requiresIn(mdle.getDirectives())
+                                     .stream()
+                                     .anyMatch(rd -> rd.isTransitive() &&
+                                                     javaBase.equals(rd.getDependency()));
+                if (hasRequiresTransitiveJavaBase) {
                     Map<ModuleElement, SortedSet<PackageElement>> filteredIndirectPackages =
                             indirectPackages.entrySet()
                                             .stream()
