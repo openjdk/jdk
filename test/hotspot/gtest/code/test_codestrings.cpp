@@ -45,14 +45,15 @@ static const char* replace_addr_expr(const char* str)
     std::basic_string<char> tmp1 = std::regex_replace(str, std::regex("0x[0-9a-fA-F]+"), "<addr>");
     // Padding: aarch64
     std::basic_string<char> tmp2 = std::regex_replace(tmp1, std::regex("\\s+<addr>:\\s+\\.inst\\t<addr> ; undefined"), "");
-    std::basic_string<char> tmp3 = std::regex_replace(tmp2, std::regex(",\\s+.*\\s+<addr>"), "<addr>");
-    std::basic_string<char> tmp4 = std::regex_replace(tmp3, std::regex(", <addr> = .*"), "<addr>");
-    std::basic_string<char> tmp5 = std::regex_replace(tmp4, std::regex("\\s+<addr>:\\s+udf\\t#0"), "");
+    std::basic_string<char> tmp3 = std::regex_replace(tmp2, std::regex(",\\s+.*<addr>"), "");
+    std::basic_string<char> tmp4 = std::regex_replace(tmp3, std::regex(", <addr> = .*"), "");
+    std::basic_string<char> tmp5 = std::regex_replace(tmp4, std::regex("b[\\\\t\\s]+.*"), "b <addr>");
+    std::basic_string<char> tmp6 = std::regex_replace(tmp5, std::regex("\\s+<addr>:\\s+udf\\t#0"), "");
     // Padding: riscv
-    std::basic_string<char> tmp6  = std::regex_replace(tmp5, std::regex("\\s+<addr>:\\s+unimp"), "");
+    std::basic_string<char> tmp7  = std::regex_replace(tmp6, std::regex("\\s+<addr>:\\s+unimp"), "");
     // Padding: x64
-    std::basic_string<char> tmp7  = std::regex_replace(tmp6, std::regex("\\s+<addr>:\\s+hlt[ \\t]+(?!\\n\\s+;;)"), "");
-    std::basic_string<char> red  = std::regex_replace(tmp7, std::regex("(\\s+<addr>:\\s+nop)[ \\t]*"), "$1");
+    std::basic_string<char> tmp8  = std::regex_replace(tmp7, std::regex("\\s+<addr>:\\s+hlt[ \\t]+(?!\\n\\s+;;)"), "");
+    std::basic_string<char> red  = std::regex_replace(tmp8, std::regex("(\\s+<addr>:\\s+nop)[ \\t]*"), "$1");
 
     return os::strdup(red.c_str());
 }
