@@ -2768,7 +2768,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           // unrolling or splitting this main-loop further.
           TemplateAssertionPredicateCreator template_assertion_predicate_creator(cl, scale_con , int_offset, int_limit,
                                                                                  this);
-          loop_entry = template_assertion_predicate_creator.create_with_halt(loop_entry);
+          loop_entry = template_assertion_predicate_creator.create(loop_entry);
           assert(assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
 
           // Initialized Assertion Predicate for the value of the initial main-loop.
