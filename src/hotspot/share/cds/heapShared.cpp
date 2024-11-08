@@ -528,12 +528,21 @@ void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop
 }
 
 static void copy_java_mirror_hashcode(oop orig_mirror, oop scratch_m) {
-  int src_hash = orig_mirror->identity_hash();
-  scratch_m->set_mark(markWord::prototype().copy_set_hash(src_hash));
-  assert(scratch_m->mark().is_unlocked(), "sanity");
+  // We need to retain the identity_hash, because it may have been used by some hashtables
+  // in the shared heap.
+  if (!orig_mirror->fast_no_hash_check()) {
+    intptr_t src_hash = orig_mirror->identity_hash();
+    if (UseCompactObjectHeaders) {
+      narrowKlass nk = CompressedKlassPointers::encode(orig_mirror->klass());
+      scratch_m->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));
+    } else {
+      scratch_m->set_mark(markWord::prototype().copy_set_hash(src_hash));
+    }
+    assert(scratch_m->mark().is_unlocked(), "sanity");
 
-  DEBUG_ONLY(int archived_hash = scratch_m->identity_hash());
-  assert(src_hash == archived_hash, "Java mirror wrong hash: original %x, scratch %x", src_hash, archived_hash);
+    DEBUG_ONLY(intptr_t archived_hash = scratch_m->identity_hash());
+    assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
+  }
 }
 
 static objArrayOop get_archived_resolved_references(InstanceKlass* src_ik) {
