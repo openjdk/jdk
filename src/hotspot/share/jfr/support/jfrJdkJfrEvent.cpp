@@ -35,6 +35,7 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/stack.inline.hpp"
 
 static jobject empty_java_util_arraylist = nullptr;
@@ -80,27 +81,22 @@ static bool is_allowed(const Klass* k) {
   return !(k->is_abstract() || k->should_be_initialized());
 }
 
-static void fill_klasses(GrowableArray<const void*>& event_subklasses, const InstanceKlass* event_klass, JavaThread* thread) {
+static void fill_klasses(GrowableArray<jclass>& event_subklasses, const InstanceKlass* event_klass, JavaThread* thread) {
   assert(event_subklasses.length() == 0, "invariant");
   assert(event_klass != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
+  // Do not safepoint while walking the ClassHierarchy, keeping klasses alive and storing their mirrors in JNI handles.
+  NoSafepointVerifier nsv;
 
   for (ClassHierarchyIterator iter(const_cast<InstanceKlass*>(event_klass)); !iter.done(); iter.next()) {
     Klass* subk = iter.klass();
     if (is_allowed(subk)) {
-      event_subklasses.append(subk);
+      // We are walking the class hierarchy and saving the relevant klasses in JNI handles.
+      // To be allowed to store the java mirror, we must ensure that the klass and its oops are kept alive,
+      // and perform the store before the next safepoint.
+      subk->keep_alive();
+      event_subklasses.append((jclass)JfrJavaSupport::local_jni_handle(subk->java_mirror(), thread));
     }
-  }
-}
-
-static void transform_klasses_to_local_jni_handles(GrowableArray<const void*>& event_subklasses, JavaThread* thread) {
-  assert(event_subklasses.is_nonempty(), "invariant");
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
-
-  for (int i = 0; i < event_subklasses.length(); ++i) {
-    const InstanceKlass* k = static_cast<const InstanceKlass*>(event_subklasses.at(i));
-    assert(is_allowed(k), "invariant");
-    event_subklasses.at_put(i, JfrJavaSupport::local_jni_handle(k->java_mirror(), thread));
   }
 }
 
@@ -126,14 +122,12 @@ jobject JdkJfrEvent::get_all_klasses(TRAPS) {
   }
 
   ResourceMark rm(THREAD);
-  GrowableArray<const void*> event_subklasses(initial_array_size);
+  GrowableArray<jclass> event_subklasses(initial_array_size);
   fill_klasses(event_subklasses, InstanceKlass::cast(klass), THREAD);
 
   if (event_subklasses.is_empty()) {
     return empty_java_util_arraylist;
   }
-
-  transform_klasses_to_local_jni_handles(event_subklasses, THREAD);
 
   Handle h_array_list(THREAD, new_java_util_arraylist(THREAD));
   if (h_array_list.is_null()) {
@@ -152,7 +146,7 @@ jobject JdkJfrEvent::get_all_klasses(TRAPS) {
 
   JavaValue result(T_BOOLEAN);
   for (int i = 0; i < event_subklasses.length(); ++i) {
-    const jclass clazz = (jclass)event_subklasses.at(i);
+    const jclass clazz = event_subklasses.at(i);
     assert(JdkJfrEvent::is_subklass(clazz), "invariant");
     JfrJavaArguments args(&result, array_list_klass, add_method_sym, add_method_sig_sym);
     args.set_receiver(h_array_list());
