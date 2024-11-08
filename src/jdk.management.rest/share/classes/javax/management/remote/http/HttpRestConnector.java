@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeable {
 
     protected volatile boolean connected;
-    protected JMXServiceURL url;
+    protected JMXServiceURL jmxServiceURL;
     protected String baseURL;
     protected Map<String,?> env;
     protected HttpRestConnection connection;
@@ -56,15 +56,15 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
 
     private static AtomicInteger id = new AtomicInteger(0);
 
-    public HttpRestConnector(JMXServiceURL url, Map<String,?> env) {
-        this.url = url;
+    public HttpRestConnector(JMXServiceURL jmxServiceURL, Map<String,?> env) {
+        this.jmxServiceURL = jmxServiceURL;
         this.env = env;
         if (env == null) {
             this.env = new HashMap<String,Object>();
         }
         connectionBroadcaster = new NotificationBroadcasterSupport();
 
-        System.err.println("XXXXX HttpRestConnector url=" + url);
+        System.err.println("XXXXX HttpRestConnector jmxServiceURL =" + jmxServiceURL);
         fixURL();
     }
 
@@ -74,10 +74,10 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
         // Normalise our baseURL to end with /jmx/servers/
 
         // Convert to just http....
-        baseURL = url.toString().substring(12);
+        baseURL = jmxServiceURL.toString().substring(12);
         // or rebuild from host/port/protocol
 
-        String path = url.getURLPath(); // e.g. /jmx/servers/platform
+        String path = jmxServiceURL.getURLPath(); // e.g. /jmx/servers/platform
 
         if (path.isEmpty()) {
             path = "/jmx/servers/platform";
@@ -87,7 +87,7 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
 
     public JMXServiceURL getAddress() {
         // JMXAddressable interface
-        return url;
+        return jmxServiceURL;
     }
 
     public void connect() throws IOException {
@@ -101,7 +101,7 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
         // In RMI, the Connector would call RMIServerImpl.newClient over RMI,
         // whch calls connServer.connectionOpened (which adds to list of connections in JmxConnectorServer)
         // and returns an RMIConnection.
-        connection = new HttpRestConnection(url, baseURL, env); 
+        connection = new HttpRestConnection(jmxServiceURL, baseURL, env); 
         connection.setConnector(this);
         connected = true;
     }
@@ -168,5 +168,19 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
             throw new IOException("Not connected");
         }
         return connection.getConnectionId();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder b = new StringBuilder(this.getClass().getName());
+        b.append(":");
+        if (connection != null) {
+            b.append(" connection=").append(connection.toString());
+        }
+        if (jmxServiceURL != null) {
+            if (connection !=null) b.append(",");
+            b.append(" jmxServiceURL=").append(jmxServiceURL.toString());
+        }
+        return b.toString();
     }
 }

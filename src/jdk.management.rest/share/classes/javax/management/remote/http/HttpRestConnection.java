@@ -555,8 +555,13 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
             } else {
                 // Manually form a simple JSON body:
                 typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(value);
+                // value of null??
+                String v = null;
+                if (typeMapper != null) {
+                    v = typeMapper.toJsonValue(value).toJsonString();
+                }
                 System.err.println("AAAAA MANUAL Attribute = " + attribute + " typeMapper = " + typeMapper);
-                body = "{ \"" + attribute.getName() +"\": " + typeMapper.toJsonValue(value).toJsonString() + "}";
+                body = "{ \"" + attribute.getName() +"\": " + v + "}";
             }
 //            System.err.println("AAAAA body = " + body);
             String s = executeHttpPostRequest(url(href), body);
@@ -570,6 +575,10 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
 
     public AttributeList setAttributes(ObjectName name, AttributeList attributes)
         throws InstanceNotFoundException, ReflectionException, IOException {
+
+        if (attributes == null || attributes.isEmpty()) {
+            return new AttributeList();
+        }
 
         JSONObject o = objectForName(name);
         if (o == null) {
