@@ -370,7 +370,7 @@ MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerD
       tty->print_cr("  -> Aliasing always, distance = %d.", distance.value());
     }
 #endif
-  return MemPointerAliasing::make_always(distance.value());
+  return MemPointerAliasing::make_always_at_distance(distance.value());
 }
 
 bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {

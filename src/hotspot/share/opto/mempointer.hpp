@@ -373,13 +373,21 @@ public:
 class MemPointerAliasing {
 public:
   enum Aliasing {
-    Unknown, // Distance unknown.
-             //   Example: two "int[]" with different variable index offsets.
-             //            e.g. "array[i]  vs  array[j]".
-             //            e.g. "array1[i] vs  array2[j]".
-    Always}; // Constant distance = p1 - p2.
-             //   Example: The same address expression, except for a constant offset
-             //            e.g. "array[i]  vs  array[i+1]".
+    Unknown,          // Distance unknown.
+                      //   Example: two "int[]" (unknown if the same) with different variable index offsets:
+                      //            e.g. "array[i]  vs  array[j]".
+                      //            e.g. "array1[i] vs  array2[j]".
+    AlwaysAtDistance, // Constant distance = p2 - p1.
+                      //   Example: The same address expression, except for a constant offset:
+                      //            e.g. "array[i]  vs  array[i+1]".
+    NotOrAtDistance}; // At compile-time, we know that at run-time it is either of these:
+                      //   (1) Not: The pointers belong to different memory objects.
+                      //   (2) AtConstDistance: distance = p2 - p1.
+                      //   Example: two "int[]" (unknown if the same) with indices that only differ by a
+                      //            constant offset:
+                      //            e.g. "array1[i] vs array2[i+4]":
+                      //                 if "array1 == array2": distance = 4.
+                      //                 if "array1 != array2": different memory objects.
 private:
   const Aliasing _aliasing;
   const jint _distance;
@@ -396,27 +404,28 @@ public:
     return MemPointerAliasing(Unknown, 0);
   }
 
-  static MemPointerAliasing make_always(const jint distance) {
-    return MemPointerAliasing(Always, distance);
+  static MemPointerAliasing make_always_at_distance(const jint distance) {
+    return MemPointerAliasing(AlwaysAtDistance, distance);
   }
 
   // Use case: exact aliasing and adjacency.
   bool is_always_at_distance(const jint distance) const {
-    return _aliasing == Always && _distance == distance;
+    return _aliasing == AlwaysAtDistance && _distance == distance;
   }
 
   // Use case: overlap.
   // Note: the bounds are exclusive: lo < element < hi
   bool is_never_in_distance_range(const jint distance_lo, const jint distance_hi) const {
-    return _aliasing == Always &&
+    return _aliasing == AlwaysAtDistance &&
            (_distance <= distance_lo || distance_hi <= _distance);
   }
 
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     switch(_aliasing) {
-      case Unknown: st->print("Unknown");               break;
-      case Always:  st->print("Always(%d)", _distance); break;
+      case Unknown:           st->print("Unknown");                         break;
+      case AlwaysAtDistance:  st->print("AlwaysAtDistance(%d)", _distance); break;
+      case NotOrAtDistance:   st->print("NotOrAtDistance(%d)",  _distance); break;
       default: ShouldNotReachHere();
     }
   }
