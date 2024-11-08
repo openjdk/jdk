@@ -96,6 +96,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @param i the index
      * @return the current value
      */
+    @SuppressWarnings("unchecked")
     public final E get(int i) {
         return (E)AA.getVolatile(array, i);
     }
@@ -132,6 +133,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @param newValue the new value
      * @return the previous value
      */
+    @SuppressWarnings("unchecked")
     public final E getAndSet(int i, E newValue) {
         return (E)AA.getAndSet(array, i, newValue);
     }
