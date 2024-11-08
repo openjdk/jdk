@@ -29,8 +29,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
 
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
@@ -630,17 +628,13 @@ public interface ObjectInputFilter {
             configLog = System.getLogger("java.io.serialization");
 
             // Get the values of the system properties, if they are defined
-            @SuppressWarnings("removal")
             String factoryClassName = StaticProperty.jdkSerialFilterFactory() != null
                     ? StaticProperty.jdkSerialFilterFactory()
-                    : AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                        Security.getProperty(SERIAL_FILTER_FACTORY_PROPNAME));
+                    : Security.getProperty(SERIAL_FILTER_FACTORY_PROPNAME);
 
-            @SuppressWarnings("removal")
             String filterString = StaticProperty.jdkSerialFilter() != null
                     ? StaticProperty.jdkSerialFilter()
-                    : AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                        Security.getProperty(SERIAL_FILTER_PROPNAME));
+                    : Security.getProperty(SERIAL_FILTER_PROPNAME);
 
             // Initialize the static filter if the jdk.serialFilter is present
             String filterMessage = null;
