@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8343775
- * @summary Test for `@since` in jdk.crypto.cryptoki module
+ * @summary Test for @since in jdk.crypto.cryptoki module
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker jdk.crypto.cryptoki
  */
