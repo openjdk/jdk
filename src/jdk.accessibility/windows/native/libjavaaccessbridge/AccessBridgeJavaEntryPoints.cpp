@@ -75,7 +75,7 @@ AccessBridgeJavaEntryPoints::~AccessBridgeJavaEntryPoints() {
     }
 
 #define EXCEPTION_CHECK(situationDescription, returnVal)                                        \
-    if (exception = jniEnv->ExceptionOccurred()) {                                              \
+    if (jniEnv->ExceptionCheck(jniEnv)) {                                                       \
         PrintDebugString("[ERROR]: *** Exception occured while doing: %s; returning %d", situationDescription, returnVal);   \
         jniEnv->ExceptionDescribe();                                                            \
         jniEnv->ExceptionClear();                                                               \
@@ -83,7 +83,7 @@ AccessBridgeJavaEntryPoints::~AccessBridgeJavaEntryPoints() {
     }
 
 #define EXCEPTION_CHECK_WITH_RELEASE(situationDescription, returnVal, js, stringBytes)          \
-    if (exception = jniEnv->ExceptionOccurred()) {                                              \
+    if (jniEnv->ExceptionCheck(jniEnv)) {                                                       \
         PrintDebugString("[ERROR]: *** Exception occured while doing: %s - call to GetStringLength; returning %d", situationDescription, returnVal);   \
         jniEnv->ExceptionDescribe();                                                            \
         jniEnv->ExceptionClear();                                                               \
@@ -91,7 +91,7 @@ AccessBridgeJavaEntryPoints::~AccessBridgeJavaEntryPoints() {
         return (returnVal);                                                                     \
     }                                                                                           \
     jniEnv->ReleaseStringChars(js, stringBytes);                                                \
-    if (exception = jniEnv->ExceptionOccurred()) {                                              \
+    if (jniEnv->ExceptionCheck(jniEnv)) {                                                       \
         PrintDebugString("[ERROR]: *** Exception occured while doing: %s - call to ReleaseStringChars; returning %d", situationDescription, returnVal);   \
         jniEnv->ExceptionDescribe();                                                            \
         jniEnv->ExceptionClear();                                                               \
@@ -99,7 +99,7 @@ AccessBridgeJavaEntryPoints::~AccessBridgeJavaEntryPoints() {
     }
 
 #define EXCEPTION_CHECK_VOID(situationDescription)                                              \
-    if (exception = jniEnv->ExceptionOccurred()) {                                              \
+    if (jniEnv->ExceptionCheck(jniEnv)) {                                                       \
         PrintDebugString("[ERROR]: *** Exception occured while doing: %s", situationDescription);   \
         jniEnv->ExceptionDescribe();                                                            \
         jniEnv->ExceptionClear();                                                               \
