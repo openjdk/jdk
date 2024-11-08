@@ -1962,6 +1962,13 @@ enum Nf {
   INSN(vbrev8_v, 0b1010111, 0b010, 0b01000, 0b010010); // reverse bits in every byte of element
   INSN(vrev8_v,  0b1010111, 0b010, 0b01001, 0b010010); // reverse bytes in every elememt
 
+  // Vector AES instructions (Zvkned extension)
+  INSN(vaesem_vv,   0b1110111, 0b010, 0b00010, 0b101000);
+  INSN(vaesef_vv,   0b1110111, 0b010, 0b00011, 0b101000);
+
+  INSN(vaesdm_vv,   0b1110111, 0b010, 0b00000, 0b101000);
+  INSN(vaesdf_vv,   0b1110111, 0b010, 0b00001, 0b101000);
+
   INSN(vclz_v,  0b1010111, 0b010, 0b01100, 0b010010); // count leading zeros
   INSN(vctz_v,  0b1010111, 0b010, 0b01101, 0b010010); // count trailing zeros
 
@@ -2892,8 +2899,9 @@ public:
 // Unconditional branch instructions
 // --------------------------
  protected:
-  // All calls and jumps must go via MASM.
+  // All calls and jumps must go via MASM. Only use x1 (aka ra) as link register for now.
   void jalr(Register Rd, Register Rs, const int32_t offset) {
+    assert(Rd != x5 && Rs != x5, "Register x5 must not be used for calls/jumps.");
     /* jalr -> c.jr/c.jalr */
     if (do_compress() && (offset == 0 && Rs != x0)) {
       if (Rd == x1) {
@@ -2908,6 +2916,7 @@ public:
   }
 
   void jal(Register Rd, const int32_t offset) {
+    assert(Rd != x5, "Register x5 must not be used for calls/jumps.");
     /* jal -> c.j, note c.jal is RV32C only */
     if (do_compress() &&
         Rd == x0 &&
@@ -2915,7 +2924,6 @@ public:
       c_j(offset);
       return;
     }
-
     _jal(Rd, offset);
   }
 

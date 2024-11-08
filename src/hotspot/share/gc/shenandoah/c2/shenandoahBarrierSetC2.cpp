@@ -480,7 +480,14 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
   const TypePtr* adr_type = access.addr().type();
   Node* adr = access.addr().node();
 
+  bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
+
   if (!access.is_oop()) {
+    return BarrierSetC2::store_at_resolved(access, val);
+  }
+
+  if (no_keepalive) {
+    // No keep-alive means no need for the pre-barrier.
     return BarrierSetC2::store_at_resolved(access, val);
   }
 

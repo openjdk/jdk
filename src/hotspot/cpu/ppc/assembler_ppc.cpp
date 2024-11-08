@@ -448,7 +448,6 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp, bool retur
       xa = (x >> 48) & 0xffff;
       xb = (x >> 32) & 0xffff; // No sign compensation, we use lis+ori or li to allow usage of R0.
       bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
-      bool return_xd = false;
 
       if (xa_loaded) { lis(tmp, xa); }
       if (xc) { lis(d, xc); }

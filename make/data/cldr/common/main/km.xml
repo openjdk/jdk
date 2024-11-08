@@ -34,7 +34,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ann">អូបូឡូ</language>
 			<language type="anp">អាហ្គីកា</language>
 			<language type="ar">អារ៉ាប់</language>
-			<language type="ar_001">អារ៉ាប់ (ស្តង់ដារ)</language>
+			<language type="ar_001">អារ៉ាប់ស្តង់ដារទំនើប</language>
 			<language type="arn">ម៉ាពូឈី</language>
 			<language type="arp">អារ៉ាប៉ាហូ</language>
 			<language type="ars">អារ៉ាប់ណាឌី</language>
@@ -46,7 +46,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="awa">អាវ៉ាឌី</language>
 			<language type="ay">អីម៉ារ៉ា</language>
 			<language type="az">អាស៊ែបៃហ្សង់</language>
-			<language type="az" alt="short">អាហ្សេរី</language>
+			<language type="az" alt="short">អាហ្ស៊ែរី</language>
 			<language type="ba">បាស្គៀ</language>
 			<language type="ban">បាលី</language>
 			<language type="bas">បាសា</language>
@@ -60,12 +60,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bi">ប៊ីស្លាម៉ា</language>
 			<language type="bin">ប៊ីនី</language>
 			<language type="bla">ស៊ីកស៊ីកា</language>
+			<language type="blo">អានី</language>
 			<language type="bm">បាម្បារា</language>
 			<language type="bn">បង់ក្លាដែស</language>
 			<language type="bo">ទីបេ</language>
 			<language type="br">ប្រ៊ីស្តុន</language>
 			<language type="brx">បូដូ</language>
-			<language type="bs">បូស្នី</language>
+			<language type="bs">បូស្ន៊ី</language>
 			<language type="bug">ប៊ុកហ្គី</language>
 			<language type="byn">ប្ល៊ីន</language>
 			<language type="ca">កាតាឡាន</language>
@@ -171,6 +172,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="iba">អ៊ីបាន</language>
 			<language type="ibb">អាយប៊ីប៊ីអូ</language>
 			<language type="id">ឥណ្ឌូណេស៊ី</language>
+			<language type="ie">អ៊ីនធើលីងវេ</language>
 			<language type="ig">អ៊ីកបូ</language>
 			<language type="ii">ស៊ីឈាន់យី</language>
 			<language type="ikt">អ៊ីនុកទីទុត​កាណាដា​ប៉ែកខាងលិច</language>
@@ -224,6 +226,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">កូមី</language>
 			<language type="kw">កូនីស</language>
 			<language type="kwk">ក្វាក់វ៉ាឡា</language>
+			<language type="kxv">គូវី</language>
 			<language type="ky">​កៀហ្ស៊ីស</language>
 			<language type="la">ឡាតំាង</language>
 			<language type="lad">ឡាឌីណូ</language>
@@ -235,6 +238,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lij">លីគូរី</language>
 			<language type="lil">លីលលូអេត</language>
 			<language type="lkt">ឡាកូតា</language>
+			<language type="lmo">ឡំបាត</language>
 			<language type="ln">លីនកាឡា</language>
 			<language type="lo">ឡាវ</language>
 			<language type="lou">ក្រេអូល លូអ៊ីស៊ីអាណា</language>
@@ -348,7 +352,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="rwk">រ៉្វា</language>
 			<language type="sa">សំស្ក្រឹត</language>
 			<language type="sad">សានដាវី</language>
-			<language type="sah">សាខា</language>
+			<language type="sah">យ៉ាឃុត</language>
 			<language type="saq">សាមបូរូ</language>
 			<language type="sat">សាន់តាលី</language>
 			<language type="sba">ងាំបេយ</language>
@@ -391,6 +395,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw_CD">កុងហ្គោស្វាហ៊ីលី</language>
 			<language type="swb">កូម៉ូរី</language>
 			<language type="syr">ស៊ីរី</language>
+			<language type="szl">ស៊ីឡេស៊ី</language>
 			<language type="ta">តាមីល</language>
 			<language type="tce">ថុចឆុនខាងត្បូង</language>
 			<language type="te">តេលុគុ</language>
@@ -433,6 +438,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ve">វេនដា</language>
 			<language type="vec">វេណេតូ</language>
 			<language type="vi">វៀតណាម</language>
+			<language type="vmw">ម៉ាឃូវ៉ា</language>
 			<language type="vo">វូឡាពូក</language>
 			<language type="vun">វុនចូ</language>
 			<language type="wa">វ៉ាលូន</language>
@@ -444,6 +450,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">អ៊ូចិន</language>
 			<language type="xal">កាលមីគ</language>
 			<language type="xh">ឃសា</language>
+			<language type="xnr">ខែងគ្រី</language>
 			<language type="xog">សូហ្គា</language>
 			<language type="yav">យ៉ាងបេន</language>
 			<language type="ybb">យេមបា</language>
@@ -841,7 +848,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TN">ទុយនីស៊ី</territory>
 			<territory type="TO">តុងហ្គា</territory>
 			<territory type="TR">តួកគី</territory>
-			<territory type="TR" alt="variant">តួកគីយេ</territory>
 			<territory type="TT">ទ្រីនីដាត និង​តូបាហ្គោ</territory>
 			<territory type="TV">ទូវ៉ាលូ</territory>
 			<territory type="TW">តៃវ៉ាន់</territory>
@@ -1403,6 +1409,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MEd">E d/M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">សប្តាហ៍ទី W នៃខែ MMMM</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
@@ -1653,9 +1660,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="sun-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃអាទិត្យទៀត</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃអាទិត្យមុន</relativeTimePattern>
 				</relativeTime>
@@ -1779,6 +1783,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>ម៉ោង​នៅ​ {0}</regionFormat>
 			<regionFormat type="daylight">ម៉ោង​ពេល​ថ្ងៃ​នៅ​ {0}</regionFormat>
 			<regionFormat type="standard">ម៉ោង​ស្តង់ដារ​នៅ ​{0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ហូណូលូលូ</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>ម៉ោងសកលដែលមានការសម្រួល</standard>
@@ -2516,9 +2523,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>អ៊ូឡង់បាទ័រ</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>ឈូបាល់សាន</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>ម៉ាកាវ</exemplarCity>
 			</zone>
@@ -2918,9 +2922,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>ណូម</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ហូណូលូលូ</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>អង់ចូរ៉ាក</exemplarCity>
 			</zone>
@@ -3265,13 +3266,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅ​ចិន</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>ម៉ោង​នៅ​ឆូបាល់សាន</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ឆូបាល់សាន</standard>
-					<daylight>ម៉ោង​នៅ​ឆូបាល់សាននារដូវ​ក្ដៅ​</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>ម៉ោង​នៅ​កោះ​គ្រីស្មាស</standard>
@@ -3508,6 +3502,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ម៉ោង​នៅ​ជប៉ុន</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ជប៉ុន</standard>
 					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅជប៉ុន</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>ពេលវេលានៅកាហ្សាក់ស្ថាន</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4008,7 +4007,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000 ទ្រីលាន</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -4368,7 +4366,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ហ្គូរីនី​ប៉ារ៉ាហ្គាយ</displayName>
 			</currency>
 			<currency type="QAR">
-				<displayName>រៀល​កាតា</displayName>
+				<displayName>រីយ៉ាលកាតា</displayName>
+				<displayName count="other">រីយ៉ាលកាតា</displayName>
 			</currency>
 			<currency type="RON">
 				<displayName>លូ​រូម៉ានី</displayName>
@@ -5175,6 +5174,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ត្រាម</displayName>
 				<unitPattern count="other">{0} ត្រាម</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ពន្លឺ</displayName>
+				<unitPattern count="other">{0} ពន្លឺ</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>ផ្នែកក្នុងមួយប៊ីលាន</displayName>
+				<unitPattern count="other">{0} ផ្នែកក្នុងមួយប៊ីលាន</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>យប់</displayName>
+				<unitPattern count="other">{0} យប់</unitPattern>
+				<perUnitPattern>{0} ក្នុងមួយយប់</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ទិសទាំងបួន</displayName>
 			</coordinateUnit>
@@ -5470,6 +5482,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ច្បិច</displayName>
 				<unitPattern count="other">{0} ច្បិច</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ពន្លឺ</displayName>
+				<unitPattern count="other">{0} ពន្លឺ</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>ផ្នែក/ប៊ីលាន</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>យប់</displayName>
+				<unitPattern count="other">{0} យប់</unitPattern>
+				<perUnitPattern>{0}/យប់</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ទិស</displayName>
 				<coordinateUnitPattern type="east">{0}កើត</coordinateUnitPattern>
@@ -5521,9 +5545,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<unitPattern count="other">{0}L/100km</unitPattern>
-			</unit>
-			<unit type="duration-decade">
-				<unitPattern count="other">{0} ទ.វ.</unitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<unitPattern count="other">{0} ត្រី</unitPattern>
@@ -5603,6 +5624,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-liter">
 				<unitPattern count="other">{0}L</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ពន្លឺ</displayName>
+				<unitPattern count="other">{0} ពន្លឺ</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="other">{0}ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>យប់</displayName>
+				<unitPattern count="other">{0} យប់</unitPattern>
+				<perUnitPattern>{0}/យប់</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>

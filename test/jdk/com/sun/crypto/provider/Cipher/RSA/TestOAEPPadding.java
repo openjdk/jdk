@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8020081 8022669
+ * @library /test/lib
  * @summary encryption/decryption test for using OAEPPadding with
  * OAEPParameterSpec specified and not specified during a Cipher.init().
  * @author Anthony Scarpino
@@ -43,7 +44,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.PSource;
-
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestOAEPPadding {
     private static RSAPrivateKey privateKey;
@@ -52,11 +53,14 @@ public class TestOAEPPadding {
     static boolean failed = false;
 
     public static void main(String args[]) throws Exception {
-        cp = Security.getProvider("SunJCE");
+        cp = Security.getProvider(
+                        System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + cp.getName() + "...");
-        Provider kfp = Security.getProvider("SunRsaSign");
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", kfp);
-        kpg.initialize(2048);
+        Provider kfp = Security.getProvider(
+                        System.getProperty("test.providername", "SunRsaSign"));
+        String kpgAlgorithm = "RSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, kfp);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
         privateKey = (RSAPrivateKey)kp.getPrivate();
         publicKey = (RSAPublicKey)kp.getPublic();
