@@ -100,6 +100,7 @@ public final class Recording implements Closeable {
      *         FlightRecorderPermission "accessFlightRecorder" is not set.
      *
      * @see jdk.jfr
+     * @since 11
      */
     public Recording(Map<String, String> settings) {
         Objects.requireNonNull(settings, "settings");
