@@ -160,6 +160,8 @@ class Stream<T> extends ExchangeImpl<T> {
     // send lock: prevent sending DataFrames after reset occurred.
     private final Lock sendLock = new ReentrantLock();
     private final Lock stateLock = new ReentrantLock();
+    private final Lock inputQLock = new ReentrantLock();
+
     /**
      * A reference to this Stream's connection Send Window controller. The
      * stream MUST acquire the appropriate amount of Send Window before
@@ -183,6 +185,7 @@ class Stream<T> extends ExchangeImpl<T> {
     private void schedule() {
         boolean onCompleteCalled = false;
         HttpResponse.BodySubscriber<T> subscriber = responseSubscriber;
+        inputQLock.lock();
         try {
             if (subscriber == null) {
                 // pendingResponseSubscriber will be null until response headers have been received and
@@ -199,7 +202,7 @@ class Stream<T> extends ExchangeImpl<T> {
                 Http2Frame frame = inputQ.peek();
                 if (frame instanceof ResetFrame rf) {
                     inputQ.remove();
-                    if (endStreamReceived() && rf.getErrorCode() ==  ResetFrame.NO_ERROR) {
+                    if (endStreamReceived() && rf.getErrorCode() == ResetFrame.NO_ERROR) {
                         // If END_STREAM is already received, complete the requestBodyCF successfully
                         // and stop sending any request data.
                         requestBodyCF.complete(null);
@@ -208,7 +211,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     }
                     return;
                 }
-                DataFrame df = (DataFrame)frame;
+                DataFrame df = (DataFrame) frame;
                 boolean finished = df.getFlag(DataFrame.END_STREAM);
 
                 List<ByteBuffer> buffers = df.getData();
@@ -256,6 +259,7 @@ class Stream<T> extends ExchangeImpl<T> {
         } catch (Throwable throwable) {
             errorRef.compareAndSet(null, throwable);
         } finally {
+            inputQLock.unlock();
             if (sched.isStopped()) drainInputQueue();
         }
 
@@ -286,14 +290,19 @@ class Stream<T> extends ExchangeImpl<T> {
     // is stopped before all the data is consumed.
     private void drainInputQueue() {
         Http2Frame frame;
-        while ((frame = inputQ.poll()) != null) {
-            if (frame instanceof DataFrame df) {
-                // Data frames that have been added to the inputQ
-                // must be released using releaseUnconsumed() to
-                // account for the amount of unprocessed bytes
-                // tracked by the connection.windowUpdater.
-                connection.releaseUnconsumed(df);
+        inputQLock.lock();
+        try {
+            while ((frame = inputQ.poll()) != null) {
+                if (frame instanceof DataFrame df) {
+                    // Data frames that have been added to the inputQ
+                    // must be released using releaseUnconsumed() to
+                    // account for the amount of unprocessed bytes
+                    // tracked by the connection.windowUpdater.
+                    connection.releaseUnconsumed(df);
+                }
             }
+        } finally {
+            inputQLock.unlock();
         }
     }
 
@@ -405,10 +414,23 @@ class Stream<T> extends ExchangeImpl<T> {
                     return;
                 }
             }
-            inputQ.add(df);
+           pushDataFrame(len, df);
         } finally {
             sched.runOrSchedule();
         }
+    }
+
+    private void pushDataFrame(int len, DataFrame df) {
+        boolean closed = false;
+        stateLock.lock();
+        try {
+            if (!(closed = this.closed)) {
+                inputQ.add(df);
+            }
+        } finally {
+            stateLock.unlock();
+        }
+        if (closed && len > 0) connection.releaseUnconsumed(df);
     }
 
     /** Handles a RESET frame. RESET is always handled inline in the queue. */
@@ -1547,6 +1569,8 @@ class Stream<T> extends ExchangeImpl<T> {
             }
         } catch (Throwable ex) {
             Log.logError(ex);
+        } finally {
+            drainInputQueue();
         }
     }
 
@@ -1770,7 +1794,7 @@ class Stream<T> extends ExchangeImpl<T> {
         @Override
         protected boolean windowSizeExceeded(long received) {
             onProtocolError(new ProtocolException("stream %s flow control window exceeded"
-                            .formatted(streamid)), ResetFrame.FLOW_CONTROL_ERROR);
+                        .formatted(streamid)), ResetFrame.FLOW_CONTROL_ERROR);
             return true;
         }
     }
