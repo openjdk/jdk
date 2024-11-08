@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,6 @@ final class BiClassValue<T> {
         }
 
         private T compute(final VarHandle mapHandle, final Class<?> c, final Function<Class<?>, T> compute) {
-            @SuppressWarnings("unchecked")
             Map<Class<?>, T> map = (Map<Class<?>, T>) mapHandle.getVolatile(this);
             T value;
             T newValue = null;
@@ -128,7 +127,6 @@ final class BiClassValue<T> {
                 final Map.Entry<Class<?>, T>[] entries = map.entrySet().toArray(new Map.Entry[map.size() + 1]);
                 entries[map.size()] = Map.entry(c, newValue);
                 final var newMap = Map.ofEntries(entries);
-                @SuppressWarnings("unchecked")
                 final var witness = (Map<Class<?>, T>) mapHandle.compareAndExchange(this, map, newMap);
                 if (witness == map) {
                     value = newValue;
