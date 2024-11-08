@@ -106,11 +106,18 @@ public final class TKit {
             ThrowingRunnable.toRunnable(action).run();
         } else {
             try (PrintStream logStream = openLogStream()) {
-                extraLogStream = logStream;
-                ThrowingRunnable.toRunnable(action).run();
-            } finally {
-                extraLogStream = null;
+                withExtraLogStream(action, logStream);
             }
+        }
+    }
+
+    static void withExtraLogStream(ThrowingRunnable action, PrintStream logStream) {
+        var oldExtraLogStream = extraLogStream;
+        try {
+            extraLogStream = logStream;
+            ThrowingRunnable.toRunnable(action).run();
+        } finally {
+            extraLogStream = oldExtraLogStream;
         }
     }
 
@@ -593,7 +600,7 @@ public final class TKit {
                     msg));
         }
 
-        traceAssert(String.format("assertEquals(%d): %s", expected, msg));
+        traceAssert(concatMessages(String.format("assertEquals(%d)", expected), msg));
     }
 
     public static void assertNotEquals(long expected, long actual, String msg) {
@@ -603,8 +610,8 @@ public final class TKit {
                     msg));
         }
 
-        traceAssert(String.format("assertNotEquals(%d, %d): %s", expected,
-                actual, msg));
+        traceAssert(concatMessages(String.format("assertNotEquals(%d, %d)", expected,
+                actual), msg));
     }
 
     public static void assertEquals(String expected, String actual, String msg) {
@@ -616,7 +623,7 @@ public final class TKit {
                     msg));
         }
 
-        traceAssert(String.format("assertEquals(%s): %s", expected, msg));
+        traceAssert(concatMessages(String.format("assertEquals(%s)", expected), msg));
     }
 
     public static void assertNotEquals(String expected, String actual, String msg) {
@@ -624,8 +631,8 @@ public final class TKit {
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
 
-            traceAssert(String.format("assertNotEquals(%s, %s): %s", expected,
-                actual, msg));
+            traceAssert(concatMessages(String.format("assertNotEquals(%s, %s)", expected,
+                actual), msg));
             return;
         }
 
@@ -639,7 +646,7 @@ public final class TKit {
                     value), msg));
         }
 
-        traceAssert(String.format("assertNull(): %s", msg));
+        traceAssert(concatMessages("assertNull()", msg));
     }
 
     public static void assertNotNull(Object value, String msg) {
@@ -648,7 +655,7 @@ public final class TKit {
             error(concatMessages("Unexpected null value", msg));
         }
 
-        traceAssert(String.format("assertNotNull(%s): %s", value, msg));
+        traceAssert(concatMessages(String.format("assertNotNull(%s)", value), msg));
     }
 
     public static void assertTrue(boolean actual, String msg) {
@@ -668,7 +675,7 @@ public final class TKit {
             error(concatMessages("Failed", msg));
         }
 
-        traceAssert(String.format("assertTrue(): %s", msg));
+        traceAssert(concatMessages("assertTrue()", msg));
     }
 
     public static void assertFalse(boolean actual, String msg, Runnable onFail) {
@@ -680,7 +687,7 @@ public final class TKit {
             error(concatMessages("Failed", msg));
         }
 
-        traceAssert(String.format("assertFalse(): %s", msg));
+        traceAssert(concatMessages("assertFalse()", msg));
     }
 
     public static void assertPathExists(Path path, boolean exists) {
@@ -860,7 +867,7 @@ public final class TKit {
             List<String> actual, String msg) {
         currentTest.notifyAssert();
 
-        traceAssert(String.format("assertStringListEquals(): %s", msg));
+        traceAssert(concatMessages("assertStringListEquals()", msg));
 
         String idxFieldFormat = Functional.identity(() -> {
             int listSize = expected.size();
@@ -890,7 +897,7 @@ public final class TKit {
                     expectedStr));
         });
 
-        if (expected.size() < actual.size()) {
+        if (actual.size() > expected.size()) {
             // Actual string list is longer than expected
             error(concatMessages(String.format(
                     "Actual list is longer than expected by %d elements",
@@ -900,7 +907,7 @@ public final class TKit {
         if (actual.size() < expected.size()) {
             // Actual string list is shorter than expected
             error(concatMessages(String.format(
-                    "Actual list is longer than expected by %d elements",
+                    "Actual list is shorter than expected by %d elements",
                     expected.size() - actual.size()), msg));
         }
     }

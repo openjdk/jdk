@@ -151,12 +151,16 @@ public class Functional {
     @SuppressWarnings("unchecked")
     public static RuntimeException rethrowUnchecked(Throwable throwable) throws
             ExceptionBox {
-        if (throwable instanceof RuntimeException) {
-            throw (RuntimeException)throwable;
+        if (throwable instanceof RuntimeException err) {
+            throw err;
         }
 
-        if (throwable instanceof InvocationTargetException) {
-            throw new ExceptionBox(throwable.getCause());
+        if (throwable instanceof Error err) {
+            throw err;
+        }
+
+        if (throwable instanceof InvocationTargetException err) {
+            throw rethrowUnchecked(err.getCause());
         }
 
         throw new ExceptionBox(throwable);
