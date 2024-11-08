@@ -50,8 +50,10 @@ public class DeterministicDump {
     public static void doTest(boolean compressed) throws Exception {
         ArrayList<String> baseArgs = new ArrayList<>();
 
-        // Use the same heap size as make/Images.gmk
+        // Try to reduce indeterminism of GC heap sizing and evacuation.
         baseArgs.add("-Xmx128M");
+        baseArgs.add("-Xms128M");
+        baseArgs.add("-Xmn120M");
 
         if (Platform.is64bit()) {
             // This option is available only on 64-bit.
@@ -80,7 +82,7 @@ public class DeterministicDump {
         String mapName = logName + ".map";
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-Xint") // Override any -Xmixed/-Xcomp flags from jtreg -vmoptions
-            .addPrefix("-Xlog:cds=debug")
+            .addPrefix("-Xlog:cds=debug,gc=debug")
             .addPrefix("-Xlog:cds+map*=trace:file=" + mapName + ":none:filesize=0")
             .setArchiveName(archiveName)
             .addSuffix(args)

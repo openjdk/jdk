@@ -169,7 +169,7 @@ public class ServerNotifForwarder {
             } catch (Exception e) {
                 // Give back the first exception
                 //
-                if (re != null) {
+                if (re == null) {
                     re = e;
                 }
             }

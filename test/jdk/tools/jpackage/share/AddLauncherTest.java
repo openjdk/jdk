@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,10 @@ import jdk.jpackage.test.CfgFile;
  * @summary jpackage with --add-launcher
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest != null)
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile AddLauncherTest.java
  * @run main/othervm/timeout=360 -Xmx512m
- *  --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
  *  jdk.jpackage.test.Main
  *  --jpt-run=AddLauncherTest.test
  */
@@ -63,12 +61,10 @@ import jdk.jpackage.test.CfgFile;
  * @summary jpackage with --add-launcher
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest == null)
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile AddLauncherTest.java
  * @run main/othervm/timeout=540 -Xmx512m
- *  --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
  *  jdk.jpackage.test.Main
  *  --jpt-run=AddLauncherTest
  */

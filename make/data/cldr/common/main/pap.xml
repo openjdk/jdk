@@ -12,21 +12,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="ar" draft="unconfirmed">arabir</language>
+			<language type="ar_001" draft="unconfirmed">arabir (mundu)</language>
 			<language type="de" draft="unconfirmed">alemán</language>
-			<language type="de_AT" draft="unconfirmed">alemán (AT)</language>
-			<language type="de_CH" draft="unconfirmed">alemán (CH)</language>
 			<language type="en" draft="unconfirmed">ingles</language>
-			<language type="en_AU" draft="unconfirmed">ingles (AU)</language>
-			<language type="en_CA" draft="unconfirmed">ingles (CA)</language>
-			<language type="en_GB" draft="unconfirmed">ingles (GB)</language>
-			<language type="en_US" draft="unconfirmed">ingles (US)</language>
 			<language type="es" draft="unconfirmed">spañó</language>
 			<language type="es_419" draft="unconfirmed">spañó di latino amérika</language>
-			<language type="es_ES" draft="unconfirmed">spañó (ES)</language>
-			<language type="es_MX" draft="unconfirmed">spañó (MX)</language>
 			<language type="fr" draft="unconfirmed">franses</language>
-			<language type="fr_CA" draft="unconfirmed">franses (CA)</language>
-			<language type="fr_CH" draft="unconfirmed">franses (CH)</language>
 			<language type="he" draft="unconfirmed">hebreo</language>
 			<language type="hi" draft="unconfirmed">hindi</language>
 			<language type="hmn" draft="unconfirmed">hmong</language>
@@ -38,23 +30,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ko" draft="unconfirmed">koreano</language>
 			<language type="la" draft="unconfirmed">latin</language>
 			<language type="nl" draft="unconfirmed">hulandes</language>
-			<language type="nl_BE" draft="unconfirmed">hulandes (BE)</language>
 			<language type="pap">Papiamentu</language>
 			<language type="pl" draft="unconfirmed">polaco</language>
 			<language type="pt" draft="unconfirmed">portugues</language>
-			<language type="pt_BR" draft="unconfirmed">portugues (BR)</language>
-			<language type="pt_PT" draft="unconfirmed">portugues (PT)</language>
+			<language type="ru" draft="unconfirmed">ruso</language>
+			<language type="th" draft="unconfirmed">tailandes</language>
+			<language type="tr" draft="unconfirmed">turko</language>
+			<language type="und" draft="unconfirmed">idioma deskonosí</language>
 			<language type="zh" draft="unconfirmed">chines</language>
 		</languages>
 		<scripts>
+			<script type="Arab" draft="unconfirmed">Arabir</script>
 			<script type="Brai" draft="unconfirmed">braille</script>
 			<script type="Jpan" draft="unconfirmed">hapones</script>
 			<script type="Kore" draft="unconfirmed">koreano</script>
 			<script type="Latn" draft="unconfirmed">Latin</script>
+			<script type="Zxxx" draft="unconfirmed">No Tin Ortografia</script>
+			<script type="Zzzz" draft="unconfirmed">Ortografia Deskonosí</script>
 		</scripts>
 		<territories>
 			<territory type="001" draft="unconfirmed">mundu</territory>
-			<territory type="002" draft="unconfirmed">Afrika</territory>
+			<territory type="002" draft="unconfirmed">Áfrika</territory>
 			<territory type="003" draft="unconfirmed">Nort Amérika</territory>
 			<territory type="005" draft="unconfirmed">Zùit Amérika</territory>
 			<territory type="011" draft="unconfirmed">Wèst Afrika</territory>
@@ -82,20 +78,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="154" draft="unconfirmed">Nort Europa</territory>
 			<territory type="155" draft="unconfirmed">Wèst Europa</territory>
 			<territory type="419" draft="unconfirmed">Latino Amérika</territory>
+			<territory type="AF" draft="unconfirmed">Afghanistan</territory>
+			<territory type="AG" draft="unconfirmed">Antigua &amp; Barbuda</territory>
 			<territory type="AI" draft="unconfirmed">Anguilla</territory>
+			<territory type="AL" draft="unconfirmed">Albania</territory>
 			<territory type="AO" draft="unconfirmed">Angola</territory>
 			<territory type="AR" draft="unconfirmed">Argentina</territory>
 			<territory type="AT" draft="unconfirmed">Austria</territory>
 			<territory type="AU" draft="unconfirmed">Australia</territory>
 			<territory type="AW" draft="unconfirmed">Aruba</territory>
+			<territory type="BA" draft="unconfirmed">Bosnia i Herzegowina</territory>
 			<territory type="BB" draft="unconfirmed">Barbados</territory>
 			<territory type="BE" draft="unconfirmed">Bèlgika</territory>
 			<territory type="BG" draft="unconfirmed">Bulgaria</territory>
+			<territory type="BL" draft="unconfirmed">Saint Bathélemy</territory>
 			<territory type="BM" draft="unconfirmed">Bermuda</territory>
 			<territory type="BO" draft="unconfirmed">Bolivia</territory>
-			<territory type="BQ" draft="unconfirmed">Antilla Hulandes</territory>
+			<territory type="BQ" draft="unconfirmed">Antia Hulandes</territory>
 			<territory type="BR" draft="unconfirmed">Brazil</territory>
 			<territory type="BS" draft="unconfirmed">Bahamas</territory>
+			<territory type="BV" draft="unconfirmed">Isla Bouvet</territory>
 			<territory type="BW" draft="unconfirmed">Botswana</territory>
 			<territory type="BY" draft="unconfirmed">Belarus</territory>
 			<territory type="BZ" draft="unconfirmed">Belize</territory>
@@ -112,35 +114,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CO" draft="unconfirmed">Colombia</territory>
 			<territory type="CR" draft="unconfirmed">Costa Rica</territory>
 			<territory type="CU" draft="unconfirmed">Cuba</territory>
-			<territory type="CV" draft="unconfirmed">Cape Verde</territory>
+			<territory type="CV" draft="unconfirmed">Kabo Verde</territory>
 			<territory type="CW">Kòrsou</territory>
+			<territory type="CZ" draft="unconfirmed">Cheko</territory>
+			<territory type="CZ" alt="variant" draft="unconfirmed">Repúblika di Cheko</territory>
 			<territory type="DE" draft="unconfirmed">Alemania</territory>
 			<territory type="DK" draft="unconfirmed">Dinamarka</territory>
 			<territory type="DM" draft="unconfirmed">Dominica</territory>
 			<territory type="DO" draft="unconfirmed">Repúblika Dominikano</territory>
+			<territory type="DZ" draft="unconfirmed">Algeria</territory>
 			<territory type="EC" draft="unconfirmed">Ecuador</territory>
 			<territory type="EE" draft="unconfirmed">Estonia</territory>
 			<territory type="EG" draft="unconfirmed">Egipto</territory>
+			<territory type="EH" draft="unconfirmed">Western Sahara</territory>
 			<territory type="ER" draft="unconfirmed">Eritrea</territory>
 			<territory type="ES" draft="unconfirmed">Spaña</territory>
 			<territory type="ET" draft="unconfirmed">Etiopia</territory>
 			<territory type="EU" draft="unconfirmed">Union Europeo</territory>
 			<territory type="FI" draft="unconfirmed">Finlandia</territory>
 			<territory type="FJ" draft="unconfirmed">Fiji</territory>
+			<territory type="FK" draft="unconfirmed">Islanan Falkland</territory>
+			<territory type="FK" alt="variant" draft="unconfirmed">Islanan Falkland (Islas Malvinas)</territory>
 			<territory type="FM" draft="unconfirmed">Micronesia</territory>
 			<territory type="FR" draft="unconfirmed">Fransia</territory>
 			<territory type="GB" draft="unconfirmed">Gran Bretaña</territory>
 			<territory type="GD" draft="unconfirmed">Grenada</territory>
+			<territory type="GF" draft="unconfirmed">Guyana Franses</territory>
 			<territory type="GH" draft="unconfirmed">Ghana</territory>
 			<territory type="GL" draft="unconfirmed">Grunlandia</territory>
 			<territory type="GM" draft="unconfirmed">Gambia</territory>
 			<territory type="GN" draft="unconfirmed">Guinea</territory>
 			<territory type="GP" draft="unconfirmed">Guadeloupe</territory>
+			<territory type="GQ" draft="unconfirmed">Guinea Ekuatorial</territory>
 			<territory type="GR" draft="unconfirmed">Gresia</territory>
 			<territory type="GT" draft="unconfirmed">Guatemala</territory>
 			<territory type="GU" draft="unconfirmed">Guam</territory>
+			<territory type="GW" draft="unconfirmed">Guinea-Bissau</territory>
+			<territory type="GY" draft="unconfirmed">Guyana</territory>
 			<territory type="HK" draft="unconfirmed">Hong Kong</territory>
 			<territory type="HN" draft="unconfirmed">Honduras</territory>
+			<territory type="HR" draft="unconfirmed">Kroasia</territory>
 			<territory type="HT" draft="unconfirmed">Haiti</territory>
 			<territory type="HU" draft="unconfirmed">Hungria</territory>
 			<territory type="ID" draft="unconfirmed">Indonesia</territory>
@@ -156,16 +169,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="KE" draft="unconfirmed">Kenya</territory>
 			<territory type="KH" draft="unconfirmed">Cambodia</territory>
 			<territory type="KM" draft="unconfirmed">Comóros</territory>
+			<territory type="KN" draft="unconfirmed">St. Kitts i Nevis</territory>
 			<territory type="KP" draft="unconfirmed">Nort Korea</territory>
 			<territory type="KR" draft="unconfirmed">Surkorea</territory>
+			<territory type="KY" draft="unconfirmed">Islanan Caiman</territory>
+			<territory type="LC" draft="unconfirmed">Sint Lucia</territory>
+			<territory type="LI" draft="unconfirmed">Liechtenstein</territory>
 			<territory type="LK" draft="unconfirmed">Sri Lanka</territory>
 			<territory type="LR" draft="unconfirmed">Liberia</territory>
 			<territory type="LU" draft="unconfirmed">Luxemburg</territory>
 			<territory type="MA" draft="unconfirmed">Morocco</territory>
+			<territory type="MC" draft="unconfirmed">Monaco</territory>
 			<territory type="MD" draft="unconfirmed">Moldavia</territory>
+			<territory type="ME" draft="unconfirmed">Montenegro</territory>
+			<territory type="MF" draft="unconfirmed">Saint Martin</territory>
 			<territory type="MG" draft="unconfirmed">Madagascar</territory>
 			<territory type="ML" draft="unconfirmed">Mali</territory>
+			<territory type="MN" draft="unconfirmed">Mongolia</territory>
+			<territory type="MO" draft="unconfirmed">Macao</territory>
+			<territory type="MQ" draft="unconfirmed">Martinique</territory>
+			<territory type="MS" draft="unconfirmed">Montserrat</territory>
 			<territory type="MT" draft="unconfirmed">Malta</territory>
+			<territory type="MV" draft="unconfirmed">Maldives</territory>
 			<territory type="MW" draft="unconfirmed">Malawi</territory>
 			<territory type="MX" draft="unconfirmed">México</territory>
 			<territory type="MZ" draft="unconfirmed">Mozambique</territory>
@@ -180,21 +205,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PF" draft="unconfirmed">Polinesia Franses</territory>
 			<territory type="PH" draft="unconfirmed">Filipinas</territory>
 			<territory type="PL" draft="unconfirmed">Polonia</territory>
+			<territory type="PM" draft="unconfirmed">St. Pierre &amp; Miquelon</territory>
 			<territory type="PR" draft="unconfirmed">Puerto Rico</territory>
 			<territory type="PT" draft="unconfirmed">Portugal</territory>
 			<territory type="PY" draft="unconfirmed">Paraguay</territory>
 			<territory type="QA" draft="unconfirmed">Qatar</territory>
+			<territory type="RO" draft="unconfirmed">Romania</territory>
+			<territory type="RS" draft="unconfirmed">Servia</territory>
 			<territory type="RU" draft="unconfirmed">Rusia</territory>
 			<territory type="RW" draft="unconfirmed">Rwanda</territory>
+			<territory type="SC" draft="unconfirmed">Seychelles</territory>
 			<territory type="SD" draft="unconfirmed">Sudan</territory>
 			<territory type="SE" draft="unconfirmed">Suesia</territory>
+			<territory type="SG" draft="unconfirmed">Singapore</territory>
+			<territory type="SH" draft="unconfirmed">Sint Helena</territory>
+			<territory type="SI" draft="unconfirmed">Slovenia</territory>
 			<territory type="SK" draft="unconfirmed">Slovakia</territory>
 			<territory type="SL" draft="unconfirmed">Sierra Leone</territory>
+			<territory type="SM" draft="unconfirmed">San Marino</territory>
 			<territory type="SN" draft="unconfirmed">Senegal</territory>
 			<territory type="SO" draft="unconfirmed">Somalia</territory>
 			<territory type="SR" draft="unconfirmed">Surinam</territory>
 			<territory type="SV" draft="unconfirmed">El Salvador</territory>
 			<territory type="SX" draft="unconfirmed">Sint Maarten</territory>
+			<territory type="TC" draft="unconfirmed">Turks i Caicos</territory>
+			<territory type="TD" draft="unconfirmed">Chad</territory>
+			<territory type="TH" draft="unconfirmed">Tailandia</territory>
 			<territory type="TR" draft="unconfirmed">Turkia</territory>
 			<territory type="TT" draft="unconfirmed">Trinidad i Tobago</territory>
 			<territory type="TW" draft="unconfirmed">Taiwan</territory>
@@ -203,7 +239,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UN" draft="unconfirmed">Nashonnan Uní</territory>
 			<territory type="US" draft="unconfirmed">Merka</territory>
 			<territory type="UY" draft="unconfirmed">Uruguay</territory>
+			<territory type="VC" draft="unconfirmed">Sint Vicent i Grenadines</territory>
 			<territory type="VE" draft="unconfirmed">Venezuela</territory>
+			<territory type="VG" draft="unconfirmed">Virgin Islands (Britániko)</territory>
+			<territory type="VI" draft="unconfirmed">Virgin Islands (Merikano)</territory>
 			<territory type="VN" draft="unconfirmed">Vietnam</territory>
 			<territory type="ZA" draft="unconfirmed">Suráfrika</territory>
 			<territory type="ZM" draft="unconfirmed">Zambia</territory>
@@ -266,10 +305,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -423,7 +468,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">jan</month>
+							<month type="1" draft="unconfirmed">yan</month>
 							<month type="2" draft="unconfirmed">feb</month>
 							<month type="3" draft="unconfirmed">mar</month>
 							<month type="4" draft="unconfirmed">apr</month>
@@ -462,6 +507,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">1 kuartal</quarter>
+							<quarter type="2" draft="unconfirmed">2 kuartal</quarter>
+							<quarter type="3" draft="unconfirmed">3 kuartal</quarter>
+							<quarter type="4" draft="unconfirmed">4 kuartal</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">di promé kuartal</quarter>
+							<quarter type="2" draft="unconfirmed">di dos kuartal</quarter>
+							<quarter type="3" draft="unconfirmed">di tres kuartal</quarter>
+							<quarter type="4" draft="unconfirmed">di kuanter kuartal</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">1 kuartal</quarter>
+							<quarter type="2" draft="unconfirmed">2 kuartal</quarter>
+							<quarter type="3" draft="unconfirmed">3 kuartal</quarter>
+							<quarter type="4" draft="unconfirmed">4 kuartal</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">di promé kuartal</quarter>
+							<quarter type="2" draft="unconfirmed">di dos kuartal</quarter>
+							<quarter type="3" draft="unconfirmed">di tres kuartal</quarter>
+							<quarter type="4" draft="unconfirmed">di kuanter kuartal</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
 				<eras>
 					<eraNames>
 						<era type="0" draft="unconfirmed">Promé ku Kristu</era>
@@ -711,11 +786,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Johns">
 				<exemplarCity draft="unconfirmed">Sint John’s</exemplarCity>
 			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity draft="unconfirmed">Kabo Verde</exemplarCity>
+			</zone>
 			<zone type="America/Curacao">
 				<exemplarCity draft="unconfirmed">Kòrsou</exemplarCity>
 			</zone>
 			<zone type="America/Santo_Domingo">
 				<exemplarCity draft="unconfirmed">Repúblka Dominicana</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<exemplarCity draft="unconfirmed">Lònden</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity draft="unconfirmed">Aténas</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity draft="unconfirmed">Herúsalèm</exemplarCity>
@@ -732,12 +816,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Panama">
 				<exemplarCity draft="unconfirmed">Panamá</exemplarCity>
 			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity draft="unconfirmed">Azóres</exemplarCity>
+			</zone>
 			<zone type="America/St_Vincent">
 				<exemplarCity draft="unconfirmed">Sint Vincent</exemplarCity>
 			</zone>
 			<zone type="America/St_Thomas">
 				<exemplarCity draft="unconfirmed">Sint Thomas</exemplarCity>
 			</zone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard draft="unconfirmed">Ora di Áfrika Sentral</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard draft="unconfirmed">Ora di Ost Áfrika</standard>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic draft="unconfirmed">Ora di Azóres</generic>
+					<standard draft="unconfirmed">Ora Normal di Azóres</standard>
+					<daylight draft="unconfirmed">Ora di Azóres Temporada di Zomer</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="unconfirmed">Ora di Europa Sentral</generic>
+					<standard draft="unconfirmed">Ora Normal di Europa Sentral</standard>
+					<daylight draft="unconfirmed">Ora di Europa Sentral Temporada di Zomer</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="unconfirmed">Ora di Ost Europa</generic>
+					<standard draft="unconfirmed">Ora Normal di Ost Europa</standard>
+					<daylight draft="unconfirmed">Ora di Ost Europa Temporada di Zomer</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="unconfirmed">Ora di Wèst Europa</generic>
+					<standard draft="unconfirmed">Ora Normal di Wèst Europa</standard>
+					<daylight draft="unconfirmed">Ora di Wèst Europa Temporada di Zomer</daylight>
+				</long>
+			</metazone>
 			<metazone type="GMT">
 				<long>
 					<standard draft="unconfirmed">Greenwich Mean Time</standard>
@@ -746,6 +871,94 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="one" draft="unconfirmed">0 mil</pattern>
+					<pattern type="1000" count="other" draft="unconfirmed">0 mil</pattern>
+					<pattern type="10000" count="one" draft="unconfirmed">00 mil</pattern>
+					<pattern type="10000" count="other" draft="unconfirmed">00 mil</pattern>
+					<pattern type="100000" count="one" draft="unconfirmed">000 mil</pattern>
+					<pattern type="100000" count="other" draft="unconfirmed">000 mil</pattern>
+					<pattern type="1000000" count="one" draft="unconfirmed">0 mion</pattern>
+					<pattern type="1000000" count="other" draft="unconfirmed">0 mion</pattern>
+					<pattern type="10000000" count="one" draft="unconfirmed">00 mion</pattern>
+					<pattern type="10000000" count="other" draft="unconfirmed">00 mion</pattern>
+					<pattern type="100000000" count="one" draft="unconfirmed">000 mion</pattern>
+					<pattern type="100000000" count="other" draft="unconfirmed">000 mion</pattern>
+					<pattern type="1000000000" count="one" draft="unconfirmed">0 bion</pattern>
+					<pattern type="1000000000" count="other" draft="unconfirmed">0 bion</pattern>
+					<pattern type="10000000000" count="one" draft="unconfirmed">00 bion</pattern>
+					<pattern type="10000000000" count="other" draft="unconfirmed">00 bion</pattern>
+					<pattern type="100000000000" count="one" draft="unconfirmed">000 bion</pattern>
+					<pattern type="100000000000" count="other" draft="unconfirmed">000 bion</pattern>
+					<pattern type="1000000000000" count="one" draft="unconfirmed">0 trion</pattern>
+					<pattern type="1000000000000" count="other" draft="unconfirmed">0 trion</pattern>
+					<pattern type="10000000000000" count="one" draft="unconfirmed">00 trion</pattern>
+					<pattern type="10000000000000" count="other" draft="unconfirmed">00 trion</pattern>
+					<pattern type="100000000000000" count="one" draft="unconfirmed">000 trion</pattern>
+					<pattern type="100000000000000" count="other" draft="unconfirmed">000 trion</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" count="one" draft="unconfirmed">0mil</pattern>
+					<pattern type="1000" count="other" draft="unconfirmed">0mil</pattern>
+					<pattern type="10000" count="one" draft="unconfirmed">00mil</pattern>
+					<pattern type="10000" count="other" draft="unconfirmed">00mil</pattern>
+					<pattern type="100000" count="one" draft="unconfirmed">000mil</pattern>
+					<pattern type="100000" count="other" draft="unconfirmed">000mil</pattern>
+					<pattern type="1000000" count="one" draft="unconfirmed">0mion</pattern>
+					<pattern type="1000000" count="other" draft="unconfirmed">0mion</pattern>
+					<pattern type="10000000" count="one" draft="unconfirmed">00mion</pattern>
+					<pattern type="10000000" count="other" draft="unconfirmed">00mion</pattern>
+					<pattern type="100000000" count="one" draft="unconfirmed">000mion</pattern>
+					<pattern type="100000000" count="other" draft="unconfirmed">000mion</pattern>
+					<pattern type="1000000000" count="one" draft="unconfirmed">0bion</pattern>
+					<pattern type="1000000000" count="other" draft="unconfirmed">0bion</pattern>
+					<pattern type="10000000000" count="one" draft="unconfirmed">00bion</pattern>
+					<pattern type="10000000000" count="other" draft="unconfirmed">00bion</pattern>
+					<pattern type="100000000000" count="one" draft="unconfirmed">000bion</pattern>
+					<pattern type="100000000000" count="other" draft="unconfirmed">000bion</pattern>
+					<pattern type="1000000000000" count="one" draft="unconfirmed">0trion</pattern>
+					<pattern type="1000000000000" count="other" draft="unconfirmed">0trion</pattern>
+					<pattern type="10000000000000" count="one" draft="unconfirmed">00trion</pattern>
+					<pattern type="10000000000000" count="other" draft="unconfirmed">00trion</pattern>
+					<pattern type="100000000000000" count="one" draft="unconfirmed">000trion</pattern>
+					<pattern type="100000000000000" count="other" draft="unconfirmed">000trion</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="one" draft="unconfirmed">¤0mil</pattern>
+					<pattern type="1000" count="other" draft="unconfirmed">¤0mil</pattern>
+					<pattern type="10000" count="one" draft="unconfirmed">¤00mil</pattern>
+					<pattern type="10000" count="other" draft="unconfirmed">¤00mil</pattern>
+					<pattern type="100000" count="one" draft="unconfirmed">¤000mil</pattern>
+					<pattern type="100000" count="other" draft="unconfirmed">¤000mil</pattern>
+					<pattern type="1000000" count="one" draft="unconfirmed">¤0mion</pattern>
+					<pattern type="1000000" count="other" draft="unconfirmed">¤0mion</pattern>
+					<pattern type="10000000" count="one" draft="unconfirmed">¤00mion</pattern>
+					<pattern type="10000000" count="other" draft="unconfirmed">¤00mion</pattern>
+					<pattern type="100000000" count="one" draft="unconfirmed">¤000mion</pattern>
+					<pattern type="100000000" count="other" draft="unconfirmed">¤000mion</pattern>
+					<pattern type="1000000000" count="one" draft="unconfirmed">¤0bion</pattern>
+					<pattern type="1000000000" count="other" draft="unconfirmed">¤0bion</pattern>
+					<pattern type="10000000000" count="one" draft="unconfirmed">¤00bion</pattern>
+					<pattern type="10000000000" count="other" draft="unconfirmed">¤00bion</pattern>
+					<pattern type="100000000000" count="one" draft="unconfirmed">¤000bion</pattern>
+					<pattern type="100000000000" count="other" draft="unconfirmed">¤000bion</pattern>
+					<pattern type="1000000000000" count="one" draft="unconfirmed">¤0trion</pattern>
+					<pattern type="1000000000000" count="other" draft="unconfirmed">¤0trion</pattern>
+					<pattern type="10000000000000" count="one" draft="unconfirmed">¤00trion</pattern>
+					<pattern type="10000000000000" count="other" draft="unconfirmed">¤00trion</pattern>
+					<pattern type="100000000000000" count="one" draft="unconfirmed">¤000trion</pattern>
+					<pattern type="100000000000000" count="other" draft="unconfirmed">¤000trion</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencies>
 			<currency type="ANG">
 				<displayName draft="unconfirmed">Florin</displayName>
@@ -767,49 +980,263 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<minimalPairs>
+			<pluralMinimalPairs count="one" draft="unconfirmed">{0} dia</pluralMinimalPairs>
+			<pluralMinimalPairs count="other" draft="unconfirmed">{0} dianan</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">di {0}</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
+		<unitLength type="long">
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0} pa {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}-{1}</compoundUnitPattern>
+			</compoundUnit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} ost</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} nort</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} suit</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} wèst</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
 		<unitLength type="short">
 			<coordinateUnit>
 				<displayName draft="unconfirmed">direkshon</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} ost</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} nort</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} suit</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} wèst</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<coordinateUnit>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} ost</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} nort</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} suit</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} wèst</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="end" draft="unconfirmed">{0} i {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, i {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
 			<listPatternPart type="end" draft="unconfirmed">{0} òf {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} òf {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0}, i {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} &amp; {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="end" draft="unconfirmed">{0}, i {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit-short">
 			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
+	<characterLabels>
+		<characterLabelPattern type="all" draft="unconfirmed">{0} — tur</characterLabelPattern>
+		<characterLabelPattern type="historic" draft="unconfirmed">{0} — históriko</characterLabelPattern>
+		<characterLabelPattern type="other" draft="unconfirmed">{0} — otro</characterLabelPattern>
+		<characterLabel type="animal" draft="unconfirmed">bestia</characterLabel>
+		<characterLabel type="animals_nature" draft="unconfirmed">bestia òf naturalesa</characterLabel>
+		<characterLabel type="arrows" draft="unconfirmed">flecha</characterLabel>
+		<characterLabel type="body" draft="unconfirmed">kurpa</characterLabel>
+		<characterLabel type="building" draft="unconfirmed">edifisio</characterLabel>
+		<characterLabel type="bullets_stars" draft="unconfirmed">bullet òf strea</characterLabel>
+		<characterLabel type="female" draft="unconfirmed">muhé</characterLabel>
+		<characterLabel type="flag" draft="unconfirmed">bandera</characterLabel>
+		<characterLabel type="flags" draft="unconfirmed">bandera</characterLabel>
+		<characterLabel type="food_drink" draft="unconfirmed">kuminda òf bebida</characterLabel>
+		<characterLabel type="heart" draft="unconfirmed">kurason</characterLabel>
+		<characterLabel type="male" draft="unconfirmed">hòmber</characterLabel>
+		<characterLabel type="musical_symbols" draft="unconfirmed">símbolo musikal</characterLabel>
+		<characterLabel type="nature" draft="unconfirmed">naturalesa</characterLabel>
+		<characterLabel type="numbers" draft="unconfirmed">number</characterLabel>
+		<characterLabel type="objects" draft="unconfirmed">opheto</characterLabel>
+		<characterLabel type="other" draft="unconfirmed">otro</characterLabel>
+		<characterLabel type="person" draft="unconfirmed">persona</characterLabel>
+		<characterLabel type="place" draft="unconfirmed">lugá</characterLabel>
+		<characterLabel type="plant" draft="unconfirmed">planchi</characterLabel>
+		<characterLabel type="punctuation" draft="unconfirmed">puntuashon</characterLabel>
+		<characterLabel type="sign_standard_symbols" draft="unconfirmed">señal òf símbolo</characterLabel>
+		<characterLabel type="smileys_people" draft="unconfirmed">smiley òf persona</characterLabel>
+		<characterLabel type="sport" draft="unconfirmed">deporte</characterLabel>
+		<characterLabel type="symbols" draft="unconfirmed">símbolo</characterLabel>
+		<characterLabel type="travel" draft="unconfirmed">biaha</characterLabel>
+		<characterLabel type="travel_places" draft="unconfirmed">biaha òf lugá</characterLabel>
+		<characterLabel type="weather" draft="unconfirmed">wer</characterLabel>
+	</characterLabels>
 	<personNames>
+		<nameOrderLocales order="givenFirst" draft="unconfirmed">und pap</nameOrderLocales>
+		<initialPattern type="initialSequence" draft="unconfirmed">{0}{1}</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern draft="unconfirmed">{title} {given} {given2} {surname} {surname2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern draft="unconfirmed">{given} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern draft="unconfirmed">{title} {given} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern draft="unconfirmed">{given} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern draft="unconfirmed">{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern draft="unconfirmed">{given} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern draft="unconfirmed">{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern draft="unconfirmed">{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern draft="unconfirmed">{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern draft="unconfirmed">{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern draft="unconfirmed">{given-initial}{given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern draft="unconfirmed">{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern draft="unconfirmed">{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern draft="unconfirmed">{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern draft="unconfirmed">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern draft="unconfirmed">{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
 			<namePattern draft="unconfirmed">{title} {surname} {surname2} {given} {given2}</namePattern>
 		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern draft="unconfirmed">{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern draft="unconfirmed">{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern draft="unconfirmed">{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern draft="unconfirmed">{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern draft="unconfirmed">{surname} {given} {given2-initial} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern draft="unconfirmed">{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern draft="unconfirmed">{title} {surname} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern draft="unconfirmed">{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern draft="unconfirmed">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern draft="unconfirmed">{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern draft="unconfirmed">{surname} {given-initial}{given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern draft="unconfirmed">{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern draft="unconfirmed">{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern draft="unconfirmed">{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern draft="unconfirmed">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern draft="unconfirmed">{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern draft="unconfirmed">{surname-core}, {given}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern draft="unconfirmed">{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern draft="unconfirmed">{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern draft="unconfirmed">{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern draft="unconfirmed">{surname-core}, {given-initial}{given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern draft="unconfirmed">{surname}, {given-informal}</namePattern>
+		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given" draft="unconfirmed">Zendaya</nameField>
+			<nameField type="given" draft="unconfirmed">Jurriey</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given" draft="unconfirmed">Irene</nameField>
+			<nameField type="given" draft="unconfirmed">Jurriey</nameField>
+			<nameField type="surname" draft="unconfirmed">Martina</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
 			<nameField type="given" draft="unconfirmed">Mari-Sue</nameField>
+			<nameField type="given2" draft="unconfirmed">Matilda</nameField>
+			<nameField type="surname" draft="unconfirmed">Martha</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
+			<nameField type="title" draft="unconfirmed">sr.</nameField>
 			<nameField type="given" draft="unconfirmed">Jackson Martina</nameField>
+			<nameField type="given-informal" draft="unconfirmed">Sontje</nameField>
+			<nameField type="given2" draft="unconfirmed">Henry Robert</nameField>
+			<nameField type="surname-prefix" draft="unconfirmed">∅∅∅</nameField>
+			<nameField type="surname-core" draft="unconfirmed">Martha</nameField>
+			<nameField type="surname2" draft="unconfirmed">Vapor</nameField>
+			<nameField type="generation" draft="unconfirmed">Jr.</nameField>
+			<nameField type="credentials" draft="unconfirmed">MP</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given" draft="unconfirmed">Johnny</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given" draft="unconfirmed">Käthe</nameField>
+			<nameField type="surname" draft="unconfirmed">Müller</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given" draft="unconfirmed">Zäzilia</nameField>
+			<nameField type="given2" draft="unconfirmed">Hamish</nameField>
+			<nameField type="surname" draft="unconfirmed">Stöber</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
+			<nameField type="title" draft="unconfirmed">Prof. Dr.</nameField>
 			<nameField type="given" draft="unconfirmed">Ada Kornelia</nameField>
+			<nameField type="given-informal" draft="unconfirmed">Neele</nameField>
+			<nameField type="given2" draft="unconfirmed">César Martín</nameField>
+			<nameField type="surname-prefix" draft="unconfirmed">von</nameField>
+			<nameField type="surname-core" draft="unconfirmed">Brühl</nameField>
+			<nameField type="surname2" draft="unconfirmed">González Domingo</nameField>
+			<nameField type="generation" draft="unconfirmed">Jr.</nameField>
+			<nameField type="credentials" draft="unconfirmed">MD DDS</nameField>
 		</sampleName>
 	</personNames>
 </ldml>
