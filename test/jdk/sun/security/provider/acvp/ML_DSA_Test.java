@@ -36,14 +36,14 @@ public class ML_DSA_Test {
     public static void run(JSONValue kat, Provider provider) throws Exception {
         var mode = kat.get("mode").asString();
         switch (mode) {
-            case "keyGen" -> mldsaGen(kat, provider);
-            case "sigGen" -> mldsaSign(kat, provider);
-            case "sigVer" -> mldsaVerify(kat, provider);
+            case "keyGen" -> keyGenTest(kat, provider);
+            case "sigGen" -> sigGenTest(kat, provider);
+            case "sigVer" -> sigVerTest(kat, provider);
             default -> throw new UnsupportedOperationException("Unknown mode: " + mode);
         }
     }
 
-    static void mldsaGen(JSONValue kat, Provider p) throws Exception {
+    static void keyGenTest(JSONValue kat, Provider p) throws Exception {
         var g = p == null
                 ? KeyPairGenerator.getInstance("ML-DSA")
                 : KeyPairGenerator.getInstance("ML-DSA", p);
@@ -67,7 +67,7 @@ public class ML_DSA_Test {
         }
     }
 
-    static void mldsaSign(JSONValue kat, Provider p) throws Exception {
+    static void sigGenTest(JSONValue kat, Provider p) throws Exception {
         var s = p == null
                 ? Signature.getInstance("ML-DSA")
                 : Signature.getInstance("ML-DSA", p);
@@ -82,17 +82,19 @@ public class ML_DSA_Test {
                     public String getFormat() { return "RAW"; }
                     public byte[] getEncoded() { return toByteArray(c.get("sk").asString()); }
                 };
-                var sr = new FixedSecureRandom(det ? new byte[32] : toByteArray(c.get("rnd").asString()));
+                var sr = new FixedSecureRandom(
+                        det ? new byte[32] : toByteArray(c.get("rnd").asString()));
                 s.initSign(sk, sr);
                 s.update(toByteArray(c.get("message").asString()));
                 var sig = s.sign();
-                Asserts.assertEqualsByteArray(sig, toByteArray(c.get("signature").asString()));
+                Asserts.assertEqualsByteArray(
+                        sig, toByteArray(c.get("signature").asString()));
             }
             System.out.println();
         }
     }
 
-    static void mldsaVerify(JSONValue kat, Provider p) throws Exception {
+    static void sigVerTest(JSONValue kat, Provider p) throws Exception {
         var s = p == null
                 ? Signature.getInstance("ML-DSA")
                 : Signature.getInstance("ML-DSA", p);

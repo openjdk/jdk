@@ -39,16 +39,16 @@ import java.security.Security;
 /// The files are either put into the `data` directory or another
 /// directory specified by the `test.acvp.data` test property.
 /// The test walks through the directory recursively and looks for
-/// file names equals to or ending with `internalProjection.json` and
-/// runs test on them.
+/// file names equal to or ending with `internalProjection.json` and
+/// runs tests on them.
 ///
-/// Set the `test.acvp.alg` test property to only test this algorithm.
+/// Set the `test.acvp.alg` test property to only test the specified algorithm.
 ///
 /// Sample files can be downloaded from
 /// [https://github.com/usnistgov/ACVP-Server/tree/master/gen-val/json-files].
 ///
 /// By default, the test uses system-preferred implementations.
-/// If you want to test on a specific provider, set the
+/// If you want to test a specific provider, set the
 /// `test.acvp.provider` test property. The provider must be
 /// registered.
 ///

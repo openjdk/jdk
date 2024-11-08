@@ -37,13 +37,13 @@ public class ML_KEM_Test {
     public static void run(JSONValue kat, Provider provider) throws Exception {
         var mode = kat.get("mode").asString();
         switch (mode) {
-            case "keyGen" -> mlkemGen(kat, provider);
-            case "encapDecap" -> mlkemEnc(kat, provider);
+            case "keyGen" -> keyGenTest(kat, provider);
+            case "encapDecap" -> encapDecapTest(kat, provider);
             default -> throw new UnsupportedOperationException("Unknown mode: " + mode);
         }
     }
 
-    static void mlkemGen(JSONValue kat, Provider p) throws Exception {
+    static void keyGenTest(JSONValue kat, Provider p) throws Exception {
         var g = p == null
                 ? KeyPairGenerator.getInstance("ML-KEM")
                 : KeyPairGenerator.getInstance("ML-KEM", p);
@@ -68,7 +68,7 @@ public class ML_KEM_Test {
         }
     }
 
-    static void mlkemEnc(JSONValue kat, Provider p) throws Exception {
+    static void encapDecapTest(JSONValue kat, Provider p) throws Exception {
         var g = p == null
                 ? KEM.getInstance("ML-KEM")
                 : KEM.getInstance("ML-KEM", p);
@@ -87,7 +87,8 @@ public class ML_KEM_Test {
                     var e = g.newEncapsulator(
                             ek, new FixedSecureRandom(toByteArray(c.get("m").asString())));
                     var enc = e.encapsulate();
-                    Asserts.assertEqualsByteArray(enc.encapsulation(), toByteArray(c.get("c").asString()));
+                    Asserts.assertEqualsByteArray(
+                            enc.encapsulation(), toByteArray(c.get("c").asString()));
                     Asserts.assertEqualsByteArray(
                             enc.key().getEncoded(), toByteArray(c.get("k").asString()));
                 }
