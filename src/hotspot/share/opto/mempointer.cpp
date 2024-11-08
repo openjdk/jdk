@@ -328,17 +328,22 @@ MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerD
 #endif
 
   // "MemPointer Lemma" condition (S2): check if all summands are the same:
-  for (uint i = 0; i < SUMMANDS_SIZE; i++) {
-    const MemPointerSummand s1 = summands_at(i);
-    const MemPointerSummand s2 = other.summands_at(i);
-    if (s1 != s2) {
+  bool has_same_base = false;
+  if (has_different_base_but_otherwise_same_summands_as(other)) {
+    // At runtime, the two object bases can be:
+    //   (1) different: we have no aliasing, pointers point to different memory objects.
+    //   (2) the same:  implies that all summands are the same, (S2) holds.
+    has_same_base = false;
+  } else if (has_same_summands_as(other)) {
+    // (S2) holds. If all summands are the same, also the base must be the same.
+    has_same_base = true;
+  } else {
 #ifndef PRODUCT
-      if (trace.is_trace_aliasing()) {
-        tty->print_cr("  -> Aliasing unknown, differ on summand %d.", i);
-      }
-#endif
-      return MemPointerAliasing::make_unknown();
+    if (trace.is_trace_aliasing()) {
+      tty->print_cr("  -> Aliasing unknown, summands are not the same.");
     }
+#endif
+    return MemPointerAliasing::make_unknown();
   }
 
   // "MemPointer Lemma" condition (S3): check that the constants do not differ too much:
@@ -356,21 +361,95 @@ MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerD
     return MemPointerAliasing::make_unknown();
   }
 
-  // "MemPointer Lemma" condition (S1):
-  //   Given that all summands are the same, we know that both pointers point into the
-  //   same memory object. With the Pre-Condition, we know that both pointers are in
-  //   bounds of that same memory object.
-
-  // Hence, all 4 conditions of the "MemoryPointer Lemma" are established, and hence
-  // we know that the distance between the underlying pointers is equal to the distance
-  // we computed for the MemPointers:
-  //   p_other - p_this = distance = other.con - this.con
+  if (has_same_base) {
+    // "MemPointer Lemma" condition (S1):
+    //   Given that all summands are the same, we know that both pointers point into the
+    //   same memory object. With the Pre-Condition, we know that both pointers are in
+    //   bounds of that same memory object.
+    //
+    // Hence, all 4 conditions of the "MemPointer Lemma" are established, and hence
+    // we know that the distance between the underlying pointers is equal to the distance
+    // we computed for the MemPointers:
+    //   p_other - p_this = distance = other.con - this.con
 #ifndef PRODUCT
-    if (trace.is_trace_aliasing()) {
-      tty->print_cr("  -> Aliasing always, distance = %d.", distance.value());
-    }
+      if (trace.is_trace_aliasing()) {
+        tty->print_cr("  -> Aliasing always at distance = %d.", distance.value());
+      }
 #endif
-  return MemPointerAliasing::make_always_at_distance(distance.value());
+    return MemPointerAliasing::make_always_at_distance(distance.value());
+  } else {
+    // At runtime, the two object bases can be:
+    //   (1) different: pointers do not alias.
+    //   (2) the same:  implies that (S2) holds. The summands are all the same, and with
+    //                  the Pre-Condition, we know that both pointers are in bounds of the
+    //                  same memory object, i.e. (S1) holds. We have already proven (S0)
+    //                  and (S3), so all 4 conditions for "MemPointer Lemma" are given.
+#ifndef PRODUCT
+      if (trace.is_trace_aliasing()) {
+        tty->print_cr("  -> Aliasing not or at distance = %d.", distance.value());
+      }
+#endif
+    return MemPointerAliasing::make_not_or_at_distance(distance.value());
+  }
+}
+
+bool MemPointerDecomposedForm::has_same_summands_as(const MemPointerDecomposedForm& other) const {
+  for (uint i = 0; i < SUMMANDS_SIZE; i++) {
+    if (summands_at(i) != other.summands_at(i)) { return false; }
+  }
+  return true;
+}
+
+bool MemPointerDecomposedForm::has_different_base_but_otherwise_same_summands_as(const MemPointerDecomposedForm& other) const {
+  if (!base().is_object() ||
+      !other.base().is_object() ||
+      base().get() == other.base().get()) {
+    // The base is the same, or we do not know if the base is different.
+    return false;
+  }
+  const MemPointerSummand base1(base().get(),       NoOverflowInt(1));
+  const MemPointerSummand base2(other.base().get(), NoOverflowInt(1));
+  bool found_base1 = false;
+  bool found_base2 = false;
+
+  uint i1 = 0;
+  uint i2 = 0;
+  while (i1 < SUMMANDS_SIZE || i2 < SUMMANDS_SIZE) {
+    // Handle bases.
+    if (i1 < SUMMANDS_SIZE && summands_at(i1) == base1) {
+      assert(!found_base1, "can only find once");
+      found_base1 = true;
+      i1++;
+      continue;
+    }
+    if (i2 < SUMMANDS_SIZE && other.summands_at(i2) == base2) {
+      assert(!found_base2, "can only find once");
+      found_base2 = true;
+      i2++;
+      continue;
+    }
+    // Handle empty summands.
+    if (i1 < SUMMANDS_SIZE && summands_at(i1).variable() == nullptr) {
+      i1++;
+      continue;
+    }
+    if (i2 < SUMMANDS_SIZE && other.summands_at(i2).variable() == nullptr) {
+      i2++;
+      continue;
+    }
+    // Handle other summands.
+    if (i1 < SUMMANDS_SIZE && i2 < SUMMANDS_SIZE &&
+	summands_at(i1) == other.summands_at(i2)) {
+      i1++;
+      i2++;
+      continue;
+    }
+    // There is a difference in the summands, other than the bases.
+    return false;
+  }
+  assert(i1 == SUMMANDS_SIZE && i2 == SUMMANDS_SIZE, "scanned all");
+  // Check if we found both bases - the other summands are all the same.
+  return found_base1 && found_base2;
 }
 
 bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {

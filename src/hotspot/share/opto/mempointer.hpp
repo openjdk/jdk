@@ -371,7 +371,7 @@ public:
 
 // Class to represent aliasing between two MemPointer.
 class MemPointerAliasing {
-public:
+private:
   enum Aliasing {
     Unknown,          // Distance unknown.
                       //   Example: two "int[]" (unknown if the same) with different variable index offsets:
@@ -381,14 +381,13 @@ public:
                       //   Example: The same address expression, except for a constant offset:
                       //            e.g. "array[i]  vs  array[i+1]".
     NotOrAtDistance}; // At compile-time, we know that at run-time it is either of these:
-                      //   (1) Not: The pointers belong to different memory objects.
+                      //   (1) Not: The pointers belong to different memory objects. Distance unknown.
                       //   (2) AtConstDistance: distance = p2 - p1.
                       //   Example: two "int[]" (unknown if the same) with indices that only differ by a
                       //            constant offset:
                       //            e.g. "array1[i] vs array2[i+4]":
                       //                 if "array1 == array2": distance = 4.
                       //                 if "array1 != array2": different memory objects.
-private:
   const Aliasing _aliasing;
   const jint _distance;
 
@@ -408,6 +407,10 @@ public:
     return MemPointerAliasing(AlwaysAtDistance, distance);
   }
 
+  static MemPointerAliasing make_not_or_at_distance(const jint distance) {
+    return MemPointerAliasing(NotOrAtDistance, distance);
+  }
+
   // Use case: exact aliasing and adjacency.
   bool is_always_at_distance(const jint distance) const {
     return _aliasing == AlwaysAtDistance && _distance == distance;
@@ -416,7 +419,7 @@ public:
   // Use case: overlap.
   // Note: the bounds are exclusive: lo < element < hi
   bool is_never_in_distance_range(const jint distance_lo, const jint distance_hi) const {
-    return _aliasing == AlwaysAtDistance &&
+    return (_aliasing == AlwaysAtDistance || _aliasing == NotOrAtDistance) &&
            (_distance <= distance_lo || distance_hi <= _distance);
   }
 
@@ -513,6 +516,7 @@ public:
     static Base from_AddP(Node* pointer);
     bool is_known() const { return _is_known; }
     Node* get() const { assert(is_known(), "must be"); return _base; }
+    bool is_object() const { return _is_known && _base != nullptr; }
 
 #ifndef PRODUCT
     void print_on(outputStream* st) const {
@@ -578,6 +582,11 @@ public:
   MemPointerAliasing get_aliasing_with(const MemPointerDecomposedForm& other
                                        NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const;
 
+private:
+  bool has_same_summands_as(const MemPointerDecomposedForm& other) const;
+  bool has_different_base_but_otherwise_same_summands_as(const MemPointerDecomposedForm& other) const;
+
+public:
   const MemPointerSummand& summands_at(const uint i) const {
     assert(i < SUMMANDS_SIZE, "in bounds");
     return _summands[i];
