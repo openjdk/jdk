@@ -48,7 +48,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     // Unsafe offsets for direct field access
     private static final long UNDERLYING_DATA_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "underlyingData");
+            UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
@@ -62,29 +62,29 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // | other          |  Set(other)   |
     //
     @Stable
-    private volatile Object underlyingData;
+    private volatile Object value;
 
     // Only allow creation via the factory `StableValueImpl::newInstance`
     private StableValueImpl() {}
 
     @ForceInline
     @Override
-    public boolean trySet(T underlyingData) {
-        if (this.underlyingData != null) {
+    public boolean trySet(T value) {
+        if (this.value != null) {
             return false;
         }
         // Mutual exclusion is required here as `computeIfUnset` might also
         // attempt to modify the `wrappedValue`
         synchronized (this) {
-            return wrapAndCas(underlyingData);
+            return wrapAndCas(value);
         }
     }
 
     @ForceInline
     @Override
-    public void setOrThrow(T underlyingData) {
-        if (!trySet(underlyingData)) {
-            throw new IllegalStateException("Cannot set the underlying data to " + underlyingData +
+    public void setOrThrow(T value) {
+        if (!trySet(value)) {
+            throw new IllegalStateException("Cannot set the underlying data to " + value +
                     " because the underlying data is already set: " + this);
         }
     }
@@ -92,7 +92,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElseThrow() {
-        final Object t = underlyingData;
+        final Object t = value;
         if (t == null) {
             throw new NoSuchElementException("No underlying data set");
         }
@@ -102,26 +102,26 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElse(T other) {
-        final Object t = underlyingData;
+        final Object t = value;
         return (t == null) ? other : unwrap(t);
     }
 
     @ForceInline
     @Override
     public boolean isSet() {
-        return underlyingData != null;
+        return value != null;
     }
 
     @ForceInline
     @Override
     public T computeIfUnset(Supplier<? extends T> supplier) {
-        final Object t = underlyingData;
+        final Object t = value;
         return (t == null) ? computeIfUnsetSlowPath(supplier) : unwrap(t);
     }
 
     @DontInline
     private synchronized T computeIfUnsetSlowPath(Supplier<? extends T> supplier) {
-        final Object t = underlyingData;
+        final Object t = value;
         if (t == null) {
             final T newValue = supplier.get();
             // The mutex is reentrant so we need to check if the value was actually set.
@@ -134,7 +134,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @Override
     public String toString() {
-        final Object t = underlyingData;
+        final Object t = value;
         return t == this
                 ? "(this StableValue)"
                 : "StableValue" + renderWrapped(t);
@@ -144,7 +144,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @ForceInline
     public Object wrappedValue() {
-        return underlyingData;
+        return value;
     }
 
     static String renderWrapped(Object t) {

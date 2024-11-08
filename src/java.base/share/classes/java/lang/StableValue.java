@@ -25,7 +25,6 @@
 
 package java.lang;
 
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.lang.stable.StableValueImpl;
 import jdk.internal.lang.stable.StableValueFactories;
@@ -41,17 +40,15 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A value that has the same performance as a final field but can be freely initialized.
- * <p>
- * In the Java programming language, a field could either be immutable (i.e. declared
- * {@code final}) or mutable (i.e. not declared {@code final}):
- * <p>
- * Stable values are objects that represent deferred immutable data and are treated
- * as constants by the JVM, enabling the same performance optimizations that are
+ * A stable value is an object that represents deferred immutable data. Stable values are
+ * treated as constants by the JVM, enabling the same performance optimizations that are
  * possible by marking a field {@code final}. Yet, stable values offer greater flexibility
  * as to the timing of initialization compared to {@code final} fields.
  * <p>
- * The characteristics of the various kinds of storage are summarized in the following table:
+ * In the Java programming language, a field could either be immutable (i.e. declared
+ * {@code final}) or mutable (i.e. not declared {@code final}). Stable values fill
+ * the gap between immutable ({@code final}) fields and mutable (non-{@code final}):
+ * <p>
  * <br/>
  * <blockquote>
  * <table class="plain">
@@ -91,43 +88,53 @@ import java.util.function.Supplier;
  * </table>
  * </blockquote>
  * <p>
- * A <em>stable value</em> is an object of type {@linkplain StableValue {@code StableValue<T>}}
- * and is a holder of underlying data of type {@code T}. It can be used to defer
- * initialization of its underlying data while retaining the same performance as if
- * a field of type {@code T} was declared {@code final}. Once the underlying data has
- * been initialized, the stable value usually acts as a constant for the rest of the
- * program's execution. In effect, a stable value provides a way of achieving deferred
- * immutability.
+ * As such, stable values offers many of the advantages from both the other types and
+ * hence effectively provides a way of achieving deferred immutability.
  * <p>
- * A stable value can be used <em>imperatively</em> or <em>functionally</em> as outlined
- * hereunder.
- * <h2 id="imperative-use">Imperative use</h2>
- * Imperative use often entails more low-level usage, interacting directly with the
- * underlying data. Here is an example of how the underlying data can be initialized
- * imperatively using a pre-computed value (here {@code 42}) using the method
- * {@linkplain StableValue#trySet(Object) trySet()}. The method will return {@code true}
- * if the underlying data was indeed initialized, or it will return {@code false} if
- * the underlying data was already initialized:
+ * An instance of {@code StableValue<T>} is an immutable holder for a value of
+ * {@code type T}. Initially, an instance of {@code StableValue<T>} is <em>unset</em>,
+ * which means it holds no value. It can be <em>set</em> by passing a value to
+ * {@linkplain StableValue#trySet(Object) trySet()},
+ * {@linkplain StableValue#setOrThrow(Object) setOrThrow()}, or
+ * {@linkplain StableValue#computeIfUnset(Supplier) computeIfUnset()}. Once set, the
+ * value held by a {@code StableValue<T>} can never change and can be retrieved by calling
+ * {@linkplain StableValue#orElseThrow() orElseThrow()},
+ * {@linkplain StableValue#orElse(Object) orElse()}, or
+ * {@linkplain StableValue#computeIfUnset(Supplier) computeIfUnset()}. The Java
+ * Virtual Machine treats a {@code StableValue<T>} that is set as a constant, equal to
+ * the value that it holds.
+ * <p>
+ * A stable value can be used <em>imperatively</em> -- by interacting directly with the
+ * holder value -- or <em>functionally</em> whereby a supplier is provided that will be
+ * used to calculate the holder value, should it be unset.
+ * <p>
+ * <em id="imperative-use">Imperative use</em>
+ * <p>
+ * Imperative use often entails more low-level usage. Here is an example of how the
+ * holder value can be set imperatively using a pre-computed value (here {@code 42})
+ * using the method {@linkplain StableValue#trySet(Object) trySet()}.
+ * The method will return {@code true} if the holder value was indeed set, or
+ * it will return {@code false} if the holder value was already set:
  *
  * {@snippet lang=java :
- *     // Creates a new stable value with no underlying data
+ *     // Creates a new stable value with no holder value
  *     StableValue<Integer> stableValue = StableValue.of();
- *     // ... logic that may or may not set the underlying data of stableValue
+ *     // ... logic that may or may not set the holder value of stableValue
  *     if (stableValue.trySet(42)) {
- *        System.out.println("The underlying data was initialized to 42.");
+ *        System.out.println("The holder value was set to 42.");
  *     } else {
- *        System.out.println("The value was already initialized to " + stableValue.orElseThrow());
+ *        System.out.println("The holder value was already set to " + stableValue.orElseThrow());
  *     }
  * }
- * Note that the underlying data can only be initialized at most once, even when several
- * threads are racing to initialize the underlying data. Only one thread is selected as
- * the winner.
- *
- * <h2 id="functional-use">Functional use</h2>
+ * Note that the holder value can only be set at most once, even when several threads are
+ * racing to set the holder value. Only one thread is selected as the winner.
+ * <p>
+ * <em id="functional-use">Functional use</em>
+ * <p>
  * Functional use of a stable value entails providing a
  * {@linkplain Supplier {@code Supplier<? extends T>}} to the instance method
  * {@linkplain StableValue#computeIfUnset(Supplier) computeIfUnset()} whereby the
- * provided supplier is automatically invoked if there is no underlying data as shown in
+ * provided supplier is automatically invoked if no holder value is set, as shown in
  * this example:
  *
  * {@snippet lang = java:
@@ -147,14 +154,13 @@ import java.util.function.Supplier;
  *    }
  *}
  * The {@code getLogger()} method calls {@code logger.computeIfUnset()} on the
- * stable value to retrieve its underlying data. If the stable value is unset, then
- * {@code computeIfUnset()} initializes the underlying data, causing the stable value to
- * become set; the underlying data is then returned to the client. In other words,
- * {@code computeIfUnset()} guarantees that a stable value's underlying data is
- * initialized before it is used.
+ * stable value to retrieve its holder value. If the stable value is unset, then
+ * {@code computeIfUnset()} evaluates and sets the holder value; the holder value is then
+ * returned to the client. In other words, {@code computeIfUnset()} guarantees that a
+ * stable value's holder value is set before it is used.
  * <p>
- * Even though the stable value, once set, is immutable, its underlying data is not
- * required to be initialized upfront. Rather, it can be initialized on demand. Furthermore,
+ * Even though the stable value, once set, is immutable, its holder value is not
+ * required to be set upfront. Rather, it can be set on demand. Furthermore,
  * {@code computeIfUnset()} guarantees that the lambda expression provided is evaluated
  * only once, even when {@code logger.computeIfUnset()} is invoked concurrently.
  * This property is crucial as evaluation of the lambda expression may have side effects,
@@ -164,26 +170,9 @@ import java.util.function.Supplier;
  * A {@linkplain StableValue} is mainly intended to be a member of a holding class (as
  * shown in the examples above) and is usually neither exposed directly via accessors nor
  * passed as a method parameter.
- * <p>
- * There are two additional categories of stable values:
- * <ul>
- *     <li>{@linkplain StableValue##stable-functions Stable Functions}
- *     <ul>
- *         <li>Stable supplier: {@linkplain Supplier {@code Supplier<T>}}</li>
- *         <li>Stable int function: {@linkplain IntFunction {@code IntFunction<R>}}</li>
- *         <li>Stable function: {@linkplain Function {@code Function<T, R>}}</li>
- *     </ul>
- *     </li>
- *     <li>{@linkplain StableValue##stable-collections Stable Collections}
- *     <ul>
- *         <li>Stable list: {@linkplain List {@code List<E>}}</li>
- *         <li>Stable map: {@linkplain Map {@code Map<K, V>}}</li>
- *     </ul>
- *     </li>
- * </ul>
  *
  * <h2 id="stable-functions">Stable Functions</h2>
- * Stable functions are thread-safe, caching, lazily computed functions that, for each
+ * Stable functions are thread-safe, caching, and lazily computed functions that, for each
  * allowed input (if any), record the values of some original function upon being first
  * accessed via the stable function's sole abstract method.
  * <p>
@@ -192,8 +181,8 @@ import java.util.function.Supplier;
  * <p>
  * A <em>stable supplier</em> allows a more convenient construct compared to a
  * {@linkplain StableValue} in the sense that a field declaration can also specify how
- * the underlying data of a stable value is to be initialized, but without actually
- * initializing its underlying data upfront:
+ * the holder value of a stable value is to be set, but without actually setting its
+ * holder value upfront:
  * {@snippet lang = java:
  *     class Component {
  *
@@ -211,7 +200,7 @@ import java.util.function.Supplier;
  * {@linkplain StableValue##functional-use functional example} above.
  * <p>
  * A <em>stable int function</em> stores values in an array of stable values where
- * the elements' underlying data are computed the first time a particular input value
+ * the elements' holder value are computed the first time a particular input value
  * is provided.
  * When the stable int function is first created --
  * via the {@linkplain StableValue#ofIntFunction(int, IntFunction)
@@ -233,7 +222,7 @@ import java.util.function.Supplier;
  *}
  * <p>
  * A <em>stable function</em> stores values in an array of stable values where
- * the elements' underlying data are computed the first time a particular input value
+ * the elements' holder value are computed the first time a particular input value
  * is provided.
  * When the stable function is first created --
  * via the {@linkplain StableValue#ofFunction(Set, Function) StableValue.ofFunction()}
@@ -300,38 +289,38 @@ import java.util.function.Supplier;
  *}
  *
  * <h2 id="memory-consistency">Memory Consistency Properties</h2>
- * All stores made to underlying data before being set are guaranteed to be seen by
- * any thread that obtains the data via a stable value.
+ * All stores made to a holder value before being set are guaranteed to be seen by
+ * any thread that obtains the holder value via a stable value.
  * <p>
  * More formally, the action of attempting to interact (i.e. via load or store operations)
- * with a StableValue's underlying data (e.g. via {@link StableValue#trySet} or
+ * with a StableValue's holder value (e.g. via {@link StableValue#trySet} or
  * {@link StableValue#orElseThrow()}) forms a
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * relation between any other action of attempting to interact with the
- * StableValue's underlying data. The same happens-before guarantees extend to
+ * StableValue's holder value. The same happens-before guarantees extend to
  * stable functions and stable collections; any action of attempting to interact via a
  * valid input value {@code I} <em>happens-before</em> any subsequent action of attempting
  * to interact via a valid input value {@code J} if, and only if, {@code I} and {@code J}
  * {@linkplain Object#equals(Object) equals()}.
  *
  * <h2 id="miscellaneous">Miscellaneous</h2>
- * Except for a StableValue's underlying data itself, all method parameters must be
+ * Except for a StableValue's holder value itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
  * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
- *           (directly or indirectly) synchronizing on a StableValue. Failure to do this
- *           may lead to deadlock. Stable functions and collections on the other hand are
- *           guaranteed <em>not to synchronize</em> on {@code this}.
+ *           (directly or indirectly) synchronizing on a {@code StableValue}. Failure to
+ *           do this may lead to deadlock. Stable functions and collections on the
+ *           other hand are guaranteed <em>not to synchronize</em> on {@code this}.
  *
- * @implNote Instance fields explicitly declared as StableValue or one-dimensional arrays
- *           thereof are eligible for certain JVM optimizations where normal instance
- *           fields are not. This comes with restrictions on reflective modifications.
- *           Although most ways of reflective modification of such fields are disabled,
- *           it is strongly discouraged to circumvent these protection means as
- *           reflectively modifying such fields may lead to unspecified behavior.
+ * @implNote Instance fields explicitly declared as {@code StableValue} or one-dimensional
+ *           arrays thereof are eligible for certain JVM optimizations where normal
+ *           instance fields are not. This comes with restrictions on reflective
+ *           modifications. Although most ways of reflective modification of such fields
+ *           are disabled, it is strongly discouraged to circumvent these protection means
+ *           as reflectively modifying such fields may lead to unspecified behavior.
  *
- * @param <T> type of the underlying data
+ * @param <T> type of the holder value
  *
  * @since 25
  */
@@ -342,52 +331,52 @@ public sealed interface StableValue<T>
     // Principal methods
 
     /**
-     * {@return {@code true} if the underlying data was set to the provided
-     *          {@code underlyingData}, {@code false} otherwise}
+     * {@return {@code true} if the holder value was set to the provided
+     *          {@code value}, {@code false} otherwise}
      * <p>
-     * When this method returns, the underlying data is always set.
+     * When this method returns, the holder value is always set.
      *
-     * @param underlyingData to set
+     * @param value to set
      */
-    boolean trySet(T underlyingData);
+    boolean trySet(T value);
 
     /**
-     * {@return the underlying data if set, otherwise, returns the provided
+     * {@return the holder value if set, otherwise, returns the provided
      *          {@code other} value}
      *
      *
-     * @param other to return if the underlying data is not set
+     * @param other to return if the holder value is not set
      */
     T orElse(T other);
 
     /**
-     * {@return the underlying data if set, otherwise, throws {@code NoSuchElementException}}
+     * {@return the holder value if set, otherwise, throws {@code NoSuchElementException}}
      *
-     * @throws NoSuchElementException if no underlying data is set
+     * @throws NoSuchElementException if no holder value is set
      */
     T orElseThrow();
 
     /**
-     * {@return {@code true} if the underlying data is set, {@code false} otherwise}
+     * {@return {@code true} if the holder value is set, {@code false} otherwise}
      */
     boolean isSet();
 
     /**
-     * {@return the underlying data; if not set, first attempts to compute the
-     *          underlying data using the provided {@code supplier}}
+     * {@return the holder value; if unset, first attempts to compute the holder value
+     *          using the provided {@code supplier}}
      * <p>
      * The provided {@code supplier} is guaranteed to be invoked at most once if it
      * completes without throwing an exception.
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
-     * underlying data is set. The most common usage is to construct a new object serving
+     * holder value is set. The most common usage is to construct a new object serving
      * as a lazily computed value or memoized result, as in:
      *
      * <pre> {@code
      * Value witness = stable.computeIfUnset(Value::new);
      * }</pre>
      * <p>
-     * When this method returns successfully, the underlying data is always set.
+     * When this method returns successfully, the holder value is always set.
      *
      * @implSpec The implementation logic is equivalent to the following steps for this
      *           {@code stable}:
@@ -406,44 +395,43 @@ public sealed interface StableValue<T>
      * will only be invoked once even if invoked from several threads unless the
      * {@code supplier} throws an exception.
      *
-     * @param  supplier to be used for computing the underlying data
+     * @param  supplier to be used for computing the holder value
      */
     T computeIfUnset(Supplier<? extends T> supplier);
 
     // Convenience methods
 
     /**
-     * Sets the underlying data to the provided {@code underlyingData}, or,
+     * Sets the holder value to the provided {@code value}, or,
      * if already set, throws {@link IllegalStateException}.
      * <p>
-     * When this method returns (or throws an Exception), the underlying data is
-     * always set.
+     * When this method returns (or throws an Exception), the holder value is always set.
      *
-     * @param underlyingData to set
-     * @throws IllegalStateException if the underlying data is already set
+     * @param value to set
+     * @throws IllegalStateException if the holder value was already set
      */
-    void setOrThrow(T underlyingData);
+    void setOrThrow(T value);
 
     // Factories
 
     /**
-     * {@return a new stable value with no underlying data}
+     * {@return a new stable value with no holder value}
      * <p>
      * The returned {@linkplain StableValue stable value} is a thin, atomic, thread-safe,
-     * set-at-most-once, stable value with no underlying data eligible for certain JVM
-     * optimizations once the underlying data is set.
+     * set-at-most-once, stable value with no holder value eligible for certain JVM
+     * optimizations once the holder value is set.
      *
-     * @param <T> type of the underlying data
+     * @param <T> type of the holder value
      */
     static <T> StableValue<T> of() {
         return StableValueFactories.of();
     }
 
     /**
-     * {@return a new stable supplier with no underlying data}
+     * {@return a new stable supplier with no holder value}
      * <p>
      * The returned stable {@linkplain Supplier supplier} is a thread-safe, caching,
-     * lazily computed supplier that records the value of the provided {@code original}
+     * and lazily computed supplier that records the value of the provided {@code original}
      * supplier upon being first accessed via the returned supplier's
      * {@linkplain Supplier#get() get()} method.
      * <p>
@@ -454,7 +442,7 @@ public sealed interface StableValue<T>
      * thrown by the computing thread.
      * <p>
      * If the provided {@code original} supplier throws an exception, it is relayed
-     * to the initial caller and no value is recorded.
+     * to the initial caller and no holder value is recorded.
      *
      * @param original supplier used to compute a cached value
      * @param <T>      the type of results supplied by the returned supplier
@@ -465,11 +453,11 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable int function with no underlying data}
+     * {@return a new stable int function with no holder values}
      * <p>
      * The returned stable {@link IntFunction int function} is a thread-safe, caching,
-     * lazily computed int function that, for each allowed input, records the values of
-     * the provided {@code original} int function upon being first accessed via the
+     * and lazily computed int function that, for each allowed input, records the values
+     * of the provided {@code original} int function upon being first accessed via the
      * returned int function's {@linkplain IntFunction#apply(int) apply()} method.
      * <p>
      * The provided {@code original} int function is guaranteed to be successfully invoked
@@ -480,7 +468,7 @@ public sealed interface StableValue<T>
      * the computing thread.
      * <p>
      * If the provided {@code original} int function throws an exception, it is relayed
-     * to the initial caller and no value is recorded.
+     * to the initial caller and no holder value is recorded.
      *
      * @param size     the size of the allowed inputs in {@code [0, size)}
      * @param original IntFunction used to compute cached values
@@ -496,10 +484,10 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable function with no underlying data}
+     * {@return a new stable function with no holder values}
      * <p>
      * The returned stable {@link Function function} is a stable, thread-safe,
-     * caching, lazily computed function that, for each allowed input in the given
+     * caching, and lazily computed function that, for each allowed input in the given
      * set of {@code inputs}, records the values of the provided {@code original} function
      * upon being first accessed via the returned function's
      * {@linkplain Function#apply(Object) apply()} method.
@@ -511,7 +499,7 @@ public sealed interface StableValue<T>
      * computed or an exception is thrown by the computing thread.
      * <p>
      * If the provided {@code original} function throws an exception, it is relayed to
-     * the initial caller and no value is recorded.
+     * the initial caller and no holder value is recorded.
      *
      * @param inputs   the set of allowed input values
      * @param original Function used to compute cached values
@@ -526,12 +514,12 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable list of the provided {@code size} with no underlying data}
+     * {@return a new stable list of the provided {@code size} with no holder values}
      * <p>
      * The returned {@linkplain List list} is a stable, thread-safe, caching,
-     * lazily computed, shallowly immutable list where the individual elements of the list
-     * are lazily computed via the provided {@code mapper} whenever an element is first
-     * accessed (directly or indirectly), for example via the returned list's
+     * lazily computed, and shallowly immutable list where the individual elements of the
+     * list are lazily computed via the provided {@code mapper} whenever an element is
+     * first accessed (directly or indirectly), for example via the returned list's
      * {@linkplain List#get(int) get()} method.
      * <p>
      * The provided {@code mapper} int function is guaranteed to be successfully invoked
@@ -540,10 +528,10 @@ public sealed interface StableValue<T>
      * is computed or an exception is thrown by the computing thread.
      * <p>
      * If the provided {@code mapper} throws an exception, it is relayed to the initial
-     * caller and no element is recorded.
+     * caller and no holder value for the element is recorded.
      * <p>
      * The returned List is not {@link Serializable} as this would require the provided
-     * {@code mapper} to be {@link Serializable} as well which would create security
+     * {@code mapper} to be {@link Serializable} as well, which would create security
      * concerns.
      *
      * @param size   the size of the returned list
@@ -551,7 +539,8 @@ public sealed interface StableValue<T>
      *               (may return {@code null})
      * @param <E>    the type of elements in the returned list
      */
-    static <E> List<E> ofList(int size, IntFunction<? extends E> mapper) {
+    static <E> List<E> ofList(int size,
+                              IntFunction<? extends E> mapper) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
@@ -560,19 +549,19 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable map with the provided {@code keys} with no underlying data}
+     * {@return a new stable map with the provided {@code keys} with no holder values}
      * <p>
      * The returned {@linkplain Map map} is a stable, thread-safe, caching,
-     * lazily computed, shallowly immutable map where the individual values of the map
+     * lazily computed, and shallowly immutable map where the individual values of the map
      * are lazily computed via the provided {@code mapper} whenever an element is first
      * accessed (directly or indirectly), for example via the returned map's
      * {@linkplain Map#get(Object) get()} method.
      * <p>
      * If the provided {@code mapper} throws an exception, it is relayed to the initial
-     * caller and no value is recorded.
+     * caller and no holder value associated with the provided key is recorded.
      * <p>
      * The returned Map is not {@link Serializable} as this would require the provided
-     * {@code mapper} to be {@link Serializable} as well which would create security
+     * {@code mapper} to be {@link Serializable} as well, which would create security
      * concerns.
      *
      * @param keys   the keys in the returned map
@@ -581,7 +570,8 @@ public sealed interface StableValue<T>
      * @param <K>    the type of keys maintained by the returned map
      * @param <V>    the type of mapped values in the returned map
      */
-    static <K, V> Map<K, V> ofMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+    static <K, V> Map<K, V> ofMap(Set<K> keys,
+                                  Function<? super K, ? extends V> mapper) {
         Objects.requireNonNull(keys);
         Objects.requireNonNull(mapper);
         return StableValueFactories.ofMap(keys, mapper);

@@ -110,7 +110,7 @@ final class TrustedFieldTypeTest {
         StableValue<?> stableValue = StableValue.of();
         Class<?> clazz = stableValue.getClass();
         System.out.println("clazz = " + clazz);
-        assertThrows(NoSuchFieldException.class, () -> clazz.getField("underlyingData"));
+        assertThrows(NoSuchFieldException.class, () -> clazz.getField("value"));
     }
 
     @Test
@@ -159,7 +159,7 @@ final class TrustedFieldTypeTest {
         stableValue.trySet(42);
         jdk.internal.misc.Unsafe unsafe = Unsafe.getUnsafe();
 
-        long offset = unsafe.objectFieldOffset(stableValue.getClass(), "underlyingData");
+        long offset = unsafe.objectFieldOffset(stableValue.getClass(), "value");
         assertTrue(offset > 0);
 
         // Unfortunately, it is possible to update the underlying data via jdk.internal.misc.Unsafe
