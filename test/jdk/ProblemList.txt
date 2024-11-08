@@ -518,6 +518,8 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-all
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
+java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id0    8343244 generic-all
+java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1    8343244 generic-all
 
 ############################################################################
 
@@ -804,6 +806,7 @@ java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/Frame/FrameStateTest/FrameStateTest.java 8203920 macosx-all,linux-all
 java/awt/print/PrinterJob/ScaledText/ScaledText.java 8231226 macosx-all
+java/awt/print/PrinterJob/PrintTextTest.java 8148334 generic-all
 java/awt/font/TextLayout/TestJustification.java 8250791 macosx-all
 java/awt/TrayIcon/DragEventSource/DragEventSource.java 8252242 macosx-all
 java/awt/FileDialog/DefaultFocusOwner/DefaultFocusOwner.java 7187728 macosx-all,linux-all

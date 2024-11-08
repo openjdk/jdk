@@ -419,7 +419,7 @@
                                                                             \
   product(intx, LoopOptsCount, 43,                                          \
           "Set level of loop optimization for tier 1 compiles")             \
-          range(5, 43)                                                      \
+          range(5, max_jint)                                                \
                                                                             \
   product(bool, OptimizeUnstableIf, true, DIAGNOSTIC,                       \
           "Optimize UnstableIf traps")                                      \

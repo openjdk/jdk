@@ -2639,10 +2639,15 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     // have been redefined.
     bool trace_name_printed = false;
     adjust_default_methods(&trace_name_printed);
-    vtable().initialize_vtable();
-    itable().initialize_itable();
+    if (verified_at_dump_time()) {
+      // Initialize vtable and itable for classes which can be verified at dump time.
+      // Unlinked classes such as old classes with major version < 50 cannot be verified
+      // at dump time.
+      vtable().initialize_vtable();
+      itable().initialize_itable();
+    }
   }
-#endif
+#endif // INCLUDE_JVMTI
 
   // restore constant pool resolved references
   constants()->restore_unshareable_info(CHECK);
