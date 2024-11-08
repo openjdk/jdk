@@ -438,7 +438,7 @@ public:
     return velt_type(n)->array_element_basic_type();
   }
 
-  int data_size(Node* s) const {
+  int data_size(const Node* s) const {
     int bsize = type2aelembytes(velt_basic_type(s));
     assert(bsize != 0, "valid size");
     return bsize;

@@ -474,7 +474,7 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.types().same_velt_type(n1, n2);
   }
 
-  int data_size(Node* n) const {
+  int data_size(const Node* n) const {
     return _vloop_analyzer.types().data_size(n);
   }
 
@@ -570,16 +570,23 @@ private:
   private:
     const MemNode* _mem;
     const XPointer* _xpointer;
+
   public:
     // Empty, for GrowableArray
     MemOp() : _mem(nullptr), _xpointer(nullptr) {}
     MemOp(const MemNode* mem, const XPointer* xpointer) : _mem(mem), _xpointer(xpointer) {}
+
+    const MemNode* mem() const { return _mem; }
+    const XPointer& xpointer() const { return *_xpointer; }
+
+    static int cmp_by_group(MemOp* a, MemOp* b);
+    static int cmp_by_group_and_con(MemOp* a, MemOp* b);
   };
   void create_adjacent_memop_pairs();
   void collect_valid_memops(GrowableArray<MemOp>& memops);
-  void create_adjacent_memop_pairs_in_all_groups(const GrowableArray<const VPointer*>& vpointers);
-  static int find_group_end(const GrowableArray<const VPointer*>& vpointers, int group_start);
-  void create_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, int group_end);
+  void create_adjacent_memop_pairs_in_all_groups(const GrowableArray<MemOp>& memops);
+  static int find_group_end(const GrowableArray<MemOp>& memops, int group_start);
+  void create_adjacent_memop_pairs_in_one_group(const GrowableArray<MemOp>& memops, const int group_start, int group_end);
 
   // Various methods to check if we can pack two nodes.
   bool can_pack_into_pair(Node* s1, Node* s2);

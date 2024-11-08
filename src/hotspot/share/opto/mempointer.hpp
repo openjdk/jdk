@@ -461,13 +461,24 @@ public:
   NoOverflowInt scale() const { return _scale; }
 
   static int cmp_by_variable_idx(MemPointerSummand* p1, MemPointerSummand* p2) {
-    if (p1->variable() == nullptr) {
-      return (p2->variable() == nullptr) ? 0 : 1;
-    } else if (p2->variable() == nullptr) {
+    return cmp_by_variable_idx(*p1, *p2);
+  }
+
+  static int cmp_by_variable_idx(const MemPointerSummand& p1, const MemPointerSummand& p2) {
+    if (p1.variable() == nullptr) {
+      return (p2.variable() == nullptr) ? 0 : 1;
+    } else if (p2.variable() == nullptr) {
       return -1;
     }
 
-    return p1->variable()->_idx - p2->variable()->_idx;
+    return p1.variable()->_idx - p2.variable()->_idx;
+  }
+
+  static int cmp(const MemPointerSummand& p1, const MemPointerSummand& p2) {
+    int cmp = cmp_by_variable_idx(p1, p2);
+    if (cmp != 0) { return cmp; }
+
+    return NoOverflowInt::cmp(p1.scale(), p2.scale());
   }
 
   friend bool operator==(const MemPointerSummand a, const MemPointerSummand b) {
@@ -621,6 +632,16 @@ public:
 
   const NoOverflowInt con() const { return _con; }
   const Base& base() const { return _base; }
+
+  static int cmp_summands(const MemPointerDecomposedForm& a, const MemPointerDecomposedForm& b) {
+    for (int i = 0; i < SUMMANDS_SIZE; i++) {
+      const MemPointerSummand& s_a = a.summands_at(i);
+      const MemPointerSummand& s_b = b.summands_at(i);
+      int cmp = MemPointerSummand::cmp(s_a, s_b);
+      if (cmp != 0) { return cmp;}
+    }
+    return 0;
+  }
 
 #ifndef PRODUCT
   void print_form_on(outputStream* st) const {

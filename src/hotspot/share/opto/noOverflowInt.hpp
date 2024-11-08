@@ -100,6 +100,17 @@ public:
     return a.value() % b.value() == 0;
   }
 
+  static int cmp(const NoOverflowInt& a, const NoOverflowInt& b) {
+    if (a.is_NaN()) {
+      return b.is_NaN() ? 0 : 1;
+    } else if (b.is_NaN()) {
+      return -1;
+    }
+    if (a.value() < b.value()) { return -1; }
+    if (a.value() > b.value()) { return  1; }
+    return 0;
+  }
+
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     if (is_NaN()) {

@@ -25,6 +25,7 @@
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/memnode.hpp"
 #include "opto/superword.hpp"
 #include "opto/superwordVTransformBuilder.hpp"
 #include "opto/vectornode.hpp"
@@ -502,6 +503,33 @@ bool SuperWord::SLP_extract() {
   return schedule_and_apply();
 }
 
+// We use two comparisons, because a subtraction could underflow.
+#define RETURN_CMP_VALUE_IF_NOT_EQUAL(a, b) \
+  if (a < b) { return -1; }                 \
+  if (a > b) { return  1; }
+
+int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
+  // Opcode
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->Opcode(),  b->mem()->Opcode());
+
+  // VPointer summands
+  return MemPointerDecomposedForm::cmp_summands(a->xpointer().decomposed_form(),
+                                                b->xpointer().decomposed_form());
+}
+
+int SuperWord::MemOp::cmp_by_group_and_con(MemOp* a, MemOp* b) {
+  // Group
+  int cmp_group = cmp_by_group(a, b);
+  if (cmp_group != 0) { return cmp_group; }
+
+  // VPointer con
+  jint a_con = a->xpointer().decomposed_form().con().value();
+  jint b_con = b->xpointer().decomposed_form().con().value();
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a_con, b_con);
+
+  return 0;
+}
+
 // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
 void SuperWord::create_adjacent_memop_pairs() {
   ResourceMark rm;
@@ -509,15 +537,14 @@ void SuperWord::create_adjacent_memop_pairs() {
 
   collect_valid_memops(memops);
 
-  // Sort the VPointers. This does 2 things:
-  //  - Separate the VPointer into groups: all memops that have the same opcode and the same
-  //    VPointer, except for the offset. Adjacent memops must have the same opcode and the
-  //    same VPointer, except for a shift in the offset. Thus, two memops can only be adjacent
-  //    if they are in the same group. This decreases the work.
-  //  - Sort by offset inside the groups. This decreases the work needed to determine adjacent
-  //    memops inside a group.
-  assert(false, "TODO");
-  //vpointers.sort(VPointer::cmp_for_sort);
+  // Sort the MemOps by group, and inside a group by VPointer con:
+  //  - Group: all memops with the same opcode, and the same VPointer summands. Adjacent memops
+  //           have the same opcode and the same VPointer summands, only the VPointer con is
+  //           different. Thus, two memops can only be adjacent if they are in the same group.
+  //           This decreases the work.
+  //  - VPointer con: Sorting by VPointer con inside the group allows us to perform a sliding
+  //                  window algorithm, to determine adjacent memops efficiently.
+  memops.sort(MemOp::cmp_by_group_and_con);
 
 #ifndef PRODUCT
   if (is_trace_superword_adjacent_memops()) {
@@ -525,7 +552,7 @@ void SuperWord::create_adjacent_memop_pairs() {
   }
 #endif
 
-  //create_adjacent_memop_pairs_in_all_groups(vpointers);
+  create_adjacent_memop_pairs_in_all_groups(memops);
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
@@ -535,7 +562,7 @@ void SuperWord::create_adjacent_memop_pairs() {
 #endif
 }
 
-// Collect all memops vpointers that could potentially be vectorized.
+// Collect all memops that could potentially be vectorized.
 void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) {
   for_each_mem([&] (const MemNode* mem, int bb_idx) {
     const XPointer& p = xpointer(mem);
@@ -548,22 +575,22 @@ void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) {
 }
 
 // For each group, find the adjacent memops.
-void SuperWord::create_adjacent_memop_pairs_in_all_groups(const GrowableArray<const VPointer*> &vpointers) {
+void SuperWord::create_adjacent_memop_pairs_in_all_groups(const GrowableArray<MemOp>& memops) {
   int group_start = 0;
-  while (group_start < vpointers.length()) {
-    int group_end = find_group_end(vpointers, group_start);
-    create_adjacent_memop_pairs_in_one_group(vpointers, group_start, group_end);
+  while (group_start < memops.length()) {
+    int group_end = find_group_end(memops, group_start);
+    create_adjacent_memop_pairs_in_one_group(memops, group_start, group_end);
     group_start = group_end;
   }
 }
 
-// Step forward until we find a VPointer of another group, or we reach the end of the array.
-int SuperWord::find_group_end(const GrowableArray<const VPointer*>& vpointers, int group_start) {
+// Step forward until we find a MemOp of another group, or we reach the end of the array.
+int SuperWord::find_group_end(const GrowableArray<MemOp>& memops, int group_start) {
   int group_end = group_start + 1;
-  while (group_end < vpointers.length() &&
-         VPointer::cmp_for_sort_by_group(
-           vpointers.adr_at(group_start),
-           vpointers.adr_at(group_end)
+  while (group_end < memops.length() &&
+         MemOp::cmp_by_group(
+           memops.adr_at(group_start),
+           memops.adr_at(group_end)
          ) == 0) {
     group_end++;
   }
@@ -572,64 +599,66 @@ int SuperWord::find_group_end(const GrowableArray<const VPointer*>& vpointers, i
 
 // Find adjacent memops for a single group, e.g. for all LoadI of the same base, invar, etc.
 // Create pairs and add them to the pairset.
-void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, const int group_end) {
+void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<MemOp>& memops, const int group_start, const int group_end) {
 #ifndef PRODUCT
   if (is_trace_superword_adjacent_memops()) {
     tty->print_cr(" group:");
     for (int i = group_start; i < group_end; i++) {
-      const VPointer* p = vpointers.at(i);
+      const MemOp& memop = memops.at(i);
       tty->print("  ");
-      p->print();
+      memop.mem()->dump();
+      tty->print("  ");
+      memop.xpointer().print_on(tty);
     }
   }
 #endif
 
-  MemNode* first = vpointers.at(group_start)->mem();
-  int element_size = data_size(first);
+  const MemNode* first = memops.at(group_start).mem();
+  const int element_size = data_size(first);
 
-  // For each ref in group: find others that can be paired:
-  for (int i = group_start; i < group_end; i++) {
-    const VPointer* p1 = vpointers.at(i);
-    MemNode* mem1 = p1->mem();
-
-    bool found = false;
-    // For each ref in group with larger or equal offset:
-    for (int j = i + 1; j < group_end; j++) {
-      const VPointer* p2 = vpointers.at(j);
-      MemNode* mem2 = p2->mem();
-      assert(mem1 != mem2, "look only at pair of different memops");
-
-      // Check for correct distance.
-      assert(data_size(mem1) == element_size, "all nodes in group must have the same element size");
-      assert(data_size(mem2) == element_size, "all nodes in group must have the same element size");
-      assert(p1->offset_in_bytes() <= p2->offset_in_bytes(), "must be sorted by offset");
-      if (p1->offset_in_bytes() + element_size > p2->offset_in_bytes()) { continue; }
-      if (p1->offset_in_bytes() + element_size < p2->offset_in_bytes()) { break; }
-
-      // Only allow nodes from same origin idx to be packed (see CompileCommand Option Vectorize)
-      if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
-
-      if (!can_pack_into_pair(mem1, mem2)) { continue; }
-
-#ifndef PRODUCT
-      if (is_trace_superword_adjacent_memops()) {
-        if (found) {
-          tty->print_cr(" WARNING: multiple pairs with the same node. Ignored pairing:");
-        } else {
-          tty->print_cr(" pair:");
-        }
-        tty->print("  ");
-        p1->print();
-        tty->print("  ");
-        p2->print();
-      }
-#endif
-
-      if (!found) {
-        _pairset.add_pair(mem1, mem2);
-      }
-    }
-  }
+//  // For each ref in group: find others that can be paired:
+//  for (int i = group_start; i < group_end; i++) {
+//    const VPointer* p1 = vpointers.at(i);
+//    MemNode* mem1 = p1->mem();
+//
+//    bool found = false;
+//    // For each ref in group with larger or equal offset:
+//    for (int j = i + 1; j < group_end; j++) {
+//      const VPointer* p2 = vpointers.at(j);
+//      MemNode* mem2 = p2->mem();
+//      assert(mem1 != mem2, "look only at pair of different memops");
+//
+//      // Check for correct distance.
+//      assert(data_size(mem1) == element_size, "all nodes in group must have the same element size");
+//      assert(data_size(mem2) == element_size, "all nodes in group must have the same element size");
+//      assert(p1->offset_in_bytes() <= p2->offset_in_bytes(), "must be sorted by offset");
+//      if (p1->offset_in_bytes() + element_size > p2->offset_in_bytes()) { continue; }
+//      if (p1->offset_in_bytes() + element_size < p2->offset_in_bytes()) { break; }
+//
+//      // Only allow nodes from same origin idx to be packed (see CompileCommand Option Vectorize)
+//      if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
+//
+//      if (!can_pack_into_pair(mem1, mem2)) { continue; }
+//
+//#ifndef PRODUCT
+//      if (is_trace_superword_adjacent_memops()) {
+//        if (found) {
+//          tty->print_cr(" WARNING: multiple pairs with the same node. Ignored pairing:");
+//        } else {
+//          tty->print_cr(" pair:");
+//        }
+//        tty->print("  ");
+//        p1->print();
+//        tty->print("  ");
+//        p2->print();
+//      }
+//#endif
+//
+//      if (!found) {
+//        _pairset.add_pair(mem1, mem2);
+//      }
+//    }
+//  }
 }
 
 void VLoopMemorySlices::find_memory_slices() {
