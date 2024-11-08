@@ -339,11 +339,6 @@ public final class ProcessBuilder
      * @see    System#getenv()
      */
     public Map<String,String> environment() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null)
-            security.checkPermission(new RuntimePermission("getenv.*"));
-
         if (environment == null)
             environment = ProcessEnvironment.environment();
 
@@ -1069,11 +1064,6 @@ public final class ProcessBuilder
         // Throws IndexOutOfBoundsException if command is empty
         String prog = cmdarray[0];
 
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null)
-            security.checkExec(prog);
-
         String dir = directory == null ? null : directory.toString();
 
         for (String s : cmdarray) {
@@ -1114,14 +1104,11 @@ public final class ProcessBuilder
         } catch (IOException | IllegalArgumentException e) {
             String exceptionInfo = ": " + e.getMessage();
             Throwable cause = e;
-            if ((e instanceof IOException) && security != null) {
+            if (e instanceof IOException) {
                 // Can not disclose the fail reason for read-protected files.
-                try {
-                    security.checkRead(prog);
-                } catch (SecurityException se) {
-                    exceptionInfo = "";
-                    cause = se;
-                }
+                // TBD: alternate mechanism to disabla sensitive exception content
+                exceptionInfo = "";
+                cause = null;
             }
             // It's much easier for us to create a high-quality error
             // message than the low-level C code which found the problem.
