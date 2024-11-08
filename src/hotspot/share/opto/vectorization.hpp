@@ -720,6 +720,8 @@ public:
   jint con_value() const { return _decomposed_form.con().value(); }
 
   // Aliasing
+  // TODO refactor together with MemPointer - should be shared code. Maybe the _size needs to be in ...Form?
+  bool is_adjacent_to_and_before(const XPointer& other, const VLoop& vloop) const;
   bool never_overlaps_with(const XPointer& other, const VLoop& vloop) const;
 
   NOT_PRODUCT( void print_on(outputStream* st) const; )

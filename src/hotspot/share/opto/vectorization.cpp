@@ -485,6 +485,24 @@ int VPointer::cmp_for_sort(const VPointer** p1, const VPointer** p2) {
   return 0; // equal
 }
 
+bool XPointer::is_adjacent_to_and_before(const XPointer& other, const VLoop& vloop) const {
+  const MemPointerDecomposedForm& s1 = decomposed_form();
+  const MemPointerDecomposedForm& s2 = other.decomposed_form();
+  const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA vloop.mptrace() ));
+  const bool is_adjacent = aliasing.is_always_at_distance(_size);
+
+#ifndef PRODUCT
+  if (vloop.mptrace().is_trace_adjacency()) {
+    tty->print("Adjacent: %s, because size = %d and aliasing = ",
+               is_adjacent ? "true" : "false", _size);
+    aliasing.print_on(tty);
+    tty->cr();
+  }
+#endif
+
+  return is_adjacent;
+}
+
 bool XPointer::never_overlaps_with(const XPointer& other, const VLoop& vloop) const {
   const MemPointerDecomposedForm& s1 = decomposed_form();
   const MemPointerDecomposedForm& s2 = other.decomposed_form();

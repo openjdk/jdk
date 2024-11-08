@@ -778,13 +778,9 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
     return false;
   }
 
-  // Adjacent memory references must have the same base, be comparable
-  // and have the correct distance between them.
-  const VPointer& p1 = vpointer(s1->as_Mem());
-  const VPointer& p2 = vpointer(s2->as_Mem());
-  if (p1.base() != p2.base() || !p1.comparable(p2)) return false;
-  int diff = p2.offset_in_bytes() - p1.offset_in_bytes();
-  return diff == data_size(s1);
+  const XPointer& p1 = xpointer(s1->as_Mem());
+  const XPointer& p2 = xpointer(s2->as_Mem());
+  return p1.is_adjacent_to_and_before(p2, _vloop);
 }
 
 //------------------------------isomorphic---------------------------
