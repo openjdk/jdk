@@ -495,6 +495,8 @@ public:
 //
 //   pointer = SUM(summands) + con
 //
+// Note: if the base is known to be an object reference (base().is_object()), then
+//       the base is in the 0th summand.
 class MemPointerDecomposedForm : public StackObj {
 public:
   // We limit the number of summands to 10. This is just a best guess, and not at this
@@ -546,7 +548,7 @@ private:
   // Default / trivial: pointer = 0 + 1 * pointer
   MemPointerDecomposedForm(Node* pointer) :
     _con(NoOverflowInt(0)),
-    _base(Base::from_AddP(pointer))
+    _base(Base())
   {
     assert(pointer != nullptr, "pointer must be non-null");
     _summands[0] = MemPointerSummand(pointer, NoOverflowInt(1));
@@ -558,10 +560,34 @@ private:
   {
     assert(!_con.is_NaN(), "non-NaN constant");
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
+#ifdef ASSERT
     for (int i = 0; i < summands.length(); i++) {
-      MemPointerSummand s = summands.at(i);
+      const MemPointerSummand& s = summands.at(i);
       assert(s.variable() != nullptr, "variable cannot be null");
       assert(!s.scale().is_NaN(), "non-NaN scale");
+    }
+#endif
+
+    if (_base.is_object()) {
+      MemPointerSummand b(_base.get(), NoOverflowInt(1));
+      if (summands.contains(b)) {
+        // We have a known base object, move it to the 0th summand.
+        _summands[0] = b;
+        int pos = 1;
+        for (int i = 0; i < summands.length(); i++) {
+          if (summands.at(i) == b) { continue; }
+          _summands[pos++] = summands.at(i);
+        }
+        return;
+      } else {
+        // We did not find the base object, reset to unknown base.
+        assert(false, "we should always find the base");
+        _base = Base();
+      }
+    }
+
+    for (int i = 0; i < summands.length(); i++) {
+      const MemPointerSummand& s = summands.at(i);
       _summands[i] = s;
     }
   }
@@ -583,7 +609,8 @@ public:
                                        NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const;
 
 private:
-  bool has_same_summands_as(const MemPointerDecomposedForm& other) const;
+  bool has_same_summands_as(const MemPointerDecomposedForm& other, uint start) const;
+  bool has_same_summands_as(const MemPointerDecomposedForm& other) const { return has_same_summands_as(other, 0); };
   bool has_different_base_but_otherwise_same_summands_as(const MemPointerDecomposedForm& other) const;
 
 public:

@@ -393,8 +393,8 @@ MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerD
   }
 }
 
-bool MemPointerDecomposedForm::has_same_summands_as(const MemPointerDecomposedForm& other) const {
-  for (uint i = 0; i < SUMMANDS_SIZE; i++) {
+bool MemPointerDecomposedForm::has_same_summands_as(const MemPointerDecomposedForm& other, uint start) const {
+  for (uint i = start; i < SUMMANDS_SIZE; i++) {
     if (summands_at(i) != other.summands_at(i)) { return false; }
   }
   return true;
@@ -407,49 +407,15 @@ bool MemPointerDecomposedForm::has_different_base_but_otherwise_same_summands_as
     // The base is the same, or we do not know if the base is different.
     return false;
   }
+
+#ifdef ASSERT
   const MemPointerSummand base1(base().get(),       NoOverflowInt(1));
   const MemPointerSummand base2(other.base().get(), NoOverflowInt(1));
-  bool found_base1 = false;
-  bool found_base2 = false;
+  assert(summands_at(0) == base1 && other.summands_at(0) == base2, "bases in 0th element");
+#endif
 
-  uint i1 = 0;
-  uint i2 = 0;
-  while (i1 < SUMMANDS_SIZE || i2 < SUMMANDS_SIZE) {
-    // Handle bases.
-    if (i1 < SUMMANDS_SIZE && summands_at(i1) == base1) {
-      assert(!found_base1, "can only find once");
-      found_base1 = true;
-      i1++;
-      continue;
-    }
-    if (i2 < SUMMANDS_SIZE && other.summands_at(i2) == base2) {
-      assert(!found_base2, "can only find once");
-      found_base2 = true;
-      i2++;
-      continue;
-    }
-    // Handle empty summands.
-    if (i1 < SUMMANDS_SIZE && summands_at(i1).variable() == nullptr) {
-      i1++;
-      continue;
-    }
-    if (i2 < SUMMANDS_SIZE && other.summands_at(i2).variable() == nullptr) {
-      i2++;
-      continue;
-    }
-    // Handle other summands.
-    if (i1 < SUMMANDS_SIZE && i2 < SUMMANDS_SIZE &&
-	summands_at(i1) == other.summands_at(i2)) {
-      i1++;
-      i2++;
-      continue;
-    }
-    // There is a difference in the summands, other than the bases.
-    return false;
-  }
-  assert(i1 == SUMMANDS_SIZE && i2 == SUMMANDS_SIZE, "scanned all");
-  // Check if we found both bases - the other summands are all the same.
-  return found_base1 && found_base2;
+  // Check if all other summands are the same.
+  return has_same_summands_as(other, 1);
 }
 
 bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
