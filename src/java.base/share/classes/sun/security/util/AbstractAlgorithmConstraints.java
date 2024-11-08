@@ -94,7 +94,7 @@ public abstract class AbstractAlgorithmConstraints
             return false;
         }
 
-        // TLS cipher suite wild card matching
+        // TLS cipher suite wildcard matching
         for (String pattern : algorithms) {
             if (wildCardMatch(pattern, algorithm)) {
                 return false;
@@ -116,21 +116,21 @@ public abstract class AbstractAlgorithmConstraints
 
     private static boolean wildCardMatch(final String pattern,
                                          final String algorithm) {
-        if (pattern.contains("*")) {
-            if (!pattern.startsWith("TLS_")) {
-                throw new IllegalArgumentException(
-                        "Wildcard pattern must start with 'TLS_'");
-            }
-
-            return patternCache.computeIfAbsent(
-                            pattern,
-                            p -> Pattern.compile(
-                                    "^\\Q" + p.replace("*", "\\E.*\\Q") + "\\E$"
-                            ))
-                    .matcher(algorithm)
-                    .matches();
+        if (!pattern.contains("*")) {
+            return false;
         }
 
-        return false;
+        if (!pattern.startsWith("TLS_")) {
+            throw new IllegalArgumentException(
+                    "Wildcard pattern must start with \"TLS_\"");
+        }
+
+        return patternCache.computeIfAbsent(
+                        pattern,
+                        p -> Pattern.compile(
+                                // Ignore all regex characters but asterisk.
+                                "^\\Q" + p.replace("*", "\\E.*\\Q") + "\\E$"))
+                .matcher(algorithm)
+                .matches();
     }
 }
