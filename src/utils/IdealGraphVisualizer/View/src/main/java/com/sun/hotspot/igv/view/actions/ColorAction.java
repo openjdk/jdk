@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.view.widgets.FigureWidget;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Arrays;
 import javax.swing.*;
@@ -38,7 +39,6 @@ import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
 import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
-
 
 
 @ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ColorAction")
@@ -86,10 +86,49 @@ public final class ColorAction extends ModelAwareAction {
     private static final JButton selectedColorButton = new JButton("Preview");
     private static final JColorChooser colorChooser = new JColorChooser(Color.WHITE);
 
-    ColorAction() {
+    public ColorAction() {
+        // Store the current look and feel
+        String originalLookAndFeel = UIManager.getLookAndFeel().getClass().getName();
+
+        try {
+            // Set Look and Feel
+            //UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+            //UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
+            //UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+
+            // Set a default font to avoid NullPointerException with certain Look and Feels
+            Font defaultFont = new Font("Dialog", Font.PLAIN, 12);
+            UIManager.put("Button.font", defaultFont);
+            UIManager.put("ColorChooser.font", defaultFont);
+            UIManager.put("TabbedPane.font", defaultFont); // if tabbed panes are used
+
+            // Initialize components with the custom Look and Feel
+            initializeComponents();
+
+            // Update the UI for the button and color chooser to apply the new Look and Feel
+            SwingUtilities.updateComponentTreeUI(selectedColorButton);
+            SwingUtilities.updateComponentTreeUI(colorChooser);
+
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                // Restore the original Look and Feel for the rest of the application
+                UIManager.setLookAndFeel(originalLookAndFeel);
+
+                // Do not update `selectedColorButton` and `colorChooser` back to the original LAF
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+    private void initializeComponents() {
         selectedColorButton.setPreferredSize(new Dimension(3 * 32, 32));
         selectedColorButton.setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, Color.BLACK));
         selectedColorButton.setOpaque(true);
+        selectedColorButton.setContentAreaFilled(true); // Ensures content is filled without rounded edges
         selectedColorButton.setBackground(Color.WHITE);
         selectedColorButton.setForeground(Color.BLACK); // Set text color
 
