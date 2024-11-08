@@ -33,6 +33,7 @@ import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.StandardPackageType;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
@@ -62,8 +63,7 @@ final class LinuxPackageBuilder {
         return reply;
     }
 
-    private LinuxPackage create(jdk.jpackage.internal.model.Package pkg,
-            AppImageLayout pkgLayout) throws ConfigException {
+    private LinuxPackage create(Package pkg, AppImageLayout pkgLayout) throws ConfigException {
         return new LinuxPackage.Stub(pkg,
                 pkgLayout,
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),

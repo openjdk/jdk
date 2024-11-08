@@ -64,7 +64,7 @@ final class AppImageBuilder {
         }
 
         AppImageBuilder create(Application app) {
-            return new AppImageBuilder(app, app.asApplicationLayout(), excludeCopyDirs, launcherCallback);
+            return new AppImageBuilder(app, excludeCopyDirs, launcherCallback);
         }
 
         AppImageBuilder create(Package pkg) {
@@ -80,24 +80,31 @@ final class AppImageBuilder {
     }
 
     private AppImageBuilder(Application app, ApplicationLayout appLayout,
-            List<Path> excludeCopyDirs, LauncherCallback launcherCallback) {
+            List<Path> excludeCopyDirs, LauncherCallback launcherCallback,
+            boolean withAppImageFile) {
         Objects.requireNonNull(app);
         Objects.requireNonNull(appLayout);
 
         this.app = app;
         this.appLayout = appLayout;
-        this.withAppImageFile = true;
+        this.withAppImageFile = withAppImageFile;
         this.launcherCallback = launcherCallback;
         this.excludeCopyDirs = Optional.ofNullable(excludeCopyDirs).orElseGet(List::of);
+    }
+
+    private AppImageBuilder(Application app, List<Path> excludeCopyDirs,
+            LauncherCallback launcherCallback) {
+        this(app, app.asApplicationLayout(), excludeCopyDirs, launcherCallback, false);
     }
 
     private AppImageBuilder(Package pkg, List<Path> excludeCopyDirs,
             LauncherCallback launcherCallback) {
         this(pkg.app(), pkg.asPackageApplicationLayout(), excludeCopyDirs,
-                launcherCallback);
+                launcherCallback, false);
     }
 
-    private static void copyRecursive(Path srcDir, Path dstDir, List<Path> excludeDirs) throws IOException {
+    private static void copyRecursive(Path srcDir, Path dstDir,
+            List<Path> excludeDirs) throws IOException {
         srcDir = srcDir.toAbsolutePath();
 
         List<Path> excludes = new ArrayList<>();
@@ -194,7 +201,8 @@ final class AppImageBuilder {
     }
 
     static interface LauncherCallback {
-        default public void onLauncher(Application app, LauncherContext ctx) throws IOException, PackagerException {
+        default public void onLauncher(Application app, LauncherContext ctx)
+                throws IOException, PackagerException {
             var iconResource = createLauncherIconResource(app, ctx.launcher,
                     ctx.env::createResource);
             if (iconResource != null) {
