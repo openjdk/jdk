@@ -490,14 +490,23 @@ bool XPointer::never_overlaps_with(const XPointer& other, const VLoop& vloop) co
   const MemPointerDecomposedForm& s2 = other.decomposed_form();
   const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA vloop.mptrace() ));
 
-  // TODO
-  bool is_never_overlap = false;
+  // The aliasing tries to compute:
+  //   distance = s2 - s1
+  //
+  // We know that we have no overlap if we can prove:
+  //   s1 >= s2 + s2_size      ||  s1 + s1_size <= s2
+  //
+  // Which we can restate as:
+  //   distance <= -s2_size    ||  s1_size <= distance
+  //
+  const jint distance_lo = -other.size();
+  const jint distance_hi = size();
+  bool is_never_overlap = aliasing.is_never_in_distance_range(distance_lo, distance_hi);
 
 #ifndef PRODUCT
   if (vloop.mptrace().is_trace_overlap()) {
-    tty->print("Never Overlap: %s, aliasing: ", is_never_overlap ? "true" : "false");
-    //tty->print("Never Overlap: %s, because size = %d and aliasing = ",
-    //           is_adjacent ? "true" : "false", size);
+    tty->print("Never Overlap: %s, distance_lo: %d, distance_hi: %d, aliasing: ",
+               is_never_overlap ? "true" : "false", distance_lo, distance_hi);
     aliasing.print_on(tty);
     tty->cr();
   }

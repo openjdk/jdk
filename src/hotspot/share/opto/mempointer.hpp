@@ -405,6 +405,13 @@ public:
     return _aliasing == Always && _distance == distance;
   }
 
+  // Use case: overlap.
+  // Note: the bounds are exclusive: lo < element < hi
+  bool is_never_in_distance_range(const jint distance_lo, const jint distance_hi) const {
+    return _aliasing == Always &&
+           (_distance <= distance_lo || distance_hi <= _distance);
+  }
+
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     switch(_aliasing) {
