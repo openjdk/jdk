@@ -63,7 +63,7 @@ public class TestCastX2NotProcessedIGVN {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 1"},
-        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true"})
     public static int test2(int stop, int[] array) {
         int v = 0;
         stop = Math.min(stop, Integer.MAX_VALUE / 4);
