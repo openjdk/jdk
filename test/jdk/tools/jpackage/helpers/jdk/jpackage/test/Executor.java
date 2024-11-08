@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public final class Executor extends CommandArguments<Executor> {
     public Executor() {
         saveOutputType = new HashSet<>(Set.of(SaveOutputType.NONE));
         removePath = false;
+        winEnableUTF8 = false;
     }
 
     public Executor setExecutable(String v) {
@@ -87,6 +88,15 @@ public final class Executor extends CommandArguments<Executor> {
 
     public Executor setRemovePath(boolean value) {
         removePath = value;
+        return this;
+    }
+
+    public Executor setWinEnableUTF8(boolean value) {
+        if (!TKit.isWindows()) {
+            throw new UnsupportedOperationException(
+                    "setWinEnableUTF8 is only valid on Windows platform");
+        }
+        winEnableUTF8 = value;
         return this;
     }
 
@@ -326,8 +336,17 @@ public final class Executor extends CommandArguments<Executor> {
 
     private Result runExecutable() throws IOException, InterruptedException {
         List<String> command = new ArrayList<>();
-        command.add(executablePath().toString());
-        command.addAll(args);
+
+        if (winEnableUTF8) {
+            // run chcp to change the code page to UTF-8 on Windows
+            command.add("cmd.exe");
+            command.add("/c");
+            command.add("chcp 65001 && " + printCommandLine(executablePath().toString(), args));
+        } else {
+            command.add(executablePath().toString());
+            command.addAll(args);
+        }
+
         ProcessBuilder builder = new ProcessBuilder(command);
         if (winTmpDir != null) {
             builder.environment().put("TMP", winTmpDir);
@@ -457,13 +476,16 @@ public final class Executor extends CommandArguments<Executor> {
             exec = executablePath().toString();
         }
 
-        return String.format(format, printCommandLine(exec, args),
-                args.size() + 1);
+        String chcpCmdLine = winEnableUTF8 ? "cmd.exe /c chcp 65001 && " : "";
+        int chcpTokenNum = chcpCmdLine.isEmpty() ? 0 : chcpCmdLine.split(" ").length;
+
+        return String.format(format, chcpCmdLine + printCommandLine(exec, args),
+                chcpTokenNum + args.size() + 1);
     }
 
     private static String printCommandLine(String executable, List<String> args) {
         // Want command line printed in a way it can be easily copy/pasted
-        // to be executed manally
+        // to be executed manually
         Pattern regex = Pattern.compile("\\s");
         return Stream.concat(Stream.of(executable), args.stream()).map(
                 v -> (v.isEmpty() || regex.matcher(v).find()) ? "\"" + v + "\"" : v).collect(
@@ -479,6 +501,7 @@ public final class Executor extends CommandArguments<Executor> {
     private Set<SaveOutputType> saveOutputType;
     private Path directory;
     private boolean removePath;
+    private boolean winEnableUTF8;
     private String winTmpDir = null;
 
     private static enum SaveOutputType {

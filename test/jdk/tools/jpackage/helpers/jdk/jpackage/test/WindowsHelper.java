@@ -237,7 +237,7 @@ public class WindowsHelper {
 
     public static void killAppLauncherProcess(JPackageCommand cmd,
             String launcherName, int expectedCount) {
-        var pids = findAppLauncherPIDs(cmd, launcherName);
+        var pids = findAppLauncherPIDs(cmd, launcherName, expectedCount);
         try {
             TKit.assertEquals(expectedCount, pids.length, String.format(
                     "Check [%d] %s app launcher processes found running",
@@ -250,16 +250,20 @@ public class WindowsHelper {
         }
     }
 
-    private static long[] findAppLauncherPIDs(JPackageCommand cmd, String launcherName) {
+    private static long[] findAppLauncherPIDs(JPackageCommand cmd, String launcherName, int expectedCount) {
         // Get the list of PIDs and PPIDs of app launcher processes.
         // wmic process where (name = "foo.exe") get ProcessID,ParentProcessID
-        List<String> output = Executor.of("wmic", "process", "where", "(name",
+        Executor executor = Executor.of("wmic", "process", "where", "(name",
                 "=",
                 "\"" + cmd.appLauncherPath(launcherName).getFileName().toString() + "\"",
-                ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).
-                saveOutput().executeAndGetOutput();
+                ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).saveOutput();
+        // setWinEnableUTF8(true) for JDK-XXXXXXX
+        if (expectedCount == 0) {
+            executor.setWinEnableUTF8(true);
+        }
+        List<String> output = executor.executeAndGetOutput();
 
-        if ("No Instance(s) Available.".equals(output.getFirst().trim())) {
+        if ("No Instance(s) Available.".equals(output.get(1).trim())) {
             return new long[0];
         }
 
