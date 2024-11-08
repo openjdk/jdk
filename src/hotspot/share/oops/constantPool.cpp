@@ -477,7 +477,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
   if (k == nullptr) {
     // We'd come here if the referenced class has been excluded via
     // SystemDictionaryShared::is_excluded_class(). As a result, ArchiveBuilder
-    // has cleared the resolved_klasses()->at(...) pointer to NULL. Thus, we
+    // has cleared the resolved_klasses()->at(...) pointer to null. Thus, we
     // need to revert the tag to JVM_CONSTANT_UnresolvedClass.
     can_archive = false;
   } else {

@@ -47,9 +47,8 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Test jpackage command line with overlapping input and output paths
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile InOutPathTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=InOutPathTest
@@ -73,11 +72,20 @@ public final class InOutPathTest {
             data.addAll(additionalContentInput(packageTypes, "--app-content"));
         }
 
-        data.addAll(List.of(new Object[][]{
-            {PackageType.IMAGE.toString(), wrap(cmd -> {
-                additionalContent(cmd, "--app-content", cmd.outputBundle());
-            }, "--app-content same as output bundle")},
-        }));
+        if (!TKit.isOSX()) {
+            data.addAll(List.of(new Object[][]{
+                {PackageType.IMAGE.toString(), wrap(cmd -> {
+                    additionalContent(cmd, "--app-content", cmd.outputBundle());
+                }, "--app-content same as output bundle")},
+            }));
+        } else {
+            var contentsFolder = "Contents/MacOS";
+            data.addAll(List.of(new Object[][]{
+                {PackageType.IMAGE.toString(), wrap(cmd -> {
+                    additionalContent(cmd, "--app-content", cmd.outputBundle().resolve(contentsFolder));
+                }, String.format("--app-content same as the \"%s\" folder in the output bundle", contentsFolder))},
+            }));
+        }
 
         if (TKit.isOSX()) {
             data.addAll(additionalContentInput(PackageType.MAC_DMG.toString(),
@@ -172,6 +180,16 @@ public final class InOutPathTest {
             cmd.executeAndAssertHelloAppImageCreated();
             if (isAppImageValid(cmd)) {
                 verifyAppImage(cmd);
+            }
+
+            if (cmd.hasArgument("--app-content")) {
+                // `--app-content` can be set to the app image directory which
+                // should not exist before jpackage is executed:
+                //  jpackage --name Foo --dest output --app-content output/Foo
+                // Verify the directory exists after jpackage execution.
+                // At least this will catch the case when the value of
+                // `--app-content` option refers to a path unrelated to jpackage I/O.
+                TKit.assertDirectoryExists(Path.of(cmd.getArgumentValue("--app-content")));
             }
         } else {
             new PackageTest()
