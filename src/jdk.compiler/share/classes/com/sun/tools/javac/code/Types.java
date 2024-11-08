@@ -1695,6 +1695,7 @@ public class Types {
                         } else if (csym.isSealed()) {
                             return areDisjoint(isym, csym.getPermittedSubclasses());
                         } else if (isym.isSealed()) {
+                            // if the class is not final and not sealed then it has to be freely extensible
                             return areDisjoint(csym, isym.getPermittedSubclasses());
                         }
                     } // now both are classes or both are interfaces
