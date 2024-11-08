@@ -18,7 +18,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bho" draft="contributed">bhojpuri</language>
 			<language type="eu" draft="contributed">euskera</language>
 			<language type="grc" draft="contributed">griego antiguo</language>
-			<language type="lo" draft="contributed">lao</language>
 			<language type="nso" draft="contributed">sotho septentrional</language>
 			<language type="pa" draft="contributed">punyabí</language>
 			<language type="ss" draft="contributed">siswati</language>

@@ -3782,6 +3782,14 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
+#ifdef ASSERT
+  case Op_ConNKlass: {
+    const TypePtr* tp = n->as_Type()->type()->make_ptr();
+    ciKlass* klass = tp->is_klassptr()->exact_klass();
+    assert(klass->is_in_encoding_range(), "klass cannot be compressed");
+    break;
+  }
+#endif
   default:
     assert(!n->is_Call(), "");
     assert(!n->is_Mem(), "");
