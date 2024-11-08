@@ -1083,6 +1083,26 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
   st->print_cr("%s %ld days %ld:%02ld hours", startStr, days, hours, minutes);
 }
 
+void os::print_tos_pc(outputStream* st, const void* context) {
+  if (context == nullptr) return;
+
+  // First of all, carefully determine sp without inspecting memory near pc.
+  // See comment below.
+  intptr_t* sp = nullptr;
+  fetch_frame_from_context(context, &sp, nullptr);
+  print_tos(st, (address)sp);
+  st->cr();
+
+  // Note: it may be unsafe to inspect memory near pc. For example, pc may
+  // point to garbage if entry point in an nmethod is corrupted. Leave
+  // this at the end, and hope for the best.
+  // This version of fetch_frame_from_context finds the caller pc if the actual
+  // one is bad.
+  address pc = fetch_frame_from_context(context).pc();
+  print_instructions(st, pc);
+  st->cr();
+}
+
 void os::print_tos(outputStream* st, address sp) {
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
   print_hex_dump(st, sp, sp + 512, sizeof(intptr_t));
@@ -2166,7 +2186,7 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    NmtVirtualMemoryLocker ml;
+    ThreadCritical tc;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
       MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
@@ -2188,7 +2208,7 @@ bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    NmtVirtualMemoryLocker ml;
+    ThreadCritical tc;
     res = pd_release_memory(addr, bytes);
     if (res) {
       MemTracker::record_virtual_memory_release((address)addr, bytes);
@@ -2273,7 +2293,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::enabled()) {
-    NmtVirtualMemoryLocker ml;
+    ThreadCritical tc;
     result = pd_unmap_memory(addr, bytes);
     if (result) {
       MemTracker::record_virtual_memory_release((address)addr, bytes);
@@ -2312,7 +2332,7 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 bool os::release_memory_special(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::enabled()) {
-    NmtVirtualMemoryLocker ml;
+    ThreadCritical tc;
     res = pd_release_memory_special(addr, bytes);
     if (res) {
       MemTracker::record_virtual_memory_release((address)addr, bytes);
