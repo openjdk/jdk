@@ -839,7 +839,7 @@ public:
     _opt_roots_scanned(0),
     _opt_refs_scanned(0),
     _opt_refs_memory_used(0) { }
- 
+
   bool do_heap_region(G1HeapRegion* r) override {
     if (r->has_index_in_opt_cset()) {
       scan_opt_rem_set_roots(r);
