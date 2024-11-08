@@ -30,7 +30,6 @@ import jdk.internal.misc.Unsafe;
  * @test
  * @bug 8343068
  * @summary C2: CastX2P Ideal transformation not always applied
- * @requires os.arch != "ppc64le" & os.arch != "ppc64"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.c2.TestCastX2NotProcessedIGVN
@@ -63,7 +62,8 @@ public class TestCastX2NotProcessedIGVN {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 1"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 1"},
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static int test2(int stop, int[] array) {
         int v = 0;
         stop = Math.min(stop, Integer.MAX_VALUE / 4);
