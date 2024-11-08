@@ -166,7 +166,6 @@ public class RISCV64 extends Architecture {
     public enum Flag {
         UseConservativeFence,
         AvoidUnalignedAccesses,
-        NearCpool,
         TraceTraps,
         UseRVV,
         UseRVC,

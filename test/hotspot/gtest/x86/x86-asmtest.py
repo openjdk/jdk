@@ -20,6 +20,7 @@
 # questions.
 
 import os
+import sys
 import platform
 import random
 import re
@@ -305,7 +306,7 @@ immediate_map = {
 }
 
 def is_64_reg(reg):
-    return reg in {'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15'}
+    return reg in {'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15', 'r16', 'r17', 'r18', 'r19', 'r20', 'r21', 'r22', 'r23', 'r24', 'r25', 'r26', 'r27', 'r28', 'r29', 'r30', 'r31'}
 
 def print_instruction(instr, lp64_flag, print_lp64_flag):
     cstr = instr.cstr()
@@ -315,10 +316,15 @@ def print_instruction(instr, lp64_flag, print_lp64_flag):
     insns_strs.append(cstr)
     outfile.write(f"    {astr}\n")
 
-def handle_lp64_flag(i, lp64_flag, print_lp64_flag):
-    if is_64_reg(test_regs[i]) and not lp64_flag and print_lp64_flag:
-        print("#ifdef _LP64")
-        return True
+def handle_lp64_flag(lp64_flag, print_lp64_flag, *regs):
+    for reg in regs:
+        if is_64_reg(reg):
+            if not lp64_flag and print_lp64_flag:
+                print("#ifdef _LP64")
+            return True
+    if lp64_flag and print_lp64_flag:
+        print("#endif // _LP64")
+        return False
     return lp64_flag
 
 def get_immediate_list(op_name, width):
@@ -344,90 +350,177 @@ def get_immediate_list(op_name, width):
     else:
         return immediate_map[width]
 
-def generate(RegOp, ops, print_lp64_flag=True):
+lp64_flag = False
+def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
+    global lp64_flag
     for op in ops:
         op_name = op[0]
         width = op[2]
-        lp64_flag = False
 
         if RegOp in [RegInstruction, CondRegInstruction]:
-            for i in range(len(test_regs)):
-                lp64_flag = handle_lp64_flag(i, lp64_flag, print_lp64_flag)
-                instr = RegOp(*op, reg=test_regs[i])
+            if full_set:
+                for i in range(len(test_regs)):
+                    test_reg = test_regs[i]
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg)
+                    instr = RegOp(*op, reg=test_reg)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
+            else:
+                test_reg = random.choice(test_regs)
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg)
+                instr = RegOp(*op, reg=test_reg)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [TwoRegInstruction, MoveRegRegInstruction]:
-            for i in range(len(test_regs)):
-                lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
-                instr = RegOp(*op, reg1=test_regs[i], reg2=test_regs[(i + 1) % len(test_regs)])
+            if full_set:
+                for i in range(len(test_regs)):
+                    test_reg1 = test_regs[i]
+                    test_reg2 = test_regs[(i + 1) % len(test_regs)]
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
+                    instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
+            else:
+                test_reg1 = random.choice(test_regs)
+                test_reg2 = random.choice(test_regs)
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
+                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [MemRegInstruction, RegMemInstruction, MoveRegMemInstruction, CmpxchgInstruction, CondRegMemInstruction]:
-            for i in range(len(test_regs)):
-                if test_regs[(i + 2) % len(test_regs)] == 'rsp':
-                    continue
-                lp64_flag = handle_lp64_flag((i + 2) % len(test_regs), lp64_flag, print_lp64_flag)
-                instr = RegOp(*op, reg=test_regs[i], mem_base=test_regs[(i + 1) % len(test_regs)], mem_idx=test_regs[(i + 2) % len(test_regs)])
+            if full_set:
+                for i in range(len(test_regs)):
+                    test_reg = test_regs[i]
+                    test_mem_base = test_regs[(i + 1) % len(test_regs)]
+                    test_mem_idx = test_regs[(i + 2) % len(test_regs)]
+                    if test_mem_idx == 'rsp':
+                        continue
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg, test_mem_base, test_mem_idx)
+                    instr = RegOp(*op, reg=test_reg, mem_base=test_mem_base, mem_idx=test_mem_idx)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
+            else:
+                filtered_regs = [reg for reg in test_regs if reg != 'rsp']
+                test_reg = random.choice(test_regs)
+                test_mem_base = random.choice(test_regs)
+                test_mem_idx = random.choice(filtered_regs)
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg, test_mem_base, test_mem_idx)
+                instr = RegOp(*op, reg=test_reg, mem_base=test_mem_base, mem_idx=test_mem_idx)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegImmInstruction]:
-            imm_list = get_immediate_list(op_name, width)
-            for i in range(len(test_regs)):
-                lp64_flag = handle_lp64_flag(i, lp64_flag, print_lp64_flag)
-                for imm in imm_list:
-                    instr = RegOp(*op, reg=test_regs[i], imm=imm)
-                    print_instruction(instr, lp64_flag, print_lp64_flag)
+            if full_set:
+                imm_list = get_immediate_list(op_name, width)
+                for i in range(len(test_regs)):
+                    test_reg = test_regs[i]
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg)
+                    for imm in imm_list:
+                        instr = RegOp(*op, reg=test_reg, imm=imm)
+                        print_instruction(instr, lp64_flag, print_lp64_flag)
+            else:
+                test_reg = random.choice(test_regs)
+                imm = random.choice(get_immediate_list(op_name, width))
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg)
+                instr = RegOp(*op, reg=test_reg, imm=imm)
+                print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [MemImmInstruction]:
-            imm_list = get_immediate_list(op_name, width)
-            for imm in imm_list:
-                for i in range(len(test_regs)):
-                    if test_regs[(i + 1) % len(test_regs)] == 'rsp':
-                        continue
-                    lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
-                    instr = RegOp(*op, imm=imm, mem_base=test_regs[i], mem_idx=test_regs[(i + 1) % len(test_regs)])
-                    print_instruction(instr, lp64_flag, print_lp64_flag)
+            if full_set:
+                imm_list = get_immediate_list(op_name, width)
+                for imm in imm_list:
+                    for i in range(len(test_regs)):
+                        test_mem_base = test_regs[i]
+                        test_mem_idx = test_regs[(i + 1) % len(test_regs)]
+                        if test_mem_idx == 'rsp':
+                            continue
+                        lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_mem_base, test_mem_idx)
+                        instr = RegOp(*op, imm=imm, mem_base=test_mem_base, mem_idx=test_mem_idx)
+                        print_instruction(instr, lp64_flag, print_lp64_flag)
+
+            else:
+                filtered_regs = [reg for reg in test_regs if reg != 'rsp']
+                imm = random.choice(get_immediate_list(op_name, width))
+                test_mem_base = random.choice(test_regs)
+                test_mem_idx = random.choice(filtered_regs)
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_mem_base, test_mem_idx)
+                instr = RegOp(*op, imm=imm, mem_base=test_mem_base, mem_idx=test_mem_idx)
+                print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [MemInstruction]:
-            for i in range(len(test_regs)):
-                if test_regs[(i + 1) % len(test_regs)] == 'rsp':
-                    continue
-                lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
-                instr = RegOp(*op, mem_base=test_regs[i], mem_idx=test_regs[(i + 1) % len(test_regs)])
+            if full_set:
+                for i in range(len(test_regs)):
+                    test_mem_base = test_regs[i]
+                    test_mem_idx = test_regs[(i + 1) % len(test_regs)]
+                    if test_mem_idx == 'rsp':
+                        continue
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_mem_base, test_mem_idx)
+                    instr = RegOp(*op, mem_base=test_mem_base, mem_idx=test_mem_idx)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
+            else:
+                filtered_regs = [reg for reg in test_regs if reg != 'rsp']
+                test_mem_base = random.choice(test_regs)
+                test_mem_idx = random.choice(filtered_regs)
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_mem_base, test_mem_idx)
+                instr = RegOp(*op, mem_base=test_mem_base, mem_idx=test_mem_idx)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegRegImmInstruction]:
-            imm_list = get_immediate_list(op_name, width)
-            for i in range(len(test_regs)):
-                lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
-                for imm in imm_list:
-                    instr = RegOp(*op, reg1=test_regs[i], reg2=test_regs[(i + 1) % len(test_regs)], imm=imm)
-                    print_instruction(instr, lp64_flag, print_lp64_flag)
+            if full_set:
+                imm_list = get_immediate_list(op_name, width)
+                for i in range(len(test_regs)):
+                    test_reg1 = test_regs[i]
+                    test_reg2 = test_regs[(i + 1) % len(test_regs)]
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
+                    for imm in imm_list:
+                        instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
+                        print_instruction(instr, lp64_flag, print_lp64_flag)
+            else:
+                imm = random.choice(get_immediate_list(op_name, width))
+                test_reg1 = random.choice(test_regs)
+                test_reg2 = random.choice(test_regs)
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
+                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
+                print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegMemImmInstruction]:
-            imm_list = get_immediate_list(op_name, width)
-            for i in range(len(test_regs)):
-                lp64_flag = handle_lp64_flag((i + 2) % len(test_regs), lp64_flag, print_lp64_flag)
-                for imm in imm_list:
-                    if test_regs[(i + 2) % len(test_regs)] == 'rsp':
+            if full_set:
+                imm_list = get_immediate_list(op_name, width)
+                for i in range(len(test_regs)):
+                    test_reg = test_regs[i]
+                    test_mem_base = test_regs[(i + 1) % len(test_regs)]
+                    test_mem_idx = test_regs[(i + 2) % len(test_regs)]
+                    if test_mem_idx == 'rsp':
                         continue
-                    instr = RegOp(*op, reg=test_regs[i], mem_base=test_regs[(i + 1) % len(test_regs)], mem_idx=test_regs[(i + 2) % len(test_regs)], imm=imm)
-                    print_instruction(instr, lp64_flag, print_lp64_flag)
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg, test_mem_base, test_mem_idx)
+                    for imm in imm_list:
+                        instr = RegOp(*op, reg=test_reg, mem_base=test_mem_base, mem_idx=test_mem_idx, imm=imm)
+                        print_instruction(instr, lp64_flag, print_lp64_flag)
+            else:
+                imm = random.choice(get_immediate_list(op_name, width))
+                filtered_regs = [reg for reg in test_regs if reg != 'rsp']
+                test_reg = random.choice(test_regs)
+                test_mem_base = random.choice(test_regs)
+                test_mem_idx = random.choice(filtered_regs)
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg, test_mem_base, test_mem_idx)
+                instr = RegOp(*op, reg=test_reg, imm=imm, mem_base=test_mem_base, mem_idx=test_mem_idx)
+                print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [Push2Instruction, Pop2Instruction]:
-            for i in range(len(test_regs)):
-                lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
-                if test_regs[(i + 1) % len(test_regs)] == 'rsp' or test_regs[i] == 'rsp':
-                    continue
-                instr = RegOp(*op, reg1=test_regs[i], reg2=test_regs[(i + 1) % len(test_regs)])
+            if full_set:
+                for i in range(len(test_regs)):
+                    test_reg1 = test_regs[i]
+                    test_reg2 = test_regs[(i + 1) % len(test_regs)]
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
+                    if test_reg1 == 'rsp' or test_reg2 == 'rsp':
+                        continue
+                    instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
+            else:
+                filtered_regs = [reg for reg in test_regs if reg != 'rsp']
+                test_reg1, test_reg2 = random.sample(filtered_regs, 2)
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
+                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         else:
             raise ValueError(f"Unsupported instruction type: {RegOp}")
-
-        if lp64_flag and print_lp64_flag:
-            print("#endif // _LP64")
-            lp64_flag = False
 
 def print_with_ifdef(ifdef_flags, items, item_formatter, width):
     under_defined = False
@@ -773,6 +866,8 @@ if __name__ == "__main__":
         print("This script only works on Linux")
         exit(1)
 
+    full_set = '--full' in sys.argv
+
     ifdef_flags = []
     insns_strs = []
 
@@ -783,11 +878,15 @@ if __name__ == "__main__":
     outfile.write(".intel_syntax noprefix\n")
 
     for RegOp, ops in instruction_set.items():
-        generate(RegOp, ops, True)
+        generate(RegOp, ops, True, full_set)
+        
+    if lp64_flag:
+        lp64_flag = False
+        print("#endif // _LP64")
 
     print("#ifdef _LP64")
     for RegOp, ops in instruction_set64.items():
-        generate(RegOp, ops, False)
+        generate(RegOp, ops, False, full_set)
     print("#endif // _LP64")
 
     outfile.close()

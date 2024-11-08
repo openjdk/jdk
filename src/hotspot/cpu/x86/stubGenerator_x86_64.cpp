@@ -3831,10 +3831,10 @@ address StubGenerator::generate_lookup_secondary_supers_table_stub(u1 super_klas
       r_sub_klass   = rsi,
       result        = rdi;
 
-  __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                   rdx, rcx, rbx, r11, // temps
-                                   result,
-                                   super_klass_index);
+  __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                         rdx, rcx, rbx, r11, // temps
+                                         result,
+                                         super_klass_index);
   __ ret(0);
 
   return start;
@@ -4031,6 +4031,8 @@ void StubGenerator::generate_compiler_stubs() {
   generate_ghash_stubs();
 
   generate_chacha_stubs();
+
+  generate_sha3_stubs();
 
 #ifdef COMPILER2
   if ((UseAVX == 2) && EnableX86ECoreOpts) {

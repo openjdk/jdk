@@ -25,8 +25,10 @@
 #ifndef SHARE_CDS_ARCHIVEUTILS_HPP
 #define SHARE_CDS_ARCHIVEUTILS_HPP
 
+#include "cds/cds_globals.hpp"
 #include "cds/serializeClosure.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
@@ -228,13 +230,14 @@ public:
 class ReadClosure : public SerializeClosure {
 private:
   intptr_t** _ptr_array;
-
+  intptr_t _base_address;
   inline intptr_t nextPtr() {
     return *(*_ptr_array)++;
   }
 
 public:
-  ReadClosure(intptr_t** ptr_array) { _ptr_array = ptr_array; }
+  ReadClosure(intptr_t** ptr_array, intptr_t base_address) :
+    _ptr_array(ptr_array), _base_address(base_address) {}
 
   void do_ptr(void** p);
   void do_u4(u4* p);
@@ -247,7 +250,27 @@ public:
 
 class ArchiveUtils {
 public:
+  static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
+
+  // offset must represent an object of type T in the mapped shared space. Return
+  // a direct pointer to this object.
+  template <typename T> T static from_offset(u4 offset) {
+    T p = (T)(SharedBaseAddress + offset);
+    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    return p;
+  }
+
+  // p must be an archived object. Get its offset from SharedBaseAddress
+  template <typename T> static u4 to_offset(T p) {
+    uintx pn = (uintx)p;
+    uintx base = (uintx)SharedBaseAddress;
+    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    assert(pn > base, "sanity"); // No valid object is stored at 0 offset from SharedBaseAddress
+    uintx offset = pn - base;
+    assert(offset <= MAX_SHARED_DELTA, "range check");
+    return static_cast<u4>(offset);
+  }
 };
 
 class HeapRootSegments {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,9 @@ import jdk.jpackage.test.JPackageCommand;
 /*
  * @test usage of scripts from resource dir
  * @summary jpackage with
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinScriptTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinScriptTest
