@@ -49,6 +49,10 @@ class name java/lang/Runtime
 method name load descriptor (Ljava/lang/String;)V flags 1 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;@Ljdk/internal/javac/Restricted;
 method name loadLibrary descriptor (Ljava/lang/String;)V flags 1 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;@Ljdk/internal/javac/Restricted;
 
+class name java/lang/ScopedValue
+-method name runWhere descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;Ljava/lang/Runnable;)V
+-method name callWhere descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;Ljava/lang/ScopedValue$CallableOp;)Ljava/lang/Object;
+
 class name java/lang/System
 -method name load descriptor (Ljava/lang/String;)V
 -method name loadLibrary descriptor (Ljava/lang/String;)V
@@ -945,6 +949,82 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 class name java/util/zip/ZipError
 header extends java/lang/InternalError flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="24")
 
+class name javax/crypto/KDF
+header extends java/lang/Object flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;KEY_DERIVATION;)
+innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
+method name getAlgorithm descriptor ()Ljava/lang/String; flags 1
+method name getProviderName descriptor ()Ljava/lang/String; flags 1
+method name getParameters descriptor ()Ljavax/crypto/KDFParameters; flags 1
+method name getInstance descriptor (Ljava/lang/String;)Ljavax/crypto/KDF; thrownTypes java/security/NoSuchAlgorithmException flags 9
+method name getInstance descriptor (Ljava/lang/String;Ljava/lang/String;)Ljavax/crypto/KDF; thrownTypes java/security/NoSuchAlgorithmException,java/security/NoSuchProviderException flags 9
+method name getInstance descriptor (Ljava/lang/String;Ljava/security/Provider;)Ljavax/crypto/KDF; thrownTypes java/security/NoSuchAlgorithmException flags 9
+method name getInstance descriptor (Ljava/lang/String;Ljavax/crypto/KDFParameters;)Ljavax/crypto/KDF; thrownTypes java/security/NoSuchAlgorithmException,java/security/InvalidAlgorithmParameterException flags 9
+method name getInstance descriptor (Ljava/lang/String;Ljavax/crypto/KDFParameters;Ljava/lang/String;)Ljavax/crypto/KDF; thrownTypes java/security/NoSuchAlgorithmException,java/security/NoSuchProviderException,java/security/InvalidAlgorithmParameterException flags 9
+method name getInstance descriptor (Ljava/lang/String;Ljavax/crypto/KDFParameters;Ljava/security/Provider;)Ljavax/crypto/KDF; thrownTypes java/security/NoSuchAlgorithmException,java/security/InvalidAlgorithmParameterException flags 9
+method name deriveKey descriptor (Ljava/lang/String;Ljava/security/spec/AlgorithmParameterSpec;)Ljavax/crypto/SecretKey; thrownTypes java/security/InvalidAlgorithmParameterException,java/security/NoSuchAlgorithmException flags 1
+method name deriveData descriptor (Ljava/security/spec/AlgorithmParameterSpec;)[B thrownTypes java/security/InvalidAlgorithmParameterException flags 1
+
+class name javax/crypto/KDFParameters
+header extends java/lang/Object flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;KEY_DERIVATION;)
+
+class name javax/crypto/KDFSpi
+header extends java/lang/Object flags 421 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;KEY_DERIVATION;)
+method name <init> descriptor (Ljavax/crypto/KDFParameters;)V thrownTypes java/security/InvalidAlgorithmParameterException flags 4
+method name engineGetParameters descriptor ()Ljavax/crypto/KDFParameters; flags 404
+method name engineDeriveKey descriptor (Ljava/lang/String;Ljava/security/spec/AlgorithmParameterSpec;)Ljavax/crypto/SecretKey; thrownTypes java/security/InvalidAlgorithmParameterException,java/security/NoSuchAlgorithmException flags 404
+method name engineDeriveData descriptor (Ljava/security/spec/AlgorithmParameterSpec;)[B thrownTypes java/security/InvalidAlgorithmParameterException flags 404
+
+class name javax/crypto/spec/HKDFParameterSpec
+header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec nestMembers javax/crypto/spec/HKDFParameterSpec$ExtractThenExpand,javax/crypto/spec/HKDFParameterSpec$Expand,javax/crypto/spec/HKDFParameterSpec$Extract,javax/crypto/spec/HKDFParameterSpec$Builder flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;KEY_DERIVATION;)
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$Builder outerClass javax/crypto/spec/HKDFParameterSpec innerClassName Builder flags 19
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$Expand outerClass javax/crypto/spec/HKDFParameterSpec innerClassName Expand flags 19
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$ExtractThenExpand outerClass javax/crypto/spec/HKDFParameterSpec innerClassName ExtractThenExpand flags 19
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$Extract outerClass javax/crypto/spec/HKDFParameterSpec innerClassName Extract flags 19
+method name ofExtract descriptor ()Ljavax/crypto/spec/HKDFParameterSpec$Builder; flags 9
+method name expandOnly descriptor (Ljavax/crypto/SecretKey;[BI)Ljavax/crypto/spec/HKDFParameterSpec$Expand; flags 9
+
+class name javax/crypto/spec/HKDFParameterSpec$Builder
+header extends java/lang/Object nestHost javax/crypto/spec/HKDFParameterSpec flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;KEY_DERIVATION;)
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$Builder outerClass javax/crypto/spec/HKDFParameterSpec innerClassName Builder flags 19
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$Extract outerClass javax/crypto/spec/HKDFParameterSpec innerClassName Extract flags 19
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$ExtractThenExpand outerClass javax/crypto/spec/HKDFParameterSpec innerClassName ExtractThenExpand flags 19
+method name extractOnly descriptor ()Ljavax/crypto/spec/HKDFParameterSpec$Extract; flags 1
+method name thenExpand descriptor ([BI)Ljavax/crypto/spec/HKDFParameterSpec$ExtractThenExpand; flags 1
+method name addIKM descriptor (Ljavax/crypto/SecretKey;)Ljavax/crypto/spec/HKDFParameterSpec$Builder; flags 1
+method name addIKM descriptor ([B)Ljavax/crypto/spec/HKDFParameterSpec$Builder; flags 1
+method name addSalt descriptor (Ljavax/crypto/SecretKey;)Ljavax/crypto/spec/HKDFParameterSpec$Builder; flags 1
+method name addSalt descriptor ([B)Ljavax/crypto/spec/HKDFParameterSpec$Builder; flags 1
+
+class name javax/crypto/spec/HKDFParameterSpec$Expand
+header extends java/lang/Object implements javax/crypto/spec/HKDFParameterSpec nestHost javax/crypto/spec/HKDFParameterSpec flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;KEY_DERIVATION;)
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$Expand outerClass javax/crypto/spec/HKDFParameterSpec innerClassName Expand flags 19
+method name prk descriptor ()Ljavax/crypto/SecretKey; flags 1
+method name info descriptor ()[B flags 1
+method name length descriptor ()I flags 1
+
+class name javax/crypto/spec/HKDFParameterSpec$Extract
+header extends java/lang/Object implements javax/crypto/spec/HKDFParameterSpec nestHost javax/crypto/spec/HKDFParameterSpec flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;KEY_DERIVATION;)
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$Extract outerClass javax/crypto/spec/HKDFParameterSpec innerClassName Extract flags 19
+method name ikms descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<Ljavax/crypto/SecretKey;>;
+method name salts descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<Ljavax/crypto/SecretKey;>;
+
+class name javax/crypto/spec/HKDFParameterSpec$ExtractThenExpand
+header extends java/lang/Object implements javax/crypto/spec/HKDFParameterSpec nestHost javax/crypto/spec/HKDFParameterSpec flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;KEY_DERIVATION;)
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$ExtractThenExpand outerClass javax/crypto/spec/HKDFParameterSpec innerClassName ExtractThenExpand flags 19
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$Extract outerClass javax/crypto/spec/HKDFParameterSpec innerClassName Extract flags 19
+innerclass innerClass javax/crypto/spec/HKDFParameterSpec$Expand outerClass javax/crypto/spec/HKDFParameterSpec innerClassName Expand flags 19
+method name ikms descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<Ljavax/crypto/SecretKey;>;
+method name salts descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<Ljavax/crypto/SecretKey;>;
+method name info descriptor ()[B flags 1
+method name length descriptor ()I flags 1
+
+class name javax/security/auth/Subject
+header extends java/lang/Object implements java/io/Serializable flags 31
+innerclass innerClass java/lang/ScopedValue$Carrier outerClass java/lang/ScopedValue innerClassName Carrier flags 19
+innerclass innerClass java/lang/ScopedValue$CallableOp outerClass java/lang/ScopedValue innerClassName CallableOp flags 609
+innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
 class name jdk/internal/classfile/impl/AbstractBoundLocalVariable
 header extends jdk/internal/classfile/impl/AbstractElement implements jdk/internal/classfile/impl/Util$WritableLocalVariable flags 21
 innerclass innerClass jdk/internal/classfile/impl/Util$WritableLocalVariable outerClass jdk/internal/classfile/impl/Util innerClassName WritableLocalVariable flags 608
@@ -1577,6 +1657,7 @@ header extends jdk/internal/classfile/impl/AbstractDirectBuilder implements jdk/
 innerclass innerClass jdk/internal/classfile/impl/AbstractPseudoInstruction$ExceptionCatchImpl outerClass jdk/internal/classfile/impl/AbstractPseudoInstruction innerClassName ExceptionCatchImpl flags 19
 -method name build descriptor (Ljdk/internal/classfile/impl/MethodInfo;Ljava/util/function/Consumer;Ljdk/internal/classfile/impl/SplitConstantPool;Ljdk/internal/classfile/impl/ClassFileImpl;Ljava/lang/classfile/CodeModel;)Ljava/lang/classfile/Attribute;
 -method name writeIncrement descriptor (II)V
+-method name writeLoadConstant descriptor (Ljava/lang/classfile/Opcode;Ljava/lang/classfile/constantpool/LoadableConstantEntry;)V
 method name build descriptor (Ljdk/internal/classfile/impl/MethodInfo;Ljava/util/function/Consumer;Ljdk/internal/classfile/impl/SplitConstantPool;Ljdk/internal/classfile/impl/ClassFileImpl;Ljava/lang/classfile/CodeModel;)Ljdk/internal/classfile/impl/UnboundAttribute; flags 9 signature (Ljdk/internal/classfile/impl/MethodInfo;Ljava/util/function/Consumer<-Ljava/lang/classfile/CodeBuilder;>;Ljdk/internal/classfile/impl/SplitConstantPool;Ljdk/internal/classfile/impl/ClassFileImpl;Ljava/lang/classfile/CodeModel;)Ljdk/internal/classfile/impl/UnboundAttribute<Ljava/lang/classfile/attribute/CodeAttribute;>;
 method name writeIncrement descriptor (ZII)V flags 1
 method name addLabel descriptor (Ljdk/internal/classfile/impl/DirectCodeBuilder$DeferredLabel;)V flags 1
@@ -1731,6 +1812,8 @@ method name pop2 descriptor ()Ljava/lang/classfile/CodeBuilder; flags 1
 method name sipush descriptor (I)Ljava/lang/classfile/CodeBuilder; flags 1
 method name swap descriptor ()Ljava/lang/classfile/CodeBuilder; flags 1
 method name tableswitch descriptor (IILjava/lang/classfile/Label;Ljava/util/List;)Ljava/lang/classfile/CodeBuilder; flags 1 signature (IILjava/lang/classfile/Label;Ljava/util/List<Ljava/lang/classfile/instruction/SwitchCase;>;)Ljava/lang/classfile/CodeBuilder;
+method name writeAdaptLoadConstant descriptor (Ljava/lang/classfile/Opcode;Ljava/lang/classfile/constantpool/LoadableConstantEntry;)V flags 1
+method name writeDirectLoadConstant descriptor (Ljava/lang/classfile/Opcode;Ljava/lang/classfile/constantpool/LoadableConstantEntry;)V flags 1
 
 class name jdk/internal/classfile/impl/DirectFieldBuilder
 header extends jdk/internal/classfile/impl/AbstractDirectBuilder implements jdk/internal/classfile/impl/TerminalFieldBuilder,jdk/internal/classfile/impl/Util$Writable flags 31 signature Ljdk/internal/classfile/impl/AbstractDirectBuilder<Ljava/lang/classfile/FieldModel;>;Ljdk/internal/classfile/impl/TerminalFieldBuilder;Ljdk/internal/classfile/impl/Util$Writable;
