@@ -640,9 +640,15 @@ void ShenandoahHeap::post_initialize() {
   _workers->threads_do(&init_gclabs);
 
   // gclab can not be initialized early during VM startup, as it can not determinate its max_size.
-  // Now, we will let WorkerThreads to initialize gclab when new worker is created. Note that the
-  // safepoint workers will never evacuate anything, so have no need for gc labs.
+  // Now, we will let WorkerThreads to initialize gclab when new worker is created.
   _workers->set_initialize_gclab();
+
+  // Note that the safepoint workers may require gclabs if the threads are used to create a heap dump
+  // during a concurrent evacuation phase.
+  if (_safepoint_workers != nullptr) {
+    _safepoint_workers->threads_do(&init_gclabs);
+    _safepoint_workers->set_initialize_gclab();
+  }
 
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers();)
 }
@@ -1259,11 +1265,16 @@ void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
 }
 
 void ShenandoahHeap::concurrent_retire_gc_labs() {
+  ShenandoahRetireGCLABClosure retire(ResizeTLAB);
+
   if (!cancelled_gc()) {
     // If GC was cancelled, we'll want to retain these GC LABs for use in the degenerated cycle.
-    ShenandoahRetireGCLABClosure retire(ResizeTLAB);
     workers()->threads_do(&retire);
   }
+
+  // Safepoint workers may be asked to evacuate objects if they are visiting oops to create a heap dump
+  // during a concurrent evacuation phase. These threads will _not_ be used during a degenerated cycle.
+  safepoint_workers()->threads_do(&retire);
 
   // A degenerated cycle won't attempt to use LABs from the mutator threads
   ShenandoahRetireJavaGCLABClosure retire_java_labs;
