@@ -230,13 +230,14 @@ public:
 class ReadClosure : public SerializeClosure {
 private:
   intptr_t** _ptr_array;
-
+  intptr_t _base_address;
   inline intptr_t nextPtr() {
     return *(*_ptr_array)++;
   }
 
 public:
-  ReadClosure(intptr_t** ptr_array) { _ptr_array = ptr_array; }
+  ReadClosure(intptr_t** ptr_array, intptr_t base_address) :
+    _ptr_array(ptr_array), _base_address(base_address) {}
 
   void do_ptr(void** p);
   void do_u4(u4* p);

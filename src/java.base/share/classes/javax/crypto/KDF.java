@@ -396,19 +396,21 @@ public final class KDF {
                    InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "algorithm must not be null");
         Objects.requireNonNull(provider, "provider must not be null");
-
-        Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
-                                                    algorithm,
-                                                    kdfParameters,
-                                                    provider);
-        if (!JceSecurity.canUseProvider(instance.provider)) {
-            String msg = "JCE cannot authenticate the provider "
-                         + instance.provider.getName();
-            throw new NoSuchProviderException(msg);
+        try {
+            Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
+                                                        algorithm,
+                                                        kdfParameters,
+                                                        provider);
+            if (!JceSecurity.canUseProvider(instance.provider)) {
+                String msg = "JCE cannot authenticate the provider "
+                             + instance.provider.getName();
+                throw new NoSuchProviderException(msg);
+            }
+            return new KDF(new Delegate((KDFSpi) instance.impl,
+                                        instance.provider), algorithm);
+        } catch (NoSuchAlgorithmException nsae) {
+            return handleException(nsae);
         }
-        return new KDF(new Delegate((KDFSpi) instance.impl,
-                                    instance.provider), algorithm
-        );
     }
 
     /**
@@ -444,18 +446,31 @@ public final class KDF {
                    InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "algorithm must not be null");
         Objects.requireNonNull(provider, "provider must not be null");
-        Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
-                                                    algorithm,
-                                                    kdfParameters,
-                                                    provider);
-        if (!JceSecurity.canUseProvider(instance.provider)) {
-            String msg = "JCE cannot authenticate the provider "
-                         + instance.provider.getName();
-            throw new SecurityException(msg);
+        try {
+            Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
+                                                        algorithm,
+                                                        kdfParameters,
+                                                        provider);
+            if (!JceSecurity.canUseProvider(instance.provider)) {
+                String msg = "JCE cannot authenticate the provider "
+                             + instance.provider.getName();
+                throw new SecurityException(msg);
+            }
+            return new KDF(new Delegate((KDFSpi) instance.impl,
+                                        instance.provider), algorithm);
+        } catch (NoSuchAlgorithmException nsae) {
+            return handleException(nsae);
         }
-        return new KDF(new Delegate((KDFSpi) instance.impl,
-                                    instance.provider), algorithm
-        );
+    }
+
+    private static KDF handleException(NoSuchAlgorithmException e)
+            throws NoSuchAlgorithmException,
+                   InvalidAlgorithmParameterException {
+        Throwable cause = e.getCause();
+        if (cause instanceof InvalidAlgorithmParameterException iape) {
+            throw iape;
+        }
+        throw e;
     }
 
     /**
@@ -671,7 +686,8 @@ public final class KDF {
         if (hasOne) throw new InvalidAlgorithmParameterException(
                 "The KDFParameters supplied could not be used in combination "
                 + "with the supplied algorithm for the selected Provider");
-        else throw new NoSuchAlgorithmException();
+        else throw new NoSuchAlgorithmException(
+                "No available provider supports the specified algorithm");
     }
 
     private static boolean checkSpiNonNull(Delegate d) {
