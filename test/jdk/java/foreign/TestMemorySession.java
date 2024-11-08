@@ -344,7 +344,7 @@ public class TestMemorySession {
                 }
                 // Keep the 2 threads operating on the same scope
                 int k = lock.getAndAdd(1) + 1;
-                while (k != i * 2) {
+                while (k < i * 2) {
                     Thread.onSpinWait();
                     k = lock.get();
                 }
@@ -368,7 +368,7 @@ public class TestMemorySession {
                 }
                 // Keep the 2 threads operating on the same scope
                 int k = lock.getAndAdd(1) + 1;
-                while (k != i * 2) {
+                while (k < i * 2) {
                     Thread.onSpinWait();
                     k = lock.get();
                 }
