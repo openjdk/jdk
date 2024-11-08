@@ -141,7 +141,7 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
 }
 
 void ShenandoahUncommitThread::stop_service() {
-  MonitorLocker locker(&_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker locker(&_lock, Mutex::_safepoint_check_flag);
   _stop_requested.set();
   locker.notify_all();
 }
