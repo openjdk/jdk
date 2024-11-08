@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,10 +181,11 @@ int Block::is_Empty() const {
     return success_result;
   }
 
-  // Ideal nodes are allowable in empty blocks: skip them  Only MachNodes
-  // turn directly into code, because only MachNodes have non-trivial
-  // emit() functions.
-  while ((end_idx > 0) && !get_node(end_idx)->is_Mach()) {
+  // Ideal nodes (except BoxLock) are allowable in empty blocks: skip them. Only
+  // Mach and BoxLock nodes turn directly into code via emit().
+  while ((end_idx > 0) &&
+         !get_node(end_idx)->is_Mach() &&
+         !get_node(end_idx)->is_BoxLock()) {
     end_idx--;
   }
 
