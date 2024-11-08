@@ -26,7 +26,11 @@ package com.sun.hotspot.igv.view.actions;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.Color;
-import javax.swing.JColorChooser;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.util.ArrayList;
+import java.util.Arrays;
+import javax.swing.*;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
@@ -63,15 +67,83 @@ public final class ColorAction extends ModelAwareAction {
         return NbBundle.getMessage(ColorAction.class, "CTL_ColorAction");
     }
 
-    @Override
+    private static final ArrayList<Color> colors = new ArrayList<>(Arrays.asList(
+            Color.RED,
+            Color.ORANGE,
+            Color.YELLOW,
+            Color.GREEN,
+            Color.CYAN,
+            Color.BLUE,
+            Color.MAGENTA,
+            Color.PINK,
+            Color.DARK_GRAY,
+            Color.GRAY,
+            Color.LIGHT_GRAY,
+            Color.WHITE
+    ));
+
+    private static final JButton selectedColorButton = new JButton();
+    private static final JColorChooser colorChooser = new JColorChooser(Color.WHITE);
+
+    ColorAction() {
+        selectedColorButton.setPreferredSize(new Dimension(32, 32));
+        selectedColorButton.setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, Color.BLACK));
+        selectedColorButton.setOpaque(true);
+        selectedColorButton.setBackground(Color.WHITE);
+
+        // Add a ChangeListener to react to color selection changes
+        colorChooser.getSelectionModel().addChangeListener(e -> {
+            Color selectedColor = colorChooser.getColor();
+            if (selectedColor != null) {
+                selectedColorButton.setBackground(selectedColor);
+            }
+        });
+
+        // Create a panel to display recent colors
+        JPanel recentColorsPanel = new JPanel();
+        recentColorsPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        updateColorsPanel(recentColorsPanel);
+
+        // Add recent colors panel below the color chooser
+        colorChooser.setPreviewPanel(recentColorsPanel);
+    }
+
     public void performAction(DiagramViewModel model) {
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
-            Color selectedColor = JColorChooser.showDialog(null, "Choose a Color", Color.WHITE);
-            if (selectedColor != null) {
-                editor.colorSelectedFigures(selectedColor);
-            }
+            // Create the dialog with an OK button to select the color
+            JDialog dialog = JColorChooser.createDialog(
+                    null,
+                    "Choose a Color",
+                    true,
+                    colorChooser,
+                    e -> {
+                        // OK button action
+                        Color selectedColor = selectedColorButton.getBackground();
+                        if (selectedColor != null) {
+                            editor.colorSelectedFigures(selectedColor);
+                        }
+                    },
+                    null // Cancel button action
+            );
+            dialog.setVisible(true);
         }
+    }
+
+    private void updateColorsPanel(JPanel panel) {
+        panel.removeAll();
+        for (Color color : colors) {
+            JButton colorButton = new JButton();
+            colorButton.setBackground(color);
+            colorButton.setOpaque(true);
+            colorButton.setPreferredSize(new Dimension(16, 16));
+            colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            colorButton.addActionListener(e -> selectedColorButton.setBackground(color));
+            panel.add(colorButton);
+        }
+        panel.add(selectedColorButton, 0);
+        panel.revalidate();
+        panel.repaint();
     }
 
     @Override
