@@ -43,7 +43,7 @@ import org.openide.util.NbBundle.Messages;
         @ActionReference(path = "Shortcuts", name = "D-C")
 })
 @Messages({
-        "CTL_ColorAction=Color action",
+        "CTL_ColorAction=Color",
         "HINT_ColorAction=Color current set of selected nodes"
 })
 public final class ColorAction extends ModelAwareAction {

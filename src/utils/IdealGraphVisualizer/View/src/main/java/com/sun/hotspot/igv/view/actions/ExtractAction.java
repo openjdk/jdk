@@ -42,7 +42,7 @@ import org.openide.util.NbBundle.Messages;
         @ActionReference(path = "Shortcuts", name = "D-X")
 })
 @Messages({
-        "CTL_ExtractAction=Extract action",
+        "CTL_ExtractAction=Extract",
         "HINT_ExtractAction=Extract current set of selected nodes"
 })
 public final class ExtractAction extends ModelAwareAction {

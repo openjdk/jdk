@@ -100,6 +100,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         };
 
         Action[] actionsWithSelection = new Action[]{
+                ColorAction.get(ColorAction.class),
                 ExtractAction.get(ExtractAction.class),
                 HideAction.get(HideAction.class),
                 null,
@@ -167,8 +168,6 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.addSeparator();
         toolBar.add(ReduceDiffAction.get(ReduceDiffAction.class));
         toolBar.add(ExpandDiffAction.get(ExpandDiffAction.class));
-        toolBar.addSeparator();
-        toolBar.add(ColorAction.get(ColorAction.class));
         toolBar.addSeparator();
         toolBar.add(ExtractAction.get(ExtractAction.class));
         toolBar.add(HideAction.get(HideAction.class));
