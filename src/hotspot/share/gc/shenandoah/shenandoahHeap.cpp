@@ -1240,15 +1240,36 @@ public:
   }
 };
 
+class ShenandoahRetireJavaGCLABClosure : public HandshakeClosure {
+private:
+  ShenandoahRetireGCLABClosure _retire;
+public:
+  explicit ShenandoahRetireJavaGCLABClosure() :
+    HandshakeClosure("Shenandoah Retire Java GC LABs"),
+    _retire(ResizeTLAB) {}
+
+  void do_thread(Thread* thread) override {
+    _retire.do_thread(thread);
+  }
+};
+
 void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
   ShenandoahEvacuationTask task(this, _collection_set, concurrent);
   workers()->run_task(&task);
+}
 
+void ShenandoahHeap::concurrent_retire_gc_labs() {
   if (!cancelled_gc()) {
-    // If GC was cancelled, we'll want to retain these GC labs for use in the degenerated cycle.
+    // If GC was cancelled, we'll want to retain these GC LABs for use in the degenerated cycle.
     ShenandoahRetireGCLABClosure retire(ResizeTLAB);
     workers()->threads_do(&retire);
   }
+
+  // A degenerated cycle won't attempt to use LABs from the mutator threads
+  ShenandoahRetireJavaGCLABClosure retire_java_labs;
+  Handshake::execute(&retire_java_labs);
+
+  _update_refs_iterator.reset();
 }
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
@@ -1460,6 +1481,7 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     cl.do_thread(t);
   }
+  workers()->threads_do(&cl);
 
   if (safepoint_workers() != nullptr) {
     ShenandoahAssertNoLabs no_labs;

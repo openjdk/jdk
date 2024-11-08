@@ -188,6 +188,10 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   if (heap->is_evacuation_in_progress()) {
     // Concurrently evacuate
     entry_evacuate();
+
+    // Evacuation is complete, retire gc labs
+    heap->concurrent_retire_gc_labs();
+
     if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
       return false;
     }
@@ -1057,7 +1061,6 @@ void ShenandoahConcurrentGC::op_init_updaterefs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   heap->set_evacuation_in_progress(false);
   heap->set_concurrent_weak_root_in_progress(false);
-  heap->prepare_update_heap_references(true /*concurrent*/);
   heap->set_update_refs_in_progress(true);
   if (ShenandoahVerify) {
     heap->verifier()->verify_before_updaterefs();
