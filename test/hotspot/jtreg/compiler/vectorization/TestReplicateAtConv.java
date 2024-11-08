@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_LEAKPROFILER_LEAKPROFILER_HPP
-#define SHARE_JFR_LEAKPROFILER_LEAKPROFILER_HPP
+/**
+ * @test
+ * @bug 8341834
+ * @summary C2 compilation fails with "bad AD file" due to Replicate
+ * @run main/othervm -XX:CompileCommand=compileonly,TestReplicateAtConv::test -Xcomp TestReplicateAtConv
+ */
 
-#include "memory/allStatic.hpp"
-#include "utilities/globalDefinitions.hpp"
+public class TestReplicateAtConv {
+    public static long val = 0;
 
-class JavaThread;
+    public static void test() {
+        int array[] = new int[500];
 
-class LeakProfiler : public AllStatic {
- public:
-  static bool start(int sample_count);
-  static bool stop();
-  static bool is_running();
-  static bool is_supported();
+        for (int i = 0; i < 100; i++) {
+            for (long l = 100; l > i; l--) {
+                val = 42 + (l + i);
+                array[(int)l] = (int)l - (int)val;
+            }
+        }
+    }
 
-  static void emit_events(int64_t cutoff_ticks, bool emit_all, bool skip_bfs);
-  static void sample(HeapWord* object, size_t size, JavaThread* thread);
-};
-
-#endif // SHARE_JFR_LEAKPROFILER_LEAKPROFILER_HPP
+    public static void main(String[] args) {
+        test();
+    }
+}
