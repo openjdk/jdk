@@ -71,6 +71,8 @@ public class Launcher {
     private static final Provider PROVIDER;
 
     private static int count = 0;
+    private static int invalidTest = 0;
+    private static int unsupportedTest = 0;
 
     static {
         var provProp = System.getProperty("test.acvp.provider");
@@ -109,7 +111,10 @@ public class Launcher {
         }
 
         if (count > 0) {
+            System.out.println();
             System.out.println("Test completed: " + count);
+            System.out.println("Invalid tests: " + invalidTest);
+            System.out.println("Unsupported tests: " + unsupportedTest);
         } else {
             throw new SkippedException("No supported test found");
         }
@@ -122,6 +127,7 @@ public class Launcher {
                 kat = JSONValue.parse(Files.readString(test));
             } catch (Exception e) {
                 System.out.println("Warning: cannot parse " + test + ". Skipped");
+                invalidTest++;
                 return;
             }
             var alg = kat.get("algorithm").asString();
@@ -144,6 +150,7 @@ public class Launcher {
                 }
                 default -> {
                     System.out.println("Skipped unsupported algorithm: " + alg);
+                    unsupportedTest++;
                 }
             }
         } catch (RuntimeException re) {
