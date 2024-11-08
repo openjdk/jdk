@@ -2146,7 +2146,7 @@ void os::print_siginfo(outputStream *st, const void* siginfo) {
   // detail capturing the context for said assert/guarantee.
   const EXCEPTION_RECORD* const er = (EXCEPTION_RECORD*)siginfo;
   if (er->ExceptionCode == EXCEPTION_ACCESS_VIOLATION && er->NumberParameters >= 2) {
-    if ((void*)er->ExceptionInformation[1] == g_assert_poison_report_page) {
+    if ((void*)er->ExceptionInformation[1] == g_assert_poison_page_for_reporting) {
       return;
     }
   }
@@ -2844,7 +2844,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return EXCEPTION_CONTINUE_SEARCH;
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-
       if (in_java) {
         // Either stack overflow or null pointer exception.
         address addr = (address) exception_record->ExceptionInformation[1];

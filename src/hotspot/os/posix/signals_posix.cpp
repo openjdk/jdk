@@ -1143,7 +1143,7 @@ void os::print_siginfo(outputStream* os, const void* si0) {
   // If we are here because of an assert/guarantee, we suppress
   // printing the siginfo, because it is only an implementation
   // detail capturing the context for said assert/guarantee.
-  if ((si->si_signo == SIGSEGV || si->si_signo == SIGBUS) && si->si_addr == g_assert_poison_report_page) {
+  if ((si->si_signo == SIGSEGV || si->si_signo == SIGBUS) && si->si_addr == g_assert_poison_page_for_reporting) {
     return;
   }
 #endif

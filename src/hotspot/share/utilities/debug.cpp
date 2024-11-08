@@ -726,7 +726,7 @@ void initialize_assert_poison() {
 }
 
 void disarm_assert_poison() {
-  g_assert_poison_report_page = g_assert_poison;
+  g_assert_poison_page_for_reporting = g_assert_poison;
   g_assert_poison = &g_dummy;
 }
 
@@ -746,13 +746,12 @@ bool handle_assert_poison_fault(const void* ucVoid) {
     DEBUG_ONLY(print_unprotect_error();)
     return false; // unprotecting memory may fail in OOM situations, as surprising as this sounds.
   }
-  if (ucVoid == nullptr) {
-    return false;
-  }
-  // Save context.
-  const intx my_tid = os::current_thread_id();
-  if (Atomic::cmpxchg(&g_asserting_thread, (intx)0, my_tid) == 0) {
-    os::save_assert_context(ucVoid);
+  if (ucVoid != nullptr) {
+    // Save context.
+    const intx my_tid = os::current_thread_id();
+    if (Atomic::cmpxchg(&g_asserting_thread, (intx)0, my_tid) == 0) {
+      os::save_assert_context(ucVoid);
+    }
   }
   return true;
 }

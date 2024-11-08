@@ -38,7 +38,7 @@ class oopDesc;
 #if (defined(LINUX) || defined(_WINDOWS)) && !defined(ZERO)
 #define CAN_SHOW_REGISTERS_ON_ASSERT
 extern char* g_assert_poison;
-extern const char* g_assert_poison_report_page;
+extern const char* g_assert_poison_page_for_reporting;
 #define TOUCH_ASSERT_POISON (*g_assert_poison) = 'X';
 void initialize_assert_poison();
 void disarm_assert_poison();
