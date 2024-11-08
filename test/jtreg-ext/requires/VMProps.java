@@ -23,11 +23,7 @@
 
 package requires;
 
-import java.lang.module.ModuleFinder;
-import java.lang.module.ModuleReader;
-import java.lang.module.ModuleReference;
 import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +39,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
