@@ -49,7 +49,7 @@ public class ML_DSA {
     private final int MASK_SEED_LEN = 64;
     private static final int D_MASK = (1 << ML_DSA_D) - 1;
     private final int T0_COEFF_SIZE = 13;
-    
+
     private static final int MONT_R_BITS = 32;
     private static final long MONT_R = 4294967296L; // 1 << MONT_R_BITS
     private static final int MONT_Q = 8380417;
