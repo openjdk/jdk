@@ -34,7 +34,6 @@ import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.util.List;
