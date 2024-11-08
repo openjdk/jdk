@@ -141,7 +141,7 @@ void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
   {
-    NmtVirtualMemoryLocker ml;
+    MemoryFileTracker::Instance::Locker lock;
     MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
   }
 

@@ -23,7 +23,7 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += dangling-doc-comments this-escape
+DISABLED_WARNINGS_java += dangling-doc-comments
 
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
