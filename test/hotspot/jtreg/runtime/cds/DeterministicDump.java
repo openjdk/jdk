@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 
 public class DeterministicDump {
@@ -127,6 +128,8 @@ public class DeterministicDump {
                     byte b0 = buff0[i];
                     byte b1 = buff1[i];
                     if (b0 != b1) {
+                        // The checksums are stored in the header so it should be skipped
+                        // since we want to see the first meaningful diff between the archives
                         if (total + i > HEADER_SIZE) {
                             print_diff(file0 + ".map", file1 + ".map", total + i);
                             throw new RuntimeException("File content different at byte #" + (total + i) + ", b0 = " + b0 + ", b1 = " + b1);
@@ -163,6 +166,8 @@ public class DeterministicDump {
         int word = location / 8;
         int word_offset = word % 4; // Each line in the map file prints four words
 
+        String region = "";
+
         // Skip header text and go to first line
         for (int i = 0; i < HEADER_LEN; i++) {
             b0.readLine();
@@ -173,26 +178,43 @@ public class DeterministicDump {
         String s1 = "";
         int count = 0;
 
+        // Store lines before and including the diff
+        ArrayDeque<String> prefix0 = new ArrayDeque<String>();
+        ArrayDeque<String> prefix1 = new ArrayDeque<String>();
+
         // A line may contain 1-4 words so we iterate by word
         do {
             s0 = b0.readLine();
             s1 = b1.readLine();
             line_num++;
-            // Skip lines with headers e.g.
+
+            if (prefix0.size() >= NUM_LINES / 2 + 1) {
+                prefix0.removeFirst();
+                prefix1.removeFirst();
+            }
+            prefix0.addLast(s0);
+            prefix1.addLast(s1);
+
+            // Skip lines with headers when counting words e.g.
             // [rw region          0x0000000800000000 - 0x00000008005a1f88   5906312 bytes]
             // or
             // 0x0000000800000b28: @@ TypeArrayU1       16
             if (!s0.contains(": @@") && !s0.contains("bytes]")) {
                 int words = (s0.length() - LINE_OFFSET - 70) / 8;
                 count += words;
+            } else if (s0.contains("bytes]")) {
+                region = s0;
             }
         } while (count < word);
 
+        // Print the diff with the region name above it
         System.out.println("[First diff: map file #1 (" + mapName0 + ")]");
-        String diff_f0 = print_diff_helper(b0, word_offset, s0);
+        System.out.println(region);
+        String diff_f0 = print_diff_helper(b0, word_offset, prefix0);
 
         System.out.println("\n[First diff: map file #2 (" + mapName1 + ")]");
-        String diff_f1 = print_diff_helper(b1, word_offset, s1);
+        System.out.println(region);
+        String diff_f1 = print_diff_helper(b1, word_offset, prefix1);
 
         System.out.printf("\nByte #%d at line #%d word #%d:\n", location, line_num, word_offset);
         System.out.printf("%s: %s\n%s: %s\n", mapName0, diff_f0, mapName1, diff_f1);
@@ -201,15 +223,19 @@ public class DeterministicDump {
         f1.close();
     }
 
-    static String print_diff_helper(BufferedReader b, int word_offset, String line) throws Exception {
-        // Extract word from line
+    static String print_diff_helper(BufferedReader b, int word_offset, ArrayDeque<String> prefix) throws Exception {
         int start = LINE_OFFSET + WORD_LEN * word_offset;
         int end = start + WORD_LEN;
+        String line = prefix.getLast();
         String diff = line.substring(start, end);
 
+        // Print previous lines
+        for (String s : prefix) {
+            System.out.println(s);
+        }
+
         // Print extra lines
-        System.out.println(line);
-        for (int i = 0; i < NUM_LINES; i++) {
+        for (int i = 0; i < NUM_LINES / 2; i++) {
             System.out.println(b.readLine());
         }
         return diff;
