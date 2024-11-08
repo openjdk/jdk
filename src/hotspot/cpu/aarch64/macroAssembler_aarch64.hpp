@@ -995,7 +995,7 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      Label* L_slow_path,
-                RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
+                                     Register super_check_offset = noreg);
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
@@ -1010,17 +1010,54 @@ public:
                                      Label* L_failure,
                                      bool set_cond_codes = false);
 
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp_reg,
+                                            Register temp2_reg,
+                                            Label* L_success,
+                                            Label* L_failure,
+                                            bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp_reg,
+                                           Register temp2_reg,
+                                           Register temp3_reg,
+                                           Register result_reg,
+                                           FloatRegister vtemp_reg,
+                                           Label* L_success,
+                                           Label* L_failure,
+                                           bool set_cond_codes = false);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  // Secondary subtype checking
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register r_super_klass,
+                                         Register temp1,
+                                         Register temp2,
+                                         Register temp3,
+                                         FloatRegister vtemp,
+                                         Register result,
+                                         Label *L_success);
+
+
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
-  bool lookup_secondary_supers_table(Register r_sub_klass,
-                                     Register r_super_klass,
-                                     Register temp1,
-                                     Register temp2,
-                                     Register temp3,
-                                     FloatRegister vtemp,
-                                     Register result,
-                                     u1 super_klass_slot,
-                                     bool stub_is_near = false);
+  bool lookup_secondary_supers_table_const(Register r_sub_klass,
+                                           Register r_super_klass,
+                                           Register temp1,
+                                           Register temp2,
+                                           Register temp3,
+                                           FloatRegister vtemp,
+                                           Register result,
+                                           u1 super_klass_slot,
+                                           bool stub_is_near = false);
 
   void verify_secondary_supers_table(Register r_sub_klass,
                                      Register r_super_klass,
@@ -1033,7 +1070,8 @@ public:
                                                Register r_array_index,
                                                Register r_bitmap,
                                                Register temp1,
-                                               Register result);
+                                               Register result,
+                                               bool is_stub = true);
 
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
@@ -1439,6 +1477,24 @@ public:
   address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);
 
+// Ensure that the inline code and the stub use the same registers.
+#define ARRAYS_HASHCODE_REGISTERS \
+  do {                      \
+    assert(result == r0  && \
+           ary    == r1  && \
+           cnt    == r2  && \
+           vdata0 == v3  && \
+           vdata1 == v2  && \
+           vdata2 == v1  && \
+           vdata3 == v0  && \
+           vmul0  == v4  && \
+           vmul1  == v5  && \
+           vmul2  == v6  && \
+           vmul3  == v7  && \
+           vpow   == v12 && \
+           vpowm  == v13, "registers must match aarch64.ad"); \
+  } while (0)
+
   void string_equals(Register a1, Register a2, Register result, Register cnt1);
 
   void fill_words(Register base, Register cnt, Register value);
@@ -1651,24 +1707,6 @@ private:
 #ifdef ASSERT
 inline bool AbstractAssembler::pd_check_instruction_mark() { return false; }
 #endif
-
-/**
- * class SkipIfEqual:
- *
- * Instantiating this class will result in assembly code being output that will
- * jump around any code emitted between the creation of the instance and it's
- * automatic destruction at the end of a scope block, depending on the value of
- * the flag passed to the constructor, which will be checked at run-time.
- */
-class SkipIfEqual {
- private:
-  MacroAssembler* _masm;
-  Label _label;
-
- public:
-   SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value);
-   ~SkipIfEqual();
-};
 
 struct tableswitch {
   Register _reg;

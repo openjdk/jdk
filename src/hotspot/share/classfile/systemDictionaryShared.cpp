@@ -134,7 +134,7 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
     return nullptr;
   }
 
-  return acquire_class_for_current_thread(record->_klass, class_loader,
+  return acquire_class_for_current_thread(record->klass(), class_loader,
                                           protection_domain, cfs,
                                           THREAD);
 }
@@ -789,9 +789,20 @@ InstanceKlass* SystemDictionaryShared::get_shared_lambda_proxy_class(InstanceKla
                                                                      Symbol* method_type,
                                                                      Method* member_method,
                                                                      Symbol* instantiated_method_type) {
+  if (!caller_ik->is_shared()     ||
+      !invoked_name->is_shared()  ||
+      !invoked_type->is_shared()  ||
+      !method_type->is_shared()   ||
+      !member_method->is_shared() ||
+      !instantiated_method_type->is_shared()) {
+    // These can't be represented as u4 offset, but we wouldn't have archived a lambda proxy in this case anyway.
+    return nullptr;
+  }
+
   MutexLocker ml(CDSLambda_lock, Mutex::_no_safepoint_check_flag);
-  LambdaProxyClassKey key(caller_ik, invoked_name, invoked_type,
-                          method_type, member_method, instantiated_method_type);
+  RunTimeLambdaProxyClassKey key =
+    RunTimeLambdaProxyClassKey::init_for_runtime(caller_ik, invoked_name, invoked_type,
+                                                 method_type, member_method, instantiated_method_type);
 
   // Try to retrieve the lambda proxy class from static archive.
   const RunTimeLambdaProxyClassInfo* info = _static_archive.lookup_lambda_proxy_class(&key);
@@ -899,7 +910,7 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
   assert(!CDSConfig::is_dumping_static_archive() && CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   RunTimeClassInfo* record = RunTimeClassInfo::get_for(klass);
 
-  int length = record->_num_verifier_constraints;
+  int length = record->num_verifier_constraints();
   if (length > 0) {
     for (int i = 0; i < length; i++) {
       RunTimeClassInfo::RTVerifierConstraint* vc = record->verifier_constraint_at(i);
@@ -1015,9 +1026,9 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
   if (klass->is_shared_platform_class() || klass->is_shared_app_class()) {
     RunTimeClassInfo* info = RunTimeClassInfo::get_for(klass);
     assert(info != nullptr, "Sanity");
-    if (info->_num_loader_constraints > 0) {
+    if (info->num_loader_constraints() > 0) {
       HandleMark hm(current);
-      for (int i = 0; i < info->_num_loader_constraints; i++) {
+      for (int i = 0; i < info->num_loader_constraints(); i++) {
         RunTimeClassInfo::RTLoaderConstraint* lc = info->loader_constraint_at(i);
         Symbol* name = lc->constraint_name();
         Handle loader1(current, get_class_loader_by(lc->_loader_type1));
@@ -1333,14 +1344,14 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
                                                &_dynamic_archive._builtin_dictionary,
                                                name);
   if (record != nullptr) {
-    assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
-    assert(check_alignment(record->_klass), "Address not aligned");
+    assert(!record->klass()->is_hidden(), "hidden class cannot be looked up by name");
+    assert(check_alignment(record->klass()), "Address not aligned");
     // We did not save the classfile data of the generated LambdaForm invoker classes,
     // so we cannot support CLFH for such classes.
-    if (record->_klass->is_generated_shared_class() && JvmtiExport::should_post_class_file_load_hook()) {
+    if (record->klass()->is_generated_shared_class() && JvmtiExport::should_post_class_file_load_hook()) {
        return nullptr;
     }
-    return record->_klass;
+    return record->klass();
   } else {
     return nullptr;
   }
@@ -1378,10 +1389,10 @@ public:
 
   void do_value(const RunTimeClassInfo* record) {
     ResourceMark rm;
-    _st->print_cr("%4d: %s %s", _index++, record->_klass->external_name(),
-        class_loader_name_for_shared(record->_klass));
-    if (record->_klass->array_klasses() != nullptr) {
-      record->_klass->array_klasses()->cds_print_value_on(_st);
+    _st->print_cr("%4d: %s %s", _index++, record->klass()->external_name(),
+        class_loader_name_for_shared(record->klass()));
+    if (record->klass()->array_klasses() != nullptr) {
+      record->klass()->array_klasses()->cds_print_value_on(_st);
       _st->cr();
     }
   }

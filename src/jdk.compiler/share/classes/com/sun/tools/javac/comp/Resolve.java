@@ -111,6 +111,7 @@ public class Resolve {
     private final boolean compactMethodDiags;
     private final boolean allowLocalVariableTypeInference;
     private final boolean allowYieldStatement;
+    private final boolean allowPrivateMembersInPermitsClause;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
     final boolean dumpMethodReferenceSearchResults;
     final boolean dumpStacktraceOnError;
@@ -147,6 +148,7 @@ public class Resolve {
         Target target = Target.instance(context);
         allowLocalVariableTypeInference = Feature.LOCAL_VARIABLE_TYPE_INFERENCE.allowedInSource(source);
         allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
+        allowPrivateMembersInPermitsClause = Feature.PRIVATE_MEMBERS_IN_PERMITS_CLAUSE.allowedInSource(source);
         polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
         allowModules = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
@@ -425,7 +427,9 @@ public class Resolve {
                 (env.enclClass.sym == sym.owner // fast special case
                  ||
                  env.enclClass.sym.outermostClass() ==
-                 sym.owner.outermostClass())
+                 sym.owner.outermostClass()
+                 ||
+                 privateMemberInPermitsClauseIfAllowed(env, sym))
                 &&
                 sym.isInheritedIn(site.tsym, types);
         case 0:
@@ -458,6 +462,13 @@ public class Resolve {
             return isAccessible(env, site, checkInner) && notOverriddenIn(site, sym);
         }
     }
+
+    private boolean privateMemberInPermitsClauseIfAllowed(Env<AttrContext> env, Symbol sym) {
+        return allowPrivateMembersInPermitsClause &&
+            env.info.isPermitsClause &&
+            ((JCClassDecl) env.tree).sym.outermostClass() == sym.owner.outermostClass();
+    }
+
     //where
     /* `sym' is accessible only if not overridden by
      * another symbol which is a member of `site'

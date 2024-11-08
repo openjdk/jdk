@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,8 @@ public class ReinitDigest extends PKCS11Test {
     private void doTest(String alg, Provider p, byte[] data1, byte[] data2)
             throws Exception {
         System.out.println("Testing " + alg);
-        MessageDigest md1 = MessageDigest.getInstance(alg, "SUN");
+        MessageDigest md1 = MessageDigest.getInstance(alg,
+                System.getProperty("test.provider.name", "SUN"));
         byte[] d1 = md1.digest(data1);
         MessageDigest md2 = MessageDigest.getInstance(alg, p);
         checkInstances(md1, md2);

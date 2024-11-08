@@ -263,6 +263,7 @@ public enum Source {
         FLEXIBLE_CONSTRUCTORS(JDK22, Fragments.FeatureFlexibleConstructors, DiagKind.NORMAL),
         MODULE_IMPORTS(JDK23, Fragments.FeatureModuleImports, DiagKind.PLURAL),
         JAVA_BASE_TRANSITIVE(JDK24, Fragments.FeatureJavaBaseTransitive, DiagKind.PLURAL),
+        PRIVATE_MEMBERS_IN_PERMITS_CLAUSE(JDK19),
         ;
 
         enum DiagKind {
