@@ -74,7 +74,7 @@
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 static char g_dummy;
 char* g_assert_poison = &g_dummy;
-const char* g_assert_poison_report_page = nullptr;
+const char* g_assert_poison_page_for_reporting = nullptr;
 static intx g_asserting_thread = 0;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
