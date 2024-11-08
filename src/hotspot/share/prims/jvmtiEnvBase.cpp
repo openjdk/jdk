@@ -1079,6 +1079,14 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
     if (target != nullptr) {
       ObjectMonitor *mon = target->current_waiting_monitor();
       if (mon != nullptr) wait_obj = mon->object();
+    } else {
+      assert(vthread != nullptr, "no vthread oop");
+      oop cont = java_lang_VirtualThread::continuation(vthread);
+      assert(cont != nullptr, "vthread with no continuation");
+      stackChunkOop chunk = jdk_internal_vm_Continuation::tail(cont);
+      assert(chunk != nullptr, "unmounted vthread should have a chunk");
+      ObjectMonitor *mon = chunk->current_waiting_monitor();
+      if (mon != nullptr) wait_obj = mon->object();
     }
   }
   oop pending_obj = nullptr;
