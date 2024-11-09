@@ -59,7 +59,7 @@ public final class HelloApp {
         final String className = appDesc.shortClassName();
         final String packageName = appDesc.packageName();
 
-        final Path srcFile = appDesc.classNameAsPath(".java");
+        final Path srcFile = srcDir.resolve(appDesc.classNameAsPath(".java"));
         Files.createDirectories(srcFile.getParent());
 
         JarBuilder jarBuilder = createJarBuilder().addSourceFile(srcFile);
