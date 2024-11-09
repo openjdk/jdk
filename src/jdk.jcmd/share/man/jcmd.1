@@ -65,13 +65,6 @@ selected JVM.
 The list of available commands for \f[V]jcmd\f[R] is obtained by running
 the \f[V]help\f[R] command (\f[V]jcmd\f[R] \f[I]pid\f[R] \f[V]help\f[R])
 where \f[I]pid\f[R] is the process ID for the running Java process.
-If the \f[I]pid\f[R] is \f[V]0\f[R], commands will be sent to all Java
-processes.
-The main class argument will be used to match, either partially or
-fully, the class used to start Java.
-If no options are given, it lists the running Java process identifiers
-with the main class and command-line arguments that were used to launch
-the process (the same as using \f[V]-l\f[R]).
 .TP
 \f[V]Perfcounter.print\f[R]
 Prints the performance counters exposed by the specified Java process.
@@ -102,9 +95,10 @@ to the JVM.
 It must be used on the same machine on which the JVM is running, and
 have the same effective user and group identifiers that were used to
 launch the JVM.
-Each diagnostic command has its own set of arguments.
-To display the description, syntax, and a list of available arguments
-for a diagnostic command, use the name of the command as the argument.
+Each diagnostic command has its own set of options and arguments.
+To display the description, syntax, and a list of available options and
+arguments for a diagnostic command, use the name of the command as the
+argument.
 For example:
 .RS
 .PP
@@ -142,6 +136,11 @@ If no options are given, it lists the running Java process identifiers
 that are not in separate docker processes along with the main class and
 command-line arguments that were used to launch the process (the same as
 using \f[V]-l\f[R]).
+.PP
+\f[V]jcmd\f[R] \f[I]commands\f[R] may take options and arguments.
+\f[I]Options\f[R] are specified using either \f[I]key\f[R] or
+\f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
+\f[I]Arguments\f[R] are given as just a value, never name=value.
 .PP
 The following commands are available:
 .TP
@@ -254,13 +253,9 @@ Impact: Low
 .PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
-\f[I]filename\f[R]: (Optional) The name of the map file (STRING,
-/tmp/perf-<pid>.map)
-.PP
-If \f[V]filename\f[R] is not specified, a default file name is chosen
-using the pid of the target JVM process.
-For example, if the pid is \f[V]12345\f[R], then the default
-\f[V]filename\f[R] will be \f[V]/tmp/perf-12345.map\f[R].
+\f[I]filename\f[R]: (Optional) The name of the map file.
+If %p is specified in the filename, it is expanded to the JVM\[aq]s PID.
+(FILE, \[dq]/tmp/perf-%p.map\[dq])
 .RE
 .TP
 \f[V]Compiler.queue\f[R]
@@ -302,7 +297,7 @@ Provides information about the Java finalization queue.
 Impact: Medium
 .RE
 .TP
-\f[V]GC.heap_dump\f[R] [\f[I]options\f[R]] [\f[I]arguments\f[R]]
+\f[V]GC.heap_dump\f[R] [\f[I]options\f[R]] \f[I]filename\f[R]
 Generates a HPROF format dump of the Java heap.
 .RS
 .PP
@@ -335,7 +330,9 @@ fewer.
 .PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
-\f[I]filename\f[R]: The name of the dump file (STRING, no default value)
+\f[I]filename\f[R]: The name of the dump file.
+If %p is specified in the filename, it is expanded to the JVM\[aq]s PID.
+(FILE, no default value)
 .RE
 .TP
 \f[V]GC.heap_info\f[R]
@@ -511,7 +508,7 @@ The filename may also be a directory in which case, the filename is
 generated from the PID and the current date in the specified directory.
 If %p and/or %t is specified in the filename, it expands to the
 JVM\[aq]s PID and the current timestamp, respectively.
-(STRING, no default value)
+(FILE, no default value)
 .IP \[bu] 2
 \f[V]maxage\f[R]: (Optional) Length of time for dumping the flight
 recording data to a file.
@@ -581,7 +578,7 @@ The filename may also be a directory in which case, the filename is
 generated from the PID and the current date in the specified directory.
 If %p and/or %t is specified in the filename, it expands to the
 JVM\[aq]s PID and the current timestamp, respectively.
-(STRING, no default value)
+(FILE, no default value)
 .IP \[bu] 2
 \f[V]maxage\f[R]: (Optional) Maximum time to keep the recorded data on
 disk.
@@ -675,7 +672,7 @@ is written when the recording is stopped.
 If %p and/or %t is specified in the filename, it expands to the
 JVM\[aq]s PID and the current timestamp, respectively.
 If no path is provided, the data from the recording is discarded.
-(STRING, no default value)
+(FILE, no default value)
 .IP \[bu] 2
 \f[V]name\f[R]: (Optional) Name of the recording (STRING, no default
 value)
@@ -877,8 +874,9 @@ The following \f[I]options\f[R] must be specified using either
 .IP \[bu] 2
 \f[V]-H\f[R]: (Optional) Human readable format (BOOLEAN, false)
 .IP \[bu] 2
-\f[V]-F\f[R]: (Optional) File path (STRING,
-\[dq]vm_memory_map_<pid>.txt\[dq])
+\f[V]-F\f[R]: (Optional) File path.
+If %p is specified in the filename, it is expanded to the JVM\[aq]s PID.
+(FILE, \[dq]vm_memory_map_%p.txt\[dq])
 .RE
 .TP
 \f[V]System.map\f[R] [\f[I]options\f[R]] (Linux only)
@@ -934,8 +932,9 @@ false)
 .PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
-\f[I]filepath\f[R]: The file path to the output file (STRING, no default
-value)
+\f[I]filepath\f[R]: The file path to the output file.
+If %p is specified in the filename, it is expanded to the JVM\[aq]s PID.
+(FILE, no default value)
 .RE
 .TP
 \f[V]Thread.print\f[R] [\f[I]options\f[R]]
@@ -970,16 +969,9 @@ Impact: Medium --- pause time depends on number of loaded classes
 \f[I]subcmd\f[R]: must be either \f[V]static_dump\f[R] or
 \f[V]dynamic_dump\f[R] (STRING, no default value)
 .IP \[bu] 2
-\f[I]filename\f[R]: (Optional) Name of the shared archive to be dumped
-(STRING, java_pid<pid>_<subcmd>.jsa)
-.PP
-If \f[V]filename\f[R] is not specified, a default file name is chosen
-using the pid of the target JVM process.
-For example, java_pid1234_static.jsa, java_pid5678_dynamic.jsa, etc.
-.PP
-If \f[V]filename\f[R] is not specified as an absolute path, the archive
-file is created in a directory relative to the current directory of the
-target JVM process.
+\f[I]filename\f[R]: (Optional) Name of the shared archive to be dumped.
+If %p is specified in the filename, it is expanded to the JVM\[aq]s PID.
+(FILE, \[dq]java_pid%p_<subcmd>.jsa\[dq])
 .PP
 If \f[V]dynamic_dump\f[R] is specified, the target JVM must be started
 with the JVM option \f[V]-XX:+RecordDynamicDumpInfo\f[R].

@@ -963,22 +963,33 @@ void C2_MacroAssembler::vpuminmax(int opcode, BasicType elem_bt, XMMRegister dst
 }
 
 void C2_MacroAssembler::vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
-  // T1 = -1
-  vpcmpeqq(xtmp1, xtmp1, xtmp1, vlen_enc);
-  // T1 = -1 << 63
-  vpsllq(xtmp1, xtmp1, 63, vlen_enc);
-  // Convert SRC2 to signed value i.e. T2 = T1 + SRC2
-  vpaddq(xtmp2, xtmp1, src2, vlen_enc);
-  // Convert SRC1 to signed value i.e. T1 = T1 + SRC1
-  vpaddq(xtmp1, xtmp1, src1, vlen_enc);
-  // Mask = T2 > T1
-  vpcmpgtq(xtmp1, xtmp2, xtmp1, vlen_enc);
-  if (opcode == Op_UMaxV) {
-    // Res = Mask ? Src2 : Src1
-    vpblendvb(dst, src1, src2, xtmp1, vlen_enc);
+  // For optimality, leverage a full vector width of 512 bits
+  // for operations over smaller vector sizes on AVX512 targets.
+  if (VM_Version::supports_evex() && !VM_Version::supports_avx512vl()) {
+    if (opcode == Op_UMaxV) {
+      evpmaxuq(dst, k0, src1, src2, false, Assembler::AVX_512bit);
+    } else {
+      assert(opcode == Op_UMinV, "required");
+      evpminuq(dst, k0, src1, src2, false, Assembler::AVX_512bit);
+    }
   } else {
-    // Res = Mask ? Src1 : Src2
-    vpblendvb(dst, src2, src1, xtmp1, vlen_enc);
+    // T1 = -1
+    vpcmpeqq(xtmp1, xtmp1, xtmp1, vlen_enc);
+    // T1 = -1 << 63
+    vpsllq(xtmp1, xtmp1, 63, vlen_enc);
+    // Convert SRC2 to signed value i.e. T2 = T1 + SRC2
+    vpaddq(xtmp2, xtmp1, src2, vlen_enc);
+    // Convert SRC1 to signed value i.e. T1 = T1 + SRC1
+    vpaddq(xtmp1, xtmp1, src1, vlen_enc);
+    // Mask = T2 > T1
+    vpcmpgtq(xtmp1, xtmp2, xtmp1, vlen_enc);
+    if (opcode == Op_UMaxV) {
+      // Res = Mask ? Src2 : Src1
+      vpblendvb(dst, src1, src2, xtmp1, vlen_enc);
+    } else {
+      // Res = Mask ? Src1 : Src2
+      vpblendvb(dst, src2, src1, xtmp1, vlen_enc);
+    }
   }
 }
 
@@ -7082,3 +7093,13 @@ void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, X
     vector_saturating_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
   }
 }
+
+#ifdef _LP64
+void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Address src) {
+  // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
+  // obj-start, so that we can load from the object's mark-word instead. Usually the address
+  // comes as obj-start in obj and klass_offset_in_bytes in disp.
+  movq(dst, src.plus_disp(-oopDesc::klass_offset_in_bytes()));
+  shrq(dst, markWord::klass_shift);
+}
+#endif

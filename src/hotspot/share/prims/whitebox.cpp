@@ -424,11 +424,7 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
 #endif
 #if INCLUDE_ZGC
   if (UseZGC) {
-    if (ZGenerational) {
-      return ZHeap::heap()->is_old(to_zaddress(p));
-    } else {
-      return Universe::heap()->is_in(p);
-    }
+    return ZHeap::heap()->is_old(to_zaddress(p));
   }
 #endif
 #if INCLUDE_SHENANDOAHGC
@@ -1082,6 +1078,10 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
   if (method == nullptr) {
     tty->print_cr("WB error: request to compile null method");
+    return false;
+  }
+  if (method->is_abstract()) {
+    tty->print_cr("WB error: request to compile abstract method");
     return false;
   }
   if (comp_level > CompilationPolicy::highest_compile_level()) {

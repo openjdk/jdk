@@ -419,7 +419,7 @@ JVM_FindPrimitiveClass(JNIEnv *env, const char *utf);
 
 
 /*
- * Find a class from a boot class loader. Returns NULL if class not found.
+ * Find a class from a boot class loader. Returns null if class not found.
  */
 JNIEXPORT jclass JNICALL
 JVM_FindClassFromBootLoader(JNIEnv *env, const char *name);
@@ -1141,9 +1141,6 @@ JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide);
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide);
-
-JNIEXPORT void JNICALL
-JVM_VirtualThreadHideFrames(JNIEnv* env, jclass clazz, jboolean hide);
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter);
