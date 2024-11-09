@@ -43,8 +43,10 @@ import jdk.jpackage.test.TestInstance.TestDesc;
 class MethodCall implements ThrowingConsumer {
 
     MethodCall(Object[] instanceCtorArgs, Method method, Object ... args) {
-        this.ctorArgs = Optional.ofNullable(instanceCtorArgs).orElse(
-                DEFAULT_CTOR_ARGS);
+        Objects.requireNonNull(instanceCtorArgs);
+        Objects.requireNonNull(method);
+
+        this.ctorArgs = instanceCtorArgs;
         this.method = method;
         this.methodArgs = args;
     }
@@ -237,8 +239,6 @@ class MethodCall implements ThrowingConsumer {
     private final Object[] methodArgs;
     private final Method method;
     private final Object[] ctorArgs;
-
-    static final Object[] DEFAULT_CTOR_ARGS = new Object[0];
 
     private static final Map<Class<?>, Class<?>> NORM_TYPES;
 

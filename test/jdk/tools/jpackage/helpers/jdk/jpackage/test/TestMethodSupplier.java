@@ -164,14 +164,21 @@ final class TestMethodSupplier {
 
     private Stream<Object[]> toCtorArgs(Method method) throws
             IllegalAccessException, InvocationTargetException {
-        Class type = method.getDeclaringClass();
-        List<Method> paremeterSuppliers = filterParameterSuppliers(type)
+        
+        if ((method.getModifiers() & Modifier.STATIC) != 0) {
+            // Static method, no instance
+            return Stream.ofNullable(DEFAULT_CTOR_ARGS);
+        }
+
+        final var type = method.getDeclaringClass();
+
+        final var paremeterSuppliers = filterParameterSuppliers(type)
                 .filter(m -> m.isAnnotationPresent(Parameters.class))
                 .filter(this::isEnabled)
                 .sorted(Comparator.comparing(Method::getName)).toList();
         if (paremeterSuppliers.isEmpty()) {
             // Single instance using the default constructor.
-            return Stream.ofNullable(MethodCall.DEFAULT_CTOR_ARGS);
+            return Stream.ofNullable(DEFAULT_CTOR_ARGS);
         }
 
         // Construct collection of arguments for test class instances.
@@ -469,6 +476,8 @@ final class TestMethodSupplier {
     private final OperatingSystem os;
     private final Map<Class<?>, TypeStatus> processedTypes = new HashMap<>();
 
+    private static final Object[] DEFAULT_CTOR_ARGS = new Object[0];
+    
     private static final Map<Class, Function<String, Object>> FROM_STRING;
 
     static {
