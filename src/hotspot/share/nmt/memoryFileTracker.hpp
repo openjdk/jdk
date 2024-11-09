@@ -30,6 +30,7 @@
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "nmt/vmatree.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/os.inline.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -80,8 +81,14 @@ public:
 
   class Instance : public AllStatic {
     static MemoryFileTracker* _tracker;
+    static PlatformMutex* _mutex;
 
   public:
+    class Locker : public StackObj {
+    public:
+      Locker();
+      ~Locker();
+    };
 
     static bool initialize(NMT_TrackingLevel tracking_level);
 
