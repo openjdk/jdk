@@ -108,8 +108,6 @@ public class TKitTest {
             ).create()));
         }
 
-
-
         return data.stream().map(v -> {
             return new Object[]{v};
         }).toList();
