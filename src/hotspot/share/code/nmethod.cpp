@@ -190,13 +190,13 @@ struct java_nmethod_stats_struct {
       tty->print_cr(" mutable data    = %u (%f%%)", total_mut_size, (total_mut_size * 100.0f)/total_size);
     }
     if (relocation_size != 0) {
-      tty->print_cr("   relocation    = %u (%f%%)", relocation_size, (relocation_size * 100.0f)/total_nm_size);
+      tty->print_cr("   relocation    = %u (%f%%)", relocation_size, (relocation_size * 100.0f)/total_mut_size);
     }
     if (oops_size != 0) {
-      tty->print_cr("   oops          = %u (%f%%)", oops_size, (oops_size * 100.0f)/total_nm_size);
+      tty->print_cr("   oops          = %u (%f%%)", oops_size, (oops_size * 100.0f)/total_mut_size);
     }
     if (metadata_size != 0) {
-      tty->print_cr("   metadata      = %u (%f%%)", metadata_size, (metadata_size * 100.0f)/total_nm_size);
+      tty->print_cr("   metadata      = %u (%f%%)", metadata_size, (metadata_size * 100.0f)/total_mut_size);
     }
 #if INCLUDE_JVMCI
     if (jvmci_data_size != 0) {
