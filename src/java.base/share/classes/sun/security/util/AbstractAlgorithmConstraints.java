@@ -45,7 +45,7 @@ public abstract class AbstractAlgorithmConstraints
 
     protected final AlgorithmDecomposer decomposer;
     private static final Map<String, Pattern> patternCache =
-            new ConcurrentHashMap<>();
+            new ConcurrentHashMap<>(4);
 
     protected AbstractAlgorithmConstraints(AlgorithmDecomposer decomposer) {
         this.decomposer = decomposer;
