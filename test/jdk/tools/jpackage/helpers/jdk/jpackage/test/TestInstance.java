@@ -52,7 +52,7 @@ final class TestInstance implements ThrowingRunnable {
 
         String testFullName() {
             StringBuilder sb = new StringBuilder();
-            sb.append(clazz.getSimpleName());
+            sb.append(clazz.getName());
             if (instanceArgs != null) {
                 sb.append('(').append(instanceArgs).append(')');
             }
