@@ -27,11 +27,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toCollection;
 import java.util.stream.Stream;
 import static jdk.jpackage.test.TestBuilder.CMDLINE_ARG_PREFIX;
@@ -93,12 +93,11 @@ public final class Main {
 
         // Order tests by their full names to have stable test sequence.
         List<TestInstance> orderedTests = tests.stream()
-                .sorted((a, b) -> a.fullName().compareTo(b.fullName()))
-                .collect(Collectors.toList());
+                .sorted(Comparator.comparing(TestInstance::fullName)).toList();
 
         if (listTests) {
             // Just list the tests
-            orderedTests.stream().forEach(test -> System.out.println(String.format(
+            orderedTests.forEach(test -> System.out.println(String.format(
                     "%s; workDir=[%s]", test.fullName(), test.workDir())));
             return;
         }
