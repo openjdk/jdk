@@ -132,7 +132,7 @@ public final class ErrorTest {
 
         // Configure jpackage output verifier to look up the list of provided
         // errors in the order they specified.
-        cmd.verifyOutput(Stream.of(expectedErrors)
+        cmd.validateOutput(Stream.of(expectedErrors)
                 .map(CannedFormattedString::getValue)
                 .map(TKit::assertTextStream)
                 .reduce(TKit.TextStreamVerifier::andThen).get());

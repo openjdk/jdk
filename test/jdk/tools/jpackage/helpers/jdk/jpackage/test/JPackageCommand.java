@@ -78,7 +78,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
         appLayoutAsserts = cmd.appLayoutAsserts;
-        outputVerifier = cmd.outputVerifier;
+        outputValidator = cmd.outputValidator;
         executeInDirectory = cmd.executeInDirectory;
     }
 
@@ -740,22 +740,22 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
-    public JPackageCommand verifyOutput(TKit.TextStreamVerifier verifier) {
-        return verifyOutput(verifier::apply);
+    public JPackageCommand validateOutput(TKit.TextStreamVerifier validator) {
+        return JPackageCommand.this.validateOutput(validator::apply);
     }
 
-    public JPackageCommand verifyOutput(Consumer<Stream<String>> verifier) {
-        if (verifier != null) {
+    public JPackageCommand validateOutput(Consumer<Stream<String>> validator) {
+        if (validator != null) {
             saveConsoleOutput(true);
-            outputVerifier = verifier;
+            outputValidator = validator;
         } else {
-            outputVerifier = null;
+            outputValidator = null;
         }
         return this;
     }
 
-    public JPackageCommand verifyOutput(CannedFormattedString str) {
-        return verifyOutput(TKit.assertTextStream(str.getValue()));
+    public JPackageCommand validateOutput(CannedFormattedString str) {
+        return JPackageCommand.this.validateOutput(TKit.assertTextStream(str.getValue()));
     }
 
     public boolean isWithToolProvider() {
@@ -836,8 +836,8 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .createExecutor()
                 .execute(expectedExitCode);
 
-        if (outputVerifier != null) {
-            outputVerifier.accept(result.getOutput().stream());
+        if (outputValidator != null) {
+            outputValidator.accept(result.getOutput().stream());
         }
 
         if (result.exitCode == 0) {
@@ -1210,7 +1210,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private final Actions verifyActions;
     private Path executeInDirectory;
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
-    private Consumer<Stream<String>> outputVerifier;
+    private Consumer<Stream<String>> outputValidator;
     private static boolean defaultWithToolProvider;
 
     private static final Map<String, PackageType> PACKAGE_TYPES = Functional.identity(
