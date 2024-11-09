@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import static jdk.internal.util.OperatingSystem.LINUX;
@@ -308,7 +307,7 @@ public class AnnotationsTest {
 
         var expectedTestDescs = Stream.of(tests)
                 .map(AnnotationsTest::getExpectedTestDescs)
-                .flatMap(Set::stream)
+                .flatMap(x -> x)
                 // Collect in the map to check for collisions for free
                 .collect(toMap(x -> x, x -> ""))
                 .keySet();
@@ -326,13 +325,13 @@ public class AnnotationsTest {
         }
     }
 
-    private static Set<String> getExpectedTestDescs(Class<?> type) {
+    private static Stream<String> getExpectedTestDescs(Class<?> type) {
         return toSupplier(() -> {
             var method = type.getMethod("getExpectedTestDescs");
             var testDescPefix = type.getName();
             return ((Set<String>)method.invoke(null)).stream().map(desc -> {
                 return testDescPefix + desc;
-            }).collect(toSet());
+            });
         }).get();
     }
 
