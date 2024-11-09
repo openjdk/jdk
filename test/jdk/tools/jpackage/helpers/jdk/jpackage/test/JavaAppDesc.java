@@ -81,7 +81,7 @@ public final class JavaAppDesc {
     Path classNameAsPath(String extension) {
         final String[] pathComponents = qualifiedClassName.split("\\.");
         pathComponents[pathComponents.length - 1] = shortClassName() + extension;
-        return Stream.of(pathComponents).map(Path::of).reduce(Path::resolve).get();        
+        return Stream.of(pathComponents).map(Path::of).reduce(Path::resolve).get();
     }
 
     public Path classFilePath() {
