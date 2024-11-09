@@ -242,5 +242,5 @@ public class TKitTest {
 
     private final MethodCallConfig methodCall;
 
-    private final static int LOG_MSG_TIMESTAMP_LENGTH = "[HH:mm:ss.SSS] ".length();
+    private static final int LOG_MSG_TIMESTAMP_LENGTH = "[HH:mm:ss.SSS] ".length();
 }
