@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import static jdk.internal.util.OperatingSystem.LINUX;
@@ -53,19 +54,19 @@ import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
 public class AnnotationsTest {
 
     public static void main(String... args) {
-        runTestSuites(BasicTestSuite.class, ParameterizedInstanceTestSuite.class);
+        runTests(BasicTest.class, ParameterizedInstanceTest.class);
         for (var os : OperatingSystem.values()) {
             try {
                 TestBuilderConfig.setOperatingSystem(os);
                 TKit.log("Current operating system: " + os);
-                runTestSuites(IfOSTestSuite.class);
+                runTests(IfOSTest.class);
             } finally {
                 TestBuilderConfig.setDefaults();
             }
         }
     }
 
-    public static class BasicTestSuite extends TestSuiteExecutionRecorder {
+    public static class BasicTest extends TestExecutionRecorder {
         @Test
         public void testNoArg() {
             recordTestCase();
@@ -103,18 +104,18 @@ public class AnnotationsTest {
 
         public static Set<String> getExpectedTestDescs() {
             return Set.of(
-                    "BasicTestSuite().testNoArg()",
-                    "BasicTestSuite().testNoArg(true)",
-                    "BasicTestSuite().testVarArg()",
-                    "BasicTestSuite().testVarArg(a)",
-                    "BasicTestSuite().testVarArg(b, c)",
-                    "BasicTestSuite().testVarArg2(-89, bar, [more, moore](length=2))",
-                    "BasicTestSuite().testVarArg2(-89, bar, [more](length=1))",
-                    "BasicTestSuite().testVarArg2(12, foo, [](length=0))",
-                    "BasicTestSuite().testDates(2018-05-05)",
-                    "BasicTestSuite().testDates(2018-07-11)",
-                    "BasicTestSuite().testDates(2034-05-05)",
-                    "BasicTestSuite().testDates(2056-07-11)"
+                    "().testNoArg()",
+                    "().testNoArg(true)",
+                    "().testVarArg()",
+                    "().testVarArg(a)",
+                    "().testVarArg(b, c)",
+                    "().testVarArg2(-89, bar, [more, moore](length=2))",
+                    "().testVarArg2(-89, bar, [more](length=1))",
+                    "().testVarArg2(12, foo, [](length=0))",
+                    "().testDates(2018-05-05)",
+                    "().testDates(2018-07-11)",
+                    "().testDates(2034-05-05)",
+                    "().testDates(2056-07-11)"
             );
         }
 
@@ -126,16 +127,16 @@ public class AnnotationsTest {
         }
     }
 
-    public static class ParameterizedInstanceTestSuite extends TestSuiteExecutionRecorder {
-        public ParameterizedInstanceTestSuite(String... args) {
+    public static class ParameterizedInstanceTest extends TestExecutionRecorder {
+        public ParameterizedInstanceTest(String... args) {
             super((Object[]) args);
         }
 
-        public ParameterizedInstanceTestSuite(int o) {
+        public ParameterizedInstanceTest(int o) {
             super(o);
         }
 
-        public ParameterizedInstanceTestSuite(int a, Boolean[] b, String c, String ... other) {
+        public ParameterizedInstanceTest(int a, Boolean[] b, String c, String ... other) {
             super(a, b, c, other);
         }
 
@@ -148,6 +149,12 @@ public class AnnotationsTest {
         @ParameterSupplier("jdk.jpackage.test.AnnotationsTest.dateSupplier")
         public void testDates(LocalDate v) {
             recordTestCase(v);
+        }
+
+        @Test
+        @Parameter("a")
+        public static void staticTest(String arg) {
+            staticRecorder.recordTestCase(arg);
         }
 
         @Parameters
@@ -171,33 +178,36 @@ public class AnnotationsTest {
 
         public static Set<String> getExpectedTestDescs() {
             return Set.of(
-                    "ParameterizedInstanceTestSuite().testNoArgs()",
-                    "ParameterizedInstanceTestSuite(33).testNoArgs()",
-                    "ParameterizedInstanceTestSuite(78).testNoArgs()",
-                    "ParameterizedInstanceTestSuite(55, [false, true, false](length=3), foo, [bar](length=1)).testNoArgs()",
-                    "ParameterizedInstanceTestSuite(51, [true, true, true](length=3), foo, [](length=0)).testNoArgs()",
-                    "ParameterizedInstanceTestSuite().testDates(2034-05-05)",
-                    "ParameterizedInstanceTestSuite().testDates(2056-07-11)",
-                    "ParameterizedInstanceTestSuite(33).testDates(2034-05-05)",
-                    "ParameterizedInstanceTestSuite(33).testDates(2056-07-11)",
-                    "ParameterizedInstanceTestSuite(51, [true, true, true](length=3), foo, [](length=0)).testDates(2034-05-05)",
-                    "ParameterizedInstanceTestSuite(51, [true, true, true](length=3), foo, [](length=0)).testDates(2056-07-11)",
-                    "ParameterizedInstanceTestSuite(55, [false, true, false](length=3), foo, [bar](length=1)).testDates(2034-05-05)",
-                    "ParameterizedInstanceTestSuite(55, [false, true, false](length=3), foo, [bar](length=1)).testDates(2056-07-11)",
-                    "ParameterizedInstanceTestSuite(78).testDates(2034-05-05)",
-                    "ParameterizedInstanceTestSuite(78).testDates(2056-07-11)",
-                    "ParameterizedInstanceTestSuite(55, null, null, [1](length=1)).testDates(2034-05-05)",
-                    "ParameterizedInstanceTestSuite(55, null, null, [1](length=1)).testDates(2056-07-11)",
-                    "ParameterizedInstanceTestSuite(55, null, null, [1](length=1)).testNoArgs()",
-                    "ParameterizedInstanceTestSuite(55, null, null, [](length=0)).testDates(2034-05-05)",
-                    "ParameterizedInstanceTestSuite(55, null, null, [](length=0)).testDates(2056-07-11)",
-                    "ParameterizedInstanceTestSuite(55, null, null, [](length=0)).testNoArgs()"
+                    "().testNoArgs()",
+                    "(33).testNoArgs()",
+                    "(78).testNoArgs()",
+                    "(55, [false, true, false](length=3), foo, [bar](length=1)).testNoArgs()",
+                    "(51, [true, true, true](length=3), foo, [](length=0)).testNoArgs()",
+                    "().testDates(2034-05-05)",
+                    "().testDates(2056-07-11)",
+                    "(33).testDates(2034-05-05)",
+                    "(33).testDates(2056-07-11)",
+                    "(51, [true, true, true](length=3), foo, [](length=0)).testDates(2034-05-05)",
+                    "(51, [true, true, true](length=3), foo, [](length=0)).testDates(2056-07-11)",
+                    "(55, [false, true, false](length=3), foo, [bar](length=1)).testDates(2034-05-05)",
+                    "(55, [false, true, false](length=3), foo, [bar](length=1)).testDates(2056-07-11)",
+                    "(78).testDates(2034-05-05)",
+                    "(78).testDates(2056-07-11)",
+                    "(55, null, null, [1](length=1)).testDates(2034-05-05)",
+                    "(55, null, null, [1](length=1)).testDates(2056-07-11)",
+                    "(55, null, null, [1](length=1)).testNoArgs()",
+                    "(55, null, null, [](length=0)).testDates(2034-05-05)",
+                    "(55, null, null, [](length=0)).testDates(2056-07-11)",
+                    "(55, null, null, [](length=0)).testNoArgs()",
+                    "().staticTest(a)"
             );
         }
+
+        private final static TestExecutionRecorder staticRecorder = new TestExecutionRecorder(ParameterizedInstanceTest.class);
     }
 
-    public static class IfOSTestSuite extends TestSuiteExecutionRecorder {
-        public IfOSTestSuite(int a, String b) {
+    public static class IfOSTest extends TestExecutionRecorder {
+        public IfOSTest(int a, String b) {
             super(a, b);
         }
 
@@ -231,14 +241,14 @@ public class AnnotationsTest {
                 {7, null},
             });
         }
-        
+
         @Parameters(ifNotOS = {OperatingSystem.LINUX, OperatingSystem.MACOS})
         public static Collection<Object[]> input2() {
             return Set.of(new Object[][] {
                 {10, "hello"},
             });
         }
-        
+
         @Parameters(ifNotOS = OperatingSystem.LINUX)
         public static Collection<Object[]> input3() {
             return Set.of(new Object[][] {
@@ -250,29 +260,29 @@ public class AnnotationsTest {
             switch (TestBuilderConfig.getDefault().getOperatingSystem()) {
                 case LINUX -> {
                     return Set.of(
-                            "IfOSTestSuite(7, null).testNoArgs()",
-                            "IfOSTestSuite(7, null).testVarArgs()",
-                            "IfOSTestSuite(7, null).testVarArgs(foo)",
-                            "IfOSTestSuite(7, null).testVarArgs(foo, bar)"
+                            "(7, null).testNoArgs()",
+                            "(7, null).testVarArgs()",
+                            "(7, null).testVarArgs(foo)",
+                            "(7, null).testVarArgs(foo, bar)"
                     );
                 }
 
                 case MACOS -> {
                     return Set.of(
-                            "IfOSTestSuite(15, bye).testNoArgs2()",
-                            "IfOSTestSuite(15, bye).testVarArgs()",
-                            "IfOSTestSuite(15, bye).testVarArgs(foo, bar)"
+                            "(15, bye).testNoArgs2()",
+                            "(15, bye).testVarArgs()",
+                            "(15, bye).testVarArgs(foo, bar)"
                     );
                 }
 
                 case WINDOWS -> {
                     return Set.of(
-                            "IfOSTestSuite(15, bye).testDates(2034-05-05)",
-                            "IfOSTestSuite(15, bye).testDates(2056-07-11)",
-                            "IfOSTestSuite(15, bye).testNoArgs2()",
-                            "IfOSTestSuite(10, hello).testDates(2034-05-05)",
-                            "IfOSTestSuite(10, hello).testDates(2056-07-11)",
-                            "IfOSTestSuite(10, hello).testNoArgs2()"                            
+                            "(15, bye).testDates(2034-05-05)",
+                            "(15, bye).testDates(2056-07-11)",
+                            "(15, bye).testNoArgs2()",
+                            "(10, hello).testDates(2034-05-05)",
+                            "(10, hello).testDates(2056-07-11)",
+                            "(10, hello).testNoArgs2()"
                     );
                 }
 
@@ -293,18 +303,18 @@ public class AnnotationsTest {
         });
     }
 
-    private static void runTestSuites(Class<? extends TestSuiteExecutionRecorder>... testSuites) {
+    private static void runTests(Class<? extends TestExecutionRecorder>... tests) {
         ACTUAL_TEST_DESCS.get().clear();
 
-        var expectedTestDescs = Stream.of(testSuites)
+        var expectedTestDescs = Stream.of(tests)
                 .map(AnnotationsTest::getExpectedTestDescs)
                 .flatMap(Set::stream)
                 // Collect in the map to check for collisions for free
                 .collect(toMap(x -> x, x -> ""))
                 .keySet();
 
-        var args = Stream.of(testSuites).map(testSuite -> {
-            return String.format("--jpt-run=%s", testSuite.getName());
+        var args = Stream.of(tests).map(test -> {
+            return String.format("--jpt-run=%s", test.getName());
         }).toArray(String[]::new);
 
         try {
@@ -319,7 +329,10 @@ public class AnnotationsTest {
     private static Set<String> getExpectedTestDescs(Class<?> type) {
         return toSupplier(() -> {
             var method = type.getMethod("getExpectedTestDescs");
-            return (Set<String>)method.invoke(null);
+            var testDescPefix = type.getName();
+            return ((Set<String>)method.invoke(null)).stream().map(desc -> {
+                return testDescPefix + desc;
+            }).collect(toSet());
         }).get();
     }
 
@@ -343,10 +356,15 @@ public class AnnotationsTest {
         }
     }
 
-    private static class TestSuiteExecutionRecorder {
-        protected TestSuiteExecutionRecorder(Object ... args) {
-            this.testSuiteClass = getClass();
+    private static class TestExecutionRecorder {
+        protected TestExecutionRecorder(Object ... args) {
+            this.testClass = getClass();
             this.testDescBuilder = TestInstance.TestDesc.createBuilder().ctorArgs(args);
+        }
+
+        TestExecutionRecorder(Class<?> testClass) {
+            this.testClass = testClass;
+            this.testDescBuilder = TestInstance.TestDesc.createBuilder().ctorArgs();
         }
 
         protected void recordTestCase(Object ... args) {
@@ -368,7 +386,7 @@ public class AnnotationsTest {
                     var methodName = frame.getMethodName();
                     var methodReturn = methodType.returnType();
                     var methodParameters = methodType.parameterArray();
-                    return Stream.of(testSuiteClass.getDeclaredMethods()).filter(method -> {
+                    return Stream.of(testClass.getDeclaredMethods()).filter(method -> {
                         return method.getName().equals(methodName)
                                 && method.getReturnType().equals(methodReturn)
                                 && Arrays.equals(method.getParameterTypes(), methodParameters)
@@ -380,7 +398,7 @@ public class AnnotationsTest {
 
         private boolean executed;
         private final TestInstance.TestDesc.Builder testDescBuilder;
-        private final Class<?> testSuiteClass;
+        private final Class<?> testClass;
     }
 
     private static final ThreadLocal<Set<String>> ACTUAL_TEST_DESCS = new ThreadLocal<>() {
