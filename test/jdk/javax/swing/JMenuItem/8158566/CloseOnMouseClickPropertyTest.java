@@ -44,7 +44,7 @@ import javax.swing.UIManager;
  * @key headful
  * @bug 8158566 8160879 8160977 8158566
  * @summary Provide a Swing property which modifies MenuItemUI behaviour
- * @run main/othervm/timeout=360 CloseOnMouseClickPropertyTest
+ * @run main/othervm/timeout=240 CloseOnMouseClickPropertyTest
  */
 
 public class CloseOnMouseClickPropertyTest {
@@ -109,7 +109,6 @@ public class CloseOnMouseClickPropertyTest {
         try {
             SwingUtilities.invokeAndWait(() -> createAndShowGUI(item));
             robot.waitForIdle();
-            robot.delay(1000);
 
             Point point = getClickPoint(true);
             robot.mouseMove(point.x, point.y);
