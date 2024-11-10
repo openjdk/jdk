@@ -30,7 +30,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE d MMMM, y G</pattern>
+							<pattern>EEEE, d MMMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -83,20 +83,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEEEEd">EEEE d MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
-						<dateFormatItem id="MMMEEEEd">EEEE d MMM</dateFormatItem>
-						<dateFormatItem id="MMMMEEEEd">EEEE d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMEEEEd">EEEE, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMEEEEd">EEEE, d MMMM</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d/M/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E, d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEEEEd">EEEE d MMM, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">MMMM, y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMMEEEEd">EEEE d MMMM, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMEEEEd">EEEE, d MMMM y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="GyMd">
@@ -159,7 +159,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE d MMMM, y</pattern>
+							<pattern>EEEE, d MMMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -232,14 +232,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ehms">E, h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Ehms" alt="ascii">E, h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="GyMMMEEEEd">EEEE d MMM, y G</dateFormatItem>
-						<dateFormatItem id="MMMEEEEd">EEEE d MMM</dateFormatItem>
-						<dateFormatItem id="MMMMEEEEd">EEEE d MMMM</dateFormatItem>
+						<dateFormatItem id="GyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
+						<dateFormatItem id="MMMEEEEd">EEEE, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMEEEEd">EEEE, d MMMM</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM, y</dateFormatItem>
-						<dateFormatItem id="yMMMEEEEd">EEEE d MMM, y</dateFormatItem>
-						<dateFormatItem id="yMMMMEEEEd">EEEE d MMMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMEEEEd">EEEE, d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEEEEd">EEEE, d MMMM y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="GyMMMEEEEd">
@@ -303,26 +303,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEEEEd">EEEE d MMM y G</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMMEEEEd">EEE, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMEEEEd">d EEEE MMMM</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d/M/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E d/M/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEEEEd">EEEE, d MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">MMMM, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMEEEEd">EEEE, d MMMM y</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<timeZoneNames>
-			<zone type="Asia/Rangoon">
-				<exemplarCity>Rangoon</exemplarCity>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>Kyzylorda</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity>Khovd</exemplarCity>
 			</zone>
 			<metazone type="Gulf">
 				<short>
-					<standard draft="contributed">GST</standard>
+					<standard>GST</standard>
 				</short>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Khovd Time</generic>
+					<standard>Khovd Standard Time</standard>
+					<daylight>Khovd Summer Time</daylight>
+				</long>
 			</metazone>
 			<metazone type="India">
 				<short>
@@ -428,8 +443,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
+			<currency type="KGS">
+				<displayName>Kyrgyzstani Som</displayName>
+				<displayName count="one">Kyrgyzstani som</displayName>
+				<displayName count="other">Kyrgyzstani soms</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName count="one">Kazakhstani Tenge</displayName>
+				<displayName count="other">Kazakhstani Tenges</displayName>
+			</currency>
+			<currency type="SLE">
+				<displayName count="one">Sierra Leonean Leone</displayName>
+				<displayName count="other">Sierra Leonean Leones</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName count="one">Tajikistani Somoni</displayName>
+				<displayName count="other">Tajikistani Somonis</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName count="one">Turkmenistani Manat</displayName>
+				<displayName count="other">Turkmenistani Manat</displayName>
+			</currency>
 			<currency type="USD">
 				<symbol>$</symbol>
+			</currency>
+			<currency type="UZS">
+				<displayName count="one">Uzbekistani Som</displayName>
+				<displayName count="other">Uzbekistani Som</displayName>
 			</currency>
 			<currency type="VEF">
 				<displayName>Venezuelan Bolívar</displayName>
@@ -437,9 +477,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Venezuelan bolívars</displayName>
 			</currency>
 			<currency type="VES">
-				<displayName>VES</displayName>
-				<displayName count="one">VES</displayName>
-				<displayName count="other">VES</displayName>
+				<displayName>VEF</displayName>
+				<displayName count="one">VEF</displayName>
+				<displayName count="other">VEF</displayName>
 			</currency>
 		</currencies>
 	</numbers>
@@ -448,6 +488,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} earth radius</unitPattern>
 				<unitPattern count="other">{0} earth radius</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>metric tonnes</displayName>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
