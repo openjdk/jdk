@@ -1855,20 +1855,21 @@ public class ForkJoinPool extends AbstractExecutorService {
                                        (TC_MASK & (c - TC_UNIT)) |
                                        (LMASK & c)))));
         }
-        if ((tryTerminate(false, false) & STOP) == 0L && phase != 0 &&
-            w != null) {
+        if (phase != 0 && w != null && (runState & STOP) == 0L) {
             WorkQueue[] qs; int n, i;      // remove index unless terminating
-            w.cancelTasks();               // clean queue
             long ns = w.nsteals & 0xffffffffL;
             if ((lockRunState() & STOP) == 0L &&
                 (qs = queues) != null && (n = qs.length) > 0 &&
                 qs[i = phase & SMASK & (n - 1)] == w) {
-                qs[i] = null;
-                stealCount += ns;          // accumulate steals
+                    qs[i] = null;
+                    stealCount += ns;      // accumulate steals
             }
             unlockRunState();
-            if (w.source != DROPPED && (runState & STOP) == 0L)
-                signalWork();              // possibly replace
+        }
+        if ((tryTerminate(false, false) & STOP) == 0L &&
+            phase != 0 && w != null && w.source != DROPPED) {
+            signalWork();                  // possibly replace
+            w.cancelTasks();               // clean queue
         }
         if (ex != null)
             ForkJoinTask.rethrow(ex);
@@ -2740,24 +2741,27 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return runState on exit
      */
     private long tryTerminate(boolean now, boolean enable) {
-        long e;
-        if (((e = runState) & STOP) == 0L) {
-            long isShutdown, ps;
-            if (now) {
-                runState = ((ps = lockRunState()) + RS_LOCK) | STOP | SHUTDOWN;
-                if ((ps & STOP) == 0L)
-                    interruptAll();
+        long e, isShutdown, ps;
+        if (((e = runState) & TERMINATED) != 0L)
+            now = false;
+        else if ((e & STOP) != 0L)
+            now = true;
+        else if (now) {
+            if (((ps = getAndBitwiseOrRunState(SHUTDOWN|STOP) & STOP)) == 0L) {
+                if ((ps & RS_LOCK) != 0L) {
+                    lockRunState(); // ensure queues array stable after stop
+                    unlockRunState();
+                }
+                interruptAll();
             }
-            else if ((isShutdown = (e & SHUTDOWN)) != 0L || enable) {
-                if (isShutdown == 0L)
-                    getAndBitwiseOrRunState(SHUTDOWN);
-                if (quiescent() > 0)
-                    now = true;
-            }
-            if (now)
-                e = runState;
         }
-        if ((e & (STOP | TERMINATED)) == STOP) {
+        else if ((isShutdown = (e & SHUTDOWN)) != 0L || enable) {
+            if (isShutdown == 0L)
+                getAndBitwiseOrRunState(SHUTDOWN);
+            if (quiescent() > 0)
+                now = true;
+        }
+        if (now) {
             releaseAll();
             for (;;) {
                 if (((e = runState) & CLEANED) == 0L) {
@@ -2842,7 +2846,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
             }
         }
-        //        releaseAll();
     }
 
     /**
