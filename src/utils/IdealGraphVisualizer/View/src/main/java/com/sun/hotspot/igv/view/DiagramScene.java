@@ -568,9 +568,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void clearObjects() {
-        Collection<Object> objects = new ArrayList<>(getObjects());
-        for (Object o : objects) {
-            removeObject(o);
+        Set<Object> objectSet = new HashSet<>(getObjects());
+        for (Object object : objectSet) {
+            if (isObject(object)) {
+                removeObject(object);
+            }
         }
     }
 
