@@ -48,7 +48,7 @@ public class ImageReaderFactory {
 
     private static final String JAVA_HOME = System.getProperty("java.home");
     private static final Path BOOT_MODULES_JIMAGE =
-            sun.nio.fs.DefaultFileSystemProvider.create().getPath(JAVA_HOME, "lib", "modules");
+        Paths.get(JAVA_HOME, "lib", "modules");
 
     private static final Map<Path, ImageReader> readers = new ConcurrentHashMap<>();
 
