@@ -25,11 +25,9 @@
 package jdk.jpackage.internal.model;
 
 import java.util.Map;
-import java.util.Optional;
+import jdk.jpackage.internal.util.DynamicProxy;
 
-public interface LinuxLauncher extends Launcher {
-
-    Optional<Boolean> shortcut();
+public interface LinuxLauncher extends Launcher, LinuxLauncherMixin {
 
     @Override
     default Map<String, String> extraAppImageFileData() {
@@ -37,24 +35,13 @@ public interface LinuxLauncher extends Launcher {
             return Map.of("shortcut", Boolean.toString(v));
         }).orElseGet(Map::of);
     }
-    
+
     @Override
     default String defaultIconResourceName() {
         return "JavaApp.png";
     }
 
-    final class Stub extends Launcher.Proxy<Launcher> implements LinuxLauncher {
-
-        public Stub(Launcher launcher, Optional<Boolean> shortcut) {
-            super(launcher);
-            this.shortcut = shortcut;
-        }
-
-        @Override
-        public Optional<Boolean> shortcut() {
-            return shortcut;
-        }
-
-        private final Optional<Boolean> shortcut;
+    public static LinuxLauncher create(Launcher launcher, LinuxLauncherMixin mixin) {
+        return DynamicProxy.createProxyFromPieces(LinuxLauncher.class, launcher, mixin);
     }
 }

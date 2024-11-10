@@ -25,18 +25,9 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import jdk.jpackage.internal.util.DynamicProxy;
 
-public interface LinuxPackage extends Package {
-
-    String menuGroupName();
-
-    String category();
-
-    String additionalDependencies();
-
-    String release();
-
-    String arch();
+public interface LinuxPackage extends Package, LinuxPackageMixin {
 
     @Override
     AppImageLayout packageLayout();
@@ -63,93 +54,7 @@ public interface LinuxPackage extends Package {
         return !relativeInstallDir().getFileName().equals(Path.of(packageName()));
     }
 
-    final class Stub extends Package.Proxy<Package> implements LinuxPackage {
-
-        public Stub(Package target, AppImageLayout packageLayout,
-                String menuGroupName, String category,
-                String additionalDependencies, String release, String arch)
-                throws ConfigException {
-            super(target);
-            this.packageLayout = packageLayout;
-            this.menuGroupName = menuGroupName;
-            this.category = category;
-            this.release = release;
-            this.additionalDependencies = additionalDependencies;
-            this.arch = arch;
-        }
-
-        @Override
-        public AppImageLayout packageLayout() {
-            return packageLayout;
-        }
-
-        @Override
-        public String menuGroupName() {
-            return menuGroupName;
-        }
-
-        @Override
-        public String category() {
-            return category;
-        }
-
-        @Override
-        public String additionalDependencies() {
-            return additionalDependencies;
-        }
-
-        @Override
-        public String release() {
-            return release;
-        }
-
-        @Override
-        public String arch() {
-            return arch;
-        }
-
-        private final AppImageLayout packageLayout;
-        private final String menuGroupName;
-        private final String category;
-        private final String additionalDependencies;
-        private final String release;
-        private final String arch;
-    }
-
-    class Proxy<T extends LinuxPackage> extends Package.Proxy<T> implements LinuxPackage {
-
-        public Proxy(T target) {
-            super(target);
-        }
-
-        @Override
-        final public AppImageLayout packageLayout() {
-            return target.packageLayout();
-        }
-
-        @Override
-        final public String menuGroupName() {
-            return target.menuGroupName();
-        }
-
-        @Override
-        final public String category() {
-            return target.category();
-        }
-
-        @Override
-        final public String additionalDependencies() {
-            return target.additionalDependencies();
-        }
-
-        @Override
-        final public String release() {
-            return target.release();
-        }
-
-        @Override
-        final public String arch() {
-            return target.arch();
-        }
+    public static LinuxPackage create(Package pkg, LinuxPackageMixin mixin) {
+        return DynamicProxy.createProxyFromPieces(LinuxPackage.class, pkg, mixin);
     }
 }

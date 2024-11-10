@@ -37,6 +37,7 @@ import static jdk.jpackage.internal.LinuxAppImageBuilder.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxLauncher;
+import jdk.jpackage.internal.model.LinuxLauncherMixin;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.StandardPackageType;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
@@ -55,9 +56,9 @@ final class LinuxFromParams {
             }).map(param -> {
                 return param.fetchFrom(launcherParams);
             }).findFirst();
-            return new LinuxLauncher.Stub(launcher, shortcut);
+            return LinuxLauncher.create(launcher, new LinuxLauncherMixin.Stub(shortcut));
         }), APPLICATION_LAYOUT).create();
-        return new LinuxApplication.Stub(app);
+        return LinuxApplication.create(app);
     }
 
     private static LinuxPackageBuilder createLinuxPackageBuilder(

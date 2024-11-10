@@ -25,10 +25,9 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import jdk.jpackage.internal.util.DynamicProxy;
 
-public interface LinuxDebPackage extends LinuxPackage {
-
-    String maintainerEmail();
+public interface LinuxDebPackage extends LinuxPackage, LinuxDebPackageMixin {
 
     default String maintainer() {
         return String.format("%s <%s>", app().vendor(), maintainerEmail());
@@ -49,18 +48,7 @@ public interface LinuxDebPackage extends LinuxPackage {
         }
     }
 
-    final class Stub extends LinuxPackage.Proxy<LinuxPackage> implements LinuxDebPackage {
-
-        public Stub(LinuxPackage target, String maintainerEmail) {
-            super(target);
-            this.maintainerEmail = maintainerEmail;
-        }
-
-        @Override
-        public String maintainerEmail() {
-            return maintainerEmail;
-        }
-
-        private final String maintainerEmail;
+    public static LinuxDebPackage create(LinuxPackage pkg, LinuxDebPackageMixin mixin) {
+        return DynamicProxy.createProxyFromPieces(LinuxDebPackage.class, pkg, mixin);
     }
 }

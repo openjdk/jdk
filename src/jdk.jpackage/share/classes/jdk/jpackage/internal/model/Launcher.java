@@ -70,83 +70,13 @@ public interface Launcher {
      * other value for custom icon.
      */
     Path icon();
-    
+
     default String defaultIconResourceName() {
         return null;
     }
 
     record Stub(String name, LauncherStartupInfo startupInfo,
             List<FileAssociation> fileAssociations, boolean isService,
-            String description, Path icon) implements Launcher {        
-    }
-    
-    class Proxy<T extends Launcher> extends ProxyBase<T> implements Launcher {
-
-        public Proxy(T target) {
-            super(target);
-        }
-
-        @Override
-        final public String name() {
-            return target.name();
-        }
-
-        @Override
-        final public LauncherStartupInfo startupInfo() {
-            return target.startupInfo();
-        }
-
-        @Override
-        final public List<FileAssociation> fileAssociations() {
-            return target.fileAssociations();
-        }
-
-        @Override
-        final public boolean isService() {
-            return target.isService();
-        }
-
-        @Override
-        final public String description() {
-            return target.description();
-        }
-
-        @Override
-        final public Path icon() {
-            return target.icon();
-        }
-    }
-
-    class Unsupported implements Launcher {
-
-        @Override
-        public String name() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public LauncherStartupInfo startupInfo() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<FileAssociation> fileAssociations() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isService() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String description() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Path icon() {
-            throw new UnsupportedOperationException();
-        }
+            String description, Path icon) implements Launcher {
     }
 }

@@ -33,6 +33,7 @@ import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.LinuxPackageMixin;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.StandardPackageType;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
@@ -66,13 +67,13 @@ final class LinuxPackageBuilder {
     }
 
     private LinuxPackage create(Package pkg, AppImageLayout pkgLayout) throws ConfigException {
-        return new LinuxPackage.Stub(pkg,
+        return LinuxPackage.create(pkg, new LinuxPackageMixin.Stub(
                 pkgLayout,
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
                 Optional.ofNullable(category).orElseGet(DEFAULTS::category),
                 additionalDependencies,
                 Optional.ofNullable(release).orElseGet(DEFAULTS::release),
-                LinuxPackageArch.getValue(pkg.asStandardPackageType()));
+                LinuxPackageArch.getValue(pkg.asStandardPackageType())));
     }
 
     LinuxPackageBuilder directName(String v) {

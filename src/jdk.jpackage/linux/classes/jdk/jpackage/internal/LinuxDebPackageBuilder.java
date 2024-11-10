@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxRpmPackage;
+import jdk.jpackage.internal.model.LinuxRpmPackageMixin;
 
 final class LinuxDebPackageBuilder {
 
@@ -38,9 +39,9 @@ final class LinuxDebPackageBuilder {
 
     LinuxRpmPackage create() throws ConfigException {
         var pkg = pkgBuilder.create();
-        return new LinuxRpmPackage.Stub(
-                pkg,
-                Optional.ofNullable(maintainerEmail).orElseGet(DEFAULTS::maintainerEmail));
+        return LinuxRpmPackage.create(pkg, new LinuxRpmPackageMixin.Stub(
+                Optional.ofNullable(maintainerEmail).orElseGet(
+                        DEFAULTS::maintainerEmail)));
     }
 
     LinuxDebPackageBuilder maintainerEmail(String v) {

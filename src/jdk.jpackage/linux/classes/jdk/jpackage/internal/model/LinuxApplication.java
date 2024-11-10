@@ -25,10 +25,11 @@
 
 package jdk.jpackage.internal.model;
 
+import jdk.jpackage.internal.util.DynamicProxy;
+
 public interface LinuxApplication extends Application {
-    final class Stub extends Application.Proxy<Application> implements LinuxApplication {
-        public Stub(Application app) {
-            super(app);
-        }
-    }
+    
+    public static LinuxApplication create(Application app) {
+        return DynamicProxy.createProxyFromPieces(LinuxApplication.class, app);
+    }    
 }

@@ -24,22 +24,11 @@
  */
 package jdk.jpackage.internal.model;
 
-public interface LinuxRpmPackage extends LinuxPackage {
+import jdk.jpackage.internal.util.DynamicProxy;
 
-    String licenseType();
+public interface LinuxRpmPackage extends LinuxPackage, LinuxRpmPackageMixin {
 
-    final class Stub extends LinuxPackage.Proxy<LinuxPackage> implements LinuxRpmPackage {
-
-        public Stub(LinuxPackage target, String licenseType) {
-            super(target);
-            this.licenseType = licenseType;
-        }
-
-        @Override
-        public String licenseType() {
-            return licenseType;
-        }
-
-        private final String licenseType;
+    public static LinuxRpmPackage create(LinuxPackage pkg, LinuxRpmPackageMixin mixin) {
+        return DynamicProxy.createProxyFromPieces(LinuxRpmPackage.class, pkg, mixin);
     }
 }

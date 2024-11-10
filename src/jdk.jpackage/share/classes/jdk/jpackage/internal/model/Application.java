@@ -90,63 +90,6 @@ public interface Application {
             List<Launcher> launchers) implements Application {
     }
 
-    class Proxy<T extends Application> extends ProxyBase<T> implements Application {
-
-        Proxy(T target) {
-            super(target);
-        }
-
-        @Override
-        final public String name() {
-            return target.name();
-        }
-
-        @Override
-        final public String description() {
-            return target.description();
-        }
-
-        @Override
-        final public String version() {
-            return target.version();
-        }
-
-        @Override
-        final public String vendor() {
-            return target.vendor();
-        }
-
-        @Override
-        final public String copyright() {
-            return target.copyright();
-        }
-
-        @Override
-        final public Path srcDir() {
-            return target.srcDir();
-        }
-
-        @Override
-        final public List<Path> contentDirs() {
-            return target.contentDirs();
-        }
-
-        @Override
-        final public AppImageLayout imageLayout() {
-            return target.imageLayout();
-        }
-
-        @Override
-        final public RuntimeBuilder runtimeBuilder() {
-            return target.runtimeBuilder();
-        }
-
-        @Override
-        final public List<Launcher> launchers() {
-            return target.launchers();
-        }
-    }
-
     class Unsupported implements Application {
 
         @Override

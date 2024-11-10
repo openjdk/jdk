@@ -22,39 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.model;
 
-import java.util.Objects;
-import java.util.Optional;
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.LinuxRpmPackage;
-import jdk.jpackage.internal.model.LinuxRpmPackageMixin;
+public interface LinuxDebPackageMixin {
 
-final class LinuxRpmPackageBuilder {
+    String maintainerEmail();
 
-    LinuxRpmPackageBuilder(LinuxPackageBuilder pkgBuilder) {
-        Objects.requireNonNull(pkgBuilder);
-        this.pkgBuilder = pkgBuilder;
+    record Stub(String maintainerEmail) {
     }
-
-    LinuxRpmPackage create() throws ConfigException {
-        var pkg = pkgBuilder.create();
-        return LinuxRpmPackage.create(pkg, new LinuxRpmPackageMixin.Stub(
-                Optional.ofNullable(licenseType).orElseGet(DEFAULTS::licenseType)));
-    }
-
-    LinuxRpmPackageBuilder licenseType(String v) {
-        licenseType = v;
-        return this;
-    }
-
-    private record Defaults(String licenseType) {
-    }
-
-    private String licenseType;
-
-    private final LinuxPackageBuilder pkgBuilder;
-
-    private static final Defaults DEFAULTS = new Defaults(I18N.getString(
-            "param.license-type.default"));
 }
