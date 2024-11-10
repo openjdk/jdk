@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class TestVMProcess {
         String bootClassPath = "-Xbootclasspath/a:.";
         if (testClassesOnBootClassPath) {
             // Add test classes themselves to boot classpath to make them privileged.
-            bootClassPath += File.pathSeparator + Utils.TEST_CLASSES;
+            bootClassPath += File.pathSeparator + Utils.TEST_CLASS_PATH;
         }
         cmds.add(bootClassPath);
         cmds.add("-XX:+UnlockDiagnosticVMOptions");

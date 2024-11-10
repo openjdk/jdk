@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,13 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include Execute.gmk
 include Modules.gmk
 
 ################################################################################
 
-# Use this file inside the image as target for make rule
-JIMAGE_TARGET_FILE := bin/java$(EXECUTABLE_SUFFIX)
+INTERIM_JLINK_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/interim-image-jlink
 
 INTERIM_MODULES_LIST := $(call CommaList, $(INTERIM_IMAGE_MODULES))
 
@@ -42,17 +43,18 @@ JLINK_TOOL := $(JLINK) -J-Djlink.debug=true \
     --module-path $(INTERIM_JMODS_DIR) \
     --endian $(OPENJDK_BUILD_CPU_ENDIAN)
 
-$(INTERIM_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
-    $(call DependOnVariable, INTERIM_MODULES_LIST)
-	$(call LogWarn, Creating interim jimage)
-	$(RM) -r $(INTERIM_IMAGE_DIR)
-	$(JLINK_TOOL) \
-	    --output $(INTERIM_IMAGE_DIR) \
-	    --disable-plugin generate-jli-classes \
-	    --add-modules $(INTERIM_MODULES_LIST)
-	$(TOUCH) $@
+$(eval $(call SetupExecute, jlink_interim_image, \
+    WARN := Creating interim jimage, \
+    DEPS :=  $(JMODS) $(call DependOnVariable, INTERIM_MODULES_LIST), \
+    OUTPUT_DIR := $(INTERIM_IMAGE_DIR), \
+    SUPPORT_DIR := $(INTERIM_JLINK_SUPPORT_DIR), \
+    PRE_COMMAND := $(RM) -r $(INTERIM_IMAGE_DIR), \
+    COMMAND := $(JLINK_TOOL) --output $(INTERIM_IMAGE_DIR) \
+        --disable-plugin generate-jli-classes \
+        --add-modules $(INTERIM_MODULES_LIST), \
+))
 
-TARGETS += $(INTERIM_IMAGE_DIR)/$(JIMAGE_TARGET_FILE)
+TARGETS += $(jlink_interim_image)
 
 ################################################################################
 

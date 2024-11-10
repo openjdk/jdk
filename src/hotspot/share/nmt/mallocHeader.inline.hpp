@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,8 +34,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker)
-  : _size(size), _mst_marker(mst_marker), _flags(flags),
+inline MallocHeader::MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker)
+  : _size(size), _mst_marker(mst_marker), _mem_tag(mem_tag),
     _unused(0), _canary(_header_canary_live_mark)
 {
   assert(size < max_reasonable_malloc_size, "Too large allocation size?");

@@ -106,7 +106,8 @@ public class JSpec implements Taglet  {
         this.idPrefix = idPrefix;
     }
 
-    private static final Pattern TAG_PATTERN = Pattern.compile("(?s)(.+ )?(?<chapter>[1-9][0-9]*)(?<section>[0-9.]*)( .*)?$");
+    // Note: Matches special cases like @jvms 6.5.checkcast
+    private static final Pattern TAG_PATTERN = Pattern.compile("(?s)(.+ )?(?<chapter>[1-9][0-9]*)(?<section>[0-9a-z_.]*)( .*)?$");
 
     /**
      * Returns the set of locations in which the tag may be used.

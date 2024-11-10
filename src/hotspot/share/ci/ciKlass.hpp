@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,13 @@ public:
     return false;
   }
 
+  bool is_in_encoding_range() {
+    Klass* k = get_Klass();
+    bool is_in_encoding_range = CompressedKlassPointers::is_encodable(k);
+    assert(is_in_encoding_range || k->is_interface() || k->is_abstract(), "sanity");
+    return is_in_encoding_range;
+  }
+
   // Attempt to get a klass using this ciKlass's loader.
   ciKlass* find_klass(ciSymbol* klass_name);
   // Note:  To find a class from its name string, use ciSymbol::make,
@@ -121,6 +128,9 @@ public:
   // Fetch Klass::access_flags.
   jint                   access_flags();
 
+  // Fetch Klass::misc_flags.
+  klass_flags_t          misc_flags();
+
   // What kind of ciObject is this?
   bool is_klass() const { return true; }
 
@@ -129,6 +139,9 @@ public:
   void print_name_on(outputStream* st);
 
   const char* external_name() const;
+
+  juint prototype_header_offset();
+  uintptr_t prototype_header();
 };
 
 #endif // SHARE_CI_CIKLASS_HPP

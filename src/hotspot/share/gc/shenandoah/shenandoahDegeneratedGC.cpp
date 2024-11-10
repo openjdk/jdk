@@ -32,7 +32,6 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMetrics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -276,12 +275,12 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   }
 
   if (!heap->collection_set()->is_empty()) {
+    if (ShenandoahVerify) {
+      heap->verifier()->verify_before_evacuation();
+    }
+
     heap->set_evacuation_in_progress(true);
     heap->set_has_forwarded_objects(true);
-
-    if(ShenandoahVerify) {
-      heap->verifier()->verify_during_evacuation();
-    }
   } else {
     if (ShenandoahVerify) {
       heap->verifier()->verify_after_concmark();

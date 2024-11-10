@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -223,7 +223,7 @@ import sun.security.util.SecurityConstants;
  * or a fully qualified name as defined by
  * <cite>The Java Language Specification</cite>.
  *
- * @jls 6.7 Fully Qualified Names
+ * @jls 6.7 Fully Qualified Names and Canonical Names
  * @jls 13.1 The Form of a Binary
  * @see      #resolveClass(Class)
  * @since 1.0
@@ -2442,14 +2442,32 @@ public abstract class ClassLoader {
                 " in java.library.path: " + StaticProperty.javaLibraryPath());
     }
 
-    /*
+    /**
      * Invoked in the VM class linking code.
+     * @param loader the class loader used to look up the native library symbol
+     * @param clazz the class in which the native method is declared
+     * @param entryName the native method's mangled name (this is the name used for the native lookup)
+     * @param javaName the native method's declared name
      */
-    static long findNative(ClassLoader loader, String entryName) {
+    static long findNative(ClassLoader loader, Class<?> clazz, String entryName, String javaName) {
+        NativeLibraries nativeLibraries = nativeLibrariesFor(loader);
+        long addr = nativeLibraries.find(entryName);
+        if (addr != 0 && loader != null) {
+            Reflection.ensureNativeAccess(clazz, clazz, javaName, true);
+        }
+        return addr;
+    }
+
+    /*
+     * This is also called by SymbolLookup::loaderLookup. In that case, we need
+     * to avoid a restricted check, as that check has already been performed when
+     * obtaining the lookup.
+     */
+    static NativeLibraries nativeLibrariesFor(ClassLoader loader) {
         if (loader == null) {
-            return BootLoader.getNativeLibraries().find(entryName);
+            return BootLoader.getNativeLibraries();
         } else {
-            return loader.libraries.find(entryName);
+            return loader.libraries;
         }
     }
 

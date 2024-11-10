@@ -228,7 +228,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-jigger">
 				<displayName>Schuss</displayName>
-				<unitPattern count="one">Schuss</unitPattern>
+				<unitPattern count="one">{0} Schuss</unitPattern>
 				<unitPattern count="other">{0} Schuss</unitPattern>
 			</unit>
 			<unit type="volume-pinch">

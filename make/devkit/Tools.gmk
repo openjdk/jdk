@@ -23,7 +23,7 @@
 # questions.
 #
 
-##########################################################################################
+################################################################################
 #
 # Workhorse makefile for creating ONE cross compiler
 # Needs either to be from BUILD -> BUILD OR have
@@ -92,7 +92,7 @@ else
   $(error Unknown base OS $(BASE_OS))
 endif
 
-##########################################################################################
+################################################################################
 # Define external dependencies
 
 # Latest that could be made to work.
@@ -223,7 +223,7 @@ RPM_LIST := \
     systemtap-sdt-devel \
     #
 
-##########################################################################################
+################################################################################
 # Define common directories and files
 
 # Ensure we have 32-bit libs also for x64. We enable mixed-mode.
@@ -258,7 +258,7 @@ download-rpms:
 	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
         endif
 
-##########################################################################################
+################################################################################
 # Unpack source packages
 
 # Generate downloading + unpacking of sources.
@@ -285,7 +285,7 @@ endef
 # Download and unpack all source packages
 $(foreach p,GCC BINUTILS CCACHE MPFR GMP MPC GDB,$(eval $(call Download,$(p))))
 
-##########################################################################################
+################################################################################
 # Unpack RPMS
 
 RPM_ARCHS := $(ARCH) noarch
@@ -324,7 +324,7 @@ endef
 
 $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
 
-##########################################################################################
+################################################################################
 
 # Note: MUST create a <sysroot>/usr/lib even if not really needed.
 # gcc will use a path relative to it to resolve lib64. (x86_64).
@@ -344,7 +344,7 @@ $(libs) : $(rpms)
 	@mkdir -p $(SYSROOT)/usr/lib
 	@touch $@
 
-##########################################################################################
+################################################################################
 # Create links for ffi header files so that they become visible by default when using the
 # devkit.
 ifeq ($(ARCH), x86_64)
@@ -357,12 +357,12 @@ ifeq ($(ARCH), x86_64)
   SYSROOT_LINKS += $(SYSROOT)/usr/include/ffi.h $(SYSROOT)/usr/include/ffitarget.h
 endif
 
-##########################################################################################
+################################################################################
 
 # Define marker files for each source package to be compiled
 $(foreach t,binutils mpfr gmp mpc gcc ccache gdb,$(eval $(t) = $(TARGETDIR)/$($(t)_ver).done))
 
-##########################################################################################
+################################################################################
 
 # Default base config
 CONFIG = --target=$(TARGET) \
@@ -390,7 +390,7 @@ endif
 
 TOOLS ?= $(call declare_tools,_FOR_TARGET,$(TARGET)-)
 
-##########################################################################################
+################################################################################
 
 # Create a TARGET bfd + libiberty only.
 # Configure one or two times depending on mulitlib arch.
@@ -424,7 +424,7 @@ $(bfdmakes) : CONFIG = --target=$(TARGET) \
 
 $(bfdmakes) : TOOLS = $(call declare_tools,_FOR_TARGET,$(TARGET)-) $(call declare_tools,,$(TARGET)-)
 
-##########################################################################################
+################################################################################
 
 $(gcc) \
     $(binutils) \
@@ -591,7 +591,7 @@ else
 	@echo 'done'
 endif
 
-##########################################################################################
+################################################################################
 # very straightforward. just build a ccache. it is only for host.
 $(BUILDDIR)/$(ccache_ver)/Makefile \
     : $(CCACHE_CFG)
@@ -606,7 +606,7 @@ $(BUILDDIR)/$(ccache_ver)/Makefile \
 
 gccpatch = $(TARGETDIR)/gcc-patched
 
-##########################################################################################
+################################################################################
 # For some reason cpp is not created as a target-compiler
 ifeq ($(HOST),$(TARGET))
   $(gccpatch) : $(gcc) link_libs
@@ -621,7 +621,7 @@ ifeq ($(HOST),$(TARGET))
 	@touch $@
 	@echo 'done'
 
-  ##########################################################################################
+  ##############################################################################
   # Ugly at best. Seems that when we compile host->host compiler, that are NOT
   # the BUILD compiler, the result will not try searching for libs in package root.
   # "Solve" this by create links from the target libdirs to where they are.
@@ -641,7 +641,7 @@ else
 	@echo 'done'
 endif
 
-##########################################################################################
+################################################################################
 # Build in two steps.
 # make <default>
 # make install.
@@ -656,7 +656,7 @@ $(TARGETDIR)/%.done : $(BUILDDIR)/%/Makefile
 	@touch $@
 	@echo 'done'
 
-##########################################################################################
+################################################################################
 
 $(PREFIX)/devkit.info:
 	@echo 'Creating devkit.info in the root of the kit'
@@ -670,7 +670,7 @@ $(PREFIX)/devkit.info:
 	echo 'DEVKIT_SYSROOT="$$DEVKIT_ROOT/$(TARGET)/sysroot"' >> $@
 	echo 'DEVKIT_EXTRA_PATH="$$DEVKIT_ROOT/bin"' >> $@
 
-##########################################################################################
+################################################################################
 # Copy these makefiles into the root of the kit
 $(PREFIX)/Makefile: ./Makefile
 	rm -rf $@
@@ -686,7 +686,7 @@ $(PREFIX)/Tars.gmk: ./Tars.gmk
 
 THESE_MAKEFILES := $(PREFIX)/Makefile $(PREFIX)/Tools.gmk $(PREFIX)/Tars.gmk
 
-##########################################################################################
+################################################################################
 
 ifeq ($(TARGET), $(HOST))
   # To build with dtrace support, the build needs access to the dtrace executable from the
@@ -706,7 +706,7 @@ ifeq ($(TARGET), $(HOST))
       ld.gold nm objcopy objdump ranlib readelf size strings strip)
 endif
 
-##########################################################################################
+################################################################################
 
 bfdlib : $(bfdlib)
 binutils : $(binutils)

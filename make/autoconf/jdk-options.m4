@@ -23,7 +23,7 @@
 # questions.
 #
 
-###############################################################################
+################################################################################
 # Set the debug level
 #    release: no debug information, all optimizations, no asserts.
 #    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
@@ -81,7 +81,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
   AC_SUBST(DEBUG_LEVEL)
 ])
 
-###############################################################################
+################################################################################
 #
 # Should we build only OpenJDK even if closed sources are present?
 #
@@ -235,8 +235,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   else
     HOTSPOT_OVERRIDE_LIBPATH=${with_jni_libpath}
     if test "x$OPENJDK_TARGET_OS" != "xlinux" &&
-         test "x$OPENJDK_TARGET_OS" != "xbsd" &&
-         test "x$OPENJDK_TARGET_OS" != "xaix"; then
+        test "x$OPENJDK_TARGET_OS" != "xbsd" &&
+        test "x$OPENJDK_TARGET_OS" != "xaix"; then
       AC_MSG_RESULT([fail])
       AC_MSG_ERROR([Overriding JNI library path is supported only on Linux, BSD and AIX.])
     fi
@@ -246,7 +246,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
 ])
 
-###############################################################################
+################################################################################
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 [
@@ -410,7 +410,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
   AC_SUBST(JCOV_FILTERS)
 ])
 
-###############################################################################
+################################################################################
 #
 # AddressSanitizer
 #
@@ -421,8 +421,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if AddressSanitizer (asan) is available])
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
-           test "x$TOOLCHAIN_TYPE" = "xclang" ||
-           test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+            test "x$TOOLCHAIN_TYPE" = "xclang" ||
+            test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           AC_MSG_RESULT([yes])
         else
           AC_MSG_RESULT([no])
@@ -431,7 +431,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
       ],
       IF_ENABLED: [
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
-           test "x$TOOLCHAIN_TYPE" = "xclang"; then
+            test "x$TOOLCHAIN_TYPE" = "xclang"; then
           # ASan is simply incompatible with gcc -Wstringop-truncation. See
           # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
           # It's harmless to be suppressed in clang as well.
@@ -467,7 +467,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
   AC_SUBST(ASAN_ENABLED)
 ])
 
-###############################################################################
+################################################################################
 #
 # LeakSanitizer
 #
@@ -500,7 +500,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_LEAK_SANITIZER],
   AC_SUBST(LSAN_ENABLED)
 ])
 
-###############################################################################
+################################################################################
 #
 # UndefinedBehaviorSanitizer
 #
@@ -675,6 +675,37 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 
 ################################################################################
 #
+# Enable or disable the default CDS archive generation for Compact Object Headers
+#
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
+[
+  UTIL_ARG_ENABLE(NAME: cds-archive-coh, DEFAULT: auto, RESULT: BUILD_CDS_ARCHIVE_COH,
+      DESC: [enable generation of default CDS archives for compact object headers (requires --enable-cds-archive)],
+      DEFAULT_DESC: [auto],
+      CHECKING_MSG: [if default CDS archives for compact object headers should be generated],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if CDS archive with compact object headers is available])
+        if test "x$BUILD_CDS_ARCHIVE" = "xfalse"; then
+          AC_MSG_RESULT([no (CDS default archive generation is disabled)])
+          AVAILABLE=false
+        elif test "x$OPENJDK_TARGET_CPU" != "xx86_64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xaarch64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xppc64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xppc64le" &&
+             test "x$OPENJDK_TARGET_CPU" != "xriscv64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xs390x"; then
+          AC_MSG_RESULT([no (compact object headers not supported for this platform)])
+          AVAILABLE=false
+        else
+          AC_MSG_RESULT([yes])
+          AVAILABLE=true
+        fi
+      ])
+  AC_SUBST(BUILD_CDS_ARCHIVE_COH)
+])
+
+################################################################################
+#
 # Enable the alternative CDS core region alignment
 #
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT],
@@ -707,9 +738,8 @@ AC_DEFUN([JDKOPT_ALLOW_ABSOLUTE_PATHS_IN_OUTPUT],
 [
   AC_ARG_ENABLE([absolute-paths-in-output],
       [AS_HELP_STRING([--disable-absolute-paths-in-output],
-       [Set to disable to prevent any absolute paths from the build to end up in
-        any of the build output. @<:@disabled in release builds, otherwise enabled@:>@])
-      ])
+      [Set to disable to prevent any absolute paths from the build to end up in
+      any of the build output. @<:@disabled in release builds, otherwise enabled@:>@])])
 
   AC_MSG_CHECKING([if absolute paths should be allowed in the build output])
   if test "x$enable_absolute_paths_in_output" = "xno"; then

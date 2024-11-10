@@ -68,13 +68,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
+import jdk.internal.invoke.MhUtil;
 import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
@@ -149,15 +149,8 @@ class DatagramChannelImpl
     private InetSocketAddress initialLocalAddress;
 
     // Socket adaptor, created lazily
-    private static final VarHandle SOCKET;
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            SOCKET = l.findVarHandle(DatagramChannelImpl.class, "socket", DatagramSocket.class);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
-    }
+    private static final VarHandle SOCKET = MhUtil.findVarHandle(
+            MethodHandles.lookup(), "socket", DatagramSocket.class);
     private volatile DatagramSocket socket;
 
     // Multicast support
@@ -683,14 +676,12 @@ class DatagramChannelImpl
             }
 
             long startNanos = System.nanoTime();
+            long remainingNanos = nanos;
             SocketAddress sender = null;
             try {
                 SocketAddress remote = beginRead(true, false);
                 boolean connected = (remote != null);
                 do {
-                    long remainingNanos = (nanos > 0)
-                            ? nanos - (System.nanoTime() - startNanos)
-                            : 0;
                     ByteBuffer dst = tryBlockingReceive(connected, bufLength, remainingNanos);
 
                     // if datagram received then get sender and copy to DatagramPacket
@@ -711,14 +702,22 @@ class DatagramChannelImpl
                                 }
                             }
 
-                            // copy bytes to the DatagramPacket, and set length and sender
                             if (sender != null) {
+                                // copy bytes to the DatagramPacket, and set length and sender
                                 synchronized (p) {
                                     // re-read p.bufLength in case DatagramPacket changed
                                     int len = Math.min(dst.limit(), DatagramPackets.getBufLength(p));
                                     dst.get(p.getData(), p.getOffset(), len);
                                     DatagramPackets.setLength(p, len);
                                     p.setSocketAddress(sender);
+                                }
+                            } else {
+                                // need to retry, adjusting timeout if needed
+                                if (nanos > 0) {
+                                    remainingNanos = nanos - (System.nanoTime() - startNanos);
+                                    if (remainingNanos <= 0) {
+                                        throw new SocketTimeoutException("Receive timed out");
+                                    }
                                 }
                             }
                         } finally {
@@ -746,6 +745,7 @@ class DatagramChannelImpl
     private ByteBuffer tryBlockingReceive(boolean connected, int len, long nanos)
         throws IOException
     {
+        assert nanos >= 0;
         long startNanos = System.nanoTime();
         ByteBuffer dst = Util.getTemporaryDirectBuffer(len);
         int n = -1;

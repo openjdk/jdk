@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -140,13 +140,13 @@ static task_t getTask(JNIEnv *env, jobject this_obj) {
   return (task_t)ptr;
 }
 
-#define CHECK_EXCEPTION_(value) if ((*env)->ExceptionOccurred(env)) { return value; }
-#define CHECK_EXCEPTION if ((*env)->ExceptionOccurred(env)) { return;}
+#define CHECK_EXCEPTION_(value) if ((*env)->ExceptionCheck(env)) { return value; }
+#define CHECK_EXCEPTION if ((*env)->ExceptionCheck(env)) { return;}
 #define THROW_NEW_DEBUGGER_EXCEPTION_(str, value) { throw_new_debugger_exception(env, str); return value; }
 #define THROW_NEW_DEBUGGER_EXCEPTION(str) { throw_new_debugger_exception(env, str); return;}
-#define CHECK_EXCEPTION_CLEAR if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); }
-#define CHECK_EXCEPTION_CLEAR_VOID if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return; }
-#define CHECK_EXCEPTION_CLEAR_(value) if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return value; }
+#define CHECK_EXCEPTION_CLEAR if ((*env)->ExceptionCheck(env)) { (*env)->ExceptionClear(env); }
+#define CHECK_EXCEPTION_CLEAR_VOID if ((*env)->ExceptionCheck(env)) { (*env)->ExceptionClear(env); return; }
+#define CHECK_EXCEPTION_CLEAR_(value) if ((*env)->ExceptionCheck(env)) { (*env)->ExceptionClear(env); return value; }
 
 static void throw_new_debugger_exception(JNIEnv* env, const char* errMsg) {
   jclass exceptionClass = (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException");
@@ -238,7 +238,7 @@ jlong lookupByNameIncore(
     CHECK_EXCEPTION_(0);
   }
   symbolName_cstr = (*env)->GetStringUTFChars(env, symbolName, &isCopy);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     if (objectName_cstr != NULL) {
       (*env)->ReleaseStringUTFChars(env, objectName, objectName_cstr);
     }
@@ -1136,7 +1136,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2L
   execName_cstr = (*env)->GetStringUTFChars(env, execName, &isCopy);
   CHECK_EXCEPTION;
   coreName_cstr = (*env)->GetStringUTFChars(env, coreName, &isCopy);
-  if ((*env)->ExceptionOccurred(env)) {
+  if ((*env)->ExceptionCheck(env)) {
     (*env)->ReleaseStringUTFChars(env, execName, execName_cstr);
     return;
   }
@@ -1146,7 +1146,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2L
   if ( (ph = Pgrab_core(execName_cstr, coreName_cstr)) == NULL) {
     (*env)->ReleaseStringUTFChars(env, execName, execName_cstr);
     (*env)->ReleaseStringUTFChars(env, coreName, coreName_cstr);
-    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the core file");
+    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the core file. For more information, export LIBSAPROC_DEBUG=1 and try again.");
   }
   (*env)->SetLongField(env, this_obj, p_ps_prochandle_ID, (jlong)(intptr_t)ph);
   (*env)->ReleaseStringUTFChars(env, execName, execName_cstr);

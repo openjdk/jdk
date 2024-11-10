@@ -1799,6 +1799,14 @@ public class DecimalFormat extends NumberFormat {
         }
     }
 
+    /**
+     * {@return the {@code DigitList} used by this {@code DecimalFormat} instance}
+     * Declared as package-private, intended for {@code CompactNumberFormat}.
+     */
+    DigitList getDigitList() {
+        return digitList;
+    }
+
     // ======== End fast-path formatting logic for double =========================
 
     /**

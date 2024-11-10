@@ -2579,8 +2579,7 @@ void TemplateTable::_return(TosState state) {
     Register robj = LP64_ONLY(c_rarg1) NOT_LP64(rax);
     __ movptr(robj, aaddress(0));
     __ load_klass(rdi, robj, rscratch1);
-    __ movl(rdi, Address(rdi, Klass::access_flags_offset()));
-    __ testl(rdi, JVM_ACC_HAS_FINALIZER);
+    __ testb(Address(rdi, Klass::misc_flags_offset()), KlassFlags::_misc_has_finalizer);
     Label skip_register_finalizer;
     __ jcc(Assembler::zero, skip_register_finalizer);
 
@@ -4049,6 +4048,7 @@ void TemplateTable::_new() {
   __ push(rcx);  // save the contexts of klass for initializing the header
 
   // make sure klass is initialized
+  // init_state needs acquire, but x86 is TSO, and so we are already good.
 #ifdef _LP64
   assert(VM_Version::supports_fast_class_init_checks(), "must support fast class initialization checks");
   __ clinit_barrier(rcx, r15_thread, nullptr /*L_fast_path*/, &slow_case);
@@ -4084,7 +4084,12 @@ void TemplateTable::_new() {
 
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    __ decrement(rdx, sizeof(oopDesc));
+    if (UseCompactObjectHeaders) {
+      assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
+      __ decrement(rdx, oopDesc::base_offset_in_bytes());
+    } else {
+      __ decrement(rdx, sizeof(oopDesc));
+    }
     __ jcc(Assembler::zero, initialize_header);
 
     // Initialize topmost object field, divide rdx by 8, check if odd and
@@ -4106,22 +4111,30 @@ void TemplateTable::_new() {
     // initialize remaining object fields: rdx was a multiple of 8
     { Label loop;
     __ bind(loop);
-    __ movptr(Address(rax, rdx, Address::times_8, sizeof(oopDesc) - 1*oopSize), rcx);
-    NOT_LP64(__ movptr(Address(rax, rdx, Address::times_8, sizeof(oopDesc) - 2*oopSize), rcx));
+    int header_size_bytes = oopDesc::header_size() * HeapWordSize;
+    assert(is_aligned(header_size_bytes, BytesPerLong), "oop header size must be 8-byte-aligned");
+    __ movptr(Address(rax, rdx, Address::times_8, header_size_bytes - 1*oopSize), rcx);
+    NOT_LP64(__ movptr(Address(rax, rdx, Address::times_8, header_size_bytes - 2*oopSize), rcx));
     __ decrement(rdx);
     __ jcc(Assembler::notZero, loop);
     }
 
     // initialize object header only.
     __ bind(initialize_header);
-    __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),
-              (intptr_t)markWord::prototype().value()); // header
-    __ pop(rcx);   // get saved klass back in the register.
+    if (UseCompactObjectHeaders) {
+      __ pop(rcx);   // get saved klass back in the register.
+      __ movptr(rbx, Address(rcx, Klass::prototype_header_offset()));
+      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()), rbx);
+    } else {
+      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),
+                (intptr_t)markWord::prototype().value()); // header
+      __ pop(rcx);   // get saved klass back in the register.
 #ifdef _LP64
-    __ xorl(rsi, rsi); // use zero reg to clear memory (shorter code)
-    __ store_klass_gap(rax, rsi);  // zero klass gap for compressed oops
+      __ xorl(rsi, rsi); // use zero reg to clear memory (shorter code)
+      __ store_klass_gap(rax, rsi);  // zero klass gap for compressed oops
 #endif
-    __ store_klass(rax, rcx, rscratch1);  // klass
+      __ store_klass(rax, rcx, rscratch1);  // klass
+    }
 
     if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath

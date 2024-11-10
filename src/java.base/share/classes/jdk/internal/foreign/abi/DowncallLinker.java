@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.internal.foreign.abi;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.invoke.MhUtil;
 import sun.security.action.GetPropertyAction;
 
 import java.lang.foreign.AddressLayout;
@@ -38,7 +39,6 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
@@ -56,18 +56,11 @@ public class DowncallLinker {
 
     private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
-    private static final MethodHandle MH_INVOKE_INTERP_BINDINGS;
-    private static final MethodHandle EMPTY_OBJECT_ARRAY_HANDLE = MethodHandles.constant(Object[].class, new Object[0]);
+    private static final MethodHandle MH_INVOKE_INTERP_BINDINGS = MhUtil.findVirtual(
+            MethodHandles.lookup(), DowncallLinker.class, "invokeInterpBindings",
+            methodType(Object.class, SegmentAllocator.class, Object[].class, InvocationData.class));
 
-    static {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            MH_INVOKE_INTERP_BINDINGS = lookup.findVirtual(DowncallLinker.class, "invokeInterpBindings",
-                    methodType(Object.class, SegmentAllocator.class, Object[].class, InvocationData.class));
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    private static final MethodHandle EMPTY_OBJECT_ARRAY_HANDLE = MethodHandles.constant(Object[].class, new Object[0]);
 
     private final ABIDescriptor abi;
     private final CallingSequence callingSequence;

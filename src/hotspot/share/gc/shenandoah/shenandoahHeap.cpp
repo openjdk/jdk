@@ -28,6 +28,7 @@
 #include "memory/universe.hpp"
 
 #include "gc/shared/classUnloadingContext.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -53,7 +54,6 @@
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
 #include "gc/shenandoah/shenandoahMetrics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
@@ -72,6 +72,7 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
+#include "cds/archiveHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -251,7 +252,7 @@ jint ShenandoahHeap::initialize() {
                                           bitmap_size_orig, bitmap_page_size,
                                           bitmap.base(),
                                           bitmap.size(), bitmap.page_size());
-  MemTracker::record_virtual_memory_type(bitmap.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(bitmap.base(), mtGC);
   _bitmap_region = MemRegion((HeapWord*) bitmap.base(), bitmap.size() / HeapWordSize);
   _bitmap_region_special = bitmap.special();
 
@@ -275,7 +276,7 @@ jint ShenandoahHeap::initialize() {
       os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), bitmap_page_size, false,
                                 "Cannot commit verification bitmap memory");
     }
-    MemTracker::record_virtual_memory_type(verify_bitmap.base(), mtGC);
+    MemTracker::record_virtual_memory_tag(verify_bitmap.base(), mtGC);
     MemRegion verify_bitmap_region = MemRegion((HeapWord *) verify_bitmap.base(), verify_bitmap.size() / HeapWordSize);
     _verification_bit_map.initialize(_heap_region, verify_bitmap_region);
     _verifier = new ShenandoahVerifier(this, &_verification_bit_map);
@@ -289,7 +290,7 @@ jint ShenandoahHeap::initialize() {
                                           bitmap_size_orig, aux_bitmap_page_size,
                                           aux_bitmap.base(),
                                           aux_bitmap.size(), aux_bitmap.page_size());
-  MemTracker::record_virtual_memory_type(aux_bitmap.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(aux_bitmap.base(), mtGC);
   _aux_bitmap_region = MemRegion((HeapWord*) aux_bitmap.base(), aux_bitmap.size() / HeapWordSize);
   _aux_bitmap_region_special = aux_bitmap.special();
   _aux_bit_map.initialize(_heap_region, _aux_bitmap_region);
@@ -307,7 +308,7 @@ jint ShenandoahHeap::initialize() {
                                           region_storage_size_orig, region_page_size,
                                           region_storage.base(),
                                           region_storage.size(), region_storage.page_size());
-  MemTracker::record_virtual_memory_type(region_storage.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(region_storage.base(), mtGC);
   if (!region_storage.special()) {
     os::commit_memory_or_exit(region_storage.base(), region_storage_size, region_page_size, false,
                               "Cannot commit region memory");
@@ -420,6 +421,8 @@ jint ShenandoahHeap::initialize() {
   _control_thread = new ShenandoahControlThread();
 
   ShenandoahInitLogger::print();
+
+  FullGCForwarding::initialize(_heap_region);
 
   return JNI_OK;
 }
@@ -692,7 +695,7 @@ void ShenandoahHeap::notify_mutator_alloc_words(size_t words, bool waste) {
   if (ShenandoahPacing) {
     control_thread()->pacing_notify_alloc(words);
     if (waste) {
-      pacer()->claim_for_alloc(words, true);
+      pacer()->claim_for_alloc<true>(words);
     }
   }
 }
@@ -729,9 +732,18 @@ size_t ShenandoahHeap::initial_capacity() const {
 }
 
 bool ShenandoahHeap::is_in(const void* p) const {
-  HeapWord* heap_base = (HeapWord*) base();
-  HeapWord* last_region_end = heap_base + ShenandoahHeapRegion::region_size_words() * num_regions();
-  return p >= heap_base && p < last_region_end;
+  if (is_in_reserved(p)) {
+    if (is_full_gc_move_in_progress()) {
+      // Full GC move is running, we do not have a consistent region
+      // information yet. But we know the pointer is in heap.
+      return true;
+    }
+    // Now check if we point to a live section in active region.
+    ShenandoahHeapRegion* r = heap_region_containing(p);
+    return (r->is_active() && p < r->top());
+  } else {
+    return false;
+  }
 }
 
 void ShenandoahHeap::maybe_uncommit(double shrink_before, size_t shrink_until) {
@@ -1120,7 +1132,7 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  size_t size = p->size();
+  size_t size = ShenandoahForwarding::size(p);
 
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
@@ -2002,8 +2014,8 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
   // Cleanup weak roots
   if (has_forwarded_objects()) {
     ShenandoahForwardedIsAliveClosure is_alive;
-    ShenandoahUpdateRefsClosure keep_alive;
-    ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>
+    ShenandoahNonConcUpdateRefsClosure keep_alive;
+    ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahNonConcUpdateRefsClosure>
       cleaning_task(timing_phase, &is_alive, &keep_alive, num_workers);
     _workers->run_task(&cleaning_task);
   } else {
@@ -2187,7 +2199,7 @@ public:
       do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      do_work<ShenandoahSTWUpdateRefsClosure>(worker_id);
+      do_work<ShenandoahNonConcUpdateRefsClosure>(worker_id);
     }
   }
 
@@ -2481,4 +2493,81 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
   }
 
   return false;
+}
+
+HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
+#if INCLUDE_CDS_JAVA_HEAP
+  // CDS wants a continuous memory range to load a bunch of objects.
+  // This effectively bypasses normal allocation paths, and requires
+  // a bit of massaging to unbreak GC invariants.
+
+  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
+
+  // Easy case: a single regular region, no further adjustments needed.
+  if (!ShenandoahHeapRegion::requires_humongous(size)) {
+    return allocate_memory(req);
+  }
+
+  // Hard case: the requested size would cause a humongous allocation.
+  // We need to make sure it looks like regular allocation to the rest of GC.
+
+  // CDS code would guarantee no objects straddle multiple regions, as long as
+  // regions are as large as MIN_GC_REGION_ALIGNMENT. It is impractical at this
+  // point to deal with case when Shenandoah runs with smaller regions.
+  // TODO: This check can be dropped once MIN_GC_REGION_ALIGNMENT agrees more with Shenandoah.
+  if (ShenandoahHeapRegion::region_size_bytes() < ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT) {
+    return nullptr;
+  }
+
+  HeapWord* mem = allocate_memory(req);
+  size_t start_idx = heap_region_index_containing(mem);
+  size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
+
+  // Flip humongous -> regular.
+  {
+    ShenandoahHeapLocker locker(lock(), false);
+    for (size_t c = start_idx; c < start_idx + num_regions; c++) {
+      get_region(c)->make_regular_bypass();
+    }
+  }
+
+  return mem;
+#else
+  assert(false, "Archive heap loader should not be available, should not be here");
+  return nullptr;
+#endif // INCLUDE_CDS_JAVA_HEAP
+}
+
+void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
+  // Nothing to do here, except checking that heap looks fine.
+#ifdef ASSERT
+  HeapWord* start = archive_space.start();
+  HeapWord* end = archive_space.end();
+
+  // No unclaimed space between the objects.
+  // Objects are properly allocated in correct regions.
+  HeapWord* cur = start;
+  while (cur < end) {
+    oop oop = cast_to_oop(cur);
+    shenandoah_assert_in_correct_region(nullptr, oop);
+    cur += oop->size();
+  }
+
+  // No unclaimed tail at the end of archive space.
+  assert(cur == end,
+         "Archive space should be fully used: " PTR_FORMAT " " PTR_FORMAT,
+         p2i(cur), p2i(end));
+
+  // Region bounds are good.
+  ShenandoahHeapRegion* begin_reg = heap_region_containing(start);
+  ShenandoahHeapRegion* end_reg = heap_region_containing(end);
+  assert(begin_reg->is_regular(), "Must be");
+  assert(end_reg->is_regular(), "Must be");
+  assert(begin_reg->bottom() == start,
+         "Must agree: archive-space-start: " PTR_FORMAT ", begin-region-bottom: " PTR_FORMAT,
+         p2i(start), p2i(begin_reg->bottom()));
+  assert(end_reg->top() == end,
+         "Must agree: archive-space-end: " PTR_FORMAT ", end-region-top: " PTR_FORMAT,
+         p2i(end), p2i(end_reg->top()));
+#endif
 }

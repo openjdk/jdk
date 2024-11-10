@@ -77,6 +77,7 @@
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -85,7 +86,6 @@
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -1159,6 +1159,8 @@ G1CollectedHeap::G1CollectedHeap() :
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
+  _young_regions_cardset_mm(card_set_config(), card_set_freelist_pool()),
+  _young_regions_cardset(card_set_config(), &_young_regions_cardset_mm),
   _cm(nullptr),
   _cm_thread(nullptr),
   _cr(nullptr),
@@ -1432,6 +1434,8 @@ jint G1CollectedHeap::initialize() {
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_service);
 
   G1InitLogger::print();
+
+  FullGCForwarding::initialize(heap_rs.region());
 
   return JNI_OK;
 }
@@ -2593,8 +2597,9 @@ void G1CollectedHeap::set_young_gen_card_set_stats(const G1MonotonicArenaMemoryS
 }
 
 void G1CollectedHeap::record_obj_copy_mem_stats() {
+  size_t total_old_allocated = _old_evac_stats.allocated() + _old_evac_stats.direct_allocated();
   policy()->old_gen_alloc_tracker()->
-    add_allocated_bytes_since_last_gc(_old_evac_stats.allocated() * HeapWordSize);
+    add_allocated_bytes_since_last_gc(total_old_allocated * HeapWordSize);
 
   _gc_tracer_stw->report_evacuation_statistics(create_g1_evac_summary(&_survivor_evac_stats),
                                                create_g1_evac_summary(&_old_evac_stats));
@@ -2693,6 +2698,7 @@ bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
 void G1CollectedHeap::set_region_short_lived_locked(G1HeapRegion* hr) {
   _eden.add(hr);
   _policy->set_region_eden(hr);
+  hr->install_group_cardset(young_regions_cardset());
 }
 
 #ifdef ASSERT
@@ -2902,6 +2908,8 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
       new_alloc_region->set_survivor();
       _survivor.add(new_alloc_region);
       register_new_survivor_region_with_region_attr(new_alloc_region);
+      // Install the group cardset.
+      new_alloc_region->install_group_cardset(young_regions_cardset());
     } else {
       new_alloc_region->set_old();
     }
@@ -3042,4 +3050,8 @@ void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_
 void G1CollectedHeap::finish_codecache_marking_cycle() {
   CodeCache::on_gc_marking_cycle_finish();
   CodeCache::arm_all_nmethods();
+}
+
+void G1CollectedHeap::prepare_group_cardsets_for_scan () {
+  _young_regions_cardset.reset_table_scanner_for_groups();
 }

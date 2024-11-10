@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ static bool find_ro_opt(char* mount_opts) {
   char* token;
   char* mo_ptr = mount_opts;
   // mount options are comma-separated (man proc).
-  while ((token = strsep(&mo_ptr, ",")) != NULL) {
+  while ((token = strsep(&mo_ptr, ",")) != nullptr) {
     if (strcmp(token, "ro") == 0) {
       return true;
     }
@@ -609,7 +609,7 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
 bool CgroupController::read_string(const char* filename, char* buf, size_t buf_size) {
   assert(buf != nullptr, "buffer must not be null");
   assert(filename != nullptr, "filename must be given");
-  char* s_path = subsystem_path();
+  const char* s_path = subsystem_path();
   if (s_path == nullptr) {
     log_debug(os, container)("read_string: subsystem path is null");
     return false;
@@ -679,7 +679,7 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
   assert(key != nullptr, "key must be given");
   assert(result != nullptr, "result pointer must not be null");
   assert(filename != nullptr, "file to search in must be given");
-  char* s_path = subsystem_path();
+  const char* s_path = subsystem_path();
   if (s_path == nullptr) {
     log_debug(os, container)("read_numerical_key_value: subsystem path is null");
     return false;

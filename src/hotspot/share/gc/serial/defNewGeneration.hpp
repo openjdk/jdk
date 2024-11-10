@@ -32,7 +32,6 @@
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/generationCounters.hpp"
-#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
@@ -98,11 +97,6 @@ class DefNewGeneration: public Generation {
   // the subsequent full collection will look at from-space objects:
   // therefore we must remove their forwarding pointers.
   void remove_forwarding_pointers();
-
-  virtual void restore_preserved_marks();
-
-  // Preserved marks
-  PreservedMarksSet _preserved_marks_set;
 
   Stack<oop, mtGC> _promo_failure_scan_stack;
   void drain_promo_failure_scan_stack(void);
@@ -234,8 +228,7 @@ class DefNewGeneration: public Generation {
   void update_counters();
 
   // Printing
-  virtual const char* name() const;
-  virtual const char* short_name() const { return "DefNew"; }
+  const char* name() const { return "DefNew"; }
 
   void print_on(outputStream* st) const;
 

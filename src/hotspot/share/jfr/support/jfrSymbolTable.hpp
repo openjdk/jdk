@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,15 +100,12 @@ class JfrSymbolTable : public JfrCHeapObj {
   traceid mark(const Symbol* sym, bool leakp = false);
   traceid mark(const char* str, bool leakp = false);
   traceid mark(uintptr_t hash, const char* str, bool leakp);
+  traceid mark_hidden_klass_name(const Klass* k, bool leakp);
   traceid bootstrap_name(bool leakp);
 
   bool has_entries() const { return has_symbol_entries() || has_string_entries(); }
   bool has_symbol_entries() const { return _symbol_list != nullptr; }
   bool has_string_entries() const { return _string_list != nullptr; }
-
-  traceid mark_hidden_klass_name(const InstanceKlass* k, bool leakp);
-  bool is_hidden_klass(const Klass* k);
-  uintptr_t hidden_klass_name_hash(const InstanceKlass* ik);
 
   // hashtable(s) callbacks
   void on_link(const SymbolEntry* entry);

@@ -47,8 +47,8 @@
   void fast_lock(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
   void fast_unlock(Register object, Register box, Register tmp1, Register tmp2);
   // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
-  void fast_lock_lightweight(Register object, Register tmp1, Register tmp2, Register tmp3);
-  void fast_unlock_lightweight(Register object, Register tmp1, Register tmp2, Register tmp3);
+  void fast_lock_lightweight(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
+  void fast_unlock_lightweight(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -187,6 +187,9 @@
   void expand_bits_i_v(Register dst, Register src, Register mask);
   void expand_bits_l_v(Register dst, Register src, Register mask);
 
+  void java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
+  void java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
+
   void float16_to_float_v(VectorRegister dst, VectorRegister src, uint vector_length);
   void float_to_float16_v(VectorRegister dst, VectorRegister src, VectorRegister vtmp, Register tmp, uint vector_length);
 
@@ -273,5 +276,7 @@
 
   void extract_v(Register dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
   void extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
+
+  void load_narrow_klass_compact_c2(Register dst, Address src);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP
