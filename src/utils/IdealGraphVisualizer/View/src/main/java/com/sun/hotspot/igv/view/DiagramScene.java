@@ -804,8 +804,40 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         rebuildMainLayer();
         rebuildBlockLayer();
         relayout();
-        setFigureSelection(model.getSelectedFigures());
+        rebuilding = false;
+    }
+
+    private void hiddenNodesChanged() {
+        relayout();
+        addUndo();
+    }
+
+    private void relayout() {
+        rebuilding = true;
+        Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
+        Set<BlockWidget> oldVisibleBlockWidgets = getVisibleBlockWidgets();
+
+        updateVisibleFigureWidgets();
+        updateNodeHull();
+        updateVisibleBlockWidgets();
+
+        Set<Figure> visibleFigures = getVisibleFigures();
+        Set<Connection> visibleConnections = getVisibleConnections();
+        if (getModel().getShowStableSea()) {
+            doStableSeaLayout(visibleFigures, visibleConnections);
+        } else if (getModel().getShowSea()) {
+            doSeaLayout(visibleFigures, visibleConnections);
+        } else if (getModel().getShowBlocks()) {
+            doClusteredLayout(visibleConnections);
+        } else if (getModel().getShowCFG()) {
+            doCFGLayout(visibleFigures, visibleConnections);
+        }
+        rebuildConnectionLayer();
+
+        updateFigureWidgetLocations(oldVisibleFigureWidgets);
+        updateBlockWidgetBounds(oldVisibleBlockWidgets);
         validateAll();
+        setFigureSelection(model.getSelectedFigures());
         centerSelectedFigures();
         rebuilding = false;
     }
@@ -837,11 +869,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 }
             }
         }
-    }
-
-    private void hiddenNodesChanged() {
-        relayout();
-        addUndo();
     }
 
     protected boolean isRebuilding() {
@@ -1489,68 +1516,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
-    private void centerSingleSelectedFigure() {
-        if (model.getSelectedFigures().size() == 1) {
-            if (getSceneAnimator().getPreferredLocationAnimator().isRunning()) {
-                getSceneAnimator().getPreferredLocationAnimator().addAnimatorListener(new AnimatorListener() {
-                    @Override
-                    public void animatorStarted(AnimatorEvent animatorEvent) {}
-
-                    @Override
-                    public void animatorReset(AnimatorEvent animatorEvent) {}
-
-                    @Override
-                    public void animatorFinished(AnimatorEvent animatorEvent) {
-                        getSceneAnimator().getPreferredLocationAnimator().removeAnimatorListener(this);
-                    }
-
-                    @Override
-                    public void animatorPreTick(AnimatorEvent animatorEvent) {}
-
-                    @Override
-                    public void animatorPostTick(AnimatorEvent animatorEvent) {
-                        validateAll();
-                        centerSelectedFigures();
-                    }
-                });
-            } else {
-                centerSelectedFigures();
-            }
-        }
-    }
-
     Map<OutputSlot, Set<LineWidget>> outputSlotToLineWidget = new HashMap<>();
     Map<InputSlot, Set<LineWidget>> inputSlotToLineWidget = new HashMap<>();
-
-    private void relayout() {
-        rebuilding = true;
-        Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
-        Set<BlockWidget> oldVisibleBlockWidgets = getVisibleBlockWidgets();
-
-        updateVisibleFigureWidgets();
-        updateNodeHull();
-        updateVisibleBlockWidgets();
-
-        Set<Figure> visibleFigures = getVisibleFigures();
-        Set<Connection> visibleConnections = getVisibleConnections();
-        if (getModel().getShowStableSea()) {
-            doStableSeaLayout(visibleFigures, visibleConnections);
-        } else if (getModel().getShowSea()) {
-            doSeaLayout(visibleFigures, visibleConnections);
-        } else if (getModel().getShowBlocks()) {
-            doClusteredLayout(visibleConnections);
-        } else if (getModel().getShowCFG()) {
-            doCFGLayout(visibleFigures, visibleConnections);
-        }
-        rebuildConnectionLayer();
-
-        updateFigureWidgetLocations(oldVisibleFigureWidgets);
-        updateBlockWidgetBounds(oldVisibleBlockWidgets);
-        validateAll();
-
-        centerSingleSelectedFigure();
-        rebuilding = false;
-    }
 
     public JPopupMenu createPopupMenu() {
         JPopupMenu menu = new JPopupMenu();
