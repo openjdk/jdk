@@ -48,8 +48,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 Path.of("lib/app"),
                 Path.of("lib/runtime"),
                 Path.of("lib/runtime"),
-                Path.of("lib"),
                 Path.of("lib/app/mods"),
+                Path.of("lib"),
                 Path.of("lib")
         );
     }
@@ -60,8 +60,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 Path.of("app"),
                 Path.of("runtime"),
                 Path.of("runtime"),
-                Path.of(""),
                 Path.of("app/mods"),
+                Path.of(""),
                 Path.of("")
         );
     }
@@ -72,8 +72,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 Path.of("Contents/app"),
                 Path.of("Contents/runtime"),
                 Path.of("Contents/runtime/Contents/Home"),
-                Path.of("Contents/Resources"),
                 Path.of("Contents/app/mods"),
+                Path.of("Contents/Resources"),
                 Path.of("Contents")
         );
     }
@@ -114,8 +114,8 @@ public record ApplicationLayout(Path launchersDirectory, Path appDirectory,
                 lib.resolve("app"),
                 lib.resolve("runtime"),
                 lib.resolve("runtime"),
-                lib,
                 lib.resolve("app/mods"),
+                lib,
                 lib
         );
     }

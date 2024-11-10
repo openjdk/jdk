@@ -65,14 +65,14 @@ final class LinuxFromParams {
 
         var app = APPLICATION.fetchFrom(params);
 
-        var pkgBuilder = createPackageBuilder(params, app, type)
-                .name(LINUX_PACKAGE_NAME.fetchFrom(params));
+        var pkgBuilder = createPackageBuilder(params, app, type);
 
         return new LinuxPackageBuilder(pkgBuilder)
                 .additionalDependencies(LINUX_PACKAGE_DEPENDENCIES.fetchFrom(params))
                 .category(LINUX_CATEGORY.fetchFrom(params))
                 .menuGroupName(LINUX_MENU_GROUP.fetchFrom(params))
-                .release(RELEASE.fetchFrom(params));
+                .release(RELEASE.fetchFrom(params))
+                .directName(LINUX_PACKAGE_NAME.fetchFrom(params));
     }
 
     private static LinuxPackage createLinuxRpmPackage(

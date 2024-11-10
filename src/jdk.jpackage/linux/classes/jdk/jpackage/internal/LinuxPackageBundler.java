@@ -113,7 +113,9 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             // We either have an application image or need to build one.
             if (pkg.app().runtimeBuilder() != null) {
                 // Runtime builder is present, build app image.
-                LinuxAppImageBuilder.build().create(pkg).execute(pkgEnv);
+                LinuxAppImageBuilder.build()
+                        .excludeDirFromCopying(outputParentDir)
+                        .create(pkg).execute(pkgEnv);
             } else {
                 Path srcAppImageDir = pkg.predefinedAppImage();
                 if (srcAppImageDir == null) {

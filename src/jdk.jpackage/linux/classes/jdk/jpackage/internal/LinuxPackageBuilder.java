@@ -33,6 +33,7 @@ import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.StandardPackageType;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
@@ -45,7 +46,9 @@ final class LinuxPackageBuilder {
     }
 
     LinuxPackage create() throws ConfigException {
-        if (pkgBuilder.isNameDefault()) {
+        if (directName != null) {
+            pkgBuilder.name(directName);
+        } else {
             // Lower case and turn spaces/underscores into dashes
             pkgBuilder.name(pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-"));
         }
@@ -62,8 +65,7 @@ final class LinuxPackageBuilder {
         return reply;
     }
 
-    private LinuxPackage create(jdk.jpackage.internal.model.Package pkg,
-            AppImageLayout pkgLayout) throws ConfigException {
+    private LinuxPackage create(Package pkg, AppImageLayout pkgLayout) throws ConfigException {
         return new LinuxPackage.Stub(pkg,
                 pkgLayout,
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
@@ -71,6 +73,11 @@ final class LinuxPackageBuilder {
                 additionalDependencies,
                 Optional.ofNullable(release).orElseGet(DEFAULTS::release),
                 LinuxPackageArch.getValue(pkg.asStandardPackageType()));
+    }
+
+    LinuxPackageBuilder directName(String v) {
+        directName = v;
+        return this;
     }
 
     LinuxPackageBuilder menuGroupName(String v) {
@@ -152,6 +159,7 @@ final class LinuxPackageBuilder {
     private record Defaults(String release, String menuGroupName, String category) {
     }
 
+    private String directName;
     private String menuGroupName;
     private String category;
     private String additionalDependencies;

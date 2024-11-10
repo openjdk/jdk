@@ -53,7 +53,7 @@ final class PackageBuilder {
     Package create() throws ConfigException {
         final var effectiveName = Optional.ofNullable(name).orElseGet(app::name);
 
-        final Path relativeInstallDir;
+        Path relativeInstallDir;
         if (installDir != null) {
             var normalizedInstallDir = mapInstallDir(installDir, type);
             if (type instanceof StandardPackageType stdType) {
@@ -78,9 +78,13 @@ final class PackageBuilder {
             }
             relativeInstallDir = normalizedInstallDir;
         } else if (type instanceof StandardPackageType stdType) {
-            relativeInstallDir = defaultRelativeInstallDir(stdType, effectiveName, app);
+            relativeInstallDir = defaultInstallDir(stdType, effectiveName, app);
         } else {
             throw new UnsupportedOperationException();
+        }
+
+        if (relativeInstallDir.isAbsolute()) {
+            relativeInstallDir = Path.of("/").relativize(relativeInstallDir);
         }
 
         return new Stub(
@@ -98,10 +102,6 @@ final class PackageBuilder {
     PackageBuilder name(String v) {
         name = v;
         return this;
-    }
-
-    boolean isNameDefault() {
-        return name == null;
     }
 
     PackageBuilder fileName(Path v) {
@@ -177,20 +177,20 @@ final class PackageBuilder {
         return installDir;
     }
 
-    private static Path defaultRelativeInstallDir(StandardPackageType pkgType, String pkgName, Application app) {
+    private static Path defaultInstallDir(StandardPackageType pkgType, String pkgName, Application app) {
         switch (pkgType) {
             case WIN_EXE, WIN_MSI -> {
                 return Path.of(app.name());
             }
             case LINUX_DEB, LINUX_RPM -> {
-                return Path.of("opt").resolve(pkgName);
+                return Path.of("/opt").resolve(pkgName);
             }
             case MAC_DMG, MAC_PKG -> {
                 Path base;
                 if (app.isRuntime()) {
-                    base = Path.of("Library/Java/JavaVirtualMachines");
+                    base = Path.of("/Library/Java/JavaVirtualMachines");
                 } else {
-                    base = Path.of("Applications");
+                    base = Path.of("/Applications");
                 }
                 return base.resolve(pkgName);
             }
