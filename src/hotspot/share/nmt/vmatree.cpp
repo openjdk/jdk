@@ -230,24 +230,37 @@ void VMATree::print_on(outputStream* out) {
 VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, const MemTag tag) {
   auto pos = [](TreapNode* n) { return n->key(); };
   position from = start;
+  position end  = from+size;
   size_t remsize = size;
+  IntervalState* istate = nullptr;
 
   VMATreap::Range range = _tree.find_enclosing_range(from);
-  assert(range.start != nullptr && range.end != nullptr,
-         "Setting a memory tag must be done within existing range");
-  if (range.start == nullptr || range.end == nullptr) {
-    log_debug(nmt)("set_tag called on non-existent range: " PTR_FORMAT " - " PTR_FORMAT,
-                   from, from+size);
+  if ((range.start == nullptr && range.end == nullptr)
+      || (range.start != nullptr && range.end == nullptr)) {
+    // There is no range containing the starting address
+    assert(range.start->val().out.type() == StateType::Released, "must be");
     return SummaryDiff();
+  } else if (range.start == nullptr && range.end != nullptr) {
+    position found_end = pos(range.end);
+    if (found_end < end) {
+      // There is a range starting somewhere within [start, start+size)
+      from = found_end;
+      remsize = end - from;
+      istate = &out_state(range.end);
+    } else {
+      // The found address is outside of our range, we can end now.
+      return SummaryDiff();
+    }
+  } else {
+    // Both nodes exist
+    istate = &out_state(range.start);
   }
-
-  position end = MIN2(from + remsize, pos(range.end));
-
-  StateType type = out_state(range.start).type();
+  end = MIN2(from + remsize, pos(range.end));
+  StateType type = istate->type();
   SummaryDiff diff;
   // Ignore any released ranges, these must be mtNone and have no stack
   if (type != StateType::Released) {
-    RegionData new_data = RegionData(out_state(range.start).stack(), tag);
+    RegionData new_data = RegionData(istate->stack(), tag);
     SummaryDiff result = register_mapping(from, end, type, new_data);
     diff.add(result);
   }

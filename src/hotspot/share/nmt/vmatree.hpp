@@ -205,7 +205,9 @@ public:
     return register_mapping(from, from + size, StateType::Committed, metadata, use_tag_inplace);
   }
 
-  // Modify all ranges found in range [from, from+size) to have tag.
+  // Given an interval and a tag, find all reserved and committed ranges within that
+  // interval and set their tag to the one provided.
+  // 
   SummaryDiff set_tag(position from, size size, MemTag tag);
 
   SummaryDiff uncommit_mapping(position from, size size, const RegionData& metadata) {

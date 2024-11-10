@@ -437,6 +437,13 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     tree.set_tag(0, 80, mtGC);
     expect_equivalent_form(expected, tree);
   }
+
+  {
+    VMATree tree;
+    Tree::RegionData class_shared(si, mtClassShared);
+    tree.reserve_mapping(10, 10, class_shared);
+    tree.set_tag(0, 100, mtCompiler);
+  }
 }
 
 // Tests for summary accounting
