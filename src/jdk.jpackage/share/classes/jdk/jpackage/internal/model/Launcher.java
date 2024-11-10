@@ -79,4 +79,38 @@ public interface Launcher {
             List<FileAssociation> fileAssociations, boolean isService,
             String description, Path icon) implements Launcher {
     }
+
+    class Unsupported implements Launcher {
+
+        @Override
+        public String name() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public LauncherStartupInfo startupInfo() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<FileAssociation> fileAssociations() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isService() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String description() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Path icon() {
+            throw new UnsupportedOperationException();
+        }
+
+    }
 }
