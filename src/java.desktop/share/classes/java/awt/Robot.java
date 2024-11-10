@@ -777,8 +777,6 @@ public class Robot {
     }
 
 
-
-
     private static int DEFAULT_SPEED = 20;       // Speed for mouse glide and click
     private static int DEFAULT_SYNC_DELAY = 500; // Default Additional delay for waitForIdle()
     private static int DEFAULT_STEP_LENGTH = 2;  // Step length (in pixels) for mouse glide

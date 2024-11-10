@@ -123,9 +123,6 @@ public class ExtendedRobot extends Robot {
 //        return this.syncDelay;
     }
 
-
-
-
     /**
      * Emulate native drag and drop process using {@code InputEvent.BUTTON1_DOWN_MASK}.
      * The method successively moves mouse cursor to point with coordinates
