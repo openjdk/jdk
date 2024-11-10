@@ -126,11 +126,11 @@ final class StringLatin1 {
             charPos -= 2;
             writeDigitPair(buf, charPos, -i);
         } else {
-            buf[--charPos] = (byte)('0' - i);
+            putChar(buf, --charPos, '0' - i);
         }
 
         if (negative) {
-            buf[--charPos] = (byte)'-';
+            putChar(buf, --charPos, '-');
         }
         return charPos;
     }
@@ -185,19 +185,19 @@ final class StringLatin1 {
             charPos -= 2;
             writeDigitPair(buf, charPos, -i2);
         } else {
-            buf[--charPos] = (byte)('0' - i2);
+            putChar(buf, --charPos, '0' - i2);
         }
 
         if (negative) {
-            buf[--charPos] = (byte)'-';
+            putChar(buf, --charPos, '-');
         }
         return charPos;
     }
 
     private static void writeDigitPair(byte[] buf, int charPos, int value) {
         short pair = DecimalDigits.digitPair(value);
-        buf[charPos] = (byte)(pair);
-        buf[charPos + 1] = (byte)(pair >> 8);
+        putChar(buf, charPos    , (byte)(pair));
+        putChar(buf, charPos + 1, (byte)(pair >> 8));
     }
 
     public static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
@@ -849,8 +849,8 @@ final class StringLatin1 {
     }
 
     public static void putChar(byte[] val, int index, int c) {
-        //assert (canEncode(c));
-        val[index] = (byte)(c);
+        assert index >= 0 && index < length(val) : "Trusted caller missed bounds check";
+        UNSAFE.putByte(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + index, (byte) c);
     }
 
     public static char getChar(byte[] val, int index) {
