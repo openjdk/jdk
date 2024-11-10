@@ -194,7 +194,7 @@ public class TestWindow extends Window implements ActionListener,
     @Override
     public void windowOpened(WindowEvent e) {}
 
-    public void clickButton(Button b, ExtendedRobot robot) {
+    public void clickButton(Button b, Robot robot) {
         try {
             Flag.waitTillShown(b);
         } catch (InterruptedException e) {}
@@ -209,11 +209,11 @@ public class TestWindow extends Window implements ActionListener,
         }
     }
 
-    public void clickOpenButton(ExtendedRobot robot) throws Exception {
+    public void clickOpenButton(Robot robot) throws Exception {
         clickOpenButton(robot, true, "");
     }
 
-    public void clickOpenButton(ExtendedRobot robot,
+    public void clickOpenButton(Robot robot,
                                 boolean       refState,
                                 String        message) throws Exception {
         openClicked.reset();
@@ -226,11 +226,11 @@ public class TestWindow extends Window implements ActionListener,
         assertEQ(openClicked.flag(), refState, msg + " " + message);
     }
 
-    public void clickCloseButton(ExtendedRobot robot) throws Exception {
+    public void clickCloseButton(Robot robot) throws Exception {
         clickCloseButton(robot, true, "");
     }
 
-    public void clickCloseButton(ExtendedRobot robot,
+    public void clickCloseButton(Robot robot,
                                  boolean       refState,
                                  String        message) throws Exception {
         closeClicked.reset();
@@ -243,11 +243,11 @@ public class TestWindow extends Window implements ActionListener,
         assertEQ(closeClicked.flag(), refState, msg + " " + message);
     }
 
-    public void clickDummyButton(ExtendedRobot robot) throws Exception {
+    public void clickDummyButton(Robot robot) throws Exception {
         clickDummyButton(robot, true, "");
     }
 
-    public void clickDummyButton(ExtendedRobot robot,
+    public void clickDummyButton(Robot robot,
                                  boolean       refState,
                                  String        message) throws Exception {
         dummyClicked.reset();
@@ -260,7 +260,7 @@ public class TestWindow extends Window implements ActionListener,
         assertEQ(dummyClicked.flag(), refState, msg + " " + message);
     }
 
-    public void checkBlockedWindow(ExtendedRobot robot,
+    public void checkBlockedWindow(Robot robot,
                                    String message) throws Exception {
         dummyGained.reset();
         dummyClicked.reset();
@@ -281,7 +281,7 @@ public class TestWindow extends Window implements ActionListener,
     }
 
     public void checkUnblockedWindowWithBlockedParent(
-            ExtendedRobot robot, String message) throws Exception {
+            Robot robot, String message) throws Exception {
 
         dummyGained.reset();
         dummyClicked.reset();
@@ -297,7 +297,7 @@ public class TestWindow extends Window implements ActionListener,
             "when its parent is non-focusable. "  + message);
     }
 
-    public void checkUnblockedWindow(ExtendedRobot robot,
+    public void checkUnblockedWindow(Robot robot,
                                      String message) throws Exception {
         dummyGained.reset();
         dummyClicked.reset();
