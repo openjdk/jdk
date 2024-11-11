@@ -29,15 +29,15 @@
 
 // Tests that strings are interned and returns the same string when interning from different string types
 
-// Simple ASCII string " Java(R)!! "
+// Simple ASCII string "Java(R)!!"
 static const char static_ascii_utf8_str[] = {0x4A, 0x61, 0x76, 0x61, 0x28, 0x52, 0x29, 0x21, 0x21};
-static const int ASCII_LENGTH = 9;
+static const size_t ASCII_LENGTH = 9;
 
-// Complex string " Jāvá®!☺☻ ", has character lengths 13122133 = 16
+// Complex string "Jāvá®!☺☻", has character lengths 13122133 = 16
 static const unsigned char static_utf8_str[] = {0x4A, 0x61, 0xCC, 0x84, 0x76, 0xC3, 0xA1, 0xC2, 0xAE, 0x21, 0xE2, 0x98, 0xBA, 0xE2, 0x98, 0xBB};
-static const int COMPLEX_LENGTH = 16;
+static const size_t COMPLEX_LENGTH = 16;
 
-void test_intern(const char* utf8_str, int utf8_length) {
+void test_intern(const char* utf8_str, size_t utf8_length) {
     JavaThread* THREAD = JavaThread::current();
     ThreadInVMfromNative ThreadInVMfromNative(THREAD);
     HandleMark hm(THREAD);
@@ -47,7 +47,7 @@ void test_intern(const char* utf8_str, int utf8_length) {
     EXPECT_TRUE(java_lang_String::equals(interned_string_from_utf8, utf8_str, utf8_length));
     EXPECT_EQ(java_lang_String::hash_code(utf8_str, utf8_length),java_lang_String::hash_code(interned_string_from_utf8));
 
-    Symbol* symbol_from_utf8 = SymbolTable::new_symbol(utf8_str, utf8_length);
+    Symbol* symbol_from_utf8 = SymbolTable::new_symbol(utf8_str, static_cast<int>(utf8_length));
     oop interned_string_from_symbol = StringTable::intern(symbol_from_utf8, THREAD);
 
     EXPECT_EQ(interned_string_from_utf8, interned_string_from_symbol);

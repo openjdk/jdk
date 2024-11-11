@@ -134,32 +134,32 @@ const char* StringTable::get_symbol_utf8(StringWrapper symbol) {
   return reinterpret_cast<const char*>(symbol.symbol_str->bytes());
 }
 
-unsigned int StringTable::hash_wrapped_string(StringWrapper wrapped_str, int len) {
+unsigned int StringTable::hash_wrapped_string(StringWrapper wrapped_str) {
   switch (wrapped_str.type) {
   case StringType::OopStr:
     return java_lang_String::hash_code(wrapped_str.oop_str());
   case StringType::UnicodeStr:
-    return java_lang_String::hash_code(wrapped_str.unicode_str, len);
+    return java_lang_String::hash_code(wrapped_str.unicode_str, static_cast<int>(wrapped_str.length));
   case StringType::SymbolStr:
-    return java_lang_String::hash_code(get_symbol_utf8(wrapped_str), len);
+    return java_lang_String::hash_code(get_symbol_utf8(wrapped_str), wrapped_str.length);
   case StringType::UTF8Str:
-    return java_lang_String::hash_code(wrapped_str.utf8_str, len);
+    return java_lang_String::hash_code(wrapped_str.utf8_str, wrapped_str.length);
   default:
     ShouldNotReachHere();
   }
   return 0;
 }
 
-bool StringTable::wrapped_string_equals(oop java_string, StringWrapper wrapped_str, int len) {
+bool StringTable::wrapped_string_equals(oop java_string, StringWrapper wrapped_str, int _) {
   switch (wrapped_str.type) {
   case StringType::OopStr:
     return java_lang_String::equals(java_string, wrapped_str.oop_str());
   case StringType::UnicodeStr:
-    return java_lang_String::equals(java_string, wrapped_str.unicode_str, len);
+    return java_lang_String::equals(java_string, wrapped_str.unicode_str, static_cast<int>(wrapped_str.length));
   case StringType::SymbolStr:
-    return java_lang_String::equals(java_string, get_symbol_utf8(wrapped_str), len);
+    return java_lang_String::equals(java_string, get_symbol_utf8(wrapped_str), wrapped_str.length);
   case StringType::UTF8Str:
-    return java_lang_String::equals(java_string, wrapped_str.utf8_str, len);
+    return java_lang_String::equals(java_string, wrapped_str.utf8_str, wrapped_str.length);
   default:
     ShouldNotReachHere();
   }
@@ -244,10 +244,10 @@ public:
 class StringTableLookupUTF8 : public StringTableLookup {
 private:
   const char* _str;
-  int _utf8_len;
+  size_t _utf8_len;
 
 public:
-  StringTableLookupUTF8(Thread* thread, uintx hash, const char* key, int utf8_len)
+  StringTableLookupUTF8(Thread* thread, uintx hash, const char* key, size_t utf8_len)
       : StringTableLookup(thread, hash), _str(key), _utf8_len(utf8_len) {}
 
   bool equals(const WeakHandle* value) {
@@ -347,15 +347,15 @@ oop StringTable::lookup(Symbol* symbol) {
 
 oop StringTable::lookup(const jchar* name, int len) {
   unsigned int hash = java_lang_String::hash_code(name, len);
-  StringWrapper wrapped_name(name);
-  oop string = lookup_shared(wrapped_name, len, hash);
+  StringWrapper wrapped_name(name, len);
+  oop string = lookup_shared(wrapped_name, hash);
   if (string != nullptr) {
     return string;
   }
   if (_alt_hash) {
     hash = hash_string(name, len, true);
   }
-  return do_lookup(wrapped_name, len, hash);
+  return do_lookup(wrapped_name, hash);
 }
 
 class StringTableGet : public StackObj {
@@ -380,7 +380,7 @@ void StringTable::update_needs_rehash(bool rehash) {
   }
 }
 
-oop StringTable::do_lookup(StringWrapper name, int len, uintx hash) {
+oop StringTable::do_lookup(StringWrapper name, uintx hash) {
   Thread* thread = Thread::current();
   StringTableGet stg(thread);
   bool rehash_warning;
@@ -392,17 +392,17 @@ oop StringTable::do_lookup(StringWrapper name, int len, uintx hash) {
     break;
   }
   case StringType::UnicodeStr: {
-    StringTableLookupUnicode lookup(thread, hash, name.unicode_str, len);
+    StringTableLookupUnicode lookup(thread, hash, name.unicode_str, static_cast<int>(name.length));
     _local_table->get(thread, lookup, stg, &rehash_warning);
     break;
   }
   case StringType::SymbolStr: {
-    StringTableLookupUTF8 lookup(thread, hash, get_symbol_utf8(name), len);
+    StringTableLookupUTF8 lookup(thread, hash, get_symbol_utf8(name), name.length);
     _local_table->get(thread, lookup, stg, &rehash_warning);
     break;
   }
   case StringType::UTF8Str: {
-    StringTableLookupUTF8 lookup(thread, hash, name.utf8_str, len);
+    StringTableLookupUTF8 lookup(thread, hash, name.utf8_str, name.length);
     _local_table->get(thread, lookup, stg, &rehash_warning);
     break;
   }
@@ -442,12 +442,12 @@ const jchar *StringTable::to_unicode(StringWrapper wrapped_str, int &len, TRAPS)
   return nullptr;
 }
 
-Handle StringTable::to_handle(StringWrapper wrapped_str, int len, TRAPS) {
+Handle StringTable::to_handle(StringWrapper wrapped_str, TRAPS) {
   switch (wrapped_str.type) {
   case StringType::OopStr:
     return wrapped_str.oop_str;
   case StringType::UnicodeStr:
-    return java_lang_String::create_from_unicode(wrapped_str.unicode_str, len, THREAD);
+    return java_lang_String::create_from_unicode(wrapped_str.unicode_str, static_cast<int>(wrapped_str.length), THREAD);
   case StringType::SymbolStr:
     return java_lang_String::create_from_symbol(wrapped_str.symbol_str, THREAD);
   case StringType::UTF8Str:
@@ -462,8 +462,8 @@ Handle StringTable::to_handle(StringWrapper wrapped_str, int len, TRAPS) {
 oop StringTable::intern(Symbol* symbol, TRAPS) {
   if (symbol == nullptr) return nullptr;
   int length = symbol->utf8_length();
-  StringWrapper name(symbol);
-  oop result = intern(name, length, CHECK_NULL);
+  StringWrapper name(symbol, length);
+  oop result = intern(name, CHECK_NULL);
   return result;
 }
 
@@ -471,23 +471,23 @@ oop StringTable::intern(oop string, TRAPS) {
   if (string == nullptr) return nullptr;
   int length = java_lang_String::length(string);
   Handle h_string (THREAD, string);
-  StringWrapper name(h_string);
-  oop result = intern(name, length, CHECK_NULL);
+  StringWrapper name(h_string, length);
+  oop result = intern(name, CHECK_NULL);
   return result;
 }
 
 oop StringTable::intern(const char* utf8_string, TRAPS) {
   if (utf8_string == nullptr) return nullptr;
-  int length = static_cast<int>(strlen(utf8_string));
-  StringWrapper name(utf8_string);
-  oop result = intern(name, length, CHECK_NULL);
+  size_t length = strlen(utf8_string);
+  StringWrapper name(utf8_string, length);
+  oop result = intern(name, CHECK_NULL);
   return result;
 }
 
-oop StringTable::intern(StringWrapper name, int len, TRAPS) {
+oop StringTable::intern(StringWrapper name, TRAPS) {
   // shared table always uses java_lang_String::hash_code
-  unsigned int hash = hash_wrapped_string(name, len);
-  oop found_string = lookup_shared(name, len, hash);
+  unsigned int hash = hash_wrapped_string(name);
+  oop found_string = lookup_shared(name, hash);
   if (found_string != nullptr) {
     return found_string;
   }
@@ -495,23 +495,23 @@ oop StringTable::intern(StringWrapper name, int len, TRAPS) {
   if (_alt_hash) {
     ResourceMark rm(THREAD);
     // Convert to unicode for alt hashing
-    int length = len;
-    const jchar* chars = to_unicode(name, length, CHECK_NULL);
-    hash = hash_string(chars, length, true);
+    int unicode_length;
+    const jchar* chars = to_unicode(name, unicode_length, CHECK_NULL);
+    hash = hash_string(chars, unicode_length, true);
   }
 
-  found_string = do_lookup(name, len, hash);
+  found_string = do_lookup(name, hash);
   if (found_string != nullptr) {
     return found_string;
   }
-  return do_intern(name, len, hash, THREAD);
+  return do_intern(name, hash, THREAD);
 }
 
-oop StringTable::do_intern(StringWrapper name, int len, uintx hash, TRAPS) {
+oop StringTable::do_intern(StringWrapper name, uintx hash, TRAPS) {
   HandleMark hm(THREAD);  // cleanup strings created
-  Handle string_h = to_handle(name, len, CHECK_NULL);
+  Handle string_h = to_handle(name, CHECK_NULL);
 
-  assert(StringTable::wrapped_string_equals(string_h(), name, len),
+  assert(StringTable::wrapped_string_equals(string_h(), name),
          "string must be properly initialized");
 
   // Notify deduplication support that the string is being interned.  A string
@@ -891,14 +891,14 @@ size_t StringTable::shared_entry_count() {
   return _shared_table.entry_count();
 }
 
-oop StringTable::lookup_shared(StringWrapper name, int len, unsigned int hash) {
-  assert(hash == hash_wrapped_string(name, len),
+oop StringTable::lookup_shared(StringWrapper name, unsigned int hash) {
+  assert(hash == hash_wrapped_string(name),
          "hash must be computed using java_lang_String::hash_code");
-  return _shared_table.lookup(name, hash, len);
+  return _shared_table.lookup(name, hash, 0);
 }
 
 oop StringTable::lookup_shared(const jchar* name, int len) {
-  StringWrapper wrapped_name(name);
+  StringWrapper wrapped_name(name, len);
   return _shared_table.lookup(wrapped_name, java_lang_String::hash_code(name, len), len);
 }
 

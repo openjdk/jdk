@@ -37,19 +37,19 @@ static const unsigned char static_utf8_str[] = {0x4A, 0x61, 0xCC, 0x84, 0x76, 0x
 static const jchar static_unicode_str[] = { 0x004A, 0x0061, 0x0304, 0x0076, 0x00E1, 0x00AE, 0x0021, 0x263A, 0x263B};
 
 static const int ASCII_LENGTH = 9;
-static const int UTF8_LENGTH = 16;
+static const size_t UTF8_LENGTH = 16;
 static const int UNICODE_LENGTH = 9;
 
-void compare_utf8_utf8(const char* utf8_str1, const char* utf8_str2, int utf8_len) {
+void compare_utf8_utf8(const char* utf8_str1, const char* utf8_str2, size_t utf8_len) {
     EXPECT_EQ(java_lang_String::hash_code(utf8_str1, utf8_len), java_lang_String::hash_code(utf8_str2, utf8_len));
     EXPECT_STREQ(utf8_str1, utf8_str2);
 }
 
-void compare_utf8_unicode(const char* utf8_str, const jchar* unicode_str, int utf8_len, int unicode_len) {
+void compare_utf8_unicode(const char* utf8_str, const jchar* unicode_str, size_t utf8_len, int unicode_len) {
     EXPECT_EQ(java_lang_String::hash_code(utf8_str, utf8_len), java_lang_String::hash_code(unicode_str, unicode_len));
 }
 
-void compare_utf8_oop(const char* utf8_str, Handle oop_str, int utf8_len, int unicode_len) {
+void compare_utf8_oop(const char* utf8_str, Handle oop_str, size_t utf8_len, int unicode_len) {
     EXPECT_EQ(java_lang_String::hash_code(utf8_str, utf8_len), java_lang_String::hash_code(oop_str()));
     EXPECT_TRUE(java_lang_String::equals(oop_str(), utf8_str, utf8_len));
 }
@@ -71,7 +71,7 @@ void compare_oop_oop(Handle oop_str1, Handle oop_str2) {
     EXPECT_TRUE(java_lang_String::equals(oop_str1(), oop_str2()));
 }
 
-void test_utf8_convert(const char* utf8_str, int utf8_len, int unicode_len) {
+void test_utf8_convert(const char* utf8_str, size_t utf8_len, int unicode_len) {
     EXPECT_TRUE(UTF8::is_legal_utf8((unsigned char*)utf8_str, strlen(utf8_str), false));
 
     JavaThread* THREAD = JavaThread::current();
@@ -97,7 +97,7 @@ void test_utf8_convert(const char* utf8_str, int utf8_len, int unicode_len) {
     compare_utf8_utf8(utf8_str, utf8_str_from_oop, utf8_len);
 }
 
-void test_unicode_convert(const jchar* unicode_str, int utf8_len, int unicode_len) {
+void test_unicode_convert(const jchar* unicode_str, size_t utf8_len, int unicode_len) {
     JavaThread* THREAD = JavaThread::current();
     ThreadInVMfromNative ThreadInVMfromNative(THREAD);
     ResourceMark rm(THREAD);
@@ -121,7 +121,7 @@ void test_unicode_convert(const jchar* unicode_str, int utf8_len, int unicode_le
     compare_unicode_unicode(unicode_str, unicode_str_from_oop, unicode_len);
 }
 
-void test_utf8_unicode_cross(const char* utf8_str, const jchar* unicode_str, int utf8_len, int unicode_len) {
+void test_utf8_unicode_cross(const char* utf8_str, const jchar* unicode_str, size_t utf8_len, int unicode_len) {
     compare_utf8_unicode(utf8_str, unicode_str, utf8_len, unicode_len);
 
     JavaThread* THREAD = JavaThread::current();
