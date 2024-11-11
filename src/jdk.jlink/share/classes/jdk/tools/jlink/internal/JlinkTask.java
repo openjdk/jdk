@@ -620,6 +620,12 @@ public class JlinkTask {
                 String msg = taskHelper.getMessage("err.runtime.link.jdk.jlink.prohibited");
                 throw new IllegalArgumentException(msg);
             }
+            // Do not permit linking from run-time image when the current image
+            // is being patched
+            if (jdk.internal.misc.VM.getSavedProperties().get("jdk.module.patch.0") != null) {
+                String msg = taskHelper.getMessage("err.runtime.link.patched.module");
+                throw new IllegalArgumentException(msg);
+            }
 
             // Print info message indicating linking from the run-time image
             if (verbose && log != null) {

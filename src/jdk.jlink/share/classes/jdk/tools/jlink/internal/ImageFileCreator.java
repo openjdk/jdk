@@ -223,7 +223,6 @@ public final class ImageFileCreator {
             e.printStackTrace();
         }
         String message = switch (e.getReason()) {
-            case PATCH_MODULE -> helper.getMessage("err.runtime.link.patched.module", e.getFile());
             case MODIFIED_FILE -> helper.getMessage("err.runtime.link.modified.file", e.getFile());
             default -> throw new AssertionError("Unexpected value: " + e.getReason());
         };

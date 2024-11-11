@@ -35,7 +35,6 @@ public class RuntimeImageLinkException extends RuntimeException {
     private static final long serialVersionUID = -1848914673073119403L;
 
     public static enum Reason {
-        PATCH_MODULE,  /* link exception due to patched module */
         MODIFIED_FILE, /* link exception due to modified file  */
     }
 
