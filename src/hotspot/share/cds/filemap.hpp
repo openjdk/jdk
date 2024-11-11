@@ -188,12 +188,15 @@ private:
   address _narrow_oop_base;                       // compressed oop encoding base
   int    _narrow_oop_shift;                       // compressed oop encoding shift
   bool   _compact_strings;                        // value of CompactStrings
+  bool   _compact_headers;                        // value of UseCompactObjectHeaders
   uintx  _max_heap_size;                          // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
-  bool    _use_secondary_supers_table;            // save the flag UseSecondarySupersTable
+  int     _narrow_klass_pointer_bits;             // save number of bits in narrowKlass
+  int     _narrow_klass_shift;                    // save shift width used to pre-compute narrowKlass IDs in archived heap objects
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
+  size_t  _early_serialized_data_offset;          // Data accessed using {ReadClosure,WriteClosure}::serialize()
   size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
   bool _has_non_jar_in_classpath;                 // non-jar file entry exists in classpath
   unsigned int _common_app_classpath_prefix_size; // size of the common prefix of app class paths
@@ -259,9 +262,11 @@ public:
   address narrow_oop_base()                const { return _narrow_oop_base; }
   int narrow_oop_shift()                   const { return _narrow_oop_shift; }
   bool compact_strings()                   const { return _compact_strings; }
+  bool compact_headers()                   const { return _compact_headers; }
   uintx max_heap_size()                    const { return _max_heap_size; }
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
+  char* early_serialized_data()            const { return from_mapped_offset(_early_serialized_data_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
   const char* jvm_ident()                  const { return _jvm_ident; }
   char* requested_base_address()           const { return _requested_base_address; }
@@ -270,7 +275,10 @@ public:
   bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
+  int narrow_klass_pointer_bits()          const { return _narrow_klass_pointer_bits; }
+  int narrow_klass_shift()                 const { return _narrow_klass_shift; }
   HeapRootSegments heap_root_segments()    const { return _heap_root_segments; }
+  bool has_full_module_graph()             const { return _has_full_module_graph; }
   size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos; }
   size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos; }
   size_t rw_ptrmap_start_pos()             const { return _rw_ptrmap_start_pos; }
@@ -283,6 +291,7 @@ public:
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
+  void set_early_serialized_data(char* p)        { set_as_offset(p, &_early_serialized_data_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_root_segments(HeapRootSegments segments) { _heap_root_segments = segments; }
@@ -396,6 +405,8 @@ public:
 
   char* cloned_vtables()                      const { return header()->cloned_vtables(); }
   void  set_cloned_vtables(char* p)           const { header()->set_cloned_vtables(p); }
+  char* early_serialized_data()               const { return header()->early_serialized_data(); }
+  void  set_early_serialized_data(char* p)    const { header()->set_early_serialized_data(p); }
   char* serialized_data()                     const { return header()->serialized_data(); }
   void  set_serialized_data(char* p)          const { header()->set_serialized_data(p); }
 
@@ -554,6 +565,7 @@ public:
                     GrowableArray<const char*>* rp_array,
                     unsigned int dumptime_prefix_len,
                     unsigned int runtime_prefix_len) NOT_CDS_RETURN_(false);
+  void  extract_module_paths(const char* runtime_path, GrowableArray<const char*>* module_paths);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
   bool  map_heap_region_impl() NOT_CDS_JAVA_HEAP_RETURN_(false);

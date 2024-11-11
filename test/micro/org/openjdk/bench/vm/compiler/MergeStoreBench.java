@@ -43,7 +43,7 @@ import jdk.internal.misc.Unsafe;
 @State(Scope.Thread)
 @Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = {"--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"})
+@Fork(value = 3, jvmArgs = {"--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"})
 public class MergeStoreBench {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 

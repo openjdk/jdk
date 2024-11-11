@@ -755,7 +755,7 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
 
     if (Opcode() == Op_CallLeafVector) {
       // If the return is in vector, compute appropriate regmask taking into account the whole range
-      if(ideal_reg >= Op_VecS && ideal_reg <= Op_VecZ) {
+      if(ideal_reg >= Op_VecA && ideal_reg <= Op_VecZ) {
         if(OptoReg::is_valid(regs.second())) {
           for (OptoReg::Name r = regs.first(); r <= regs.second(); r = OptoReg::add(r, 1)) {
             rm.Insert(r);
@@ -1615,8 +1615,14 @@ void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 }
 Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem) {
   Node* mark_node = nullptr;
-  // For now only enable fast locking for non-array types
-  mark_node = phase->MakeConX(markWord::prototype().value());
+  if (UseCompactObjectHeaders) {
+    Node* klass_node = in(AllocateNode::KlassNode);
+    Node* proto_adr = phase->transform(new AddPNode(klass_node, klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
+    mark_node = LoadNode::make(*phase, control, mem, proto_adr, TypeRawPtr::BOTTOM, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
+  } else {
+    // For now only enable fast locking for non-array types
+    mark_node = phase->MakeConX(markWord::prototype().value());
+  }
   return mark_node;
 }
 

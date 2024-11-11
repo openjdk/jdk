@@ -33,6 +33,8 @@ class LIR_Assembler;
 class StubAssembler;
 class G1PreBarrierStub;
 class G1PostBarrierStub;
+class G1PreBarrierStubC2;
+class G1PostBarrierStubC2;
 
 class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
 protected:
@@ -43,7 +45,6 @@ protected:
 
   void g1_write_barrier_pre(MacroAssembler* masm,
                             Register store_addr,
-                            Register new_val,
                             Register pre_val,
                             Register tmp1,
                             Register tmp2);
@@ -70,6 +71,29 @@ public:
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
   void generate_c1_post_barrier_runtime_stub(StubAssembler* sasm);
 #endif
+
+#ifdef COMPILER2
+  void g1_write_barrier_pre_c2(MacroAssembler* masm,
+                               Register obj,
+                               Register pre_val,
+                               Register thread,
+                               Register tmp1,
+                               Register tmp2,
+                               G1PreBarrierStubC2* c2_stub);
+  void generate_c2_pre_barrier_stub(MacroAssembler* masm,
+                                    G1PreBarrierStubC2* stub) const;
+  void g1_write_barrier_post_c2(MacroAssembler* masm,
+                                Register store_addr,
+                                Register new_val,
+                                Register thread,
+                                Register tmp1,
+                                Register tmp2,
+                                Register tmp3,
+                                G1PostBarrierStubC2* c2_stub);
+  void generate_c2_post_barrier_stub(MacroAssembler* masm,
+                                     G1PostBarrierStubC2* stub) const;
+#endif
+
 };
 
 #endif // CPU_ARM_GC_G1_G1BARRIERSETASSEMBLER_ARM_HPP

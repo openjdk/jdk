@@ -1590,7 +1590,6 @@
   declare_c2_type(StorePNode, StoreNode)                                  \
   declare_c2_type(StoreNNode, StoreNode)                                  \
   declare_c2_type(StoreNKlassNode, StoreNode)                             \
-  declare_c2_type(StoreCMNode, StoreNode)                                 \
   declare_c2_type(SCMemProjNode, ProjNode)                                \
   declare_c2_type(LoadStoreNode, Node)                                    \
   declare_c2_type(CompareAndSwapNode, LoadStoreConditionalNode)           \
@@ -2004,8 +2003,6 @@
   declare_constant(LogBytesPerWord)                                       \
   declare_constant(BytesPerWord)                                          \
   declare_constant(BytesPerLong)                                          \
-                                                                          \
-  declare_constant(LogKlassAlignmentInBytes)                              \
                                                                           \
   declare_constant(HeapWordSize)                                          \
   declare_constant(LogHeapWordSize)                                       \
@@ -2511,6 +2508,7 @@
   declare_constant(markWord::lock_shift)                                  \
   declare_constant(markWord::age_shift)                                   \
   declare_constant(markWord::hash_shift)                                  \
+  LP64_ONLY(declare_constant(markWord::klass_shift))                      \
                                                                           \
   declare_constant(markWord::lock_mask)                                   \
   declare_constant(markWord::lock_mask_in_place)                          \

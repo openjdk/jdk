@@ -582,6 +582,8 @@ void ClassLoader::setup_module_search_path(JavaThread* current, const char* path
   new_entry = create_class_path_entry(current, path, &st,
                                       false /*is_boot_append */, false /* from_class_path_attr */);
   if (new_entry != nullptr) {
+    // ClassLoaderExt::process_module_table() filters out non-jar entries before calling this function.
+    assert(new_entry->is_jar_file(), "module path entry %s is not a jar file", new_entry->name());
     add_to_module_path_entries(path, new_entry);
   }
 }
@@ -1240,7 +1242,7 @@ static char decode_percent_encoded(const char *str, size_t& index) {
     hex[1] = str[index + 2];
     hex[2] = '\0';
     index += 2;
-    return (char) strtol(hex, NULL, 16);
+    return (char) strtol(hex, nullptr, 16);
   }
   return str[index];
 }

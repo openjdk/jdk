@@ -32,19 +32,11 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
 /**
- * @test id=ZSinglegen
- * @requires vm.hasJFR & vm.gc.ZSinglegen
+ * @test id=Z
+ * @requires vm.hasJFR & vm.gc.Z
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZUnmapEvent
- */
-
-/**
- * @test id=ZGenerational
- * @requires vm.hasJFR & vm.gc.ZGenerational
- * @key jfr
- * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZUnmapEvent
+ * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestZUnmapEvent
  */
 
 public class TestZUnmapEvent {

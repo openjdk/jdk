@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,9 @@ import jdk.jfr.consumer.RecordedClassLoader;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedStackTrace;
+import jdk.jfr.internal.PrivateAccess;
+import jdk.jfr.internal.Type;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * This is a helper class to QueryResolver. It handles the creation of fields
@@ -60,9 +63,9 @@ import jdk.jfr.consumer.RecordedStackTrace;
 final class FieldBuilder {
     private static final Set<String> KNOWN_TYPES = createKnownTypes();
     private final List<EventType> eventTypes;
-    private final ValueDescriptor descriptor;
     private final Field field;
     private final String fieldName;
+    private ValueDescriptor descriptor;
 
     public FieldBuilder(List<EventType> eventTypes, FilteredType type, String fieldName) {
         this.eventTypes = eventTypes;
@@ -77,12 +80,15 @@ final class FieldBuilder {
             return List.of(field);
         }
 
+        configureAliases();
         if (descriptor != null) {
             field.fixedWidth = !descriptor.getTypeName().equals("java.lang.String");
             field.dataType = descriptor.getTypeName();
             field.label = makeLabel(descriptor, hasDuration());
             field.alignLeft = true;
-            field.valueGetter = valueGetter(field.name);
+            if (field.valueGetter == null) {
+                field.valueGetter = valueGetter(field.name);
+            }
 
             configureNumericTypes();
             configureTime();
@@ -113,22 +119,6 @@ final class FieldBuilder {
     }
 
     private boolean configureSyntheticFields() {
-        if (fieldName.equals("stackTrace.topApplicationFrame")) {
-            configureTopApplicationFrameField();
-            return true;
-        }
-        if (fieldName.equals("stackTrace.notInit")) {
-            configureNotInitFrameField();
-            return true;
-        }
-        if (fieldName.equals("stackTrace.topFrame.class")) {
-            configureTopFrameClassField();
-            return true;
-        }
-        if (fieldName.equals("stackTrace.topFrame")) {
-            configureTopFrameField();
-            return true;
-        }
         if (fieldName.equals("id") && field.type.getName().equals("jdk.ActiveSetting")) {
             configureEventTypeIdField();
             return true;
@@ -142,6 +132,73 @@ final class FieldBuilder {
             return true;
         }
         return false;
+    }
+
+    private void configureAliases() {
+        configureFrame("topFrame", FieldBuilder::topFrame);
+        configureFrame("topApplicationFrame", FieldBuilder::topApplicationFrame);
+        configureFrame("topNotInitFrame", FieldBuilder::topNotInitFrame);
+    }
+
+    private void configureFrame(String frameName, Function<RecordedEvent, Object> getter) {
+        String name = "stackTrace." + frameName;
+        if (!fieldName.startsWith(name)) {
+            return;
+        }
+        ValueDescriptor stackTrace = Utils.findField(field.type.getFields(), "stackTrace");
+        if (stackTrace == null) {
+            return;
+        }
+        ValueDescriptor frames = Utils.findField(stackTrace.getFields(), "frames");
+        if (frames == null) {
+            return;
+        }
+        int length = name.length();
+        if (fieldName.length() == length) {
+            descriptor = frames; // Use array descriptor for now
+            field.valueGetter = getter;
+            return;
+        }
+        String subName = fieldName.substring(length + 1);
+        Type type = PrivateAccess.getInstance().getType(frames);
+        ValueDescriptor subField = type.getField(subName);
+        if (subField != null) {
+            descriptor = subField;
+            field.valueGetter = e -> {
+                if (getter.apply(e) instanceof RecordedFrame frame) {
+                    return frame.getValue(subName);
+                }
+                return null;
+            };
+        }
+    }
+
+    private static RecordedFrame topFrame(RecordedEvent event) {
+        return findJavaFrame(event, x -> true);
+    }
+
+    private static RecordedFrame topApplicationFrame(RecordedEvent event) {
+        return findJavaFrame(event, frame -> {
+            RecordedClass cl = frame.getMethod().getType();
+            RecordedClassLoader classLoader = cl.getClassLoader();
+            return classLoader != null && !"bootstrap".equals(classLoader.getName());
+        });
+    }
+
+    private static Object topNotInitFrame(RecordedEvent event) {
+        return findJavaFrame(event, frame -> !frame.getMethod().getName().equals("<init>"));
+    }
+
+    private static RecordedFrame findJavaFrame(RecordedEvent event, Predicate<RecordedFrame> condition) {
+        RecordedStackTrace st = event.getStackTrace();
+        if (st != null) {
+            for (RecordedFrame frame : st.getFrames()) {
+                if (frame.isJavaFrame() && condition.test(frame)) {
+                    return frame;
+                }
+            }
+        }
+        return null;
     }
 
     private void configureEventTypeIdField() {
@@ -166,65 +223,6 @@ final class FieldBuilder {
         return map;
     }
 
-    private void configureTopFrameField() {
-        field.alignLeft = true;
-        field.label = "Method";
-        field.dataType = "jdk.types.Method";
-        field.valueGetter = e -> {
-            RecordedStackTrace t = e.getStackTrace();
-            return t != null ? t.getFrames().getFirst() : null;
-        };
-        field.lexicalSort = true;
-    }
-
-    private void configureTopFrameClassField() {
-        field.alignLeft = true;
-        field.label = "Class";
-        field.dataType = "java.lang.Class";
-        field.valueGetter = e -> {
-            RecordedStackTrace t = e.getStackTrace();
-            if (t == null) {
-                return null;
-            }
-            return t.getFrames().getFirst().getMethod().getType();
-        };
-        field.lexicalSort = true;
-    }
-
-    private void configureCustomFrame(Predicate<RecordedFrame> condition) {
-        field.alignLeft = true;
-        field.dataType = "jdk.types.Frame";
-        field.label = "Method";
-        field.lexicalSort = true;
-        field.valueGetter = e -> {
-            RecordedStackTrace t = e.getStackTrace();
-            if (t != null) {
-                for (RecordedFrame f : t.getFrames()) {
-                    if (f.isJavaFrame()) {
-                        if (condition.test(f)) {
-                            return f;
-                        }
-                    }
-                }
-            }
-            return null;
-        };
-    }
-
-    private void configureNotInitFrameField() {
-        configureCustomFrame(frame -> {
-            return !frame.getMethod().getName().equals("<init>");
-        });
-    }
-
-    private void configureTopApplicationFrameField() {
-        configureCustomFrame(frame -> {
-            RecordedClass cl = frame.getMethod().getType();
-            RecordedClassLoader classLoader = cl.getClassLoader();
-            return classLoader != null && !"bootstrap".equals(classLoader.getName());
-        });
-    }
-
     private void configureEventType(Function<RecordedEvent, Object> retriever) {
         field.alignLeft = true;
         field.dataType = String.class.getName();
@@ -234,6 +232,9 @@ final class FieldBuilder {
     }
 
     private static String makeLabel(ValueDescriptor v, boolean hasDuration) {
+        if (v.getTypeName().equals("jdk.types.StackFrame")) {
+            return "Method";
+        }
         String label = v.getLabel();
         if (label == null) {
             return v.getName();

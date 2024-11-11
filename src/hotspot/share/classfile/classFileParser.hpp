@@ -378,44 +378,6 @@ class ClassFileParser {
     if (!b) { classfile_parse_error(msg, THREAD); return; }
   }
 
-  void report_assert_property_failure(const char* msg, TRAPS) const PRODUCT_RETURN;
-  void report_assert_property_failure(const char* msg, int index, TRAPS) const PRODUCT_RETURN;
-
-  inline void assert_property(bool b, const char* msg, TRAPS) const {
-#ifdef ASSERT
-    if (!b) {
-      report_assert_property_failure(msg, THREAD);
-    }
-#endif
-  }
-
-  inline void assert_property(bool b, const char* msg, int index, TRAPS) const {
-#ifdef ASSERT
-    if (!b) {
-      report_assert_property_failure(msg, index, THREAD);
-    }
-#endif
-  }
-
-  inline void check_property(bool property,
-                             const char* msg,
-                             int index,
-                             TRAPS) const {
-    if (_need_verify) {
-      guarantee_property(property, msg, index, CHECK);
-    } else {
-      assert_property(property, msg, index, CHECK);
-    }
-  }
-
-  inline void check_property(bool property, const char* msg, TRAPS) const {
-    if (_need_verify) {
-      guarantee_property(property, msg, CHECK);
-    } else {
-      assert_property(property, msg, CHECK);
-    }
-  }
-
   inline void guarantee_property(bool b,
                                  const char* msg,
                                  int index,
@@ -548,6 +510,10 @@ class ClassFileParser {
   bool is_hidden() const { return _is_hidden; }
   bool is_interface() const { return _access_flags.is_interface(); }
   bool is_abstract() const { return _access_flags.is_abstract(); }
+
+  // Returns true if the Klass to be generated will need to be addressable
+  // with a narrow Klass ID.
+  bool klass_needs_narrow_id() const;
 
   ClassLoaderData* loader_data() const { return _loader_data; }
   const Symbol* class_name() const { return _class_name; }
