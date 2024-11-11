@@ -29,6 +29,7 @@
 #include "memory/universe.hpp"
 
 #include "gc/shared/classUnloadingContext.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -458,6 +459,8 @@ jint ShenandoahHeap::initialize() {
   initialize_controller();
 
   print_init_logger();
+
+  FullGCForwarding::initialize(_heap_region);
 
   return JNI_OK;
 }
@@ -1238,7 +1241,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   assert(from_region->is_young(), "Only expect evacuations from young in this mode");
   bool alloc_from_lab = true;
   HeapWord* copy = nullptr;
-  size_t size = p->size();
+  size_t size = ShenandoahForwarding::size(p);
 
 #ifdef ASSERT
   if (ShenandoahOOMDuringEvacALot &&

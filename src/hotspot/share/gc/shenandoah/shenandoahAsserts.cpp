@@ -200,7 +200,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file, line);
   }
 
-  Klass* obj_klass = obj->klass_or_null();
+  Klass* obj_klass = ShenandoahForwarding::klass(obj);
   if (obj_klass == nullptr) {
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "Object klass pointer should not be null",
@@ -238,7 +238,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                     file, line);
     }
 
-    if (obj_klass != fwd->klass()) {
+    if (obj_klass != ShenandoahForwarding::klass(fwd)) {
       print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Forwardee klass disagrees with object class",
                     file, line);
