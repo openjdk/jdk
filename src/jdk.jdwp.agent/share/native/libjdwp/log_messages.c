@@ -48,9 +48,7 @@
 #define DT_SIZE                 (MAXLEN_DT+1)
 #define TZ_SIZE                 (TIMESTAMP_SIZE-MAXLEN_DT-MAXLEN_MS)
 
-#ifndef _WIN32
 static MUTEX_T my_mutex = MUTEX_INIT;
-#endif
 
 /* Static variables (should be protected with mutex) */
 static int logging;
