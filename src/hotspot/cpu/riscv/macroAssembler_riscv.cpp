@@ -4245,10 +4245,11 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
   }
 #endif
 
+  // The relocation created while emitting the stub will ensure this
+  // call instruction is subsequently patched to call the stub.
   relocate(entry.rspec(), [&] {
-    int64_t distance = 0;
-    auipc(tmp, (int32_t)distance + 0x800);
-    ld(tmp, Address(tmp, ((int32_t)distance << 20) >> 20));
+    auipc(tmp, 0);
+    ld(tmp, Address(tmp, 0));
     jalr(tmp);
   });
 
