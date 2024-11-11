@@ -410,25 +410,28 @@ public class ForkJoinPool extends AbstractExecutorService {
      *
      * Field "runState" and per-WorkQueue field "phase" play similar
      * roles, as lockable, versioned counters. Field runState also
-     * includes monotonic event bits (SHUTDOWN, STOP, CLEANED (when
-     * all queues are knowm to be empty after stopping) and
-     * TERMINATED).  The version tags enable detection of state
-     * changes (by comparing two reads) modulo bit wraparound. The bit
-     * range in each case suffices for purposes of determining
-     * quiescence, termination, avoiding ABA-like errors, and signal
-     * control, most of which are ultimately based on at most 15bit
-     * ranges (due to 32767 max total workers). RunState updates do
-     * not need to be atomic with respect to ctl updates, but because
-     * they are not, some care is required to avoid stalls. The
-     * seqLock properties detect changes and conditionally upgrade to
-     * coordinate with updates. It is typically held for less than a
-     * dozen instructions unless the queue array is being resized,
-     * during which contention is rare. To be conservative,
-     * lockRunState is implemented as a spin/sleep loop. Here and
-     * elsewhere spin constants are short enough to apply even on
-     * systems with few available processors.  In addition to checking
-     * pool status, reads of runState sometimes serve as acquire
-     * fences before reading other fields.
+     * includes monotonic event bits:
+     * * SHUTDOWN: no more external tasks accepted; STOP when quiescent
+     * * STOP: no more tasks run, and deregister all workers
+     * * CLEANED: all unexecuted tasks have been cancelled
+     * * TERMINATED: all qorkers deregistered and all queues cleaned
+     * The version tags enable detection of state changes (by
+     * comparing two reads) modulo bit wraparound. The bit range in
+     * each case suffices for purposes of determining quiescence,
+     * termination, avoiding ABA-like errors, and signal control, most
+     * of which are ultimately based on at most 15bit ranges (due to
+     * 32767 max total workers). RunState updates do not need to be
+     * atomic with respect to ctl updates, but because they are not,
+     * some care is required to avoid stalls. The seqLock properties
+     * detect changes and conditionally upgrade to coordinate with
+     * updates. It is typically held for less than a dozen
+     * instructions unless the queue array is being resized, during
+     * which contention is rare. To be conservative, lockRunState is
+     * implemented as a spin/sleep loop. Here and elsewhere spin
+     * constants are short enough to apply even on systems with few
+     * available processors.  In addition to checking pool status,
+     * reads of runState sometimes serve as acquire fences before
+     * reading other fields.
      *
      * Field "parallelism" holds the target parallelism (normally
      * corresponding to pool size). Users can dynamically reset target
@@ -653,24 +656,36 @@ public class ForkJoinPool extends AbstractExecutorService {
      * workers are inactive because the caller and any others
      * executing helpQuiesce are not included in counts.
      *
-     * Termination. A call to shutdownNow invokes tryTerminate to
-     * atomically set a runState mode bit.  However, the process of
-     * termination is intrinsically non-atomic. The calling thread, as
-     * well as other workers thereafter terminating help cancel queued
-     * tasks until runState is marked as CLEANED (staggering queues
-     * and backing off on interference to avoid contention while doing
-     * so-- see method cleanQueues). These actions race with
-     * unterminated workers.  By default, workers check for
-     * termination only when accessing pool state.  This may take a
-     * while but suffices for structured computational tasks.  But not
-     * necessarily for others. Class InterruptibleTask (see below)
-     * further arranges runState checks before executing task bodies,
-     * and ensures interrupts while terminating. Even so, there are no
-     * guarantees after an abrupt shutdown that remaining tasks
-     * complete normally or exceptionally or are cancelled.
-     * Termination may fail to complete if running tasks ignore both
-     * task status and interrupts and/or produce more tasks after
-     * others that could cancel them have exited.
+     * Termination. Termination is initiated by setting STOP in one of
+     * three ways (via methods tryTerminate and quiescent):
+     * * A call to shutdownNow, in which case all workers are
+     *   interrupted.  ensuring that the queues array is stable,
+     *   so will not miss any of them.
+     * * A call to shutdown when quiescent, in which case method
+     *   releaseWaiters is used to dequeue them, at which point they notice
+     *   STOP state and return from runWorker to deregister();
+     * * The pool becomes quiescent() sometime after shutdown has
+     *   been called, in which case releaseWaiters is also used to
+     *   propagate as they deregister.
+     * Upon STOP, each worker, as well as external callers to
+     * tryTerminate (via close() etc) race to set CLEANED, indicating
+     * that all tasks have been cancelled. The implementation (method
+     * cleanQueues) balances cases in which there may be many tasks to
+     * cancel (benefitting from parallelism) versus contention and
+     * interference when many threads try to poll remaining queues,
+     * while also avoiding unnecessary rechedcks, by using
+     * pseudorandom scans and giving up upon interference. This may be
+     * retried by the same caller only when there are no more
+     * registered workers, using the same criteria as method
+     * quiescent.  When CLEANED and all workers have deregistered,
+     * TERMINATED is set, also signalling any caller of
+     * awaitTermination or close.  Because shutdownNow-based
+     * termination relies on interrupts, there is no guarantee that
+     * workers will stop if their tasks ignore interrupts.  Class
+     * InterruptibleTask (see below) further arranges runState checks
+     * before executing task bodies, and ensures interrupts while
+     * terminating. Even so, there are no guarantees because tasks may
+     * internally enter unbounded loops.
      *
      * Trimming workers. To release resources after periods of lack of
      * use, a worker starting to wait when the pool is quiescent will
@@ -1847,7 +1862,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         if ((w = ((wt == null) ? null : wt.workQueue)) == null)
             phase = 0;
         else if ((phase = w.phase) != 0 && (phase & IDLE) != 0)
-            releaseAll();                  // ensure released
+            releaseWaiters();              // ensure released
         if (w == null || w.source != DROPPED) {
             long c = ctl;                  // decrement counts
             do {} while (c != (c = compareAndExchangeCtl(
@@ -1916,7 +1931,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     /**
      * Releases all waiting workers. Called only during shutdown.
      */
-    private void releaseAll() {
+    private void releaseWaiters() {
         for (long c = ctl;;) {
             WorkQueue[] qs; WorkQueue v; int sp, i;
             if ((sp = (int)c) == 0 || (qs = queues) == null ||
@@ -2749,7 +2764,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         else if (now) {
             if (((ps = getAndBitwiseOrRunState(SHUTDOWN|STOP) & STOP)) == 0L) {
                 if ((ps & RS_LOCK) != 0L) {
-                    lockRunState(); // ensure queues array stable after stop
+                    spinLockRunState(); // ensure queues array stable after stop
                     unlockRunState();
                 }
                 interruptAll();
@@ -2762,7 +2777,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 now = true;
         }
         if (now) {
-            releaseAll();
+            releaseWaiters();
             for (;;) {
                 if (((e = runState) & CLEANED) == 0L) {
                     boolean clean = cleanQueues();
@@ -2771,7 +2786,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
                 if ((e & TERMINATED) != 0L)
                     break;
-                if (ctl != 0L)
+                if (ctl != 0L) // else loop if didn't finish cleaning
                     break;
                 if ((e & CLEANED) != 0L) {
                     e |= TERMINATED;
