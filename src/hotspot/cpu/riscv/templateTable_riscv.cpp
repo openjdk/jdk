@@ -2465,13 +2465,7 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     // take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    ExternalAddress target(JvmtiExport::get_field_access_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(x10, Address(t0, offset));
-    });
-
+    __ lwu(x10, ExternalAddress(JvmtiExport::get_field_access_count_addr()));
     __ beqz(x10, L1);
 
     __ load_field_entry(c_rarg2, index);
@@ -2676,12 +2670,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     // we take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    ExternalAddress target(JvmtiExport::get_field_modification_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(x10, Address(t0, offset));
-    });
+    __ lwu(x10, ExternalAddress(JvmtiExport::get_field_modification_count_addr()));
     __ beqz(x10, L1);
 
     __ mv(c_rarg2, cache);
@@ -2969,13 +2958,9 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     // Check to see if a field modification watch has been set before
     // we take the time to call into the VM.
     Label L2;
-    ExternalAddress target(JvmtiExport::get_field_modification_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(c_rarg3, Address(t0, offset));
-    });
+    __ lwu(c_rarg3, ExternalAddress(JvmtiExport::get_field_modification_count_addr()));
     __ beqz(c_rarg3, L2);
+
     __ pop_ptr(x9);                  // copy the object pointer from tos
     __ verify_oop(x9);
     __ push_ptr(x9);                 // put the object pointer back on tos
@@ -3101,13 +3086,9 @@ void TemplateTable::fast_accessfield(TosState state) {
     // Check to see if a field access watch has been set before we
     // take the time to call into the VM.
     Label L1;
-    ExternalAddress target(JvmtiExport::get_field_access_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(x12, Address(t0, offset));
-    });
+    __ lwu(x12, ExternalAddress(JvmtiExport::get_field_access_count_addr()));
     __ beqz(x12, L1);
+
     // access constant pool cache entry
     __ load_field_entry(c_rarg2, t1);
     __ verify_oop(x10);
@@ -3565,12 +3546,22 @@ void TemplateTable::_new() {
 
     // The object is initialized before the header. If the object size is
     // zero, go directly to the header initialization.
-    __ sub(x13, x13, sizeof(oopDesc));
+    if (UseCompactObjectHeaders) {
+      assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
+      __ sub(x13, x13, oopDesc::base_offset_in_bytes());
+    } else {
+      __ sub(x13, x13, sizeof(oopDesc));
+    }
     __ beqz(x13, initialize_header);
 
     // Initialize object fields
     {
-      __ add(x12, x10, sizeof(oopDesc));
+      if (UseCompactObjectHeaders) {
+        assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
+        __ add(x12, x10, oopDesc::base_offset_in_bytes());
+      } else {
+        __ add(x12, x10, sizeof(oopDesc));
+      }
       Label loop;
       __ bind(loop);
       __ sd(zr, Address(x12));
@@ -3581,10 +3572,15 @@ void TemplateTable::_new() {
 
     // initialize object hader only.
     __ bind(initialize_header);
-    __ mv(t0, (intptr_t)markWord::prototype().value());
-    __ sd(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
-    __ store_klass_gap(x10, zr);   // zero klass gap for compressed oops
-    __ store_klass(x10, x14);      // store klass last
+    if (UseCompactObjectHeaders) {
+      __ ld(t0, Address(x14, Klass::prototype_header_offset()));
+      __ sd(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
+    } else {
+      __ mv(t0, (intptr_t)markWord::prototype().value());
+      __ sd(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
+      __ store_klass_gap(x10, zr);   // zero klass gap for compressed oops
+      __ store_klass(x10, x14);      // store klass last
+    }
 
     if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath

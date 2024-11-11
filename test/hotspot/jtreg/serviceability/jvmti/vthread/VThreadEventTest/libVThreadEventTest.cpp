@@ -118,13 +118,13 @@ Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
   }
 
   clazz = env->FindClass("VThreadEventTest");
-  if (clazz == NULL) {
+  if (clazz == nullptr) {
       LOG("FindClass failed\n");
       return JNI_ERR;
   }
 
   mid = env->GetStaticMethodID(clazz, "agentStarted", "()V");
-  if (mid == NULL) {
+  if (mid == nullptr) {
       LOG("GetStaticMethodID failed\n");
       return JNI_ERR;
   }

@@ -2243,8 +2243,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   Address src_length_addr = Address(src, arrayOopDesc::length_offset_in_bytes());
   Address dst_length_addr = Address(dst, arrayOopDesc::length_offset_in_bytes());
-  Address src_klass_addr = Address(src, oopDesc::klass_offset_in_bytes());
-  Address dst_klass_addr = Address(dst, oopDesc::klass_offset_in_bytes());
 
   // test for null
   if (flags & LIR_OpArrayCopy::src_null_check) {
@@ -2305,15 +2303,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays
-      if (UseCompressedClassPointers) {
-        __ ldrw(tmp, src_klass_addr);
-        __ ldrw(rscratch1, dst_klass_addr);
-        __ cmpw(tmp, rscratch1);
-      } else {
-        __ ldr(tmp, src_klass_addr);
-        __ ldr(rscratch1, dst_klass_addr);
-        __ cmp(tmp, rscratch1);
-      }
+      __ cmp_klasses_from_objects(src, dst, tmp, rscratch1);
       __ br(Assembler::NE, *stub->entry());
     } else {
       // For object arrays, if src is a sub class of dst then we can
@@ -2435,36 +2425,14 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // but not necessarily exactly of type default_type.
     Label known_ok, halt;
     __ mov_metadata(tmp, default_type->constant_encoding());
-    if (UseCompressedClassPointers) {
-      __ encode_klass_not_null(tmp);
-    }
 
     if (basic_type != T_OBJECT) {
-
-      if (UseCompressedClassPointers) {
-        __ ldrw(rscratch1, dst_klass_addr);
-        __ cmpw(tmp, rscratch1);
-      } else {
-        __ ldr(rscratch1, dst_klass_addr);
-        __ cmp(tmp, rscratch1);
-      }
+      __ cmp_klass(dst, tmp, rscratch1);
       __ br(Assembler::NE, halt);
-      if (UseCompressedClassPointers) {
-        __ ldrw(rscratch1, src_klass_addr);
-        __ cmpw(tmp, rscratch1);
-      } else {
-        __ ldr(rscratch1, src_klass_addr);
-        __ cmp(tmp, rscratch1);
-      }
+      __ cmp_klass(src, tmp, rscratch1);
       __ br(Assembler::EQ, known_ok);
     } else {
-      if (UseCompressedClassPointers) {
-        __ ldrw(rscratch1, dst_klass_addr);
-        __ cmpw(tmp, rscratch1);
-      } else {
-        __ ldr(rscratch1, dst_klass_addr);
-        __ cmp(tmp, rscratch1);
-      }
+      __ cmp_klass(dst, tmp, rscratch1);
       __ br(Assembler::EQ, known_ok);
       __ cmp(src, dst);
       __ br(Assembler::EQ, known_ok);
@@ -2547,12 +2515,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     add_debug_info_for_null_check_here(info);
   }
 
-  if (UseCompressedClassPointers) {
-    __ ldrw(result, Address (obj, oopDesc::klass_offset_in_bytes()));
-    __ decode_klass_not_null(result);
-  } else {
-    __ ldr(result, Address (obj, oopDesc::klass_offset_in_bytes()));
-  }
+  __ load_klass(result, obj);
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {

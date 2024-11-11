@@ -391,6 +391,10 @@ class TemplateAssertionPredicate : public Predicate {
     return _if_node->in(0);
   }
 
+  OpaqueTemplateAssertionPredicateNode* opaque_node() const {
+    return _if_node->in(1)->as_OpaqueTemplateAssertionPredicate();
+  }
+
   IfNode* head() const override {
     return _if_node;
   }
@@ -399,6 +403,9 @@ class TemplateAssertionPredicate : public Predicate {
     return _success_proj;
   }
 
+  IfTrueNode* clone_and_replace_init(Node* new_control, OpaqueLoopInitNode* new_opaque_init, PhaseIdealLoop* phase) const;
+  void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
+  IfTrueNode* initialize(PhaseIdealLoop* phase, Node* new_control) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      PhaseIdealLoop* phase) const;
   static bool is_predicate(Node* node);
@@ -429,6 +436,7 @@ class InitializedAssertionPredicate : public Predicate {
     return _success_proj;
   }
 
+  void kill(PhaseIdealLoop* phase) const;
   static bool is_predicate(Node* node);
 };
 
@@ -456,6 +464,8 @@ class TemplateAssertionExpression : public StackObj {
   OpaqueTemplateAssertionPredicateNode* clone_and_replace_init(Node* new_init, Node* new_ctrl, PhaseIdealLoop* phase);
   OpaqueTemplateAssertionPredicateNode* clone_and_replace_init_and_stride(Node* new_control, Node* new_init,
                                                                           Node* new_stride, PhaseIdealLoop* phase);
+  void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn);
+  OpaqueInitializedAssertionPredicateNode* clone_and_fold_opaque_loop_nodes(Node* new_ctrl, PhaseIdealLoop* phase);
 };
 
 // Class to represent a node being part of a Template Assertion Expression. Note that this is not an IR node.
@@ -603,6 +613,7 @@ class InitializedAssertionPredicateCreator : public StackObj {
 
   IfTrueNode* create_from_template(IfNode* template_assertion_predicate, Node* new_control, Node* new_init,
                                    Node* new_stride);
+  IfTrueNode* create_from_template(IfNode* template_assertion_predicate, Node* new_control);
   IfTrueNode* create(Node* operand, Node* new_control, jint stride, int scale, Node* offset, Node* range
                      NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type));
 
@@ -941,6 +952,22 @@ class NodeInOriginalLoopBody : public NodeInLoopBody {
   }
 };
 
+// This class checks whether a node is in the cloned loop body and not the original one from which the loop was cloned.
+class NodeInClonedLoopBody : public NodeInLoopBody {
+  const uint _first_node_index_in_cloned_loop_body;
+
+ public:
+  explicit NodeInClonedLoopBody(const uint first_node_index_in_cloned_loop_body)
+      : _first_node_index_in_cloned_loop_body(first_node_index_in_cloned_loop_body) {}
+  NONCOPYABLE(NodeInClonedLoopBody);
+
+  // Check if 'node' is a clone. This can easily be achieved by comparing its node index to the first node index
+  // inside the cloned loop body (all of them are clones).
+  bool check(Node* node) const override {
+    return node->_idx >= _first_node_index_in_cloned_loop_body;
+  }
+};
+
 // Visitor to create Initialized Assertion Predicates at a target loop from Template Assertion Predicates from a source
 // loop. This visitor can be used in combination with a PredicateIterator.
 class CreateAssertionPredicatesVisitor : public PredicateVisitor {
@@ -951,17 +978,22 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   PhaseIdealLoop* const _phase;
   bool _has_hoisted_check_parse_predicates;
   const NodeInLoopBody& _node_in_loop_body;
+  const bool _clone_template;
+
+  IfTrueNode* clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate);
+  IfTrueNode* initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate) const;
 
  public:
   CreateAssertionPredicatesVisitor(Node* init, Node* stride, Node* new_control, PhaseIdealLoop* phase,
-                                   const NodeInLoopBody& node_in_loop_body)
+                                   const NodeInLoopBody& node_in_loop_body, const bool clone_template)
       : _init(init),
         _stride(stride),
         _old_target_loop_entry(new_control),
         _new_control(new_control),
         _phase(phase),
         _has_hoisted_check_parse_predicates(false),
-        _node_in_loop_body(node_in_loop_body) {}
+        _node_in_loop_body(node_in_loop_body),
+        _clone_template(clone_template) {}
   NONCOPYABLE(CreateAssertionPredicatesVisitor);
 
   using PredicateVisitor::visit;
@@ -984,4 +1016,54 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   }
 };
 
+// This visitor collects all Template Assertion Predicates If nodes or the corresponding Opaque nodes, depending on the
+// provided 'get_opaque' flag, to the provided list.
+class TemplateAssertionPredicateCollector : public PredicateVisitor {
+  Unique_Node_List& _list;
+  const bool _get_opaque;
+
+ public:
+  TemplateAssertionPredicateCollector(Unique_Node_List& list, const bool get_opaque)
+      : _list(list),
+        _get_opaque(get_opaque) {}
+
+  using PredicateVisitor::visit;
+
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
+    if (_get_opaque) {
+      _list.push(template_assertion_predicate.opaque_node());
+    } else {
+      _list.push(template_assertion_predicate.tail());
+    }
+  }
+};
+
+// This visitor updates the stride for an Assertion Predicate during Loop Unrolling. The inputs to the OpaqueLoopStride
+// nodes Template of Template Assertion Predicates are updated and new Initialized Assertion Predicates are created
+// from the updated templates. The old Initialized Assertion Predicates are killed.
+class UpdateStrideForAssertionPredicates : public PredicateVisitor {
+  Node* const _new_stride;
+  PhaseIdealLoop* const _phase;
+
+  void replace_opaque_stride_input(const TemplateAssertionPredicate& template_assertion_predicate) const;
+  IfTrueNode* initialize_from_updated_template(const TemplateAssertionPredicate& template_assertion_predicate) const;
+  void connect_initialized_assertion_predicate(Node* new_control_out, IfTrueNode* initialized_success_proj) const;
+
+ public:
+  UpdateStrideForAssertionPredicates(Node* const new_stride, PhaseIdealLoop* phase)
+      : _new_stride(new_stride),
+        _phase(phase) {}
+  NONCOPYABLE(UpdateStrideForAssertionPredicates);
+
+  using PredicateVisitor::visit;
+
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
+
+  // Kill the old Initialized Assertion Predicates with old strides before unrolling. The new Initialized Assertion
+  // Predicates are inserted after the Template Assertion Predicate which ensures that we are not accidentally visiting
+  // and killing a newly created Initialized Assertion Predicate here.
+  void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) override {
+    initialized_assertion_predicate.kill(_phase);
+  }
+};
 #endif // SHARE_OPTO_PREDICATES_HPP
