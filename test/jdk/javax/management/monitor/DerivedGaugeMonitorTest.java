@@ -27,6 +27,8 @@
  * @summary Test that the initial derived gauge is (Integer)0
  * @author Daniel Fuchs
  *
+ * @library /test/lib
+ *
  * @run clean DerivedGaugeMonitorTest
  * @run build DerivedGaugeMonitorTest
  * @run main DerivedGaugeMonitorTest
@@ -40,10 +42,11 @@ import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
 import javax.management.monitor.CounterMonitor;
 import javax.management.monitor.GaugeMonitor;
+import jdk.test.lib.Utils;
 
 public class DerivedGaugeMonitorTest {
 
-    public static final int WAIT_TIME = 10000;
+    public static final int WAIT_TIME = 1000;
 
     public static interface Things {
         public long getALong();
@@ -241,7 +244,7 @@ public class DerivedGaugeMonitorTest {
             mon1.setGranularityPeriod(5);
             mon2.setGranularityPeriod(5);
 
-            my.cdl.await(WAIT_TIME, TimeUnit.MILLISECONDS);
+            my.cdl.await(Utils.adjustTimeout(WAIT_TIME), TimeUnit.MILLISECONDS);
             if (my.cdl.getCount() > 0)
                 throw new Exception(attr+": Count down not reached!");
 
