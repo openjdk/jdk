@@ -60,13 +60,6 @@ import static java.net.Proxy.NO_PROXY;
  *          diagnosis of intermittent failures reported in 8342811.
  * @library /test/lib
  *          /test/jdk/java/net/httpclient/lib
- * @modules java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          jdk.httpserver
  * @run main/othervm -Djdk.tracePinnedThreads=full
  *      -Djdk.httpclient.HttpClient.log=headers,requests,trace
  *      -Djdk.internal.httpclient.debug=true
