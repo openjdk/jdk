@@ -414,7 +414,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * * SHUTDOWN: no more external tasks accepted; STOP when quiescent
      * * STOP: no more tasks run, and deregister all workers
      * * CLEANED: all unexecuted tasks have been cancelled
-     * * TERMINATED: all qorkers deregistered and all queues cleaned
+     * * TERMINATED: all workers deregistered and all queues cleaned
      * The version tags enable detection of state changes (by
      * comparing two reads) modulo bit wraparound. The bit range in
      * each case suffices for purposes of determining quiescence,
@@ -659,8 +659,8 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Termination. Termination is initiated by setting STOP in one of
      * three ways (via methods tryTerminate and quiescent):
      * * A call to shutdownNow, in which case all workers are
-     *   interrupted.  ensuring that the queues array is stable,
-     *   so will not miss any of them.
+     *   interrupted, first ensuring that the queues array is stable,
+     *   to avoid missing any workers.
      * * A call to shutdown when quiescent, in which case method
      *   releaseWaiters is used to dequeue them, at which point they notice
      *   STOP state and return from runWorker to deregister();
@@ -673,7 +673,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * cleanQueues) balances cases in which there may be many tasks to
      * cancel (benefitting from parallelism) versus contention and
      * interference when many threads try to poll remaining queues,
-     * while also avoiding unnecessary rechedcks, by using
+     * while also avoiding unnecessary rechecks, by using
      * pseudorandom scans and giving up upon interference. This may be
      * retried by the same caller only when there are no more
      * registered workers, using the same criteria as method
@@ -871,7 +871,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * external joining callers never run these tasks, they must await
      * cancellation by others, which can occur along several different
      * paths. The inability to rely on caller-runs may also require
-     * extra signalling (and resulting scanning and contention) so is
+     * extra signalling (resulting in scanning and contention) so is
      * done only conditionally in methods push and runworker.
      *
      * Across these APIs, rules for reporting exceptions for tasks
@@ -1663,6 +1663,10 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     static final Class<?> interruptibleTaskClass;
 
+    /**
+     * For VirtualThread intrinsics
+     */
+    private static final JavaLangAccess JLA;
 
     // fields declared in order of their likely layout on most VMs
     volatile CountDownLatch termination; // lazily constructed
@@ -2636,7 +2640,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
         q.push(task, signalIfEmpty ? this : null, internal);
     }
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * Returns queue for an external submission, bypassing call to
@@ -4095,6 +4098,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             throw new Error("array index scale not a power of two");
 
         interruptibleTaskClass = ForkJoinTask.InterruptibleTask.class;
+        JLA = SharedSecrets.getJavaLangAccess();
         defaultForkJoinWorkerThreadFactory =
             new DefaultForkJoinWorkerThreadFactory();
         @SuppressWarnings("removal")
