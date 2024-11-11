@@ -24,11 +24,12 @@
 package com.sun.hotspot.igv.graph;
 
 import com.sun.hotspot.igv.data.InputBlock;
+import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.layout.Cluster;
+import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Dimension;
 import java.awt.Rectangle;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  *
@@ -36,9 +37,9 @@ import java.util.Set;
  */
 public class Block implements Cluster {
 
-    private InputBlock inputBlock;
+    protected final InputBlock inputBlock;
     private Rectangle bounds;
-    private Diagram diagram;
+    private final Diagram diagram;
 
     public Block(InputBlock inputBlock, Diagram diagram) {
         this.inputBlock = inputBlock;
@@ -59,6 +60,15 @@ public class Block implements Cluster {
         return succs;
     }
 
+    public List<? extends Vertex> getVertices() {
+        List<Vertex> vertices = new ArrayList<>();
+        for (InputNode inputNode : inputBlock.getNodes()) {
+            vertices.add(diagram.getFigure(inputNode));
+        }
+        return vertices;
+    }
+
+
     public void setBounds(Rectangle r) {
         this.bounds = r;
     }
@@ -74,6 +84,17 @@ public class Block implements Cluster {
     @Override
     public String toString() {
         return inputBlock.getName();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        Block other = (Block) obj;
+        return inputBlock.equals(other.inputBlock);
+    }
+
+    @Override
+    public int hashCode() {
+        return inputBlock.hashCode();
     }
 }
 

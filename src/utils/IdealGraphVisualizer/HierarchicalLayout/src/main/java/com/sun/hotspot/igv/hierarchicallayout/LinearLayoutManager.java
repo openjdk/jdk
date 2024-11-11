@@ -23,17 +23,17 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+import com.sun.hotspot.igv.layout.Cluster;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Point;
 import java.util.*;
 
 public class LinearLayoutManager extends LayoutManager {
 
-    // Ranking determining the vertical node ordering.
-    private final Map<? extends Vertex, Integer> vertexRank;
+    Collection<? extends Cluster> clusters;
 
-    public LinearLayoutManager(Map<? extends Vertex, Integer> vertexRank) {
-        this.vertexRank = vertexRank;
+    public LinearLayoutManager(Collection<? extends Cluster> clusters) {
+        this.clusters = clusters;
     }
 
     @Override
@@ -43,15 +43,22 @@ public class LinearLayoutManager extends LayoutManager {
 
     @Override
     public void doLayout(LayoutGraph graph) {
-
         assert (graph.getLinks().isEmpty());
 
         // Sort vertices according to given rank.
-        List<Vertex> vertices = new ArrayList<>(graph.getVertices());
-        vertices.sort(Comparator.comparingInt((Vertex v) -> vertexRank.getOrDefault(v, Integer.MAX_VALUE)));
+        List<Vertex> sortedVertices = new ArrayList<>();
+        Set<Vertex> vertices = graph.getVertices();
+
+        for (Cluster cluster : clusters) {
+            for (Vertex vertex : cluster.getVertices()) {
+                if (vertices.contains(vertex)) {
+                    sortedVertices.add(vertex);
+                }
+            }
+        }
 
         // Assign vertical coordinates in rank order.
-        assignVerticalCoordinates(vertices);
+        assignVerticalCoordinates(sortedVertices);
     }
 
     private void assignVerticalCoordinates(List<Vertex> vertices) {

@@ -917,41 +917,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void doCFGLayout(Set<Figure> figures, Set<Connection> edges) {
-        HierarchicalCFGLayoutManager cfgLayoutManager = new HierarchicalCFGLayoutManager();
-
-        Diagram diagram = getModel().getDiagram();
-
-        Map<InputNode, Figure> nodeFig = new HashMap<>();
-        for (Figure f : figures) {
-            InputNode n = f.getInputNode();
-            if (n != null) {
-                nodeFig.put(n, f);
-            }
-        }
-        // Compute global ranking among figures given by in-block order. If
-        // needed, this could be cached as long as it is computed for all the
-        // figures in the model, not just the visible ones.
-        Map<Figure, Integer> figureRank = new HashMap<>(figures.size());
-        int r = 0;
-        for (InputBlock b : diagram.getInputBlocks()) {
-            for (InputNode n : b.getNodes()) {
-                Figure f = nodeFig.get(n);
-                if (f != null) {
-                    figureRank.put(f, r);
-                    r++;
-                }
-            }
-        }
-
-        // Add visible connections for CFG edges.
-        for (BlockConnection c : diagram.getBlockConnections()) {
-            if (isVisibleBlockConnection(c)) {
-                edges.add(c);
-            }
-        }
-
-        cfgLayoutManager.setSubManager(new LinearLayoutManager(figureRank));
-        cfgLayoutManager.setClusters(getVisibleBlocks());
+        HierarchicalCFGLayoutManager cfgLayoutManager = new HierarchicalCFGLayoutManager(getVisibleBlockConnections(), getVisibleBlocks());
         cfgLayoutManager.setCutEdges(model.getCutEdges());
         cfgLayoutManager.doLayout(new LayoutGraph(edges, figures));
     }
@@ -1474,6 +1440,16 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         }
         return visibleBlocks;
+    }
+
+    private Set<Connection> getVisibleBlockConnections() {
+        Set<Connection> clusterLinks = new HashSet<>();
+        for (BlockConnection c : getModel().getDiagram().getBlockConnections()) {
+            if (isVisibleBlockConnection(c)) {
+                clusterLinks.add(c);
+            }
+        }
+        return clusterLinks;
     }
 
     private HashSet<Connection> getVisibleConnections() {

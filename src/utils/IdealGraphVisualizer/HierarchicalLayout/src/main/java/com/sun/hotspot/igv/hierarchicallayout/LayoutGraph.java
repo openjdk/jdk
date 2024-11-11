@@ -170,8 +170,8 @@ public class LayoutGraph {
         return vertexToLayoutNode.get(vertex);
     }
 
-    public LayoutGraph(Set<? extends Link> links, Set<? extends Vertex> additionalVertices) {
-        this.links = links;
+    public LayoutGraph(Collection<? extends Link> links, Collection<? extends Vertex> additionalVertices) {
+        this.links = new HashSet<>(links);
 
         vertices = new TreeSet<>(additionalVertices);
         portLinks = new HashMap<>(links.size());

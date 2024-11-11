@@ -31,24 +31,20 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
 
     private final FontMetrics fontMetrics;
     // Lays out nodes within a single cluster (basic block).
-    private LayoutManager subManager;
+    private final LayoutManager subManager;
     // Lays out clusters in the CFG.
-    private LayoutManager manager;
-    private Set<Cluster> clusters;
+    private final LayoutManager manager;
+    private final Set<? extends Cluster> clusters;
+    private final Set<? extends Link> clusterLinks;
 
-    public HierarchicalCFGLayoutManager() {
+    public HierarchicalCFGLayoutManager(Set<? extends Link> clusterLinks, Set<? extends Cluster> clusters) {
+        this.clusterLinks = clusterLinks;
+        this.clusters = clusters;
         // Anticipate block label sizes to dimension blocks appropriately.
         Canvas canvas = new Canvas();
         fontMetrics = canvas.getFontMetrics(TITLE_FONT);
+        this.subManager = new LinearLayoutManager(clusters);
         this.manager =  new HierarchicalLayoutManager();
-    }
-
-    public void setSubManager(LayoutManager manager) {
-        this.subManager = manager;
-    }
-
-    public void setClusters(Set<Cluster> clusters) {
-        this.clusters = clusters;
     }
 
     @Override
@@ -59,51 +55,54 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
     }
 
     public void doLayout(LayoutGraph graph) {
-
         // Create cluster-level nodes and edges.
-        Map<Cluster, ClusterNode> clusterNode = createClusterNodes(graph);
-        Set<ClusterEdge> clusterEdges = createClusterEdges(clusterNode);
-        markRootClusters(clusterEdges);
+        Map<Cluster, ClusterNode> clusterNodes = createClusterNodes(graph.getVertices());
+        Set<ClusterEdge> clusterEdges = createClusterEdges(clusterNodes);
 
         // Compute layout for each cluster.
-        for (Cluster c : clusters) {
-            ClusterNode n = clusterNode.get(c);
-            subManager.doLayout(new LayoutGraph(n.getSubEdges(), n.getSubNodes()));
-            n.updateSize();
+        for (ClusterNode clusterNode : clusterNodes.values()) {
+            subManager.doLayout(new LayoutGraph(clusterNode.getSubEdges(), clusterNode.getSubNodes()));
+            clusterNode.updateSize();
+        }
+
+        // mark root nodes
+        LayoutGraph clusterGraph = new LayoutGraph(clusterEdges, clusterNodes.values());
+        for (Vertex rootVertex : clusterGraph.findRootVertices()) {
+            assert rootVertex instanceof ClusterNode;
+            ((ClusterNode) rootVertex).setRoot(true);
         }
 
         // Compute inter-cluster layout.
-        manager.doLayout(new LayoutGraph(clusterEdges, new HashSet<>(clusterNode.values())));
+        manager.doLayout(clusterGraph);
 
         // Write back results.
-        writeBackClusterBounds(clusterNode);
-        writeBackClusterEdgePoints(graph, clusterEdges);
+        writeBackClusterBounds(clusterNodes);
+        writeBackClusterEdgePoints(clusterEdges);
     }
 
-    private Map<Cluster, ClusterNode> createClusterNodes(LayoutGraph graph) {
-        Map<Cluster, ClusterNode> clusterNode = new HashMap<>();
-        for (Cluster c : clusters) {
-            String blockLabel = "B" + c;
+    private Map<Cluster, ClusterNode> createClusterNodes(SortedSet<Vertex> vertices) {
+        Map<Cluster, ClusterNode> clusterNodes = new HashMap<>();
+        for (Cluster cluster : clusters) {
+            String blockLabel = "B" + cluster;
             Dimension emptySize = new Dimension(fontMetrics.stringWidth(blockLabel) + ClusterNode.PADDING,
                                                 fontMetrics.getHeight() + ClusterNode.PADDING);
-            ClusterNode cn = new ClusterNode(c, c.toString(), fontMetrics.getHeight(), emptySize);
-            clusterNode.put(c, cn);
+            ClusterNode clusterNode = new ClusterNode(cluster, cluster.toString(), fontMetrics.getHeight(), emptySize);
+            clusterNodes.put(cluster, clusterNode);
         }
 
-        for (Vertex v : graph.getVertices()) {
-            Cluster c = v.getCluster();
-            assert c != null : "Cluster of vertex " + v + " is null!";
-            clusterNode.get(c).addSubNode(v);
+        for (Vertex vertex : vertices) {
+            Cluster cluster = vertex.getCluster();
+            clusterNodes.get(cluster).addSubNode(vertex);
         }
-        return clusterNode;
+        return clusterNodes;
     }
 
-    private Set<ClusterEdge> createClusterEdges(Map<Cluster, ClusterNode> clusterNode) {
+    private Set<ClusterEdge> createClusterEdges(Map<Cluster, ClusterNode> clusterNodes) {
         Set<ClusterEdge> clusterEdges = new HashSet<>();
         for (Cluster c : clusters) {
-            ClusterNode start = clusterNode.get(c);
+            ClusterNode start = clusterNodes.get(c);
             for (Cluster succ : c.getSuccessors()) {
-                ClusterNode end = clusterNode.get(succ);
+                ClusterNode end = clusterNodes.get(succ);
                 if (end != null) {
                     ClusterEdge e = new ClusterEdge(start, end);
                     clusterEdges.add(e);
@@ -113,14 +112,6 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         return clusterEdges;
     }
 
-    private void markRootClusters(Set<ClusterEdge> clusterEdges) {
-        Set<Vertex> roots = new LayoutGraph(clusterEdges).findRootVertices();
-        for (Vertex v : roots) {
-            assert v instanceof ClusterNode;
-            ((ClusterNode) v).setRoot(true);
-        }
-    }
-
     private void writeBackClusterBounds(Map<Cluster, ClusterNode> clusterNode) {
         for (Cluster c : clusters) {
             ClusterNode n = clusterNode.get(c);
@@ -128,16 +119,17 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         }
     }
 
-    private void writeBackClusterEdgePoints(LayoutGraph graph, Set<ClusterEdge> clusterEdges) {
+    private void writeBackClusterEdgePoints(Set<ClusterEdge> clusterEdges) {
         // Map from "primitive" cluster edges to their input links.
-        Map<AbstractMap.SimpleEntry<Cluster, Cluster>, Link> inputLink = new HashMap<>();
-        for (Link l : graph.getLinks()) {
-            inputLink.put(new AbstractMap.SimpleEntry<>(l.getFromCluster(), l.getToCluster()), l);
+        Map<AbstractMap.SimpleEntry<Cluster, Cluster>, Link> linkMap = new HashMap<>();
+
+        for (Link clusterLink : clusterLinks) {
+            linkMap.put(new AbstractMap.SimpleEntry<>(clusterLink.getFromCluster(), clusterLink.getToCluster()), clusterLink);
         }
-        for (ClusterEdge ce : clusterEdges) {
-            assert (ce.getControlPoints() != null);
-            Link l = inputLink.get(new AbstractMap.SimpleEntry<>(ce.getFromCluster(), ce.getToCluster()));
-            l.setControlPoints(ce.getControlPoints());
+
+        for (ClusterEdge clusterEdge : clusterEdges) {
+            Link clusterLink = linkMap.get(new AbstractMap.SimpleEntry<>(clusterEdge.getFromCluster(), clusterEdge.getToCluster()));
+            clusterLink.setControlPoints(clusterEdge.getControlPoints());
         }
     }
 }
