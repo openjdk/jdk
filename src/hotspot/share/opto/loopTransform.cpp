@@ -1779,47 +1779,19 @@ bool IdealLoopTree::is_invariant(Node* n) const {
 
 // Search the Assertion Predicates added by loop predication and/or range check elimination and update them according
 // to the new stride.
-void PhaseIdealLoop::update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init,
-                                                           const int stride_con) {
-  Node* entry = ctrl;
-  Node* prev_proj = ctrl;
-  LoopNode* outer_loop_head = loop_head->skip_strip_mined();
-  IdealLoopTree* outer_loop = get_loop(outer_loop_head);
+void PhaseIdealLoop::update_main_loop_assertion_predicates(CountedLoopNode* main_loop_head) {
+  Node* init = main_loop_head->init_trip();
 
   // Compute the value of the loop induction variable at the end of the
   // first iteration of the unrolled loop: init + new_stride_con - init_inc
-  int new_stride_con = stride_con * 2;
-  Node* max_value = _igvn.intcon(new_stride_con);
-  set_ctrl(max_value, C->root());
+  int unrolled_stride_con = main_loop_head->stride_con() * 2;
+  Node* unrolled_stride = _igvn.intcon(unrolled_stride_con);
+  set_ctrl(unrolled_stride, C->root());
 
-  while (entry != nullptr && entry->is_Proj() && entry->in(0)->is_If()) {
-    IfNode* iff = entry->in(0)->as_If();
-    ProjNode* proj = iff->proj_out(1 - entry->as_Proj()->_con);
-    if (!proj->unique_ctrl_out()->is_Halt()) {
-      break;
-    }
-    Node* bol = iff->in(1);
-    if (bol->is_OpaqueTemplateAssertionPredicate()) {
-      assert(assertion_predicate_has_loop_opaque_node(iff), "must find OpaqueLoop* nodes");
-      // This is a Template Assertion Predicate for the initial or last access.
-      // Create an Initialized Assertion Predicates for it accordingly:
-      // - For the initial access a[init] (same as before)
-      // - For the last access a[init+new_stride-orig_stride] (with the new unroll stride)
-      prev_proj = create_initialized_assertion_predicate(iff, init, max_value, prev_proj);
-    } else if (bol->is_OpaqueInitializedAssertionPredicate()) {
-      // This is one of the two Initialized Assertion Predicates:
-      // - For the initial access a[init]
-      // - For the last access a[init+old_stride-orig_stride]
-      // We could keep the one for the initial access but we do not know which one we currently have here. Just kill both.
-      _igvn.replace_input_of(iff, 1, _igvn.intcon(1));
-    }
-    assert(!bol->is_OpaqueNotNull() || !loop_head->is_main_loop(), "OpaqueNotNull should not be at main loop");
-    entry = entry->in(0)->in(0);
-  }
-  if (prev_proj != ctrl) {
-    _igvn.replace_input_of(outer_loop_head, LoopNode::EntryControl, prev_proj);
-    set_idom(outer_loop_head, prev_proj, dom_depth(outer_loop_head));
-  }
+  Node* loop_entry = main_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
+  PredicateIterator predicate_iterator(loop_entry);
+  UpdateStrideForAssertionPredicates update_stride_for_assertion_predicates(unrolled_stride, this);
+  predicate_iterator.for_each(update_stride_for_assertion_predicates);
 }
 
 // Source Loop: Cloned   - peeled_loop_head
@@ -1936,7 +1908,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   assert(old_trip_count > 1 && (!adjust_min_trip || stride_p <=
     MIN2<int>(max_jint / 2 - 2, MAX2(1<<3, Matcher::max_vector_size(T_BYTE)) * loop_head->unrolled_count())), "sanity");
 
-  update_main_loop_assertion_predicates(ctrl, loop_head, init, stride_con);
+  update_main_loop_assertion_predicates(loop_head);
 
   // Adjust loop limit to keep valid iterations number after unroll.
   // Use (limit - stride) instead of (((limit - init)/stride) & (-2))*stride

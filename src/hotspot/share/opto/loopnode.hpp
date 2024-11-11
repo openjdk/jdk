@@ -948,7 +948,7 @@ private:
  private:
   DEBUG_ONLY(static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);)
   static void get_assertion_predicates(ParsePredicateSuccessProj* parse_predicate_proj, Unique_Node_List& list, bool get_opaque = false);
-  void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
+  void update_main_loop_assertion_predicates(CountedLoopNode* main_loop_head);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                        CountedLoopNode* remaining_loop_head,
                                                        uint first_node_index_in_cloned_loop_body,
