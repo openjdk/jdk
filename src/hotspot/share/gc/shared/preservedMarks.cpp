@@ -143,10 +143,6 @@ void PreservedMarksSet::restore(WorkerThreads* workers) {
   assert_empty();
 }
 
-WorkerTask* PreservedMarksSet::create_task() {
-  return new RestorePreservedMarksTask(this);
-}
-
 void PreservedMarksSet::reclaim() {
   assert_empty();
 
