@@ -638,14 +638,11 @@ AC_DEFUN([JDKOPT_EXCLUDE_TRANSLATIONS],
 
 ################################################################################
 #
-# Optionally disable man pages
+# Optionally disable man pages (deprecated)
 #
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_MANPAGES],
 [
-  UTIL_ARG_ENABLE(NAME: manpages, DEFAULT: true, RESULT: BUILD_MANPAGES,
-      DESC: [enable copying of static man pages],
-      CHECKING_MSG: [if static man pages should be copied])
-  AC_SUBST(BUILD_MANPAGES)
+  UTIL_DEPRECATED_ARG_ENABLE(manpages)
 ])
 
 ################################################################################
