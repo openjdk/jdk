@@ -113,7 +113,7 @@ public class StopThreadTest {
             } else {
                 testTaskThread = Thread.ofPlatform().name("TestTaskThread").start(testTask);
             }
-            TestTask.ensureAtPointA(testTaskThread);
+            TestTask.ensureBlockedAfterPointA(testTaskThread);
 
             if (is_virtual) { // this check is for virtual target thread only
                 log("\nMain #A.1: unsuspended");
@@ -179,7 +179,7 @@ public class StopThreadTest {
         static Object lock = new Object();
         static void log(String str) { System.out.println(str); }
 
-        static volatile boolean atPointA = false;
+        static volatile boolean reachedPointA = false;
         static volatile boolean finished = false;
 
         static void sleep(long millis) {
@@ -190,9 +190,9 @@ public class StopThreadTest {
             }
         }
 
-        static void ensureAtPointA(Thread vt) {
+        static void ensureBlockedAfterPointA(Thread vt) {
             // wait while the thread state is not the expected one
-            while (!atPointA && vt.getState() != Thread.State.BLOCKED) {
+            while (!reachedPointA || vt.getState() != Thread.State.BLOCKED) {
                 sleep(1);
             }
         }
@@ -253,7 +253,7 @@ public class StopThreadTest {
         //  - when suspended: JVMTI_ERROR_NONE is expected
         static void A() {
             log("TestTask.A: started");
-            atPointA = true;
+            reachedPointA = true;
             synchronized (lock) {
             }
             log("TestTask.A: finished");
