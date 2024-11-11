@@ -28,8 +28,6 @@ package jdk.internal.util;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 
-import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
-
 /**
  * Digits class for decimal digits.
  *
@@ -37,6 +35,7 @@ import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
  */
 public final class DecimalDigits {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final long ARRAY_BYTE_BASE_OFFSET = Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
     /**
      * Each element of the array represents the packaging of two ascii characters based on little endian:<p>
