@@ -91,20 +91,10 @@ public final class ColorAction extends ModelAwareAction {
             // Set Look and Feel specifically for selected components
             UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
 
-            // Create a panel for color chooser and apply the LAF to it
-            JPanel customLAFPanel = new JPanel();
-            customLAFPanel.add(selectedColorButton);
-            customLAFPanel.add(colorChooser);
-
-            Font defaultFont = new Font("Dialog", Font.PLAIN, 12);
-            UIManager.put("ColorChooser.font", defaultFont);
-
-            // Initialize components with the custom Look and Feel
-            initializeComponents();
-
             // Update only specific components to the Metal LAF
-            SwingUtilities.updateComponentTreeUI(customLAFPanel);
-
+            SwingUtilities.updateComponentTreeUI(selectedColorButton);
+            SwingUtilities.updateComponentTreeUI(colorChooser);
+            initializeComponents();
         } catch (Exception ignored) {
         } finally {
             try {
@@ -132,12 +122,26 @@ public final class ColorAction extends ModelAwareAction {
         });
 
         // Create a panel to display recent colors
-        JPanel recentColorsPanel = new JPanel();
-        recentColorsPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        updateColorsPanel(recentColorsPanel);
+        JPanel colorsPanel = new JPanel();
+        colorsPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        for (Color color : colors) {
+            JButton colorButton = new JButton();
+            colorButton.setBackground(color);
+            colorButton.setOpaque(true);
+            colorButton.setPreferredSize(new Dimension(16, 16));
+            colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            colorButton.addActionListener(e -> {
+                selectedColorButton.setBackground(color);
+                selectedColorButton.setForeground(FigureWidget.getTextColor(color));
+            });
+            colorsPanel.add(colorButton);
+        }
+        colorsPanel.add(selectedColorButton, 0);
+        colorsPanel.revalidate();
+        colorsPanel.repaint();
 
         // Add recent colors panel below the color chooser
-        colorChooser.setPreviewPanel(recentColorsPanel);
+        colorChooser.setPreviewPanel(colorsPanel);
     }
 
     // Variables to store the dialog position
@@ -171,25 +175,6 @@ public final class ColorAction extends ModelAwareAction {
             }
             dialogHolder[0].setVisible(true);
         }
-    }
-
-    private void updateColorsPanel(JPanel panel) {
-        panel.removeAll();
-        for (Color color : colors) {
-            JButton colorButton = new JButton();
-            colorButton.setBackground(color);
-            colorButton.setOpaque(true);
-            colorButton.setPreferredSize(new Dimension(16, 16));
-            colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-            colorButton.addActionListener(e -> {
-                selectedColorButton.setBackground(color);
-                selectedColorButton.setForeground(FigureWidget.getTextColor(color));
-            });
-            panel.add(colorButton);
-        }
-        panel.add(selectedColorButton, 0);
-        panel.revalidate();
-        panel.repaint();
     }
 
     @Override
