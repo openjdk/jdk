@@ -117,6 +117,10 @@ runtime/Dictionary/CleanProtectionDomain.java 8341916 generic-all
 runtime/Dictionary/ProtectionDomainCacheTest.java 8341916 generic-all
 runtime/logging/ProtectionDomainVerificationTest.java 8341916 generic-all
 
+# Fails with +UseCompactObjectHeaders on aarch64
+runtime/cds/appcds/SharedBaseAddress.java 8340212 linux-aarch64,macosx-aarch64
+runtime/cds/SharedBaseAddress.java 8340212 linux-aarch64,macosx-aarch64
+
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
