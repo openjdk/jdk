@@ -80,7 +80,7 @@ const char* StubRoutines::_stub_names[StubGenStubId::NUM_STUBIDS];
 #define REPEAT_STUB_NAME(blob_name, stub_name, count)            \
   stub_id = StubGenStubId:: STUB_ID_NAME(stub_name);             \
   const char *name = # stub_name;                                \
-  int len = strlen(name);                                        \
+  int len = (int)strlen(name);                                   \
   _stub_names[stub_id] = name ;                                  \
   assert(count < 100, "increase digit count in repeat names");   \
   for (int i = 1; i < count; i++) {                              \
