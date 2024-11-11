@@ -28,10 +28,15 @@
  * @summary Incorrect paint of JProgressBar in Nimbus LF
  */
 
+import java.io.File;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
@@ -67,6 +72,12 @@ public class bug8041642 {
             System.out.println("point " + point + " color " + color);
             if (color.getGreen() < 150 || color.getBlue() > 30 ||
                     color.getRed() > 200) {
+                Rectangle bounds = frame.getBounds();
+                BufferedImage img = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
+                Graphics g = img.getGraphics();
+                frame.paint(g);
+                g.dispose();
+                ImageIO.write(img, "png", new File("bug8041642.png"));
                 throw new RuntimeException("Bar padding color should be green");
             }
 
