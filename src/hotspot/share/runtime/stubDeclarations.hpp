@@ -347,22 +347,42 @@
 // declare or define the C++ code we need to manage those blobs, stubs
 // and entries.
 //
+// All ports employ the same blobs. However, the organization of the
+// stubs and entry points in a blob can vary from one port to the
+// next. A template macro is provided to specify the details of each
+// blob, including generic and arch-specific variations.
+// 
 // If you want to define a new stub or entry then you can do so by
 // adding suitable declarations within the scope of the relevant blob.
 // For the blob with name BLOB_NAME add your declarations to macro
-// STUBGEN_<BLOB_NAME>STUBS_DO. If a stub or entries are arch-specific
-// then add them to the arch-specific section of the macro (create one
-// if needed).
+// STUBGEN_<BLOB_NAME>_STUBS_DO. Generic stubs and entries are
+// declared using the do_stub, repeat_stub, do_entry and do_entry_init
+// templates (see below for full details). The do_blob and end_blob
+// templates should never need to be modified.
 //
-// Note, the client macro STUBGEN_ALL_DO has only been split into
-// separate per-blob submacros, STUBGEN_<BLOB_NAME>_BLOBS_DO for
-// convenience, to make it easier to manage definitions. These
-// blob_specific sub-macros should not be called directly by client
-// code (in class StubRoutines and StubGenerator),
+// Some stubs and their associated entries are architecture-specific.
+// They need to be declared in the architecture-specific header file
+// src/cpu/<arch>stubDecolaration_<arch>.cpp. For the blob with name
+// BLOB_NAME the correspnding declarations macro are provided by macro
+// STUBGEN_<BLOB_NAME>_STUBS_ARCH_DO. Arch-specific stubs and entries
+// are declared using the do_stub, repeat_stub, do_arch_entry and
+// do_arch_entry_init templates (see below for details). An
+// architecure also needs to specify architecture parameters used when
+// creating each blob. These are defined using the do_arch_blob
+// template (see below). 
+//
+// Note, the client macro STUBGEN_ALL_DO is provided to allow client
+// code to iterate over all blob, stub or entry declarations. It has
+// only been split into separate per-blob generic submacros,
+// STUBGEN_<BLOB_NAME>_BLOBS_DO and arch-specific per-blob submacros
+// STUBGEN_<BLOB_NAME>_BLOBS_ARCH_DO for convenience, to make it
+// easier to manage definitions. The blob_specific sub-macros should
+// not be called directly by client code (in class StubRoutines and
+// StubGenerator),
 //
 // A client wishing to generate blob, stub or entry code elements is
-// expected to pass template macros as arguments to STUBGEN_ALL_DO
-// which will schedule code generation code for whatever C++ code
+// expected to pass template macros as arguments to STUBGEN_ALL_DO.
+// This will schedule code generation code for whatever C++ code
 // elements are required to implement a declaration or definition
 // relevant to each blob, stub or entry. Alternatively, a client can
 // operate on a subset of the declarations by calling macros
@@ -462,6 +482,27 @@
 // that they receive an extra argument which identifies the current
 // architecture e.g. x86, aarch64 etc.
 
+// Include arch-specific stub and entry declarations and make sure the
+// relevant template macros ahve been defined
+
+#include CPU_HEADER(stubDeclarations)
+
+#ifndef STUBGEN_INITIAL_BLOBS_ARCH_DO
+#error "Arch-specific directory failed to declare required initial stubs and entries"
+#endif
+
+#ifndef STUBGEN_CONTINUATION_BLOBS_ARCH_DO
+#error "Arch-specific directory failed to declare required continuation stubs and entries"
+#endif
+
+#ifndef STUBGEN_COMPILER_BLOBS_ARCH_DO
+#error "Arch-specific directory failed to declare required compiler stubs and entries"
+#endif
+
+#ifndef STUBGEN_FINAL_BLOBS_ARCH_DO
+#error "Arch-specific directory failed to declare required final stubs and entries"
+#endif
+
 // Iterator macros to apply templates to all relevant blobs, stubs and
 // entries. Clients should use STUBGEN_ALL_DO, STUBGEN_BLOBS_DO,
 // STUBGEN_STUBS_DO, STUBGEN_BLOBS_STUBS_DO, STUBGEN_ENTRIES_DO,
@@ -537,53 +578,10 @@
   do_stub(initial, dlibm_tan_cot_huge)                                  \
   do_entry(initial, dlibm_tan_cot_huge, dlibm_tan_cot_huge,             \
            dlibm_tan_cot_huge)                                          \
-  AARCH64_ONLY(                                                         \
-    do_arch_blob(initial, 10000)                                        \
-  )                                                                     \
-  X86_ONLY(                                                             \
-    do_arch_blob(initial, 20000 WINDOWS_ONLY(+1000))                    \
-    do_stub(initial, verify_mxcsr)                                      \
-    do_arch_entry(x86, initial, verify_mxcsr, verify_mxcsr_entry,       \
-                  verify_mxcsr_entry)                                   \
-    LP64_ONLY(                                                          \
-      do_stub(initial, get_previous_sp)                                 \
-      do_arch_entry(x86, initial, get_previous_sp,                      \
-                    get_previous_sp_entry,                              \
-                    get_previous_sp_entry)                              \
-      do_stub(initial, f2i_fixup)                                       \
-      do_arch_entry(x86, initial, f2i_fixup, f2i_fixup, f2i_fixup)      \
-      do_stub(initial, f2l_fixup)                                       \
-      do_arch_entry(x86, initial, f2l_fixup, f2l_fixup, f2l_fixup)      \
-      do_stub(initial, d2i_fixup)                                       \
-      do_arch_entry(x86, initial, d2i_fixup, d2i_fixup, d2i_fixup)      \
-      do_stub(initial, d2l_fixup)                                       \
-      do_arch_entry(x86, initial, d2l_fixup, d2l_fixup, d2l_fixup)      \
-      do_stub(initial, float_sign_mask)                                 \
-      do_arch_entry(x86, initial, float_sign_mask, float_sign_mask,     \
-                    float_sign_mask)                                    \
-      do_stub(initial, float_sign_flip)                                 \
-      do_arch_entry(x86, initial, float_sign_flip, float_sign_flip,     \
-                    float_sign_flip)                                    \
-      do_stub(initial, double_sign_mask)                                \
-      do_arch_entry(x86, initial, double_sign_mask, double_sign_mask,   \
-                    double_sign_mask)                                   \
-      do_stub(initial, double_sign_flip)                                \
-      do_arch_entry(x86, initial, double_sign_flip, double_sign_flip,   \
-                    double_sign_flip)                                   \
-    )                                                                   \
-    NOT_LP64(                                                           \
-      do_stub(initial, verify_fpu_cntrl_word)                           \
-      do_arch_entry(x86, initial, verify_fpu_cntrl_word,                \
-                    verify_fpu_cntrl_wrd_entry,                         \
-                    verify_fpu_cntrl_wrd_entry)                         \
-      do_stub(initial, d2i_wrapper)                                     \
-      do_arch_entry(x86, initial, d2i_wrapper, d2i_wrapper,             \
-                    d2i_wrapper)                                        \
-      do_stub(initial, d2l_wrapper)                                     \
-      do_arch_entry(x86, initial, d2l_wrapper, d2l_wrapper,             \
-                    d2l_wrapper)                                        \
-    )                                                                   \
-  )                                                                     \
+  /* merge in stubs and entries declared in arch header */              \
+  STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub, repeat_stub,                   \
+                                do_arch_blob,                           \
+                                do_arch_entry, do_arch_entry_init)      \
   end_blob(initial)                                                     \
 
 
@@ -604,12 +602,10 @@ do_stub(continuation, cont_returnBarrier)                               \
   do_stub(continuation, cont_returnBarrierExc)                          \
   do_entry(continuation, cont_returnBarrierExc, cont_returnBarrierExc,  \
            cont_returnBarrierExc)                                       \
-  AARCH64_ONLY(                                                         \
-    do_arch_blob(continuation, 2000)                                    \
-  )                                                                     \
-  X86_ONLY(                                                             \
-    do_arch_blob(continuation, 1000 LP64_ONLY(+2000))                   \
-  )                                                                     \
+  /* merge in stubs and entries declared in arch header */              \
+  STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub, repeat_stub,              \
+                                     do_arch_blob,                      \
+                                     do_arch_entry, do_arch_entry_init) \
   end_blob(continuation)                                                \
 
 
@@ -738,230 +734,10 @@ do_stub(continuation, cont_returnBarrier)                               \
   do_stub(compiler, bigIntegerLeftShiftWorker)                          \
   do_entry(compiler, bigIntegerLeftShiftWorker,                         \
            bigIntegerLeftShiftWorker, bigIntegerLeftShift)              \
-  AARCH64_ONLY(                                                         \
-    do_arch_blob(compiler, 30000 ZGC_ONLY(+10000))                      \
-    do_stub(compiler, vector_iota_indices)                              \
-    do_arch_entry(aarch64, compiler, vector_iota_indices,               \
-                  vector_iota_indices, vector_iota_indices)             \
-    do_stub(compiler, large_array_equals)                               \
-    do_arch_entry(aarch64, compiler, large_array_equals,                \
-                  large_array_equals, large_array_equals)               \
-    do_arch_entry(aarch64, compiler, large_arrays_hashcode_boolean,     \
-                  large_arrays_hashcode_boolean,                        \
-                  large_arrays_hashcode_boolean)                        \
-    do_stub(compiler, large_arrays_hashcode_byte)                       \
-    do_arch_entry(aarch64, compiler, large_arrays_hashcode_byte,        \
-                  large_arrays_hashcode_byte,                           \
-                  large_arrays_hashcode_byte)                           \
-    do_stub(compiler, large_arrays_hashcode_char)                       \
-    do_arch_entry(aarch64, compiler, large_arrays_hashcode_char,        \
-                  large_arrays_hashcode_char,                           \
-                  large_arrays_hashcode_char)                           \
-    do_stub(compiler, large_arrays_hashcode_short)                      \
-    do_arch_entry(aarch64, compiler, large_arrays_hashcode_short,       \
-                  large_arrays_hashcode_short,                          \
-                  large_arrays_hashcode_short)                          \
-    do_stub(compiler, large_arrays_hashcode_int)                        \
-    do_arch_entry(aarch64, compiler, large_arrays_hashcode_int,         \
-                  large_arrays_hashcode_int,                            \
-                  large_arrays_hashcode_int)                            \
-    do_stub(compiler, large_byte_array_inflate)                         \
-    do_arch_entry(aarch64, compiler, large_byte_array_inflate,          \
-                  large_byte_array_inflate, large_byte_array_inflate)   \
-    do_stub(compiler, count_positives)                                  \
-    do_arch_entry(aarch64, compiler, count_positives, count_positives,  \
-                  count_positives)                                      \
-    do_stub(compiler, count_positives_long)                             \
-    do_arch_entry(aarch64, compiler, count_positives_long,              \
-                  count_positives_long, count_positives_long)           \
-    do_stub(compiler, compare_long_string_LL)                           \
-    do_arch_entry(aarch64, compiler, compare_long_string_LL,            \
-                  compare_long_string_LL, compare_long_string_LL)       \
-    do_stub(compiler, compare_long_string_UU)                           \
-    do_arch_entry(aarch64, compiler, compare_long_string_UU,            \
-                  compare_long_string_UU, compare_long_string_UU)       \
-    do_stub(compiler, compare_long_string_LU)                           \
-    do_arch_entry(aarch64, compiler, compare_long_string_LU,            \
-                  compare_long_string_LU, compare_long_string_LU)       \
-    do_stub(compiler, compare_long_string_UL)                           \
-    do_arch_entry(aarch64, compiler, compare_long_string_UL,            \
-                  compare_long_string_UL, compare_long_string_UL)       \
-    do_stub(compiler, string_indexof_linear_ll)                         \
-    do_arch_entry(aarch64, compiler, string_indexof_linear_ll,          \
-                  string_indexof_linear_ll, string_indexof_linear_ll)   \
-    do_stub(compiler, string_indexof_linear_uu)                         \
-    do_arch_entry(aarch64, compiler, string_indexof_linear_uu,          \
-                  string_indexof_linear_uu, string_indexof_linear_uu)   \
-    do_stub(compiler, string_indexof_linear_ul)                         \
-    do_arch_entry(aarch64, compiler, string_indexof_linear_ul,          \
-                  string_indexof_linear_ul, string_indexof_linear_ul)   \
-    /* this uses the entry for ghash_processBlocks */                   \
-    do_stub(compiler, ghash_processBlocks_wide)                         \
-  )                                                                     \
-  X86_ONLY(                                                             \
-    do_arch_blob(compiler, 20000 LP64_ONLY(+47000) WINDOWS_ONLY(+2000)) \
-    do_stub(compiler, vector_float_sign_mask)                           \
-    do_arch_entry(x86, compiler, vector_float_sign_mask,                \
-                  vector_float_sign_mask, vector_float_sign_mask)       \
-    do_stub(compiler, vector_float_sign_flip)                           \
-    do_arch_entry(x86, compiler, vector_float_sign_flip,                \
-                  vector_float_sign_flip, vector_float_sign_flip)       \
-    do_stub(compiler, vector_double_sign_mask)                          \
-    do_arch_entry(x86, compiler, vector_double_sign_mask,               \
-                  vector_double_sign_mask, vector_double_sign_mask)     \
-    do_stub(compiler, vector_double_sign_flip)                          \
-    do_arch_entry(x86, compiler, vector_double_sign_flip,               \
-                  vector_double_sign_flip, vector_double_sign_flip)     \
-    do_stub(compiler, vector_all_bits_set)                              \
-    do_arch_entry(x86, compiler, vector_all_bits_set,                   \
-                  vector_all_bits_set, vector_all_bits_set)             \
-    do_stub(compiler, vector_int_mask_cmp_bits)                         \
-    do_arch_entry(x86, compiler, vector_int_mask_cmp_bits,              \
-                  vector_int_mask_cmp_bits, vector_int_mask_cmp_bits)   \
-    do_stub(compiler, vector_short_to_byte_mask)                        \
-    do_arch_entry(x86, compiler, vector_short_to_byte_mask,             \
-                  vector_short_to_byte_mask, vector_short_to_byte_mask) \
-    do_stub(compiler, vector_byte_perm_mask)                            \
-    do_arch_entry(x86, compiler,vector_byte_perm_mask,                  \
-                  vector_byte_perm_mask, vector_byte_perm_mask)         \
-    do_stub(compiler, vector_int_to_byte_mask)                          \
-    do_arch_entry(x86, compiler, vector_int_to_byte_mask,               \
-                  vector_int_to_byte_mask, vector_int_to_byte_mask)     \
-    do_stub(compiler, vector_int_to_short_mask)                         \
-    do_arch_entry(x86, compiler, vector_int_to_short_mask,              \
-                  vector_int_to_short_mask, vector_int_to_short_mask)   \
-    do_stub(compiler, vector_32_bit_mask)                               \
-    do_arch_entry(x86, compiler, vector_32_bit_mask,                    \
-                  vector_32_bit_mask, vector_32_bit_mask)               \
-    do_stub(compiler, vector_64_bit_mask)                               \
-    do_arch_entry(x86, compiler, vector_64_bit_mask,                    \
-                  vector_64_bit_mask, vector_64_bit_mask)               \
-    do_stub(compiler, vector_byte_shuffle_mask)                         \
-    do_arch_entry(x86, compiler, vector_int_shuffle_mask,               \
-                  vector_byte_shuffle_mask, vector_byte_shuffle_mask)   \
-    do_stub(compiler, vector_short_shuffle_mask)                        \
-    do_arch_entry(x86, compiler, vector_int_shuffle_mask,               \
-                  vector_short_shuffle_mask, vector_short_shuffle_mask) \
-    do_stub(compiler, vector_int_shuffle_mask)                          \
-    do_arch_entry(x86, compiler, vector_int_shuffle_mask,               \
-                  vector_int_shuffle_mask, vector_int_shuffle_mask)     \
-    do_stub(compiler, vector_long_shuffle_mask)                         \
-    do_arch_entry(x86, compiler, vector_long_shuffle_mask,              \
-                  vector_long_shuffle_mask, vector_long_shuffle_mask)   \
-    do_stub(compiler, vector_long_sign_mask)                            \
-    do_arch_entry(x86, compiler, vector_long_sign_mask,                 \
-                  vector_long_sign_mask, vector_long_sign_mask)         \
-    do_stub(compiler, vector_iota_indices)                              \
-    do_arch_entry(x86, compiler, vector_iota_indices,                   \
-                  vector_iota_indices, vector_iota_indices)             \
-    do_stub(compiler, vector_count_leading_zeros_lut)                   \
-    do_arch_entry(x86, compiler, vector_count_leading_zeros_lut,        \
-                  vector_count_leading_zeros_lut,                       \
-                  vector_count_leading_zeros_lut)                       \
-    do_stub(compiler, vector_reverse_bit_lut)                           \
-    do_arch_entry(x86, compiler, vector_reverse_bit_lut,                \
-                  vector_reverse_bit_lut, vector_reverse_bit_lut)       \
-    do_stub(compiler, vector_reverse_byte_perm_mask_long)               \
-    do_arch_entry(x86, compiler, vector_reverse_byte_perm_mask_short,   \
-                  vector_reverse_byte_perm_mask_short,                  \
-                  vector_reverse_byte_perm_mask_short)                  \
-    do_arch_entry(x86, compiler, vector_reverse_byte_perm_mask_int,     \
-                  vector_reverse_byte_perm_mask_int,                    \
-                  vector_reverse_byte_perm_mask_int)                    \
-    do_arch_entry(x86, compiler, vector_reverse_byte_perm_mask_long,    \
-                  vector_reverse_byte_perm_mask_long,                   \
-                  vector_reverse_byte_perm_mask_long)                   \
-    do_stub(compiler, vector_popcount_lut)                              \
-    do_arch_entry(x86, compiler, vector_popcount_lut,                   \
-                  vector_popcount_lut, vector_popcount_lut)             \
-    do_stub(compiler, upper_word_mask)                                  \
-    do_arch_entry(x86, compiler, upper_word_mask, upper_word_mask_addr, \
-                  upper_word_mask_addr)                                 \
-    do_stub(compiler, shuffle_byte_flip_mask)                           \
-    do_arch_entry(x86, compiler, shuffle_byte_flip_mask,                \
-                  shuffle_byte_flip_mask_addr,                          \
-                  shuffle_byte_flip_mask_addr)                          \
-    do_stub(compiler, pshuffle_byte_flip_mask)                          \
-    do_arch_entry(x86, compiler, pshuffle_byte_flip_mask,               \
-                  pshuffle_byte_flip_mask_addr,                         \
-                  pshuffle_byte_flip_mask_addr)                         \
-    LP64_ONLY(                                                          \
-      /* x86_64 exposes these 3 stubs via a generic entry array */      \
-      /* oher arches use arch-specific entries */                       \
-      /* this really needs rationalising */                             \
-      do_stub(compiler, string_indexof_linear_ll)                       \
-      do_stub(compiler, string_indexof_linear_uu)                       \
-      do_stub(compiler, string_indexof_linear_ul)                       \
-      do_stub(compiler, pshuffle_byte_flip_mask_sha512)                 \
-      do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,      \
-                    pshuffle_byte_flip_mask_addr_sha512,                \
-                    pshuffle_byte_flip_mask_addr_sha512)                \
-      do_stub(compiler, compress_perm_table32)                          \
-      do_arch_entry(x86, compiler, compress_perm_table32,               \
-                    compress_perm_table32, compress_perm_table32)       \
-      do_stub(compiler, compress_perm_table64)                          \
-      do_arch_entry(x86, compiler, compress_perm_table64,               \
-                    compress_perm_table64, compress_perm_table64)       \
-      do_stub(compiler, expand_perm_table32)                            \
-      do_arch_entry(x86, compiler, expand_perm_table32,                 \
-                    expand_perm_table32, expand_perm_table32)           \
-      do_stub(compiler, expand_perm_table64)                            \
-      do_arch_entry(x86, compiler, expand_perm_table64,                 \
-                    expand_perm_table64, expand_perm_table64)           \
-      do_stub(compiler, avx2_shuffle_base64)                            \
-      do_arch_entry(x86, compiler, avx2_shuffle_base64,                 \
-                    avx2_shuffle_base64, base64_avx2_shuffle_addr)      \
-      do_stub(compiler, avx2_input_mask_base64)                         \
-      do_arch_entry(x86, compiler, avx2_input_mask_base64,              \
-                    avx2_input_mask_base64,                             \
-                    base64_avx2_input_mask_addr)                        \
-      do_stub(compiler, avx2_lut_base64)                                \
-      do_arch_entry(x86, compiler, avx2_lut_base64,                     \
-                    avx2_lut_base64, base64_avx2_lut_addr)              \
-      do_stub(compiler, avx2_decode_tables_base64)                      \
-      do_arch_entry(x86, compiler, avx2_decode_tables_base64,           \
-                    avx2_decode_tables_base64,                          \
-                    base64_AVX2_decode_tables_addr)                     \
-      do_stub(compiler, avx2_decode_lut_tables_base64)                  \
-      do_arch_entry(x86, compiler, avx2_decode_lut_tables_base64,       \
-                    avx2_decode_lut_tables_base64,                      \
-                    base64_AVX2_decode_LUT_tables_addr)                 \
-      do_stub(compiler, shuffle_base64)                                 \
-      do_arch_entry(x86, compiler, shuffle_base64, shuffle_base64,      \
-                    base64_shuffle_addr)                                \
-      do_stub(compiler, lookup_lo_base64)                               \
-      do_arch_entry(x86, compiler, lookup_lo_base64, lookup_lo_base64,  \
-                    base64_vbmi_lookup_lo_addr)                         \
-      do_stub(compiler, lookup_hi_base64)                               \
-      do_arch_entry(x86, compiler, lookup_hi_base64, lookup_hi_base64,  \
-                    base64_vbmi_lookup_hi_addr)                         \
-      do_stub(compiler, lookup_lo_base64url)                            \
-      do_arch_entry(x86, compiler, lookup_lo_base64url,                 \
-                    lookup_lo_base64url,                                \
-                    base64_vbmi_lookup_lo_url_addr)                     \
-      do_stub(compiler, lookup_hi_base64url)                            \
-      do_arch_entry(x86, compiler, lookup_hi_base64url,                 \
-                    lookup_hi_base64url,                                \
-                    base64_vbmi_lookup_hi_url_addr)                     \
-      do_stub(compiler, pack_vec_base64)                                \
-      do_arch_entry(x86, compiler, pack_vec_base64, pack_vec_base64,    \
-                    base64_vbmi_pack_vec_addr)                          \
-      do_stub(compiler, join_0_1_base64)                                \
-      do_arch_entry(x86, compiler, join_0_1_base64, join_0_1_base64,    \
-                    base64_vbmi_join_0_1_addr)                          \
-      do_arch_entry(x86, compiler, join_1_2_base64, join_1_2_base64,    \
-                    base64_vbmi_join_1_2_addr)                          \
-      do_stub(compiler, join_2_3_base64)                                \
-      do_arch_entry(x86, compiler, join_2_3_base64, join_2_3_base64,    \
-                    base64_vbmi_join_2_3_addr)                          \
-      do_stub(compiler, encoding_table_base64)                          \
-      do_arch_entry(x86, compiler, encoding_table_base64,               \
-                    encoding_table_base64, base64_encoding_table_addr)  \
-      do_stub(compiler, decoding_table_base64)                          \
-      do_arch_entry(x86, compiler, decoding_table_base64,               \
-                    decoding_table_base64, base64_decoding_table_addr)  \
-    )                                                                   \
-  )                                                                     \
+  /* merge in stubs and entries declared in arch header */              \
+  STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub, repeat_stub,                  \
+                                     do_arch_blob,                      \
+                                     do_arch_entry, do_arch_entry_init) \
   end_blob(compiler)                                                    \
 
 
@@ -1120,37 +896,10 @@ do_stub(continuation, cont_returnBarrier)                               \
   do_entry(final, lookup_secondary_supers_table_slow_path,              \
            lookup_secondary_supers_table_slow_path_stub,                \
            lookup_secondary_supers_table_slow_path_stub)                \
-  AARCH64_ONLY(                                                         \
-    do_arch_blob(final, 20000 ZGC_ONLY(+100000))                        \
-    do_stub(final, copy_byte_f)                                         \
-    do_arch_entry(aarch64, final, copy_byte_f, copy_byte_f,             \
-                  copy_byte_f)                                          \
-    do_stub(final, copy_byte_b)                                         \
-    do_arch_entry(aarch64, final, copy_byte_b, copy_byte_b,             \
-                  copy_byte_b)                                          \
-    do_stub(final, copy_oop_f)                                          \
-    do_arch_entry(aarch64, final, copy_oop_f, copy_oop_f, copy_oop_f)   \
-    do_stub(final, copy_oop_b)                                          \
-    do_arch_entry(aarch64, final, copy_oop_b, copy_oop_b, copy_oop_b)   \
-    do_stub(final, copy_oop_uninit_f)                                   \
-    do_arch_entry(aarch64, final, copy_oop_uninit_f, copy_oop_uninit_f, \
-                  copy_oop_uninit_f)                                    \
-    do_stub(final, copy_oop_uninit_b)                                   \
-    do_arch_entry(aarch64, final, copy_oop_uninit_b, copy_oop_uninit_b, \
-                  copy_oop_uninit_b)                                    \
-    do_stub(final, zero_blocks)                                         \
-    do_arch_entry(aarch64, final, zero_blocks, zero_blocks,             \
-                  zero_blocks)                                          \
-    do_stub(final, spin_wait)                                           \
-    do_arch_entry_init(aarch64, final, spin_wait, spin_wait,            \
-                       spin_wait, empty_spin_wait)                      \
-    /* atomic entries are not stored in class StubRoutines::aarch64 */  \
-    do_stub(final, atomic_entry_points)                                 \
-  )                                                                     \
-  X86_ONLY(                                                             \
-    do_arch_blob(final, 10000 LP64_ONLY(+20000)                         \
-                        WINDOWS_ONLY(+2000) ZGC_ONLY(+20000))           \
-  )                                                                     \
+  /* merge in stubs and entries declared in arch header */              \
+  STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub, repeat_stub,                     \
+                              do_arch_blob,                             \
+                              do_arch_entry, do_arch_entry_init)        \
   end_blob(final)                                                       \
 
 
