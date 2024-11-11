@@ -563,6 +563,8 @@ javax/management/monitor/DerivedGaugeMonitorTest.java           8042211 generic-
 
 javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 linux-all
 
+javax/management/remote/mandatory/notif/EmptyDomainNotificationTest.java 8343838 generic-all
+
 ############################################################################
 
 # jdk_net
