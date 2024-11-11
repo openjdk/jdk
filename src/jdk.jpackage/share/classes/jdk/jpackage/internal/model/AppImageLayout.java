@@ -25,6 +25,7 @@
 package jdk.jpackage.internal.model;
 
 
+import java.lang.reflect.Modifier;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,32 +56,24 @@ public interface AppImageLayout {
         }
     }
 
-    class Proxy<T extends AppImageLayout> extends ProxyBase<T> implements AppImageLayout {
-
-        public Proxy(T target) {
-            super(target);
-        }
-
-        @Override
-        final public Path runtimeDirectory() {
-            return target.runtimeDirectory();
-        }
-
-        @Override
-        public AppImageLayout resolveAt(Path root) {
-            return target.resolveAt(root);
-        }
-    }
-
     public static PathGroup toPathGroup(AppImageLayout appImageLayout) {
-        return new PathGroup(Stream.of(appImageLayout.getClass().getMethods()).filter(m -> {
-            return m.getReturnType().isAssignableFrom(Path.class) && m.getParameterCount() == 0;
-        }).<Map.Entry<String, Path>>mapMulti((m, consumer) -> {
-            Optional.ofNullable(toFunction(m::invoke).apply(appImageLayout)).ifPresent(path -> {
-                consumer.accept(Map.entry(m.getName(), (Path)path));
-            });
-        }).collect(HashMap::new, (ctnr, e) -> {
-            ctnr.put(e.getKey(), e.getValue());
-        }, Map::putAll));
+        return new PathGroup(Stream.of(appImageLayout.getClass().getInterfaces())
+                // For all interfaces (it should be one, but multiple is OK) 
+                // extending AppImageLayout interface call all non-static methods 
+                // without parameters and with java.nio.file.Path return type.
+                // Create a map from the names of methods called and return values.
+                .filter(AppImageLayout.class::isAssignableFrom)
+                .map(Class::getMethods)
+                .flatMap(Stream::of)
+                .filter(m -> !Modifier.isStatic(m.getModifiers()))
+                .filter(m -> {
+                    return m.getReturnType().isAssignableFrom(Path.class) && m.getParameterCount() == 0;
+                }).<Map.Entry<String, Path>>mapMulti((m, consumer) -> {
+                    Optional.ofNullable(toFunction(m::invoke).apply(appImageLayout)).ifPresent(path -> {
+                        consumer.accept(Map.entry(m.getName(), (Path)path));
+                    });
+                }).collect(HashMap::new, (ctnr, e) -> {
+                    ctnr.put(e.getKey(), e.getValue());
+                }, Map::putAll));
     }
 }
