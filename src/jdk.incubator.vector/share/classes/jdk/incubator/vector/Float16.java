@@ -25,6 +25,7 @@
 
 package jdk.incubator.vector;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -32,6 +33,8 @@ import java.math.BigInteger;
 
 import static java.lang.Float.float16ToFloat;
 import static java.lang.Float.floatToFloat16;
+import static java.lang.Integer.numberOfLeadingZeros;
+import static java.lang.Math.multiplyHigh;
 
 /**
  * The {@code Float16} is a class holding 16-bit data
@@ -230,9 +233,7 @@ public final class Float16
      * @see java.lang.Float#toString(float)
      */
     public static String toString(Float16 f16) {
-        // FIXME -- update for Float16 precision
-        return Float.toString(f16.floatValue());
-        // return FloatToDecimal.toString(f16.floatValue());
+         return Float16ToDecimal.toString(f16);
     }
 
     /**
@@ -1664,4 +1665,650 @@ public final class Float16
     public static Float16 signum(Float16 f) {
         return (f.floatValue() == 0.0f || isNaN(f)) ? f : copySign(valueOf(1), f);
     }
+
+    /* TODO Temporary hack while Float16 resides in incubator */
+    private static final class Float16ToDecimal {
+        /*
+         * For full details about this code see the following references:
+         *
+         * [1] Giulietti, "The Schubfach way to render doubles",
+         *     https://drive.google.com/file/d/1gp5xv4CAa78SVgCeWfGqqI4FfYYYuNFb
+         *
+         * [2] IEEE Computer Society, "IEEE Standard for Floating-Point Arithmetic"
+         *
+         * [3] Bouvier & Zimmermann, "Division-Free Binary-to-Decimal Conversion"
+         *
+         * Divisions are avoided altogether for the benefit of those architectures
+         * that do not provide specific machine instructions or where they are slow.
+         * This is discussed in section 10 of [1].
+         */
+
+        /* The precision in bits */
+        static final int P = PRECISION;
+
+        /* Exponent width in bits */
+        private static final int W = (Float16.SIZE - 1) - (P - 1);
+
+        /* Minimum value of the exponent: -(2^(W-1)) - P + 3 */
+        static final int Q_MIN = (-1 << (W - 1)) - P + 3;
+
+        /* Maximum value of the exponent: 2^(W-1) - P */
+        static final int Q_MAX = (1 << (W - 1)) - P;
+
+        /* 10^(E_MIN - 1) <= MIN_VALUE < 10^E_MIN */
+        static final int E_MIN = -7;
+
+        /* 10^(E_MAX - 1) <= MAX_VALUE < 10^E_MAX */
+        static final int E_MAX = 5;
+
+        /* Threshold to detect tiny values, as in section 8.2.1 of [1] */
+        static final int C_TINY = 2;
+
+        /* The minimum and maximum k, as in section 8 of [1] */
+        static final int K_MIN = -8;
+        static final int K_MAX = 1;
+
+        /* H is as in section 8.1 of [1] */
+        static final int H = 5;
+
+        /* Minimum value of the significand of a normal value: 2^(P-1) */
+        private static final int C_MIN = 1 << (P - 1);
+
+        /* Mask to extract the biased exponent */
+        private static final int BQ_MASK = (1 << W) - 1;
+
+        /* Mask to extract the fraction bits */
+        private static final int T_MASK = (1 << (P - 1)) - 1;
+
+        /* Used in rop() */
+        private static final long MASK_32 = (1L << 32) - 1;
+
+        /* Used for left-to-tight digit extraction */
+        private static final int MASK_15 = (1 << 15) - 1;
+
+        private static final int NON_SPECIAL    = 0;
+        private static final int PLUS_ZERO      = 1;
+        private static final int MINUS_ZERO     = 2;
+        private static final int PLUS_INF       = 3;
+        private static final int MINUS_INF      = 4;
+        private static final int NAN            = 5;
+
+        /*
+         * Room for the longer of the forms
+         *     -ddd.dd      H + 2 characters
+         *     -ddddd.0     H + 3 characters
+         *     -0.00ddddd   H + 5 characters
+         *     -d.ddddE-e   H + 5 characters
+         * where there are H digits d
+         */
+        public static final int MAX_CHARS = H + 5;
+
+        private final byte[] bytes = new byte[MAX_CHARS];
+
+        /* Index into bytes of rightmost valid character */
+        private int index;
+
+        private Float16ToDecimal() {
+        }
+
+        /**
+         * Returns a string representation of the {@code Float16}
+         * argument. All characters mentioned below are ASCII characters.
+         *
+         * @param   v   the {@code Float16} to be converted.
+         * @return a string representation of the argument.
+         * @see Float16#toString(Float16)
+         */
+        public static String toString(Float16 v) {
+            return new Float16ToDecimal().toDecimalString(v);
+        }
+
+        /**
+         * Appends the rendering of the {@code v} to {@code app}.
+         *
+         * <p>The outcome is the same as if {@code v} were first
+         * {@link #toString(Float16) rendered} and the resulting string were then
+         * {@link Appendable#append(CharSequence) appended} to {@code app}.
+         *
+         * @param v the {@code Float16} whose rendering is appended.
+         * @param app the {@link Appendable} to append to.
+         * @throws IOException If an I/O error occurs
+         */
+        public static Appendable appendTo(Float16 v, Appendable app)
+                throws IOException {
+            return new Float16ToDecimal().appendDecimalTo(v, app);
+        }
+
+        private String toDecimalString(Float16 v) {
+            return switch (toDecimal(v)) {
+                case NON_SPECIAL -> charsToString();
+                case PLUS_ZERO -> "0.0";
+                case MINUS_ZERO -> "-0.0";
+                case PLUS_INF -> "Infinity";
+                case MINUS_INF -> "-Infinity";
+                default -> "NaN";
+            };
+        }
+
+        private Appendable appendDecimalTo(Float16 v, Appendable app)
+                throws IOException {
+            switch (toDecimal(v)) {
+                case NON_SPECIAL:
+                    char[] chars = new char[index + 1];
+                    for (int i = 0; i < chars.length; ++i) {
+                        chars[i] = (char) bytes[i];
+                    }
+                    if (app instanceof StringBuilder builder) {
+                        return builder.append(chars);
+                    }
+                    if (app instanceof StringBuffer buffer) {
+                        return buffer.append(chars);
+                    }
+                    for (char c : chars) {
+                        app.append(c);
+                    }
+                    return app;
+                case PLUS_ZERO: return app.append("0.0");
+                case MINUS_ZERO: return app.append("-0.0");
+                case PLUS_INF: return app.append("Infinity");
+                case MINUS_INF: return app.append("-Infinity");
+                default: return app.append("NaN");
+            }
+        }
+
+        /*
+         * Returns
+         *     PLUS_ZERO       iff v is 0.0
+         *     MINUS_ZERO      iff v is -0.0
+         *     PLUS_INF        iff v is POSITIVE_INFINITY
+         *     MINUS_INF       iff v is NEGATIVE_INFINITY
+         *     NAN             iff v is NaN
+         */
+        private int toDecimal(Float16 v) {
+            /*
+             * For full details see references [2] and [1].
+             *
+             * For finite v != 0, determine integers c and q such that
+             *     |v| = c 2^q    and
+             *     Q_MIN <= q <= Q_MAX    and
+             *         either    2^(P-1) <= c < 2^P                 (normal)
+             *         or        0 < c < 2^(P-1)  and  q = Q_MIN    (subnormal)
+             */
+            int bits = float16ToRawShortBits(v);
+            int t = bits & T_MASK;
+            int bq = (bits >>> P - 1) & BQ_MASK;
+            if (bq < BQ_MASK) {
+                index = -1;
+                if (bits < 0) {
+                    append('-');
+                }
+                if (bq != 0) {
+                    /* normal value. Here mq = -q */
+                    int mq = -Q_MIN + 1 - bq;
+                    int c = C_MIN | t;
+                    /* The fast path discussed in section 8.3 of [1] */
+                    if (0 < mq & mq < P) {
+                        int f = c >> mq;
+                        if (f << mq == c) {
+                            return toChars(f, 0);
+                        }
+                    }
+                    return toDecimal(-mq, c, 0);
+                }
+                if (t != 0) {
+                    /* subnormal value */
+                    return t < C_TINY
+                            ? toDecimal(Q_MIN, 10 * t, -1)
+                            : toDecimal(Q_MIN, t, 0);
+                }
+                return bits == 0 ? PLUS_ZERO : MINUS_ZERO;
+            }
+            if (t != 0) {
+                return NAN;
+            }
+            return bits > 0 ? PLUS_INF : MINUS_INF;
+        }
+
+        private int toDecimal(int q, int c, int dk) {
+            /*
+             * The skeleton corresponds to figure 7 of [1].
+             * The efficient computations are those summarized in figure 9.
+             * Also check the appendix.
+             *
+             * Here's a correspondence between Java names and names in [1],
+             * expressed as approximate LaTeX source code and informally.
+             * Other names are identical.
+             * cb:     \bar{c}     "c-bar"
+             * cbr:    \bar{c}_r   "c-bar-r"
+             * cbl:    \bar{c}_l   "c-bar-l"
+             *
+             * vb:     \bar{v}     "v-bar"
+             * vbr:    \bar{v}_r   "v-bar-r"
+             * vbl:    \bar{v}_l   "v-bar-l"
+             *
+             * rop:    r_o'        "r-o-prime"
+             */
+            int out = c & 0x1;
+            long cb = c << 2;
+            long cbr = cb + 2;
+            long cbl;
+            int k;
+            /*
+             * flog10pow2(e) = floor(log_10(2^e))
+             * flog10threeQuartersPow2(e) = floor(log_10(3/4 2^e))
+             * flog2pow10(e) = floor(log_2(10^e))
+             */
+            if (c != C_MIN | q == Q_MIN) {
+                /* regular spacing */
+                cbl = cb - 2;
+                k = MathUtils.flog10pow2(q);
+            } else {
+                /* irregular spacing */
+                cbl = cb - 1;
+                k = MathUtils.flog10threeQuartersPow2(q);
+            }
+            int h = q + MathUtils.flog2pow10(-k) + 33;
+
+            /* g is as in the appendix */
+            long g = MathUtils.g1(k) + 1;
+
+            int vb = rop(g, cb << h);
+            int vbl = rop(g, cbl << h);
+            int vbr = rop(g, cbr << h);
+
+            int s = vb >> 2;
+            if (s >= 100) {
+                /*
+                 * For n = 5, m = 1 the discussion in section 10 of [1] shows
+                 *     s' = floor(s / 10) = floor(s 52_429 / 2^19)
+                 *
+                 * sp10 = 10 s'
+                 * tp10 = 10 t'
+                 * upin    iff    u' = sp10 10^k in Rv
+                 * wpin    iff    w' = tp10 10^k in Rv
+                 * See section 9.3 of [1].
+                 */
+                int sp10 = 10 * (int) (s * 52_429L >>> 19);
+                int tp10 = sp10 + 10;
+                boolean upin = vbl + out <= sp10 << 2;
+                boolean wpin = (tp10 << 2) + out <= vbr;
+                if (upin != wpin) {
+                    return toChars(upin ? sp10 : tp10, k);
+                }
+            }
+
+            /*
+             * 10 <= s < 100    or    s >= 100  and  u', w' not in Rv
+             * uin    iff    u = s 10^k in Rv
+             * win    iff    w = t 10^k in Rv
+             * See section 9.3 of [1].
+             */
+            int t = s + 1;
+            boolean uin = vbl + out <= s << 2;
+            boolean win = (t << 2) + out <= vbr;
+            if (uin != win) {
+                /* Exactly one of u or w lies in Rv */
+                return toChars(uin ? s : t, k + dk);
+            }
+            /*
+             * Both u and w lie in Rv: determine the one closest to v.
+             * See section 9.3 of [1].
+             */
+            int cmp = vb - (s + t << 1);
+            return toChars(cmp < 0 || cmp == 0 && (s & 0x1) == 0 ? s : t, k + dk);
+        }
+
+        /*
+         * Computes rop(cp g 2^(-95))
+         * See appendix and figure 11 of [1].
+         */
+        private static int rop(long g, long cp) {
+            long x1 = multiplyHigh(g, cp);
+            long vbp = x1 >>> 31;
+            return (int) (vbp | (x1 & MASK_32) + MASK_32 >>> 32);
+        }
+
+        /*
+         * Formats the decimal f 10^e.
+         */
+        private int toChars(int f, int e) {
+            /*
+             * For details not discussed here see section 10 of [1].
+             *
+             * Determine len such that
+             *     10^(len-1) <= f < 10^len
+             */
+            int len = MathUtils.flog10pow2(Integer.SIZE - numberOfLeadingZeros(f));
+            if (f >= MathUtils.pow10(len)) {
+                len += 1;
+            }
+
+            /*
+             * Let fp and ep be the original f and e, respectively.
+             * Transform f and e to ensure
+             *     10^(H-1) <= f < 10^H
+             *     fp 10^ep = f 10^(e-H) = 0.f 10^e
+             */
+            f *= (int)MathUtils.pow10(H - len);
+            e += len;
+
+            /*
+             * The toChars?() methods perform left-to-right digits extraction
+             * using ints, provided that the arguments are limited to 8 digits.
+             * Therefore, split the H = 9 digits of f into:
+             *     h = the most significant digit of f
+             *     l = the last 4, least significant digits of f
+             *
+             * For n = 5, m = 4 the discussion in section 10 of [1] shows
+             *     floor(f / 10^4) = floor(107_375L f / 2^30)
+             */
+            int h = (int) (f * 107_375L >>> 30);
+            int l = f - 10_000 * h;
+
+            if (0 < e && e <= 7) {
+                return toChars1(h, l, e);
+            }
+            if (-3 < e && e <= 0) {
+                return toChars2(h, l, e);
+            }
+            return toChars3(h, l, e);
+        }
+
+        private int toChars1(int h, int l, int e) {
+            /*
+             * 0 < e <= 7: plain format without leading zeroes.
+             * Left-to-right digits extraction:
+             * algorithm 1 in [3], with b = 10, k = 4, n = 15.
+             */
+            appendDigit(h);
+            int y = y(l);
+            int t;
+            int i = 1;
+            for (; i < e; ++i) {
+                t = 10 * y;
+                appendDigit(t >>> 15);
+                y = t & MASK_15;
+            }
+            append('.');
+            for (; i <= 4; ++i) {
+                t = 10 * y;
+                appendDigit(t >>> 15);
+                y = t & MASK_15;
+            }
+            /*
+             * As H = 5 < 7, where 7 is the threshold for plain format without
+             * leading zeros, it can happen that the 2nd loop above is not executed.
+             * The following line ensures the presence of a digit to the right
+             * of the decimal point.
+             */
+            appendDigit(0);
+            removeTrailingZeroes();
+            return NON_SPECIAL;
+        }
+
+        private int toChars2(int h, int l, int e) {
+            /* -3 < e <= 0: plain format with leading zeroes */
+            appendDigit(0);
+            append('.');
+            for (; e < 0; ++e) {
+                appendDigit(0);
+            }
+            appendDigit(h);
+            append4Digits(l);
+            removeTrailingZeroes();
+            return NON_SPECIAL;
+        }
+
+        private int toChars3(int h, int l, int e) {
+            /* -3 >= e | e > 7: computerized scientific notation */
+            appendDigit(h);
+            append('.');
+            append4Digits(l);
+            removeTrailingZeroes();
+            exponent(e - 1);
+            return NON_SPECIAL;
+        }
+
+        private void append4Digits(int m) {
+            /*
+             * Left-to-right digits extraction:
+             * algorithm 1 in [3], with b = 10, k = 4, n = 15.
+             */
+            int y = y(m);
+            for (int i = 0; i < 4; ++i) {
+                int t = 10 * y;
+                appendDigit(t >>> 15);
+                y = t & MASK_15;
+            }
+        }
+
+        private void removeTrailingZeroes() {
+            while (bytes[index] == '0') {
+                --index;
+            }
+            /* ... but do not remove the one directly to the right of '.' */
+            if (bytes[index] == '.') {
+                ++index;
+            }
+        }
+
+        private int y(int a) {
+            /*
+             * Algorithm 1 in [3] needs computation of
+             *     floor((a + 1) 2^n / b^k) - 1
+             * with a < 10^4, b = 10, k = 4, n = 15.
+             * Noting that
+             *     (a + 1) 2^n <= 10^4 2^15 < 10^9
+             * For n = 9, m = 4 the discussion in section 10 of [1] leads to:
+             */
+            return (int) (((a + 1) << 15) * 1_759_218_605L >>> 44) - 1;
+        }
+
+        private void exponent(int e) {
+            append('E');
+            if (e < 0) {
+                append('-');
+                e = -e;
+            }
+            appendDigit(e);
+        }
+
+        private void append(int c) {
+            bytes[++index] = (byte) c;
+        }
+
+        private void appendDigit(int d) {
+            bytes[++index] = (byte) ('0' + d);
+        }
+
+        /* Using the deprecated constructor enhances performance */
+        @SuppressWarnings("deprecation")
+        private String charsToString() {
+            return new String(bytes, 0, 0, index + 1);
+        }
+
+    }
+
+    /* TODO Temporary hack while Float16 resides in incubator */
+
+    /**
+     * This class exposes package private utilities for other classes.
+     * Thus, all methods are assumed to be invoked with correct arguments,
+     * so these are not checked at all.
+     */
+    private static final class MathUtils {
+        /*
+         * For full details about this code see the following reference:
+         *
+         *     Giulietti, "The Schubfach way to render doubles",
+         *     https://drive.google.com/file/d/1gp5xv4CAa78SVgCeWfGqqI4FfYYYuNFb
+         */
+
+        /*
+         * The boundaries for k in g0(int) and g1(int).
+         * K_MIN must be DoubleToDecimal.K_MIN or less.
+         * K_MAX must be DoubleToDecimal.K_MAX or more.
+         */
+        static final int K_MIN = -8;
+        static final int K_MAX = 1;
+
+        /* Must be DoubleToDecimal.H or more */
+        static final int H = 17;
+
+        /* C_10 = floor(log10(2) * 2^Q_10), A_10 = floor(log10(3/4) * 2^Q_10) */
+        private static final int Q_10 = 41;
+        private static final long C_10 = 661_971_961_083L;
+        private static final long A_10 = -274_743_187_321L;
+
+        /* C_2 = floor(log2(10) * 2^Q_2) */
+        private static final int Q_2 = 38;
+        private static final long C_2 = 913_124_641_741L;
+
+        private MathUtils() {
+            throw new RuntimeException("not supposed to be instantiated.");
+        }
+
+        /* The first powers of 10. The last entry must be 10^(DoubleToDecimal.H) */
+        private static final long[] pow10 = {
+                1L,
+                10L,
+                100L,
+                1_000L,
+                10_000L,
+                100_000L,
+                1_000_000L,
+                10_000_000L,
+                100_000_000L,
+                1_000_000_000L,
+                10_000_000_000L,
+                100_000_000_000L,
+                1_000_000_000_000L,
+                10_000_000_000_000L,
+                100_000_000_000_000L,
+                1_000_000_000_000_000L,
+                10_000_000_000_000_000L,
+                100_000_000_000_000_000L,
+        };
+
+        /**
+         * Returns 10<sup>{@code e}</sup>.
+         *
+         * @param e The exponent which must meet
+         *          0 &le; {@code e} &le; {@link #H}.
+         * @return 10<sup>{@code e}</sup>.
+         */
+        static long pow10(int e) {
+            return pow10[e];
+        }
+
+        /**
+         * Returns the unique integer <i>k</i> such that
+         * 10<sup><i>k</i></sup> &le; 2<sup>{@code e}</sup>
+         * &lt; 10<sup><i>k</i>+1</sup>.
+         * <p>
+         * The result is correct when |{@code e}| &le; 6_432_162.
+         * Otherwise the result is undefined.
+         *
+         * @param e The exponent of 2, which should meet
+         *          |{@code e}| &le; 6_432_162 for safe results.
+         * @return &lfloor;log<sub>10</sub>2<sup>{@code e}</sup>&rfloor;.
+         */
+        static int flog10pow2(int e) {
+            return (int) (e * C_10 >> Q_10);
+        }
+
+        /**
+         * Returns the unique integer <i>k</i> such that
+         * 10<sup><i>k</i></sup> &le; 3/4 &middot; 2<sup>{@code e}</sup>
+         * &lt; 10<sup><i>k</i>+1</sup>.
+         * <p>
+         * The result is correct when
+         * -3_606_689 &le; {@code e} &le; 3_150_619.
+         * Otherwise the result is undefined.
+         *
+         * @param e The exponent of 2, which should meet
+         *          -3_606_689 &le; {@code e} &le; 3_150_619 for safe results.
+         * @return &lfloor;log<sub>10</sub>(3/4 &middot;
+         * 2<sup>{@code e}</sup>)&rfloor;.
+         */
+        static int flog10threeQuartersPow2(int e) {
+            return (int) (e * C_10 + A_10 >> Q_10);
+        }
+
+        /**
+         * Returns the unique integer <i>k</i> such that
+         * 2<sup><i>k</i></sup> &le; 10<sup>{@code e}</sup>
+         * &lt; 2<sup><i>k</i>+1</sup>.
+         * <p>
+         * The result is correct when |{@code e}| &le; 1_838_394.
+         * Otherwise the result is undefined.
+         *
+         * @param e The exponent of 10, which should meet
+         *          |{@code e}| &le; 1_838_394 for safe results.
+         * @return &lfloor;log<sub>2</sub>10<sup>{@code e}</sup>&rfloor;.
+         */
+        static int flog2pow10(int e) {
+            return (int) (e * C_2 >> Q_2);
+        }
+
+        /**
+         * Let 10<sup>-{@code k}</sup> = <i>&beta;</i> 2<sup><i>r</i></sup>,
+         * for the unique pair of integer <i>r</i> and real <i>&beta;</i> meeting
+         * 2<sup>125</sup> &le; <i>&beta;</i> &lt; 2<sup>126</sup>.
+         * Further, let <i>g</i> = &lfloor;<i>&beta;</i>&rfloor; + 1.
+         * Split <i>g</i> into the higher 63 bits <i>g</i><sub>1</sub> and
+         * the lower 63 bits <i>g</i><sub>0</sub>. Thus,
+         * <i>g</i><sub>1</sub> =
+         * &lfloor;<i>g</i> 2<sup>-63</sup>&rfloor;
+         * and
+         * <i>g</i><sub>0</sub> =
+         * <i>g</i> - <i>g</i><sub>1</sub> 2<sup>63</sup>.
+         * <p>
+         * This method returns <i>g</i><sub>1</sub> while
+         * {@link #g0(int)} returns <i>g</i><sub>0</sub>.
+         * <p>
+         * If needed, the exponent <i>r</i> can be computed as
+         * <i>r</i> = {@code flog2pow10(-k)} - 125 (see {@link #flog2pow10(int)}).
+         *
+         * @param k The exponent of 10, which must meet
+         *          {@link #K_MIN} &le; {@code e} &le; {@link #K_MAX}.
+         * @return <i>g</i><sub>1</sub> as described above.
+         */
+        static long g1(int k) {
+            return g[k - K_MIN << 1];
+        }
+
+        /**
+         * Returns <i>g</i><sub>0</sub> as described in
+         * {@link #g1(int)}.
+         *
+         * @param k The exponent of 10, which must meet
+         *          {@link #K_MIN} &le; {@code e} &le; {@link #K_MAX}.
+         * @return <i>g</i><sub>0</sub> as described in
+         * {@link #g1(int)}.
+         */
+        static long g0(int k) {
+            return g[k - K_MIN << 1 | 1];
+        }
+
+        /*
+         * The precomputed values for g1(int) and g0(int).
+         * The first entry must be for an exponent of K_MIN or less.
+         * The last entry must be for an exponent of K_MAX or more.
+         */
+        private static final long[] g = {
+                0x5F5E_1000_0000_0000L, 0x0000_0000_0000_0001L, //   -8
+                0x4C4B_4000_0000_0000L, 0x0000_0000_0000_0001L, //   -7
+                0x7A12_0000_0000_0000L, 0x0000_0000_0000_0001L, //   -6
+                0x61A8_0000_0000_0000L, 0x0000_0000_0000_0001L, //   -5
+                0x4E20_0000_0000_0000L, 0x0000_0000_0000_0001L, //   -4
+                0x7D00_0000_0000_0000L, 0x0000_0000_0000_0001L, //   -3
+                0x6400_0000_0000_0000L, 0x0000_0000_0000_0001L, //   -2
+                0x5000_0000_0000_0000L, 0x0000_0000_0000_0001L, //   -1
+                0x4000_0000_0000_0000L, 0x0000_0000_0000_0001L, //    0
+                0x6666_6666_6666_6666L, 0x3333_3333_3333_3334L, //    1
+        };
+
+    }
+
 }
