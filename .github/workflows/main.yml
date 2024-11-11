@@ -284,7 +284,7 @@ jobs:
     with:
       platform: macos-aarch64
       runs-on: 'macos-14'
-      xcode-toolset-version: '14.3.1'
+      xcode-toolset-version: '15.4'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.prepare.outputs.macos-aarch64 == 'true'
