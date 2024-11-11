@@ -19,16 +19,9 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 8331051
- * @summary Test for `@since` for java.base module
- * @library /test/lib
- *          /test/jdk/tools/sincechecker
- * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.compiler/com.sun.tools.javac.code
- * @run main SinceChecker java.base --exclude java.lang.classfile
- */
+public class BootChild extends BootSuper {
+    // Does not override BootSuper::doit()
+}
