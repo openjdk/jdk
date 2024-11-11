@@ -118,6 +118,7 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
       // could do this for all ref_kinds, but would explode assembly code size
       trace_method_handle(_masm, buf);
     __ STOP(buf);
+    FreeHeap(buf);
   }
   BLOCK_COMMENT("} verify_ref_kind");
   __ bind(L);
