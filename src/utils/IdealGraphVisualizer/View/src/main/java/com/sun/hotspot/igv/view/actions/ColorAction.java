@@ -80,44 +80,27 @@ public final class ColorAction extends ModelAwareAction {
             Color.WHITE
     ));
 
-    private static final JButton selectedColorButton = new JButton("Preview");
+    private static final JLabel selectedColorLabel = new JLabel("Preview");
     private static final JColorChooser colorChooser = new JColorChooser(Color.WHITE);
 
     public ColorAction() {
-        // Store the current look and feel
-        String originalLookAndFeel = UIManager.getLookAndFeel().getClass().getName();
-
-        try {
-            // Set Look and Feel specifically for selected components
-            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-
-            // Update only specific components to the Metal LAF
-            SwingUtilities.updateComponentTreeUI(selectedColorButton);
-            SwingUtilities.updateComponentTreeUI(colorChooser);
-            initializeComponents();
-        } catch (Exception ignored) {
-        } finally {
-            try {
-                // Restore the original Look and Feel for the rest of the application
-                UIManager.setLookAndFeel(originalLookAndFeel);
-            } catch (Exception ignored) {}
-        }
+        initializeComponents();
     }
 
     private void initializeComponents() {
-        selectedColorButton.setPreferredSize(new Dimension(3 * 32, 32));
-        selectedColorButton.setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, Color.BLACK));
-        selectedColorButton.setOpaque(true);
-        selectedColorButton.setContentAreaFilled(true); // Ensures content is filled without rounded edges
-        selectedColorButton.setBackground(Color.WHITE);
-        selectedColorButton.setForeground(Color.BLACK); // Set text color
+        selectedColorLabel.setPreferredSize(new Dimension(3 * 32, 32));
+        selectedColorLabel.setOpaque(true);
+        selectedColorLabel.setBackground(Color.WHITE);
+        selectedColorLabel.setForeground(Color.BLACK); // Set text color
+        selectedColorLabel.setHorizontalAlignment(SwingConstants.CENTER); // Center the text
+
 
         // Add a ChangeListener to react to color selection changes
         colorChooser.getSelectionModel().addChangeListener(e -> {
             Color selectedColor = colorChooser.getColor();
             if (selectedColor != null) {
-                selectedColorButton.setBackground(selectedColor);
-                selectedColorButton.setForeground(FigureWidget.getTextColor(selectedColor));
+                selectedColorLabel.setBackground(selectedColor);
+                selectedColorLabel.setForeground(FigureWidget.getTextColor(selectedColor));
             }
         });
 
@@ -128,15 +111,18 @@ public final class ColorAction extends ModelAwareAction {
             JButton colorButton = new JButton();
             colorButton.setBackground(color);
             colorButton.setOpaque(true);
+            colorButton.setBorderPainted(false);
+            colorButton.setRolloverEnabled(false);
+            colorButton.setRequestFocusEnabled(false);
+
             colorButton.setPreferredSize(new Dimension(16, 16));
-            colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK));
             colorButton.addActionListener(e -> {
-                selectedColorButton.setBackground(color);
-                selectedColorButton.setForeground(FigureWidget.getTextColor(color));
+                selectedColorLabel.setBackground(color);
+                selectedColorLabel.setForeground(FigureWidget.getTextColor(color));
             });
             colorsPanel.add(colorButton);
         }
-        colorsPanel.add(selectedColorButton, 0);
+        colorsPanel.add(selectedColorLabel, 0);
         colorsPanel.revalidate();
         colorsPanel.repaint();
 
@@ -161,7 +147,7 @@ public final class ColorAction extends ModelAwareAction {
                         // Save the current location
                         dialogLoc = dialogHolder[0].getLocation();
                         // OK button action
-                        Color selectedColor = selectedColorButton.getBackground();
+                        Color selectedColor = selectedColorLabel.getBackground();
                         if (selectedColor != null) {
                             editor.colorSelectedFigures(selectedColor);
                         }
