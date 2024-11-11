@@ -1430,7 +1430,7 @@ public class Http2TestServerConnection {
         sendWindow.acquire(amount);
     }
 
-    void updateConnectionWindow(int amount) {
+    public void updateConnectionWindow(int amount) {
         System.out.printf("sendWindow (available:%s, released amount=%s) is now: %s%n",
                 sendWindow.availablePermits(), amount, sendWindow.availablePermits() + amount);
         sendWindow.release(amount);

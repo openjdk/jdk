@@ -83,6 +83,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 
 import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 
 /**
@@ -425,9 +426,9 @@ public interface HttpServerAdapters {
                 this.exchange = exch;
             }
             @Override
-            public Version getServerVersion() { return Version.HTTP_1_1; }
+            public Version getServerVersion() { return HTTP_1_1; }
             @Override
-            public Version getExchangeVersion() { return Version.HTTP_1_1; }
+            public Version getExchangeVersion() { return HTTP_1_1; }
             @Override
             public InputStream getRequestBody() {
                 return exchange.getRequestBody();
@@ -586,38 +587,6 @@ public interface HttpServerAdapters {
 
     }
 
-
-    /**
-     * A version agnostic adapter class for HTTP Server Handlers.
-     */
-    public interface HttpTestHandler {
-        void handle(HttpTestExchange t) throws IOException;
-
-        default HttpHandler toHttpHandler() {
-            return (t) -> doHandle(HttpTestExchange.of(t));
-        }
-        default Http2Handler toHttp2Handler() {
-            return (t) -> doHandle(HttpTestExchange.of(t));
-        }
-
-        default void handleFailure(final HttpTestExchange exchange, Throwable failure) {
-            System.out.println("WARNING: exception caught in HttpTestHandler::handle " + failure);
-            System.err.println("WARNING: exception caught in HttpTestHandler::handle " + failure);
-            if (PRINTSTACK && !expectException(exchange)) {
-                failure.printStackTrace(System.out);
-            }
-        }
-
-        private void doHandle(HttpTestExchange exchange) throws IOException {
-            try {
-                handle(exchange);
-            } catch (Throwable failure) {
-                handleFailure(exchange, failure);
-                throw failure;
-            }
-        }
-    }
-
     /**
      * An {@link HttpTestHandler} that handles only HEAD and GET
      * requests. If another method is used 405 is returned with
@@ -659,6 +628,38 @@ public interface HttpServerAdapters {
             }
             t.getResponseBody().close();
             t.close();
+        }
+    }
+
+
+    /**
+     * A version agnostic adapter class for HTTP Server Handlers.
+     */
+    public interface HttpTestHandler {
+        void handle(HttpTestExchange t) throws IOException;
+
+        default HttpHandler toHttpHandler() {
+            return (t) -> doHandle(HttpTestExchange.of(t));
+        }
+        default Http2Handler toHttp2Handler() {
+            return (t) -> doHandle(HttpTestExchange.of(t));
+        }
+
+        default void handleFailure(final HttpTestExchange exchange, Throwable failure) {
+            System.out.println("WARNING: exception caught in HttpTestHandler::handle " + failure);
+            System.err.println("WARNING: exception caught in HttpTestHandler::handle " + failure);
+            if (PRINTSTACK && !expectException(exchange)) {
+                failure.printStackTrace(System.out);
+            }
+        }
+
+        private void doHandle(HttpTestExchange exchange) throws IOException {
+            try {
+                handle(exchange);
+            } catch (Throwable failure) {
+                handleFailure(exchange, failure);
+                throw failure;
+            }
         }
     }
 
@@ -1423,15 +1424,15 @@ public interface HttpServerAdapters {
                         impl.getAddress().getPort());
             }
             @Override
-            public Version getVersion() { return Version.HTTP_1_1; }
+            public Version getVersion() { return HTTP_1_1; }
 
             @Override
             public boolean canHandle(final Version version, final Version... more) {
-                if (version != Version.HTTP_1_1) {
+                if (version != HTTP_1_1) {
                     return false;
                 }
                 for (var v : more) {
-                    if (v != Version.HTTP_1_1) {
+                    if (v != HTTP_1_1) {
                         return false;
                     }
                 }
@@ -1461,7 +1462,7 @@ public interface HttpServerAdapters {
             public void setAuthenticator(com.sun.net.httpserver.Authenticator authenticator) {
                 context.setAuthenticator(authenticator);
             }
-            @Override public Version getVersion() { return Version.HTTP_1_1; }
+            @Override public Version getVersion() { return HTTP_1_1; }
         }
 
         private static class Http2TestServerImpl extends  HttpTestServer {
@@ -1509,12 +1510,12 @@ public interface HttpServerAdapters {
                         : H3DiscoveryMode.HTTP_3_ALT_SVC;
             }
 
-            public Version getVersion() { return Version.HTTP_2; }
+            public Version getVersion() { return HTTP_2; }
 
             @Override
             public boolean canHandle(final Version version, final Version... more) {
                 final Set<Version> supported = new HashSet<>();
-                supported.add(Version.HTTP_2);
+                supported.add(HTTP_2);
                 impl.getH3AltService().ifPresent((unused)->  supported.add(HTTP_3));
                 if (!supported.contains(version)) {
                     return false;
@@ -1568,7 +1569,7 @@ public interface HttpServerAdapters {
                             "only BasicAuthenticator is supported on HTTP/2 context");
                 }
             }
-            @Override public Version getVersion() { return Version.HTTP_2; }
+            @Override public Version getVersion() { return HTTP_2; }
         }
 
         private static final class H3ServerAdapter extends HttpTestServer {
