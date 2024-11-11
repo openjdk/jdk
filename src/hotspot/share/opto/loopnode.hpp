@@ -993,7 +993,7 @@ public:
     _loop_or_ctrl.map(n->_idx, (Node*)((intptr_t)ctrl + 1));
   }
   void set_root_as_ctrl(Node* n) {
-    assert( !has_node(n) || has_ctrl(n), "" );
+    assert(!has_node(n) || has_ctrl(n), "");
     _loop_or_ctrl.map(n->_idx, (Node*)((intptr_t)C->root() + 1));
   }
   // Set control and update loop membership
