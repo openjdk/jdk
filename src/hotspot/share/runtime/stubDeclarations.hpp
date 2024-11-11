@@ -537,6 +537,14 @@
            catch_exception_entry)                                       \
   do_stub(initial, fence)                                               \
   do_entry(initial, fence, fence_entry, fence_entry)                    \
+  do_stub(initial, atomic_xchg)                                         \
+  do_entry(initial, atomic_xchg, atomic_xchg_entry, atomic_xchg_entry)  \
+  do_stub(initial, atomic_cmpxchg)                                      \
+  do_entry(initial, atomic_cmpxchg, atomic_cmpxchg_entry,               \
+           atomic_cmpxchg_entry)                                        \
+  do_stub(initial, atomic_cmpxchg_long)                                 \
+  do_entry(initial, atomic_cmpxchg_long, atomic_cmpxchg_long_entry,     \
+           atomic_cmpxchg_long_entry)                                   \
   do_stub(initial, updateBytesCRC32)                                    \
   do_entry(initial, updateBytesCRC32, updateBytesCRC32,                 \
            updateBytesCRC32)                                            \
@@ -615,14 +623,6 @@ do_stub(continuation, cont_returnBarrier)                               \
                                   do_arch_blob,                         \
                                   do_arch_entry, do_arch_entry_init)    \
   do_blob(compiler)                                                     \
-  do_stub(compiler, atomic_xchg)                                        \
-  do_entry(compiler, atomic_xchg, atomic_xchg_entry, atomic_xchg_entry) \
-  do_stub(compiler, atomic_cmpxchg)                                     \
-  do_entry(compiler, atomic_cmpxchg, atomic_cmpxchg_entry,              \
-           atomic_cmpxchg_entry)                                        \
-  do_stub(compiler, atomic_cmpxchg_long)                                \
-  do_entry(compiler, atomic_cmpxchg_long, atomic_cmpxchg_long_entry,    \
-           atomic_cmpxchg_long_entry)                                   \
   do_stub(compiler, atomic_add)                                         \
   do_entry(compiler, atomic_add, atomic_add_entry, atomic_add_entry)    \
   do_stub(compiler, array_sort)                                         \

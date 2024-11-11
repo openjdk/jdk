@@ -135,7 +135,8 @@
   do_stub(final, spin_wait)                                             \
   do_arch_entry_init(aarch64, final, spin_wait, spin_wait,              \
                      spin_wait, empty_spin_wait)                        \
-  /* atomic entries are not stored in class StubRoutines::aarch64 */    \
+  /* stub only -- entries are not stored in StubRoutines::aarch64 */    \
+  /* n.b. these are not the same as the generic atomic stubs */         \
   do_stub(final, atomic_entry_points)                                   \
 
 
