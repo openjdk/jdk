@@ -2655,6 +2655,10 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // Where we put new limit calculations.
   Node* pre_ctrl = _vloop.pre_loop_head()->in(LoopNode::EntryControl);
 
+  const Predicates predicates(pre_ctrl);
+  predicates.dump();
+  pre_ctrl->dump_bfs(20,0,"#c");
+
   // Ensure the original loop limit is available from the pre-loop Opaque1 node.
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
