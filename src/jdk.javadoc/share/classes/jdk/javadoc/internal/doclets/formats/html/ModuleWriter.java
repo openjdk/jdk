@@ -601,8 +601,8 @@ public class ModuleWriter extends HtmlDocletWriter {
                     addIndirectPackages(aepTable, filteredIndirectPackages);
                     section.add(aepTable);
                     //add the preview box:
-                    section.add(HtmlTree.DIV(HtmlTree.BR()));
-                    section.add(HtmlTree.DIV(HtmlTree.BR()));
+                    section.add(HtmlTree.BR());
+                    section.add(HtmlTree.BR());
                     HtmlId previewRequiresTransitiveId = HtmlId.of("preview-requires-transitive-java.base");
                     var previewDiv = HtmlTree.DIV(HtmlStyles.previewBlock);
                     previewDiv.setId(previewRequiresTransitiveId);
