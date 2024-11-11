@@ -56,6 +56,7 @@ public class SegmentBulkRandomFill {
     private static final MemorySegment[] HEAP_SEGMENTS = new MemorySegment[INSTANCES];
     private static final MemorySegment[] NATIVE_SEGMENTS = new MemorySegment[INSTANCES];
     private static final MemorySegment[] UNALIGNED_SEGMENTS = new MemorySegment[INSTANCES];
+    private static final MemorySegment[] MIXED_SEGMENTS = new MemorySegment[INSTANCES];
 
     @Setup
     public void setup() {
@@ -66,6 +67,12 @@ public class SegmentBulkRandomFill {
             HEAP_SEGMENTS[i] = MemorySegment.ofArray(array);
             NATIVE_SEGMENTS[i] = arena.allocate(array.length, 8);
             UNALIGNED_SEGMENTS[i] = arena.allocate(array.length + 1, 8).asSlice(1);
+            MIXED_SEGMENTS[i] = switch (rnd.nextInt(3) % 3) {
+                case 0 -> HEAP_SEGMENTS[i];
+                case 1 -> NATIVE_SEGMENTS[i];
+                case 2 -> UNALIGNED_SEGMENTS[i];
+                default -> throw new InternalError("We cannot end up here: " + i);
+            };
         }
     }
 
@@ -114,7 +121,7 @@ public class SegmentBulkRandomFill {
     @Benchmark
     public void nativeSegmentFillLoop() {
         for (int i = 0; i < INSTANCES; i++) {
-            final long end = HEAP_SEGMENTS[i].byteSize();
+            final long end = NATIVE_SEGMENTS[i].byteSize();
             for (long j = 0; j < end; j++) {
                 NATIVE_SEGMENTS[i].set(ValueLayout.JAVA_BYTE, j, (byte) 0);
             }
@@ -140,9 +147,35 @@ public class SegmentBulkRandomFill {
     @Benchmark
     public void unalignedSegmentFillLoop() {
         for (int i = 0; i < INSTANCES; i++) {
-            final long end = HEAP_SEGMENTS[i].byteSize();
+            final long end = UNALIGNED_SEGMENTS[i].byteSize();
             for (long j = 0; j < end; j++) {
                 UNALIGNED_SEGMENTS[i].set(ValueLayout.JAVA_BYTE, j, (byte) 0);
+            }
+        }
+    }
+
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
+    @Benchmark
+    public void mixedSegmentFillJava() {
+        for (int i = 0; i < INSTANCES; i++) {
+            MIXED_SEGMENTS[i].fill((byte) 0);
+        }
+    }
+
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
+    @Benchmark
+    public void mixedSegmentFillUnsafe() {
+        for (int i = 0; i < INSTANCES; i++) {
+            MIXED_SEGMENTS[i].fill((byte) 0);
+        }
+    }
+
+    @Benchmark
+    public void mixedSegmentFillLoop() {
+        for (int i = 0; i < INSTANCES; i++) {
+            final long end = MIXED_SEGMENTS[i].byteSize();
+            for (long j = 0; j < end; j++) {
+                MIXED_SEGMENTS[i].set(ValueLayout.JAVA_BYTE, j, (byte) 0);
             }
         }
     }
