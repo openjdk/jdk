@@ -745,6 +745,7 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # jdk_util
 java/util/zip/CloseInflaterDeflaterTest.java  8339216 linux-s390x
+java/util/BitSet/HugeToString.java            8343925 linux-all
 
 ############################################################################
 
