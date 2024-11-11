@@ -241,9 +241,10 @@ void DumpRegion::commit_to(char* newtop) {
                  which, commit, _vs->actual_committed_size(), _vs->high());
 }
 
-
-char* DumpRegion::allocate(size_t num_bytes) {
-  char* p = (char*)align_up(_top, (size_t)SharedSpaceObjectAlignment);
+char* DumpRegion::allocate(size_t num_bytes, size_t alignment) {
+  // Always align to at least minimum alignment
+  alignment = MAX2(SharedSpaceObjectAlignment, alignment);
+  char* p = (char*)align_up(_top, alignment);
   char* newtop = p + align_up(num_bytes, (size_t)SharedSpaceObjectAlignment);
   expand_top_to(newtop);
   memset(p, 0, newtop - p);
@@ -343,7 +344,7 @@ void ReadClosure::do_tag(int tag) {
   int old_tag;
   old_tag = (int)(intptr_t)nextPtr();
   // do_int(&old_tag);
-  assert(tag == old_tag, "old tag doesn't match");
+  assert(tag == old_tag, "tag doesn't match (%d, expected %d)", old_tag, tag);
   FileMapInfo::assert_mark(tag == old_tag);
 }
 
