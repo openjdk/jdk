@@ -28,7 +28,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.model.LauncherJarStartupInfo;
+import jdk.jpackage.internal.model.LauncherJarStartupInfoMixin;
 import jdk.jpackage.internal.model.LauncherModularStartupInfo;
+import jdk.jpackage.internal.model.LauncherModularStartupInfoMixin;
 import jdk.jpackage.internal.model.LauncherStartupInfo.Stub;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 
@@ -67,7 +69,9 @@ final class LauncherStartupInfoBuilder {
 
         @Override
         public LauncherStartupInfo apply(LauncherStartupInfo base) {
-            return new LauncherModularStartupInfo.Stub(base, moduleName, modulePath);
+            return LauncherModularStartupInfo.create(base,
+                    new LauncherModularStartupInfoMixin.Stub(moduleName,
+                            modulePath));
         }
     }
 
@@ -77,7 +81,9 @@ final class LauncherStartupInfoBuilder {
 
         @Override
         public LauncherStartupInfo apply(LauncherStartupInfo base) {
-            return new LauncherJarStartupInfo.Stub(base, jarPath, isClassNameFromMainJar);
+            return LauncherJarStartupInfo.create(base,
+                    new LauncherJarStartupInfoMixin.Stub(jarPath,
+                            isClassNameFromMainJar));
         }
     }
 

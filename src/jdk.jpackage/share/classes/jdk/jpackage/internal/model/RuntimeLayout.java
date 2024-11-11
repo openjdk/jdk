@@ -25,12 +25,23 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import jdk.jpackage.internal.util.DynamicProxy;
+import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 
 /**
- * App image directory layout.
+ * Runtime app image layout.
  */
 public interface RuntimeLayout extends AppImageLayout {
 
-    static final RuntimeLayout DEFAULT = new RuntimeLayoutStub(new AppImageLayout.Stub(Path.of("")));
+    @Override
+    default RuntimeLayout resolveAt(Path root) {
+        return create(new AppImageLayout.Stub(resolveNullablePath(root, runtimeDirectory())));
+    }
+
+    static RuntimeLayout create(AppImageLayout layout) {
+        return DynamicProxy.createProxyFromPieces(RuntimeLayout.class, layout);
+    }
+
+    static final RuntimeLayout DEFAULT = create(new AppImageLayout.Stub(Path.of("")));
 }

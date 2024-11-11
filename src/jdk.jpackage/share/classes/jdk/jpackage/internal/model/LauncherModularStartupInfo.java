@@ -24,36 +24,14 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.nio.file.Path;
-import java.util.List;
+import jdk.jpackage.internal.util.DynamicProxy;
 
-public interface LauncherModularStartupInfo extends LauncherStartupInfo {
+public interface LauncherModularStartupInfo extends LauncherStartupInfo,
+        LauncherModularStartupInfoMixin {
 
-    String moduleName();
-
-    List<Path> modulePath();
-
-    final class Stub extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
-            implements LauncherModularStartupInfo {
-
-        public Stub(LauncherStartupInfo target, String moduleName,
-                List<Path> modulePath) {
-            super(target);
-            this.moduleName = moduleName;
-            this.modulePath = modulePath;
-        }
-
-        @Override
-        public String moduleName() {
-            return moduleName;
-        }
-
-        @Override
-        public List<Path> modulePath() {
-            return modulePath;
-        }
-
-        private final String moduleName;
-        private final List<Path> modulePath;
+    public static LauncherModularStartupInfo create(LauncherStartupInfo info,
+            LauncherModularStartupInfoMixin mixin) {
+        return DynamicProxy.createProxyFromPieces(
+                LauncherModularStartupInfo.class, info, mixin);
     }
 }

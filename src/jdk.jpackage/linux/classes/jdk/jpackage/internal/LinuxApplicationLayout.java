@@ -26,27 +26,19 @@ package jdk.jpackage.internal;
 
 import jdk.jpackage.internal.model.*;
 import java.nio.file.Path;
+import jdk.jpackage.internal.util.DynamicProxy;
 import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
-final class LinuxApplicationLayout extends ApplicationLayout.Proxy<ApplicationLayout> {
+interface LinuxApplicationLayout extends ApplicationLayout, LinuxApplicationLayoutMixin {
 
-    LinuxApplicationLayout(ApplicationLayout layout, Path libAppLauncher) {
-        super(layout);
-        this.libAppLauncher = libAppLauncher;
+    static LinuxApplicationLayout create(ApplicationLayout layout, Path libAppLauncher) {
+        return DynamicProxy.createProxyFromPieces(LinuxApplicationLayout.class,
+                layout, new LinuxApplicationLayoutMixin.Stub(libAppLauncher));
     }
 
     @Override
-    public LinuxApplicationLayout resolveAt(Path root) {
-        return new LinuxApplicationLayout(target.resolveAt(root),
-                resolveNullablePath(root, libAppLauncher));
+    default LinuxApplicationLayout resolveAt(Path root) {
+        return create(ApplicationLayout.super.resolveAt(root),
+                resolveNullablePath(root, libAppLauncher()));
     }
-
-    /**
-     * Path to "libapplauncher.so".
-     */
-    Path libAppLauncher() {
-        return libAppLauncher;
-    }
-
-    private final Path libAppLauncher;
 }

@@ -24,38 +24,14 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.nio.file.Path;
+import jdk.jpackage.internal.util.DynamicProxy;
 
-public interface LauncherJarStartupInfo extends LauncherStartupInfo {
-    /**
-     * Returns path to the main jar relative to app's main source directory.
-     * 
-     * @see jdk.jpackage.internal.model.Application#srcDir() 
-     */
-    Path jarPath();
+public interface LauncherJarStartupInfo extends LauncherStartupInfo,
+        LauncherJarStartupInfoMixin {
 
-    boolean isClassNameFromMainJar();
-
-    final class Stub extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
-            implements LauncherJarStartupInfo {
-
-        public Stub(LauncherStartupInfo target, Path jarPath, boolean isClassNameFromMainJar) {
-            super(target);
-            this.jarPath = jarPath;
-            this.isClassNameFromMainJar = isClassNameFromMainJar;
-        }
-
-        @Override
-        public Path jarPath() {
-            return jarPath;
-        }
-
-        @Override
-        public boolean isClassNameFromMainJar() {
-            return isClassNameFromMainJar;
-        }
-
-        private final Path jarPath;
-        private final boolean isClassNameFromMainJar;
+    public static LauncherJarStartupInfo create(LauncherStartupInfo info,
+            LauncherJarStartupInfoMixin mixin) {
+        return DynamicProxy.createProxyFromPieces(LauncherJarStartupInfo.class,
+                info, mixin);
     }
 }

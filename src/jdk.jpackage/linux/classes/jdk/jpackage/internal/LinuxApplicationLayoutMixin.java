@@ -22,31 +22,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal;
 
 import java.nio.file.Path;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Predicate;
 
-public interface FileAssociation {
+interface LinuxApplicationLayoutMixin {
 
-    String description();
-
-    Path icon();
-
-    default boolean hasIcon() {
-        return Objects.nonNull(icon());
-    }
-
-    default boolean hasNonEmptyDescription() {
-        return Optional.ofNullable(description()).filter(Predicate.not(String::isEmpty)).isPresent();
-    }
-
-    String mimeType();
-
-    String extension();
-
-    record Stub(String description, Path icon, String mimeType, String extension) implements FileAssociation {
-    }
+    /**
+     * Path to "libapplauncher.so".
+     */
+    Path libAppLauncher();
+    
+    record Stub(Path libAppLauncher) implements LinuxApplicationLayoutMixin {}
 }

@@ -58,34 +58,6 @@ public interface LauncherStartupInfo {
 
     }
 
-    class Proxy<T extends LauncherStartupInfo> extends ProxyBase<T>
-            implements LauncherStartupInfo {
-
-        public Proxy(T target) {
-            super(target);
-        }
-
-        @Override
-        final public String qualifiedClassName() {
-            return target.qualifiedClassName();
-        }
-
-        @Override
-        final public List<String> javaOptions() {
-            return target.javaOptions();
-        }
-
-        @Override
-        final public List<String> defaultParameters() {
-            return target.defaultParameters();
-        }
-
-        @Override
-        final public List<Path> classPath() {
-            return target.classPath();
-        }
-    }
-
     class Unsupported implements LauncherStartupInfo {
 
         @Override

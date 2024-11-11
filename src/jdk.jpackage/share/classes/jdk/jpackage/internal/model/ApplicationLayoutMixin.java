@@ -24,10 +24,38 @@
  */
 package jdk.jpackage.internal.model;
 
-abstract class ProxyBase<T> {
-    protected ProxyBase(T target) {
-        this.target = target;
-    }
+import java.nio.file.Path;
 
-    protected final T target;
+/**
+ * App image directory contents specific to application packaging.
+ */
+public interface ApplicationLayoutMixin {
+
+    /**
+     * Path to launchers directory.
+     */
+    Path launchersDirectory();
+
+    /**
+     * Path to application data directory.
+     */
+    Path appDirectory();
+
+    /**
+     * Path to application mods directory.
+     */
+    Path appModsDirectory();
+
+    /**
+     * Path to directory with application's desktop integration files.
+     */
+    Path destktopIntegrationDirectory();
+
+    /**
+     * Path to directory with additional application content.
+     */
+    Path contentDirectory();
+
+    record Stub(Path launchersDirectory, Path appDirectory, Path appModsDirectory, Path destktopIntegrationDirectory, Path contentDirectory) implements ApplicationLayoutMixin {
+    }
 }

@@ -103,7 +103,7 @@ final class LinuxPackageBuilder {
 
     private static LinuxApplicationLayout usrTreePackageLayout(Path prefix, String packageName) {
         final var lib = prefix.resolve(Path.of("lib", packageName));
-        return new LinuxApplicationLayout(
+        return LinuxApplicationLayout.create(
                 ApplicationLayout.build()
                         .launchersDirectory(prefix.resolve("bin"))
                         .appDirectory(lib.resolve("app"))

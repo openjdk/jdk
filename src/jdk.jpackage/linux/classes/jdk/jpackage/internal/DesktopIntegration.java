@@ -48,6 +48,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import static jdk.jpackage.internal.AppImageBuilder.createLauncherIconResource;
 import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.util.DynamicProxy;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
@@ -68,7 +69,7 @@ final class DesktopIntegration extends ShellCustomAction {
     private DesktopIntegration(BuildEnv env, LinuxPackage pkg, LinuxLauncher launcher) throws IOException {
 
         associations = launcher.fileAssociations().stream().map(
-                LinuxFileAssociation::new).toList();
+                LinuxFileAssociation::create).toList();
 
         this.env = env;
         this.pkg = pkg;
@@ -398,8 +399,7 @@ final class DesktopIntegration extends ShellCustomAction {
 
             IOUtils.copyFile(fa.icon(), faIconFile.srcPath());
 
-            shellCommands.addIcon(mimeType, faIconFile.installPath(),
-                    fa.iconSize);
+            shellCommands.addIcon(mimeType, faIconFile.installPath(), fa.iconSize());
         }
     }
 
@@ -453,15 +453,22 @@ final class DesktopIntegration extends ShellCustomAction {
         return commonIconSize;
     }
 
-    private static class LinuxFileAssociation extends FileAssociation.Proxy<FileAssociation> {
-        LinuxFileAssociation(FileAssociation fa) {
-            this(fa, getIconSize(fa));
-        }
+    private interface LinuxFileAssociationMixin {
+        int iconSize();
 
-        private LinuxFileAssociation(FileAssociation fa, int iconSize) {
-            super(iconSize > 0 ? fa : new FileAssociation.Stub(fa.description(),
-                    fa.icon(), fa.mimeType(), fa.extension()));
-            this.iconSize = iconSize;
+        record Stub(int iconSize) implements LinuxFileAssociationMixin {}
+    }
+
+    private static interface LinuxFileAssociation extends FileAssociation, LinuxFileAssociationMixin {
+        static LinuxFileAssociation create(FileAssociation fa) {
+            var iconSize = getIconSize(fa);
+            if (iconSize <= 0) {
+                // nullify the icon
+                fa = new FileAssociation.Stub(fa.description(), null,
+                        fa.mimeType(), fa.extension());
+            }
+            return DynamicProxy.createProxyFromPieces(LinuxFileAssociation.class,
+                    fa, new LinuxFileAssociationMixin.Stub(iconSize));
         }
 
         private static int getIconSize(FileAssociation fa) {
@@ -471,8 +478,6 @@ final class DesktopIntegration extends ShellCustomAction {
                     .map(DesktopIntegration::getSquareSizeOfImage)
                     .orElse(-1);
         }
-
-        private final int iconSize;
     }
 
     private final BuildEnv env;

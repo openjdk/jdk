@@ -25,28 +25,16 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Predicate;
 
-public interface FileAssociation {
+public interface LauncherJarStartupInfoMixin {
+    /**
+     * Returns path to the main jar relative to app's main source directory.
+     * 
+     * @see jdk.jpackage.internal.model.Application#srcDir() 
+     */
+    Path jarPath();
 
-    String description();
+    boolean isClassNameFromMainJar();
 
-    Path icon();
-
-    default boolean hasIcon() {
-        return Objects.nonNull(icon());
-    }
-
-    default boolean hasNonEmptyDescription() {
-        return Optional.ofNullable(description()).filter(Predicate.not(String::isEmpty)).isPresent();
-    }
-
-    String mimeType();
-
-    String extension();
-
-    record Stub(String description, Path icon, String mimeType, String extension) implements FileAssociation {
-    }
+    record Stub(Path jarPath, boolean isClassNameFromMainJar) implements LauncherJarStartupInfoMixin {}
 }

@@ -62,6 +62,6 @@ final class LinuxAppImageBuilder {
         }
     }
 
-    final static LinuxApplicationLayout APPLICATION_LAYOUT = new LinuxApplicationLayout(
+    final static LinuxApplicationLayout APPLICATION_LAYOUT = LinuxApplicationLayout.create(
             ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, Path.of("lib/libapplauncher.so"));
 }

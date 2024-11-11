@@ -26,6 +26,8 @@ package jdk.jpackage.internal.model;
 
 public interface LinuxPackageMixin {
 
+    AppImageLayout packageLayout();
+
     String menuGroupName();
 
     String category();

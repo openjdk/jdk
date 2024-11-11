@@ -25,94 +25,21 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import jdk.jpackage.internal.util.DynamicProxy;
 import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 /**
  * Application directory layout.
  */
-public interface ApplicationLayout extends AppImageLayout {
-
-    /**
-     * Path to launchers directory.
-     */
-    Path launchersDirectory();
-
-    /**
-     * Path to application data directory.
-     */
-    Path appDirectory();
-
-    /**
-     * Path to application mods directory.
-     */
-    Path appModsDirectory();
-
-    /**
-     * Path to directory with application's desktop integration files.
-     */
-    Path destktopIntegrationDirectory();
-
-    /**
-     * Path to directory with additional application content.
-     */
-    Path contentDirectory();
+public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixin {
 
     @Override
-    ApplicationLayout resolveAt(Path root);
+    default ApplicationLayout resolveAt(Path root) {
+        return buildFrom(this).resolveAt(root).create();
+    }
 
-    final class Stub extends AppImageLayout.Proxy<AppImageLayout> implements ApplicationLayout {
-
-        public Stub(AppImageLayout target, Path launchersDirectory,
-                Path appDirectory, Path appModsDirectory,
-                Path destktopIntegrationDirectory, Path contentDirectory) {
-            super(target);
-            this.launchersDirectory = launchersDirectory;
-            this.appDirectory = appDirectory;
-            this.appModsDirectory = appModsDirectory;
-            this.destktopIntegrationDirectory = destktopIntegrationDirectory;
-            this.contentDirectory = contentDirectory;
-        }
-
-        @Override
-        public Path launchersDirectory() {
-            return launchersDirectory;
-        }
-
-        @Override
-        public Path appDirectory() {
-            return appDirectory;
-        }
-
-        @Override
-        public Path appModsDirectory() {
-            return appModsDirectory;
-        }
-
-        @Override
-        public Path destktopIntegrationDirectory() {
-            return destktopIntegrationDirectory;
-        }
-
-        @Override
-        public Path contentDirectory() {
-            return contentDirectory;
-        }
-
-        @Override
-        public ApplicationLayout resolveAt(Path base) {
-            return new ApplicationLayout.Stub(target.resolveAt(base),
-                    resolveNullablePath(base, launchersDirectory),
-                    resolveNullablePath(base, appDirectory),
-                    resolveNullablePath(base, appModsDirectory),
-                    resolveNullablePath(base, destktopIntegrationDirectory),
-                    resolveNullablePath(base, contentDirectory));
-        }
-
-        private final Path launchersDirectory;
-        private final Path appDirectory;
-        private final Path appModsDirectory;
-        private final Path destktopIntegrationDirectory;
-        private final Path contentDirectory;
+    static ApplicationLayout create(AppImageLayout appImage, ApplicationLayoutMixin mixin) {
+        return DynamicProxy.createProxyFromPieces(ApplicationLayout.class, appImage, mixin);
     }
 
     public static Builder build() {
@@ -121,43 +48,6 @@ public interface ApplicationLayout extends AppImageLayout {
 
     public static Builder buildFrom(ApplicationLayout appLayout) {
         return new Builder(appLayout);
-    }
-
-    class Proxy<T extends ApplicationLayout> extends AppImageLayout.Proxy<T> implements ApplicationLayout {
-
-        public Proxy(T target) {
-            super(target);
-        }
-
-        @Override
-        final public Path launchersDirectory() {
-            return target.launchersDirectory();
-        }
-
-        @Override
-        final public Path appDirectory() {
-            return target.appDirectory();
-        }
-
-        @Override
-        final public Path appModsDirectory() {
-            return target.appModsDirectory();
-        }
-
-        @Override
-        final public Path destktopIntegrationDirectory() {
-            return target.destktopIntegrationDirectory();
-        }
-
-        @Override
-        final public Path contentDirectory() {
-            return target.contentDirectory();
-        }
-
-        @Override
-        public ApplicationLayout resolveAt(Path root) {
-            return target.resolveAt(root);
-        }
     }
 
     final class Builder {
@@ -174,13 +64,10 @@ public interface ApplicationLayout extends AppImageLayout {
         }
 
         public ApplicationLayout create() {
-            return new ApplicationLayout.Stub(
-                    new AppImageLayout.Stub(runtimeDirectory),
-                    launchersDirectory,
-                    appDirectory,
-                    appModsDirectory,
-                    destktopIntegrationDirectory,
-                    contentDirectory);
+            return ApplicationLayout.create(new AppImageLayout.Stub(
+                    runtimeDirectory), new ApplicationLayoutMixin.Stub(
+                    launchersDirectory, appDirectory, appModsDirectory,
+                    destktopIntegrationDirectory, contentDirectory));
         }
 
         public Builder setAll(String path) {
@@ -194,6 +81,16 @@ public interface ApplicationLayout extends AppImageLayout {
             appModsDirectory(path);
             destktopIntegrationDirectory(path);
             contentDirectory(path);
+            return this;
+        }
+
+        public Builder resolveAt(Path base) {
+            launchersDirectory(resolveNullablePath(base, launchersDirectory));
+            appDirectory(resolveNullablePath(base, appDirectory));
+            runtimeDirectory(resolveNullablePath(base, runtimeDirectory));
+            appModsDirectory(resolveNullablePath(base, appModsDirectory));
+            destktopIntegrationDirectory(resolveNullablePath(base, destktopIntegrationDirectory));
+            contentDirectory(resolveNullablePath(base, contentDirectory));
             return this;
         }
 

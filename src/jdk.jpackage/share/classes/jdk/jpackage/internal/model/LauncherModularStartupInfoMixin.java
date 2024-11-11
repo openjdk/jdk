@@ -25,15 +25,14 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import java.util.List;
 
-final class RuntimeLayoutStub extends AppImageLayout.Proxy<AppImageLayout> implements RuntimeLayout {
-    
-    RuntimeLayoutStub(AppImageLayout target) {
-        super(target);
+public interface LauncherModularStartupInfoMixin {
+
+    String moduleName();
+
+    List<Path> modulePath();
+
+    record Stub(String moduleName, List<Path> modulePath) implements LauncherModularStartupInfoMixin {
     }
-
-    @Override
-    public RuntimeLayout resolveAt(Path root) {
-        return new RuntimeLayoutStub(target.resolveAt(root));
-    }    
 }
