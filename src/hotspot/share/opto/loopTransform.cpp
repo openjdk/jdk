@@ -758,7 +758,6 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 #endif
     }
   }
-  Node* entry = head->in(LoopNode::EntryControl);
 
   // Step 1: Clone the loop body.  The clone becomes the peeled iteration.
   //         The pre-loop illegally has 2 control users (old & new loops).
