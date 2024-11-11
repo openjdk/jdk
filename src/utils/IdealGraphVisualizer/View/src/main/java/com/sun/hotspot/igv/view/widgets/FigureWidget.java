@@ -123,7 +123,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         middleWidget = new Widget(scene);
         middleWidget.setPreferredBounds(new Rectangle(0, 0, f.getWidth(), f.getHeight()));
         middleWidget.setLayout(LayoutFactory.createHorizontalFlowLayout(SerialAlignment.CENTER, 0));
-        middleWidget.setBackground(f.getColor());
         middleWidget.setOpaque(true);
         middleWidget.getActions().addAction(new DoubleClickAction(this));
         middleWidget.setCheckClipping(false);
@@ -216,6 +215,13 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
                 g2d.fill(path);
                 g2d.setColor(oldColor);
             }
+        }
+    }
+
+    public void refreshColor() {
+        middleWidget.setBackground(figure.getColor());
+        for (LabelWidget lw : labelWidgets) {
+            lw.setForeground(getTextColor(figure.getColor()));
         }
     }
 
