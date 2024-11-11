@@ -51,7 +51,8 @@ public class PrintCheckboxManualTest extends Panel {
             This test is for Linux with XToolkit ONLY!,
             1. Click the 'Print' button on the frame
             2. Select a printer in the print dialog and proceed
-            3. If the frame with checkbox and button on it is printed successfully test PASSED else FAILED.
+            3. If the frame with checkbox and button on it
+               is printed without any exception test PASSED else FAILED.
         """;
 
     public static void main(String[] args) throws Exception {
@@ -80,7 +81,9 @@ public class PrintCheckboxManualTest extends Panel {
         Button b = new Button("Print");
         b.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ev) {
-                PrintJob pj = Toolkit.getDefaultToolkit().getPrintJob(f, "PrintCheckboxManualTest", null);
+                PrintJob pj = Toolkit.getDefaultToolkit().
+                                      getPrintJob(f, "PrintCheckboxManualTest",
+                                                  null);
                 if (pj != null) {
                     try {
                         Graphics g = pj.getGraphics();
