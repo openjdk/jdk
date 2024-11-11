@@ -39,7 +39,6 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -54,22 +53,19 @@ public class SegmentBulkRandomFill {
 
     private static final int INSTANCES = 100_000;
 
-    MemorySegment[] heapSegments;
-    MemorySegment[] nativeSegments;
-    MemorySegment[] unalignedSegments;
+    private static final MemorySegment[] HEAP_SEGMENTS = new MemorySegment[INSTANCES];
+    private static final MemorySegment[] NATIVE_SEGMENTS = new MemorySegment[INSTANCES];
+    private static final MemorySegment[] UNALIGNED_SEGMENTS = new MemorySegment[INSTANCES];
 
     @Setup
     public void setup() {
-        heapSegments = new MemorySegment[INSTANCES];
-        nativeSegments = new MemorySegment[INSTANCES];
-        unalignedSegments = new MemorySegment[INSTANCES];
         var rnd = new Random(42);
         var arena = Arena.ofAuto();
         for (int i = 0; i < INSTANCES; i++) {
             var array = new byte[rnd.nextInt(1024)];
-            heapSegments[i] = MemorySegment.ofArray(array);
-            nativeSegments[i] = arena.allocate(array.length, 8);
-            unalignedSegments[i] = arena.allocate(array.length + 1, 8).asSlice(1);
+            HEAP_SEGMENTS[i] = MemorySegment.ofArray(array);
+            NATIVE_SEGMENTS[i] = arena.allocate(array.length, 8);
+            UNALIGNED_SEGMENTS[i] = arena.allocate(array.length + 1, 8).asSlice(1);
         }
     }
 
@@ -77,7 +73,7 @@ public class SegmentBulkRandomFill {
     @Benchmark
     public void heapSegmentFillJava() {
         for (int i = 0; i < INSTANCES; i++) {
-            heapSegments[i].fill((byte) 0);
+            HEAP_SEGMENTS[i].fill((byte) 0);
         }
     }
 
@@ -85,16 +81,16 @@ public class SegmentBulkRandomFill {
     @Benchmark
     public void heapSegmentFillUnsafe() {
         for (int i = 0; i < INSTANCES; i++) {
-            heapSegments[i].fill((byte) 0);
+            HEAP_SEGMENTS[i].fill((byte) 0);
         }
     }
 
     @Benchmark
     public void heapSegmentFillLoop() {
         for (int i = 0; i < INSTANCES; i++) {
-            final long end = heapSegments[i].byteSize();
+            final long end = HEAP_SEGMENTS[i].byteSize();
             for (long j = 0; j < end; j++) {
-                heapSegments[i].set(ValueLayout.JAVA_BYTE, j, (byte) 0);
+                HEAP_SEGMENTS[i].set(ValueLayout.JAVA_BYTE, j, (byte) 0);
             }
         }
     }
@@ -103,7 +99,7 @@ public class SegmentBulkRandomFill {
     @Benchmark
     public void nativeSegmentFillJava() {
         for (int i = 0; i < INSTANCES; i++) {
-            nativeSegments[i].fill((byte) 0);
+            NATIVE_SEGMENTS[i].fill((byte) 0);
         }
     }
 
@@ -111,16 +107,16 @@ public class SegmentBulkRandomFill {
     @Benchmark
     public void nativeSegmentFillUnsafe() {
         for (int i = 0; i < INSTANCES; i++) {
-            nativeSegments[i].fill((byte) 0);
+            NATIVE_SEGMENTS[i].fill((byte) 0);
         }
     }
 
     @Benchmark
     public void nativeSegmentFillLoop() {
         for (int i = 0; i < INSTANCES; i++) {
-            final long end = heapSegments[i].byteSize();
+            final long end = HEAP_SEGMENTS[i].byteSize();
             for (long j = 0; j < end; j++) {
-                nativeSegments[i].set(ValueLayout.JAVA_BYTE, j, (byte) 0);
+                NATIVE_SEGMENTS[i].set(ValueLayout.JAVA_BYTE, j, (byte) 0);
             }
         }
     }
@@ -129,7 +125,7 @@ public class SegmentBulkRandomFill {
     @Benchmark
     public void unalignedSegmentFillJava() {
         for (int i = 0; i < INSTANCES; i++) {
-            unalignedSegments[i].fill((byte) 0);
+            UNALIGNED_SEGMENTS[i].fill((byte) 0);
         }
     }
 
@@ -137,16 +133,16 @@ public class SegmentBulkRandomFill {
     @Benchmark
     public void unalignedSegmentFillUnsafe() {
         for (int i = 0; i < INSTANCES; i++) {
-            unalignedSegments[i].fill((byte) 0);
+            UNALIGNED_SEGMENTS[i].fill((byte) 0);
         }
     }
 
     @Benchmark
     public void unalignedSegmentFillLoop() {
         for (int i = 0; i < INSTANCES; i++) {
-            final long end = heapSegments[i].byteSize();
+            final long end = HEAP_SEGMENTS[i].byteSize();
             for (long j = 0; j < end; j++) {
-                unalignedSegments[i].set(ValueLayout.JAVA_BYTE, j, (byte) 0);
+                UNALIGNED_SEGMENTS[i].set(ValueLayout.JAVA_BYTE, j, (byte) 0);
             }
         }
     }
