@@ -244,11 +244,11 @@ private:
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
 
-  size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
   double predict_survivor_regions_evac_time() const;
   double predict_retained_regions_evac_time() const;
 
 public:
+  size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
   size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
 
   // The minimum number of retained regions we will add to the CSet during a young GC.

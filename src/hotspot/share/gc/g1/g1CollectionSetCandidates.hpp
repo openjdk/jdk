@@ -64,8 +64,6 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
   //
   double _gc_efficiency;
 
-  double predict_group_copy_time_ms() const;
-
 public:
   G1CSetCandidateGroup(G1CardSetConfiguration* config);
   ~G1CSetCandidateGroup() {
