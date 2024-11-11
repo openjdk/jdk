@@ -70,6 +70,7 @@ class ArenaStatCounter : public CHeapObj<mtCompiler> {
   ArenaCountersByTag _current_by_tag;
   // Peak composition:
   ArenaCountersByTag _peak_by_tag;
+
   // MemLimit handling
   size_t _limit;
   bool _hit_limit;
@@ -99,6 +100,10 @@ public:
   void start(size_t limit);
   void end();
 
+  // Mark the start and end of a phase.
+  void c2_start_phase(const char* phase_name);
+  void c2_end_phase(const char* phase_name);
+
   // Account an arena allocation or de-allocation.
   // Returns true if new peak reached
   bool account(ssize_t delta, int tag);
@@ -116,6 +121,11 @@ public:
 
 class CompilationMemoryStatistic : public AllStatic {
   static bool _enabled;
+
+  // C2 only: inform statistic about start and end of a compilation phase
+  static void on_c2_phase_start_0(const char* phase_name);
+  static void on_c2_phase_end_0(const char* phase_name);
+
 public:
   static void initialize();
   // true if CollectMemStat or PrintMemStat has been enabled for any method
@@ -126,6 +136,11 @@ public:
   // status information from ciEnv (compilation failed, oom'ed or went okay). ciEnv::_failure_reason
   // must be set at this point (so place CompilationMemoryStatisticMark correctly).
   static void on_end_compilation();
+
+  // C2 only: inform statistic about start and end of a compilation phase
+  static inline void on_c2_phase_start(const char* phase_name);
+  static inline void on_c2_phase_end(const char* phase_name);
+
   static void on_arena_change(ssize_t diff, const Arena* arena);
   static void print_all_by_size(outputStream* st, bool human_readable, size_t minsize);
   // For compilers

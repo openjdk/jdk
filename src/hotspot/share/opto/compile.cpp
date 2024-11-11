@@ -29,7 +29,7 @@
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationFailureInfo.hpp"
-#include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compilationMemoryStatistic.inline.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -4320,12 +4320,19 @@ Compile::TracePhase::TracePhase(const char* name, PhaseTraceId id)
     _log->stamp();
     _log->end_head();
   }
+
+  // Inform memory statistic, if enabled
+  CompilationMemoryStatistic::on_c2_phase_start(_phase_name);
 }
 
 Compile::TracePhase::TracePhase(PhaseTraceId id)
   : TracePhase(Phase::get_phase_trace_id_text(id), id) {}
 
 Compile::TracePhase::~TracePhase() {
+
+  // Inform memory statistic, if enabled
+  CompilationMemoryStatistic::on_c2_phase_end(_phase_name);
+
   if (_compile->failing_internal()) {
     if (_log != nullptr) {
       _log->done("phase");

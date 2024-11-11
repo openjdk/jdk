@@ -94,6 +94,15 @@ void ArenaStatCounter::update_c2_node_count() {
 #endif
 }
 
+// Mark the start and end of a phase.
+void ArenaStatCounter::c2_start_phase(const char* phase_name) {
+
+}
+
+void ArenaStatCounter::c2_end_phase(const char* phase_name) {
+
+}
+
 // Account an arena allocation or de-allocation.
 bool ArenaStatCounter::account(ssize_t delta, int tag) {
   assert(_active, "compilaton has not yet started");
@@ -110,6 +119,19 @@ bool ArenaStatCounter::account(ssize_t delta, int tag) {
   _current_by_tag.add(tag, delta);
   // Did we reach a peak?
   if (_current > _peak) {
+
+    if (UseNewCode) {
+      CompilerThread* const th = Thread::current()->as_Compiler_thread();
+
+      CompileTask* const task = th->task();
+      const CompilerType ct = task->compiler()->type();
+      const int comp_id = task->compile_id();
+
+      tty->print_cr("(%d ) peaked at %zu", comp_id, _current);
+
+
+    }
+
     _peak = _current;
     assert(delta > 0, "Sanity (%zu %zu)", _current, _peak);
     update_c2_node_count();
@@ -125,9 +147,12 @@ bool ArenaStatCounter::account(ssize_t delta, int tag) {
 
 void ArenaStatCounter::print_on(outputStream* st) const {
   st->print("%zu [", _peak);
+  bool printed = false;
   for (int tag = 0; tag < _peak_by_tag.element_count(); tag++) {
     if (_peak_by_tag.counter(tag) > 0) {
-      st->print("%s %zu ", _peak_by_tag.tag_name(tag), _peak_by_tag.counter(tag));
+      st->print("%s%s %zu",
+          (printed ? ", " : ""), _peak_by_tag.tag_name(tag), _peak_by_tag.counter(tag));
+      printed = true;
     }
   }
   st->print("]");
@@ -162,15 +187,19 @@ public:
         Symbol::compute_hash(n._s);
   }
 
+  void print_on(outputStream* st) const {
+    ResourceMark rm;
+    st->print_raw(_k->as_C_string());
+    st->print_raw("::");
+    st->print_raw(_m->as_C_string());
+    st->put('(');
+    st->print_raw(_s->as_C_string());
+    st->put(')');
+  }
+
   char* as_C_string(char* buf, size_t len) const {
     stringStream ss(buf, len);
-    ResourceMark rm;
-    ss.print_raw(_k->as_C_string());
-    ss.print_raw("::");
-    ss.print_raw(_m->as_C_string());
-    ss.put('(');
-    ss.print_raw(_s->as_C_string());
-    ss.put(')');
+    print_on(&ss);
     return buf;
   }
   bool operator== (const FullMethodName& b) const {
@@ -182,6 +211,7 @@ public:
 class MemStatEntry : public CHeapObj<mtInternal> {
   const FullMethodName _method;
   CompilerType _comptype;
+  int _comp_id;
   double _time;
   // How often this has been recompiled.
   int _num_recomp;
@@ -201,13 +231,14 @@ class MemStatEntry : public CHeapObj<mtInternal> {
 public:
 
   MemStatEntry(FullMethodName method)
-    : _method(method), _comptype(compiler_c1),
+    : _method(method), _comptype(compiler_c1), _comp_id(-1),
       _time(0), _num_recomp(0), _thread(nullptr), _limit(0),
       _total(0), _live_nodes_at_peak(0),
       _result(nullptr) {
     _peak_by_tag.clear();
   }
 
+  void set_comp_id(int comp_id) { _comp_id = comp_id; }
   void set_comptype(CompilerType comptype) { _comptype = comptype; }
   void set_current_time() { _time = os::elapsedTime(); }
   void set_current_thread() { _thread = Thread::current(); }
@@ -225,7 +256,7 @@ public:
   static void print_legend(outputStream* st) {
 #define LEGEND_KEY_FMT "%11s"
     st->print_cr("Legend:");
-    st->print_cr("  " LEGEND_KEY_FMT ": %s", "total", "memory allocated via arenas while compiling");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "total", "peak memory allocated via arenas while compiling");
     for (int tag = 0; tag < Arena::tag_count(); tag++) {
       st->print_cr("  " LEGEND_KEY_FMT ": %s", Arena::tag_name[tag], Arena::tag_desc[tag]);
     }
@@ -234,6 +265,7 @@ public:
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "limit", "memory limit, if set");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "time", "time taken for last compilation (sec)");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "type", "compiler type");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "id", "compile id");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "#rc", "how often recompiled");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "thread", "compiler thread");
 #undef LEGEND_KEY_FMT
@@ -246,10 +278,10 @@ public:
       st->print(SIZE_FMT, Arena::tag_name[tag]);
     }
 #define HDR_FMT1 "%-8s%-8s%-8s%-8s"
-#define HDR_FMT2 "%-6s%-4s%-19s%s"
+#define HDR_FMT2 "%-6s%-6s%-4s%-19s%s"
 
     st->print(HDR_FMT1, "result", "#nodes", "limit", "time");
-    st->print(HDR_FMT2, "type", "#rc", "thread", "method");
+    st->print(HDR_FMT2, "type", "id", "#rc", "thread", "method");
     st->print_cr("");
   }
 
@@ -301,6 +333,10 @@ public:
     st->print("%s ", compilertype2name(_comptype));
     col += 6; st->fill_to(col);
 
+    // Compile ID
+    st->print("%d ", _comp_id);
+    col += 6; st->fill_to(col);
+
     // Recomp
     st->print("%u ", _num_recomp);
     col += 4; st->fill_to(col);
@@ -350,7 +386,7 @@ class MemStatTable :
 {
 public:
 
-  void add(const FullMethodName& fmn, CompilerType comptype,
+  void add(const FullMethodName& fmn, CompilerType comptype, int compid,
            size_t total, ArenaCountersByTag peak_by_tag,
            unsigned live_nodes_at_peak, size_t limit, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
@@ -365,6 +401,7 @@ public:
       e = *pe;
       assert(e != nullptr, "Sanity");
     }
+    e->set_comp_id(compid);
     e->set_current_time();
     e->set_current_thread();
     e->set_comptype(comptype);
@@ -417,6 +454,12 @@ void CompilationMemoryStatistic::on_start_compilation(const DirectiveSet* direct
   assert(enabled(), "Not enabled?");
   const size_t limit = directive->mem_limit();
   Thread::current()->as_Compiler_thread()->arena_stat()->start(limit);
+
+
+  if (UseNewCode) {
+    tty->print_cr("-> start compilation ");
+  }
+
 }
 
 void CompilationMemoryStatistic::on_end_compilation() {
@@ -426,6 +469,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
   ArenaStatCounter* const arena_stat = th->arena_stat();
   CompileTask* const task = th->task();
   const CompilerType ct = task->compiler()->type();
+  const int comp_id = task->compile_id();
 
   const Method* const m = th->task()->method();
   FullMethodName fmn(m);
@@ -455,19 +499,28 @@ void CompilationMemoryStatistic::on_end_compilation() {
     MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
     assert(_the_table != nullptr, "not initialized");
 
-    _the_table->add(fmn, ct,
+    _the_table->add(fmn, ct, comp_id,
                     arena_stat->peak(), // total
                     arena_stat->peak_by_tag(),
                     arena_stat->live_nodes_at_peak(),
                     arena_stat->limit(),
                     result);
   }
+
+  if (UseNewCode) {
+    tty->print_cr("<- end compilation ");
+  }
+
   if (print) {
-    char buf[1024];
-    fmn.as_C_string(buf, sizeof(buf));
-    tty->print("%s Arena usage %s: ", compilertype2name(ct), buf);
-    arena_stat->print_on(tty);
-    tty->cr();
+    // Pre-assemble string to prevent tearing
+    char buf[2048];
+    stringStream ss(buf, sizeof(buf));
+    ss.print("%s (%d) Arena usage", compilertype2name(ct), comp_id);
+    fmn.print_on(&ss);
+    ss.print_raw(": ");
+    arena_stat->print_on(&ss);
+    ss.cr();
+    tty->print_raw(buf);
   }
 
   arena_stat->end(); // reset things
@@ -572,6 +625,23 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
       arena_stat->set_limit_in_process(false);
     }
   }
+}
+
+// C2 only: inform statistic about start and end of a compilation phase
+void CompilationMemoryStatistic::on_c2_phase_start_0(const char* phase_name) {
+  assert(enabled(), "Not enabled?");
+  CompilerThread* const th = Thread::current()->as_Compiler_thread();
+  ArenaStatCounter* const arena_stat = th->arena_stat();
+  assert(arena_stat != nullptr, "A compilation should be in process?");
+  arena_stat->c2_start_phase(phase_name);
+}
+
+void CompilationMemoryStatistic::on_c2_phase_end_0(DEBUG_ONLY(const char* phase_name)) {
+  assert(enabled(), "Not enabled?");
+  CompilerThread* const th = Thread::current()->as_Compiler_thread();
+  ArenaStatCounter* const arena_stat = th->arena_stat();
+  assert(arena_stat != nullptr, "A compilation should be in process?");
+  arena_stat->c2_end_phase(phase_name);
 }
 
 static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStatEntry* e2) {
