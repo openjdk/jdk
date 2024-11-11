@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,8 @@ import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 /**
  * The class contains common functionality for algorithm constraints classes.
@@ -44,8 +41,6 @@ public abstract class AbstractAlgorithmConstraints
         implements AlgorithmConstraints {
 
     protected final AlgorithmDecomposer decomposer;
-    private static final Map<String, Pattern> patternCache =
-            new ConcurrentHashMap<>(4);
 
     protected AbstractAlgorithmConstraints(AlgorithmDecomposer decomposer) {
         this.decomposer = decomposer;
@@ -94,13 +89,6 @@ public abstract class AbstractAlgorithmConstraints
             return false;
         }
 
-        // TLS cipher suite wildcard matching
-        for (String pattern : algorithms) {
-            if (wildCardMatch(pattern, algorithm)) {
-                return false;
-            }
-        }
-
         // decompose the algorithm into sub-elements
         Set<String> elements = decomposer.decompose(algorithm);
 
@@ -114,23 +102,4 @@ public abstract class AbstractAlgorithmConstraints
         return true;
     }
 
-    private static boolean wildCardMatch(final String pattern,
-                                         final String algorithm) {
-        if (!pattern.contains("*")) {
-            return false;
-        }
-
-        if (!pattern.startsWith("TLS_")) {
-            throw new IllegalArgumentException(
-                    "Wildcard pattern must start with \"TLS_\"");
-        }
-
-        return patternCache.computeIfAbsent(
-                        pattern,
-                        p -> Pattern.compile(
-                                // Ignore all regex characters but asterisk.
-                                "^\\Q" + p.replace("*", "\\E.*\\Q") + "\\E$"))
-                .matcher(algorithm)
-                .matches();
-    }
 }
