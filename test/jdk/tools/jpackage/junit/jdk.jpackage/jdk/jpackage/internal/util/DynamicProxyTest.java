@@ -48,22 +48,32 @@ public class DynamicProxyTest {
 
     static interface Convo extends Smalltalk, ConvoMixin {
     }
-    
+
     static interface ConvoMixinWithOverrideSayBye {
 
         String sayThings();
-        
+
         String sayBye();
 
         record Stub(String sayThings, String sayBye) implements ConvoMixinWithOverrideSayBye {
         }
     }
-    
+
     static interface ConvoWithOverrideSayBye extends Smalltalk, ConvoMixinWithOverrideSayBye {
         @Override
-        String sayBye();        
+        String sayBye();
     }
-    
+
+    static interface ConvoWithDefaultSayHelloWithOverrideSayBye extends Smalltalk, ConvoMixinWithOverrideSayBye {
+        @Override
+        String sayBye();
+
+        @Override
+        default String sayHello() {
+            return "Ciao";
+        }
+    }
+
     @Test
     public void testSmalltalk() {
         var convo = DynamicProxy.createProxyFromPieces(Smalltalk.class);
@@ -80,7 +90,7 @@ public class DynamicProxyTest {
         assertEquals("Bye", convo.sayBye());
         assertEquals(otherThings, convo.sayThings());
     }
-    
+
     @Test
     public void testConvoWithDuke() {
         final var otherThings = "How is your day?";
@@ -94,13 +104,13 @@ public class DynamicProxyTest {
         assertEquals("Bye", convo.sayBye());
         assertEquals(otherThings, convo.sayThings());
     }
-    
+
     @Test
     public void testConvoWithCustomSayBye() {
         var mixin = new ConvoMixinWithOverrideSayBye.Stub("How is your day?", "See you");
-                
+
         var convo = DynamicProxy.createProxyFromPieces(ConvoWithOverrideSayBye.class, new Smalltalk() {}, mixin);
-        
+
         var expectedConvo = new ConvoWithOverrideSayBye() {
             @Override
             public String sayBye() {
@@ -110,12 +120,35 @@ public class DynamicProxyTest {
             @Override
             public String sayThings() {
                 return mixin.sayThings;
-            }            
+            }
         };
-        
+
         assertEquals(expectedConvo.sayHello(), convo.sayHello());
         assertEquals(expectedConvo.sayBye(), convo.sayBye());
-        assertEquals(((Smalltalk)expectedConvo).sayBye(), convo.sayBye());
+        assertEquals(expectedConvo.sayThings(), convo.sayThings());
+    }
+
+    @Test
+    public void testConvoWithCustomSayHelloAndSayBye() {
+        var mixin = new ConvoMixinWithOverrideSayBye.Stub("How is your day?", "See you");
+
+        var convo = DynamicProxy.createProxyFromPieces(ConvoWithDefaultSayHelloWithOverrideSayBye.class, new Smalltalk() {}, mixin);
+
+        var expectedConvo = new ConvoWithDefaultSayHelloWithOverrideSayBye() {
+            @Override
+            public String sayBye() {
+                return mixin.sayBye;
+            }
+
+            @Override
+            public String sayThings() {
+                return mixin.sayThings;
+            }
+        };
+
+        assertEquals("Ciao", expectedConvo.sayHello());
+        assertEquals(expectedConvo.sayHello(), convo.sayHello());
+        assertEquals(expectedConvo.sayBye(), convo.sayBye());
         assertEquals(expectedConvo.sayThings(), convo.sayThings());
     }
 }
