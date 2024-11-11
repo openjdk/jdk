@@ -506,6 +506,13 @@ final class ByteMaxVector extends ByteVector {
                                      ByteMaxMask.class, (ByteMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public ByteMaxVector selectFrom(Vector<Byte> v1,
+                                   Vector<Byte> v2) {
+        return (ByteMaxVector)
+            super.selectFromTemplate((ByteMaxVector) v1, (ByteMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

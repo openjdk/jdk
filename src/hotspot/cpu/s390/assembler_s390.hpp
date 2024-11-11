@@ -56,24 +56,23 @@ class Immediate {
     }
 
     // Test if x is within signed immediate range for nbits.
-    static bool is_uimm(int64_t x, unsigned int nbits) {
+    static bool is_uimm(uint64_t x, unsigned int nbits) {
       // nbits == 0  --> false
       // nbits >= 64 --> true
       assert(1 <= nbits && nbits < 64, "don't call, use statically known result");
-      const uint64_t xu       = (unsigned long)x;
       const uint64_t maxplus1 = 1UL << nbits;
-      return xu < maxplus1; // Unsigned comparison. Negative inputs appear to be very large.
+      return x < maxplus1; // Unsigned comparison. Negative inputs appear to be very large.
     }
-    static bool is_uimm32(int64_t x) {
+    static bool is_uimm32(uint64_t x) {
       return is_uimm(x, 32);
     }
-    static bool is_uimm16(int64_t x) {
+    static bool is_uimm16(uint64_t x) {
       return is_uimm(x, 16);
     }
-    static bool is_uimm12(int64_t x) {
+    static bool is_uimm12(uint64_t x) {
       return is_uimm(x, 12);
     }
-    static bool is_uimm8(int64_t x) {
+    static bool is_uimm8(uint64_t x) {
       return is_uimm(x,  8);
     }
 };
@@ -795,8 +794,8 @@ class Assembler : public AbstractAssembler {
 #define DSGF_ZOPC   (unsigned long)(227L << 40 | 29L)
 #define DSG_ZOPC    (unsigned long)(227L << 40 | 13L)
 // RR, unsigned
-#define DLR_ZOPC    (unsigned  int)(185 << 24 | 151 << 16)
-#define DLGR_ZOPC   (unsigned  int)(185 << 24 | 135 << 16)
+#define DLR_ZOPC    (unsigned  int)(0xb997 << 16)
+#define DLGR_ZOPC   (unsigned  int)(0xb987 << 16)
 // RM, unsigned
 #define DL_ZOPC     (unsigned long)(227L << 40 | 151L)
 #define DLG_ZOPC    (unsigned long)(227L << 40 | 135L)
@@ -2257,6 +2256,8 @@ class Assembler : public AbstractAssembler {
   inline void z_mghi( Register r1, int64_t i2);   // mult r1 = r1 * i2_imm16;   int64
 
   // Division instructions
+  inline void z_dlr(  Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
+  inline void z_dlgr( Register r1, Register r2);      // div  r1 = r1 / r2               ; int128/int64 needs reg pair!
   inline void z_dsgr( Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
   inline void z_dsgfr(Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
 
