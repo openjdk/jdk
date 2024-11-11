@@ -3495,15 +3495,18 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @see #toEngineeringString()
      */
     public String toPlainString() {
-        if(scale==0) {
-            if(intCompact!=INFLATED) {
-                return Long.toString(intCompact);
-            } else {
-                return intVal.toString();
-            }
-        }
-        if(this.scale<0) { // No decimal point
-            if(signum()==0) {
+        int scale = this.scale;
+        long intCompact = this.intCompact;
+
+        if (scale == 0)
+            return unscaledString();
+        // currency fast path
+        if (scale == 2 && intCompact != INFLATED)
+            return scale2(intCompact);
+
+        int signum = signum();
+        if (this.scale < 0) { // No decimal point
+            if (signum == 0) {
                 return "0";
             }
             int trailingZeros = checkScaleNonZero((-(long)scale));
@@ -3514,18 +3517,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (len < 0) {
                 throw new OutOfMemoryError("too large to fit in a String");
             }
-            StringBuilder buf = new StringBuilder(len);
-            buf.append(str);
-            buf.repeat('0', trailingZeros);
-            return buf.toString();
+
+            return new StringBuilder(len)
+                    .append(str)
+                    .repeat('0', trailingZeros)
+                    .toString();
         }
-        String str;
-        if(intCompact!=INFLATED) {
-            str = Long.toString(Math.abs(intCompact));
-        } else {
-            str = intVal.abs().toString();
-        }
-        return getValueString(signum(), str, scale);
+
+        return getValueString(signum, unscaledAbsString(), scale);
     }
 
     /* Returns a digit.digit string */
@@ -3534,21 +3533,22 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         StringBuilder buf;
         int insertionPoint = intString.length() - scale;
         if (insertionPoint == 0) {  /* Point goes just before intVal */
-            return (signum<0 ? "-0." : "0.") + intString;
+            return (signum < 0 ? "-0." : "0.").concat(intString);
         } else if (insertionPoint > 0) { /* Point goes inside intVal */
-            buf = new StringBuilder(intString);
-            buf.insert(insertionPoint, '.');
+            buf = new StringBuilder();
             if (signum < 0)
-                buf.insert(0, '-');
+                buf.append('-');
+            buf.append(intString)
+               .insert(insertionPoint + (signum < 0 ? 1 : 0), '.');
         } else { /* We must insert zeros between point and intVal */
             int len = (signum < 0 ? 3 : 2) + scale;
             if (len < 0) {
                 throw new OutOfMemoryError("too large to fit in a String");
             }
-            buf = new StringBuilder(len);
-            buf.append(signum<0 ? "-0." : "0.");
-            buf.repeat('0', -insertionPoint);  // insertionPoint != MIN_VALUE
-            buf.append(intString);
+            buf = new StringBuilder(len)
+                    .append(signum<0 ? "-0." : "0.")
+                    .repeat('0', -insertionPoint)  // insertionPoint != MIN_VALUE
+                    .append(intString);
         }
         return buf.toString();
     }
@@ -4185,75 +4185,45 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         long intCompact = this.intCompact;
         int scale = this.scale;
         if (scale == 0)                      // zero scale is trivial
-            return (intCompact != INFLATED) ?
-                Long.toString(intCompact):
-                intVal.toString();
-        if (scale == 2  &&
-            intCompact >= 0 && intCompact < Integer.MAX_VALUE) {
-            // currency fast path
-            int lowInt = (int)intCompact % 100;
-            int highInt = (int)intCompact / 100;
-            int highIntSize = DecimalDigits.stringSize(highInt);
-            byte[] buf = new byte[highIntSize + 3];
-            DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
-            buf[highIntSize] = '.';
-            DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
-            try {
-                return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
-            } catch (CharacterCodingException cce) {
-                throw new AssertionError(cce);
-            }
-        }
+            return unscaledString();
+        if (scale == 2 && intCompact != INFLATED)
+            return scale2(intCompact);
 
-        char[] coeff;
-        int offset;  // offset is the starting index for coeff array
         // Get the significand as an absolute value
-        if (intCompact != INFLATED) {
-            coeff = new char[19];
-            offset = DecimalDigits.getChars(Math.abs(intCompact), coeff.length, coeff);
-        } else {
-            offset = 0;
-            coeff  = intVal.abs().toString().toCharArray();
-        }
+        String coeff = unscaledAbsString();
 
         // Construct a buffer, with sufficient capacity for all cases.
         // If E-notation is needed, length will be: +1 if negative, +1
         // if '.' needed, +2 for "E+", + up to 10 for adjusted exponent.
         // Otherwise it could have +1 if negative, plus leading "0.00000"
-        StringBuilder buf = new StringBuilder(32);;
-        if (signum() < 0)             // prefix '-' if negative
-            buf.append('-');
-        int coeffLen = coeff.length - offset;
+        int coeffLen = coeff.length();
         long adjusted = -(long)scale + (coeffLen -1);
         if ((scale >= 0) && (adjusted >= -6)) { // plain number
-            int pad = scale - coeffLen;         // count of padding zeros
-            if (pad >= 0) {                     // 0.xxx form
-                buf.append('0');
-                buf.append('.');
-                for (; pad>0; pad--) {
-                    buf.append('0');
-                }
-                buf.append(coeff, offset, coeffLen);
-            } else {                         // xx.xx form
-                buf.append(coeff, offset, -pad);
-                buf.append('.');
-                buf.append(coeff, -pad + offset, scale);
+            return getValueString(signum(), coeff, scale);
+        }
+        // E-notation is needed
+        return layoutCharsE(sci, coeff, coeffLen, adjusted);
+    }
+
+    private String layoutCharsE(boolean sci, String coeff, int coeffLen, long adjusted) {
+        StringBuilder buf = new StringBuilder(32);
+        int signum = signum();
+        if (signum < 0)                  // prefix '-' if negative
+            buf.append('-');
+        if (sci) {                       // Scientific notation
+            buf.append(coeff.charAt(0)); // first character
+            if (coeffLen > 1) {          // more to come
+                buf.append('.')
+                   .append(coeff, 1, coeffLen);
             }
-        } else { // E-notation is needed
-            if (sci) {                       // Scientific notation
-                buf.append(coeff[offset]);   // first character
-                if (coeffLen > 1) {          // more to come
-                    buf.append('.');
-                    buf.append(coeff, offset + 1, coeffLen - 1);
-                }
-            } else {                         // Engineering notation
-                int sig = (int)(adjusted % 3);
-                if (sig < 0)
-                    sig += 3;                // [adjusted was negative]
-                adjusted -= sig;             // now a multiple of 3
-                sig++;
-                if (signum() == 0) {
-                    switch (sig) {
+        } else {                         // Engineering notation
+            int sig = (int)(adjusted % 3);
+            if (sig < 0)
+                sig += 3;                // [adjusted was negative]
+            adjusted -= sig;             // now a multiple of 3
+            sig++;
+            if (signum == 0) {
+                switch (sig) {
                     case 1:
                         buf.append('0'); // exponent is a multiple of three
                         break;
@@ -4267,27 +4237,63 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         break;
                     default:
                         throw new AssertionError("Unexpected sig value " + sig);
-                    }
-                } else if (sig >= coeffLen) {   // significand all in integer
-                    buf.append(coeff, offset, coeffLen);
-                    // may need some zeros, too
-                    for (int i = sig - coeffLen; i > 0; i--) {
-                        buf.append('0');
-                    }
-                } else {                     // xx.xxE form
-                    buf.append(coeff, offset, sig);
-                    buf.append('.');
-                    buf.append(coeff, offset + sig, coeffLen - sig);
                 }
-            }
-            if (adjusted != 0) {             // [!sci could have made 0]
-                buf.append('E');
-                if (adjusted > 0)            // force sign for positive
-                    buf.append('+');
-                buf.append(adjusted);
+            } else if (sig >= coeffLen) {// significand all in integer
+                buf.append(coeff, 0, coeffLen)
+                   .repeat('0', sig - coeffLen); // may need some zeros, too
+            } else {                     // xx.xxE form
+                buf.append(coeff, 0, sig)
+                   .append('.')
+                   .append(coeff, sig, coeffLen);
             }
         }
+        if (adjusted != 0) {             // [!sci could have made 0]
+            buf.append('E');
+            if (adjusted > 0)            // force sign for positive
+                buf.append('+');
+            buf.append(adjusted);
+        }
         return buf.toString();
+    }
+
+    private String scale2(long intCompact) {
+        boolean negative = intCompact < 0;
+        if (negative) {
+            intCompact = -intCompact;
+        }
+        int lowInt = (int) (intCompact % 100);
+        long highInt = intCompact / 100;
+        int highIntSize = DecimalDigits.stringSize(highInt);
+        if (negative) {
+            highIntSize++;
+        }
+        byte[] buf = new byte[highIntSize + 3];
+        if (negative) {
+            buf[0] = '-';
+        }
+        DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
+        buf[highIntSize] = '.';
+        DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
+        try {
+            return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
+        }
+    }
+
+    /**
+     * Get the significand as an absolute value
+     */
+    private String unscaledAbsString() {
+        return intCompact != INFLATED
+                ? Long.toString(Math.abs(intCompact))
+                : intVal.abs().toString();
+    }
+
+    private String unscaledString() {
+        return intCompact != INFLATED
+                ? Long.toString(intCompact)
+                : intVal.toString();
     }
 
     /**
