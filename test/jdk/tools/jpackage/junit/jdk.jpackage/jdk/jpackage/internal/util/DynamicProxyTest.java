@@ -1,0 +1,121 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package jdk.jpackage.internal.util;
+
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+public class DynamicProxyTest {
+
+    static interface Smalltalk {
+
+        default String sayHello() {
+            return "Hello";
+        }
+
+        default String sayBye() {
+            return "Bye";
+        }
+    }
+
+    static interface ConvoMixin {
+
+        String sayThings();
+
+        record Stub(String sayThings) implements ConvoMixin {
+        }
+    }
+
+    static interface Convo extends Smalltalk, ConvoMixin {
+    }
+    
+    static interface ConvoMixinWithOverrideSayBye {
+
+        String sayThings();
+        
+        String sayBye();
+
+        record Stub(String sayThings, String sayBye) implements ConvoMixinWithOverrideSayBye {
+        }
+    }
+    
+    static interface ConvoWithOverrideSayBye extends Smalltalk, ConvoMixinWithOverrideSayBye {
+        @Override
+        String sayBye();        
+    }
+    
+    @Test
+    public void testSmalltalk() {
+        var convo = DynamicProxy.createProxyFromPieces(Smalltalk.class);
+        assertEquals("Hello", convo.sayHello());
+        assertEquals("Bye", convo.sayBye());
+    }
+
+    @Test
+    public void testConvo() {
+        final var otherThings = "How is your day?";
+        var convo = DynamicProxy.createProxyFromPieces(Convo.class,
+                new Smalltalk() {}, new ConvoMixin.Stub(otherThings));
+        assertEquals("Hello", convo.sayHello());
+        assertEquals("Bye", convo.sayBye());
+        assertEquals(otherThings, convo.sayThings());
+    }
+    
+    @Test
+    public void testConvoWithDuke() {
+        final var otherThings = "How is your day?";
+        var convo = DynamicProxy.createProxyFromPieces(Convo.class, new Smalltalk() {
+            @Override
+            public String sayHello() {
+                return "Hello, Duke";
+            }
+        }, new ConvoMixin.Stub(otherThings));
+        assertEquals("Hello, Duke", convo.sayHello());
+        assertEquals("Bye", convo.sayBye());
+        assertEquals(otherThings, convo.sayThings());
+    }
+    
+    @Test
+    public void testConvoWithCustomSayBye() {
+        var mixin = new ConvoMixinWithOverrideSayBye.Stub("How is your day?", "See you");
+                
+        var convo = DynamicProxy.createProxyFromPieces(ConvoWithOverrideSayBye.class, new Smalltalk() {}, mixin);
+        
+        var expectedConvo = new ConvoWithOverrideSayBye() {
+            @Override
+            public String sayBye() {
+                return mixin.sayBye;
+            }
+
+            @Override
+            public String sayThings() {
+                return mixin.sayThings;
+            }            
+        };
+        
+        assertEquals(expectedConvo.sayHello(), convo.sayHello());
+        assertEquals(expectedConvo.sayBye(), convo.sayBye());
+        assertEquals(((Smalltalk)expectedConvo).sayBye(), convo.sayBye());
+        assertEquals(expectedConvo.sayThings(), convo.sayThings());
+    }
+}

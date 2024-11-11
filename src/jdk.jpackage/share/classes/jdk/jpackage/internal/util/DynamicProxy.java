@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,21 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
+import java.util.function.BinaryOperator;
 import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 public final class DynamicProxy {
 
     public static <T> T createProxyFromPieces(Class<T> interfaceType, Object ... pieces) {
+        return createProxyFromPieces(interfaceType, STANDARD_CONFLICT_RESOLVER, pieces);
+    }
+
+    public static <T> T createProxyFromPieces(Class<T> interfaceType,
+            BinaryOperator<Method> conflictResolver, Object... pieces) {
         if (!interfaceType.isInterface()) {
             throw new IllegalArgumentException(String.format(
                     "Type %s must be an interface", interfaceType.getName()));
@@ -56,7 +63,7 @@ public final class DynamicProxy {
                     return Set.of(obj.getClass().getInterfaces()).contains(iface);
                 }).reduce((a, b) -> {
                     throw new IllegalArgumentException(String.format(
-                            "Both [%s] and [%s] objects implement %s", a, b,
+                            "Both [%s] and [%s] pieces implement %s", a, b,
                             iface));
                 }).orElseThrow(() -> createInterfaceNotImplementedException(List.of(iface)));
             }));
@@ -71,22 +78,56 @@ public final class DynamicProxy {
             throw createInterfaceNotImplementedException(missingInterfaces);
         }
 
-        var methodDispatch = Stream.of(interfaces)
-                .map(Class::getMethods)
-                .flatMap(Stream::of)
-                .filter(Predicate.not(Method::isDefault))
-                .collect(toMap(x -> x, method -> {
-                    return interfaceDispatch.get(method.getDeclaringClass());
-                }));
+        Map<Method, Handler> methodDispatch = Stream.of(interfaceType.getMethods())
+                .map(method -> {
+                    final var methodDeclaringClass = method.getDeclaringClass();
+                    if (!methodDeclaringClass.equals(interfaceType)) {
+                        var piece = interfaceDispatch.get(methodDeclaringClass);
+                        var pieceMethod = toSupplier(
+                                    () -> piece.getClass().getMethod(
+                                            method.getName(),
+                                            method.getParameterTypes())).get();
+                        if (!method.isDefault()) {
+                            return Map.entry(method, new Handler(piece, pieceMethod));
+                        } else if (method.equals(pieceMethod)) {
+                            // The handler class doesn't override the default method
+                            // of the interface, don't add it to the dispatch map.
+                            return null;
+                        } else {
+                            return Map.entry(method, new Handler(piece, pieceMethod));
+                        }
+                    } else if (method.isDefault()) {
+                        return null;
+                    } else {
+                        // Find a piece handling the method.
+                        var handler = interfaceDispatch.values().stream().map(piece -> {
+                            try {
+                                return new Handler(piece,
+                                        piece.getClass().getMethod(
+                                                method.getName(),
+                                                method.getParameterTypes()));
+                            } catch (NoSuchMethodException ex) {
+                                return null;
+                            }
+                        }).filter(Objects::nonNull).reduce(new ConflictResolverAdapter(conflictResolver)).orElseThrow(() -> {
+                            return new IllegalArgumentException(String.format(
+                                    "None of the pieces can handle %s", method));
+                        });
+
+                        return Map.entry(method, handler);
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return createProxy(interfaceType, methodDispatch);
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T createProxy(Class<T> interfaceType, Map<Method, Object> dispatch) {
+    private static <T> T createProxy(Class<T> interfaceType, Map<Method, Handler> dispatch) {
         return (T) Proxy.newProxyInstance(interfaceType.getClassLoader(),
                 new Class<?>[]{interfaceType},
-                new DynamicMixinInvocationHandler(dispatch));
+                new DynamicProxyInvocationHandler(dispatch));
     }
 
     private static IllegalArgumentException createInterfaceNotImplementedException(
@@ -95,16 +136,52 @@ public final class DynamicProxy {
                 "None of the pieces implement %s", missingInterfaces));
     }
 
-    private record DynamicMixinInvocationHandler(Map<Method, Object> dispatch) implements InvocationHandler {
+    private record DynamicProxyInvocationHandler(Map<Method, Handler> dispatch) implements InvocationHandler {
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            if (method.isDefault()) {
+            var handler = dispatch.get(method);
+            if (handler != null) {
+                return handler.invoke(args);
+            } else if (method.isDefault()) {
                 return InvocationHandler.invokeDefault(proxy, method, args);
             } else {
-                var handler = dispatch.get(method);
-                return method.invoke(handler, args);
+                throw new UnsupportedOperationException(String.format("No handler for %s", method));
             }
         }
     }
+
+    private record Handler(Object obj, Method method) {
+        Object invoke(Object[] args) throws Throwable {
+            return method.invoke(obj, args);
+        }
+    }
+
+    private record ConflictResolverAdapter(
+            BinaryOperator<Method> conflictResolver) implements
+            BinaryOperator<Handler> {
+
+        @Override
+        public Handler apply(Handler a, Handler b) {
+            var m = conflictResolver.apply(a.method, b.method);
+            if (m == a.method) {
+                return a;
+            } else if (m == b.method) {
+                return b;
+            } else {
+                throw new UnsupportedOperationException();
+            }
+        }
+    }
+
+    public static final BinaryOperator<Method> STANDARD_CONFLICT_RESOLVER = (a, b) -> {
+        if (a.isDefault() == b.isDefault()) {
+            throw new IllegalArgumentException(String.format(
+                    "Ambiguous choice between %s and %s", a, b));
+        } else if (!a.isDefault()) {
+            return a;
+        } else {
+            return b;
+        }
+    };
 }
