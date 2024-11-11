@@ -1274,7 +1274,9 @@ void ShenandoahHeap::concurrent_retire_gc_labs() {
 
   // Safepoint workers may be asked to evacuate objects if they are visiting oops to create a heap dump
   // during a concurrent evacuation phase. These threads will _not_ be used during a degenerated cycle.
-  safepoint_workers()->threads_do(&retire);
+  if (safepoint_workers() != nullptr) {
+    safepoint_workers()->threads_do(&retire);
+  }
 
   // A degenerated cycle won't attempt to use LABs from the mutator threads
   ShenandoahRetireJavaGCLABClosure retire_java_labs;
@@ -1437,14 +1439,6 @@ public:
   }
 };
 
-class ShenandoahAssertNoLabs : public ThreadClosure {
-public:
-  void do_thread(Thread* thread) override {
-    assert(ShenandoahThreadLocalData::gclab(thread) == nullptr, "Thread should not have GCLAB");
-    assert(ShenandoahThreadLocalData::plab(thread) == nullptr, "Thread should not have PLAB");
-  }
-};
-
 void ShenandoahHeap::labs_make_parsable() {
   assert(UseTLAB, "Only call with UseTLAB");
 
@@ -1495,8 +1489,7 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
   workers()->threads_do(&cl);
 
   if (safepoint_workers() != nullptr) {
-    ShenandoahAssertNoLabs no_labs;
-    safepoint_workers()->threads_do(&no_labs);
+    safepoint_workers()->threads_do(&cl);
   }
 }
 
