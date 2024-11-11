@@ -133,6 +133,7 @@ class outputStream : public CHeapObjBase {
    void print_raw_cr(const char* str, size_t len) { print_raw(str, len); cr(); }
    void print_data(void* data, size_t len, bool with_ascii, bool rel_addr=true);
    void put(char ch);
+   void put(char c, int count);
    void sp(int count = 1);
    void cr();
    void cr_indent();

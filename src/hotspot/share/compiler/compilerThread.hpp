@@ -85,6 +85,7 @@ class CompilerThread : public JavaThread {
   CompileQueue* queue()        const             { return _queue; }
   CompilerCounters* counters() const             { return _counters; }
   ArenaStatCounter* arena_stat() const           { return _arena_stat; }
+  void set_arenastat(ArenaStatCounter* v)        { _arena_stat = v; }
 
   // Get/set the thread's compilation environment.
   ciEnv*        env()                            { return _env; }

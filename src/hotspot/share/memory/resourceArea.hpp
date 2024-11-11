@@ -58,6 +58,10 @@ public:
     Arena(mem_tag, Arena::Tag::tag_ra, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
   }
 
+  ResourceArea(MemTag mem_tag, Arena::Tag arena_tag) :
+    Arena(mem_tag, arena_tag) DEBUG_ONLY(COMMA _nesting(0)) {
+  }
+
   char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
   DEBUG_ONLY(int nesting() const { return _nesting; })

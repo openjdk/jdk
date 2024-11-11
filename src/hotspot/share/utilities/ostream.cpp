@@ -212,11 +212,17 @@ void outputStream::put(char ch) {
 }
 
 void outputStream::sp(int count) {
-  if (count < 0)  return;
+  put(' ', count);
+}
 
+void outputStream::put(char ch, int count) {
+  assert(ch != 0, "please fix call site");
+  if (count < 0)  return;
+  char tmp[8];
+  memset(tmp, ch, sizeof(tmp));
   while (count > 0) {
     int nw = (count > 8) ? 8 : count;
-    this->write("        ", nw);
+    this->write(tmp, nw);
     count -= nw;
   }
 }

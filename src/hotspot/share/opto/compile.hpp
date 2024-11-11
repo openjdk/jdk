@@ -238,14 +238,17 @@ class Compile : public Phase {
   // (The time collection itself is always conditionalized on CITime.)
   class TracePhase : public TraceTime {
    private:
-    Compile*    _compile;
+    Compile* const _compile;
     CompileLog* _log;
-    bool _dolog;
+    const bool _dolog;
+    const PhaseTraceId _id;
+    const int _num; // sequential number, local to this compilation
    public:
     TracePhase(PhaseTraceId phaseTraceId);
     TracePhase(const char* name, PhaseTraceId phaseTraceId);
     ~TracePhase();
     const char* phase_name() const { return title(); }
+    int num() const { return _num; }
   };
 
   // Information per category of alias (memory slice)
@@ -379,6 +382,7 @@ class Compile : public Phase {
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
+  int                   _phase_num;             // current phase number, for TracePhase
 #ifndef PRODUCT
   IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
@@ -541,6 +545,8 @@ public:
   // ID for this compilation.  Useful for setting breakpoints in the debugger.
   int               compile_id() const          { return _compile_id; }
   DirectiveSet*     directive() const           { return _directive; }
+
+  int               advance_phasenum()          { return ++_phase_num; }
 
   // Does this compilation allow instructions to subsume loads?  User
   // instructions that subsume a load may result in an unschedulable
