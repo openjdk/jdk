@@ -132,7 +132,7 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
     // Search for newlines in the string and repeatedly print the substrings that end
     // with each newline.
     const char* next = strstr(msg, "\n");
-    while (next != NULL) {  // We have some newlines to print
+    while (next != nullptr) {  // We have some newlines to print
       int to_print = next - base;
       WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%.*s\n", to_print, base), written);
       if (use_decorations) {
