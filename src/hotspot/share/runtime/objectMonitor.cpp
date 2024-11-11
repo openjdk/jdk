@@ -1133,6 +1133,14 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
 // or drain _cxq, we need to reacquire the lock before we can wake up
 // (unpark) a waiting thread.
 //
+// Note that we read the EntryList and then the cxq after dropping the
+// lock, so the values need not form a stable snapshot. In particular,
+// after reading the (empty) EntryList, another thread could acquire
+// and release the lock, moving any entries in the cxq to the
+// EntryList, causing the current thread to see an empty cxq and
+// conclude there are no waiters. But this is okay as the thread that
+// moved the cxq is responsible for waking the successor.
+//
 // The CAS() in enter provides for safety and exclusion, while the
 // MEMBAR in exit provides for progress and avoids stranding.
 //

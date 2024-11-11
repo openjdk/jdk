@@ -346,11 +346,8 @@ class Instruction: public CompilationResourceObj {
     NeedsNullCheckFlag = 0,
     CanTrapFlag,
     DirectCompareFlag,
-    IsEliminatedFlag,
     IsSafepointFlag,
     IsStaticFlag,
-    NeedsStoreCheckFlag,
-    NeedsWriteBarrierFlag,
     PreservesStateFlag,
     TargetIsFinalFlag,
     TargetIsLoadedFlag,
@@ -361,7 +358,6 @@ class Instruction: public CompilationResourceObj {
     ProfileMDOFlag,
     IsLinkedInBlockFlag,
     NeedsRangeCheckFlag,
-    InWorkListFlag,
     DeoptimizeOnException,
     KillsMemoryFlag,
     OmitChecksFlag,
@@ -840,14 +836,12 @@ LEAF(StoreField, AccessField)
   : AccessField(obj, offset, field, is_static, state_before, needs_patching)
   , _value(value)
   {
-    set_flag(NeedsWriteBarrierFlag, as_ValueType(field_type())->is_object());
     ASSERT_VALUES
     pin();
   }
 
   // accessors
   Value value() const                            { return _value; }
-  bool needs_write_barrier() const               { return check_flag(NeedsWriteBarrierFlag); }
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { AccessField::input_values_do(f); f->visit(&_value); }
@@ -974,16 +968,12 @@ LEAF(StoreIndexed, AccessIndexed)
   : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
   , _value(value), _profiled_method(nullptr), _profiled_bci(0), _check_boolean(check_boolean)
   {
-    set_flag(NeedsWriteBarrierFlag, (as_ValueType(elt_type)->is_object()));
-    set_flag(NeedsStoreCheckFlag, (as_ValueType(elt_type)->is_object()));
     ASSERT_VALUES
     pin();
   }
 
   // accessors
   Value value() const                            { return _value; }
-  bool needs_write_barrier() const               { return check_flag(NeedsWriteBarrierFlag); }
-  bool needs_store_check() const                 { return check_flag(NeedsStoreCheckFlag); }
   bool check_boolean() const                     { return _check_boolean; }
   // Helpers for MethodData* profiling
   void set_should_profile(bool value)                { set_flag(ProfileMDOFlag, value); }

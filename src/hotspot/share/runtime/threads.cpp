@@ -166,6 +166,9 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                           string,
                           CHECK);
 
+  JFR_ONLY(assert(JFR_JVM_THREAD_ID(thread) == static_cast<traceid>(java_lang_Thread::thread_id(thread_oop())),
+             "initial tid mismatch");)
+
   // Set thread status to running since main thread has
   // been started and running.
   java_lang_Thread::set_thread_status(thread_oop(),
@@ -532,13 +535,15 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
   MACOS_AARCH64_ONLY(main_thread->init_wx());
 
-  if (!main_thread->set_as_starting_thread()) {
+  if (!Thread::set_as_starting_thread(main_thread)) {
     vm_shutdown_during_initialization(
                                       "Failed necessary internal allocation. Out of swap space");
     main_thread->smr_delete();
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return JNI_ENOMEM;
   }
+
+  JFR_ONLY(Jfr::initialize_main_thread(main_thread);)
 
   // Enable guard page *after* os::create_main_thread(), otherwise it would
   // crash Linux VM, see notes in os_linux.cpp.

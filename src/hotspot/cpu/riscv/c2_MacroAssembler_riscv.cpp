@@ -234,7 +234,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty.
+  // Check if the entry lists are empty (EntryList first - by convention).
   ld(t0, Address(tmp, ObjectMonitor::EntryList_offset()));
   ld(tmp1Reg, Address(tmp, ObjectMonitor::cxq_offset()));
   orr(t0, t0, tmp1Reg);
@@ -566,7 +566,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty.
+    // Check if the entry lists are empty (EntryList first - by convention).
     ld(t0, Address(tmp1_monitor, ObjectMonitor::EntryList_offset()));
     ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::cxq_offset()));
     orr(t0, t0, tmp3_t);
@@ -3118,4 +3118,14 @@ void C2_MacroAssembler::extract_fp_v(FloatRegister dst, VectorRegister src, Basi
     vslidedown_vx(tmp, src, t0);
     vfmv_f_s(dst, tmp);
   }
+}
+
+void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Address src) {
+  // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
+  // obj-start, so that we can load from the object's mark-word instead. Usually the address
+  // comes as obj-start in obj and klass_offset_in_bytes in disp.
+  assert(UseCompactObjectHeaders, "must");
+  int offset = oopDesc::mark_offset_in_bytes() - oopDesc::klass_offset_in_bytes();
+  ld(dst, Address(src.base(), src.offset() + offset));
+  srli(dst, dst, markWord::klass_shift);
 }

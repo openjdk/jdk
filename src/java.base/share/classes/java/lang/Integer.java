@@ -432,11 +432,11 @@ public final class Integer extends Number
         int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
-            StringLatin1.getChars(i, size, buf);
+            DecimalDigits.getCharsLatin1(i, size, buf);
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[size * 2];
-            StringUTF16.getChars(i, size, buf);
+            DecimalDigits.getCharsUTF16(i, size, buf);
             return new String(buf, UTF16);
         }
     }
@@ -960,7 +960,17 @@ public final class Integer extends Number
             if (archivedCache == null || size > archivedCache.length) {
                 Integer[] c = new Integer[size];
                 int j = low;
-                for(int i = 0; i < c.length; i++) {
+                // If archive has Integer cache, we must use all instances from it.
+                // Otherwise, the identity checks between archived Integers and
+                // runtime-cached Integers would fail.
+                int archivedSize = (archivedCache == null) ? 0 : archivedCache.length;
+                for (int i = 0; i < archivedSize; i++) {
+                    c[i] = archivedCache[i];
+                    assert j == archivedCache[i];
+                    j++;
+                }
+                // Fill the rest of the cache.
+                for (int i = archivedSize; i < size; i++) {
                     c[i] = new Integer(j++);
                 }
                 archivedCache = c;
