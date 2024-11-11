@@ -3941,19 +3941,6 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean 
 #endif
 JVM_END
 
-// Always update the temporary VTMS transition bit.
-JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jclass clazz, jboolean hide))
-#if INCLUDE_JVMTI
-  if (!DoJVMTIVirtualThreadTransitions) {
-    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
-    return;
-  }
-  assert(!thread->is_in_VTMS_transition(), "sanity check");
-  assert(thread->is_in_tmp_VTMS_transition() != (bool)hide, "sanity check");
-  thread->toggle_is_in_tmp_VTMS_transition();
-#endif
-JVM_END
-
 // Notification from VirtualThread about disabling JVMTI Suspend in a sync critical section.
 // Needed to avoid deadlocks with JVMTI suspend mechanism.
 JVM_ENTRY(void, JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter))
