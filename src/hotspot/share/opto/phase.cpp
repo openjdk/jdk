@@ -29,7 +29,6 @@
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/phase.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 int Phase::_total_bytes_compiled = 0;
 

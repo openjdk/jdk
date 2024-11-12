@@ -2444,7 +2444,7 @@ void Compile::Optimize() {
 #endif
 
   {
-    TracePhase tp("macroExpand", _t_macroExpand);
+    TracePhase tp(_t_macroExpand);
     print_method(PHASE_BEFORE_MACRO_EXPANSION, 3);
     PhaseMacroExpand  mex(igvn);
     if (mex.expand_macro_nodes()) {

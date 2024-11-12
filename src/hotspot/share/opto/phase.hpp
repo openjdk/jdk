@@ -64,61 +64,61 @@ public:
     last_phase
   };
 
-#define ALL_PHASE_TRACE_IDS(f) \
-		f(   _t_parser,                  "parse") \
-		f(   _t_optimizer,               "optimizer") \
-		f(     _t_escapeAnalysis,        "escapeAnalysis") \
-		f(       _t_connectionGraph,     "connectionGraph") \
-		f(       _t_macroEliminate,      "macroEliminate") \
-		f(     _t_iterGVN,               "iterGVN") \
-		f(     _t_incrInline,            "incrementalInline") \
-		f(       _t_incrInline_ideal,    "incrementalInline_ideal") \
-		f(       _t_incrInline_igvn,     "incrementalInline_igvn") \
-		f(       _t_incrInline_pru,      "incrementalInline_pru") \
-		f(       _t_incrInline_inline,   "incrementalInline_inline") \
-		f(     _t_vector,                "") \
-		f(       _t_vector_elimination,  "vector_elimination") \
-		f(         _t_vector_igvn,       "incrementalInline_igvn") \
-		f(         _t_vector_pru,        "vector_pru") \
-		f(     _t_renumberLive,          "") \
-		f(     _t_idealLoop,             "idealLoop") \
-		f(       _t_autoVectorize,       "autoVectorize") \
-		f(     _t_idealLoopVerify,       "idealLoopVerify") \
-		f(     _t_ccp,                   "ccp") \
-		f(     _t_iterGVN2,              "iterGVN2") \
-		f(     _t_macroExpand,           "macroExpand") \
-		f(     _t_barrierExpand,         "barrierExpand") \
-		f(     _t_graphReshaping,        "XXXX") \
-		f(   _t_matcher,                 "XXXX") \
-		f(     _t_postselect_cleanup,    "XXXX") \
-		f(   _t_scheduler,               "XXXX") \
-		f(   _t_registerAllocation,      "XXXX") \
-		f(     _t_ctorChaitin,           "XXXX") \
-		f(     _t_buildIFGvirtual,       "XXXX") \
-		f(     _t_buildIFGphysical,      "XXXX") \
-		f(     _t_computeLive,           "XXXX") \
-		f(     _t_regAllocSplit,         "XXXX") \
-		f(     _t_postAllocCopyRemoval,  "XXXX") \
-		f(     _t_mergeMultidefs,        "XXXX") \
-		f(     _t_fixupSpills,           "XXXX") \
-		f(     _t_chaitinCompact,        "XXXX") \
-		f(     _t_chaitinCoalesce1,      "XXXX") \
-		f(     _t_chaitinCoalesce2,      "XXXX") \
-		f(     _t_chaitinCoalesce3,      "XXXX") \
-		f(     _t_chaitinCacheLRG,       "XXXX") \
-		f(     _t_chaitinSimplify,       "XXXX") \
-		f(     _t_chaitinSelect,         "XXXX") \
-		f(   _t_blockOrdering,           "XXXX") \
-		f(   _t_peephole,                "XXXX") \
-		f(   _t_postalloc_expand,        "XXXX") \
-		f(   _t_output,                  "XXXX") \
-		f(     _t_instrSched,            "XXXX") \
-		f(     _t_shortenBranches,       "XXXX") \
-		f(     _t_buildOopMaps,          "XXXX") \
-		f(     _t_fillBuffer,            "XXXX") \
-		f(     _t_registerMethod,        "XXXX") \
-		f(   _t_temporaryTimer1,         "XXXX") \
-		f(   _t_temporaryTimer2,         "XXXX")
+#define ALL_PHASE_TRACE_IDS(f)                                   \
+    f(   _t_parser,                  "parse")                    \
+    f(   _t_optimizer,               "optimizer")                \
+    f(     _t_escapeAnalysis,        "escapeAnalysis")           \
+    f(       _t_connectionGraph,     "connectionGraph")          \
+    f(       _t_macroEliminate,      "macroEliminate")           \
+    f(     _t_iterGVN,               "iterGVN")                  \
+    f(     _t_incrInline,            "incrementalInline")        \
+    f(       _t_incrInline_ideal,    "incrementalInline_ideal")  \
+    f(       _t_incrInline_igvn,     "incrementalInline_igvn")   \
+    f(       _t_incrInline_pru,      "incrementalInline_pru")    \
+    f(       _t_incrInline_inline,   "incrementalInline_inline") \
+    f(     _t_vector,                "")                         \
+    f(       _t_vector_elimination,  "vector_elimination")       \
+    f(         _t_vector_igvn,       "incrementalInline_igvn")   \
+    f(         _t_vector_pru,        "vector_pru")               \
+    f(     _t_renumberLive,          "")                         \
+    f(     _t_idealLoop,             "idealLoop")                \
+    f(       _t_autoVectorize,       "autoVectorize")            \
+    f(     _t_idealLoopVerify,       "idealLoopVerify")          \
+    f(     _t_ccp,                   "ccp")                      \
+    f(     _t_iterGVN2,              "iterGVN2")                 \
+    f(     _t_macroExpand,           "macroExpand")              \
+    f(     _t_barrierExpand,         "barrierExpand")            \
+    f(     _t_graphReshaping,        "graphReshape")             \
+    f(   _t_matcher,                 "matcher")                  \
+    f(     _t_postselect_cleanup,    "postselect_cleanup")       \
+    f(   _t_scheduler,               "scheduler")                \
+    f(   _t_registerAllocation,      "regalloc")                 \
+    f(     _t_ctorChaitin,           "ctorChaitin")              \
+    f(     _t_buildIFGvirtual,       "buildIFG_virt")            \
+    f(     _t_buildIFGphysical,      "buildIFG")                 \
+    f(     _t_computeLive,           "computeLive")              \
+    f(     _t_regAllocSplit,         "regAllocSplit")            \
+    f(     _t_postAllocCopyRemoval,  "postAllocCopyRemoval")     \
+    f(     _t_mergeMultidefs,        "mergeMultidefs")           \
+    f(     _t_fixupSpills,           "fixupSpills")              \
+    f(     _t_chaitinCompact,        "chaitinCompact")           \
+    f(     _t_chaitinCoalesce1,      "chaitinCoalesce1")         \
+    f(     _t_chaitinCoalesce2,      "chaitinCoalesce2")         \
+    f(     _t_chaitinCoalesce3,      "chaitinCoalesce3")         \
+    f(     _t_chaitinCacheLRG,       "chaitinCacheLRG")          \
+    f(     _t_chaitinSimplify,       "chaitinSimplify")          \
+    f(     _t_chaitinSelect,         "chaitinSelect")            \
+    f(   _t_blockOrdering,           "blockOrdering")            \
+    f(   _t_peephole,                "peephole")                 \
+    f(   _t_postalloc_expand,        "postalloc_expand")         \
+    f(   _t_output,                  "output")                   \
+    f(     _t_instrSched,            "isched")                   \
+    f(     _t_shortenBranches,       "shorten branches")         \
+    f(     _t_buildOopMaps,          "bldOopMaps")               \
+    f(     _t_fillBuffer,            "fill buffer")              \
+    f(     _t_registerMethod,        "install_code")             \
+    f(   _t_temporaryTimer1,         "tempTimer1")               \
+    f(   _t_temporaryTimer2,         "tempTimer2")
 
   enum PhaseTraceId {
 #define DEFID(name, text) name,
