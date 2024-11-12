@@ -24,8 +24,6 @@
  */
 package java.lang;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -59,7 +57,6 @@ import jdk.internal.vm.annotation.JvmtiHideEvents;
 import jdk.internal.vm.annotation.JvmtiMountTransition;
 import jdk.internal.vm.annotation.ReservedStackAccess;
 import sun.nio.ch.Interruptible;
-import sun.security.action.GetPropertyAction;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
@@ -893,7 +890,6 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     @Override
-    @SuppressWarnings("removal")
     public void interrupt() {
         if (Thread.currentThread() != this) {
             // if current thread is a virtual thread then prevent it from being
@@ -1261,39 +1257,32 @@ final class VirtualThread extends BaseVirtualThread {
     /**
      * Creates the default ForkJoinPool scheduler.
      */
-    @SuppressWarnings("removal")
     private static ForkJoinPool createDefaultScheduler() {
-        ForkJoinWorkerThreadFactory factory = pool -> {
-            PrivilegedAction<ForkJoinWorkerThread> pa = () -> new CarrierThread(pool);
-            return AccessController.doPrivileged(pa);
-        };
-        PrivilegedAction<ForkJoinPool> pa = () -> {
-            int parallelism, maxPoolSize, minRunnable;
-            String parallelismValue = System.getProperty("jdk.virtualThreadScheduler.parallelism");
-            String maxPoolSizeValue = System.getProperty("jdk.virtualThreadScheduler.maxPoolSize");
-            String minRunnableValue = System.getProperty("jdk.virtualThreadScheduler.minRunnable");
-            if (parallelismValue != null) {
-                parallelism = Integer.parseInt(parallelismValue);
-            } else {
-                parallelism = Runtime.getRuntime().availableProcessors();
-            }
-            if (maxPoolSizeValue != null) {
-                maxPoolSize = Integer.parseInt(maxPoolSizeValue);
-                parallelism = Integer.min(parallelism, maxPoolSize);
-            } else {
-                maxPoolSize = Integer.max(parallelism, 256);
-            }
-            if (minRunnableValue != null) {
-                minRunnable = Integer.parseInt(minRunnableValue);
-            } else {
-                minRunnable = Integer.max(parallelism / 2, 1);
-            }
-            Thread.UncaughtExceptionHandler handler = (t, e) -> { };
-            boolean asyncMode = true; // FIFO
-            return new ForkJoinPool(parallelism, factory, handler, asyncMode,
-                         0, maxPoolSize, minRunnable, pool -> true, 30, SECONDS);
-        };
-        return AccessController.doPrivileged(pa);
+        ForkJoinWorkerThreadFactory factory = pool -> new CarrierThread(pool);
+        int parallelism, maxPoolSize, minRunnable;
+        String parallelismValue = System.getProperty("jdk.virtualThreadScheduler.parallelism");
+        String maxPoolSizeValue = System.getProperty("jdk.virtualThreadScheduler.maxPoolSize");
+        String minRunnableValue = System.getProperty("jdk.virtualThreadScheduler.minRunnable");
+        if (parallelismValue != null) {
+            parallelism = Integer.parseInt(parallelismValue);
+        } else {
+            parallelism = Runtime.getRuntime().availableProcessors();
+        }
+        if (maxPoolSizeValue != null) {
+            maxPoolSize = Integer.parseInt(maxPoolSizeValue);
+            parallelism = Integer.min(parallelism, maxPoolSize);
+        } else {
+            maxPoolSize = Integer.max(parallelism, 256);
+        }
+        if (minRunnableValue != null) {
+            minRunnable = Integer.parseInt(minRunnableValue);
+        } else {
+            minRunnable = Integer.max(parallelism / 2, 1);
+        }
+        Thread.UncaughtExceptionHandler handler = (t, e) -> { };
+        boolean asyncMode = true; // FIFO
+        return new ForkJoinPool(parallelism, factory, handler, asyncMode,
+                     0, maxPoolSize, minRunnable, pool -> true, 30, SECONDS);
     }
 
     /**
@@ -1310,7 +1299,7 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private static ScheduledExecutorService[] createDelayedTaskSchedulers() {
         String propName = "jdk.virtualThreadScheduler.timerQueues";
-        String propValue = GetPropertyAction.privilegedGetProperty(propName);
+        String propValue = System.getProperty(propName);
         int queueCount;
         if (propValue != null) {
             queueCount = Integer.parseInt(propValue);
@@ -1341,7 +1330,7 @@ final class VirtualThread extends BaseVirtualThread {
      * attempts to park.
      */
     private static int tracePinningMode() {
-        String propValue = GetPropertyAction.privilegedGetProperty("jdk.tracePinnedThreads");
+        String propValue = System.getProperty("jdk.tracePinnedThreads");
         if (propValue != null) {
             if (propValue.length() == 0 || "full".equalsIgnoreCase(propValue))
                 return 1;
