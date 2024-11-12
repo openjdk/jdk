@@ -36,7 +36,7 @@ import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
-@Fork(value = 1, jvmArgsAppend = {
+@Fork(value = 1, jvmArgs = {
         "--enable-preview"})
 @Warmup(iterations = 3)
 @Measurement(iterations = 4)
