@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "oops/klassMode.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
