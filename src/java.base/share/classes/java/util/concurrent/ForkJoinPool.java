@@ -1811,7 +1811,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param w caller's WorkQueue
      */
     final void registerWorker(WorkQueue w) {
-        if (w != null) {
+        if (w != null && (runState & STOP) == 0L) {
             ThreadLocalRandom.localInit();
             int seed = w.stackPred = ThreadLocalRandom.getProbe();
             int phaseSeq = seed & ~((IDLE << 1) - 1); // initial phase tag
@@ -1862,10 +1862,10 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param ex the exception causing failure, or null if none
      */
     final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) {
-        WorkQueue w; int phase;
-        if ((w = ((wt == null) ? null : wt.workQueue)) == null)
-            phase = 0;
-        else if ((phase = w.phase) != 0 && (phase & IDLE) != 0)
+        WorkQueue w = null;                // null if not created
+        int phase = 0;                     // 0 if not registered
+        if (wt != null && (w = wt.workQueue) != null &&
+            (phase = w.phase) != 0 && (phase & IDLE) != 0)
             releaseWaiters();              // ensure released
         if (w == null || w.source != DROPPED) {
             long c = ctl;                  // decrement counts
@@ -1874,16 +1874,18 @@ public class ForkJoinPool extends AbstractExecutorService {
                                        (TC_MASK & (c - TC_UNIT)) |
                                        (LMASK & c)))));
         }
-        if (phase != 0 && w != null && (runState & STOP) == 0L) {
-            WorkQueue[] qs; int n, i;      // remove index unless terminating
+        if (phase != 0 && w != null) {     // remove index unless terminating
             long ns = w.nsteals & 0xffffffffL;
-            if ((lockRunState() & STOP) == 0L &&
-                (qs = queues) != null && (n = qs.length) > 0 &&
-                qs[i = phase & SMASK & (n - 1)] == w) {
+            if ((runState & STOP) == 0L) {
+                WorkQueue[] qs; int n, i;
+                if ((lockRunState() & STOP) == 0L &&
+                    (qs = queues) != null && (n = qs.length) > 0 &&
+                    qs[i = phase & SMASK & (n - 1)] == w) {
                     qs[i] = null;
                     stealCount += ns;      // accumulate steals
+                }
+                unlockRunState();
             }
-            unlockRunState();
         }
         if ((tryTerminate(false, false) & STOP) == 0L &&
             phase != 0 && w != null && w.source != DROPPED) {
@@ -2604,15 +2606,15 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (w == null)
                     w = new WorkQueue(null, id, 0, false);
                 w.phase = id;
-                long stop = lockRunState() & STOP;
-                if (stop == 0L && queues == qs && qs[i] == null) {
+                long shutdown = lockRunState() & SHUTDOWN;
+                if (shutdown == 0L && queues == qs && qs[i] == null) {
                     q = qs[i] = w;                   // else retry
                     w = null;
                 }
                 unlockRunState();
                 if (q != null)
                     return q;
-                if (stop != 0L)
+                if (shutdown != 0L)
                     break;
             }
             else if (!q.tryLockPhase())              // move index
