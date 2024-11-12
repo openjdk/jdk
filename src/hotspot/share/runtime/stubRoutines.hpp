@@ -156,7 +156,7 @@ class UnsafeMemoryAccessMark : public StackObj {
 #define BLOB_ENUM_DECLARE(blob_name) \
   STUB_ID_NAME(blob_name),
 
-enum StubGenBlobId {
+enum StubGenBlobId : int {
   NO_BLOBID = -1,
   STUBGEN_BLOBS_DO(BLOB_ENUM_DECLARE)
   NUM_BLOBIDS
@@ -196,7 +196,7 @@ STUBGEN_BLOBS_STUBS_DO(BLOB_LOCAL_ENUM_START, BLOB_LOCAL_ENUM_END, BLOB_LOCAL_ST
   STUB_ID_NAME(stub_name),                                              \
     _ ## stub_name ## _limit = STUB_ID_NAME(stub_name) + (count - 1),
 
-enum StubGenStubId {
+enum StubGenStubId : int {
   NO_STUBID = -1,
   STUBGEN_STUBS_DO(STUB_ENUM_DECLARE, STUB_ENUM_REPEAT)
   NUM_STUBIDS

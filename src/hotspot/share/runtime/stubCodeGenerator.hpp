@@ -116,6 +116,9 @@ class StubCodeGenerator: public StackObj {
   virtual void stub_epilog(StubCodeDesc* cdesc); // called by StubCodeMark destructor
 };
 
+// forward declare stub id enum
+
+enum StubGenStubId : int;
 
 // Stack-allocated helper class used to associate a stub code with a name.
 // All stub code generating functions that use a StubCodeMark will be registered
@@ -129,6 +132,7 @@ class StubCodeMark: public StackObj {
 
  public:
   StubCodeMark(StubCodeGenerator* cgen, const char* group, const char* name);
+  StubCodeMark(StubCodeGenerator* cgen, StubGenStubId stub_id);
   ~StubCodeMark();
 
 };

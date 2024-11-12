@@ -54,6 +54,7 @@
   do_stub(compiler, large_array_equals)                                 \
   do_arch_entry(aarch64, compiler, large_array_equals,                  \
                 large_array_equals, large_array_equals)                 \
+  do_stub(compiler, large_arrays_hashcode_boolean)                      \
   do_arch_entry(aarch64, compiler, large_arrays_hashcode_boolean,       \
                 large_arrays_hashcode_boolean,                          \
                 large_arrays_hashcode_boolean)                          \

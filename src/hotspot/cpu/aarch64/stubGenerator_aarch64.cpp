@@ -204,8 +204,7 @@ class StubGenerator: public StubCodeGenerator {
            "adjust this code");
 
     StubGenStubId stub_id = StubGenStubId::call_stub_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     const Address sp_after_call (rfp, sp_after_call_off * wordSize);
@@ -425,8 +424,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_catch_exception() {
     StubGenStubId stub_id = StubGenStubId::catch_exception_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     // same as in generate_call_stub():
@@ -482,8 +480,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_forward_exception() {
     StubGenStubId stub_id = StubGenStubId::forward_exception_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     // Upon entry, LR points to the return address returning into
@@ -573,8 +570,7 @@ class StubGenerator: public StubCodeGenerator {
   //    [tos + 5]: saved rscratch1
   address generate_verify_oop() {
     StubGenStubId stub_id = StubGenStubId::verify_oop_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Label exit, error;
@@ -624,8 +620,7 @@ class StubGenerator: public StubCodeGenerator {
   // Generate indices for iota vector.
   address generate_iota_indices(StubGenStubId stub_id) {
     __ align(CodeEntryAlignment);
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
     // B
     __ emit_data64(0x0706050403020100, relocInfo::none);
@@ -669,8 +664,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::zero_blocks_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     if (UseBlockZeroing) {
@@ -859,8 +853,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     __ bind(start);
 
@@ -1619,8 +1612,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ align(CodeEntryAlignment);
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ enter();
 
@@ -1694,7 +1686,6 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_copy(StubGenStubId stub_id, address nooverlap_target, address *entry) {
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
     RegSet saved_regs = RegSet::of(s, d, count);
-    const char* name = StubRoutines::get_stub_name(stub_id);
     int size;
     bool aligned;
     bool is_oop;
@@ -1775,7 +1766,7 @@ class StubGenerator: public StubCodeGenerator {
       ShouldNotReachHere();
     }
 
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ enter();
 
@@ -1861,7 +1852,6 @@ class StubGenerator: public StubCodeGenerator {
   //    r0 == -1^K - failure, where K is partial transfer count
   //
   address generate_checkcast_copy(StubGenStubId stub_id, address *entry) {
-    const char* name = StubRoutines::get_stub_name(stub_id);
     bool dest_uninitialized;
     switch (stub_id) {
     case checkcast_arraycopy_id:
@@ -1906,7 +1896,7 @@ class StubGenerator: public StubCodeGenerator {
                                copied_oop, r19_klass, count_save);
 
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
@@ -2083,13 +2073,12 @@ class StubGenerator: public StubCodeGenerator {
                                address int_copy_entry,
                                address long_copy_entry) {
     StubGenStubId stub_id = StubGenStubId::unsafe_arraycopy_id;
-    const char* name = StubRoutines::get_stub_name(stub_id);
 
     Label L_long_aligned, L_int_aligned, L_short_aligned;
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
 
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -2137,7 +2126,6 @@ class StubGenerator: public StubCodeGenerator {
                                 address int_copy_entry, address oop_copy_entry,
                                 address long_copy_entry, address checkcast_copy_entry) {
     StubGenStubId stub_id = StubGenStubId::generic_arraycopy_id;
-    const char* name = StubRoutines::get_stub_name(stub_id);
 
     Label L_failed, L_objArray;
     Label L_copy_bytes, L_copy_shorts, L_copy_ints, L_copy_longs;
@@ -2155,7 +2143,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
 
@@ -2442,8 +2430,7 @@ class StubGenerator: public StubCodeGenerator {
     };
 
     __ align(CodeEntryAlignment);
-    const char* name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     BLOCK_COMMENT("Entry:");
@@ -2585,7 +2572,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubCodeMark mark(this, "StubRoutines", "_data_cache_writeback");
+    StubGenStubId stub_id = StubGenStubId::data_cache_writeback_id;
+    StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
     __ enter();
@@ -2601,7 +2589,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubCodeMark mark(this, "StubRoutines", "_data_cache_writeback_sync");
+    StubGenStubId stub_id = StubGenStubId::data_cache_writeback_sync_id;
+    StubCodeMark mark(this, stub_id);
 
     // pre wbsync is a no-op
     // post wbsync translates to an sfence
@@ -2725,8 +2714,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_aescrypt_encryptBlock() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::aescrypt_encryptBlock_id;
-    const char *stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     const Register from        = c_rarg0;  // source array address
     const Register to          = c_rarg1;  // destination array address
@@ -2760,8 +2748,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(UseAES, "need AES cryptographic extension support");
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::aescrypt_decryptBlock_id;
-    const char *stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     Label L_doLast;
 
     const Register from        = c_rarg0;  // source array address
@@ -2800,8 +2787,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(UseAES, "need AES cryptographic extension support");
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_encryptAESCrypt_id;
-    const char *stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
 
@@ -2906,8 +2892,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(UseAES, "need AES cryptographic extension support");
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
-    const char *stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
 
@@ -3094,8 +3079,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
-    const char *stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     const address start = __ pc();
     __ enter();
 
@@ -3305,8 +3289,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::galoisCounterMode_AESCrypt_id;
-    const char *stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ enter();
 
@@ -3529,8 +3512,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ align(CodeEntryAlignment);
 
-    const char *name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Register buf       = c_rarg0;
@@ -3684,8 +3666,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    const char *name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Register buf   = c_rarg0;
@@ -3809,8 +3790,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    const char *name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Register buf   = c_rarg0;
@@ -3977,8 +3957,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    const char *name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Register buf   = c_rarg0;
@@ -4120,8 +4099,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    const char *name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Register buf           = c_rarg0;
@@ -4339,8 +4317,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::updateBytesCRC32_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
 
@@ -4385,7 +4362,8 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_int64(0x0E0D0C0F0A09080BUL);
 
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+    StubGenStubId stub_id = StubGenStubId::chacha20Block_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ enter();
 
@@ -4508,8 +4486,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::updateBytesCRC32C_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
 
@@ -4548,8 +4525,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_updateBytesAdler32() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::updateBytesAdler32_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_by16, L_by16_loop, L_by1_loop, L_do_mod, L_combine, L_by1;
@@ -4771,8 +4747,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_multiplyToLen() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::multiplyToLen_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
     const Register x     = r0;
@@ -4805,8 +4780,7 @@ class StubGenerator: public StubCodeGenerator {
     // multiply_to_len shows a bit better overall results
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::squareToLen_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     const Register x     = r0;
@@ -4840,8 +4814,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_mulAdd() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::mulAdd_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
 
@@ -4872,8 +4845,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_bigIntegerRightShift() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::bigIntegerRightShiftWorker_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Label ShiftSIMDLoop, ShiftTwoLoop, ShiftThree, ShiftTwo, ShiftOne, Exit;
@@ -4996,8 +4968,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_bigIntegerLeftShift() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::bigIntegerLeftShiftWorker_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Label ShiftSIMDLoop, ShiftTwoLoop, ShiftThree, ShiftTwo, ShiftOne, Exit;
@@ -5106,8 +5077,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
 
     StubGenStubId stub_id = StubGenStubId::count_positives_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     address entry = __ pc();
 
@@ -5369,8 +5339,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
 
     StubGenStubId stub_id = StubGenStubId::large_array_equals_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     address entry = __ pc();
     __ enter();
@@ -5495,29 +5464,29 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    const char *mark_name = "";
+    StubGenStubId stub_id;
     switch (eltype) {
     case T_BOOLEAN:
-      mark_name = "_large_arrays_hashcode_boolean";
+      stub_id = StubGenStubId::large_arrays_hashcode_boolean_id;
       break;
     case T_BYTE:
-      mark_name = "_large_arrays_hashcode_byte";
+      stub_id = StubGenStubId::large_arrays_hashcode_byte_id;
       break;
     case T_CHAR:
-      mark_name = "_large_arrays_hashcode_char";
+      stub_id = StubGenStubId::large_arrays_hashcode_char_id;
       break;
     case T_SHORT:
-      mark_name = "_large_arrays_hashcode_short";
+      stub_id = StubGenStubId::large_arrays_hashcode_short_id;
       break;
     case T_INT:
-      mark_name = "_large_arrays_hashcode_int";
+      stub_id = StubGenStubId::large_arrays_hashcode_int_id;
       break;
     default:
-      mark_name = "_large_arrays_hashcode_incorrect_type";
-      __ should_not_reach_here();
+      stub_id = StubGenStubId::NO_STUBID;
+      ShouldNotReachHere();
     };
 
-    StubCodeMark mark(this, "StubRoutines", mark_name);
+    StubCodeMark mark(this, stub_id);
 
     address entry = __ pc();
     __ enter();
@@ -5751,8 +5720,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_dsin_dcos(bool isCos) {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = (isCos ? StubGenStubId::dcos_id : StubGenStubId::dsin_id);
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ generate_dsin_dcos(isCos, (address)StubRoutines::aarch64::_npio2_hw,
         (address)StubRoutines::aarch64::_two_over_pi,
@@ -5804,8 +5772,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_compare_long_string_different_encoding(bool isLU) {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = (isLU ? StubGenStubId::compare_long_string_LU_id : StubGenStubId::compare_long_string_UL_id);
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Label SMALL_LOOP, TAIL, TAIL_LOAD_16, LOAD_LAST, DIFF1, DIFF2,
         DONE, CALCULATE_DIFFERENCE, LARGE_LOOP_PREFETCH, NO_PREFETCH,
@@ -5915,8 +5882,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_float16ToFloat() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::hf2f_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     BLOCK_COMMENT("Entry:");
     __ flt16_to_flt(v0, r0, v1);
@@ -5930,8 +5896,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_floatToFloat16() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::f2hf_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     BLOCK_COMMENT("Entry:");
     __ flt_to_flt16(r0, v0, v1);
@@ -5942,8 +5907,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::method_entry_barrier_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     Label deoptimize_label;
 
@@ -6009,8 +5973,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_compare_long_string_same_encoding(bool isLL) {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = (isLL ? StubGenStubId::compare_long_string_LL_id : StubGenStubId::compare_long_string_UU_id);
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
         tmp1 = r10, tmp2 = r11, tmp1h = rscratch1, tmp2h = rscratch2;
@@ -6184,8 +6147,7 @@ class StubGenerator: public StubCodeGenerator {
         ShouldNotReachHere();                                                  \
     }
 
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     __ mov(idx, 0);
     __ sve_whilelt(pgtmp1, mode == LL ? __ B : __ H, idx, cnt);
@@ -6292,8 +6254,7 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
     __ align(CodeEntryAlignment);
-    const char* stubName = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stubName);
+    StubCodeMark mark(this, stub_id);
     address entry = __ pc();
 
     int str1_chr_size = str1_isL ? 1 : 2;
@@ -6592,8 +6553,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_large_byte_array_inflate() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::large_byte_array_inflate_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Label LOOP, LOOP_START, LOOP_PRFM, LOOP_PRFM_START, DONE;
     Register src = r0, dst = r1, len = r2, octetCounter = r3;
@@ -6659,8 +6619,7 @@ class StubGenerator: public StubCodeGenerator {
     // calculation, bit-reversing the inputs and outputs.
 
     StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     __ align(wordSize * 2);
     address p = __ pc();
     __ emit_int64(0x87);  // The low-order bits of the field
@@ -6727,8 +6686,7 @@ class StubGenerator: public StubCodeGenerator {
     address small = generate_ghash_processBlocks();
 
     StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_wide_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     __ align(wordSize * 2);
     address p = __ pc();
     __ emit_int64(0x87);  // The low-order bits of the field
@@ -6840,8 +6798,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::base64_encodeBlock_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Register src   = c_rarg0;  // source array
@@ -7110,8 +7067,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::base64_decodeBlock_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Register src    = c_rarg0;  // source array
@@ -7228,8 +7184,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_spin_wait() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::spin_wait_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     __ spin_wait();
@@ -7240,8 +7195,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     StubGenStubId stub_id = (StubGenStubId)(StubGenStubId::lookup_secondary_supers_table_id + super_klass_index);
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
     const Register
@@ -7270,8 +7224,7 @@ class StubGenerator: public StubCodeGenerator {
   // Slow path implementation for UseSecondarySupersTable.
   address generate_lookup_secondary_supers_table_slow_path_stub() {
     StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_slow_path_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
     const Register
@@ -7426,8 +7379,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::atomic_entry_points_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address first_entry = __ pc();
 
     // ADD, memory_order_conservative
@@ -7587,8 +7539,7 @@ class StubGenerator: public StubCodeGenerator {
     if (!Continuations::enabled()) return nullptr;
 
     StubGenStubId stub_id = StubGenStubId::cont_thaw_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
     generate_cont_thaw(Continuation::thaw_top);
     return start;
@@ -7599,8 +7550,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // TODO: will probably need multiple return barriers depending on return type
     StubGenStubId stub_id = StubGenStubId::cont_returnBarrier_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     generate_cont_thaw(Continuation::thaw_return_barrier);
@@ -7612,8 +7562,7 @@ class StubGenerator: public StubCodeGenerator {
     if (!Continuations::enabled()) return nullptr;
 
     StubGenStubId stub_id = StubGenStubId::cont_returnBarrierExc_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     generate_cont_thaw(Continuation::thaw_return_barrier_exception);
@@ -7707,8 +7656,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_poly1305_processBlocks() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::poly1305_processBlocks_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
     Label here;
     __ enter();
@@ -7823,8 +7771,7 @@ class StubGenerator: public StubCodeGenerator {
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
     StubGenStubId stub_id = StubGenStubId::upcall_stub_exception_handler_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     // Native caller has no idea how to handle exceptions,
@@ -7842,8 +7789,7 @@ class StubGenerator: public StubCodeGenerator {
   // rmethod = result
   address generate_upcall_stub_load_target() {
     StubGenStubId stub_id = StubGenStubId::upcall_stub_load_target_id;
-    const char* stub_name = StubRoutines::get_stub_name(stub_id);
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     __ resolve_global_jobject(j_rarg0, rscratch1, rscratch2);
@@ -8904,13 +8850,15 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseMontgomeryMultiplyIntrinsic) {
-      StubCodeMark mark(this, "StubRoutines", "montgomeryMultiply");
+      StubGenStubId stub_id = StubGenStubId::montgomeryMultiply_id;
+      StubCodeMark mark(this, stub_id);
       MontgomeryMultiplyGenerator g(_masm, /*squaring*/false);
       StubRoutines::_montgomeryMultiply = g.generate_multiply();
     }
 
     if (UseMontgomerySquareIntrinsic) {
-      StubCodeMark mark(this, "StubRoutines", "montgomerySquare");
+      StubGenStubId stub_id = StubGenStubId::montgomerySquare_id;
+      StubCodeMark mark(this, stub_id);
       MontgomeryMultiplyGenerator g(_masm, /*squaring*/true);
       // We use generate_multiply() rather than generate_square()
       // because it's faster for the sizes of modulus we care about.

@@ -31,6 +31,7 @@
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
 
 
 // Implementation of StubCodeDesc
@@ -121,6 +122,8 @@ StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, const char* group, const cha
   // define the stub's beginning (= entry point) to be after the prolog:
   _cdesc->set_begin(_cgen->assembler()->pc());
 }
+
+StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubGenStubId stub_id) : StubCodeMark(cgen, "StubRoutines", StubRoutines::get_stub_name(stub_id)) { }
 
 StubCodeMark::~StubCodeMark() {
   _cgen->assembler()->flush();
