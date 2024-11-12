@@ -120,22 +120,16 @@ public final class DynamicProxy {
         if (!methodDeclaringClass.equals(interfaceType)) {
             // The method is declared in one of the superintarfaces.
             var piece = interfaceDispatch.get(methodDeclaringClass);
-            var pieceMethod = toSupplier(() -> piece.getClass().getMethod(
-                    method.getName(), method.getParameterTypes())).get();
-            if (method.isDefault() && method.equals(pieceMethod)) {                
-                // The handler class doesn't override the default method
-                // of the interface.
-                return createDefaultMethodInvoker(method, proxyDefaultMethodInvoker);
-            } else {
-                return new MethodInvoker(piece, pieceMethod);
-            }
+            return new MethodInvoker(piece, method);
         } else if (method.isDefault()) {
             return createDefaultMethodInvoker(method, proxyDefaultMethodInvoker);
         } else {
             // Find a piece handling the method.
-            var handler = interfaceDispatch.values().stream().map(piece -> {
+            var handler = interfaceDispatch.entrySet().stream().map(e -> {
                 try {
-                    return new MethodInvoker(piece, piece.getClass().getMethod(
+                    Class<?> iface = e.getKey();
+                    Object piece = e.getValue();
+                    return new MethodInvoker(piece, iface.getMethod(
                             method.getName(), method.getParameterTypes()));
                 } catch (NoSuchMethodException ex) {
                     return null;
@@ -226,6 +220,12 @@ public final class DynamicProxy {
     }
 
     private record MethodInvoker(Object obj, Method method) implements Handler {
+        
+        MethodInvoker {
+            if (!method.canAccess(obj)) {
+                method.setAccessible(true);
+            }
+        }
 
         @Override
         public Object invoke(Object proxy, Object[] args) throws Throwable {
