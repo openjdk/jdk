@@ -179,9 +179,8 @@ public class LayoutGraph {
         outputPorts = new HashMap<>(links.size());
 
         for (Link link : links) {
-            if (link.getFrom() == null || link.getTo() == null) {
-                continue;
-            }
+            assert link.getFrom() != null;
+            assert link.getTo() != null;
             Port fromPort = link.getFrom();
             Port toPort = link.getTo();
             Vertex fromVertex = fromPort.getVertex();

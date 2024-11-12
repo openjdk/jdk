@@ -57,7 +57,9 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
     public void doLayout(LayoutGraph graph) {
         // Create cluster-level nodes and edges.
         Map<Cluster, ClusterNode> clusterNodes = createClusterNodes(graph.getVertices());
-        Set<ClusterEdge> clusterEdges = createClusterEdges(clusterNodes);
+        assert clusterNodes.size() == clusters.size();
+        Map<Link, ClusterEdge> clusterEdges = createClusterEdges(clusterNodes);
+        assert clusterEdges.size() == clusterLinks.size();
 
         // Compute layout for each cluster.
         for (ClusterNode clusterNode : clusterNodes.values()) {
@@ -66,7 +68,7 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         }
 
         // mark root nodes
-        LayoutGraph clusterGraph = new LayoutGraph(clusterEdges, clusterNodes.values());
+        LayoutGraph clusterGraph = new LayoutGraph(clusterEdges.values(), clusterNodes.values());
         for (Vertex rootVertex : clusterGraph.findRootVertices()) {
             assert rootVertex instanceof ClusterNode;
             ((ClusterNode) rootVertex).setRoot(true);
@@ -74,6 +76,9 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
 
         // Compute inter-cluster layout.
         manager.doLayout(clusterGraph);
+        for (Link clusterLink : clusterGraph.getLinks()) {
+            assert clusterLink.getControlPoints() != null; // TODO should not fail
+        }
 
         // Write back results.
         writeBackClusterBounds(clusterNodes);
@@ -97,38 +102,32 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         return clusterNodes;
     }
 
-    private Set<ClusterEdge> createClusterEdges(Map<Cluster, ClusterNode> clusterNodes) {
-        Set<ClusterEdge> clusterEdges = new HashSet<>();
-        for (Cluster c : clusters) {
-            ClusterNode start = clusterNodes.get(c);
-            for (Cluster succ : c.getSuccessors()) {
-                ClusterNode end = clusterNodes.get(succ);
-                if (end != null) {
-                    ClusterEdge e = new ClusterEdge(start, end);
-                    clusterEdges.add(e);
-                }
-            }
+    private Map<Link, ClusterEdge> createClusterEdges(Map<Cluster, ClusterNode> clusterNodes) {
+        Map<Link, ClusterEdge> clusterEdges = new HashMap<>();
+
+        for (Link clusterLink : clusterLinks) {
+            ClusterNode fromClusterNode = clusterNodes.get(clusterLink.getFromCluster());
+            ClusterNode toClusterNode = clusterNodes.get(clusterLink.getToCluster());
+            assert fromClusterNode != null;
+            assert toClusterNode != null;
+            clusterEdges.put(clusterLink, new ClusterEdge(fromClusterNode, toClusterNode));
         }
+
         return clusterEdges;
     }
 
-    private void writeBackClusterBounds(Map<Cluster, ClusterNode> clusterNode) {
-        for (Cluster c : clusters) {
-            ClusterNode n = clusterNode.get(c);
-            c.setBounds(new Rectangle(n.getPosition(), n.getSize()));
+    private void writeBackClusterBounds(Map<Cluster, ClusterNode> clusterNodeMap) {
+        assert clusterNodeMap.size() == clusters.size();
+        for (Cluster cluster : clusters) {
+            ClusterNode clusterNode = clusterNodeMap.get(cluster);
+            cluster.setBounds(new Rectangle(clusterNode.getPosition(), clusterNode.getSize()));
         }
     }
 
-    private void writeBackClusterEdgePoints(Set<ClusterEdge> clusterEdges) {
-        // Map from "primitive" cluster edges to their input links.
-        Map<AbstractMap.SimpleEntry<Cluster, Cluster>, Link> linkMap = new HashMap<>();
-
+    private void writeBackClusterEdgePoints(Map<Link, ClusterEdge> clusterEdgesMap) {
+        assert clusterEdgesMap.size() == clusterLinks.size();
         for (Link clusterLink : clusterLinks) {
-            linkMap.put(new AbstractMap.SimpleEntry<>(clusterLink.getFromCluster(), clusterLink.getToCluster()), clusterLink);
-        }
-
-        for (ClusterEdge clusterEdge : clusterEdges) {
-            Link clusterLink = linkMap.get(new AbstractMap.SimpleEntry<>(clusterEdge.getFromCluster(), clusterEdge.getToCluster()));
+            ClusterEdge clusterEdge = clusterEdgesMap.get(clusterLink);
             clusterLink.setControlPoints(clusterEdge.getControlPoints());
         }
     }

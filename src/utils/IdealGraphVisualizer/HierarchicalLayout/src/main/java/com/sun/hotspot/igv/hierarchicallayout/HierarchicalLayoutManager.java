@@ -1043,6 +1043,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             int minY = Integer.MAX_VALUE;
 
             HashMap<Link, List<Point>> linkPositions = computeLinkPositions(graph);
+
             for (List<Point> points : linkPositions.values()) {
                 for (Point point : points) {
                     if (point != null) {
