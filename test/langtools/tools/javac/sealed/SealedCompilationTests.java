@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1176,6 +1176,39 @@ class SealedCompilationTests extends CompilationTestCase {
                     void test () {
                         C[] c = null;
                         I[] i = (I[]) c;
+                    }
+                }
+                """,
+                """
+                class Test {
+                    sealed interface I permits C1 {}
+                    non-sealed class C1 implements I {}
+                    class C2 extends C1 {}
+                    class C3 {}
+                    I m(int s, C3 c3) {
+                        I i = (I)c3;
+                    }
+                }
+                """,
+                """
+                class Test {
+                    sealed interface I permits C1 {}
+                    non-sealed class C1 implements I {}
+                    class C2 extends C1 {}
+                    class C3 {}
+                    I m(int s, C3 c3) {
+                        I i = (C1)c3;
+                    }
+                }
+                """,
+                """
+                class Test {
+                    sealed interface I permits C1 {}
+                    non-sealed class C1 implements I {}
+                    class C2 extends C1 {}
+                    class C3 {}
+                    I m(int s, C3 c3) {
+                        I i = (C2)c3;
                     }
                 }
                 """
