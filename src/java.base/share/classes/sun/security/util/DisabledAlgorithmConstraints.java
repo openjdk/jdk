@@ -100,10 +100,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             new DisabledAlgorithmConstraints(PROPERTY_JAR_DISABLED_ALGS);
     }
 
-    private static final int INITIAL_PATTERN_CAPACITY = 4;
-    private final List<Pattern> disabledPatterns;
-
     private final Set<String> disabledAlgorithms;
+    private final List<Pattern> disabledPatterns;
     private final Constraints algorithmConstraints;
     private volatile SoftReference<Map<String, Boolean>> cacheRef =
             new SoftReference<>(null);
@@ -991,7 +989,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
     private List<Pattern> getDisabledPatterns() {
         List<Pattern> ret = null;
-        List<String> patternStrings = new ArrayList<>(INITIAL_PATTERN_CAPACITY);
+        List<String> patternStrings = new ArrayList<>(4);
 
         for (String p : disabledAlgorithms) {
             if (p.contains("*")) {
@@ -1004,7 +1002,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         if (!patternStrings.isEmpty()) {
-            ret = new ArrayList<>(INITIAL_PATTERN_CAPACITY);
+            ret = new ArrayList<>(patternStrings.size());
 
             for (String p : patternStrings) {
                 // Exclude patterns from algorithm code flow.
