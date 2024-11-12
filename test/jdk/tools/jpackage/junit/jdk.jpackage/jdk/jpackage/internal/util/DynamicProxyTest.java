@@ -157,7 +157,7 @@ public class DynamicProxyTest {
     }
 
     @Test
-    public void testInhereted() {
+    public void testInherited() {
         interface Base {
             String doSome();
         }
