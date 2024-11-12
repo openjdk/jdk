@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,28 +20,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-public class Allocation {
+package jdk.test.lib;
 
-    public long p;
-    public long size;
-
-    public Allocation(long p, long size) {
-        this.p = p;
+public enum Unit {
+    B(1), K(1024), M(1024 * 1024), G(1024 * 1024 * 1024);
+    public final long size;
+    Unit(long size) {
         this.size = size;
     }
-
-    public boolean isNull() {
-        return p == 0;
-    }
-
-    @Override
-    public String toString() {
-        return "Allocation{" +
-                "p=" + p +
-                ", size=" + size +
-                '}';
+    public long size() {
+        return size;
     }
 }
