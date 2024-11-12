@@ -1254,6 +1254,8 @@ public:
     _retire(ResizeTLAB) {}
 
   void do_thread(Thread* thread) override {
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahThreadLocalData::set_gc_state(thread, heap->gc_state());
     _retire.do_thread(thread);
   }
 };
@@ -1264,10 +1266,14 @@ void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
 }
 
 void ShenandoahHeap::concurrent_prepare_for_update_refs() {
-  // It is possible that the GC has been cancelled after the last cancellation check after evacuation.
-  // However, it will not have been cancelled for an evacuation failure so the degenerated cycle will
-  // resume from update refs.
+  // It's possible that evacuation succeeded, but we could still be cancelled when we get here.
+  // A cancellation at this point means the degenerated cycle must resume from update-refs.
+  _gc_state.set_cond(EVACUATION, false);
+  _gc_state.set_cond(WEAK_ROOTS, false);
+  _gc_state.set_cond(UPDATEREFS, true);
+
   ShenandoahPrepareForUpdateRefs prepare_for_update_refs;
+
   workers()->threads_do(&prepare_for_update_refs);
 
   // Safepoint workers may be asked to evacuate objects if they are visiting oops to create a heap dump
