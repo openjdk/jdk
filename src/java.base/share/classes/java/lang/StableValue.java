@@ -85,7 +85,7 @@ import java.util.function.Supplier;
  *     // @link substring="of" target="#of" :
  *     static final StableValue<Integer> VAL = StableValue.of();
  *
-       // ... logic that may or may not set the holder value of `VAL`
+ *     // ... logic that may or may not set the holder value of `VAL`
  *
  *     // @link substring="trySet(42)" target="#trySet(Object)"
  *     if (VAL.trySet(42)) {
