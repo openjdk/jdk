@@ -1150,7 +1150,7 @@ public class MergeStoreBench {
         UNSAFE.putByte(array, address + 1, (byte) (c >> 8));
     }
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 1, jvmArgs = {
             "-XX:+UnlockDiagnosticVMOptions", "-XX:-MergeStores"
     })
     public static class MergeStoresDisabled extends MergeStoreBench {}
