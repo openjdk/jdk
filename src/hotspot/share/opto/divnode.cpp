@@ -1178,8 +1178,82 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
 //------------------------------Idealize---------------------------------------
 Node *UModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
-  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  if (in(0) && remove_dead_region(phase, can_reshape)) {
+    return this;
+  }
+  // Don't bother trying to transform a dead node
+  if (in(0) && in(0)->is_top()) {
+    return nullptr;
+  }
+
+  // Get the modulus
+  const Type* t = phase->type(in(2));
+  if (t == Type::TOP) {
+    return nullptr;
+  }
+  const TypeInt* ti = t->is_int();
+
+  // Check for useless control input
+  // Check for excluding mod-zero case
+  if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
+    set_req(0, nullptr); // Yank control input
+    return this;
+  }
+
+  if (!ti->is_con()) {
+    return nullptr;
+  }
+  jint con = ti->get_con();
+
+  if (con == 1) {
+    return new ConINode(TypeInt::ZERO);
+  }
+  if (con == 0) {
+    return nullptr;
+  }
+
+  if (is_power_of_2(con)) {
+    return new AndINode(in(1), phase->intcon(con - 1));
+  }
+
   return nullptr;
+}
+
+const Type* UModINode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  if (t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  // 0 MOD X is 0
+  if (t1 == TypeInt::ZERO) {
+    return TypeInt::ZERO;
+  }
+  // X MOD X is 0
+  if (in(1) == in(2)) {
+    return TypeInt::ZERO;
+  }
+
+  // Either input is BOTTOM ==> the result is the local BOTTOM
+  const Type* bot = bottom_type();
+  if ((t1 == bot) || (t2 == bot) ||
+      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
+    return bot;
+  }
+
+  const TypeInt* i1 = t1->is_int();
+  const TypeInt* i2 = t2->is_int();
+  if (i1->is_con() && i2->is_con()) {
+    juint au = static_cast<juint>(i1->get_con());
+    juint bu = static_cast<juint>(i2->get_con());
+    return TypeInt::make(static_cast<jint>(au % bu));
+  }
+
+  return TypeInt::INT;
 }
 
 //=============================================================================

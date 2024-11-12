@@ -30,14 +30,14 @@ import compiler.lib.ir_framework.*;
  * @bug 8267265
  * @summary Test that Ideal transformations of DivINode* are being performed as expected.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.ModINodeIdealizationTests
+ * @run driver compiler.c2.irTests.UModINodeIdealizationTests
  */
-public class ModINodeIdealizationTests {
+public class UModINodeIdealizationTests {
     public static void main(String[] args) {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "constantAgain"})
+    @Run(test = {"constant", "constantAgain", "powerOf2", "reallyConstant"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         a = (a == 0) ? 2 : a;
@@ -56,29 +56,44 @@ public class ModINodeIdealizationTests {
     @DontCompile
     public void assertResult(int a, int b, boolean shouldThrow) {
         try {
-            Asserts.assertEQ(a % a, constant(a));
+            Asserts.assertEQ(Integer.remainderUnsigned(a, a), constant(a));
             Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
         } catch (ArithmeticException e) {
             Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
         }
 
-        Asserts.assertEQ(a % 1, constantAgain(a));
+        Asserts.assertEQ(Integer.remainderUnsigned(a, 1), constantAgain(a));
+        Asserts.assertEQ(Integer.remainderUnsigned(a, 32), powerOf2(a));
+        Asserts.assertEQ(Integer.remainderUnsigned(Integer.parseUnsignedInt("2147483648"), 302032), reallyConstant());
     }
 
     @Test
-    @IR(failOn = {IRNode.MOD_I, IRNode.MUL})
+    @IR(failOn = {IRNode.UMOD_I, IRNode.MUL})
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x % x => 0
     public int constant(int x) {
-        return x % x;
+        return Integer.remainderUnsigned(x, x);
     }
 
     @Test
-    @IR(failOn = {IRNode.MOD_I})
+    @IR(failOn = {IRNode.UMOD_I})
     // Checks x % 1 => 0
     public int constantAgain(int x) {
-        return x % 1;
+        return Integer.remainderUnsigned(x, 1);
     }
 
-    // TODO: mod 2^k or 2^k-1
+    @Test
+    @IR(failOn = {IRNode.UMOD_I, IRNode.MUL})
+    // Checks x % 1 => 0
+    public int reallyConstant() {
+        return Integer.remainderUnsigned(-2147483648, 302032); // -2147483648 = Integer.parseUnsignedInt("2147483648")
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UMOD_I, IRNode.MUL})
+    @IR(counts = {IRNode.AND, "1"})
+    // Checks that for x % 2^k, 2^k-1 is used as a bit mask.
+    public int powerOf2(int x) {
+        return Integer.remainderUnsigned(x, 32);
+    }
 }
