@@ -26,10 +26,21 @@ import java.lang.ref.Reference;
 import java.lang.reflect.*;
 import jdk.internal.misc.Unsafe;
 
+
+
 /*
-/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-exports java.base/jdk.internal.misc=ALL-UNNAMED -XX:CompileCommand=compileonly,TestReachabilityFenceWithBuffer::test -Xbatch -XX:+UseNewCode TestReachabilityFenceWithBuffer.java
-*/
+ * @test
+ * @bug 8290892
+ * @summary Tests to ensure that reachabilityFence() correctly keeps objects from being collected prematurely.
+ * @modules java.base/jdk.internal.misc
+
+ * @run main/othervm -XX:CompileCommand=compileonly,*TestReachabilityFenceWithBuffer::* -Xbatch compiler.c2.TestReachabilityFenceWithBuffer
+ */
+
 public class TestReachabilityFenceWithBuffer {
+    /*
+    /build/macosx-aarch64-debug/jdk/bin/java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-exports java.base/jdk.internal.misc=ALL-UNNAMED -XX:CompileCommand=compileonly,TestReachabilityFenceWithBuffer::test -Xbatch -XX:+UseNewCode TestReachabilityFenceWithBuffer.java
+    */
 
     static class MyBuffer {
 
