@@ -465,6 +465,10 @@ private:
   void do_class_unloading();
   // Reference updating
   void prepare_update_heap_references(bool concurrent);
+
+  // Retires LABs used for evacuation
+  void concurrent_prepare_for_update_refs();
+
   virtual void update_heap_references(bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);
@@ -801,8 +805,6 @@ private:
 
   void try_inject_alloc_failure();
   bool should_inject_alloc_failure();
-
-  void concurrent_prepare_for_update_refs();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
