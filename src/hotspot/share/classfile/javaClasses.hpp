@@ -181,7 +181,7 @@ class java_lang_String : AllStatic {
     return h;
   }
 
-  static unsigned int hash_code(const char *utf8_str, size_t utf8_len) {
+  static unsigned int hash_code(const char* utf8_str, size_t utf8_len) {
     unsigned int h = 0;
     int unicode_length = UTF8::unicode_length(utf8_str, utf8_len);
 

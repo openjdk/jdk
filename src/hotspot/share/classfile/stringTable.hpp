@@ -56,7 +56,6 @@ class StringTable : AllStatic {
   static double get_load_factor();
   static double get_dead_factor(size_t num_dead);
 
-  // typedef enum { obj_str, unicode_str, symbol_str, utf8_str } StringType;
   enum class StringType {
     OopStr, UnicodeStr, SymbolStr, UTF8Str
   };
@@ -80,13 +79,14 @@ class StringTable : AllStatic {
 public:
   typedef struct StringWrapperInternal StringWrapper;
 
-  static bool wrapped_string_equals(oop java_string, StringWrapper wrapped_str, int _ = 0);
+  // Unnamed int needed to fit CompactHashtable's equals type signature
+  static bool wrapped_string_equals(oop java_string, StringWrapper wrapped_str, int = 0);
 
 private:
   static const char* get_symbol_utf8(StringWrapper symbol_str);
   static unsigned int hash_wrapped_string(StringWrapper wrapped_str);
-  static const jchar *to_unicode(StringWrapper wrapped_str, int &len, TRAPS);
-  static Handle to_handle(StringWrapper wrapped_str, TRAPS);
+  static const jchar* to_unicode(StringWrapper wrapped_str, int &len, TRAPS);
+  static Handle handle_from_wrapped_string(StringWrapper wrapped_str, TRAPS);
 
   // GC support
 
@@ -119,7 +119,7 @@ private:
   // Interning
   static oop intern(Symbol* symbol, TRAPS);
   static oop intern(oop string, TRAPS);
-  static oop intern(const char *utf8_string, TRAPS);
+  static oop intern(const char* utf8_string, TRAPS);
 
   // Rehash the string table if it gets out of balance
 private:

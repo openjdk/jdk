@@ -150,7 +150,8 @@ unsigned int StringTable::hash_wrapped_string(StringWrapper wrapped_str) {
   return 0;
 }
 
-bool StringTable::wrapped_string_equals(oop java_string, StringWrapper wrapped_str, int _) {
+// Unnamed int needed to fit CompactHashtable's equals type signature
+bool StringTable::wrapped_string_equals(oop java_string, StringWrapper wrapped_str, int) {
   switch (wrapped_str.type) {
   case StringType::OopStr:
     return java_lang_String::equals(java_string, wrapped_str.oop_str());
@@ -415,23 +416,25 @@ oop StringTable::do_lookup(StringWrapper name, uintx hash) {
 }
 
 // Converts and allocates to a unicode string and stores the unicode length in len
-const jchar *StringTable::to_unicode(StringWrapper wrapped_str, int &len, TRAPS) {
+const jchar* StringTable::to_unicode(StringWrapper wrapped_str, int &len, TRAPS) {
   switch (wrapped_str.type) {
   case StringType::UnicodeStr:
+    len = static_cast<int>(wrapped_str.length);
     return wrapped_str.unicode_str;
   case StringType::OopStr:
+    len = static_cast<int>(wrapped_str.length);
     return java_lang_String::as_unicode_string(wrapped_str.oop_str(), len, CHECK_NULL);
   case StringType::SymbolStr: {
     const char* utf8_str = get_symbol_utf8(wrapped_str);
     int unicode_length = UTF8::unicode_length(utf8_str, wrapped_str.symbol_str->utf8_length());
-    jchar *chars = NEW_RESOURCE_ARRAY(jchar, unicode_length);
+    jchar* chars = NEW_RESOURCE_ARRAY(jchar, unicode_length);
     UTF8::convert_to_unicode(utf8_str, chars, unicode_length);
     len = unicode_length;
     return chars;
   }
   case StringType::UTF8Str: {
     int unicode_length = UTF8::unicode_length(wrapped_str.utf8_str);
-    jchar *chars = NEW_RESOURCE_ARRAY(jchar, unicode_length);
+    jchar* chars = NEW_RESOURCE_ARRAY(jchar, unicode_length);
     UTF8::convert_to_unicode(wrapped_str.utf8_str, chars, unicode_length);
     len = unicode_length;
     return chars;
@@ -442,7 +445,7 @@ const jchar *StringTable::to_unicode(StringWrapper wrapped_str, int &len, TRAPS)
   return nullptr;
 }
 
-Handle StringTable::to_handle(StringWrapper wrapped_str, TRAPS) {
+Handle StringTable::handle_from_wrapped_string(StringWrapper wrapped_str, TRAPS) {
   switch (wrapped_str.type) {
   case StringType::OopStr:
     return wrapped_str.oop_str;
@@ -509,7 +512,7 @@ oop StringTable::intern(StringWrapper name, TRAPS) {
 
 oop StringTable::do_intern(StringWrapper name, uintx hash, TRAPS) {
   HandleMark hm(THREAD);  // cleanup strings created
-  Handle string_h = to_handle(name, CHECK_NULL);
+  Handle string_h = handle_from_wrapped_string(name, CHECK_NULL);
 
   assert(StringTable::wrapped_string_equals(string_h(), name),
          "string must be properly initialized");
@@ -894,12 +897,14 @@ size_t StringTable::shared_entry_count() {
 oop StringTable::lookup_shared(StringWrapper name, unsigned int hash) {
   assert(hash == hash_wrapped_string(name),
          "hash must be computed using java_lang_String::hash_code");
+  // len is required but is already part of StringWrapper, so 0 is used
   return _shared_table.lookup(name, hash, 0);
 }
 
 oop StringTable::lookup_shared(const jchar* name, int len) {
   StringWrapper wrapped_name(name, len);
-  return _shared_table.lookup(wrapped_name, java_lang_String::hash_code(name, len), len);
+  // len is required but is already part of StringWrapper, so 0 is used
+  return _shared_table.lookup(wrapped_name, java_lang_String::hash_code(name, len), 0);
 }
 
 // This is called BEFORE we enter the CDS safepoint. We can allocate heap objects.
