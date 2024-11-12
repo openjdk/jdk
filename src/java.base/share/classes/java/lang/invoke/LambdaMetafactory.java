@@ -207,19 +207,6 @@ import java.util.Objects;
  * type. (For method references, the implementation method is simply the
  * referenced method; no desugaring is needed.)
  *
- * <p>Uses besides evaluation of lambda expressions and method references are
- * unintended.  These linkage methods may change their unspecified behaviors at
- * any time to better suit the Java language features, which may impact
- * unintended uses.  For example, classes and interfaces in Java source code
- * are all strongly reachable from their defining loaders (JLS {@jls 12.7}).
- * Thus, the class implementing the "function objects" returned by these methods
- * may be similarly strongly reachable from the defining class loader of the
- * caller of these methods, because these objects are logically a part of the
- * caller class or interface.  These methods do not have to consider the scenario
- * where the caller is {@linkplain MethodHandles.Lookup#defineHiddenClass not
- * strongly reachable} from its defining class loader, and such use cases may
- * lead to resource leaks.
- *
  * <p>The argument list of the implementation method and the argument list of
  * the interface method(s) may differ in several ways.  The implementation
  * methods may have additional arguments to accommodate arguments captured by
@@ -241,6 +228,20 @@ import java.util.Objects;
  * referencing a method or constructor. In theory, any method handle could be
  * used, but this is not compatible with some implementation techniques and
  * would complicate the work implementations must do.
+ *
+ * <p>Uses besides evaluation of lambda expressions and method references are
+ * unintended.  These linkage methods may change their unspecified behaviors at
+ * any time to better suit the Java language features they were designed to
+ * support, and such changes may impact unintended uses.  Unintended uses of
+ * these linkage methods may lead to resource leaks, or other unspecified
+ * negative effects.
+ *
+ * @implNote In the reference implementation, the classes implementing the created
+ * function objects are strongly reachable from the defining class loader of the
+ * caller.  This technique reduces heap memory use, but it prevents the
+ * implementation class from unloading when the caller is a {@linkplain
+ * MethodHandles.Lookup.ClassOption#STRONG hidden class} and is unloaded, or when
+ * the returned call site is no longer strongly reachable.
  *
  * @since 1.8
  */
