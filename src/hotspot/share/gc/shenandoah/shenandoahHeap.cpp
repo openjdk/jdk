@@ -1344,6 +1344,7 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
   if (_uncommit_thread != nullptr) {
     tcl->do_thread(_uncommit_thread);
   }
+
   workers()->threads_do(tcl);
   if (_safepoint_workers != nullptr) {
     _safepoint_workers->threads_do(tcl);

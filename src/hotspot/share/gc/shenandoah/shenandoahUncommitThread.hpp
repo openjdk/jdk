@@ -30,7 +30,7 @@
 class ShenandoahHeap;
 
 class ShenandoahUncommitThread : public ConcurrentGCThread {
-  ShenandoahHeap* _heap;
+  ShenandoahHeap* const _heap;
   ShenandoahSharedFlag _soft_max_changed;
   ShenandoahSharedFlag _explicit_gc_requested;
   ShenandoahSharedFlag _stop_requested;

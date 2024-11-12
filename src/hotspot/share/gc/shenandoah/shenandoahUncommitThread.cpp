@@ -52,8 +52,10 @@ void ShenandoahUncommitThread::run_service() {
     bool explicit_gc_requested = _explicit_gc_requested.try_unset();
 
     if (soft_max_changed || explicit_gc_requested || current - last_shrink_time > shrink_period) {
-      double shrink_before = (soft_max_changed || explicit_gc_requested) ? current : current - ((double) ShenandoahUncommitDelay / 1000.0);
       size_t shrink_until = soft_max_changed ? _heap->soft_max_capacity() : _heap->min_capacity();
+      double shrink_before = (soft_max_changed || explicit_gc_requested) ?
+              current :
+              current - ((double) ShenandoahUncommitDelay / 1000.0);
 
       // Explicit GC tries to uncommit everything down to min capacity.
       // Soft max change tries to uncommit everything down to target capacity.
@@ -66,7 +68,7 @@ void ShenandoahUncommitThread::run_service() {
     {
       MonitorLocker locker(&_lock, Mutex::_no_safepoint_check_flag);
       if (!_stop_requested.is_set()) {
-        locker.wait((int64_t )shrink_period);
+        locker.wait((int64_t)shrink_period);
       }
     }
   }
