@@ -50,6 +50,13 @@ public interface LinuxPackage extends Package, LinuxPackageMixin {
         return String.format(packageFileNameTemlate, packageName(), version(), release(), arch());
     }
 
+    // This override is needed to make Package.packageFileNameWithSuffix() invoke
+    // LinuxPackage.packageFileName() instead of the default Package.packageFileName().
+    @Override
+    default String packageFileNameWithSuffix() {
+        return Package.super.packageFileNameWithSuffix();
+    }
+
     default boolean isInstallDirInUsrTree() {
         return !relativeInstallDir().getFileName().equals(Path.of(packageName()));
     }
