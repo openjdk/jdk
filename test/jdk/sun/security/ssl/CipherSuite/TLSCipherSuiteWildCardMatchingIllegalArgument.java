@@ -60,13 +60,12 @@ public class TLSCipherSuiteWildCardMatchingIllegalArgument {
     public void testChainedBefore() throws Exception {
         try {
             SSLContext.getInstance("TLS");
+            fail("No IllegalArgumentException was thrown");
         } catch (ExceptionInInitializerError e) {
             assertEquals(IllegalArgumentException.class,
                          e.getCause().getClass());
             assertEquals("Wildcard pattern must start with \"TLS_\"",
                          e.getCause().getMessage());
-            return;
         }
-        fail("No IllegalArgumentException was thrown");
     }
 }
