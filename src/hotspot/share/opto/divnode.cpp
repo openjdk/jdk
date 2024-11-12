@@ -470,6 +470,77 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
   return q;
 }
 
+template <typename TypeClass>
+const TypeClass* is(const Type* t);
+
+template <>
+const TypeInt* is<TypeInt>(const Type* t) {
+  return t->is_int();
+}
+
+template <>
+const TypeLong* is<TypeLong>(const Type* t) {
+  return t->is_long();
+}
+
+template <typename TypeClass>
+Node* make_and(Node* a, Node* b);
+
+template <>
+Node* make_and<TypeLong>(Node* a, Node* b) {
+  return new AndLNode(a, b);
+}
+
+template <>
+Node* make_and<TypeInt>(Node* a, Node* b) {
+  return new AndINode(a, b);
+}
+
+template <typename TypeClass, typename Signed>
+Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div,
+                         Node* (*transform)(PhaseGVN* phase, Node* dividend, Signed divisor)) {
+  // Check for dead control input
+  if (div->in(0) && div->remove_dead_region(phase, can_reshape)) {
+    return div;
+  }
+  // Don't bother trying to transform a dead node
+  if (div->in(0) && div->in(0)->is_top()) {
+    return nullptr;
+  }
+
+  const Type* t = phase->type(div->in(2));
+  if (t == TypeClass::ONE) { // Identity?
+    return nullptr;          // Skip it
+  }
+
+  const TypeClass* tl = is<TypeClass>(t);
+  if (!tl) {
+    return nullptr;
+  }
+
+  // Check for useless control input
+  // Check for excluding div-zero case
+  if (div->in(0) && (tl->_hi < 0 || tl->_lo > 0)) {
+    div->set_req(0, nullptr); // Yank control input
+    return div;
+  }
+
+  if (!tl->is_con()) {
+    return nullptr;
+  }
+  Signed l = tl->get_con(); // Get divisor
+
+  if (l == 0) {
+    return nullptr; // Dividing by zero constant does not idealize
+  }
+
+  if (l == min_jint) {
+    return nullptr;
+  }
+
+  return transform(phase, div->in(1), l);
+}
+
 static Node *transform_unsigned_long_divide( PhaseGVN *phase, Node *dividend, jlong divisor ) {
   // Check for invalid divisors
   assert( divisor != 0 && divisor != min_jint,
@@ -915,36 +986,8 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
-  // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return nullptr;
-
-  const Type *t = phase->type( in(2) );
-  if( t == TypeInt::ONE )      // Identity?
-    return nullptr;            // Skip it
-
-  const TypeInt *ti = t->isa_int();
-  if( !ti ) return nullptr;
-
-  // Check for useless control input
-  // Check for excluding div-zero case
-  if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
-    set_req(0, nullptr);           // Yank control input
-    return this;
-  }
-
-  if( !ti->is_con() ) return nullptr;
-  jint i = ti->get_con();       // Get divisor
-
-  if (i == 0) return nullptr;   // Dividing by zero constant does not idealize
-
-  // Dividing by MININT does not optimize as a power-of-2 shift.
-  if( i == min_jint ) return nullptr;
-
-  return transform_unsigned_int_divide( phase, in(1), i );
+  return unsigned_div_ideal<TypeInt, jint>(phase, can_reshape, this, transform_unsigned_int_divide);
 }
-
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
@@ -979,34 +1022,7 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
-  // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return nullptr;
-
-  const Type *t = phase->type( in(2) );
-  if( t == TypeLong::ONE )      // Identity?
-    return nullptr;             // Skip it
-
-  const TypeLong *tl = t->isa_long();
-  if( !tl ) return nullptr;
-
-  // Check for useless control input
-  // Check for excluding div-zero case
-  if (in(0) && (tl->_hi < 0 || tl->_lo > 0)) {
-    set_req(0, nullptr);         // Yank control input
-    return this;
-  }
-
-  if( !tl->is_con() ) return nullptr;
-  jlong l = tl->get_con();      // Get divisor
-
-  if (l == 0) return nullptr;   // Dividing by zero constant does not idealize
-
-  // Dividing by MINLONG does not optimize as a power-of-2 shift.
-  if( l == min_jlong ) return nullptr;
-
-  return transform_unsigned_long_divide( phase, in(1), l );
+  return unsigned_div_ideal<TypeLong, jlong>(phase, can_reshape, this, transform_unsigned_long_divide);
 }
 
 
@@ -1176,32 +1192,6 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
-
-template <typename TypeClass>
-const TypeClass* is(const Type* t);
-
-template <>
-const TypeInt* is<TypeInt>(const Type* t) {
-  return t->is_int();
-}
-
-template <>
-const TypeLong* is<TypeLong>(const Type* t) {
-  return t->is_long();
-}
-
-template <typename TypeClass>
-Node* make_and(Node* a, Node* b);
-
-template <>
-Node* make_and<TypeLong>(Node* a, Node* b) {
-  return new AndLNode(a, b);
-}
-
-template <>
-Node* make_and<TypeInt>(Node* a, Node* b) {
-  return new AndINode(a, b);
-}
 
 template <typename TypeClass, typename Signed>
 Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
