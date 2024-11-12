@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,14 +80,14 @@ public class DeterministicDump {
 
         // (1) Dump with the same args. Should produce the same archive.
         String baseArchive2 = dump(baseArgs);
-        compare(baseArchive, baseArchive2);
+        compare(baseArchive, baseArchive2, baseArchiveFile);
 
         // (2) This will cause the archive to be relocated during dump time. We should
         //     still get the same bits. This simulates relocation that happens when
         //     Address Space Layout Randomization prevents the archive space to
         //     be mapped at the default location.
         String relocatedArchive = dump(baseArgs, "-XX:+UnlockDiagnosticVMOptions", "-XX:ArchiveRelocationMode=1");
-        compare(baseArchive, relocatedArchive);
+        compare(baseArchive, relocatedArchive, baseArchiveFile);
     }
 
     static int id = 0;
@@ -107,7 +107,7 @@ public class DeterministicDump {
         return logName;
     }
 
-    static void compare(String file0, String file1) throws Exception {
+    static void compare(String file0, String file1, File archiveFile) throws Exception {
         byte[] buff0 = new byte[4096];
         byte[] buff1 = new byte[4096];
         try (FileInputStream in0 = new FileInputStream(file0 + ".jsa");
@@ -131,7 +131,7 @@ public class DeterministicDump {
                         // The checksums are stored in the header so it should be skipped
                         // since we want to see the first meaningful diff between the archives
                         if (total + i > HEADER_SIZE) {
-                            print_diff(file0 + ".map", file1 + ".map", total + i);
+                            print_diff(file0 + ".map", file1 + ".map", archiveFile, total + i);
                             throw new RuntimeException("File content different at byte #" + (total + i) + ", b0 = " + b0 + ", b1 = " + b1);
                         }
                     }
@@ -154,18 +154,37 @@ public class DeterministicDump {
         return total;
     }
 
+    // CDS map file doesn't print the alignment bytes so they need to be considered
+    // when mapping the byte number in the archive to the word in the map file
+    static int archiveByteToMapWord(File archiveFile, int location) throws Exception {
+        int totalSize = 0;
+        int word = location;
+
+        long len = HEADER_SIZE;
+        long aligned = CDSArchiveUtils.fileHeaderSizeAligned(archiveFile);
+        for (int i = 0; i < CDSArchiveUtils.num_regions(); i++) {
+            if (i != 0) {
+                len = CDSArchiveUtils.usedRegionSize(archiveFile, i);
+                aligned = CDSArchiveUtils.usedRegionSizeAligned(archiveFile, i);
+            }
+            totalSize += len;
+            if (location > totalSize) {
+                word -= (aligned - len - 16);
+            }
+        }
+        return word/8;
+    }
+
     // Read the mapfile and print out the lines associated with the location
-    static void print_diff(String mapName0, String mapName1, int location) throws Exception {
+    static void print_diff(String mapName0, String mapName1, File archiveFile, int location) throws Exception {
         FileReader f0 = new FileReader(mapName0);
         BufferedReader b0 = new BufferedReader(f0);
 
         FileReader f1 = new FileReader(mapName1);
         BufferedReader b1 = new BufferedReader(f1);
 
-        int line_num = HEADER_LEN;
-        int word = location / 8;
-        int word_offset = word % 4; // Each line in the map file prints four words
-
+        int word = archiveByteToMapWord(archiveFile, location);
+        int wordOffset = word % 4; // Each line in the map file prints four words
         String region = "";
 
         // Skip header text and go to first line
@@ -174,6 +193,7 @@ public class DeterministicDump {
             b1.readLine();
         }
 
+        int line_num = HEADER_LEN;
         String s0 = "";
         String s1 = "";
         int count = 0;
@@ -210,33 +230,37 @@ public class DeterministicDump {
         // Print the diff with the region name above it
         System.out.println("[First diff: map file #1 (" + mapName0 + ")]");
         System.out.println(region);
-        String diff_f0 = print_diff_helper(b0, word_offset, prefix0);
+        String diff0 = print_diff_helper(b0, wordOffset, prefix0);
 
         System.out.println("\n[First diff: map file #2 (" + mapName1 + ")]");
         System.out.println(region);
-        String diff_f1 = print_diff_helper(b1, word_offset, prefix1);
+        String diff1 = print_diff_helper(b1, wordOffset, prefix1);
 
-        System.out.printf("\nByte #%d at line #%d word #%d:\n", location, line_num, word_offset);
-        System.out.printf("%s: %s\n%s: %s\n", mapName0, diff_f0, mapName1, diff_f1);
+        System.out.printf("\nByte #%d at line #%d word #%d:\n", location, line_num, wordOffset);
+        System.out.printf("%s: %s\n%s: %s\n", mapName0, diff0, mapName1, diff1);
 
         f0.close();
         f1.close();
     }
 
-    static String print_diff_helper(BufferedReader b, int word_offset, ArrayDeque<String> prefix) throws Exception {
-        int start = LINE_OFFSET + WORD_LEN * word_offset;
+    static String print_diff_helper(BufferedReader b, int wordOffset, ArrayDeque<String> prefix) throws Exception {
+        int start = LINE_OFFSET + WORD_LEN * wordOffset;
         int end = start + WORD_LEN;
         String line = prefix.getLast();
         String diff = line.substring(start, end);
 
         // Print previous lines
         for (String s : prefix) {
-            System.out.println(s);
+            if (s.equals(line)) {
+                System.out.println(">" + s);
+            } else {
+                System.out.println(" " + s);
+            }
         }
 
         // Print extra lines
         for (int i = 0; i < NUM_LINES / 2; i++) {
-            System.out.println(b.readLine());
+            System.out.println(" " + b.readLine());
         }
         return diff;
     }

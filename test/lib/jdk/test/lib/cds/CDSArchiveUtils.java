@@ -145,6 +145,7 @@ public class CDSArchiveUtils {
     public static int dynamicArchiveHeaderSize()    { return dynamicArchiveHeaderSize;    }
     public static int cdsFileMapRegionSize()        { return cdsFileMapRegionSize;        }
     public static long alignment()                  { return alignment;                   }
+    public static int num_regions()                 { return num_regions;                 }
 
 
 
@@ -492,6 +493,12 @@ public class CDSArchiveUtils {
             transferFrom(inputChannel, outputChannel, offset, orgSize - bytesToDelete);
         }
         return dstFile;
+    }
+
+    // used region size
+    public static long usedRegionSize(File archiveFile, int region) throws Exception {
+        long offset = spOffset + cdsFileMapRegionSize * region + spUsedOffset;
+        return readInt(archiveFile, offset, sizetSize);
     }
 
     // used region size
