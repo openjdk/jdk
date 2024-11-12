@@ -31,8 +31,6 @@ class ClassLoaderData;
 class InstanceKlass;
 class outputStream;
 
-template <typename T> class GrowableArray;
-
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // The data structure for the class loader data dictionaries.
 
