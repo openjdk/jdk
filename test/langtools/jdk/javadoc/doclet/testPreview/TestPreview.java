@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874 8297879
- *           8331947 8281533
+ *           8331947 8281533 8343239
  * @summary  test generated docs for items declared using preview
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -194,6 +194,47 @@ public class TestPreview extends JavadocTester {
                     "<a href=\"API3.html#test()\"><code>API3.test()</code></a><sup><a href=\"API3.html#preview-test()\">PREVIEW</a></sup>");
         checkOutput("api2/api/API3.html", true,
                     "<div class=\"block\"><a href=\"#test()\"><code>test()</code></a><sup><a href=\"#preview-test()\">PREVIEW</a></sup></div>");
+    }
+
+    // 8343239 pre-existing permanent API that is later retrofitted
+    // to extend a @PreviewFeature interface should not be flagged as a preview feature
+    @Test
+    public void nonPreviewExtendsPreview() {
+        javadoc("-d", "out-non-preview-extends-preview",
+                "--add-exports", "java.base/jdk.internal.javac=api2",
+                "--source-path", Paths.get(testSrc, "api2").toAbsolutePath().toString(),
+                "--show-packages=all",
+                "api2/previewextendsnonpreview");
+        checkExit(Exit.OK);
+
+        checkOutput("api2/previewextendsnonpreview/NonPreviewExtendsPreview.html", true,
+                """
+                <div class="horizontal-scroll">
+                <div class="type-signature"><span class="modifiers">public interface </span><span class="element-name type-name-label">NonPreviewExtendsPreview</span><span class="extends-implements">
+                extends <a href="CoreInterface.html" title="interface in previewextendsnonpreview">CoreInterface</a><sup><a href="CoreInterface.html#preview-previewextendsnonpreview.CoreInterface">PREVIEW</a></sup></span></div>
+                <div class="preview-block" id="preview-previewextendsnonpreview.NonPreviewExtendsPreview"><span class="preview-label"><code>NonPreviewExtendsPreview</code> relies on preview features of the Java platform:</span>
+                <ul class="preview-comment">
+                <li><code>NonPreviewExtendsPreview</code> refers to one or more preview APIs:  <a href="CoreInterface.html" title="interface in previewextendsnonpreview"><code>CoreInterface</code></a>.</li>
+                </ul>
+                <div class="preview-comment">Programs can use <code>NonPreviewExtendsPreview</code> without enabling preview features. Programs can only reference the preview API by name when preview features are enabled.</div>
+                <div class="preview-comment">Preview features may be removed in a future release, or upgraded to permanent features of the Java platform.</div>
+                </div>
+                """);
+        checkOutput("api2/previewextendsnonpreview/NonPreviewExtendsPreview.html", false,
+                """
+                <div class="preview-comment">Programs can only use <code>NonPreviewExtendsPreview</code> when preview features are enabled.</div>
+                """);
+        checkOutput("api2/previewextendsnonpreview/CoreInterface.html", true,
+                """
+                <div class="horizontal-scroll">
+                <div class="type-signature"><span class="modifiers">public interface </span><span class="element-name type-name-label">CoreInterface</span></div>
+                <div class="preview-block" id="preview-previewextendsnonpreview.CoreInterface"><span class="preview-label"><code>CoreInterface</code> is a preview API of the Java platform.</span>
+                <div class="preview-comment">Programs can only use <code>CoreInterface</code> when preview features are enabled.</div>
+                <div class="preview-comment">Preview features may be removed in a future release, or upgraded to permanent features of the Java platform.</div>
+                </div>
+                <div class="block">Preview feature</div>
+                </div>
+                """);
     }
 
     @Test
