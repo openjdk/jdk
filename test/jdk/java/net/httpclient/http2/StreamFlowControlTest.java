@@ -282,7 +282,7 @@ public class StreamFlowControlTest {
         this.https2TestServer.start();
 
         // warmup to eliminate delay due to SSL class loading and initialization.
-        try (var client = HttpClient.newBuilder().sslContext(sslContext).build();) {
+        try (var client = HttpClient.newBuilder().sslContext(sslContext).build()) {
             var request = HttpRequest.newBuilder(URI.create(h2Head)).HEAD().build();
             var resp = client.send(request, BodyHandlers.discarding());
             assertEquals(resp.statusCode(), 200);
