@@ -101,13 +101,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     private static List<String> keyChains;
 
-    public static final BundlerParamInfo<Boolean>
-            MAC_CONFIGURE_LAUNCHER_IN_PLIST = new BundlerParamInfo<>(
-                    "mac.configure-launcher-in-plist",
-                    Boolean.class,
-                    params -> Boolean.FALSE,
-                    (s, p) -> Boolean.valueOf(s));
-
     public static final BundlerParamInfo<String> MAC_CF_BUNDLE_NAME =
             new BundlerParamInfo<>(
                     Arguments.CLIOptions.MAC_BUNDLE_NAME.getId(),
