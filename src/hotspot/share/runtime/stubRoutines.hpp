@@ -190,11 +190,11 @@ STUBGEN_BLOBS_STUBS_DO(BLOB_LOCAL_ENUM_START, BLOB_LOCAL_ENUM_END, BLOB_LOCAL_ST
 // declare global stub id enum
 
 #define STUB_ENUM_DECLARE(blob_name, stub_name) \
-  STUB_ID_NAME(stub_name),
+  STUB_ID_NAME(stub_name) ,
 
 #define STUB_ENUM_REPEAT(blob_name, stub_name, count)                   \
   STUB_ID_NAME(stub_name),                                              \
-    _ ## stub_name ## _limit = STUB_ID_NAME(stub_name) + (count - 1),
+  stub_name ## _limit = STUB_ID_NAME(stub_name) + (count - 1),
 
 enum StubGenStubId : int {
   NO_STUBID = -1,
