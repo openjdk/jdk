@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,10 @@
  * questions.
  */
 
-package pkg2;
-
-public abstract class DocumentedNonGenericChild extends UndocumentedGenericParent<String, InterruptedException, IllegalArgumentException> {
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void parentMethod2() {}
-}
+/*
+ * @test
+ * @bug 8343442
+ * @summary Test for `@since` in jdk.sctp module
+ * @library /test/lib /test/jdk/tools/sincechecker
+ * @run main SinceChecker jdk.sctp
+ */

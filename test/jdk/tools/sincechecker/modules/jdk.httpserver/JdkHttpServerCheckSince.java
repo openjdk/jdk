@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Google, Inc.  All Rights Reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,10 @@
  * questions.
  */
 
-/** A documented class. */
-public class DocumentedClass extends UndocumentedClass {
-  /** {@link #method} */
-  public void m1() {}
-  /** {@link #publicMethod} */
-  public void m2() {}
-  /** {@link #protectedMethod} */
-  public void m3() {}
-  /** {@link #privateMethod} */
-  public void m4() {}
-}
+/*
+ * @test
+ * @bug 8343442
+ * @summary Test for `@since` in jdk.httpserver module
+ * @library /test/lib /test/jdk/tools/sincechecker
+ * @run main SinceChecker jdk.httpserver
+ */

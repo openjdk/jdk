@@ -462,11 +462,11 @@ public final class Long extends Number
         int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
-            DecimalDigits.getCharsLatin1(i, size, buf);
+            StringLatin1.getChars(i, size, buf);
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[size * 2];
-            DecimalDigits.getCharsUTF16(i, size, buf);
+            StringUTF16.getChars(i, size, buf);
             return new String(buf, UTF16);
         }
     }
