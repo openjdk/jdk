@@ -25,17 +25,12 @@
  * @test
  * @bug 8235459
  * @summary Confirm that HttpRequest.BodyPublishers#ofFile(Path)
- *          works with changing permissions
- *          policy 1: no custom permission
- *          policy 2: custom permission for test classes
- *          policy 3: custom permission for test classes and httpclient
+ *          works as expected
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @compile ../ReferenceTracker.java
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        SecureZipFSProvider
- * @run testng/othervm/java.security.policy=FilePublisherPermsTest1.policy -Djdk.internal.httpclient.debug=err -Djava.security.debug=all FilePublisherPermsTest
- * @run testng/othervm/java.security.policy=FilePublisherPermsTest2.policy FilePublisherPermsTest
- * @run testng/othervm/java.security.policy=FilePublisherPermsTest3.policy FilePublisherPermsTest
+ * @run testng/othervm FilePublisherPermsTest
  */
 
 import jdk.test.lib.net.SimpleSSLContext;
@@ -129,27 +124,8 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
             throws Exception {
         out.printf("\n\n--- testDefaultFs(%s, %s): starting\n",
                 uriString, path);
-
-        if (System.getSecurityManager() != null) {
-            changePerms(path.toString(), "read,write,delete");
-            // Should not throw
-            BodyPublisher bodyPublisher = BodyPublishers.ofFile(path);
-            // Restrict permissions
-            changePerms(path.toString(), "delete");
-            try {
-                BodyPublishers.ofFile(path);
-                fail();
-            } catch (SecurityException e) {
-                out.println("Caught expected: " + e);
-            }
-            try {
-                var resp = send(uriString, bodyPublisher);
-                out.println("request unexpectedly succeded: " + resp);
-                fail();
-            } catch (SecurityException e) {
-                out.println("Caught expected: " + e);
-            }
-        }
+        BodyPublisher bodyPublisher = BodyPublishers.ofFile(path);
+        send(uriString, bodyPublisher);
     }
 
     // Zip File system set up
@@ -193,44 +169,14 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
     @Test(dataProvider = "zipFsData")
     public void testZipFs(String uriString, Path path) throws Exception {
         out.printf("\n\n--- testZipFsCustomPerm(%s, %s): starting\n", uriString, path);
-        if (System.getSecurityManager() != null) {
-            changePerms(path.toString(), "read,write,delete");
-
-            // Custom permission not sufficiently granted, expected to fail
-            if (!policyFile.contains("FilePublisherPermsTest3")) {
-                try {
-                    BodyPublishers.ofFile(path);
-                    fail();
-                } catch (SecurityException e) {
-                    out.println("Caught expected: " + e);
-                    return;
-                }
-            } else {
-                BodyPublisher bodyPublisher = BodyPublishers.ofFile(path);
-                send(uriString, bodyPublisher);
-                // Restrict permissions
-                changePerms(path.toString(), "delete");
-                try {
-                    BodyPublishers.ofFile(path);
-                    fail();
-                } catch (SecurityException e) {
-                    out.println("Caught expected: " + e);
-                }
-                try {
-                    send(uriString, bodyPublisher);
-                    fail();
-                } catch (SecurityException e) {
-                    out.println("Caught expected: " + e);
-                }
-            }
-        }
+        BodyPublisher bodyPublisher = BodyPublishers.ofFile(path);
+        send(uriString, bodyPublisher);
     }
 
     @Test
     public void testFileNotFound() throws Exception {
         out.printf("\n\n--- testFileNotFound(): starting\n");
         var zipPath = Path.of("fileNotFound.zip");
-        changePerms(zipPath.toString(), "read,write,delete");
         try (FileSystem fs = newZipFs(zipPath)) {
             Path fileInZip = zipFsFile(fs);
             Files.deleteIfExists(fileInZip);
@@ -240,7 +186,6 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
             out.println("Caught expected: " + e);
         }
         var path = Path.of("fileNotFound.txt");
-        changePerms(path.toString(), "read,write,delete");
         try {
             Files.deleteIfExists(path);
             BodyPublishers.ofFile(path);
@@ -300,40 +245,6 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
         if (failed instanceof Error e) throw e;
         if (failed instanceof Exception ex) throw ex;
         return resp;
-    }
-
-    private void changePerms(String path, String actions) {
-        System.err.println("extending policy to grant "
-                + FilePermission.class.getName()
-                + " \"" + path +"\", \"" + actions +"\"");
-        Policy.setPolicy(new CustomPolicy(
-                new FilePermission(path, actions)
-        ));
-    }
-
-    static class CustomPolicy extends Policy {
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-        final PermissionCollection perms = new Permissions();
-
-        CustomPolicy(Permission... permissions) {
-            java.util.Arrays.stream(permissions).forEach(perms::add);
-        }
-
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return perms;
-        }
-
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return perms;
-        }
-
-        public boolean implies(ProtectionDomain domain, Permission perm) {
-            // Ignore any existing permissions for test files
-            return perm.getName().equals(defaultFsPath.toString())
-                    || perm.getName().equals(zipFsPath.toString())
-                    ? perms.implies(perm)
-                    : perms.implies(perm) || DEFAULT_POLICY.implies(domain, perm);
-        }
     }
 
     static class HttpEchoHandler implements HttpServerAdapters.HttpTestHandler {

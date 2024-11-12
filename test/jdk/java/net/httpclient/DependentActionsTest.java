@@ -32,12 +32,7 @@
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
  *                      DependentActionsTest
- * @run testng/othervm/java.security.policy=dependent.policy
- *                     -Djdk.httpclient.quic.maxPtoBackoff=9
- *                     -Djava.security.debug=all
- *                     -Djdk.internal.httpclient.debug=true
- *                      DependentActionsTest
- */
+  */
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

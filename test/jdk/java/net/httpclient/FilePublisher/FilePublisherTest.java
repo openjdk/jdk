@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors,headers FilePublisherTest
- * @run testng/othervm/java.security.policy=FilePublisherTest.policy
- *         -Djdk.httpclient.HttpClient.log=errors,headers,quic FilePublisherTest
  */
 
 import jdk.httpclient.test.lib.http3.Http3TestServer;

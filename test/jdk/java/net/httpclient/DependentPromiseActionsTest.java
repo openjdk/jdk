@@ -30,8 +30,6 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DependentPromiseActionsTest
  * @run testng/othervm -Djdk.internal.httpclient.debug=true DependentPromiseActionsTest
- * @run testng/othervm/java.security.policy=dependent.policy
-  *           -Djdk.internal.httpclient.debug=true DependentPromiseActionsTest
  */
 
 import java.io.BufferedReader;
@@ -539,7 +537,8 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
                 httpStack.forEach(f -> System.out.printf("\t%s%n", f));
                 failed.set(new RuntimeException("Dependant action has unexpected frame in " +
                         Thread.currentThread() + ": " + httpStack.get(0)));
-            }            return;
+            }
+            return;
         } else if (System.getSecurityManager() != null) {
             Optional<StackFrame> sf = WALKER.walk(s -> findFrame(s, "PrivilegedRunnable"));
             if (!sf.isPresent()) {
@@ -597,6 +596,7 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
                 "Expected 3 push promises for " + w + " in "
                         + response.request().uri());
         assertEquals(result, List.of(response.request().uri().toASCIIString()));
+
     }
 
     interface Staller extends Consumer<Where> {

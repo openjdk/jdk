@@ -87,7 +87,6 @@ import static org.testng.Assert.fail;
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run testng/othervm AsFileDownloadTest
- * @run testng/othervm/java.security.policy=AsFileDownloadTest.policy AsFileDownloadTest
  */
 public class AsFileDownloadTest {
 
@@ -393,8 +392,8 @@ public class AsFileDownloadTest {
         https2TestServer.stop();
         h3TestServer.stop();
 
-        if (System.getSecurityManager() == null && Files.exists(tempDir)) {
-            // clean up before next run with security manager
+        if (Files.exists(tempDir)) {
+            // clean up
             FileUtils.deleteFileTreeWithRetry(tempDir);
         }
     }

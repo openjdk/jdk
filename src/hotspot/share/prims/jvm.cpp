@@ -1269,87 +1269,6 @@ JVM_ENTRY(jobject, JVM_GetProtectionDomain(JNIEnv *env, jclass cls))
 JVM_END
 
 
-// Returns the inherited_access_control_context field of the running thread.
-JVM_ENTRY(jobject, JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls))
-  oop result = java_lang_Thread::inherited_access_control_context(thread->threadObj());
-  return JNIHandles::make_local(THREAD, result);
-JVM_END
-
-JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
-  if (!UsePrivilegedStack) return nullptr;
-
-  ResourceMark rm(THREAD);
-  GrowableArray<Handle>* local_array = new GrowableArray<Handle>(12);
-  JvmtiVMObjectAllocEventCollector oam;
-
-  // count the protection domains on the execution stack. We collapse
-  // duplicate consecutive protection domains into a single one, as
-  // well as stopping when we hit a privileged frame.
-
-  oop previous_protection_domain = nullptr;
-  Handle privileged_context(thread, nullptr);
-  bool is_privileged = false;
-  oop protection_domain = nullptr;
-
-  // Iterate through Java frames
-  vframeStream vfst(thread);
-  for(; !vfst.at_end(); vfst.next()) {
-    // get method of frame
-    Method* method = vfst.method();
-
-    // stop at the first privileged frame
-    if (method->method_holder() == vmClasses::AccessController_klass() &&
-      method->name() == vmSymbols::executePrivileged_name())
-    {
-      // this frame is privileged
-      is_privileged = true;
-
-      javaVFrame *priv = vfst.asJavaVFrame();       // executePrivileged
-
-      StackValueCollection* locals = priv->locals();
-      StackValue* ctx_sv = locals->at(1); // AccessControlContext context
-      StackValue* clr_sv = locals->at(2); // Class<?> caller
-      assert(!ctx_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
-      assert(!clr_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
-      privileged_context    = ctx_sv->get_obj();
-      Handle caller         = clr_sv->get_obj();
-
-      Klass *caller_klass = java_lang_Class::as_Klass(caller());
-      protection_domain  = caller_klass->protection_domain();
-    } else {
-      protection_domain = method->method_holder()->protection_domain();
-    }
-
-    if ((previous_protection_domain != protection_domain) && (protection_domain != nullptr)) {
-      local_array->push(Handle(thread, protection_domain));
-      previous_protection_domain = protection_domain;
-    }
-
-    if (is_privileged) break;
-  }
-
-
-  // either all the domains on the stack were system domains, or
-  // we had a privileged system domain
-  if (local_array->is_empty()) {
-    if (is_privileged && privileged_context.is_null()) return nullptr;
-
-    oop result = java_security_AccessControlContext::create(objArrayHandle(), is_privileged, privileged_context, CHECK_NULL);
-    return JNIHandles::make_local(THREAD, result);
-  }
-
-  objArrayOop context = oopFactory::new_objArray(vmClasses::ProtectionDomain_klass(),
-                                                 local_array->length(), CHECK_NULL);
-  objArrayHandle h_context(thread, context);
-  for (int index = 0; index < local_array->length(); index++) {
-    h_context->obj_at_put(index, local_array->at(index)());
-  }
-
-  oop result = java_security_AccessControlContext::create(h_context, is_privileged, privileged_context, CHECK_NULL);
-
-  return JNIHandles::make_local(THREAD, result);
-JVM_END
-
 class ScopedValueBindingsResolver {
 public:
   InstanceKlass* Carrier_klass;
@@ -3089,6 +3008,10 @@ JVM_ENTRY(void, JVM_SetCurrentThread(JNIEnv* env, jobject thisThread,
                                      jobject theThread))
   oop threadObj = JNIHandles::resolve(theThread);
   thread->set_vthread(threadObj);
+
+  // Set lock id of new current Thread
+  thread->set_lock_id(java_lang_Thread::thread_id(threadObj));
+
   JFR_ONLY(Jfr::on_set_current_thread(thread, threadObj);)
 JVM_END
 
@@ -3955,6 +3878,39 @@ JVM_ENTRY(void, JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jbool
 #endif
 JVM_END
 
+JVM_ENTRY(void, JVM_VirtualThreadPinnedEvent(JNIEnv* env, jclass ignored, jstring op))
+#if INCLUDE_JFR
+  freeze_result result = THREAD->last_freeze_fail_result();
+  assert(result != freeze_ok, "sanity check");
+  EventVirtualThreadPinned event(UNTIMED);
+  event.set_starttime(THREAD->last_freeze_fail_time());
+  if (event.should_commit()) {
+    ResourceMark rm(THREAD);
+    const char *str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(op));
+    THREAD->post_vthread_pinned_event(&event, str, result);
+  }
+#endif
+JVM_END
+
+JVM_ENTRY(jobject, JVM_TakeVirtualThreadListToUnblock(JNIEnv* env, jclass ignored))
+  ParkEvent* parkEvent = ObjectMonitor::vthread_unparker_ParkEvent();
+  assert(parkEvent != nullptr, "not initialized");
+
+  OopHandle& list_head = ObjectMonitor::vthread_cxq_head();
+  oop vthread_head = nullptr;
+  while (true) {
+    if (list_head.peek() != nullptr) {
+      for (;;) {
+        oop head = list_head.resolve();
+        if (list_head.cmpxchg(head, nullptr) == head) {
+          return JNIHandles::make_local(THREAD, head);
+        }
+      }
+    }
+    ThreadBlockInVM tbivm(THREAD);
+    parkEvent->park();
+  }
+JVM_END
 /*
  * Return the current class's class file version.  The low order 16 bits of the
  * returned jint contain the class's major version.  The high order 16 bits
