@@ -2658,6 +2658,9 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const Predicates predicates(pre_ctrl);
   predicates.dump();
   pre_ctrl->dump_bfs(20,0,"#c");
+  const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
+  assert(predicate_block->has_parse_predicate(), "we must be able to find the parse predicate");
+  ParsePredicateSuccessProj* parse_predicate_proj = predicate_block->parse_predicate_success_proj();
 
   // Ensure the original loop limit is available from the pre-loop Opaque1 node.
   Node* orig_limit = pre_opaq->original_loop_limit();
@@ -2822,6 +2825,41 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     orig_limit->dump();
   }
 #endif
+
+  if (align_to_ref_p.base()->is_top() && VLoop::vectors_should_be_aligned()) {
+    // TODO actually, this needs to go to every reference - not just the alignment ref!!!
+    // We are accessing native memory. The base adr has no alignment guarantees.
+    // TODO
+    // Check: (base % ObjectAlignmentInBytes) == 0.
+    Node* xbase = new CastP2XNode(nullptr, base);
+    phase()->register_new_node(xbase, pre_ctrl);
+    TRACE_ALIGN_VECTOR_NODE(xbase);
+#ifdef _LP64
+    xbase  = new ConvL2INode(xbase);
+    phase()->register_new_node(xbase, pre_ctrl);
+    TRACE_ALIGN_VECTOR_NODE(xbase);
+#endif
+    Node* mask_alignment = igvn().intcon(ObjectAlignmentInBytes-1);
+    Node* base_alignment = new AndINode(xbase, mask_alignment);
+    phase()->register_new_node(base_alignment, pre_ctrl);
+    TRACE_ALIGN_VECTOR_NODE(mask_alignment);
+    TRACE_ALIGN_VECTOR_NODE(base_alignment);
+
+    Node* zero = igvn().intcon(0);
+    Node* cmp_alignment = CmpNode::make(base_alignment, zero, T_INT, false);
+    Node* bool_alignment = new BoolNode(cmp_alignment, BoolTest::eq);
+    phase()->register_new_node(cmp_alignment, pre_ctrl);
+    phase()->register_new_node(bool_alignment, pre_ctrl);
+    TRACE_ALIGN_VECTOR_NODE(cmp_alignment);
+    TRACE_ALIGN_VECTOR_NODE(bool_alignment);
+
+    Node* new_predicate_proj = phase()->create_new_if_for_predicate(parse_predicate_proj, nullptr,
+                                                                    Deoptimization::Reason_auto_vectorization_check,
+                                                                    Op_If);
+    Node* iff_alignment = new_predicate_proj->in(0);
+    igvn().replace_input_of(iff_alignment, 1, bool_alignment);
+    TRACE_ALIGN_VECTOR_NODE(iff_alignment);
+  }
 
   if (stride == 0 || !is_power_of_2(abs(stride)) ||
       scale  == 0 || !is_power_of_2(abs(scale))  ||
