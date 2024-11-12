@@ -26,22 +26,18 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.BinaryOperator;
 import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
 
-public final class DynamicProxy {
+public final class CompositeProxy {
 
     public final static class Builder {
 
         public <T> T create(Class<T> interfaceType, Object... pieces) {
-            return createProxyFromPieces(interfaceType, conflictResolver,
+            return CompositeProxy.createCompositeProxy(interfaceType, conflictResolver,
                     invokeTunnel, pieces);
         }
 
@@ -68,17 +64,16 @@ public final class DynamicProxy {
         return new Builder();
     }
 
-    public static <T> T createProxyFromPieces(Class<T> interfaceType,
-            Object... pieces) {
+    public static <T> T create(Class<T> interfaceType, Object... pieces) {
         return build().create(interfaceType, pieces);
     }
 
-    private static <T> T createProxyFromPieces(Class<T> interfaceType,
+    private static <T> T createCompositeProxy(Class<T> interfaceType,
             BinaryOperator<Method> conflictResolver, InvokeTunnel invokeTunnel,
             Object... pieces) {
 
-        final Map<Class<?>, Object> interfaceDispatch = createInterfaceDispatch(
-                interfaceType, pieces);
+        final Map<Class<?>, Object> interfaceDispatch = CompositeProxySpec.createForPieces(
+                interfaceType, pieces).getInterfaceDispatch();
 
         final Map<Method, Handler> methodDispatch = getProxyableMethods(interfaceType).map(method -> {
             var handler = createHandler(interfaceType, method, interfaceDispatch,
@@ -92,17 +87,12 @@ public final class DynamicProxy {
 
         @SuppressWarnings("unchecked")
         T proxy = (T) Proxy.newProxyInstance(interfaceType.getClassLoader(),
-                new Class<?>[]{interfaceType},
+                new Class<?>[]{interfaceType, DynamicProxyTag.class},
                 new DynamicProxyInvocationHandler(methodDispatch));
 
         return proxy;
     }
 
-    private static IllegalArgumentException createInterfaceNotImplementedException(
-            Collection<Class<?>> missingInterfaces) {
-        return new IllegalArgumentException(String.format(
-                "None of the pieces implement %s", missingInterfaces));
-    }
 
     private static Handler createHandler(Class<?> interfaceType, Method method,
             Map<Class<?>, Object> interfaceDispatch,
@@ -131,52 +121,11 @@ public final class DynamicProxy {
                 }
             }).filter(Objects::nonNull).reduce(new ConflictResolverAdapter(conflictResolver)).orElseThrow(() -> {
                 return new IllegalArgumentException(String.format(
-                        "None of the pieces can handle %s", method));
+                        "none of the pieces can handle %s", method));
             });
 
             return handler;
         }
-    }
-
-    private static Map<Class<?>, Object> createInterfaceDispatch(Class<?> interfaceType, Object ... pieces) {
-        if (!interfaceType.isInterface()) {
-            throw new IllegalArgumentException(String.format(
-                    "Type %s must be an interface", interfaceType.getName()));
-        }
-
-        final Class<?>[] interfaces = interfaceType.getInterfaces();
-        if (interfaces.length != pieces.length) {
-            throw new IllegalArgumentException(String.format(
-                    "Type %s must extend %d interfaces",
-                    interfaceType.getName(), pieces.length));
-        }
-
-        final Map<Class<?>, Object> interfaceDispatch = Stream.of(interfaces).collect(toMap(x -> x, iface -> {
-            return Stream.of(pieces).filter(obj -> {
-                return Set.of(obj.getClass().getInterfaces()).contains(iface);
-            }).reduce((a, b) -> {
-                throw new IllegalArgumentException(String.format(
-                        "Both [%s] and [%s] pieces implement %s", a, b, iface));
-            }).orElseThrow(() -> createInterfaceNotImplementedException(List.of(iface)));
-        }));
-
-        if (interfaceDispatch.size() != interfaces.length) {
-            final List<Class<?>> missingInterfaces = new ArrayList<>(Set.of(interfaces));
-            missingInterfaces.removeAll(interfaceDispatch.entrySet());
-            throw createInterfaceNotImplementedException(missingInterfaces);
-        }
-
-        return Stream.of(interfaces).flatMap(iface -> {
-            return unfoldInterface(iface).map(unfoldedIface -> {
-                return Map.entry(unfoldedIface, interfaceDispatch.get(iface));
-            });
-        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    private static Stream<Class<?>> unfoldInterface(Class<?> interfaceType) {
-        return Stream.concat(Stream.of(interfaceType), Stream.of(
-                interfaceType.getInterfaces()).flatMap(
-                DynamicProxy::unfoldInterface));
     }
 
     private static Stream<Method> getProxyableMethods(Class<?> interfaceType) {
@@ -205,27 +154,27 @@ public final class DynamicProxy {
                 @Override
                 public Object invoke(Object proxy, Object[] args) throws Throwable {
                     return invokeTunnel.invokeDefault(proxy, this.method, args);
-                }                
+                }
             };
         } else {
             return null;
         }
     }
-    
+
     private static HandlerOfMethod createHandlerForMethod(Object obj, Method method, InvokeTunnel invokeTunnel) {
         if (invokeTunnel != null) {
             return new HandlerOfMethod(method) {
                 @Override
                 public Object invoke(Object proxy, Object[] args) throws Throwable {
                     return invokeTunnel.invoke(obj, this.method, args);
-                }                
+                }
             };
         } else {
             return new HandlerOfMethod(method) {
                 @Override
                 public Object invoke(Object proxy, Object[] args) throws Throwable {
                     return this.method.invoke(obj, args);
-                }                
+                }
             };
         }
     }
@@ -235,12 +184,12 @@ public final class DynamicProxy {
 
         Object invoke(Object proxy, Object[] args) throws Throwable;
     }
-    
+
     private abstract static class HandlerOfMethod implements Handler {
         HandlerOfMethod(Method method) {
             this.method = method;
         }
-        
+
         protected final Method method;
     }
 
@@ -264,11 +213,14 @@ public final class DynamicProxy {
     private static final BinaryOperator<Method> STANDARD_CONFLICT_RESOLVER = (a, b) -> {
         if (a.isDefault() == b.isDefault()) {
             throw new IllegalArgumentException(String.format(
-                    "Ambiguous choice between %s and %s", a, b));
+                    "ambiguous choice between %s and %s", a, b));
         } else if (!a.isDefault()) {
             return a;
         } else {
             return b;
         }
     };
+
+    public static interface DynamicProxyTag {
+    }
 }

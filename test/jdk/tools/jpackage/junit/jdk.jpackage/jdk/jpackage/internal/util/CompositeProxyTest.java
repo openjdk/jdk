@@ -25,7 +25,7 @@ package jdk.jpackage.internal.util;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
-public class DynamicProxyTest {
+public class CompositeProxyTest {
 
     static interface Smalltalk {
 
@@ -80,7 +80,7 @@ public class DynamicProxyTest {
 
     @Test
     public void testSmalltalk() {
-        var convo = DynamicProxy.createProxyFromPieces(Smalltalk.class);
+        var convo = CompositeProxy.create(Smalltalk.class);
         assertEquals("Hello", convo.sayHello());
         assertEquals("Bye", convo.sayBye());
     }
@@ -88,7 +88,7 @@ public class DynamicProxyTest {
     @Test
     public void testConvo() {
         final var otherThings = "How is your day?";
-        var convo = DynamicProxy.createProxyFromPieces(Convo.class,
+        var convo = CompositeProxy.create(Convo.class,
                 new Smalltalk() {}, new ConvoMixin.Stub(otherThings));
         assertEquals("Hello", convo.sayHello());
         assertEquals("Bye", convo.sayBye());
@@ -98,7 +98,7 @@ public class DynamicProxyTest {
     @Test
     public void testConvoWithDuke() {
         final var otherThings = "How is your day?";
-        var convo = DynamicProxy.createProxyFromPieces(Convo.class, new Smalltalk() {
+        var convo = CompositeProxy.create(Convo.class, new Smalltalk() {
             @Override
             public String sayHello() {
                 return "Hello, Duke";
@@ -113,7 +113,7 @@ public class DynamicProxyTest {
     public void testConvoWithCustomSayBye() {
         var mixin = new ConvoMixinWithOverrideSayBye.Stub("How is your day?", "See you");
 
-        var convo = DynamicProxy.createProxyFromPieces(ConvoWithOverrideSayBye.class, new Smalltalk() {}, mixin);
+        var convo = CompositeProxy.create(ConvoWithOverrideSayBye.class, new Smalltalk() {}, mixin);
 
         var expectedConvo = new ConvoWithOverrideSayBye() {
             @Override
@@ -136,7 +136,7 @@ public class DynamicProxyTest {
     public void testConvoWithCustomSayHelloAndSayBye() {
         var mixin = new ConvoMixinWithOverrideSayBye.Stub("How is your day?", "See you");
 
-        var convo = DynamicProxy.createProxyFromPieces(ConvoWithDefaultSayHelloWithOverrideSayBye.class, new Smalltalk() {}, mixin);
+        var convo = CompositeProxy.create(ConvoWithDefaultSayHelloWithOverrideSayBye.class, new Smalltalk() {}, mixin);
 
         var expectedConvo = new ConvoWithDefaultSayHelloWithOverrideSayBye() {
             @Override
@@ -169,7 +169,7 @@ public class DynamicProxyTest {
         interface Last extends Next {
         }
 
-        var last = DynamicProxy.createProxyFromPieces(Last.class, new Next() {
+        var last = CompositeProxy.create(Last.class, new Next() {
             @Override
             public String doNext() {
                 return "next";
@@ -204,20 +204,20 @@ public class DynamicProxyTest {
         interface C extends A, B {
         }
 
-        var proxyA = DynamicProxy.createProxyFromPieces(A.class, new AddM() {
+        var proxyA = CompositeProxy.create(A.class, new AddM() {
             @Override
             public String m() {
                 return "hello";
             }
         });
-        var proxyB = DynamicProxy.createProxyFromPieces(B.class, new AddN() {
+        var proxyB = CompositeProxy.create(B.class, new AddN() {
             @Override
             public String n() {
                 return "bye";
             }
 
         });
-        var proxyC = DynamicProxy.createProxyFromPieces(C.class, proxyA, proxyB);
+        var proxyC = CompositeProxy.create(C.class, proxyA, proxyB);
 
         assertEquals("hello", proxyC.m());
         assertEquals("bye", proxyC.n());

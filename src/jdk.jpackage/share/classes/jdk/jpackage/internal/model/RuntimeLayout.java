@@ -25,7 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 
@@ -40,7 +40,7 @@ public interface RuntimeLayout extends AppImageLayout {
     }
 
     static RuntimeLayout create(AppImageLayout layout) {
-        return DynamicProxy.createProxyFromPieces(RuntimeLayout.class, layout);
+        return CompositeProxy.create(RuntimeLayout.class, layout);
     }
 
     static final RuntimeLayout DEFAULT = create(new AppImageLayout.Stub(Path.of("")));

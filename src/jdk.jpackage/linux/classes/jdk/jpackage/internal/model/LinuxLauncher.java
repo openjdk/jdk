@@ -25,7 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.util.Map;
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface LinuxLauncher extends Launcher, LinuxLauncherMixin {
 
@@ -42,6 +42,6 @@ public interface LinuxLauncher extends Launcher, LinuxLauncherMixin {
     }
 
     public static LinuxLauncher create(Launcher launcher, LinuxLauncherMixin mixin) {
-        return DynamicProxy.createProxyFromPieces(LinuxLauncher.class, launcher, mixin);
+        return CompositeProxy.create(LinuxLauncher.class, launcher, mixin);
     }
 }

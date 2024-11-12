@@ -24,7 +24,7 @@
  */
 package jdk.jpackage.internal.model;
 
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface WinApplication extends Application {
 
@@ -33,6 +33,6 @@ public interface WinApplication extends Application {
     }
 
     public static WinApplication create(Application app) {
-        return DynamicProxy.createProxyFromPieces(WinApplication.class, app);
+        return CompositeProxy.create(WinApplication.class, app);
     }
 }

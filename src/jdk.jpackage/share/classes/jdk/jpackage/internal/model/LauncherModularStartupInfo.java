@@ -24,14 +24,14 @@
  */
 package jdk.jpackage.internal.model;
 
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface LauncherModularStartupInfo extends LauncherStartupInfo,
         LauncherModularStartupInfoMixin {
 
     public static LauncherModularStartupInfo create(LauncherStartupInfo info,
             LauncherModularStartupInfoMixin mixin) {
-        return DynamicProxy.createProxyFromPieces(
+        return CompositeProxy.create(
                 LauncherModularStartupInfo.class, info, mixin);
     }
 }

@@ -25,7 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface LinuxDebPackage extends LinuxPackage, LinuxDebPackageMixin {
 
@@ -49,6 +49,6 @@ public interface LinuxDebPackage extends LinuxPackage, LinuxDebPackageMixin {
     }
 
     public static LinuxDebPackage create(LinuxPackage pkg, LinuxDebPackageMixin mixin) {
-        return DynamicProxy.createProxyFromPieces(LinuxDebPackage.class, pkg, mixin);
+        return CompositeProxy.create(LinuxDebPackage.class, pkg, mixin);
     }
 }

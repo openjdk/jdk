@@ -25,7 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface LinuxPackage extends Package, LinuxPackageMixin {
 
@@ -50,18 +50,33 @@ public interface LinuxPackage extends Package, LinuxPackageMixin {
         return String.format(packageFileNameTemlate, packageName(), version(), release(), arch());
     }
 
-    // This override is needed to make Package.packageFileNameWithSuffix() invoke
-    // LinuxPackage.packageFileName() instead of the default Package.packageFileName().
-    @Override
-    default String packageFileNameWithSuffix() {
-        return Package.super.packageFileNameWithSuffix();
-    }
-
     default boolean isInstallDirInUsrTree() {
         return !relativeInstallDir().getFileName().equals(Path.of(packageName()));
     }
 
     public static LinuxPackage create(Package pkg, LinuxPackageMixin mixin) {
-        return DynamicProxy.createProxyFromPieces(LinuxPackage.class, pkg, mixin);
+        return CompositeProxy.create(LinuxPackage.class, pkg, mixin);
+    }
+
+    // These overrides are needed to make default Package methods invoke overriden
+    // LinuxPackage methods.
+    @Override
+    default String packageFileNameWithSuffix() {
+        return Package.super.packageFileNameWithSuffix();
+    }
+
+    @Override
+    default AppImageLayout installedPackageLayout() {
+        return Package.super.installedPackageLayout();
+    }
+
+    @Override
+    default ApplicationLayout asInstalledPackageApplicationLayout() {
+        return Package.super.asInstalledPackageApplicationLayout();
+    }
+
+    @Override
+    default ApplicationLayout asPackageApplicationLayout() {
+        return Package.super.asPackageApplicationLayout();
     }
 }

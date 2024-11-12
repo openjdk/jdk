@@ -26,12 +26,12 @@ package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_EXE;
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface WinExePackage extends Package, WinExePackageMixin {
 
     public static WinExePackage create(WinMsiPackage msiPackage, Path icon) {
-        return DynamicProxy.createProxyFromPieces(WinExePackage.class, createExePackage(
+        return CompositeProxy.create(WinExePackage.class, createExePackage(
                 msiPackage), new WinExePackageMixin.Stub(msiPackage, icon));
     }
     

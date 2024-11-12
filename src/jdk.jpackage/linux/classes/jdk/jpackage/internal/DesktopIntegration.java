@@ -31,7 +31,6 @@ import jdk.jpackage.internal.model.Launcher;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +47,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import static jdk.jpackage.internal.AppImageBuilder.createLauncherIconResource;
 import jdk.jpackage.internal.model.FileAssociation;
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
@@ -467,8 +466,10 @@ final class DesktopIntegration extends ShellCustomAction {
                 fa = new FileAssociation.Stub(fa.description(), null,
                         fa.mimeType(), fa.extension());
             }
-            return DynamicProxy.createProxyFromPieces(LinuxFileAssociation.class,
-                    fa, new LinuxFileAssociationMixin.Stub(iconSize));
+            return CompositeProxy.build()
+                    .invokeTunnel(CompositeProxyTunnel.INSTANCE)
+                    .create(LinuxFileAssociation.class, fa,
+                            new LinuxFileAssociationMixin.Stub(iconSize));
         }
 
         private static int getIconSize(FileAssociation fa) {

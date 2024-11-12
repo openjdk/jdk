@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 import static java.util.stream.Collectors.toMap;
 import jdk.jpackage.internal.resources.ResourceLocator;
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface WinLauncher extends Launcher, WinLauncherMixin {
 
@@ -57,6 +57,13 @@ public interface WinLauncher extends Launcher, WinLauncherMixin {
     }
 
     public static WinLauncher create(Launcher launcher, WinLauncherMixin mixin) {
-        return DynamicProxy.createProxyFromPieces(WinLauncher.class, launcher, mixin);
+        return CompositeProxy.create(WinLauncher.class, launcher, mixin);
+    }
+    
+    // This override is needed to make default Launcher methods invoke overriden
+    // WinLauncher methods.
+    @Override
+    default String executableNameWithSuffix() {
+        return Launcher.super.executableNameWithSuffix();
     }
 }

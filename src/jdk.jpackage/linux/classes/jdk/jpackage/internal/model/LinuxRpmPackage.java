@@ -24,11 +24,11 @@
  */
 package jdk.jpackage.internal.model;
 
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface LinuxRpmPackage extends LinuxPackage, LinuxRpmPackageMixin {
 
     public static LinuxRpmPackage create(LinuxPackage pkg, LinuxRpmPackageMixin mixin) {
-        return DynamicProxy.createProxyFromPieces(LinuxRpmPackage.class, pkg, mixin);
+        return CompositeProxy.create(LinuxRpmPackage.class, pkg, mixin);
     }
 }

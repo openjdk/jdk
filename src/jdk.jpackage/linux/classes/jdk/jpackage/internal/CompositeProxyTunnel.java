@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jpackage.internal;
 
-package jdk.jpackage.internal.model;
-
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import jdk.jpackage.internal.util.CompositeProxy;
 
-public interface LinuxApplication extends Application {
-    
-    public static LinuxApplication create(Application app) {
-        return CompositeProxy.create(LinuxApplication.class, app);
-    }    
+final class CompositeProxyTunnel implements CompositeProxy.InvokeTunnel {
+
+    @Override
+    public Object invoke(Object obj, Method method, Object[] args) throws Throwable {
+        return method.invoke(obj, args);
+    }
+
+    @Override
+    public Object invokeDefault(Object proxy, Method method, Object[] args) throws Throwable {
+        return InvocationHandler.invokeDefault(proxy, method, args);
+    }
+
+    static final CompositeProxyTunnel INSTANCE = new CompositeProxyTunnel();
+
 }

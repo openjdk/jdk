@@ -24,7 +24,7 @@
  */
 package jdk.jpackage.internal.model;
 
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface WinMsiPackage extends Package, WinMsiPackageMixin {
 
@@ -33,6 +33,6 @@ public interface WinMsiPackage extends Package, WinMsiPackageMixin {
     }
 
     public static WinMsiPackage create(Package pkg, WinMsiPackageMixin mixin) {
-        return DynamicProxy.createProxyFromPieces(WinMsiPackage.class, pkg, mixin);
+        return CompositeProxy.create(WinMsiPackage.class, pkg, mixin);
     }
 }

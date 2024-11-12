@@ -25,7 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import jdk.jpackage.internal.util.DynamicProxy;
+import jdk.jpackage.internal.util.CompositeProxy;
 import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 /**
@@ -39,7 +39,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
     }
 
     static ApplicationLayout create(AppImageLayout appImage, ApplicationLayoutMixin mixin) {
-        return DynamicProxy.createProxyFromPieces(ApplicationLayout.class, appImage, mixin);
+        return CompositeProxy.create(ApplicationLayout.class, appImage, mixin);
     }
 
     public static Builder build() {
