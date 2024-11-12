@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,21 @@ package sun.net;
 
 import jdk.internal.util.StaticProperty;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Properties;
 
-/*
+/**
  * This class allows for centralized access to Networking properties.
  * Default values are loaded from the file jre/lib/net.properties
  *
- *
  * @author Jean-Christophe Collet
- *
  */
-
 @SuppressWarnings("removal")
 public class NetProperties {
-    private static Properties props = new Properties();
+    private static final Properties props = new Properties();
     static {
         AccessController.doPrivileged(
             new PrivilegedAction<Void>() {
@@ -146,10 +144,7 @@ public class NetProperties {
         }
 
         if (val != null) {
-            try {
-                return Boolean.valueOf(val);
-            } catch (NumberFormatException ex) {
-            }
+            return Boolean.valueOf(val);
         }
         return null;
     }
