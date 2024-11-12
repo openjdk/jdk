@@ -236,17 +236,10 @@ final class StringConcatHelper {
         if (indexCoder < UTF16) {
             if (value) {
                 index -= 4;
-                buf[index] = 't';
-                buf[index + 1] = 'r';
-                buf[index + 2] = 'u';
-                buf[index + 3] = 'e';
+                StringLatin1.putCharsAt(buf, index, 't', 'r', 'u', 'e');
             } else {
                 index -= 5;
-                buf[index] = 'f';
-                buf[index + 1] = 'a';
-                buf[index + 2] = 'l';
-                buf[index + 3] = 's';
-                buf[index + 4] = 'e';
+                StringLatin1.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
@@ -254,17 +247,10 @@ final class StringConcatHelper {
         } else {
             if (value) {
                 index -= 4;
-                StringUTF16.putChar(buf, index, 't');
-                StringUTF16.putChar(buf, index + 1, 'r');
-                StringUTF16.putChar(buf, index + 2, 'u');
-                StringUTF16.putChar(buf, index + 3, 'e');
+                StringUTF16.putCharsAt(buf, index, 't', 'r', 'u', 'e');
             } else {
                 index -= 5;
-                StringUTF16.putChar(buf, index, 'f');
-                StringUTF16.putChar(buf, index + 1, 'a');
-                StringUTF16.putChar(buf, index + 2, 'l');
-                StringUTF16.putChar(buf, index + 3, 's');
-                StringUTF16.putChar(buf, index + 4, 'e');
+                StringUTF16.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
@@ -638,34 +624,20 @@ final class StringConcatHelper {
         if (coder == String.LATIN1) {
             if (value) {
                 index -= 4;
-                buf[index] = 't';
-                buf[index + 1] = 'r';
-                buf[index + 2] = 'u';
-                buf[index + 3] = 'e';
+                StringLatin1.putCharsAt(buf, index, 't', 'r', 'u', 'e');
             } else {
                 index -= 5;
-                buf[index] = 'f';
-                buf[index + 1] = 'a';
-                buf[index + 2] = 'l';
-                buf[index + 3] = 's';
-                buf[index + 4] = 'e';
+                StringLatin1.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
         } else {
             if (value) {
                 index -= 4;
-                StringUTF16.putChar(buf, index, 't');
-                StringUTF16.putChar(buf, index + 1, 'r');
-                StringUTF16.putChar(buf, index + 2, 'u');
-                StringUTF16.putChar(buf, index + 3, 'e');
+                StringUTF16.putCharsAt(buf, index, 't', 'r', 'u', 'e');
             } else {
                 index -= 5;
-                StringUTF16.putChar(buf, index, 'f');
-                StringUTF16.putChar(buf, index + 1, 'a');
-                StringUTF16.putChar(buf, index + 2, 'l');
-                StringUTF16.putChar(buf, index + 3, 's');
-                StringUTF16.putChar(buf, index + 4, 'e');
+                StringUTF16.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);

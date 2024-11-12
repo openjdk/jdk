@@ -96,6 +96,10 @@ JLINK_DISABLE_WARNINGS := | ( $(GREP) -v -e "WARNING: Using incubator module" ||
 JDK_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk
 JRE_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre
 
+ifeq ($(JLINK_PRODUCE_LINKABLE_RUNTIME), true)
+  JLINK_JDK_EXTRA_OPTS += --generate-linkable-runtime
+endif
+
 $(eval $(call SetupExecute, jlink_jdk, \
     WARN := Creating jdk image, \
     DEPS := $(JDK_JMODS) $(BASE_RELEASE_FILE) \
@@ -132,10 +136,16 @@ CDS_DUMP_FLAGS = -Xmx128M -Xms128M
 # Helper function for creating the CDS archives for the JDK and JRE
 #
 # Param1 - VM variant (e.g., server, client, zero, ...)
-# Param2 - _nocoops, or empty
+# Param2 - _nocoops, _coh, _nocoops_coh, or empty
 define CreateCDSArchive
-  $1_$2_DUMP_EXTRA_ARG := $(if $(filter _nocoops, $2), -XX:-UseCompressedOops, )
-  $1_$2_DUMP_TYPE      := $(if $(filter _nocoops, $2), -NOCOOPS, )
+  $1_$2_COOPS_OPTION := $(if $(findstring _nocoops, $2),-XX:-UseCompressedOops)
+  # enable and also explicitly disable coh as needed.
+  ifeq ($(call isTargetCpuBits, 64), true)
+    $1_$2_COH_OPTION := -XX:+UnlockExperimentalVMOptions \
+                        $(if $(findstring _coh, $2),-XX:+UseCompactObjectHeaders,-XX:-UseCompactObjectHeaders)
+  endif
+  $1_$2_DUMP_EXTRA_ARG := $$($1_$2_COOPS_OPTION) $$($1_$2_COH_OPTION)
+  $1_$2_DUMP_TYPE      := $(if $(findstring _nocoops, $2),-NOCOOPS,)$(if $(findstring _coh, $2),-COH,)
 
   # Only G1 supports dumping the shared heap, so explicitly use G1 if the JVM supports it.
   $1_$2_CDS_DUMP_FLAGS := $(CDS_DUMP_FLAGS) $(if $(filter g1gc, $(JVM_FEATURES_$1)), -XX:+UseG1GC)
@@ -190,6 +200,14 @@ ifeq ($(BUILD_CDS_ARCHIVE), true)
     $(foreach v, $(JVM_VARIANTS), \
       $(eval $(call CreateCDSArchive,$v,_nocoops)) \
     )
+    ifeq ($(BUILD_CDS_ARCHIVE_COH), true)
+      $(foreach v, $(JVM_VARIANTS), \
+        $(eval $(call CreateCDSArchive,$v,_coh)) \
+      )
+      $(foreach v, $(JVM_VARIANTS), \
+        $(eval $(call CreateCDSArchive,$v,_nocoops_coh)) \
+      )
+    endif
   endif
 endif
 

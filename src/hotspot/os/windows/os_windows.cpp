@@ -4150,7 +4150,7 @@ void getWindowsInstallationType(char* buffer, int bufferSize) {
   }
 
   // Query the value
-  if (RegQueryValueExA(hKey, valueName, NULL, NULL, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
+  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
     RegCloseKey(hKey);
     buffer[0] = '\0';
     return;
