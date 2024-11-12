@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,21 +42,25 @@ public class TestCloneable {
 
     @DataProvider
     public Object[][] testData() {
+        String dsaProviderName = System.getProperty("test.provider.name", "SUN");
+        String ecProviderName  = System.getProperty("test.provider.name", "SunEC");
+        String rsaProviderName = System.getProperty("test.provider.name", "SunRsaSign");
+
         return new Object[][] {
-            { "SHA1withDSA", "SUN" }, { "NONEwithDSA", "SUN" },
-            { "SHA224withDSA", "SUN" }, { "SHA256withDSA", "SUN" },
-            { "EdDSA", "SunEC" }, { "Ed25519", "SunEC" }, { "Ed448", "SunEC" },
-            { "SHA1withECDSA", "SunEC" }, { "SHA224withECDSA", "SunEC" },
-            { "SHA256withECDSA", "SunEC" }, { "SHA384withECDSA", "SunEC" },
-            { "SHA512withECDSA", "SunEC" }, { "NONEwithECDSA", "SunEC" },
-            { "MD2withRSA", "SunRsaSign" }, { "MD5withRSA", "SunRsaSign" },
-            { "SHA1withRSA", "SunRsaSign" }, { "SHA224withRSA", "SunRsaSign" },
-            { "SHA256withRSA", "SunRsaSign" },
-            { "SHA384withRSA", "SunRsaSign" },
-            { "SHA512withRSA", "SunRsaSign" },
-            { "SHA512/224withRSA", "SunRsaSign" },
-            { "SHA512/256withRSA", "SunRsaSign" },
-            { "RSASSA-PSS", "SunRsaSign" },
+            { "SHA1withDSA", dsaProviderName }, { "NONEwithDSA", dsaProviderName },
+            { "SHA224withDSA", dsaProviderName }, { "SHA256withDSA", dsaProviderName },
+            { "EdDSA", ecProviderName }, { "Ed25519", ecProviderName }, { "Ed448", ecProviderName },
+            { "SHA1withECDSA", ecProviderName }, { "SHA224withECDSA", ecProviderName },
+            { "SHA256withECDSA", ecProviderName }, { "SHA384withECDSA", ecProviderName },
+            { "SHA512withECDSA", ecProviderName }, { "NONEwithECDSA", ecProviderName },
+            { "MD2withRSA", rsaProviderName }, { "MD5withRSA", rsaProviderName },
+            { "SHA1withRSA", rsaProviderName }, { "SHA224withRSA", rsaProviderName },
+            { "SHA256withRSA", rsaProviderName },
+            { "SHA384withRSA", rsaProviderName },
+            { "SHA512withRSA", rsaProviderName },
+            { "SHA512/224withRSA", rsaProviderName },
+            { "SHA512/256withRSA", rsaProviderName },
+            { "RSASSA-PSS", rsaProviderName },
             { "NONEwithRSA", "SunMSCAPI" },
             { "SHA1withRSA", "SunMSCAPI" }, { "SHA256withRSA", "SunMSCAPI" },
             { "SHA384withRSA", "SunMSCAPI" }, { "SHA512withRSA", "SunMSCAPI" },

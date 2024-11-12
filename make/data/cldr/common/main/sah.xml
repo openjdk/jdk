@@ -721,9 +721,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Улан Баатар</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Чойбалсан</exemplarCity>
-			</zone>
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Калининград</exemplarCity>
 			</zone>
@@ -842,13 +839,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Кытай кэмэ</generic>
 					<standard>Кытай сүрүн кэмэ</standard>
 					<daylight>Кытай сайыҥҥы кэмэ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Чойбалсан кэмэ</generic>
-					<standard>Чойбалсан сүрүн кэмэ</standard>
-					<daylight>Чойбалсан сайыҥҥы кэмэ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Georgia">

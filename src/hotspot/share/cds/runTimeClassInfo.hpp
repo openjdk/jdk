@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,24 +52,24 @@ public:
   struct RTVerifierConstraint {
     u4 _name;
     u4 _from_name;
-    Symbol* name() { return (Symbol*)(SharedBaseAddress + _name);}
-    Symbol* from_name() { return (Symbol*)(SharedBaseAddress + _from_name); }
+    Symbol* name() { return ArchiveUtils::from_offset<Symbol*>(_name); }
+    Symbol* from_name() { return ArchiveUtils::from_offset<Symbol*>(_from_name); }
   };
 
   struct RTLoaderConstraint {
     u4   _name;
     char _loader_type1;
     char _loader_type2;
-    Symbol* constraint_name() {
-      return (Symbol*)(SharedBaseAddress + _name);
-    }
+    Symbol* constraint_name() { return ArchiveUtils::from_offset<Symbol*>(_name); }
   };
   struct RTEnumKlassStaticFields {
     int _num;
     int _root_indices[1];
   };
 
-  InstanceKlass* _klass;
+private:
+  u4 _klass_offset;
+  u4 _nest_host_offset;
   int _num_verifier_constraints;
   int _num_loader_constraints;
 
@@ -80,7 +80,6 @@ public:
   // optional char                    _verifier_constraint_flags[_num_verifier_constraints]
   // optional RTEnumKlassStaticFields _enum_klass_static_fields;
 
-private:
   static size_t header_size_size() {
     return align_up(sizeof(RunTimeClassInfo), wordSize);
   }
@@ -108,6 +107,9 @@ private:
 
   static size_t crc_size(InstanceKlass* klass);
 public:
+  InstanceKlass* klass() const;
+  int num_verifier_constraints() const { return _num_verifier_constraints; }
+  int num_loader_constraints() const { return _num_loader_constraints; }
   static size_t byte_size(InstanceKlass* klass, int num_verifier_constraints, int num_loader_constraints,
                           int num_enum_klass_static_fields) {
     return header_size_size() +
@@ -125,11 +127,11 @@ private:
   }
 
   size_t nest_host_offset() const {
-    return crc_offset() + crc_size(_klass);
+    return crc_offset() + crc_size(klass());
   }
 
   size_t loader_constraints_offset() const  {
-    return nest_host_offset() + nest_host_size(_klass);
+    return nest_host_offset() + nest_host_size(klass());
   }
   size_t verifier_constraints_offset() const {
     return loader_constraints_offset() + loader_constraints_size(_num_loader_constraints);
@@ -150,13 +152,13 @@ private:
   }
 
   RTEnumKlassStaticFields* enum_klass_static_fields_addr() const {
-    assert(_klass->has_archived_enum_objs(), "sanity");
+    assert(klass()->has_archived_enum_objs(), "sanity");
     return (RTEnumKlassStaticFields*)(address(this) + enum_klass_static_fields_offset());
   }
 
 public:
   CrcInfo* crc() const {
-    assert(crc_size(_klass) > 0, "must be");
+    assert(crc_size(klass()) > 0, "must be");
     return (CrcInfo*)(address(this) + crc_offset());
   }
   RTVerifierConstraint* verifier_constraints() {
@@ -173,12 +175,9 @@ public:
     return (char*)(address(this) + verifier_constraint_flags_offset());
   }
 
-  InstanceKlass** nest_host_addr() {
-    assert(_klass->is_hidden(), "sanity");
-    return (InstanceKlass**)(address(this) + nest_host_offset());
-  }
   InstanceKlass* nest_host() {
-    return *nest_host_addr();
+    assert(!ArchiveBuilder::is_active(), "not called when dumping archive");
+    return ArchiveUtils::from_offset<InstanceKlass*>(_nest_host_offset);
   }
 
   RTLoaderConstraint* loader_constraints() {
@@ -248,7 +247,7 @@ public:
   // Used by RunTimeSharedDictionary to implement OffsetCompactHashtable::EQUALS
   static inline bool EQUALS(
        const RunTimeClassInfo* value, Symbol* key, int len_unused) {
-    return (value->_klass->name() == key);
+    return (value->klass()->name() == key);
   }
 };
 

@@ -36,8 +36,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #if INCLUDE_ZGC
-#include "gc/x/xBarrierSetRuntime.hpp"
-#include "gc/x/xThreadLocalData.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #endif
@@ -56,6 +54,8 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
 
+int CompilerToVM::Data::oopDesc_klass_offset_in_bytes;
+int CompilerToVM::Data::arrayOopDesc_length_offset_in_bytes;
 
 int CompilerToVM::Data::Klass_vtable_start_offset;
 int CompilerToVM::Data::Klass_vtable_length_offset;
@@ -149,6 +149,9 @@ int CompilerToVM::Data::data_section_item_alignment;
 JVMTI_ONLY( int* CompilerToVM::Data::_should_notify_object_alloc; )
 
 void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
+  oopDesc_klass_offset_in_bytes = oopDesc::klass_offset_in_bytes();
+  arrayOopDesc_length_offset_in_bytes = arrayOopDesc::length_offset_in_bytes();
+
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
 
@@ -173,23 +176,9 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
 #if INCLUDE_ZGC
   if (UseZGC) {
-    if (ZGenerational) {
-      ZPointerVectorLoadBadMask_address   = (address) &ZPointerVectorLoadBadMask;
-      ZPointerVectorStoreBadMask_address  = (address) &ZPointerVectorStoreBadMask;
-      ZPointerVectorStoreGoodMask_address = (address) &ZPointerVectorStoreGoodMask;
-    } else {
-      thread_address_bad_mask_offset = in_bytes(XThreadLocalData::address_bad_mask_offset());
-      // Initialize the old names for compatibility.  The proper XBarrierSetRuntime names are
-      // exported as addresses in vmStructs_jvmci.cpp as are the new ZBarrierSetRuntime names.
-      ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded              = XBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded         = XBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded      = XBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded         = XBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded    = XBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded = XBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded_addr();
-      ZBarrierSetRuntime_load_barrier_on_oop_array                        = XBarrierSetRuntime::load_barrier_on_oop_array_addr();
-      ZBarrierSetRuntime_clone                                            = XBarrierSetRuntime::clone_addr();
-    }
+    ZPointerVectorLoadBadMask_address   = (address) &ZPointerVectorLoadBadMask;
+    ZPointerVectorStoreBadMask_address  = (address) &ZPointerVectorStoreBadMask;
+    ZPointerVectorStoreGoodMask_address = (address) &ZPointerVectorStoreGoodMask;
   }
 #endif
 
