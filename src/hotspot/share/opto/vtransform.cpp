@@ -180,20 +180,24 @@ void VTransform::apply_speculative_runtime_checks() {
 
 // Check: (node % alignment) == 0.
 void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
-  // TODO detect input type? - refactor names
-
   Node* ctrl = phase()->get_ctrl(node);
 
-  Node* xbase = new CastP2XNode(nullptr, node);
-  phase()->register_new_node(xbase, ctrl);
-  TRACE_ALIGN_VECTOR_NODE(xbase);
-#ifdef _LP64
-  xbase  = new ConvL2INode(xbase);
-  phase()->register_new_node(xbase, ctrl);
-  TRACE_ALIGN_VECTOR_NODE(xbase);
-#endif
+  // Cast adr/long -> int
+  if (node->bottom_type()->basic_type() == T_ADDRESS) {
+    // adr -> int/long
+    node = new CastP2XNode(nullptr, node);
+    phase()->register_new_node(node, ctrl);
+    TRACE_ALIGN_VECTOR_NODE(node);
+  }
+  if (node->bottom_type()->basic_type() == T_LONG) {
+    // long -> int
+    node  = new ConvL2INode(node);
+    phase()->register_new_node(node, ctrl);
+    TRACE_ALIGN_VECTOR_NODE(node);
+  }
+
   Node* mask_alignment = igvn().intcon(alignment-1);
-  Node* base_alignment = new AndINode(xbase, mask_alignment);
+  Node* base_alignment = new AndINode(node, mask_alignment);
   phase()->register_new_node(base_alignment, ctrl);
   TRACE_ALIGN_VECTOR_NODE(mask_alignment);
   TRACE_ALIGN_VECTOR_NODE(base_alignment);
