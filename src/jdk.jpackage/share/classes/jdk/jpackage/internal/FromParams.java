@@ -90,7 +90,7 @@ final class FromParams {
 
         if (isRuntimeInstaller) {
         } else if (predefinedAppImage != null) {
-            var appIMafeFile = AppImageFile2.load(appLayout.resolveAt(predefinedAppImage));
+            var appIMafeFile = AppImageFile2.load(predefinedAppImage, appLayout);
             appBuilder.initFromAppImage(appIMafeFile, launcherInfo -> {
                 var launcherParams = mapLauncherInfo(launcherInfo);
                 return launcherMapper.apply(mergeParams(params, launcherParams));
