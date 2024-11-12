@@ -67,7 +67,8 @@ address StubGenerator::generate_updateBytesAdler32() {
   assert(UseAdler32Intrinsics, "");
 
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+  StubGenStubId stub_id = StubGenStubId::updateBytesAdler32_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   // Choose an appropriate LIMIT for inner loop based on the granularity

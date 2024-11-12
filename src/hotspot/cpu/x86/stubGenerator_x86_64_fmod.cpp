@@ -74,7 +74,8 @@ ATTRIBUTE_ALIGNED(32) static const uint64_t CONST_e307[] = {
 
 address StubGenerator::generate_libmFmod() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "libmFmod");
+  StubGenStubId stub_id = StubGenStubId::fmod_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 

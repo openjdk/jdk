@@ -63,17 +63,17 @@ private:
 
   // define getters for arch-specific entries
 
-#define DECLARE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name) \
+#define DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name) \
   static address getter_name() { return STUB_FIELD_NAME(field_name); }
 
-#define DECLARE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
-  DECLARE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
+#define DEFINE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
 
 public:
-  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY_GETTER, DECLARE_ARCH_ENTRY_GETTER_INIT)
+  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT)
 
-#undef DECLARE_ARCH_ENTRY_GETTER_INIT
-#undef DECLARE_ARCH_GETTER_ENTRY
+#undef DEFINE_ARCH_ENTRY_GETTER_INIT
+#undef DEFINE_ARCH_GETTER_ENTRY
 
 
 #ifndef _LP64
