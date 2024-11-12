@@ -1107,7 +1107,7 @@ public final class ProcessBuilder
             throw new IOException(
                 "Cannot run program \"" + prog + "\""
                 + (dir == null ? "" : " (in directory \"" + dir + "\")")
-                + e.getMessage(),
+                + ": " + e.getMessage(),
                 e);
         }
     }
