@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,27 +85,28 @@ public abstract class Permission implements Guard, java.io.Serializable {
     }
 
     /**
-     * Implements the guard interface for a permission. The
-     * {@code SecurityManager.checkPermission} method is called,
-     * passing this permission object as the permission to check.
+     * Implements the guard interface for a permission.
      * Returns silently if access is granted. Otherwise, throws
      * a {@code SecurityException}.
      *
+     * @apiNote This method originally threw a {@code SecurityException} if a
+     *       security manager was enabled and the requested access, specified
+     *       by this permission, was not permitted.
+     *       {@linkplain SecurityManager The Security Manager} is no longer
+     *       supported; thus, this method always throws a
+     *       {@code SecurityException}.
+     *
      * @param object the object being guarded (currently ignored).
      *
-     * @throws SecurityException
-     *        if a security manager exists and its
-     *        {@code checkPermission} method doesn't allow access.
+     * @throws SecurityException always
      *
      * @see Guard
      * @see GuardedObject
-     * @see SecurityManager#checkPermission
      *
      */
+    @Override
     public void checkGuard(Object object) throws SecurityException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) sm.checkPermission(this);
+        throw new SecurityException("checking permissions is not supported");
     }
 
     /**
@@ -115,10 +116,6 @@ public abstract class Permission implements Guard, java.io.Serializable {
      * This must be implemented by subclasses of {@code Permission}, as they
      * are the only ones that can impose semantics on a {@code Permission}
      * object.
-     *
-     * <p>The {@code implies} method is used by the AccessController to determine
-     * whether a requested permission is implied by another permission that
-     * is known to be valid in the current execution context.
      *
      * @param permission the permission to check against.
      *
