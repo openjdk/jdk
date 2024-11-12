@@ -31,6 +31,7 @@
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
 import java.util.HashSet;
+import java.util.List;
 
 public class BasicFloat16ArithTests {
     private static float InfinityF = Float.POSITIVE_INFINITY;
@@ -522,6 +523,17 @@ public class BasicFloat16ArithTests {
             new String2Float16Case( "+0.0", 0.0f),
             new String2Float16Case("-0.0", -0.0f),
 
+            // Decimal signed integers are accepted as input; hex
+            // signed integers are not, see negative test cases below.
+            new String2Float16Case( "1",  1.0f),
+            new String2Float16Case("-1", -1.0f),
+
+            new String2Float16Case( "12",  12.0f),
+            new String2Float16Case("-12", -12.0f),
+
+            new String2Float16Case( "123",  123.0f),
+            new String2Float16Case("-123", -123.0f),
+
             new String2Float16Case( "1.0",  1.0f),
             new String2Float16Case("-1.0", -1.0f),
 
@@ -532,7 +544,6 @@ public class BasicFloat16ArithTests {
             new String2Float16Case( "1.5d", 1.5f),
 
             new String2Float16Case("65504.0", 65504.0f),  // Float16.MAX_VALUE
-
 
             new String2Float16Case("65520.0", InfinityF), // Float16.MAX_VALUE + 0.5*ulp
 
@@ -583,6 +594,20 @@ public class BasicFloat16ArithTests {
             float expected = testCase.expected();
             Float16 result = Float16.valueOf(input);
             checkFloat16(result, expected, "Float16.valueOf(String) " + input);
+        }
+
+        List<String> negativeCases = List.of( "0x1",
+                                       "-0x1",
+                                        "0x12",
+                                       "-0x12");
+
+        for(String negativeCase : negativeCases) {
+            try {
+                Float16 f16 = Float16.valueOf(negativeCase);
+                throw new RuntimeException("Did not get expected exception for input " + negativeCase);
+            } catch (NumberFormatException nfe) {
+                ; // Expected
+            }
         }
 
         return;

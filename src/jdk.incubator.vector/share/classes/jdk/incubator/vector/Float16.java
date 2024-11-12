@@ -464,7 +464,9 @@ public final class Float16
             char startingChar = s.charAt(0);
             boolean isSigned = (startingChar == '-') || (startingChar == '+');
             // Hex literal will start "-0x..." or "+0x..." or "0x...""
-            boolean hexInput = isX(s.charAt(isSigned ? 2 : 1));
+            // A valid hex literal must be at least three characters
+            // long "0xD" where D is a hex digit.
+            boolean hexInput = (s.length() >= 3 ) && isX(s.charAt(isSigned ? 2 : 1));
 
             if (!hexInput) { // Decimal input
                 // Grammar of BigDecimal string input is compatible
