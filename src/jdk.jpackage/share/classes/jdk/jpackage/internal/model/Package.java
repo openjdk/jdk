@@ -89,15 +89,17 @@ public interface Package {
      * Returns app image layout of the installed package.
      */
     default AppImageLayout installedPackageLayout() {
-        Path root = relativeInstallDir();
         if (type() instanceof StandardPackageType type) {
             switch (type) {
                 case LINUX_DEB, LINUX_RPM, MAC_DMG, MAC_PKG -> {
-                    root = Path.of("/").resolve(root);
+                    return packageLayout().resolveAt(Path.of("/"));
+                }
+                case WIN_EXE, WIN_MSI -> {
+                    return packageLayout();
                 }
             }
         }
-        return appImageLayout().resolveAt(root);
+        throw new UnsupportedOperationException();
     }
 
     default ApplicationLayout asInstalledPackageApplicationLayout() {
