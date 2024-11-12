@@ -184,4 +184,42 @@ public class DynamicProxyTest {
         assertEquals("next", last.doNext());
         assertEquals("some", last.doSome());
     }
+
+    @Test
+    public void testNestedProxy() {
+        interface AddM {
+            String m();
+        }
+
+        interface AddN {
+            String n();
+        }
+
+        interface A extends AddM {
+        }
+
+        interface B extends AddN  {
+        }
+
+        interface C extends A, B {
+        }
+
+        var proxyA = DynamicProxy.createProxyFromPieces(A.class, new AddM() {
+            @Override
+            public String m() {
+                return "hello";
+            }
+        });
+        var proxyB = DynamicProxy.createProxyFromPieces(B.class, new AddN() {
+            @Override
+            public String n() {
+                return "bye";
+            }
+
+        });
+        var proxyC = DynamicProxy.createProxyFromPieces(C.class, proxyA, proxyB);
+
+        assertEquals("hello", proxyC.m());
+        assertEquals("bye", proxyC.n());
+    }
 }
