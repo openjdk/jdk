@@ -108,7 +108,6 @@ public class ExtendedRobot extends Robot {
      */
     public ExtendedRobot(GraphicsDevice screen) throws AWTException {
         super(screen);
-//        throw new RuntimeException("ExtendedRobot");
     }
 
     /**
@@ -119,8 +118,7 @@ public class ExtendedRobot extends Robot {
      * @see     #waitForIdle()
      */
     public int getSyncDelay() {
-        throw new RuntimeException("getSyncDelay");
-//        return this.syncDelay;
+        return this.syncDelay;
     }
 
     /**
@@ -139,13 +137,12 @@ public class ExtendedRobot extends Robot {
      * @see     #glide(int, int, int, int)
      */
     public void dragAndDrop(int fromX, int fromY, int toX, int toY){
-        throw new RuntimeException("dragAndDrop");
-//        mouseMove(fromX, fromY);
-//        mousePress(InputEvent.BUTTON1_DOWN_MASK);
-//        waitForIdle();
-//        glide(toX, toY);
-//        mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-//        waitForIdle();
+        mouseMove(fromX, fromY);
+        mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        waitForIdle();
+        glide(toX, toY);
+        mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        waitForIdle();
     }
 
     /**
@@ -162,7 +159,6 @@ public class ExtendedRobot extends Robot {
      * @see     #dragAndDrop(int, int, int, int)
      */
     public void dragAndDrop(Point from, Point to){
-        throw new RuntimeException("dragAndDrop");
-//        dragAndDrop(from.x, from.y, to.x, to.y);
+        dragAndDrop(from.x, from.y, to.x, to.y);
     }
 }
