@@ -150,13 +150,15 @@
   do_stub(compiler, vector_reverse_bit_lut)                             \
   do_arch_entry(x86, compiler, vector_reverse_bit_lut,                  \
                 vector_reverse_bit_lut, vector_reverse_bit_lut)         \
-  do_stub(compiler, vector_reverse_byte_perm_mask_long)                 \
+  do_stub(compiler, vector_reverse_byte_perm_mask_short)                \
   do_arch_entry(x86, compiler, vector_reverse_byte_perm_mask_short,     \
                 vector_reverse_byte_perm_mask_short,                    \
                 vector_reverse_byte_perm_mask_short)                    \
+  do_stub(compiler, vector_reverse_byte_perm_mask_int)                  \
   do_arch_entry(x86, compiler, vector_reverse_byte_perm_mask_int,       \
                 vector_reverse_byte_perm_mask_int,                      \
                 vector_reverse_byte_perm_mask_int)                      \
+  do_stub(compiler, vector_reverse_byte_perm_mask_long)                 \
   do_arch_entry(x86, compiler, vector_reverse_byte_perm_mask_long,      \
                 vector_reverse_byte_perm_mask_long,                     \
                 vector_reverse_byte_perm_mask_long)                     \
@@ -238,6 +240,7 @@
     do_stub(compiler, join_0_1_base64)                                  \
     do_arch_entry(x86, compiler, join_0_1_base64, join_0_1_base64,      \
                   base64_vbmi_join_0_1_addr)                            \
+    do_stub(compiler, join_1_2_base64)                                  \
     do_arch_entry(x86, compiler, join_1_2_base64, join_1_2_base64,      \
                   base64_vbmi_join_1_2_addr)                            \
     do_stub(compiler, join_2_3_base64)                                  \
