@@ -232,35 +232,42 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
   position from = start;
   position end  = from+size;
   size_t remsize = size;
-  IntervalState* istate = nullptr;
+  VMATreap::Range range(nullptr, nullptr);
 
-  VMATreap::Range range = _tree.find_enclosing_range(from);
-  if ((range.start == nullptr && range.end == nullptr)
-      || (range.start != nullptr && range.end == nullptr)) {
-    // There is no range containing the starting address
-    assert(range.start->val().out.type() == StateType::Released, "must be");
-    return SummaryDiff();
-  } else if (range.start == nullptr && range.end != nullptr) {
-    position found_end = pos(range.end);
-    if (found_end < end) {
-      // There is a range starting somewhere within [start, start+size)
+  auto find_next_range = [&]() -> bool {
+    range = _tree.find_enclosing_range(from);
+    if ((range.start == nullptr && range.end == nullptr) ||
+        (range.start != nullptr && range.end == nullptr)) {
+      // There is no range containing the starting address
+      assert(range.start->val().out.type() == StateType::Released, "must be");
+      return false;
+    } else if (range.start == nullptr && range.end != nullptr) {
+      position found_end = pos(range.end);
+      if (found_end >= end) {
+        // The found address is outside of our range, we can end now.
+        return false;
+      }
+      // There is at least one range [found_end, ?) which starts within [start, end)
+      // Use this as the range instead.
+      range = _tree.find_enclosing_range(found_end);
+      remsize = end - found_end;
       from = found_end;
-      remsize = end - from;
-      istate = &out_state(range.end);
-    } else {
-      // The found address is outside of our range, we can end now.
-      return SummaryDiff();
     }
-  } else {
-    // Both nodes exist
-    istate = &out_state(range.start);
-  }
+    return true;
+  };
+
+  bool success = find_next_range();
+  assert(range.start != nullptr && range.end != nullptr, "must be");
+  if (!success) return SummaryDiff();
+
   end = MIN2(from + remsize, pos(range.end));
-  StateType type = istate->type();
+  IntervalState& out = out_state(range.start);
+  StateType type = out.type();
+
   SummaryDiff diff;
   // Ignore any released ranges, these must be mtNone and have no stack
   if (type != StateType::Released) {
-    RegionData new_data = RegionData(istate->stack(), tag);
+    RegionData new_data = RegionData(out.stack(), tag);
     SummaryDiff result = register_mapping(from, end, type, new_data);
     diff.add(result);
   }
@@ -271,17 +278,17 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
   // If end < from + sz then there are multiple ranges for which to set the flag.
   while (end < from + remsize) {
     // Using register_mapping may invalidate the already found range, so we must
-    // use find_enclosing_range repeatedly
-    range = _tree.find_enclosing_range(from);
-    assert(range.start != nullptr && range.end != nullptr,
-           "Setting a memory tag must be done within existing range.");
-    if (range.start == nullptr || range.end == nullptr) {
-      break;
-    }
+    // use find_next_range repeatedly
+    bool success = find_next_range();
+    assert(range.start != nullptr && range.end != nullptr, "must be");
+    if (!success) return diff;
+
     end = MIN2(from + remsize, pos(range.end));
-    StateType type = out_state(range.start).type();
+    IntervalState& out = out_state(range.start);
+    StateType type = out.type();
+
     if (type != StateType::Released) {
-      RegionData new_data = RegionData(out_state(range.start).stack(), tag);
+      RegionData new_data = RegionData(out.stack(), tag);
       SummaryDiff result = register_mapping(from, end, type, new_data);
       diff.add(result);
     }
