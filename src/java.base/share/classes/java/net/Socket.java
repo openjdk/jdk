@@ -497,13 +497,10 @@ public class Socket implements java.io.Closeable {
             if (localAddr != null)
                 bind(localAddr);
             connect(address);
-        } catch (IOException | IllegalArgumentException | SecurityException e) {
-            try {
-                close();
-            } catch (IOException ce) {
-                e.addSuppressed(ce);
-            }
-            throw e;
+        } catch (IOException | IllegalArgumentException | SecurityException error) {
+            // `connect()` already closes the socket on failures, yet `bind()` doesn't, and hence:
+            closeQuietly(error);
+            throw error;
         }
     }
 
@@ -616,6 +613,10 @@ public class Socket implements java.io.Closeable {
      *        cause it to wakeup and close the socket. This method will then throw
      *        {@code SocketException} with the interrupt status set.
      * </ol>
+     * <p> Besides above noted cases, the socket will also be closed when a
+     * connection attempt fails with a checked exception that is neither
+     * {@linkplain UnknownHostException an address resolution failure} nor
+     * {@linkplain InterruptedIOException an I/O interruption}.
      *
      * @param   endpoint the {@code SocketAddress}
      * @throws  IOException if an error occurs during the connection, the socket
@@ -650,6 +651,10 @@ public class Socket implements java.io.Closeable {
      *        cause it to wakeup and close the socket. This method will then throw
      *        {@code SocketException} with the interrupt status set.
      * </ol>
+     * <p> Besides above noted cases, the socket will also be closed when a
+     * connection attempt fails with a {@link SocketTimeoutException} or a checked
+     * exception that is neither {@linkplain UnknownHostException an address resolution
+     * failure} nor {@linkplain InterruptedIOException an I/O interruption}.
      *
      * @param   endpoint the {@code SocketAddress}
      * @param   timeout  the timeout value to be used in milliseconds.
@@ -695,15 +700,23 @@ public class Socket implements java.io.Closeable {
 
         try {
             getImpl().connect(epoint, timeout);
-        } catch (SocketTimeoutException e) {
-            throw e;
-        } catch (InterruptedIOException e) {
+        } catch (SocketTimeoutException error) {
+            closeQuietly(error);
+            throw error;
+        } catch (InterruptedIOException error) {
             Thread thread = Thread.currentThread();
             if (thread.isVirtual() && thread.isInterrupted()) {
                 close();
                 throw new SocketException("Closed by interrupt");
             }
-            throw e;
+            throw error;
+        } catch (UnknownHostException error) {
+            // `UnknownHostException` implies that a connection attempt hasn't been made yet.
+            // Hence, the state can be kept as is, no need to close the socket.
+            throw error;
+        } catch (IOException error) {
+            closeQuietly(error);
+            throw error;
         }
 
         // connect will bind the socket if not previously bound
@@ -1638,6 +1651,16 @@ public class Socket implements java.io.Closeable {
         if (isClosed())
             throw new SocketException("Socket is closed");
         return ((Boolean) (getImpl().getOption(SocketOptions.SO_REUSEADDR))).booleanValue();
+    }
+
+    private void closeQuietly(Throwable parentError) {
+        try {
+            close();
+        } catch (IOException error) {
+            if (error != parentError) {
+                parentError.addSuppressed(error);
+            }
+        }
     }
 
     /**
