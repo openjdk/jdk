@@ -257,14 +257,18 @@ public class WindowsHelper {
                 "=",
                 "\"" + cmd.appLauncherPath(launcherName).getFileName().toString() + "\"",
                 ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).saveOutput();
-        // setWinEnableUTF8(true) for JDK-XXXXXXX
+        List<String> output;
         if (expectedCount == 0) {
-            executor.setWinEnableUTF8(true);
-        }
-        List<String> output = executor.executeAndGetOutput();
-
-        if ("No Instance(s) Available.".equals(output.get(1).trim())) {
-            return new long[0];
+            // setWinEnableUTF8(true) for JDK-XXXXXXX
+            output = executor.setWinEnableUTF8(true).executeAndGetOutput();
+            if ("No Instance(s) Available.".equals(output.get(1).trim())) {
+                return new long[0];
+            }
+        } else {
+            output = executor.executeAndGetOutput();
+            if ("No Instance(s) Available.".equals(output.getFirst().trim())) {
+                return new long[0];
+            }
         }
 
         String[] headers = Stream.of(output.getFirst().split("\\s+", 2)).map(
