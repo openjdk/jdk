@@ -897,7 +897,7 @@ void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
   ZListRemoveIterator<ZPage> iter(allocation->pages());
   for (ZPage* page; iter.next(&page);) {
     freed += page->size();
-    _cache.free_page(page);
+    recycle_page(page);
   }
 
   // Adjust capacity and used to reflect the failed capacity increase
