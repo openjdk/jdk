@@ -1102,21 +1102,13 @@ public final class ProcessBuilder
             }
             return process;
         } catch (IOException | IllegalArgumentException e) {
-            String exceptionInfo = ": " + e.getMessage();
-            Throwable cause = e;
-            if (e instanceof IOException) {
-                // Can not disclose the fail reason for read-protected files.
-                // TBD: alternate mechanism to disabla sensitive exception content
-                exceptionInfo = "";
-                cause = null;
-            }
             // It's much easier for us to create a high-quality error
             // message than the low-level C code which found the problem.
             throw new IOException(
                 "Cannot run program \"" + prog + "\""
                 + (dir == null ? "" : " (in directory \"" + dir + "\")")
-                + exceptionInfo,
-                cause);
+                + e.getMessage(),
+                e);
         }
     }
 
