@@ -351,7 +351,7 @@
 // stubs and entry points in a blob can vary from one port to the
 // next. A template macro is provided to specify the details of each
 // blob, including generic and arch-specific variations.
-// 
+//
 // If you want to define a new stub or entry then you can do so by
 // adding suitable declarations within the scope of the relevant blob.
 // For the blob with name BLOB_NAME add your declarations to macro
@@ -369,7 +369,7 @@
 // do_arch_entry_init templates (see below for details). An
 // architecure also needs to specify architecture parameters used when
 // creating each blob. These are defined using the do_arch_blob
-// template (see below). 
+// template (see below).
 //
 // Note, the client macro STUBGEN_ALL_DO is provided to allow client
 // code to iterate over all blob, stub or entry declarations. It has

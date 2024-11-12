@@ -775,7 +775,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_vector_reverse_bit_lut(const char *stub_name) {
+  address generate_vector_reverse_bit_lut() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::vector_reverse_bit_lut_id;
     StubCodeMark mark(this, stub_id);
@@ -799,7 +799,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_vector_reverse_byte_perm_mask_long(const char *stub_name) {
+  address generate_vector_reverse_byte_perm_mask_long() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::vector_reverse_byte_perm_mask_long_id;
     StubCodeMark mark(this, stub_id);
@@ -823,7 +823,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_vector_reverse_byte_perm_mask_int(const char *stub_name) {
+  address generate_vector_reverse_byte_perm_mask_int() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::vector_reverse_byte_perm_mask_int_id;
     StubCodeMark mark(this, stub_id);
@@ -847,7 +847,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_vector_reverse_byte_perm_mask_short(const char *stub_name) {
+  address generate_vector_reverse_byte_perm_mask_short() {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::vector_reverse_byte_perm_mask_short_id;
     StubCodeMark mark(this, stub_id);
@@ -4276,8 +4276,8 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseMD5Intrinsics) {
-      StubRoutines::_md5_implCompress = generate_md5_implCompress(StubGenStubId::md5_implCompress_id");
-      StubRoutines::_md5_implCompressMB = generate_md5_implCompress(StubGenStubId::md5_implCompressMB_id");
+      StubRoutines::_md5_implCompress = generate_md5_implCompress(StubGenStubId::md5_implCompress_id);
+      StubRoutines::_md5_implCompressMB = generate_md5_implCompress(StubGenStubId::md5_implCompressMB_id);
     }
     if (UseSHA1Intrinsics) {
       StubRoutines::x86::_upper_word_mask_addr = generate_upper_word_mask();
