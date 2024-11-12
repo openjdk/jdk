@@ -3825,8 +3825,7 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
     if (err != nullptr) {
       log_warning(os)("bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
 #ifdef ASSERT
-      fileStream fs(stdout);
-      os::print_memory_mappings((char*)start, bytes, &fs);
+      os::print_memory_mappings((char*)start, bytes, tty);
       assert(false, "bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
 #endif
       return false;
@@ -4151,7 +4150,7 @@ void getWindowsInstallationType(char* buffer, int bufferSize) {
   }
 
   // Query the value
-  if (RegQueryValueExA(hKey, valueName, NULL, NULL, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
+  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
     RegCloseKey(hKey);
     buffer[0] = '\0';
     return;
