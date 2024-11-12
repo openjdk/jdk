@@ -166,10 +166,11 @@ final class AppImageFile2 {
 
     /**
      * Loads application image info from application image.
+     * @param appImageDir - path at which to resolve the given application layout
      * @param appLayout - application layout
      */
-    static AppImageFile2 load(ApplicationLayout appLayout) throws ConfigException, IOException {
-        var srcFilePath = getPathInAppImage(appLayout);
+    static AppImageFile2 load(Path appImageDir, ApplicationLayout appLayout) throws ConfigException, IOException {
+        var srcFilePath = getPathInAppImage(appLayout.resolveAt(appImageDir));
         try {
             Document doc = XmlUtils.initDocumentBuilder().parse(Files.newInputStream(srcFilePath));
 
@@ -249,10 +250,11 @@ final class AppImageFile2 {
             // Exception reading input XML (probably malformed XML)
             throw new IOException(ex);
         } catch (NoSuchFileException ex) {
-            throw buildConfigException("error.foreign-app-image", FILENAME).create();
+            throw buildConfigException("error.foreign-app-image", appImageDir).create();
         } catch (InavlidAppImageFileException ex) {
             // Invalid input XML
-            throw buildConfigException("error.invalid-app-image-file", FILENAME).create();
+            throw buildConfigException("error.invalid-app-image", appImageDir,
+                    FILENAME).create();
         }
     }
 

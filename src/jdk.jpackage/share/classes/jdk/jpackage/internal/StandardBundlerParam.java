@@ -40,13 +40,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import static jdk.jpackage.internal.ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
+import static jdk.jpackage.internal.util.function.ThrowingBiFunction.toBiFunction;
 
 /**
  * Standard bundler parameters.
@@ -117,8 +116,8 @@ final class StandardBundlerParam {
                             return null;
                         } else if (hasPredefinedAppImage(params)) {
                             var appImage = getPredefinedAppImage(params);
-                            var appLayout = PLATFORM_APPLICATION_LAYOUT.resolveAt(appImage);
-                            return ThrowingFunction.toFunction(AppImageFile2::load).apply(appLayout).getMainClass();
+                            return toBiFunction(AppImageFile2::load).apply(
+                                    appImage, PLATFORM_APPLICATION_LAYOUT).getMainClass();
                         }
                         return LAUNCHER_DATA.fetchFrom(params).qualifiedClassName();
                     },
@@ -159,9 +158,8 @@ final class StandardBundlerParam {
                         Path appImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
                         String appName = NAME.fetchFrom(params);
                         if (appImage != null) {
-                            var appLayout = PLATFORM_APPLICATION_LAYOUT.resolveAt(appImage);
-                            String name = ThrowingFunction.toFunction(
-                                    AppImageFile2::load).apply(appLayout).getLauncherName();
+                            String name = toBiFunction(AppImageFile2::load).apply(
+                                    appImage, PLATFORM_APPLICATION_LAYOUT).getLauncherName();
                             appName  = (name != null) ? name : appName;
                         } else if (appName == null) {
                             String s = MAIN_CLASS.fetchFrom(params);
