@@ -2790,8 +2790,8 @@ public final class System {
             }
 
             @Override
-            public String shortVersionString() {
-                return VersionProps.shortVersionString();
+            public String conciseVersionString() {
+                return VersionProps.conciseVersionString();
             }
 
         });

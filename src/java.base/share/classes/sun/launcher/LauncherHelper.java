@@ -595,7 +595,7 @@ public final class LauncherHelper {
      */
     static void printConciseUsageMessage(boolean printToStderr) {
         initOutput(printToStderr);
-        ostream.println(SharedSecrets.getJavaLangAccess().shortVersionString());
+        ostream.println(SharedSecrets.getJavaLangAccess().conciseVersionString());
         ostream.println();
         ostream.println(getLocalizedMessage("java.launcher.opt.concise.header",
                 File.pathSeparator));

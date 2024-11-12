@@ -232,7 +232,7 @@ class VersionProps {
 
     }
 
-    static String shortVersionString() {
+    static String conciseVersionString() {
         return launcher_name + " " + java_version
                    + " " + java_version_date
                    + (isLTS ? " LTS" : "");

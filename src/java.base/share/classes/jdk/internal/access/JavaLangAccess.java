@@ -639,5 +639,5 @@ public interface JavaLangAccess {
     /**
      * Return a short version string for this runtime.
      */
-    String shortVersionString();
+    String conciseVersionString();
 }
