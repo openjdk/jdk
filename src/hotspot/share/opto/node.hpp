@@ -307,7 +307,6 @@ private:
 //----------------- input edge handling
 protected:
   friend class PhaseCFG;        // Access to address of _in array elements
-  // Small size optimization: 
   Node **_in;                   // Array of use-def references to Nodes
   Node **_out;                  // Array of def-use references to Nodes
 
