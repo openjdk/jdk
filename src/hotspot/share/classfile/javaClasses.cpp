@@ -1599,7 +1599,6 @@ oop java_lang_Thread_Constants::get_VTHREAD_GROUP() {
 int java_lang_Thread::_holder_offset;
 int java_lang_Thread::_name_offset;
 int java_lang_Thread::_contextClassLoader_offset;
-int java_lang_Thread::_inheritedAccessControlContext_offset;
 int java_lang_Thread::_eetop_offset;
 int java_lang_Thread::_jvmti_thread_state_offset;
 int java_lang_Thread::_jvmti_VTMS_transition_disable_count_offset;
@@ -1616,7 +1615,6 @@ JFR_ONLY(int java_lang_Thread::_jfr_epoch_offset;)
   macro(_holder_offset,        k, "holder", thread_fieldholder_signature, false); \
   macro(_name_offset,          k, vmSymbols::name_name(), string_signature, false); \
   macro(_contextClassLoader_offset, k, vmSymbols::contextClassLoader_name(), classloader_signature, false); \
-  macro(_inheritedAccessControlContext_offset, k, vmSymbols::inheritedAccessControlContext_name(), accesscontrolcontext_signature, false); \
   macro(_eetop_offset,         k, "eetop", long_signature, false); \
   macro(_interrupted_offset,   k, "interrupted", bool_signature, false); \
   macro(_interruptLock_offset, k, "interruptLock", object_signature, false); \
@@ -1792,10 +1790,6 @@ void java_lang_Thread::set_daemon(oop java_thread) {
 
 oop java_lang_Thread::context_class_loader(oop java_thread) {
   return java_thread->obj_field(_contextClassLoader_offset);
-}
-
-oop java_lang_Thread::inherited_access_control_context(oop java_thread) {
-  return java_thread->obj_field(_inheritedAccessControlContext_offset);
 }
 
 
@@ -4861,17 +4855,11 @@ oop java_lang_ClassLoader::unnamedModule(oop loader) {
 int java_lang_System::_static_in_offset;
 int java_lang_System::_static_out_offset;
 int java_lang_System::_static_err_offset;
-int java_lang_System::_static_security_offset;
-int java_lang_System::_static_allow_security_offset;
-int java_lang_System::_static_never_offset;
 
 #define SYSTEM_FIELDS_DO(macro) \
   macro(_static_in_offset,  k, "in",  input_stream_signature, true); \
   macro(_static_out_offset, k, "out", print_stream_signature, true); \
-  macro(_static_err_offset, k, "err", print_stream_signature, true); \
-  macro(_static_security_offset, k, "security", security_manager_signature, true); \
-  macro(_static_allow_security_offset, k, "allowSecurityManager", int_signature, true); \
-  macro(_static_never_offset, k, "NEVER", int_signature, true)
+  macro(_static_err_offset, k, "err", print_stream_signature, true);
 
 void java_lang_System::compute_offsets() {
   InstanceKlass* k = vmClasses::System_klass();
@@ -4881,21 +4869,12 @@ void java_lang_System::compute_offsets() {
 // This field tells us that a security manager can never be installed so we
 // can completely skip populating the ProtectionDomainCacheTable.
 bool java_lang_System::allow_security_manager() {
-  static int initialized = false;
-  static bool allowed = true; // default
-  if (!initialized) {
-    oop base = vmClasses::System_klass()->static_field_base_raw();
-    int never = base->int_field(_static_never_offset);
-    allowed = (base->int_field(_static_allow_security_offset) != never);
-    initialized = true;
-  }
-  return allowed;
+  return false;
 }
 
 // This field tells us that a security manager is installed.
 bool java_lang_System::has_security_manager() {
-  oop base = vmClasses::System_klass()->static_field_base_raw();
-  return base->obj_field(_static_security_offset) != nullptr;
+  return false;
 }
 
 #if INCLUDE_CDS
