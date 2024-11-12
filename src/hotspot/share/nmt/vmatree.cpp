@@ -234,6 +234,8 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
   size_t remsize = size;
   VMATreap::Range range(nullptr, nullptr);
 
+  // Find the next range to adjust and set range, remsize and from
+  // appropriately. If it returns false, there is no valid next range.
   auto find_next_range = [&]() -> bool {
     range = _tree.find_enclosing_range(from);
     if ((range.start == nullptr && range.end == nullptr) ||
