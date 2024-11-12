@@ -1506,7 +1506,7 @@ const Type* ModFNode::Value(PhaseGVN* phase) const {
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return unsigned_mod_ideal<TypeLong, jint>(phase, can_reshape, this);
+  return unsigned_mod_ideal<TypeLong, jlong>(phase, can_reshape, this);
 }
 
 const Type* UModLNode::Value(PhaseGVN* phase) const {
