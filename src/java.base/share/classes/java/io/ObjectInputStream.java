@@ -1548,7 +1548,6 @@ public class ObjectInputStream
      * override security-sensitive non-final methods.  Returns TRUE if subclass
      * is "safe", FALSE otherwise.
      */
-    @SuppressWarnings("removal")
     private static Boolean auditSubclass(Class<?> subcl) {
         for (Class<?> cl = subcl;
              cl != ObjectInputStream.class;
@@ -2647,8 +2646,7 @@ public class ObjectInputStream
             final int priority;
             Callback next;
 
-            Callback(ObjectInputValidation obj, int priority, Callback next)
-            {
+            Callback(ObjectInputValidation obj, int priority, Callback next) {
                 this.obj = obj;
                 this.priority = priority;
                 this.next = next;
@@ -2694,7 +2692,6 @@ public class ObjectInputStream
          * throws an InvalidObjectException, the callback process is terminated
          * and the exception propagated upwards.
          */
-        @SuppressWarnings("removal")
         void doCallbacks() throws InvalidObjectException {
             try {
                 while (list != null) {

@@ -49,7 +49,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.internal.event.SerializationMisdeclarationEvent;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.util.ByteArray;
 
@@ -276,7 +275,6 @@ public final class ObjectStreamClass implements Serializable {
      *
      * @return  the {@code Class} instance that this descriptor represents
      */
-    @CallerSensitive
     public Class<?> forClass() {
         if (cl == null) {
             return null;
@@ -334,7 +332,6 @@ public final class ObjectStreamClass implements Serializable {
     /**
      * Creates local class descriptor representing given class.
      */
-    @SuppressWarnings("removal")
     private ObjectStreamClass(final Class<?> cl) {
         this.cl = cl;
         name = cl.getName();
@@ -907,7 +904,6 @@ public final class ObjectStreamClass implements Serializable {
      * class is non-serializable or if the appropriate no-arg constructor is
      * inaccessible/unavailable.
      */
-    @SuppressWarnings("removal")
     Object newInstance()
         throws InstantiationException, InvocationTargetException,
                UnsupportedOperationException
@@ -1328,7 +1324,6 @@ public final class ObjectStreamClass implements Serializable {
      * the not found ( which should never happen for correctly generated record
      * classes ).
      */
-    @SuppressWarnings("removal")
     private static MethodHandle canonicalRecordCtr(Class<?> cls) {
         assert cls.isRecord() : "Expected record, got: " + cls;
         Class<?>[] paramTypes = Arrays.stream(cls.getRecordComponents())
@@ -2221,7 +2216,6 @@ public final class ObjectStreamClass implements Serializable {
          * and return
          * {@code Object}
          */
-        @SuppressWarnings("removal")
         static MethodHandle deserializationCtr(ObjectStreamClass desc) {
             // check the cached value 1st
             MethodHandle mh = desc.deserializationCtr;
