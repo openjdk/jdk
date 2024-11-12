@@ -107,9 +107,9 @@ VStatus VLoop::check_preconditions_helper() {
     return VStatus::make_failure(VLoop::FAILURE_BACKEDGE);
   }
 
-  // To align vector memory accesses in the main-loop, we will have to adjust
-  // the pre-loop limit.
   if (_cl->is_main_loop()) {
+    // To align vector memory accesses in the main-loop, we will have to adjust
+    // the pre-loop limit.
     CountedLoopEndNode* pre_end = _cl->find_pre_loop_end();
     if (pre_end == nullptr) {
       return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
@@ -119,6 +119,24 @@ VStatus VLoop::check_preconditions_helper() {
       return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
     }
     _pre_loop_end = pre_end;
+
+    // To add runtime checks, we must have access to the parse predicate.
+    Node* pre_ctrl = pre_loop_head()->in(LoopNode::EntryControl);
+    const Predicates predicates(pre_ctrl);
+    const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
+    if (predicate_block->has_parse_predicate()) {
+      _auto_vectorization_parse_predicate_proj = predicate_block->parse_predicate_success_proj();
+    }
+#ifndef PRODUCT
+    if (is_trace_preconditions()) {
+      if (predicate_block->has_parse_predicate()) {
+        tty->print_cr("  auto_vectorization_parse_predicate_proj:");
+        _auto_vectorization_parse_predicate_proj->dump();
+      } else {
+        tty->print_cr("  auto_vectorization_parse_predicate_proj: not found - no speculation possible.");
+      }
+    }
+#endif
   }
 
   return VStatus::make_success();

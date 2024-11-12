@@ -2655,12 +2655,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // Where we put new limit calculations.
   Node* pre_ctrl = _vloop.pre_loop_head()->in(LoopNode::EntryControl);
 
-  const Predicates predicates(pre_ctrl);
-  predicates.dump();
-  pre_ctrl->dump_bfs(20,0,"#c");
-  const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
-  assert(predicate_block->has_parse_predicate(), "we must be able to find the parse predicate");
-  ParsePredicateSuccessProj* parse_predicate_proj = predicate_block->parse_predicate_success_proj();
+  ParsePredicateSuccessProj* parse_predicate_proj = _vloop.auto_vectorization_parse_predicate_proj();
+  assert(parse_predicate_proj != nullptr, "we must be able to find the parse predicate");
 
   // Ensure the original loop limit is available from the pre-loop Opaque1 node.
   Node* orig_limit = pre_opaq->original_loop_limit();

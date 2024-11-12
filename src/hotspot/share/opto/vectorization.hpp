@@ -84,6 +84,9 @@ private:
   PhiNode* _iv;
   CountedLoopEndNode* _pre_loop_end; // cache access to pre-loop for main loops only
 
+  // We can only add speculative runtime-checks if we have access to this parse predicate.
+  ParsePredicateSuccessProj* _auto_vectorization_parse_predicate_proj;
+
   NOT_PRODUCT(VTrace _vtrace;)
 
   static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
@@ -102,7 +105,8 @@ public:
     _cl        (nullptr),
     _cl_exit   (nullptr),
     _iv        (nullptr),
-    _pre_loop_end (nullptr) {}
+    _pre_loop_end (nullptr),
+    _auto_vectorization_parse_predicate_proj (nullptr) {}
   NONCOPYABLE(VLoop);
 
   IdealLoopTree* lpt()        const { return _lpt; };
@@ -124,6 +128,10 @@ public:
     assert(head != nullptr, "must find head");
     return head;
   };
+
+  ParsePredicateSuccessProj* auto_vectorization_parse_predicate_proj() const {
+    return _auto_vectorization_parse_predicate_proj;
+  }
 
   // Estimate maximum size for data structures, to avoid repeated reallocation
   int estimated_body_length() const { return lpt()->_body.size(); };
