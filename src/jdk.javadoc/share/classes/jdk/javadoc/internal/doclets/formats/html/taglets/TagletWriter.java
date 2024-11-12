@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,23 +367,23 @@ public class TagletWriter {
         return createAnchorAndSearchIndex(element, tagText, Text.of(tagText), desc, tree);
     }
 
-    @SuppressWarnings("preview")
     Content createAnchorAndSearchIndex(Element element, String tagText, Content tagContent, String desc, DocTree tree) {
-        Content result;
-        if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)
+        // Only create index item for tags in their native location.
+        if (context.isFirstSentence && context.inSummary
+                || context.inTags.contains(DocTree.Kind.INDEX)
+                || context.inTags.contains(DocTree.Kind.INHERIT_DOC)
+                || isDifferentTypeElement(element)
                 || !htmlWriter.isIndexable()) {
-            result = tagContent;
-        } else {
-            HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);
-            result = HtmlTree.SPAN(id, HtmlStyles.searchTagResult, tagContent);
-            if (options.createIndex() && !tagText.isEmpty()) {
-                String holder = getHolderName(element);
-                IndexItem item = IndexItem.of(element, tree, tagText, holder, desc,
-                        new DocLink(htmlWriter.path, id.name()));
-                configuration.indexBuilder.add(item);
-            }
+            return tagContent;
         }
-        return result;
+        HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);
+        if (options.createIndex() && !tagText.isEmpty()) {
+            String holder = getHolderName(element);
+            IndexItem item = IndexItem.of(element, tree, tagText, holder, desc,
+                    new DocLink(htmlWriter.path, id.name()));
+            configuration.indexBuilder.add(item);
+        }
+        return HtmlTree.SPAN(id, HtmlStyles.searchTagResult, tagContent);
     }
 
     public String getHolderName(Element element) {
@@ -471,5 +471,16 @@ public class TagletWriter {
                 .replaceAll("&#?[A-Za-z0-9]+;", " ")  // entities count as a single character
                 .replaceAll("\\R", "\n");             // normalize newlines
         return s.length() > TAG_LIST_ITEM_MAX_INLINE_LENGTH || s.contains(",");
+    }
+
+    // Test if element is the same as or belongs to the current page element
+    private boolean isDifferentTypeElement(Element element) {
+        if (element.getKind().isDeclaredType()) {
+            return element != getCurrentPageElement();
+        } else if (element.getKind() == ElementKind.OTHER) {
+            return false;
+        } else {
+            return utils.getEnclosingTypeElement(element) != getCurrentPageElement();
+        }
     }
 }

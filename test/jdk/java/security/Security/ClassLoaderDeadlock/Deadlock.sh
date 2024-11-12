@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -62,5 +62,5 @@ esac
 
 JAVA="${TESTJAVA}${FILESEP}bin${FILESEP}java"
 
-${JAVA} ${TESTVMOPTS} -cp "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}Deadlock.jar" Deadlock
+${JAVA} ${TESTVMOPTS} ${TESTJAVAOPTS} -cp "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}Deadlock.jar" Deadlock
 

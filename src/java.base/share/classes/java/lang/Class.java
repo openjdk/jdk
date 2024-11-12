@@ -151,7 +151,7 @@ import sun.reflect.misc.ReflectUtil;
  * <p> Some methods of class {@code Class} expose whether the declaration of
  * a class or interface in Java source code was <em>enclosed</em> within
  * another declaration. Other methods describe how a class or interface
- * is situated in a <dfn>{@index "nest"}</dfn>. A <a id="nest">nest</a> is a set of
+ * is situated in a <dfn>{@index "nest"}</dfn>. A nest is a set of
  * classes and interfaces, in the same run-time package, that
  * allow mutual access to their {@code private} members.
  * The classes and interfaces are known as <dfn>{@index "nestmates"}</dfn>
@@ -3278,10 +3278,10 @@ public final class Class<T> implements java.io.Serializable,
     private native ProtectionDomain getProtectionDomain0();
 
     /*
-     * Return the Virtual Machine's Class object for the named
-     * primitive type.
+     * Returns the Class object for the named primitive type. Type parameter T
+     * avoids redundant casts for trusted code.
      */
-    static native Class<?> getPrimitiveClass(String name);
+    static native <T> Class<T> getPrimitiveClass(String name);
 
     /*
      * Check if client is allowed to access members.  If access is denied,
