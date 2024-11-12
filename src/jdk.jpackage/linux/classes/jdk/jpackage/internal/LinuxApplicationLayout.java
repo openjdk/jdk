@@ -26,19 +26,22 @@ package jdk.jpackage.internal;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import jdk.jpackage.internal.model.*;
 import java.nio.file.Path;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.util.DynamicProxy;
 import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 interface LinuxApplicationLayout extends ApplicationLayout, LinuxApplicationLayoutMixin {
 
-    final static class Tunnel implements DynamicProxy.DefaultMethodInvoker {
+    final static class Tunnel implements DynamicProxy.InvokeTunnel {
 
         @Override
-        public Object invoke(Proxy proxy, Method method, Object[] args) throws
-                Throwable {
+        public Object invoke(Object obj, Method method, Object[] args) throws Throwable {
+            return method.invoke(obj, args);
+        }
+
+        @Override
+        public Object invokeDefault(Object proxy, Method method, Object[] args) throws Throwable {
             return InvocationHandler.invokeDefault(proxy, method, args);
         }
 
@@ -47,7 +50,7 @@ interface LinuxApplicationLayout extends ApplicationLayout, LinuxApplicationLayo
 
     static LinuxApplicationLayout create(ApplicationLayout layout, Path libAppLauncher) {
         return DynamicProxy.build()
-                .proxyDefaultMethodInvoker(Tunnel.INSTANCE)
+                .invokeTunnel(Tunnel.INSTANCE)
                 .create(LinuxApplicationLayout.class, layout, new LinuxApplicationLayoutMixin.Stub(libAppLauncher));
     }
 

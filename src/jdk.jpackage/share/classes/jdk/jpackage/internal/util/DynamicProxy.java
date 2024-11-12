@@ -31,12 +31,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 public final class DynamicProxy {
 
@@ -44,7 +42,7 @@ public final class DynamicProxy {
 
         public <T> T create(Class<T> interfaceType, Object... pieces) {
             return createProxyFromPieces(interfaceType, conflictResolver,
-                    proxyDefaultMethodInvoker, pieces);
+                    invokeTunnel, pieces);
         }
 
         public Builder conflictResolver(BinaryOperator<Method> v) {
@@ -52,18 +50,18 @@ public final class DynamicProxy {
             return this;
         }
 
-        public Builder proxyDefaultMethodInvoker(DefaultMethodInvoker v) {
-            proxyDefaultMethodInvoker = v;
+        public Builder invokeTunnel(InvokeTunnel v) {
+            invokeTunnel = v;
             return this;
         }
 
         private BinaryOperator<Method> conflictResolver = STANDARD_CONFLICT_RESOLVER;
-        private DefaultMethodInvoker proxyDefaultMethodInvoker;
+        private InvokeTunnel invokeTunnel;
     }
 
-    @FunctionalInterface
-    public interface DefaultMethodInvoker {
-        Object invoke(Proxy proxy, Method method, Object[] args) throws Throwable;
+    public interface InvokeTunnel {
+        Object invoke(Object obj, Method method, Object[] args) throws Throwable;
+        Object invokeDefault(Object proxy, Method method, Object[] args) throws Throwable;
     }
 
     public static Builder build() {
@@ -76,25 +74,21 @@ public final class DynamicProxy {
     }
 
     private static <T> T createProxyFromPieces(Class<T> interfaceType,
-            BinaryOperator<Method> conflictResolver,
-            DefaultMethodInvoker proxyDefaultMethodInvoker,
+            BinaryOperator<Method> conflictResolver, InvokeTunnel invokeTunnel,
             Object... pieces) {
 
         final Map<Class<?>, Object> interfaceDispatch = createInterfaceDispatch(
                 interfaceType, pieces);
 
-        final Map<Method, Handler> methodDispatch = getProxyableMethods(interfaceType)
-                .map(method -> {
-                    var handler = createHandler(interfaceType, method, interfaceDispatch,
-                            conflictResolver, proxyDefaultMethodInvoker);
-                    if (handler != null) {
-                        return Map.entry(method, handler);
-                    } else {
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+        final Map<Method, Handler> methodDispatch = getProxyableMethods(interfaceType).map(method -> {
+            var handler = createHandler(interfaceType, method, interfaceDispatch,
+                    conflictResolver, invokeTunnel);
+            if (handler != null) {
+                return Map.entry(method, handler);
+            } else {
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         @SuppressWarnings("unchecked")
         T proxy = (T) Proxy.newProxyInstance(interfaceType.getClassLoader(),
@@ -113,24 +107,25 @@ public final class DynamicProxy {
     private static Handler createHandler(Class<?> interfaceType, Method method,
             Map<Class<?>, Object> interfaceDispatch,
             BinaryOperator<Method> conflictResolver,
-            DefaultMethodInvoker proxyDefaultMethodInvoker) {
+            InvokeTunnel invokeTunnel) {
 
         final var methodDeclaringClass = method.getDeclaringClass();
 
         if (!methodDeclaringClass.equals(interfaceType)) {
             // The method is declared in one of the superintarfaces.
             var piece = interfaceDispatch.get(methodDeclaringClass);
-            return new MethodInvoker(piece, method);
+            return createHandlerForMethod(piece, method, invokeTunnel);
         } else if (method.isDefault()) {
-            return createDefaultMethodInvoker(method, proxyDefaultMethodInvoker);
+            return createHandlerForDefaultMethod(method, invokeTunnel);
         } else {
             // Find a piece handling the method.
             var handler = interfaceDispatch.entrySet().stream().map(e -> {
                 try {
                     Class<?> iface = e.getKey();
                     Object piece = e.getValue();
-                    return new MethodInvoker(piece, iface.getMethod(
-                            method.getName(), method.getParameterTypes()));
+                    return createHandlerForMethod(piece, iface.getMethod(
+                            method.getName(), method.getParameterTypes()),
+                            invokeTunnel);
                 } catch (NoSuchMethodException ex) {
                     return null;
                 }
@@ -204,50 +199,57 @@ public final class DynamicProxy {
         }
     }
 
-    private static Handler createDefaultMethodInvoker(Method method,
-            DefaultMethodInvoker proxyDefaultMethodInvoker) {
-        if (proxyDefaultMethodInvoker != null) {
-            return new DefaultMethodInvokerAdapter(proxyDefaultMethodInvoker,
-                    method);
+    private static HandlerOfMethod createHandlerForDefaultMethod(Method method, InvokeTunnel invokeTunnel) {
+        if (invokeTunnel != null) {
+            return new HandlerOfMethod(method) {
+                @Override
+                public Object invoke(Object proxy, Object[] args) throws Throwable {
+                    return invokeTunnel.invokeDefault(proxy, this.method, args);
+                }                
+            };
         } else {
             return null;
         }
     }
+    
+    private static HandlerOfMethod createHandlerForMethod(Object obj, Method method, InvokeTunnel invokeTunnel) {
+        if (invokeTunnel != null) {
+            return new HandlerOfMethod(method) {
+                @Override
+                public Object invoke(Object proxy, Object[] args) throws Throwable {
+                    return invokeTunnel.invoke(obj, this.method, args);
+                }                
+            };
+        } else {
+            return new HandlerOfMethod(method) {
+                @Override
+                public Object invoke(Object proxy, Object[] args) throws Throwable {
+                    return this.method.invoke(obj, args);
+                }                
+            };
+        }
+    }
 
+    @FunctionalInterface
     private interface Handler {
 
         Object invoke(Object proxy, Object[] args) throws Throwable;
     }
-
-    private record MethodInvoker(Object obj, Method method) implements Handler {
+    
+    private abstract static class HandlerOfMethod implements Handler {
+        HandlerOfMethod(Method method) {
+            this.method = method;
+        }
         
-        MethodInvoker {
-            if (!method.canAccess(obj)) {
-                method.setAccessible(true);
-            }
-        }
-
-        @Override
-        public Object invoke(Object proxy, Object[] args) throws Throwable {
-            return method.invoke(obj, args);
-        }
-    }
-
-    private record DefaultMethodInvokerAdapter(DefaultMethodInvoker invoker,
-            Method method) implements Handler {
-
-        @Override
-        public Object invoke(Object proxy, Object[] args) throws Throwable {
-            return invoker.invoke((Proxy) proxy, method, args);
-        }
+        protected final Method method;
     }
 
     private record ConflictResolverAdapter(
             BinaryOperator<Method> conflictResolver) implements
-            BinaryOperator<MethodInvoker> {
+            BinaryOperator<HandlerOfMethod> {
 
         @Override
-        public MethodInvoker apply(MethodInvoker a, MethodInvoker b) {
+        public HandlerOfMethod apply(HandlerOfMethod a, HandlerOfMethod b) {
             var m = conflictResolver.apply(a.method, b.method);
             if (m == a.method) {
                 return a;
