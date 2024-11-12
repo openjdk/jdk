@@ -80,6 +80,7 @@ public final class DynamicProxy {
         }
 
         Map<Method, Handler> methodDispatch = Stream.of(interfaceType.getMethods())
+                .filter(method-> !Modifier.isStatic(method.getModifiers()))
                 .map(method -> {
                     final var methodDeclaringClass = method.getDeclaringClass();
                     if (!methodDeclaringClass.equals(interfaceType)) {

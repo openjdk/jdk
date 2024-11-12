@@ -72,6 +72,10 @@ public class DynamicProxyTest {
         default String sayHello() {
             return "Ciao";
         }
+        
+        static String saySomething() {
+            return "blah";
+        }
     }
 
     @Test
