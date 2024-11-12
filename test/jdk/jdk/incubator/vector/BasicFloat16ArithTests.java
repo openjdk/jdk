@@ -136,8 +136,6 @@ public class BasicFloat16ArithTests {
         if (setSize != 63_491) {
             throwRE("Unexpected number of distinct hash values " + setSize);
         }
-
-        // System.out.println();
     }
 
     private static void checkConstants() {
@@ -232,7 +230,7 @@ public class BasicFloat16ArithTests {
 
         float[] testCases = {
             -InfinityF,
-            InfinityF,
+             InfinityF,
             -0.0f,
             +0.0f,
              1.0f,
@@ -260,7 +258,7 @@ public class BasicFloat16ArithTests {
             boolean result2 = isInfinite(valueOf(infinity));
 
             if (result1) {
-                throw new RuntimeException("Float16.isFinite returned true for " + infinity);
+                throwRE("Float16.isFinite returned true for " + infinity);
             }
 
             if (!result2) {
@@ -385,17 +383,19 @@ public class BasicFloat16ArithTests {
 
     private static void checkGetExponent() {
         float[][] testCases = {
-            {InfinityF, MAX_EXPONENT + 1},
-            {InfinityF, MAX_EXPONENT + 1},
-            {NaNf,      MAX_EXPONENT + 1},
+            { InfinityF, MAX_EXPONENT + 1},
+            {-InfinityF, MAX_EXPONENT + 1},
+            { NaNf,      MAX_EXPONENT + 1},
 
-            {-0.0f,      MIN_EXPONENT - 1},
-            {+0.0f,      MIN_EXPONENT - 1},
-            {0x1.0p-24f, MIN_EXPONENT - 1}, // Float16.MIN_VALUE
-            {0x1.0p-14f, MIN_EXPONENT},     // Float16.MIN_NORMAL
-            {1.0f,       0},
-            {2.0f,       1},
-            {4.0f,       2},
+            {-0.0f,       MIN_EXPONENT - 1},
+            {+0.0f,       MIN_EXPONENT - 1},
+            { 0x1.0p-24f, MIN_EXPONENT - 1}, // Float16.MIN_VALUE
+            {-0x1.0p-24f, MIN_EXPONENT - 1}, // Float16.MIN_VALUE
+            { 0x1.0p-14f, MIN_EXPONENT},     // Float16.MIN_NORMAL
+            {-0x1.0p-14f, MIN_EXPONENT},     // Float16.MIN_NORMAL
+            { 1.0f,       0},
+            { 2.0f,       1},
+            { 4.0f,       2},
 
             {MAX_VAL_FP16*0.5f, MAX_EXPONENT - 1},
             {MAX_VAL_FP16,      MAX_EXPONENT},
@@ -416,15 +416,17 @@ public class BasicFloat16ArithTests {
 
     private static void checkUlp() {
         float[][] testCases = {
-            {InfinityF, InfinityF},
-            {InfinityF, InfinityF},
-            {NaNf,      NaNf},
+            { InfinityF, InfinityF},
+            {-InfinityF, InfinityF},
+            { NaNf,      NaNf},
 
             // Zeros, subnormals, and MIN_VALUE all have MIN_VALUE as an ulp.
-            {-0.0f,      0x1.0p-24f},
-            {+0.0f,      0x1.0p-24f},
-            {0x1.0p-24f, 0x1.0p-24f},
-            {0x1.0p-14f, 0x1.0p-24f},
+            {-0.0f,       0x1.0p-24f},
+            {+0.0f,       0x1.0p-24f},
+            { 0x1.0p-24f, 0x1.0p-24f},
+            {-0x1.0p-24f, 0x1.0p-24f},
+            { 0x1.0p-14f, 0x1.0p-24f},
+            {-0x1.0p-14f, 0x1.0p-24f},
 
             // ulp is 10 bits away
             {0x1.0p0f,       0x0.004p0f}, // 1.0f
@@ -503,24 +505,25 @@ public class BasicFloat16ArithTests {
     }
 
     private static void checkValueOfLong() {
-        checkFloat16(valueOf(-65_521), Float.NEGATIVE_INFINITY, "-infinity");
-        checkFloat16(valueOf(-65_520), Float.NEGATIVE_INFINITY, "-infinity");
+        checkFloat16(valueOf(-65_521),  Float.NEGATIVE_INFINITY, "-infinity");
+        checkFloat16(valueOf(-65_520),  Float.NEGATIVE_INFINITY, "-infinity");
         checkFloat16(valueOf(-65_519), -MAX_VALUE.floatValue(), "-MAX_VALUE");
-        checkFloat16(valueOf(65_519), MAX_VALUE.floatValue(), "MAX_VALUE");
-        checkFloat16(valueOf(65_520), Float.POSITIVE_INFINITY, "+infinity");
-        checkFloat16(valueOf(65_521), Float.POSITIVE_INFINITY, "+infinity");
+        checkFloat16(valueOf(65_519),   MAX_VALUE.floatValue(), "MAX_VALUE");
+        checkFloat16(valueOf(65_520),   Float.POSITIVE_INFINITY, "+infinity");
+        checkFloat16(valueOf(65_521),   Float.POSITIVE_INFINITY, "+infinity");
     }
 
     private static void checkValueOfString() {
         String2Float16Case[] testCases = {
-            new String2Float16Case( "NaN",  NaNf),
+            new String2Float16Case( "NaN", NaNf),
             new String2Float16Case("+NaN", NaNf),
             new String2Float16Case("-NaN", NaNf),
 
-            new String2Float16Case( "+Infinity", +InfinityF),
-            new String2Float16Case( "-Infinity", -InfinityF),
+            new String2Float16Case("+Infinity", +InfinityF),
+            new String2Float16Case("-Infinity", -InfinityF),
 
-            new String2Float16Case( "+0.0", 0.0f),
+            new String2Float16Case( "0.0",  0.0f),
+            new String2Float16Case("+0.0",  0.0f),
             new String2Float16Case("-0.0", -0.0f),
 
             // Decimal signed integers are accepted as input; hex
@@ -577,6 +580,8 @@ public class BasicFloat16ArithTests {
 
             // Hex values
             new String2Float16Case("0x1p2",   0x1.0p2f),
+            new String2Float16Case("0x1p2f",  0x1.0p2f),
+            new String2Float16Case("0x1p2d",  0x1.0p2f),
             new String2Float16Case("0x1.0p1", 0x1.0p1f),
 
             new String2Float16Case("-0x1p2",  -0x1.0p2f),
@@ -596,7 +601,7 @@ public class BasicFloat16ArithTests {
             checkFloat16(result, expected, "Float16.valueOf(String) " + input);
         }
 
-        List<String> negativeCases = List.of( "0x1",
+        List<String> negativeCases = List.of("0x1",
                                        "-0x1",
                                         "0x12",
                                        "-0x12");
@@ -604,7 +609,7 @@ public class BasicFloat16ArithTests {
         for(String negativeCase : negativeCases) {
             try {
                 Float16 f16 = Float16.valueOf(negativeCase);
-                throw new RuntimeException("Did not get expected exception for input " + negativeCase);
+                throwRE("Did not get expected exception for input " + negativeCase);
             } catch (NumberFormatException nfe) {
                 ; // Expected
             }
@@ -637,7 +642,7 @@ public class BasicFloat16ArithTests {
         return;
     }
 
-    class FusedMultiplyAddTests {
+    private static class FusedMultiplyAddTests {
         public static void main(String... args) {
             testZeroNanInfCombos();
             testNonFinite();
@@ -667,43 +672,34 @@ public class BasicFloat16ArithTests {
         private static void testNonFinite() {
             float [][] testCases = {
                 {1.0f,       InfinityF,  2.0f,
-                 InfinityF,
-                },
+                 InfinityF},
 
                 {1.0f,       2.0f,       InfinityF,
-                 InfinityF,
-                },
+                 InfinityF},
 
                 {InfinityF,  1.0f,       InfinityF,
-                 InfinityF,
-                },
+                 InfinityF},
 
                 {0x1.ffcp14f, 2.0f,     -InfinityF,
                  -InfinityF},
 
                 {InfinityF,  1.0f,      -InfinityF,
-                 NaNf,
-                },
+                 NaNf},
 
                 {-InfinityF, 1.0f,       InfinityF,
-                 NaNf,
-                },
+                 NaNf},
 
                 {1.0f,       NaNf,       2.0f,
-                 NaNf,
-                },
+                 NaNf},
 
                 {1.0f,       2.0f,       NaNf,
-                 NaNf,
-                },
+                 NaNf},
 
                 {InfinityF,  2.0f,       NaNf,
-                 NaNf,
-                },
+                 NaNf},
 
                 {NaNf,       2.0f,       InfinityF,
-                 NaNf,
-                },
+                 NaNf},
             };
 
             for (float[] testCase: testCases) {
@@ -714,40 +710,31 @@ public class BasicFloat16ArithTests {
         private static void testZeroes() {
             float [][] testCases = {
                 {+0.0f, +0.0f, +0.0f,
-                 +0.0f,
-                },
+                 +0.0f},
 
                 {-0.0f, +0.0f, +0.0f,
-                 +0.0f,
-                },
+                 +0.0f},
 
                 {+0.0f, +0.0f, -0.0f,
-                 +0.0f,
-                },
+                 +0.0f},
 
                 {+0.0f, +0.0f, -0.0f,
-                 +0.0f,
-                },
+                 +0.0f},
 
                 {-0.0f, +0.0f, -0.0f,
-                 -0.0f,
-                },
+                 -0.0f},
 
                 {-0.0f, -0.0f, -0.0f,
-                 +0.0f,
-                },
+                 +0.0f},
 
                 {-1.0f, +0.0f, -0.0f,
-                 -0.0f,
-                },
+                 -0.0f},
 
                 {-1.0f, +0.0f, +0.0f,
-                 +0.0f,
-                },
+                 +0.0f},
 
                 {-2.0f, +0.0f, -0.0f,
-                 -0.0f,
-                },
+                 -0.0f},
             };
 
             for (float[] testCase: testCases) {
@@ -760,13 +747,13 @@ public class BasicFloat16ArithTests {
 
             float [][] testCases = {
                 {1.0f, 2.0f, 3.0f,
-                 5.0f,},
+                 5.0f},
 
                 {1.0f, 2.0f, -2.0f,
-                 0.0f,},
+                 0.0f},
 
                 {5.0f, 5.0f, -25.0f,
-                 0.0f,},
+                 0.0f},
 
                 {0.5f*MAX_VAL_FP16, 2.0f, -0.5f*MAX_VAL_FP16,
                  0.5f*MAX_VAL_FP16},
