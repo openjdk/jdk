@@ -48,23 +48,23 @@ import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm/java.security.policy=h3secmgr.policy
+ * @run testng/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
- *              H3SecMgrTest
- * @run testng/othervm/java.security.policy=h3secmgr.policy
+ *              H3SimpleTest
+ * @run testng/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              -Djava.net.preferIPv6Addresses=true
- *              H3SecMgrTest
- * @run testng/othervm/java.security.policy=h3secmgr.policy
+ *              H3SimpleTest
+ * @run testng/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              -Djava.net.preferIPv4Stack=true
- *              H3SecMgrTest
+ *              H3SimpleTest
  */
 // -Djava.security.debug=all
-public class H3SecMgrTest implements HttpServerAdapters {
+public class H3SimpleTest implements HttpServerAdapters {
 
     private SSLContext sslContext;
     private HttpTestServer h3Server;
