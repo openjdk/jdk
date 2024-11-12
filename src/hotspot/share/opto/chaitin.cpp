@@ -671,7 +671,7 @@ void PhaseChaitin::Register_Allocate() {
   // Convert CISC spills
   fixup_spills();
 
-  C->print_method(PHASE_FIXUP_SPILLS, 4);
+  C->print_method(PHASE_FIX_UP_SPILLS, 4);
 
   // Log regalloc results
   CompileLog* log = Compile::current()->log();

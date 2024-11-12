@@ -112,7 +112,7 @@ public enum CompilePhase {
     AFTER_ITERATIVE_SPILLING("After iterative spilling", RegexType.MACH),
     POST_ALLOCATION_COPY_REMOVAL("Post-allocation copy removal", RegexType.MACH),
     MERGE_MULTIDEFS("Merge multiple definitions", RegexType.MACH),
-    FIXUP_SPILLS("Fix up spills", RegexType.MACH),
+    FIX_UP_SPILLS("Fix up spills", RegexType.MACH),
     REGISTER_ALLOCATION("Register Allocation", RegexType.MACH),
     BLOCK_ORDERING("Block Ordering", RegexType.MACH),
     PEEPHOLE("Peephole", RegexType.MACH),
