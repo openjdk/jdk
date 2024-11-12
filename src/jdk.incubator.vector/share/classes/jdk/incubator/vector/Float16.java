@@ -239,7 +239,7 @@ public final class Float16
      *
      * The behavior of this class is analogous to {@link
      * Float#toHexString(float)} except that an exponent value of
-     * {@code "p14"} is used for subnormal {@code Float16} values.
+     * {@code "p-14"} is used for subnormal {@code Float16} values.
      *
      * @apiNote
      * This method corresponds to the convertToHexCharacter operation
@@ -431,7 +431,7 @@ public final class Float16
      * @see    java.lang.Float#valueOf(String)
      */
     public static Float16 valueOf(String s) throws NumberFormatException {
-        s = s.trim(); // Legacy behavior from analagous methods on
+        s = s.trim(); // Legacy behavior from analogous methods on
                       // Float and Double.
 
         // Trial conversion from String -> double. Do quick range
@@ -988,7 +988,7 @@ public final class Float16
      * Returns the larger of two {@code Float16} values.
      *
      * The handling of signed zeros, NaNs, infinities, and other
-     * special cases by this method is analagous to the handling of
+     * special cases by this method is analogous to the handling of
      * those cases by the Math#max(double, double) method.
      *
      * @apiNote
@@ -1010,7 +1010,7 @@ public final class Float16
      * Returns the smaller of two {@code Float16} values.
      *
      * The handling of signed zeros, NaNs, infinities, and other
-     * special cases by this method is analagous to the handling of
+     * special cases by this method is analogous to the handling of
      * those cases by the Math#min(double, double) method.
      *
      * @apiNote
