@@ -100,8 +100,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             new DisabledAlgorithmConstraints(PROPERTY_JAR_DISABLED_ALGS);
     }
 
+    private static final int INITIAL_PATTERN_CAPACITY = 4;
+    private final List<Pattern> disabledPatterns;
+
     private final Set<String> disabledAlgorithms;
-    private final List<Pattern> disabledPatterns = new ArrayList<>();
     private final Constraints algorithmConstraints;
     private volatile SoftReference<Map<String, Boolean>> cacheRef =
             new SoftReference<>(null);
@@ -136,7 +138,13 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             AlgorithmDecomposer decomposer) {
         super(decomposer);
         disabledAlgorithms = getAlgorithms(propertyName);
-        loadDisabledPatterns();
+
+        // Support patterns only for jdk.tls.disabledAlgorithms
+        if (PROPERTY_TLS_DISABLED_ALGS.equals(propertyName)) {
+            disabledPatterns = getDisabledPatterns();
+        } else {
+            disabledPatterns = null;
+        }
 
         // Check for alias
         for (String s : disabledAlgorithms) {
@@ -977,12 +985,13 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     private boolean checkDisabledPatterns(final String algorithm) {
-        return disabledPatterns.stream().noneMatch(
+        return disabledPatterns == null || disabledPatterns.stream().noneMatch(
                 p -> p.matcher(algorithm).matches());
     }
 
-    private void loadDisabledPatterns() {
-        List<String> patternStrings = new ArrayList<>();
+    private List<Pattern> getDisabledPatterns() {
+        List<Pattern> ret = null;
+        List<String> patternStrings = new ArrayList<>(INITIAL_PATTERN_CAPACITY);
 
         for (String p : disabledAlgorithms) {
             if (p.contains("*")) {
@@ -990,17 +999,24 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     throw new IllegalArgumentException(
                             "Wildcard pattern must start with \"TLS_\"");
                 }
-
-                disabledPatterns.add(Pattern.compile(
-                        // Ignore all regex characters but asterisk.
-                        "^\\Q" + p.replace("*", "\\E.*\\Q") + "\\E$"));
-
                 patternStrings.add(p);
             }
         }
 
-        // Exclude patterns from algorithm code flow.
-        patternStrings.forEach(disabledAlgorithms::remove);
+        if (!patternStrings.isEmpty()) {
+            ret = new ArrayList<>(INITIAL_PATTERN_CAPACITY);
+
+            for (String p : patternStrings) {
+                // Exclude patterns from algorithm code flow.
+                disabledAlgorithms.remove(p);
+
+                // Ignore all regex characters but asterisk.
+                ret.add(Pattern.compile(
+                        "^\\Q" + p.replace("*", "\\E.*\\Q") + "\\E$"));
+            }
+        }
+
+        return ret;
     }
 
     /*
