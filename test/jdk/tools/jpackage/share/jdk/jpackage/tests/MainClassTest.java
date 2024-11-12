@@ -52,9 +52,8 @@ import static jdk.jpackage.tests.MainClassTest.Script.MainClassType.*;
 /*
  * @test
  * @summary test different settings of main class name for jpackage
- * @library ../../../../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile MainClassTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.MainClassTest
