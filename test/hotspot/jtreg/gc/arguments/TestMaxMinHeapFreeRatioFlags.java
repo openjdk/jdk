@@ -138,7 +138,7 @@ public class TestMaxMinHeapFreeRatioFlags {
         // Size of byte array that will be allocated
         public static final int CHUNK_SIZE = 1024;
         // Length of byte array, that will be added to "garbage" list.
-        public static final int ARRAY_LENGTH = CHUNK_SIZE - Unsafe.ARRAY_BYTE_BASE_OFFSET;
+        public static final int ARRAY_LENGTH = CHUNK_SIZE - (int) Unsafe.ARRAY_BYTE_BASE_OFFSET;
         // Amount of tries to force heap shrinking/expansion using GC
         public static final int GC_TRIES = 10;
 

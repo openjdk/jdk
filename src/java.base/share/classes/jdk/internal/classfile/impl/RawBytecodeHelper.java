@@ -386,16 +386,16 @@ public final class RawBytecodeHelper {
     }
 
     public int getU2Unchecked(int bci) {
-        return UNSAFE.getCharUnaligned(code.array, (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
+        return UNSAFE.getCharUnaligned(code.array, Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
     }
 
     public int getShortUnchecked(int bci) {
-        return UNSAFE.getShortUnaligned(code.array, (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
+        return UNSAFE.getShortUnaligned(code.array, Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
     }
 
     // used after switch validation
     public int getIntUnchecked(int bci) {
-        return UNSAFE.getIntUnaligned(code.array, (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
+        return UNSAFE.getIntUnaligned(code.array, Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
     }
 
     // non-wide branches
