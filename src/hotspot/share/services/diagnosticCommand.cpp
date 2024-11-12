@@ -1179,8 +1179,8 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
  */
 
 VMUsageMetadataDCmd::VMUsageMetadataDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
-  _omitIfNull("-omitIfNull", "omit null valued fields from output", "BOOLEAN", false, "false"),
-  _fields("fields", "a comma separated list of metadata fields to emit", "STRING", false),
+  _omitIfNull("-omitnulls", "omit null valued fields from output", "BOOLEAN", false, "false"),
+  _fields("fields", "a comma separated list of metadata fields to emit, prepend with '+' to append to defaults, otherwise replaces defaults", "STRING", false),
   _format("format", "Output format (\"plain\" or \"json\")", "STRING", false, _TEXT_PLAIN),
   _filename("filename", "The file path to the output file to append to", "FILE", false) {
   _dcmdparser.add_dcmd_option(&_omitIfNull);
