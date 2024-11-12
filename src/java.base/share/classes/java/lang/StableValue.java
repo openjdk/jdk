@@ -42,68 +42,69 @@ import java.util.function.Supplier;
 /**
  * A stable value is an object that represents deferred immutable data.
  * <p>
- * In the Java programming language, a field could either be immutable (i.e. declared
- * {@code final}) or mutable (i.e. not declared {@code final}). Immutable fields confer
- * many performance optimizations but must be set exactly once by the creating thread
- * in the constructor or in the static initializer. Mutable fields cannot be optimized in
- * the same way but can be set an arbitrary number of times, at any time, by any thread in
- * any place in the code.
- * {@code StableValue} provides a means to eventually obtain the same performance
- * optimizations as for an immutable field while providing almost the same degree of
- * initialization freedom as for a mutable field, where the only difference is that a
- * stable value can be set <em>at most once</em>. In effect, a stable value represents
- * <em>deferred immutable data</em>.
+ * A {@linkplain StableValue} is created using the factory method
+ * {@linkplain StableValue#of()}. When created, a stable value is <em>unset</em>, which
+ * means it holds no value. It can be <em>set</em> by passing a value to
+ * {@linkplain #trySet(Object) trySet()}, {@linkplain #setOrThrow(Object) setOrThrow()},
+ * or {@linkplain #computeIfUnset(Supplier) computeIfUnset()}. Once set, the value held
+ * by a {@code StableValue<T>} can never change and can be retrieved by calling
+ * {@linkplain #orElseThrow() orElseThrow()}, {@linkplain #orElse(Object)}, or
+ * {@linkplain #computeIfUnset(Supplier) computeIfUnset()}.
  * <p>
- * The {@code StableValue} API provides several factory methods that provide stable
- * immutable holder objects that have <em>unset</em> values. By executing methods on a
- * stable value object, holder values can be <em>set</em>.
+ * A stable value that is <em>set</em> is treated as a constant by the JVM, enabling
+ * the same performance optimizations that are possible by marking a field {@code final}.
+ * Yet, stable values offer greater flexibility as to the timing of initialization
  * <p>
- * Consider the following example with a stable value "{@code VAL}" which
- * here is an immutable holder of a value of type {@linkplain Integer} and that is
- * initially created as <em>unset</em>, which means it holds no value. Later, the
- * holder value is <em>set</em> to {@code 42} (unless it was not previously <em>set</em>).
- * Once <em>set</em>, the holder value of "{@code VAL}" can be retrieved via the method
- * {@linkplain StableValue#orElseThrow()}.
- *
+ * Consider the following example with a stable value "{@code logger}" which here is an
+ * immutable holder of a value of type {@code  Logger} and that is initially created as
+ * <em>unset</em>, which means it holds no value. Later in the example, the holder value
+ * is <em>set</em>:
  * {@snippet lang = java:
- *     // Creates a new stable value with no holder value
- *     // @link substring="of" target="#of" :
- *     static final StableValue<Integer> VAL = StableValue.of();
+ * class Component {
  *
- *     // ... logic that may or may not set the holder value of `VAL`
+ *    // Creates a new stable value with no holder value
+ *    // @link substring="of" target="#of" :
+ *    private final StableValue<Logger> logger = StableValue.of();
  *
- *     // @link substring="trySet(42)" target="#trySet(Object)"
- *     if (VAL.trySet(42)) {
- *        System.out.println("The holder value was set to 42.");
- *     } else {
- *        // @link substring="orElseThrow" target="#orElseThrow"
- *        System.out.println("The holder value was already set to " + VAL.orElseThrow());
- *     }
+ *    Logger getLogger() {
+ *        if (!logger.isSet()) {
+ *            logger.trySet(Logger.create(Component.class));
+ *        }
+ *         return logger.orThrow();
+ *    }
+ *
+ *    void process() {
+ *        logger.get().info("Process started");
+ *        // ...
+ *    }
+ * }
  *}
  * <p>
  * Note that the holder value can only be set at most once, even when several threads are
  * racing to set the holder value. Only one thread is selected as the winner.
  * <p>
- * In this other example, a stable "{@code logger}" field is declared and is accessed
- * via a {@code getLogger} method in which the holder value is lazily computed via a
- * provided lambda expression:
+ * While this more low-level approach works, it does not guarantee that only one Logger
+ * is ever created. This can be fixed by using the {@linkplain #computeIfUnset(Supplier)}
+ * method where the holder is lazily computed using a provided lambda expression:
+ *
  * {@snippet lang = java:
- *    class Component {
+ * class Component {
  *
- *        // @link substring="of" target="#of" :
- *        private final StableValue<Logger> logger = StableValue.of();
+ *    // Creates a new stable value with no holder value
+ *    // @link substring="of" target="#of" :
+ *    private final StableValue<Logger> logger = StableValue.of();
  *
- *        private Logger getLogger() {
- *            return logger.computeIfUnset( () -> Logger.getLogger("org.app.Component") );
- *        }
- *
- *        void process() {
- *            getLogger().info("Process started");
- *            // ...
- *        }
- *
+ *    Logger getLogger() {
+ *        return logger.computeIfUnset(() -> Logger.create(Component.class));
  *    }
+ *
+ *    void process() {
+ *        logger.get().info("Process started");
+ *        // ...
+ *    }
+ * }
  *}
+ * <p>
  * The {@code getLogger()} method calls {@code logger.computeIfUnset()} on the
  * stable value to retrieve its holder value. If the stable value is <em>unset</em>, then
  * {@code computeIfUnset()} evaluates and sets the holder value; the holder value is then
@@ -139,7 +140,7 @@ import java.util.function.Supplier;
  *
  *         private final Supplier<Logger> logger =
  *                 // @link substring="ofSupplier" target="#ofSupplier(Supplier)" :
- *                 StableValue.ofSupplier( () -> Logger.getLogger("org.app.Component") );
+ *                 StableValue.ofSupplier( () -> Logger.getLogger(Component.class) );
  *
  *         void process() {
  *            logger.get().info("Process started");
@@ -206,23 +207,23 @@ import java.util.function.Supplier;
  * A <em>stable list</em> is similar to a stable int function but provides a full
  * implementation of an immutable {@linkplain List}. This is useful when interacting with
  * collection-based methods. Here is an example of how a stable list can be used to hold
- * a pool of order controllers:
+ * a pool of {@code Component} objects:
  * {@snippet lang = java:
  *    class Application {
  *        static final int POOL_SIZE = 16;
  *
- *        static final List<OrderController> ORDER_CONTROLLERS =
+ *        static final List<Component> COMPONENTS =
  *                // @link substring="ofList" target="#ofList(int,IntFunction)" :
- *                StableValue.ofList(POOL_SIZE, OrderController::new);
+ *                StableValue.ofList(POOL_SIZE, Component::new);
  *
- *        public static OrderController orderController() {
+ *        public static Component component() {
  *            long index = Thread.currentThread().threadId() % POOL_SIZE;
- *            return ORDER_CONTROLLERS.get((int) index);
+ *            return COMPONENTS.get((int) index);
  *        }
  *    }
- * }
+ *}
  * <p>
- * Note: In the example above, there is a constructor in the {@code OrderController}
+ * Note: In the example above, there is a constructor in the {@code Component}
  *       class that takes an {@code int} parameter.
  * <p>
  * A <em>stable map</em> is similar to a stable function but provides a full
@@ -242,39 +243,12 @@ import java.util.function.Supplier;
  *
  *     }
  *}
- * <h2 id="constant-folding">Constant Folding</h2>
- * Once a stable value is <em>set</em>, the holder value is eligible for
- * <em>constant-folding</em> optimizations provided the following requirements are
- * fulfilled:
- * <ul>
- *     <li>There is a trusted constant root in the form of a {@code static final} field.</li>
- *     <li>There is a path from the constant root to said <em>set</em> holder value via
- *         one or more trusted edges where each trusted edge can be either:
- *         <ul>
- *             <li>A component in a {@linkplain Record}.</li>
- *             <li>A {@code final} field of declared type {@linkplain StableValue} in any class,</li>
- *             <li>An element from a {@code final} field of declared type {@linkplain StableValue StableValue[]} in any class.</li>
- *             <li>A {@code final} field in a hidden class.</li>
- *         </ul>
- *     </li>
- * </ul>
- * It is expected that the types of trusted edges in the JDK will increase
- * over time and that eventually, <em>all</em> {@code final} fields will be trusted.
- *
- * <h2 id="memory-consistency">Memory Consistency Properties</h2>
- * All stores made to a holder value before being set are guaranteed to be seen by
- * any thread that obtains the holder value via a stable value.
- * <p>
- * More formally, the action of attempting to interact (i.e. via load or store operations)
- * with a StableValue's holder value (e.g. via {@link StableValue#trySet} or
- * {@link StableValue#orElseThrow()}) forms a
- * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
- * relation between any other action of attempting to interact with the
- * StableValue's holder value. The same happens-before guarantees extend to
- * stable functions and stable collections; any action of attempting to interact via a
- * valid input value {@code I} <em>happens-before</em> any subsequent action of attempting
- * to interact via a valid input value {@code J} if, and only if, {@code I} and {@code J}
- * {@linkplain Object#equals(Object) equals()}.
+ * <h2 id="thread-safety">Thread Safety</h2>
+ * Updates to an object before it is set as a holder value is guaranteed to be seen by
+ * all other threads discovering the holder value via a stable value. A holder value is
+ * guaranteed to only be settable at most once. If competing threads are racing to set
+ * a holder value, only the first is accepted and the other threads are blocked until the
+ * holder value is set.
  *
  * <h2 id="miscellaneous">Miscellaneous</h2>
  * Except for a StableValue's holder value itself, all method parameters must be
@@ -335,8 +309,8 @@ public sealed interface StableValue<T>
     boolean isSet();
 
     /**
-     * {@return the holder value; if unset, first attempts to compute the holder value
-     *          using the provided {@code supplier}}
+     * {@return the holder value; if unset, first attempts to compute and set the
+     *          holder value using the provided {@code supplier}}
      * <p>
      * The provided {@code supplier} is guaranteed to be invoked at most once if it
      * completes without throwing an exception.
