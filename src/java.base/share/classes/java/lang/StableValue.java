@@ -40,109 +40,75 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A stable value is an object that represents deferred immutable data. Stable values are
- * treated as constants by the JVM, enabling the same performance optimizations that are
- * possible by marking a field {@code final}. Yet, stable values offer greater flexibility
- * as to the timing of initialization compared to {@code final} fields.
+ * A stable value is an object that represents deferred immutable data.
  * <p>
  * In the Java programming language, a field could either be immutable (i.e. declared
- * {@code final}) or mutable (i.e. not declared {@code final}). Stable values fill
- * the gap between immutable ({@code final}) fields and mutable (non-{@code final}):
+ * {@code final}) or mutable (i.e. not declared {@code final}). Immutable fields confer
+ * many performance optimizations but must be set exactly once by the creating thread
+ * in the constructor or in the static initializer. Mutable fields cannot be optimized in
+ * the same way but can be set an arbitrary number of times, at any time, by any thread in
+ * any place in the code.
+ * {@code StableValue} provides a means to obtain the same performance optimizations as
+ * for an immutable field while providing almost the same degree of initialization freedom
+ * as for a mutable field, where the only difference is that a stable value can be set
+ * <em>at most once</em>. In effect, a stable value represents <em>deferred immutable data</em>.
  * <p>
- * <br/>
- * <blockquote>
- * <table class="plain">
- *     <caption style="display:none">Storage kind comparison</caption>
- *     <thead>
- *     <tr>
- *         <th scope="col">Storage kind</th>
- *         <th scope="col">#Updates</th>
- *         <th scope="col">Update location</th>
- *         <th scope="col">Constant folding</th>
- *         <th scope="col">Concurrent updated</th>
- *     </tr>
- *     </thead>
- *     <tbody>
- *     <tr>
- *         <th scope="row" style="font-weight:normal">Mutable (non-{@code final})</th>
- *         <td style="text-align:center;">[0, &infin;)</td>
- *         <td style="text-align:center;">Anywhere</td>
- *         <td style="text-align:center;">No</td>
- *         <td style="text-align:center;">Yes</td>
- *     </tr>
- *     <tr>
- *         <th scope="row" style="font-weight:normal">Stable (StableValue)</th>
- *         <td style="text-align:center;">[0, 1]</td>
- *         <td style="text-align:center;">Anywhere</td>
- *         <td style="text-align:center;">Yes, after update</td>
- *         <td style="text-align:center;">Yes, by winner</td>
- *      </tr>
- *      <tr>
- *         <th scope="row" style="font-weight:normal">Immutable ({@code final})</th>
- *         <td style="text-align:center;">1</td>
- *         <td style="text-align:center;">Constructor or static initializer</td>
- *         <td style="text-align:center;">Yes</td>
- *         <td style="text-align:center;">No</td>
- *      </tr>
- *      </tbody>
- * </table>
- * </blockquote>
+ * The {@code StableValue} API provides several factory methods that provide stable
+ * immutable holder objects that have <em>unset</em> values. By executing methods on a
+ * stable value object, holder values can be <em>set</em>. Once <em>set</em>, the holder
+ * value is eligible for <em>constant-folding</em> optimizations provided the following
+ * requirements are fulfilled:
+ * <ul>
+ *     <li>There is a trusted constant root in the form of a {@code static final} field.</li>
+ *     <li>There is a path from the constant root to a <em>set</em> holder value via
+ *         one or more trusted edges where each trusted edge can be either:
+ *         <ul>
+ *             <li>A component in a {@linkplain Record}.</li>
+ *             <li>A {@code final} field of declared type {@linkplain StableValue} in any class.</li>
+ *             <li>An element from a {@code final} field of declared type {@linkplain StableValue StableValue[]} in any class.</li>
+ *             <li>A {@code final} field in a hidden class.</li>
+ *         </ul>
+ *     </li>
+ * </ul>
+ * It is expected that the types of trusted edges in the JDK will increase
+ * over time and eventually, <em>all</em> {@code final} fields will be trusted.
  * <p>
- * As such, stable values offers many of the advantages from both the other types and
- * hence effectively provides a way of achieving deferred immutability.
- * <p>
- * An instance of {@code StableValue<T>} is an immutable holder for a value of
- * {@code type T}. Initially, an instance of {@code StableValue<T>} is <em>unset</em>,
- * which means it holds no value. It can be <em>set</em> by passing a value to
- * {@linkplain StableValue#trySet(Object) trySet()},
- * {@linkplain StableValue#setOrThrow(Object) setOrThrow()}, or
- * {@linkplain StableValue#computeIfUnset(Supplier) computeIfUnset()}. Once set, the
- * value held by a {@code StableValue<T>} can never change and can be retrieved by calling
- * {@linkplain StableValue#orElseThrow() orElseThrow()},
- * {@linkplain StableValue#orElse(Object) orElse()}, or
- * {@linkplain StableValue#computeIfUnset(Supplier) computeIfUnset()}. The Java
- * Virtual Machine treats a {@code StableValue<T>} that is set as a constant, equal to
- * the value that it holds.
- * <p>
- * A stable value can be used <em>imperatively</em> -- by interacting directly with the
- * holder value -- or <em>functionally</em> whereby a supplier is provided that will be
- * used to calculate the holder value, should it be unset.
- * <p>
- * <em id="imperative-use">Imperative use</em>
- * <p>
- * Imperative use often entails more low-level usage. Here is an example of how the
- * holder value can be set imperatively using a pre-computed value (here {@code 42})
- * using the method {@linkplain StableValue#trySet(Object) trySet()}.
- * The method will return {@code true} if the holder value was indeed set, or
- * it will return {@code false} if the holder value was already set:
+ * Consider the following example with a stable value "{@code VAL}" which
+ * here is an immutable holder of a value of type {@linkplain Integer} and that is
+ * initially created as <em>unset</em>, which means it holds no value. Later, the
+ * holder value is <em>set</em> to {@code 42} unless it was not previously <em>set</em>.
+ * The holder value of "{@code VAL}" (if <em>set</em>) can be retrieved via the method
+ * {@linkplain StableValue#orElseThrow()}.
  *
- * {@snippet lang=java :
+ * {@snippet lang = java:
  *     // Creates a new stable value with no holder value
- *     StableValue<Integer> stableValue = StableValue.of();
- *     // ... logic that may or may not set the holder value of stableValue
- *     if (stableValue.trySet(42)) {
+ *     // @link substring="of" target="#of" :
+ *     static final StableValue<Integer> VAL = StableValue.of();
+ *
+       // ... logic that may or may not set the holder value of `VAL`
+ *
+ *     // @link substring="trySet(42)" target="#trySet(Object)"
+ *     if (VAL.trySet(42)) {
  *        System.out.println("The holder value was set to 42.");
  *     } else {
- *        System.out.println("The holder value was already set to " + stableValue.orElseThrow());
+ *        // @link substring="orElseThrow" target="#orElseThrow"
+ *        System.out.println("The holder value was already set to " + VAL.orElseThrow());
  *     }
- * }
+ *}
+ * <p>
  * Note that the holder value can only be set at most once, even when several threads are
  * racing to set the holder value. Only one thread is selected as the winner.
  * <p>
- * <em id="functional-use">Functional use</em>
- * <p>
- * Functional use of a stable value entails providing a
- * {@linkplain Supplier {@code Supplier<? extends T>}} to the instance method
- * {@linkplain StableValue#computeIfUnset(Supplier) computeIfUnset()} whereby the
- * provided supplier is automatically invoked if no holder value is set, as shown in
- * this example:
- *
+ * In this other example, a stable "{@code logger}" field is declared and is accessed
+ * via a {@code getLogger} method in which the holder value is lazily computed via a
+ * provided lambda expression:
  * {@snippet lang = java:
  *    class Component {
  *
+ *        // @link substring="of" target="#of" :
  *        private final StableValue<Logger> logger = StableValue.of();
  *
- *        Logger getLogger() {
+ *        private Logger getLogger() {
  *            return logger.computeIfUnset( () -> Logger.getLogger("org.app.Component") );
  *        }
  *
@@ -154,15 +120,15 @@ import java.util.function.Supplier;
  *    }
  *}
  * The {@code getLogger()} method calls {@code logger.computeIfUnset()} on the
- * stable value to retrieve its holder value. If the stable value is unset, then
+ * stable value to retrieve its holder value. If the stable value is <em>unset</em>, then
  * {@code computeIfUnset()} evaluates and sets the holder value; the holder value is then
  * returned to the client. In other words, {@code computeIfUnset()} guarantees that a
- * stable value's holder value is set before it is used.
+ * stable value's holder value is <em>set</em> before it is used.
  * <p>
- * Even though the stable value, once set, is immutable, its holder value is not
- * required to be set upfront. Rather, it can be set on demand. Furthermore,
- * {@code computeIfUnset()} guarantees that the lambda expression provided is evaluated
- * only once, even when {@code logger.computeIfUnset()} is invoked concurrently.
+ * Even though the stable value, once <em>set</em>, is immutable, its holder value is not
+ * required to be <em>set</em> upfront. Rather, it can be <em>set</em> on demand.
+ * Furthermore, {@code computeIfUnset()} guarantees that the lambda expression provided is
+ * evaluated only once, even when {@code logger.computeIfUnset()} is invoked concurrently.
  * This property is crucial as evaluation of the lambda expression may have side effects,
  * e.g., the call above to {@code Logger.getLogger()} may result in storage resources
  * being prepared.
@@ -187,6 +153,7 @@ import java.util.function.Supplier;
  *     class Component {
  *
  *         private final Supplier<Logger> logger =
+ *                 // @link substring="ofSupplier" target="#ofSupplier(Supplier)" :
  *                 StableValue.ofSupplier( () -> Logger.getLogger("org.app.Component") );
  *
  *         void process() {
@@ -196,8 +163,7 @@ import java.util.function.Supplier;
  *     }
  *}
  * This also allows the stable supplier to be accessed directly, without going through
- * an accessor method like {@code getLogger()} in the
- * {@linkplain StableValue##functional-use functional example} above.
+ * an accessor method like {@code getLogger()} in the previous example.
  * <p>
  * A <em>stable int function</em> stores values in an array of stable values where
  * the elements' holder value are computed the first time a particular input value
@@ -212,6 +178,7 @@ import java.util.function.Supplier;
  *     class SqrtUtil {
  *
  *         private static final IntFunction<Double> SQRT =
+ *                 // @link substring="ofIntFunction" target="#ofIntFunction(int,IntFunction)" :
  *                 StableValue.ofIntFunction(10, Math::sqrt);
  *
  *         double sqrt9() {
@@ -226,13 +193,14 @@ import java.util.function.Supplier;
  * is provided.
  * When the stable function is first created --
  * via the {@linkplain StableValue#ofFunction(Set, Function) StableValue.ofFunction()}
- * factory -- the input set is specified together with an original {@linkplain Function}
+ * factory -- the input Set is specified together with an original {@linkplain Function}
  * which is invoked at most once per input value. In effect, the stable function will act
  * like a cache for the original {@code Function}:
  * {@snippet lang = java:
  *     class SqrtUtil {
  *
  *         private static final Function<Integer, Double> SQRT =
+ *                 // @link substring="ofFunction" target="#ofFunction(Set,Function)" :
  *                 StableValue.ofFunction(Set.of(1, 2, 4, 8, 16, 32), Math::sqrt);
  *
  *         double sqrt16() {
@@ -259,6 +227,7 @@ import java.util.function.Supplier;
  *        static final int POOL_SIZE = 16;
  *
  *        static final List<OrderController> ORDER_CONTROLLERS =
+ *                // @link substring="ofList" target="#ofList(int,IntFunction)" :
  *                StableValue.ofList(POOL_SIZE, OrderController::new);
  *
  *        public static OrderController orderController() {
@@ -279,6 +248,7 @@ import java.util.function.Supplier;
  *     class SqrtUtil {
  *
  *         private static final Map<Integer, Double> SQRT =
+ *                 // @link substring="ofMap" target="#ofMap(Set,Function)" :
  *                 StableValue.ofMap(Set.of(1, 2, 4, 8, 16, 32), Math::sqrt);
  *
  *         double sqrt16() {
