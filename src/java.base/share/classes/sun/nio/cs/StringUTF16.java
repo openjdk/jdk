@@ -32,7 +32,7 @@ class StringUTF16 {
 
     public static char getChar(byte[] val, int index) {
         return unsafe.getChar(val,
-                (long) ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * index * 2L);
+                              ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * index * 2L);
     }
 
     private static final jdk.internal.misc.Unsafe unsafe = jdk.internal.misc.Unsafe.getUnsafe();
