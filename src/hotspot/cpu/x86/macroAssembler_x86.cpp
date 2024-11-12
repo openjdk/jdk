@@ -35,6 +35,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -528,7 +529,6 @@ void MacroAssembler::call_VM_leaf_base(address entry_point, int num_args) {
   // restore stack pointer
   addq(rsp, frame::arg_reg_save_area_bytes);
 #endif
-
 }
 
 void MacroAssembler::cmp64(Register src1, AddressLiteral src2, Register rscratch) {
@@ -3040,25 +3040,13 @@ void MacroAssembler::pop_cont_fastpath() {
 }
 
 void MacroAssembler::inc_held_monitor_count() {
-#ifndef _LP64
-  Register thread = rax;
-  push(thread);
-  get_thread(thread);
-  incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-  pop(thread);
-#else // LP64
+#ifdef _LP64
   incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
 
 void MacroAssembler::dec_held_monitor_count() {
-#ifndef _LP64
-  Register thread = rax;
-  push(thread);
-  get_thread(thread);
-  decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-  pop(thread);
-#else // LP64
+#ifdef _LP64
   decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
@@ -3154,6 +3142,17 @@ void MacroAssembler::set_last_Java_frame(Register java_thread,
   }
   movptr(Address(java_thread, JavaThread::last_Java_sp_offset()), last_java_sp);
 }
+
+#ifdef _LP64
+void MacroAssembler::set_last_Java_frame(Register last_java_sp,
+                                         Register last_java_fp,
+                                         Label &L,
+                                         Register scratch) {
+  lea(scratch, L);
+  movptr(Address(r15_thread, JavaThread::last_Java_pc_offset()), scratch);
+  set_last_Java_frame(r15_thread, last_java_sp, last_java_fp, nullptr, scratch);
+}
+#endif
 
 void MacroAssembler::shlptr(Register dst, int imm8) {
   LP64_ONLY(shlq(dst, imm8)) NOT_LP64(shll(dst, imm8));

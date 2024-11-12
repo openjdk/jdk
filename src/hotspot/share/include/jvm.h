@@ -724,13 +724,6 @@ JNIEXPORT jobjectArray JNICALL
 JVM_GetMethodParameters(JNIEnv *env, jobject method);
 
 /*
- * java.security.*
- */
-
-JNIEXPORT jobject JNICALL
-JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls);
-
-/*
  * Ensure that code doing a stackwalk and using javaVFrame::locals() to
  * get the value will see a materialized value and not a scalar-replaced
  * null value.
@@ -740,9 +733,6 @@ JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls);
                    // through a native method is enough.
 JNIEXPORT void JNICALL
 JVM_EnsureMaterializedForStackWalk_func(JNIEnv* env, jobject vthread, jobject value);
-
-JNIEXPORT jobject JNICALL
-JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls);
 
 /*
  * Signal support, used to implement the shutdown sequence.  Every VM must
@@ -1144,6 +1134,12 @@ JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide);
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadPinnedEvent(JNIEnv* env, jclass clazz, jstring op);
+
+JNIEXPORT jobject JNICALL
+JVM_TakeVirtualThreadListToUnblock(JNIEnv* env, jclass ignored);
 
 /*
  * Core reflection support.
