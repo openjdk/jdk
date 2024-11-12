@@ -48,36 +48,21 @@ import java.util.function.Supplier;
  * in the constructor or in the static initializer. Mutable fields cannot be optimized in
  * the same way but can be set an arbitrary number of times, at any time, by any thread in
  * any place in the code.
- * {@code StableValue} provides a means to obtain the same performance optimizations as
- * for an immutable field while providing almost the same degree of initialization freedom
- * as for a mutable field, where the only difference is that a stable value can be set
- * <em>at most once</em>. In effect, a stable value represents <em>deferred immutable data</em>.
+ * {@code StableValue} provides a means to eventually obtain the same performance
+ * optimizations as for an immutable field while providing almost the same degree of
+ * initialization freedom as for a mutable field, where the only difference is that a
+ * stable value can be set <em>at most once</em>. In effect, a stable value represents
+ * <em>deferred immutable data</em>.
  * <p>
  * The {@code StableValue} API provides several factory methods that provide stable
  * immutable holder objects that have <em>unset</em> values. By executing methods on a
- * stable value object, holder values can be <em>set</em>. Once <em>set</em>, the holder
- * value is eligible for <em>constant-folding</em> optimizations provided the following
- * requirements are fulfilled:
- * <ul>
- *     <li>There is a trusted constant root in the form of a {@code static final} field.</li>
- *     <li>There is a path from the constant root to a <em>set</em> holder value via
- *         one or more trusted edges where each trusted edge can be either:
- *         <ul>
- *             <li>A component in a {@linkplain Record}.</li>
- *             <li>A {@code final} field of declared type {@linkplain StableValue} in any class.</li>
- *             <li>An element from a {@code final} field of declared type {@linkplain StableValue StableValue[]} in any class.</li>
- *             <li>A {@code final} field in a hidden class.</li>
- *         </ul>
- *     </li>
- * </ul>
- * It is expected that the types of trusted edges in the JDK will increase
- * over time and eventually, <em>all</em> {@code final} fields will be trusted.
+ * stable value object, holder values can be <em>set</em>.
  * <p>
  * Consider the following example with a stable value "{@code VAL}" which
  * here is an immutable holder of a value of type {@linkplain Integer} and that is
  * initially created as <em>unset</em>, which means it holds no value. Later, the
- * holder value is <em>set</em> to {@code 42} unless it was not previously <em>set</em>.
- * The holder value of "{@code VAL}" (if <em>set</em>) can be retrieved via the method
+ * holder value is <em>set</em> to {@code 42} (unless it was not previously <em>set</em>).
+ * Once <em>set</em>, the holder value of "{@code VAL}" can be retrieved via the method
  * {@linkplain StableValue#orElseThrow()}.
  *
  * {@snippet lang = java:
@@ -257,6 +242,24 @@ import java.util.function.Supplier;
  *
  *     }
  *}
+ * <h2 id="constant-folding">Constant Folding</h2>
+ * Once a stable value is <em>set</em>, the holder value is eligible for
+ * <em>constant-folding</em> optimizations provided the following requirements are
+ * fulfilled:
+ * <ul>
+ *     <li>There is a trusted constant root in the form of a {@code static final} field.</li>
+ *     <li>There is a path from the constant root to said <em>set</em> holder value via
+ *         one or more trusted edges where each trusted edge can be either:
+ *         <ul>
+ *             <li>A component in a {@linkplain Record}.</li>
+ *             <li>A {@code final} field of declared type {@linkplain StableValue} in any class,</li>
+ *             <li>An element from a {@code final} field of declared type {@linkplain StableValue StableValue[]} in any class.</li>
+ *             <li>A {@code final} field in a hidden class.</li>
+ *         </ul>
+ *     </li>
+ * </ul>
+ * It is expected that the types of trusted edges in the JDK will increase
+ * over time and that eventually, <em>all</em> {@code final} fields will be trusted.
  *
  * <h2 id="memory-consistency">Memory Consistency Properties</h2>
  * All stores made to a holder value before being set are guaranteed to be seen by
