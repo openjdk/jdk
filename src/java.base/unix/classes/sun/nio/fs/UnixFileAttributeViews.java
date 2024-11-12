@@ -72,48 +72,75 @@ class UnixFileAttributeViews {
             // permission check
             file.checkWrite();
 
-            // if not changing both attributes then need existing attributes
-            if (lastModifiedTime == null || lastAccessTime == null) {
-                try {
-                    UnixFileAttributes attrs =
-                        UnixFileAttributes.get(file, followLinks);
-                    if (lastModifiedTime == null)
-                        lastModifiedTime = attrs.lastModifiedTime();
-                    if (lastAccessTime == null)
-                        lastAccessTime = attrs.lastAccessTime();
-                } catch (UnixException x) {
-                    x.rethrowAsIOException(file);
-                }
-            }
-
-            // update times
-            long modValue = lastModifiedTime.to(TimeUnit.NANOSECONDS);
-            long accessValue= lastAccessTime.to(TimeUnit.NANOSECONDS);
-
-            boolean retry = false;
+            // use a file descriptor if possible to avoid a race due to
+            // accessing a path more than once as the file at that path could
+            // change.
+            // if path is a symlink, then the open should fail with ELOOP and
+            // the path will be used instead of the file descriptor.
+            boolean haveFd = false;
+            int fd = -1;
             try {
-                utimensat(AT_FDCWD, file, accessValue, modValue,
-                          followLinks ? 0 : AT_SYMLINK_NOFOLLOW);
+                fd = file.openForAttributeAccess(followLinks);
+                haveFd = true;
             } catch (UnixException x) {
-                // if utimensat fails with EINVAL and one/both of
-                // the times is negative then we adjust the value to the
-                // epoch and retry.
-                if (x.errno() == EINVAL &&
-                    (modValue < 0L || accessValue < 0L)) {
-                    retry = true;
-                } else {
+                if (!(x.errno() == ENXIO || (x.errno() == ELOOP))) {
                     x.rethrowAsIOException(file);
                 }
             }
-            if (retry) {
-                if (modValue < 0L) modValue = 0L;
-                if (accessValue < 0L) accessValue= 0L;
-                try {
-                    utimensat(AT_FDCWD, file, accessValue, modValue,
-                              followLinks ? 0 : AT_SYMLINK_NOFOLLOW);
-                } catch (UnixException x) {
-                    x.rethrowAsIOException(file);
+
+            try {
+                // if not changing both attributes then need existing attributes
+                if (lastModifiedTime == null || lastAccessTime == null) {
+                    try {
+                        UnixFileAttributes attrs = haveFd ?
+                            UnixFileAttributes.get(fd) :
+                            UnixFileAttributes.get(file, followLinks);
+                        if (lastModifiedTime == null)
+                            lastModifiedTime = attrs.lastModifiedTime();
+                        if (lastAccessTime == null)
+                            lastAccessTime = attrs.lastAccessTime();
+                    } catch (UnixException x) {
+                        x.rethrowAsIOException(file);
+                    }
                 }
+
+                // update times
+                long modValue = lastModifiedTime.to(TimeUnit.NANOSECONDS);
+                long accessValue= lastAccessTime.to(TimeUnit.NANOSECONDS);
+
+                boolean retry = false;
+                try {
+                    if (haveFd)
+                        futimens(fd, accessValue, modValue);
+                    else
+                        utimensat(AT_FDCWD, file, accessValue, modValue,
+                                  followLinks ? 0 : AT_SYMLINK_NOFOLLOW);
+                } catch (UnixException x) {
+                    // if utimensat fails with EINVAL and one/both of
+                    // the times is negative then we adjust the value to the
+                    // epoch and retry.
+                    if (x.errno() == EINVAL &&
+                        (modValue < 0L || accessValue < 0L)) {
+                        retry = true;
+                    } else {
+                        x.rethrowAsIOException(file);
+                    }
+                }
+                if (retry) {
+                    if (modValue < 0L) modValue = 0L;
+                    if (accessValue < 0L) accessValue= 0L;
+                    try {
+                        if (haveFd)
+                            futimens(fd, accessValue, modValue);
+                        else
+                            utimensat(AT_FDCWD, file, accessValue, modValue,
+                                      followLinks ? 0 : AT_SYMLINK_NOFOLLOW);
+                    } catch (UnixException x) {
+                        x.rethrowAsIOException(file);
+                    }
+                }
+            } finally {
+                close(fd, e -> null);
             }
         }
     }
