@@ -628,15 +628,16 @@ bool AttachOperation::read_request(RequestReader* reader) {
     buffer_size = (name_length_max + 1) + arg_count_max * (arg_length_max + 1);
     min_str_count = 1 /*name*/ + arg_count_max;
     break;
-  case ATTACH_API_V2: // <ver>0<size>0<cmd>0<arg>0<arg>0<arg>0
+  case ATTACH_API_V2: // <ver>0<size>0<cmd>0(<arg>0)* (any number of arguments)
     if (AttachListener::get_supported_version() < 2) {
-        log_error(attach)("Failed to read request: v2 is unsupported ot disabled");
+        log_error(attach)("Failed to read request: v2 is unsupported or disabled");
         return false;
     }
 
     // read size of the data
     buffer_size = reader->read_uint();
     if (buffer_size < 0) {
+      log_error(attach)("Failed to read request: negative request size (%d)", buffer_size);
       return false;
     }
     log_debug(attach)("v2 request, data size = %d", buffer_size);
@@ -646,7 +647,7 @@ bool AttachOperation::read_request(RequestReader* reader) {
       log_error(attach)("Failed to read request: too big");
       return false;
     }
-    // Must contain exact 'buffer_size' bytes.
+    // Must contain exactly 'buffer_size' bytes.
     min_read_size = buffer_size;
     break;
   default:
