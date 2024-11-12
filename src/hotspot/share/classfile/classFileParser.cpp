@@ -926,6 +926,7 @@ public:
     _method_ForceInline,
     _method_DontInline,
     _method_ChangesCurrentThread,
+    _method_JvmtiHideEvents,
     _method_JvmtiMountTransition,
     _method_InjectedProfile,
     _method_LambdaForm_Compiled,
@@ -1830,6 +1831,11 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _method_ChangesCurrentThread;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_JvmtiHideEvents_signature): {
+      if (_location != _in_method)  break;  // only allow for methods
+      if (!privileged)              break;  // only allow in privileged code
+      return _method_JvmtiHideEvents;
+    }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_JvmtiMountTransition_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
@@ -1917,6 +1923,8 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
     m->set_dont_inline();
   if (has_annotation(_method_ChangesCurrentThread))
     m->set_changes_current_thread();
+  if (has_annotation(_method_JvmtiHideEvents))
+    m->set_jvmti_hide_events();
   if (has_annotation(_method_JvmtiMountTransition))
     m->set_jvmti_mount_transition();
   if (has_annotation(_method_InjectedProfile))
@@ -5826,6 +5834,15 @@ bool ClassFileParser::is_java_lang_ref_Reference_subclass() const {
   }
 
   return _super_klass->reference_type() != REF_NONE;
+}
+
+// Returns true if the future Klass will need to be addressable with a narrow Klass ID.
+bool ClassFileParser::klass_needs_narrow_id() const {
+  // Classes that are never instantiated need no narrow Klass Id, since the
+  // only point of having a narrow id is to put it into an object header. Keeping
+  // never instantiated classes out of class space lessens the class space pressure.
+  // For more details, see JDK-8338526.
+  return !is_interface() && !is_abstract();
 }
 
 // ----------------------------------------------------------------------------

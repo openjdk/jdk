@@ -121,37 +121,6 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   return result;
 }
 
-void CompressedKlassPointers::initialize(address addr, size_t len) {
-  constexpr uintptr_t unscaled_max = nth_bit(32);
-  assert(len <= unscaled_max, "Klass range larger than 32 bits?");
-
-  // Shift is always 0 on aarch64.
-  _shift = 0;
-
-  // On aarch64, we don't bother with zero-based encoding (base=0 shift>0).
-  address const end = addr + len;
-  _base = (end <= (address)unscaled_max) ? nullptr : addr;
-
-  // Remember the Klass range:
-  _klass_range_start = addr;
-  _klass_range_end = addr + len;
-
-  // Initialize klass decode mode and check compability with decode instructions
-  if (!check_klass_decode_mode()) {
-
-    // Give fatal error if this is a specified address
-    if ((address)CompressedClassSpaceBaseAddress == _base) {
-      vm_exit_during_initialization(
-            err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
-                    CompressedClassSpaceBaseAddress, _shift));
-    } else {
-      // If this fails, it's a bug in the allocation code.
-      fatal("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
-            p2i(_base), _shift);
-    }
-  }
-}
-
 bool CompressedKlassPointers::check_klass_decode_mode(address base, int shift, const size_t range) {
   return MacroAssembler::check_klass_decode_mode(base, shift, range);
 }

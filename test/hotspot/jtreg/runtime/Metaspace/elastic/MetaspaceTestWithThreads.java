@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ public class MetaspaceTestWithThreads {
     // The context to use.
     final MetaspaceTestContext context;
 
-    // Total *word* size we allow for the test to allocation. The test may overshoot this a bit, but should not by much.
+    // Total *byte* size we allow for the test to allocation. The test may overshoot this a bit, but should not by much.
     final long testAllocationCeiling;
 
     // Number of parallel allocators
@@ -77,8 +77,8 @@ public class MetaspaceTestWithThreads {
 
         context.checkStatistics();
 
-        if (context.committedWords() > 0) {
-            throw new RuntimeException("Expected no committed words after purging empty metaspace context (was: " + context.committedWords() + ")");
+        if (context.committedBytes() > 0) {
+            throw new RuntimeException("Expected no committed bytes after purging empty metaspace context (was: " + context.committedBytes() + ")");
         }
     }
 

@@ -33,14 +33,45 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 
-ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :
-  _mark_context(ShenandoahHeap::heap()->marking_context()) {
+//
+// ========= Super
+//
+
+ShenandoahSuperClosure::ShenandoahSuperClosure() :
+  MetadataVisitingOopIterateClosure(), _heap(ShenandoahHeap::heap()) {}
+
+ShenandoahSuperClosure::ShenandoahSuperClosure(ShenandoahReferenceProcessor* rp) :
+  MetadataVisitingOopIterateClosure(rp), _heap(ShenandoahHeap::heap()) {}
+
+void ShenandoahSuperClosure::do_nmethod(nmethod* nm) {
+  nm->run_nmethod_entry_barrier();
 }
+
+//
+// ========= Marking
+//
+
+ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
+        ShenandoahSuperClosure(rp),
+        _queue(q),
+        _mark_context(ShenandoahHeap::heap()->marking_context()),
+        _weak(false) {}
+
+template<class T, ShenandoahGenerationType GENERATION>
+inline void ShenandoahMarkRefsSuperClosure::work(T* p) {
+  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _mark_context, _weak);
+}
+
+ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :
+  _mark_context(ShenandoahHeap::heap()->marking_context()) {}
 
 bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
   if (CompressedOops::is_null(obj)) {
@@ -52,8 +83,7 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
 }
 
 ShenandoahIsAliveClosure::ShenandoahIsAliveClosure() :
-  _mark_context(ShenandoahHeap::heap()->marking_context()) {
-}
+  _mark_context(ShenandoahHeap::heap()->marking_context()) {}
 
 bool ShenandoahIsAliveClosure::do_object_b(oop obj) {
   if (CompressedOops::is_null(obj)) {
@@ -69,21 +99,8 @@ BoolObjectClosure* ShenandoahIsAliveSelector::is_alive_closure() {
          reinterpret_cast<BoolObjectClosure*>(&_alive_cl);
 }
 
-void ShenandoahOopClosureBase::do_nmethod(nmethod* nm) {
-  nm->run_nmethod_entry_barrier();
-}
-
 ShenandoahKeepAliveClosure::ShenandoahKeepAliveClosure() :
-  _bs(ShenandoahBarrierSet::barrier_set()) {
-}
-
-void ShenandoahKeepAliveClosure::do_oop(oop* p) {
-  do_oop_work(p);
-}
-
-void ShenandoahKeepAliveClosure::do_oop(narrowOop* p) {
-  do_oop_work(p);
-}
+  _bs(ShenandoahBarrierSet::barrier_set()) {}
 
 template <typename T>
 void ShenandoahKeepAliveClosure::do_oop_work(T* p) {
@@ -97,14 +114,14 @@ void ShenandoahKeepAliveClosure::do_oop_work(T* p) {
   }
 }
 
-template <bool concurrent, bool stable_thread>
-ShenandoahEvacuateUpdateRootClosureBase<concurrent, stable_thread>::ShenandoahEvacuateUpdateRootClosureBase() :
-  _heap(ShenandoahHeap::heap()), _thread(stable_thread ? Thread::current() : nullptr) {
-}
 
-template <bool concurrent, bool stable_thread>
-void ShenandoahEvacuateUpdateRootClosureBase<concurrent, stable_thread>::do_oop(oop* p) {
-  if (concurrent) {
+//
+// ========= Evacuating + Roots
+//
+
+template <bool CONCURRENT, bool STABLE_THREAD>
+void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(oop* p) {
+  if (CONCURRENT) {
     ShenandoahEvacOOMScope scope;
     do_oop_work(p);
   } else {
@@ -112,9 +129,9 @@ void ShenandoahEvacuateUpdateRootClosureBase<concurrent, stable_thread>::do_oop(
   }
 }
 
-template <bool concurrent, bool stable_thread>
-void ShenandoahEvacuateUpdateRootClosureBase<concurrent, stable_thread>::do_oop(narrowOop* p) {
-  if (concurrent) {
+template <bool CONCURRENT, bool STABLE_THREAD>
+void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(narrowOop* p) {
+  if (CONCURRENT) {
     ShenandoahEvacOOMScope scope;
     do_oop_work(p);
   } else {
@@ -122,9 +139,9 @@ void ShenandoahEvacuateUpdateRootClosureBase<concurrent, stable_thread>::do_oop(
   }
 }
 
-template <bool atomic, bool stable_thread>
+template <bool CONCURRENT, bool STABLE_THREAD>
 template <class T>
-void ShenandoahEvacuateUpdateRootClosureBase<atomic, stable_thread>::do_oop_work(T* p) {
+void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_work(T* p) {
   assert(_heap->is_concurrent_weak_root_in_progress() ||
          _heap->is_concurrent_strong_root_in_progress(),
          "Only do this in root processing phase");
@@ -137,12 +154,12 @@ void ShenandoahEvacuateUpdateRootClosureBase<atomic, stable_thread>::do_oop_work
       shenandoah_assert_marked(p, obj);
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (resolved == obj) {
-        Thread* thr = stable_thread ? _thread : Thread::current();
+        Thread* thr = STABLE_THREAD ? _thread : Thread::current();
         assert(thr == Thread::current(), "Wrong thread");
 
         resolved = _heap->evacuate_object(obj, thr);
       }
-      if (atomic) {
+      if (CONCURRENT) {
         ShenandoahHeap::atomic_update_oop(resolved, p, o);
       } else {
         RawAccess<IS_NOT_NULL | MO_UNORDERED>::oop_store(p, resolved);
@@ -191,6 +208,42 @@ void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
   NMethodToOopClosure::do_nmethod(nm);
   _bs->disarm(nm);
 }
+
+
+//
+// ========= Update References
+//
+
+template <ShenandoahGenerationType GENERATION>
+ShenandoahMarkUpdateRefsClosure<GENERATION>::ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
+  ShenandoahMarkRefsSuperClosure(q, rp) {
+  assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
+}
+
+template<ShenandoahGenerationType GENERATION>
+template<class T>
+inline void ShenandoahMarkUpdateRefsClosure<GENERATION>::work(T* p) {
+  // Update the location
+  _heap->non_conc_update_with_forwarded(p);
+
+  // ...then do the usual thing
+  ShenandoahMarkRefsSuperClosure::work<T, GENERATION>(p);
+}
+
+template<class T>
+inline void ShenandoahNonConcUpdateRefsClosure::work(T* p) {
+  _heap->non_conc_update_with_forwarded(p);
+}
+
+template<class T>
+inline void ShenandoahConcUpdateRefsClosure::work(T* p) {
+  _heap->conc_update_with_forwarded(p);
+}
+
+
+//
+// ========= Utilities
+//
 
 #ifdef ASSERT
 template <class T>

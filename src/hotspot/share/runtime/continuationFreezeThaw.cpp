@@ -1442,9 +1442,7 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size, int argsize_md)
 
 #if INCLUDE_ZGC
   if (UseZGC) {
-    if (ZGenerational) {
-      ZStackChunkGCData::initialize(chunk);
-    }
+    ZStackChunkGCData::initialize(chunk);
     assert(!chunk->requires_barriers(), "ZGC always allocates in the young generation");
     _barriers = false;
   } else

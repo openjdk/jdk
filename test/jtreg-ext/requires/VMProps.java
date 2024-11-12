@@ -138,6 +138,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
+        map.put("jlink.packagedModules", this::packagedModules);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -323,17 +324,6 @@ public class VMProps implements Callable<Map<String, String>> {
         for (GC gc: GC.values()) {
             map.put("vm.gc." + gc.name(), () -> "" + vmGCProperty.test(gc));
         }
-
-        // Special handling for ZGC modes
-        var vmGCZ = vmGCProperty.test(GC.Z);
-        var genZ = WB.getBooleanVMFlag("ZGenerational");
-        var genZIsDefault = WB.isDefaultVMFlag("ZGenerational");
-        // vm.gc.ZGenerational=true means:
-        //    vm.gc.Z is true and ZGenerational is either explicitly true, or default
-        map.put("vm.gc.ZGenerational", () -> "" + (vmGCZ && (genZ || genZIsDefault)));
-        // vm.gc.ZSinglegen=true means:
-        //    vm.gc.Z is true and ZGenerational is either explicitly false, or default
-        map.put("vm.gc.ZSinglegen", () -> "" + (vmGCZ && (!genZ || genZIsDefault)));
     }
 
     /**
@@ -388,7 +378,6 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "UseCompressedOops");
         vmOptFinalFlag(map, "UseLargePages");
         vmOptFinalFlag(map, "UseVectorizedMismatchIntrinsic");
-        vmOptFinalFlag(map, "ZGenerational");
     }
 
     /**
@@ -725,6 +714,21 @@ public class VMProps implements Callable<Map<String, String>> {
     private String jdkContainerized() {
         String isEnabled = System.getenv("TEST_JDK_CONTAINERIZED");
         return "" + "true".equalsIgnoreCase(isEnabled);
+    }
+
+    private String packagedModules() {
+        // Some jlink tests require packaged modules being present (jmods).
+        // For a runtime linkable image build packaged modules aren't present
+        try {
+            Path jmodsDir = Path.of(System.getProperty("java.home"), "jmods");
+            if (jmodsDir.toFile().exists()) {
+                return Boolean.TRUE.toString();
+            } else {
+                return Boolean.FALSE.toString();
+            }
+        } catch (Throwable t) {
+            return Boolean.FALSE.toString();
+        }
     }
 
     /**
