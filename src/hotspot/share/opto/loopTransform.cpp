@@ -1108,7 +1108,7 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
   // Enable this functionality target by target as needed
   if (SuperWordLoopUnrollAnalysis) {
     if (!cl->was_slp_analyzed()) {
-      Compile::TracePhase tp("autoVectorize", &Phase::timers[Phase::_t_autoVectorize]);
+      Compile::TracePhase tp(Phase::_t_autoVectorize);
 
       VLoop vloop(this, true);
       if (vloop.check_preconditions()) {
