@@ -1246,11 +1246,11 @@ public:
   }
 };
 
-class ShenandoahRetireJavaGCLABClosure : public HandshakeClosure {
+class ShenandoahPrepareForUpdateRefs : public HandshakeClosure {
 private:
   ShenandoahRetireGCLABClosure _retire;
 public:
-  explicit ShenandoahRetireJavaGCLABClosure() :
+  explicit ShenandoahPrepareForUpdateRefs() :
     HandshakeClosure("Shenandoah Retire Java GC LABs"),
     _retire(ResizeTLAB) {}
 
@@ -1264,23 +1264,21 @@ void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
   workers()->run_task(&task);
 }
 
-void ShenandoahHeap::concurrent_retire_gc_labs() {
-  ShenandoahRetireGCLABClosure retire(ResizeTLAB);
-
-  if (!cancelled_gc()) {
-    // If GC was cancelled, we'll want to retain these GC LABs for use in the degenerated cycle.
-    workers()->threads_do(&retire);
-  }
+void ShenandoahHeap::concurrent_prepare_for_update_refs() {
+  // It is possible that the GC has been cancelled after the last cancellation check after evacuation.
+  // However, it will not have been cancelled for an evacuation failure so the degenerated cycle will
+  // resume from update refs.
+  ShenandoahPrepareForUpdateRefs prepare_for_update_refs;
+  workers()->threads_do(&prepare_for_update_refs);
 
   // Safepoint workers may be asked to evacuate objects if they are visiting oops to create a heap dump
   // during a concurrent evacuation phase. These threads will _not_ be used during a degenerated cycle.
   if (safepoint_workers() != nullptr) {
-    safepoint_workers()->threads_do(&retire);
+    safepoint_workers()->threads_do(&prepare_for_update_refs);
   }
 
   // A degenerated cycle won't attempt to use LABs from the mutator threads
-  ShenandoahRetireJavaGCLABClosure retire_java_labs;
-  Handshake::execute(&retire_java_labs);
+  Handshake::execute(&prepare_for_update_refs);
 
   _update_refs_iterator.reset();
 }

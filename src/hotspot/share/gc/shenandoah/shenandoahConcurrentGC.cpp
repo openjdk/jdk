@@ -189,12 +189,12 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     // Concurrently evacuate
     entry_evacuate();
 
-    // Evacuation is complete, retire gc labs
-    heap->concurrent_retire_gc_labs();
-
     if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
       return false;
     }
+
+    // Evacuation is complete, retire gc labs
+    heap->concurrent_prepare_for_update_refs();
 
     // Perform update-refs phase.
     vmop_entry_init_updaterefs();
