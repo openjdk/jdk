@@ -4238,7 +4238,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_vector_double_sign_flip = generate_vector_mask_long_double(StubGenStubId::vector_double_flip_mask_id, , 0x80000000, 0x00000000);
     StubRoutines::x86::_vector_short_to_byte_mask = generate_vector_mask(StubGenStubId::vector_short_to_byte_mask_id, 0x00ff00ff);
     StubRoutines::x86::_vector_int_to_byte_mask = generate_vector_mask(StubGenStubId::vector_int_to_byte_mask_id, 0x000000ff);
-    StubRoutines::x86::_vector_int_to_short_mask = generate_vector_mask(StubGenStubId::vector_int_to_short_mask_id", 0x0000ffff);
+    StubRoutines::x86::_vector_int_to_short_mask = generate_vector_mask(StubGenStubId::vector_int_to_short_mask_id, 0x0000ffff);
     StubRoutines::x86::_vector_32_bit_mask = generate_vector_custom_i32(StubGenStubId::vector_32_bit_mask_id, Assembler::AVX_512bit,
                                                                         0xFFFFFFFF, 0, 0, 0);
     StubRoutines::x86::_vector_64_bit_mask = generate_vector_custom_i32(StubGenStubId::vector_64_bit_mask_id, Assembler::AVX_512bit,
