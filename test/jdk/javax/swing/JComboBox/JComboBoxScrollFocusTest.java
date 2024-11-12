@@ -37,12 +37,12 @@ public class JComboBoxScrollFocusTest {
     private static final String INSTRUCTIONS =
             """
              Click on the dropdown button for the JComboBox in the test frame.
-             Then, press and hold left click on the down arrow button in the
-             popup list. While holding left click, the list should be scrolling
-             down. Press ALT + TAB while holding down left click to switch
-             focus to a different window. Focus the test frame again and click
-             the dropdown button for the JComboBox again. The list should not
-             be automatically scrolling.
+             Then, press and hold the left click button on the down arrow button
+             in the popup list. While holding the left click button, the list
+             should be scrolling down. Press ALT + TAB while holding down the
+             left click to switch focus to a different window. Focus the test
+             frame again and click the dropdown button for the JComboBox again.
+             The list should not be automatically scrolling.
 
              If you are able to execute all steps successfully then the test
              passes, otherwise it fails.
@@ -69,7 +69,6 @@ public class JComboBoxScrollFocusTest {
         frame.add(combobox);
         frame.setSize(400, 200);
         frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
         return frame;
     }
 }

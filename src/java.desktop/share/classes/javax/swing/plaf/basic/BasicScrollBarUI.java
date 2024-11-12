@@ -1589,7 +1589,6 @@ public class BasicScrollBarUI
         protected ArrowButtonListener() {}
 
         public void mousePressed(MouseEvent e)          {
-            System.out.println("MOUSEPRESSED: " + e);
             if(!scrollbar.isEnabled()) { return; }
             // not an unmodified left mouse button
             //if(e.getModifiers() != InputEvent.BUTTON1_MASK) {return; }
@@ -1674,15 +1673,15 @@ public class BasicScrollBarUI
                     }
                 }
             } while (parent != null);
-            if (useBlockIncrement)       {
+            if(useBlockIncrement)       {
                 scrollByBlock(direction);
                 // Stop scrolling if the thumb catches up with the mouse
-                if (scrollbar.getOrientation() == JScrollBar.VERTICAL)   {
-                    if (direction > 0)   {
-                        if (getThumbBounds().y + getThumbBounds().height
+                if(scrollbar.getOrientation() == JScrollBar.VERTICAL)   {
+                    if(direction > 0)   {
+                        if(getThumbBounds().y + getThumbBounds().height
                                 >= trackListener.currentMouseY)
                                     ((Timer)e.getSource()).stop();
-                    } else if (getThumbBounds().y <= trackListener.currentMouseY)        {
+                    } else if(getThumbBounds().y <= trackListener.currentMouseY)        {
                         ((Timer)e.getSource()).stop();
                     }
                 } else {
@@ -1696,11 +1695,11 @@ public class BasicScrollBarUI
                 scrollByUnit(direction);
             }
 
-            if (direction > 0
+            if(direction > 0
                 && scrollbar.getValue()+scrollbar.getVisibleAmount()
                         >= scrollbar.getMaximum())
                 ((Timer)e.getSource()).stop();
-            else if (direction < 0
+            else if(direction < 0
                 && scrollbar.getValue() <= scrollbar.getMinimum())
                 ((Timer)e.getSource()).stop();
         }
