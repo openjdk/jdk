@@ -389,16 +389,8 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     }
   }
-  Node* res = optimize_integer_cast(phase, T_LONG);
-  if (res != nullptr) {
-    PhaseIterGVN* igvn = phase->is_IterGVN();
-    if (igvn == nullptr) {
-      return res;
-    }
-    if (used_at_inner_loop_exit_test()) {
-      return nullptr;
-    }
-    return res;
+  if (!can_reshape || !used_at_inner_loop_exit_test()) {
+    return optimize_integer_cast(phase, T_LONG);
   }
   return nullptr;
 }
