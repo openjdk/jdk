@@ -386,6 +386,7 @@ TEST_VM(Arena, different_chunk_sizes) {
   }
 }
 
+#ifdef LINUX
 struct X : public TestRunnable {
 static size_t alloc_count;
 
@@ -440,3 +441,4 @@ TEST_VM(Arena, chunk_pool_speed) {
     }
   }
 }
+#endif
