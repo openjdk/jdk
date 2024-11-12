@@ -50,7 +50,6 @@ import jdk.test.lib.Platform;
  * @build jdk.test.lib.Platform
  * @run main KeyEventsTest
  */
-
 public class KeyEventsTest {
     TestState currentState;
     final Object LOCK = new Object();
