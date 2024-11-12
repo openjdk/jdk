@@ -82,6 +82,25 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(Node* parse_predicate_p
   return nullptr;
 }
 
+ParsePredicateNode* ParsePredicate::clone_to_unswitched_loop(Node* new_control, const bool is_false_path_loop,
+                                                             PhaseIdealLoop* phase) const {
+  ParsePredicateSuccessProj* success_proj = phase->create_new_if_for_predicate(_success_proj, new_control,
+                                                                               _parse_predicate_node->deopt_reason(),
+                                                                               Op_ParsePredicate, is_false_path_loop);
+  NOT_PRODUCT(trace_cloned_parse_predicate(is_false_path_loop, success_proj));
+  return success_proj->in(0)->as_ParsePredicate();
+}
+
+#ifndef PRODUCT
+void ParsePredicate::trace_cloned_parse_predicate(const bool is_false_path_loop,
+                                                  const ParsePredicateSuccessProj* success_proj) {
+  if (TraceLoopPredicate) {
+    tty->print("Parse Predicate cloned to %s path loop: ", is_false_path_loop ? "false" : "true");
+    success_proj->in(0)->dump();
+  }
+}
+#endif // NOT PRODUCT
+
 Deoptimization::DeoptReason RuntimePredicate::uncommon_trap_reason(IfProjNode* if_proj) {
     CallStaticJavaNode* uct_call = if_proj->is_uncommon_trap_if_pattern();
     if (uct_call == nullptr) {
@@ -194,6 +213,13 @@ IfTrueNode* TemplateAssertionPredicate::initialize(PhaseIdealLoop* phase, Node* 
   IfTrueNode* success_proj = initialized_assertion_predicate_creator.create_from_template(head(), new_control);
   DEBUG_ONLY(InitializedAssertionPredicate::verify(success_proj);)
   return success_proj;
+}
+
+// Kills the Template Assertion Predicate by setting the condition to true. Will be folded away in the next IGVN round.
+void TemplateAssertionPredicate::kill(PhaseIdealLoop* phase) const {
+  ConINode* true_con = phase->igvn().intcon(1);
+  phase->set_ctrl(true_con, phase->C->root());
+  phase->igvn().replace_input_of(_if_node, 1, true_con);
 }
 
 #ifdef ASSERT
@@ -879,6 +905,41 @@ void Predicates::dump_for_loop(LoopNode* loop_node) {
 }
 #endif // NOT PRODUCT
 
+TargetLoopPredicateChain::TargetLoopPredicateChain(LoopNode* loop_head, const NodeInLoopBody& node_in_loop_body,
+                                                   PhaseIdealLoop* phase)
+    : _loop_selector_proj(loop_head->in(LoopNode::EntryControl)),
+      _node_in_loop_body(node_in_loop_body),
+      _phase(phase) {}
+
+// Clones the provided Template Assertion Predicate to the head of the current predicate chain at the target loop.
+//
+// This is done in two steps:
+//
+//  old source loop entry                    old target loop entry                             old target loop entry
+//            |                                  |           |                                          |
+//    Template Assertion       1. clone          |       Cloned Template        2. rewire        Cloned Template
+//        Predicate 1            ===>            |     Assertion Predicate        ===>          Assertion Predicate
+//            |                                  |                                                      |
+//    source loop head                        target loop head                                  target loop head
+void TargetLoopPredicateChain::clone_template_assertion_predicate_to_chain(
+    const TemplateAssertionPredicate& template_assertion_predicate) {
+  Node* current_predicate_chain_head = predicate_chain_head();
+  IfTrueNode* cloned_template_success_proj = template_assertion_predicate.clone(_loop_selector_proj, _phase);
+  template_assertion_predicate.rewire_loop_data_dependencies(cloned_template_success_proj, _node_in_loop_body,
+                                                             _phase);
+  rewire_to_target_chain_head(cloned_template_success_proj->in(0)->as_If(), current_predicate_chain_head);
+}
+
+// Rewires the newly cloned Template Assertion Predicates to the head of the current predicate chain at the target loop.
+void TargetLoopPredicateChain::rewire_to_target_chain_head(IfNode* cloned_template_assertion_predicate,
+                                                           Node* current_predicate_chain_head) const {
+  if (current_predicate_chain_head->is_Loop()) {
+    _phase->replace_loop_entry(current_predicate_chain_head->as_Loop(), cloned_template_assertion_predicate);
+  } else {
+    _phase->replace_control(current_predicate_chain_head, cloned_template_assertion_predicate);
+  }
+}
+
 CreateAssertionPredicatesVisitor::CreateAssertionPredicatesVisitor(CountedLoopNode* target_loop_head,
                                                                    PhaseIdealLoop* phase,
                                                                    const NodeInLoopBody& node_in_loop_body,
@@ -948,8 +1009,8 @@ IfTrueNode* CreateAssertionPredicatesVisitor::clone_template_and_replace_init_in
 //          x
 //          |                                               old target
 //  Template Assertion                                      loop entry
-//     Predicate 1             old target        clone           |    \
-//          |                  loop entry        TAP 2           |     cloned Template Assertion
+//     Predicate 1            old target         clone           |    \
+//          |                 loop entry         TAP 2           |     cloned Template Assertion
 //  Template Assertion             |            ======>          |            Predicate 2
 //     Predicate 2            target loop                        |
 //          |                                               target loop #_current_predicate_chain_head
@@ -976,6 +1037,42 @@ void CreateAssertionPredicatesVisitor::rewire_to_old_predicate_chain_head(
     assert(_current_predicate_chain_head->in(0) == _old_target_loop_entry, "must be old loop entry");
     _phase->replace_control(_current_predicate_chain_head, initialized_assertion_predicate_success_proj);
   }
+}
+
+CloneUnswitchedLoopPredicatesVisitor::CloneUnswitchedLoopPredicatesVisitor(
+    LoopNode* true_path_loop_head, LoopNode* false_path_loop_head,
+    const NodeInOriginalLoopBody& node_in_true_path_loop_body, const NodeInClonedLoopBody& node_in_false_path_loop_body,
+    PhaseIdealLoop* phase)
+    : _true_path_loop_predicate_chain(true_path_loop_head, node_in_true_path_loop_body, phase),
+      _false_path_loop_predicate_chain(false_path_loop_head, node_in_false_path_loop_body, phase),
+      _phase(phase),
+      _has_hoisted_check_parse_predicates(false) {}
+
+// Keep track of whether we are in the correct Predicate Block where Template Assertion Predicates can be found.
+// The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
+void CloneUnswitchedLoopPredicatesVisitor::visit(const ParsePredicate& parse_predicate) {
+  Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
+  if (deopt_reason == Deoptimization::Reason_predicate ||
+      deopt_reason == Deoptimization::Reason_profile_predicate) {
+    _has_hoisted_check_parse_predicates = true;
+  }
+
+  _true_path_loop_predicate_chain.clone_parse_predicate_to_chain(parse_predicate, true);
+  _false_path_loop_predicate_chain.clone_parse_predicate_to_chain(parse_predicate, false);
+  parse_predicate.kill(_phase->igvn());
+}
+
+// Clone the Template Assertion Predicate, which is currently found before the newly added unswitched loop selector,
+// to the true path and false path loop.
+void CloneUnswitchedLoopPredicatesVisitor::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
+  if (!_has_hoisted_check_parse_predicates) {
+    // Only process if we are in the correct Predicate Block.
+    return;
+  }
+
+  _true_path_loop_predicate_chain.clone_template_assertion_predicate_to_chain(template_assertion_predicate);
+  _false_path_loop_predicate_chain.clone_template_assertion_predicate_to_chain(template_assertion_predicate);
+  template_assertion_predicate.kill(_phase);
 }
 
 // Clone the Template Assertion Predicate and set a new input for the OpaqueLoopStrideNode.
