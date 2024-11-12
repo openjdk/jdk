@@ -257,8 +257,8 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
   };
 
   bool success = find_next_range();
-  assert(range.start != nullptr && range.end != nullptr, "must be");
   if (!success) return SummaryDiff();
+  assert(range.start != nullptr && range.end != nullptr, "must be");
 
   end = MIN2(from + remsize, pos(range.end));
   IntervalState& out = out_state(range.start);
@@ -280,8 +280,8 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
     // Using register_mapping may invalidate the already found range, so we must
     // use find_next_range repeatedly
     bool success = find_next_range();
-    assert(range.start != nullptr && range.end != nullptr, "must be");
     if (!success) return diff;
+    assert(range.start != nullptr && range.end != nullptr, "must be");
 
     end = MIN2(from + remsize, pos(range.end));
     IntervalState& out = out_state(range.start);
