@@ -79,9 +79,15 @@ public final class SSLLogger {
             }
             isOn = true;
             // log almost everything for the "ssl" value.
-            // anything else specified with "ssl" in the property value implies
-            // a subcomponent value is to be logged.
-            sslOn = property.equals("ssl");
+            // anything else specified with "ssl" value implies
+            // a subset of ssl debugging statements. The separator value
+            // for subset values has never been specified.
+            // Allow the expand operator here also (e.g. ssl:expand)
+            sslOn = property.equals("ssl") ||
+                    (property.startsWith("ssl")
+                            && property.length() == 10
+                            && !Character.isLetterOrDigit(property.charAt(3))
+                            && property.endsWith("expand"));
         } else {
             property = null;
             logger = null;
@@ -93,6 +99,7 @@ public final class SSLLogger {
     private static void help() {
         System.err.println();
         System.err.println("help           print this help message and exit");
+        System.err.println("expand         expand debugging information");
         System.err.println();
         System.err.println("all            turn on all debugging");
         System.err.println("ssl            turn on ssl debugging");
