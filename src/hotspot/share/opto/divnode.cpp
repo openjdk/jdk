@@ -1176,52 +1176,81 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
-Node *UModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+
+template <typename TypeClass>
+const TypeClass* is(const Type* t);
+
+template <>
+const TypeInt* is<TypeInt>(const Type* t) {
+  return t->is_int();
+}
+
+template <>
+const TypeLong* is<TypeLong>(const Type* t) {
+  return t->is_long();
+}
+
+template <typename TypeClass>
+Node* make_and(Node* a, Node* b);
+
+template <>
+Node* make_and<TypeLong>(Node* a, Node* b) {
+  return new AndLNode(a, b);
+}
+
+template <>
+Node* make_and<TypeInt>(Node* a, Node* b) {
+  return new AndINode(a, b);
+}
+
+template <typename TypeClass, typename Signed>
+Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
   // Check for dead control input
-  if (in(0) && remove_dead_region(phase, can_reshape)) {
-    return this;
+  if (mod->in(0) && mod->remove_dead_region(phase, can_reshape)) {
+    return mod;
   }
   // Don't bother trying to transform a dead node
-  if (in(0) && in(0)->is_top()) {
+  if (mod->in(0) && mod->in(0)->is_top()) {
     return nullptr;
   }
 
   // Get the modulus
-  const Type* t = phase->type(in(2));
+  const Type* t = phase->type(mod->in(2));
   if (t == Type::TOP) {
     return nullptr;
   }
-  const TypeInt* ti = t->is_int();
+  const TypeClass* ti = is<TypeClass>(t);
 
   // Check for useless control input
   // Check for excluding mod-zero case
-  if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
-    set_req(0, nullptr); // Yank control input
-    return this;
+  if (mod->in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
+    mod->set_req(0, nullptr); // Yank control input
+    return mod;
   }
 
   if (!ti->is_con()) {
     return nullptr;
   }
-  jint con = ti->get_con();
+  Signed con = ti->get_con();
 
   if (con == 1) {
-    return new ConINode(TypeInt::ZERO);
+    return ConNode::make(TypeClass::ZERO);
   }
   if (con == 0) {
     return nullptr;
   }
 
   if (is_power_of_2(con)) {
-    return new AndINode(in(1), phase->intcon(con - 1));
+    return make_and<TypeClass>(mod->in(1), phase->makecon(TypeClass::make(con - 1)));
   }
 
   return nullptr;
 }
 
-const Type* UModINode::Value(PhaseGVN* phase) const {
-  const Type* t1 = phase->type(in(1));
-  const Type* t2 = phase->type(in(2));
+template <typename TypeClass, typename Unsigned, typename Signed>
+const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
+  const Type* t1 = phase->type(mod->in(1));
+  const Type* t2 = phase->type(mod->in(2));
   if (t1 == Type::TOP) {
     return Type::TOP;
   }
@@ -1230,30 +1259,38 @@ const Type* UModINode::Value(PhaseGVN* phase) const {
   }
 
   // 0 MOD X is 0
-  if (t1 == TypeInt::ZERO) {
-    return TypeInt::ZERO;
+  if (t1 == TypeClass::ZERO) {
+    return TypeClass::ZERO;
   }
   // X MOD X is 0
-  if (in(1) == in(2)) {
-    return TypeInt::ZERO;
+  if (mod->in(1) == mod->in(2)) {
+    return TypeClass::ZERO;
   }
 
   // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type* bot = bottom_type();
+  const Type* bot = mod->bottom_type();
   if ((t1 == bot) || (t2 == bot) ||
       (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
     return bot;
   }
 
-  const TypeInt* i1 = t1->is_int();
-  const TypeInt* i2 = t2->is_int();
+  const TypeClass* i1 = is<TypeClass>(t1);
+  const TypeClass* i2 = is<TypeClass>(t2);
   if (i1->is_con() && i2->is_con()) {
-    juint au = static_cast<juint>(i1->get_con());
-    juint bu = static_cast<juint>(i2->get_con());
-    return TypeInt::make(static_cast<jint>(au % bu));
+    Unsigned au = static_cast<Unsigned>(i1->get_con());
+    Unsigned bu = static_cast<Unsigned>(i2->get_con());
+    return TypeClass::make(static_cast<Signed>(au % bu));
   }
 
-  return TypeInt::INT;
+  return bot;
+}
+
+Node* UModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return unsigned_mod_ideal<TypeInt, jint>(phase, can_reshape, this);
+}
+
+const Type* UModINode::Value(PhaseGVN* phase) const {
+  return unsigned_mod_value<TypeInt, juint, jint>(phase, this);
 }
 
 //=============================================================================
@@ -1469,11 +1506,12 @@ const Type* ModFNode::Value(PhaseGVN* phase) const {
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
-  return nullptr;
+  return unsigned_mod_ideal<TypeLong, jint>(phase, can_reshape, this);
 }
 
+const Type* UModLNode::Value(PhaseGVN* phase) const {
+  return unsigned_mod_value<TypeLong, julong, jlong>(phase, this);
+}
 
 //=============================================================================
 //------------------------------Value------------------------------------------
