@@ -72,7 +72,7 @@ public class DynamicProxyTest {
         default String sayHello() {
             return "Ciao";
         }
-        
+
         static String saySomething() {
             return "blah";
         }
@@ -154,5 +154,34 @@ public class DynamicProxyTest {
         assertEquals(expectedConvo.sayHello(), convo.sayHello());
         assertEquals(expectedConvo.sayBye(), convo.sayBye());
         assertEquals(expectedConvo.sayThings(), convo.sayThings());
+    }
+
+    @Test
+    public void testInhereted() {
+        interface Base {
+            String doSome();
+        }
+
+        interface Next extends Base {
+            String doNext();
+        }
+
+        interface Last extends Next {
+        }
+
+        var last = DynamicProxy.createProxyFromPieces(Last.class, new Next() {
+            @Override
+            public String doNext() {
+                return "next";
+            }
+
+            @Override
+            public String doSome() {
+                return "some";
+            }
+        });
+
+        assertEquals("next", last.doNext());
+        assertEquals("some", last.doSome());
     }
 }
