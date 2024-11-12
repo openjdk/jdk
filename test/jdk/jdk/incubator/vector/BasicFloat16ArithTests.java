@@ -54,6 +54,7 @@ public class BasicFloat16ArithTests {
         checkValueOfDouble();
         checkValueOfLong();
         checkValueOfString();
+        checkBaseConversionRoundTrip();
         FusedMultiplyAddTests.main();
     }
 
@@ -135,8 +136,7 @@ public class BasicFloat16ArithTests {
             throwRE("Unexpected number of distinct hash values " + setSize);
         }
 
-
-        System.out.println();
+        // System.out.println();
     }
 
     private static void checkConstants() {
@@ -512,6 +512,13 @@ public class BasicFloat16ArithTests {
 
     private static void checkValueOfString() {
         String2Float16Case[] testCases = {
+            new String2Float16Case( "NaN",  NaNf),
+            new String2Float16Case("+NaN", NaNf),
+            new String2Float16Case("-NaN", NaNf),
+
+            new String2Float16Case( "+Infinity", +InfinityF),
+            new String2Float16Case( "-Infinity", -InfinityF),
+
             new String2Float16Case( "+0.0", 0.0f),
             new String2Float16Case("-0.0", -0.0f),
 
@@ -582,6 +589,27 @@ public class BasicFloat16ArithTests {
     }
 
     private static record String2Float16Case(String input, float expected) {
+    }
+
+    private static void checkBaseConversionRoundTrip() {
+        checkFloat16(Float16.NaN,
+                     Float16.valueOf("NaN").floatValue(),
+                     "base conversion of NaN");
+
+        // For each non-NaN value, make sure
+        // value -> string -> value
+        // sequence of conversions gives the expected result.
+
+        for(int i = Short.MIN_VALUE; i <= Short.MAX_VALUE; i++) {
+            Float16 f16 = Float16.shortBitsToFloat16((short)i);
+            if (Float16.isNaN(f16))
+                continue;
+
+            checkFloat16(f16,
+                         Float16.valueOf(Float16.toString(f16)).floatValue(),
+                         "base conversion");
+        }
+        return;
     }
 
     class FusedMultiplyAddTests {

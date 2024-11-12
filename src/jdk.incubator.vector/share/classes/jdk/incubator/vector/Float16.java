@@ -92,7 +92,6 @@ import static java.lang.Math.multiplyHigh;
 // JEP-401 (https://openjdk.org/jeps/401).
 // @jdk.internal.MigratedValueClass
 // @jdk.internal.ValueBased
-@SuppressWarnings("serial")
 public final class Float16
     extends Number
     implements Comparable<Float16> {
@@ -221,12 +220,10 @@ public final class Float16
      * Returns a string representation of the {@code Float16}
      * argument.
      *
-     * @implSpec
-     * The current implementation acts as if this {@code Float16} were
-     * {@linkplain #floatValue() converted} to {@code float} and then
-     * the string for that {@code float} returned. This behavior is
-     * expected to change to accommodate the precision of {@code
-     * Float16}.
+     * The behavior of this method is analogous to {@link
+     * Float#toString(float)} in the handling of special values
+     * (signed zeros, infinities, and NaN) and the generation of a
+     * decimal string that will convert back to the argument value.
      *
      * @param   f16   the {@code Float16} to be converted.
      * @return a string representation of the argument.
@@ -243,6 +240,10 @@ public final class Float16
      * The behavior of this class is analogous to {@link
      * Float#toHexString(float)} except that an exponent value of
      * {@code "p14"} is used for subnormal {@code Float16} values.
+     *
+     * @apiNote
+     * This method corresponds to the convertToHexCharacter operation
+     * defined in IEEE 754.
      *
      * @param   f16   the {@code Float16} to be converted.
      * @return a hex string representation of the argument.
@@ -443,7 +444,9 @@ public final class Float16
         // characters rather than codepoints.
 
         if (trialResult == 0.0 // handles signed zeros
-            || Math.abs(trialResult) > (65504.0 + 32.0) || // Float.MAX_VALUE + ulp(MAX_VALUE)
+            || Math.abs(trialResult) > (65504.0 + 32.0) || // Float.MAX_VALUE + ulp(MAX_VALUE),
+                                                           // handles infinities too
+            Double.isNaN(trialResult) ||
             noDoubleRoundingToFloat16(trialResult)) {
             return valueOf(trialResult);
         } else {
@@ -562,10 +565,6 @@ public final class Float16
     /**
      * {@return a {@link Float16} value rounded from the {@link BigDecimal}
      * argument using the round to nearest rounding policy}
-     *
-     * @apiNote
-     * This method corresponds to the convertFormat operation defined
-     * in IEEE 754.
      *
      * @param  v a {@link BigDecimal}
      */
@@ -784,6 +783,10 @@ public final class Float16
      * {@return the value of this {@code Float16} as an {@code int} after
      * a narrowing primitive conversion}
      *
+     * @apiNote
+     * This method corresponds to the convertToIntegerTowardZero
+     * operation defined in IEEE 754.
+     *
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
@@ -794,6 +797,10 @@ public final class Float16
     /**
      * {@return value of this {@code Float16} as a {@code long} after a
      * narrowing primitive conversion}
+     *
+     * @apiNote
+     * This method corresponds to the convertToIntegerTowardZero
+     * operation defined in IEEE 754.
      *
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
@@ -980,6 +987,10 @@ public final class Float16
     /**
      * Returns the larger of two {@code Float16} values.
      *
+     * The handling of signed zeros, NaNs, infinities, and other
+     * special cases by this method is analagous to the handling of
+     * those cases by the Math#max(double, double) method.
+     *
      * @apiNote
      * This method corresponds to the maximum operation defined in
      * IEEE 754.
@@ -989,7 +1000,6 @@ public final class Float16
      * @return the greater of {@code a} and {@code b}
      * @see java.util.function.BinaryOperator
      * @see Math#max(float, float)
-     * @see Math#max(double, double)
      */
     public static Float16 max(Float16 a, Float16 b) {
         return shortBitsToFloat16(floatToFloat16(Math.max(a.floatValue(),
@@ -998,6 +1008,10 @@ public final class Float16
 
     /**
      * Returns the smaller of two {@code Float16} values.
+     *
+     * The handling of signed zeros, NaNs, infinities, and other
+     * special cases by this method is analagous to the handling of
+     * those cases by the Math#min(double, double) method.
      *
      * @apiNote
      * This method corresponds to the minimum operation defined in
@@ -1008,7 +1022,6 @@ public final class Float16
      * @return the smaller of {@code a} and {@code b}
      * @see java.util.function.BinaryOperator
      * @see Math#min(float, float)
-     * @see Math#min(double, double)
      */
     public static Float16 min(Float16 a, Float16 b) {
         return shortBitsToFloat16(floatToFloat16(Math.min(a.floatValue(),
@@ -1485,6 +1498,9 @@ public final class Float16
      *
      * @param f16 the floating-point value whose ulp is to be returned
      * @return the size of an ulp of the argument
+     *
+     * @see Math#ulp(float)
+     * @see Math#ulp(double)
      */
     public static Float16 ulp(Float16 f16) {
         int exp = getExponent(f16);
@@ -1523,6 +1539,9 @@ public final class Float16
      * @param v starting floating-point value
      * @return The adjacent floating-point value closer to positive
      * infinity.
+     *
+     * @see Math#nextUp(float)
+     * @see Math#nextUp(double)
      */
     public static Float16 nextUp(Float16 v) {
         float f = v.floatValue();
@@ -1558,6 +1577,9 @@ public final class Float16
      * @param v  starting floating-point value
      * @return The adjacent floating-point value closer to negative
      * infinity.
+     *
+     * @see Math#nextDown(float)
+     * @see Math#nextDown(double)
      */
     public static Float16 nextDown(Float16 v) {
         float f = v.floatValue();
@@ -1599,6 +1621,9 @@ public final class Float16
      * @param v number to be scaled by a power of two.
      * @param scaleFactor power of 2 used to scale {@code v}
      * @return {@code v} &times; 2<sup>{@code scaleFactor}</sup>
+     *
+     * @see Math#scalb(float, int)
+     * @see Math#scalb(double, int)
      */
     public static Float16 scalb(Float16 v, int scaleFactor) {
         // magnitude of a power of two so large that scaling a finite
@@ -1638,6 +1663,9 @@ public final class Float16
      * @param sign   the parameter providing the sign of the result
      * @return a value with the magnitude of {@code magnitude}
      * and the sign of {@code sign}.
+     *
+     * @see Math#copySign(float, float)
+     * @see Math#copySign(double, double)
      */
     public static Float16 copySign(Float16 magnitude, Float16 sign) {
         return shortBitsToFloat16((short) ((float16ToRawShortBits(sign) &
@@ -1661,6 +1689,9 @@ public final class Float16
      *
      * @param f the floating-point value whose signum is to be returned
      * @return the signum function of the argument
+     *
+     * @see Math#signum(float)
+     * @see Math#signum(double)
      */
     public static Float16 signum(Float16 f) {
         return (f.floatValue() == 0.0f || isNaN(f)) ? f : copySign(valueOf(1), f);
