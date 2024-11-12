@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.security.spec;
+
+import java.security.DEREncodable;
 
 /**
  * This class represents the ASN.1 encoding of a private key,
@@ -59,7 +61,7 @@ package java.security.spec;
  * @since 1.2
  */
 
-public class PKCS8EncodedKeySpec extends EncodedKeySpec {
+public final class PKCS8EncodedKeySpec extends EncodedKeySpec implements DEREncodable {
 
     /**
      * Creates a new {@code PKCS8EncodedKeySpec} with the given encoded key.

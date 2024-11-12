@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
 
 package sun.security.ec.ed;
 
-import java.security.KeyFactorySpi;
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.PrivateKey;
-import java.security.InvalidKeyException;
-import java.security.ProviderException;
+import sun.security.pkcs.PKCS8Key;
+
+import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
@@ -153,9 +150,18 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
                 InvalidKeySpecException::new, publicKeySpec.getParams());
             checkLockedParams(InvalidKeySpecException::new, params);
             return new EdDSAPublicKeyImpl(params, publicKeySpec.getPoint());
+        } else if (keySpec instanceof PKCS8EncodedKeySpec) {
+            PKCS8Key p8key = null;
+            try {
+                p8key = new EdDSAPrivateKeyImpl(
+                    ((PKCS8EncodedKeySpec)keySpec).getEncoded());
+            } catch (Exception e) {
+                throw new InvalidKeyException(e);
+            }
+            return new EdDSAPublicKeyImpl(p8key.getPubKeyEncoded());
         } else {
-            throw new InvalidKeySpecException(
-                "Only X509EncodedKeySpec and EdECPublicKeySpec are supported");
+            throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                "not supported");
         }
     }
 
