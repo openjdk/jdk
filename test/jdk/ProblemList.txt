@@ -518,8 +518,6 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-all
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
-java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id0    8343244 generic-all
-java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1    8343244 generic-all
 
 ############################################################################
 
@@ -559,11 +557,7 @@ sun/management/jdp/JdpOffTest.java                              8308807 aix-ppc6
 
 javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
-javax/management/monitor/DerivedGaugeMonitorTest.java           8042211 generic-all
-
 javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 linux-all
-
-javax/management/remote/mandatory/notif/EmptyDomainNotificationTest.java 8343838 generic-all
 
 ############################################################################
 

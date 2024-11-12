@@ -3089,6 +3089,10 @@ JVM_ENTRY(void, JVM_SetCurrentThread(JNIEnv* env, jobject thisThread,
                                      jobject theThread))
   oop threadObj = JNIHandles::resolve(theThread);
   thread->set_vthread(threadObj);
+
+  // Set lock id of new current Thread
+  thread->set_lock_id(java_lang_Thread::thread_id(threadObj));
+
   JFR_ONLY(Jfr::on_set_current_thread(thread, threadObj);)
 JVM_END
 
@@ -3955,6 +3959,39 @@ JVM_ENTRY(void, JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jbool
 #endif
 JVM_END
 
+JVM_ENTRY(void, JVM_VirtualThreadPinnedEvent(JNIEnv* env, jclass ignored, jstring op))
+#if INCLUDE_JFR
+  freeze_result result = THREAD->last_freeze_fail_result();
+  assert(result != freeze_ok, "sanity check");
+  EventVirtualThreadPinned event(UNTIMED);
+  event.set_starttime(THREAD->last_freeze_fail_time());
+  if (event.should_commit()) {
+    ResourceMark rm(THREAD);
+    const char *str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(op));
+    THREAD->post_vthread_pinned_event(&event, str, result);
+  }
+#endif
+JVM_END
+
+JVM_ENTRY(jobject, JVM_TakeVirtualThreadListToUnblock(JNIEnv* env, jclass ignored))
+  ParkEvent* parkEvent = ObjectMonitor::vthread_unparker_ParkEvent();
+  assert(parkEvent != nullptr, "not initialized");
+
+  OopHandle& list_head = ObjectMonitor::vthread_cxq_head();
+  oop vthread_head = nullptr;
+  while (true) {
+    if (list_head.peek() != nullptr) {
+      for (;;) {
+        oop head = list_head.resolve();
+        if (list_head.cmpxchg(head, nullptr) == head) {
+          return JNIHandles::make_local(THREAD, head);
+        }
+      }
+    }
+    ThreadBlockInVM tbivm(THREAD);
+    parkEvent->park();
+  }
+JVM_END
 /*
  * Return the current class's class file version.  The low order 16 bits of the
  * returned jint contain the class's major version.  The high order 16 bits

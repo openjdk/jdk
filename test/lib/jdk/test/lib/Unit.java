@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,10 +21,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.event;
 
-/**
- * Event recording that a virtual thread has parked on its carrier thread.
- */
-public class VirtualThreadPinnedEvent extends Event {
+package jdk.test.lib;
+
+public enum Unit {
+    B(1), K(1024), M(1024 * 1024), G(1024 * 1024 * 1024);
+    public final long size;
+    Unit(long size) {
+        this.size = size;
+    }
+    public long size() {
+        return size;
+    }
 }

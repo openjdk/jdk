@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,10 @@
  * questions.
  */
 
-#include "jni.h"
-
-JNIEXPORT void JNICALL Java_TracePinnedThreads_invokePark(JNIEnv *env, jclass clazz) {
-    jmethodID mid = (*env)->GetStaticMethodID(env, clazz, "park", "()V");
-    if (mid != NULL) {
-        (*env)->CallStaticVoidMethod(env, clazz, mid);
-    }
-}
+/*
+ * @test
+ * @bug 8343442
+ * @summary Test for `@since` in jdk.httpserver module
+ * @library /test/lib /test/jdk/tools/sincechecker
+ * @run main SinceChecker jdk.httpserver
+ */

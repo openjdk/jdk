@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,45 +21,22 @@
  * questions.
  */
 
-package jdk.internal.event;
+import jdk.test.lib.process.OutputAnalyzer;
 
-/**
- * VirtualThreadPinnedEvent to optionally throw OOME at create, begin or commit time.
- */
-public class VirtualThreadPinnedEvent extends Event {
-    private static boolean throwOnCreate;
-    private static boolean throwOnBegin;
-    private static boolean throwOnCommit;
+class CapturingHandler extends AbstractLinkableRuntimeTest.OutputAnalyzerHandler {
 
-    public static void setCreateThrows(boolean value) {
-        throwOnCreate = value;
+    private OutputAnalyzer output;
+
+    public String stdErr() {
+        return output.getStderr();
     }
 
-    public static void setBeginThrows(boolean value) {
-        throwOnBegin = value;
-    }
-
-    public static void setCommitThrows(boolean value) {
-        throwOnCommit = value;
-    }
-
-    public VirtualThreadPinnedEvent() {
-        if (throwOnCreate) {
-            throw new OutOfMemoryError();
-        }
+    public OutputAnalyzer analyzer() {
+        return output;
     }
 
     @Override
-    public void begin() {
-        if (throwOnBegin) {
-            throw new OutOfMemoryError();
-        }
-    }
-
-    @Override
-    public void commit() {
-        if (throwOnCommit) {
-            throw new OutOfMemoryError();
-        }
+    public void handleAnalyzer(OutputAnalyzer out) {
+        this.output = out;
     }
 }
