@@ -438,7 +438,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     expect_equivalent_form(expected, tree);
   }
 
-  {
+  { // Check that setting tag with 'hole' not consisting of any regions work
     testrange expected[]{
         {10, 20, mtCompiler, si, State::Reserved}
     };
@@ -449,17 +449,19 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     expect_equivalent_form(expected, tree);
   }
 
-  { // Check that even with a 'hole' consisting of an actual region, the released regions stay untouched
+  { // Check that multiple holes still work
     testrange expected[]{
-        { 0,  50, mtNone, si, State::Released},
+        { 0,   1,   mtGC, si, State::Reserved},
+        { 1,  50, mtNone, si, State::Released},
         {50,  75,   mtGC, si, State::Reserved},
-        {75, 100, mtNone, si, State::Released}
+        {75,  99, mtNone, si, State::Released},
+        {99, 100,   mtGC, si, State::Reserved}
     };
     VMATree tree;
     Tree::RegionData class_shared(si, mtClassShared);
     tree.reserve_mapping(0, 100, class_shared);
-    tree.release_mapping(0, 50);
-    tree.release_mapping(75, 25);
+    tree.release_mapping(1, 49);
+    tree.release_mapping(75, 24);
     tree.set_tag(0, 100, mtGC);
     expect_equivalent_form(expected, tree);
   }
