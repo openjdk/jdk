@@ -68,7 +68,6 @@ final class ProcessImpl extends Process {
      * to append to a file does not open the file in a manner that guarantees
      * that writes by the child process will be atomic.
      */
-    @SuppressWarnings("removal")
     private static FileOutputStream newFileOutputStream(File f, boolean append)
         throws IOException
     {
@@ -412,7 +411,6 @@ final class ProcessImpl extends Process {
     private InputStream stdout_stream;
     private InputStream stderr_stream;
 
-    @SuppressWarnings("removal")
     private ProcessImpl(String cmd[],
                         final String envblock,
                         final String path,
@@ -422,7 +420,7 @@ final class ProcessImpl extends Process {
         throws IOException
     {
         String cmdstr;
-        final String value = System.getProperty("jdk.lang.Process.allowAmbiguousCommands", "true" ));
+        final String value = System.getProperty("jdk.lang.Process.allowAmbiguousCommands", "true");
         final boolean allowAmbiguousCommands = !"false".equalsIgnoreCase(value);
 
         if (allowAmbiguousCommands) {
@@ -514,8 +512,6 @@ final class ProcessImpl extends Process {
             fdAccess.registerCleanup(stderr_fd);
             stderr_stream = new PipeInputStream(stderr_fd);
         }
-
-        return null;
     }
 
     public OutputStream getOutputStream() {

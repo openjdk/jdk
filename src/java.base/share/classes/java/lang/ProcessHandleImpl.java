@@ -239,7 +239,6 @@ final class ProcessHandleImpl implements ProcessHandle {
      * @param  pid the native process identifier
      * @return The ProcessHandle for the pid if the process is alive;
      *         or {@code null} if the process ID does not exist in the native system.
-     * @throws SecurityException if RuntimePermission("manageProcess") is not granted
      */
     static Optional<ProcessHandle> get(long pid) {
         long start = isAlive0(pid);
@@ -275,7 +274,6 @@ final class ProcessHandleImpl implements ProcessHandle {
      * Returns the ProcessHandle for the current native process.
      *
      * @return The ProcessHandle for the OS process.
-     * @throws SecurityException if RuntimePermission("manageProcess") is not granted
      */
     public static ProcessHandleImpl current() {
         return current;
@@ -293,8 +291,6 @@ final class ProcessHandleImpl implements ProcessHandle {
      *
      * @return a ProcessHandle of the parent process; {@code null} is returned
      *         if the child process does not have a parent
-     * @throws SecurityException           if permission is not granted by the
-     *                                     security policy
      */
     public Optional<ProcessHandle> parent() {
         long ppid = parent0(pid, startTime);
