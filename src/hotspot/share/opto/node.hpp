@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,8 +138,9 @@ class NeverBranchNode;
 class Opaque1Node;
 class OpaqueLoopInitNode;
 class OpaqueLoopStrideNode;
-class Opaque4Node;
+class OpaqueNotNullNode;
 class OpaqueInitializedAssertionPredicateNode;
+class OpaqueTemplateAssertionPredicateNode;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
 class Node;
@@ -167,6 +169,7 @@ class RootNode;
 class SafePointNode;
 class SafePointScalarObjectNode;
 class SafePointScalarMergeNode;
+class SaturatingVectorNode;
 class StartNode;
 class State;
 class StoreNode;
@@ -739,6 +742,7 @@ public:
         DEFINE_CLASS_ID(CompressM, Vector, 6)
         DEFINE_CLASS_ID(Reduction, Vector, 7)
         DEFINE_CLASS_ID(NegV, Vector, 8)
+        DEFINE_CLASS_ID(SaturatingVector, Vector, 9)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
       DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
@@ -795,11 +799,12 @@ public:
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
       DEFINE_CLASS_ID(OpaqueLoopInit, Opaque1, 0)
       DEFINE_CLASS_ID(OpaqueLoopStride, Opaque1, 1)
-    DEFINE_CLASS_ID(Opaque4,  Node, 17)
+    DEFINE_CLASS_ID(OpaqueNotNull,  Node, 17)
     DEFINE_CLASS_ID(OpaqueInitializedAssertionPredicate,  Node, 18)
-    DEFINE_CLASS_ID(Move,     Node, 19)
-    DEFINE_CLASS_ID(LShift,   Node, 20)
-    DEFINE_CLASS_ID(Neg,      Node, 21)
+    DEFINE_CLASS_ID(OpaqueTemplateAssertionPredicate,  Node, 19)
+    DEFINE_CLASS_ID(Move,     Node, 20)
+    DEFINE_CLASS_ID(LShift,   Node, 21)
+    DEFINE_CLASS_ID(Neg,      Node, 22)
 
     _max_classes  = ClassMask_Neg
   };
@@ -834,7 +839,9 @@ private:
   juint _class_id;
   juint _flags;
 
+#ifdef ASSERT
   static juint max_flags();
+#endif
 
 protected:
   // These methods should be called from constructors only.
@@ -967,8 +974,9 @@ public:
   DEFINE_CLASS_QUERY(NegV)
   DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
-  DEFINE_CLASS_QUERY(Opaque4)
+  DEFINE_CLASS_QUERY(OpaqueNotNull)
   DEFINE_CLASS_QUERY(OpaqueInitializedAssertionPredicate)
+  DEFINE_CLASS_QUERY(OpaqueTemplateAssertionPredicate)
   DEFINE_CLASS_QUERY(OpaqueLoopInit)
   DEFINE_CLASS_QUERY(OpaqueLoopStride)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
@@ -1004,6 +1012,7 @@ public:
   DEFINE_CLASS_QUERY(StoreVectorScatter)
   DEFINE_CLASS_QUERY(StoreVectorMasked)
   DEFINE_CLASS_QUERY(StoreVectorScatterMasked)
+  DEFINE_CLASS_QUERY(SaturatingVector)
   DEFINE_CLASS_QUERY(ShiftV)
   DEFINE_CLASS_QUERY(Unlock)
 
@@ -1105,8 +1114,14 @@ public:
   // Skip Proj and CatchProj nodes chains. Check for Null and Top.
   Node* find_exact_control(Node* ctrl);
 
+  // Results of the dominance analysis.
+  enum class DomResult {
+    NotDominate,         // 'this' node does not dominate 'sub'.
+    Dominate,            // 'this' node dominates or is equal to 'sub'.
+    EncounteredDeadCode  // Result is undefined due to encountering dead code.
+  };
   // Check if 'this' node dominates or equal to 'sub'.
-  bool dominates(Node* sub, Node_List &nlist);
+  DomResult dominates(Node* sub, Node_List &nlist);
 
 protected:
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
@@ -1598,7 +1613,14 @@ protected:
   Node** _nodes;
   ReallocMark _nesting;         // Safety checks for arena reallocation
 
-  void   grow( uint i );        // Grow array node to fit
+  // Grow array to required capacity
+  void maybe_grow(uint i) {
+    if (i >= _max) {
+      grow(i);
+    }
+  }
+  void grow(uint i);
+
 public:
   Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
     _nodes = NEW_ARENA_ARRAY(a, Node*, max);
@@ -1616,7 +1638,7 @@ public:
   Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
   Node** adr() { return _nodes; }
   // Extend the mapping: index i maps to Node *n.
-  void map( uint i, Node *n ) { grow(i); _nodes[i] = n; }
+  void map( uint i, Node *n ) { maybe_grow(i); _nodes[i] = n; }
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
   // Clear all entries in _nodes to null but keep storage
@@ -2055,6 +2077,38 @@ inline int Op_Cast(BasicType bt) {
     return Op_CastII;
   }
   return Op_CastLL;
+}
+
+inline int Op_DivIL(BasicType bt, bool is_unsigned) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    if (is_unsigned) {
+      return Op_UDivI;
+    } else {
+      return Op_DivI;
+    }
+  }
+  if (is_unsigned) {
+    return Op_UDivL;
+  } else {
+    return Op_DivL;
+  }
+}
+
+inline int Op_DivModIL(BasicType bt, bool is_unsigned) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    if (is_unsigned) {
+      return Op_UDivModI;
+    } else {
+      return Op_DivModI;
+    }
+  }
+  if (is_unsigned) {
+    return Op_UDivModL;
+  } else {
+    return Op_DivModL;
+  }
 }
 
 #endif // SHARE_OPTO_NODE_HPP

@@ -85,12 +85,10 @@ jboolean eventHandler_synthesizeUnloadEvent(char *signature, JNIEnv *env);
 
 jclass getMethodClass(jvmtiEnv *jvmti_env, jmethodID method);
 
-/***** debugging *****/
+/***** APIs for debugging the debug agent *****/
 
-#ifdef DEBUG
 void eventHandler_dumpAllHandlers(jboolean dumpPermanent);
 void eventHandler_dumpHandlers(EventIndex ei, jboolean dumpPermanent);
 void eventHandler_dumpHandler(HandlerNode *node);
-#endif
 
 #endif /* _EVENTHANDLER_H */

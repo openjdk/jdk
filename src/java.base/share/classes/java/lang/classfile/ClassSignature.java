@@ -25,12 +25,14 @@
 package java.lang.classfile;
 
 import java.util.List;
+
 import jdk.internal.classfile.impl.SignaturesImpl;
-import static java.util.Objects.requireNonNull;
 import jdk.internal.javac.PreviewFeature;
 
+import static java.util.Objects.requireNonNull;
+
 /**
- * Models the generic signature of a class file, as defined by {@jvms 4.7.9}.
+ * Models the generic signature of a class file, as defined by JVMS {@jvms 4.7.9}.
  *
  * @since 22
  */

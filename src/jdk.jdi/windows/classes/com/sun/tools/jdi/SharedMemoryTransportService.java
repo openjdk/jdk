@@ -65,6 +65,7 @@ class SharedMemoryTransportService extends TransportService {
         }
     }
 
+    @SuppressWarnings("restricted")
     SharedMemoryTransportService() {
         System.loadLibrary("dt_shmem");
         initialize();

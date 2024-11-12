@@ -576,9 +576,6 @@ public:
   // returns true if the method does nothing but return a constant of primitive type
   bool is_constant_getter() const;
 
-  // returns true if the method is an initializer (<init> or <clinit>).
-  bool is_initializer() const;
-
   // returns true if the method is static OR if the classfile version < 51
   bool has_valid_initializer_flags() const;
 
@@ -748,6 +745,9 @@ public:
 
   bool changes_current_thread() const { return constMethod()->changes_current_thread(); }
   void set_changes_current_thread() { constMethod()->set_changes_current_thread(); }
+
+  bool jvmti_hide_events() const { return constMethod()->jvmti_hide_events(); }
+  void set_jvmti_hide_events() { constMethod()->set_jvmti_hide_events(); }
 
   bool jvmti_mount_transition() const { return constMethod()->jvmti_mount_transition(); }
   void set_jvmti_mount_transition() { constMethod()->set_jvmti_mount_transition(); }

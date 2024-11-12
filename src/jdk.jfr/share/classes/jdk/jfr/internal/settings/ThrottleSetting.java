@@ -44,7 +44,7 @@ import jdk.jfr.internal.util.TimespanUnit;
 import jdk.jfr.internal.util.Utils;
 
 @MetadataDefinition
-@Label("Event Emission Throttle")
+@Label("Throttle")
 @Description("Throttles the emission rate for an event")
 @Name(Type.SETTINGS_PREFIX + "Throttle")
 public final class ThrottleSetting extends JDKSettingControl {

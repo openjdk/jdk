@@ -34,30 +34,35 @@ public class CommandArguments<T> {
         args = new ArrayList<>();
     }
 
-    final public T addArgument(String v) {
+    public final T clearArguments() {
+        args.clear();
+        return (T) this;
+    }
+
+    public final T addArgument(String v) {
         args.add(v);
         return (T) this;
     }
 
-    final public T addArguments(List<String> v) {
+    public final T addArguments(List<String> v) {
         args.addAll(v);
         return (T) this;
     }
 
-    final public T addArgument(Path v) {
+    public final T addArgument(Path v) {
         return addArgument(v.toString());
     }
 
-    final public T addArguments(String... v) {
+    public final T addArguments(String... v) {
         return addArguments(Arrays.asList(v));
     }
 
-    final public T addPathArguments(List<Path> v) {
+    public final T addPathArguments(List<Path> v) {
         return addArguments(v.stream().map((p) -> p.toString()).collect(
                 Collectors.toList()));
     }
 
-    final public List<String> getAllArguments() {
+    public final List<String> getAllArguments() {
         return List.copyOf(args);
     }
 

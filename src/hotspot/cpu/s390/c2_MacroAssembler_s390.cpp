@@ -34,12 +34,19 @@
 #define BIND(label)        bind(label); BLOCK_COMMENT(#label ":")
 
 void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register temp1, Register temp2) {
-  compiler_fast_lock_lightweight_object(obj, temp1, temp2);
+  compiler_fast_lock_lightweight_object(obj, box, temp1, temp2);
 }
 
 
 void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Register temp1, Register temp2) {
-  compiler_fast_unlock_lightweight_object(obj, temp1, temp2);
+  compiler_fast_unlock_lightweight_object(obj, box, temp1, temp2);
+}
+
+void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Address src) {
+  // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
+  // obj-start, so that we can load from the object's mark-word instead.
+  z_lg(dst, src.plus_disp(-oopDesc::klass_offset_in_bytes()));
+  z_srlg(dst, dst, markWord::klass_shift); // TODO: could be z_sra
 }
 
 //------------------------------------------------------

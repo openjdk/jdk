@@ -13,25 +13,50 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<localeDisplayNames>
 		<languages>
 			<language type="af">Afrikoota</language>
-			<language type="am">Afaan Sidaamaa</language>
+			<language type="am">Afaan Amaaraa</language>
 			<language type="ar">Arabiffaa</language>
+			<language type="ar_001">Arabiffa Istaandaardii Ammayyaa</language>
+			<language type="as">Assamese</language>
+			<language type="ast">Astuuriyaan</language>
 			<language type="az">Afaan Azerbaijani</language>
+			<language type="az" alt="short">Afaan Azeerii</language>
 			<language type="be">Afaan Belarusia</language>
 			<language type="bg">Afaan Bulgariya</language>
+			<language type="bgc">Haryanvi</language>
+			<language type="bho">Bihoojpuurii</language>
+			<language type="blo">Anii</language>
 			<language type="bn">Afaan Baangladeshi</language>
+			<language type="br">Bireetoon</language>
+			<language type="brx">Bodo</language>
 			<language type="bs">Afaan Bosniyaa</language>
 			<language type="ca">Afaan Katalaa</language>
+			<language type="ceb">Kubuwanoo</language>
+			<language type="chr">Cherokee</language>
 			<language type="cs">Afaan Czech</language>
+			<language type="cv">Chuvash</language>
 			<language type="cy">Welishiffaa</language>
 			<language type="da">Afaan Deenmaark</language>
 			<language type="de">Afaan Jarmanii</language>
+			<language type="de_AT">Jarmanii Awustiriyaa</language>
+			<language type="de_CH">Jarmanii Siwiiz Haay</language>
+			<language type="doi">Dogri</language>
 			<language type="el">Afaan Giriiki</language>
-			<language type="en">Ingliffa</language>
+			<language type="en">Afaan Ingilizii</language>
+			<language type="en_AU">Ingiliffa Awustiraaliyaa</language>
+			<language type="en_CA">Ingiliffa Kanaadaa</language>
+			<language type="en_GB">Ingliffa Biritishii</language>
+			<language type="en_GB" alt="short">Ingliffa UK</language>
+			<language type="en_US">Ingliffa Ameekiraa</language>
+			<language type="en_US" alt="short">Ingliffa US</language>
 			<language type="eo">Afaan Esperantoo</language>
 			<language type="es">Afaan Ispeen</language>
+			<language type="es_419">Laatinii Ispaanishii Ameerikaa</language>
+			<language type="es_ES">Ispaanishii Awurooppaa</language>
+			<language type="es_MX">Ispaanishii Meeksiikoo</language>
 			<language type="et">Afaan Istooniya</language>
 			<language type="eu">Afaan Baskuu</language>
 			<language type="fa">Afaan Persia</language>
+			<language type="ff">Fula</language>
 			<language type="fi">Afaan Fiilaandi</language>
 			<language type="fil">Afaan Filippinii</language>
 			<language type="fo">Afaan Faroese</language>
@@ -42,10 +67,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gl">Afaan Galishii</language>
 			<language type="gn">Afaan Guarani</language>
 			<language type="gu">Afaan Gujarati</language>
+			<language type="ha">Hawusaa</language>
 			<language type="he">Afaan Hebrew</language>
 			<language type="hi">Afaan Hindii</language>
+			<language type="hi_Latn">Hindii (Laatiin)</language>
+			<language type="hi_Latn" alt="variant">Hinglishii</language>
 			<language type="hr">Afaan Croatian</language>
 			<language type="hu">Afaan Hangaari</language>
+			<language type="hy">Armeeniyaa</language>
 			<language type="ia">Interlingua</language>
 			<language type="id">Afaan Indoneziya</language>
 			<language type="is">Ayiislandiffaa</language>
@@ -63,8 +92,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mr">Afaan Maratii</language>
 			<language type="ms">Malaayiffaa</language>
 			<language type="mt">Afaan Maltesii</language>
+			<language type="my">Burmeesee</language>
 			<language type="ne">Afaan Nepalii</language>
 			<language type="nl">Afaan Dachii</language>
+			<language type="nl_BE">Flemish</language>
 			<language type="nn">Afaan Norwegian</language>
 			<language type="no">Afaan Norweyii</language>
 			<language type="oc">Afaan Occit</language>
@@ -92,37 +123,438 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tlh">Afaan Kilingon</language>
 			<language type="tr">Afaan Turkii</language>
 			<language type="uk">Afaan Ukreenii</language>
+			<language type="und">Afaan hin beekamne</language>
 			<language type="ur">Afaan Urdu</language>
 			<language type="uz">Afaan Uzbek</language>
 			<language type="vi">Afaan Veetinam</language>
 			<language type="xh">Afaan Xhosa</language>
+			<language type="yue">Kantonoosee</language>
+			<language type="yue" alt="menu">Chaayinisee Kantonoosee</language>
 			<language type="zh">Chinese</language>
+			<language type="zh" alt="menu">Chinese Mandariin</language>
+			<language type="zh_Hans">Chinese Salphifame</language>
+			<language type="zh_Hans" alt="long">Mandariinii Chinese Salphifame</language>
+			<language type="zh_Hant">Chinese Durii</language>
+			<language type="zh_Hant" alt="long">Mandariinii Chinese Durii</language>
 			<language type="zu">Afaan Zuulu</language>
 		</languages>
 		<scripts>
-			<script type="Latn">Latin</script>
+			<script type="Arab">Arabiffa</script>
+			<script type="Cyrl">Saayiriilik</script>
+			<script type="Hans">Salphifame</script>
+			<script type="Hans" alt="stand-alone">Han Salphifame</script>
+			<script type="Hant">Kan Durii</script>
+			<script type="Hant" alt="stand-alone">Han Kan Durii</script>
+			<script type="Jpan">Afaan Jaappaan</script>
+			<script type="Kore">Afaan Kooriyaa</script>
+			<script type="Latn">Laatinii</script>
+			<script type="Zxxx">Kan Hin Barreeffamne</script>
+			<script type="Zzzz">Barreeffama Hin Beekamne</script>
 		</scripts>
 		<territories>
-			<territory type="BR">Brazil</territory>
-			<territory type="CN">China</territory>
-			<territory type="DE">Germany</territory>
+			<territory type="001">addunyaa</territory>
+			<territory type="002">Afrikaa</territory>
+			<territory type="003">Ameerikaa Kaabaa</territory>
+			<territory type="005">Ameerikaa Kibbaa</territory>
+			<territory type="009">Oshiiniyaa</territory>
+			<territory type="011">Afrikaa Dhihaa</territory>
+			<territory type="013">Ameerikaa Gidduugaleessaa</territory>
+			<territory type="014">Afrikaa Bahaa</territory>
+			<territory type="015">Afrikaa Kabaa</territory>
+			<territory type="017">Afrikaa Gidduugaleessaa</territory>
+			<territory type="018">Kibba Afrikaa</territory>
+			<territory type="019">Ameerikaa</territory>
+			<territory type="021">Ameerikaa Kaaba</territory>
+			<territory type="029">Kariibiyaan</territory>
+			<territory type="030">Eeshiyaa Bahaa</territory>
+			<territory type="034">Eeshiyaa Kibbaa</territory>
+			<territory type="035">Kibba baha Eeshiyaa</territory>
+			<territory type="039">Awurooppaa Kibbaa</territory>
+			<territory type="053">Awustiralashiyaa</territory>
+			<territory type="054">Melaaneeshiyaa</territory>
+			<territory type="057">Naannoo Maleeshiyaa</territory>
+			<territory type="061">Poolineeshiyaa</territory>
+			<territory type="142">Eeshiyaa</territory>
+			<territory type="143">Eeshiyaa Gidduugaleessaa</territory>
+			<territory type="145">Eeshiyaa Dhihaa</territory>
+			<territory type="150">Awurooppaa</territory>
+			<territory type="151">Awurooppaa Bahaa</territory>
+			<territory type="154">Awurooppaa Kaabaa</territory>
+			<territory type="155">Awurooppaa Dhihaa</territory>
+			<territory type="202">Afrikaa Sahaaraan Gadii</territory>
+			<territory type="419">Laatin Ameerikaa</territory>
+			<territory type="AC">Odola Asenshiin</territory>
+			<territory type="AD">Andooraa</territory>
+			<territory type="AE">Yuunaatid Arab Emereet</territory>
+			<territory type="AF">Afgaanistaan</territory>
+			<territory type="AG">Antiiguyaa fi Barbuudaa</territory>
+			<territory type="AI">Anguyilaa</territory>
+			<territory type="AL">Albaaniyaa</territory>
+			<territory type="AM">Armeeniyaa</territory>
+			<territory type="AO">Angoolaa</territory>
+			<territory type="AQ">Antaarkitikaa</territory>
+			<territory type="AR">Arjentiinaa</territory>
+			<territory type="AS">Saamowa Ameerikaa</territory>
+			<territory type="AT">Awustiriyaa</territory>
+			<territory type="AU">Awustiraaliyaa</territory>
+			<territory type="AW">Arubaa</territory>
+			<territory type="AX">Odoloota Alaand</territory>
+			<territory type="AZ">Azerbaajiyaan</territory>
+			<territory type="BA">Bosiiniyaa fi Herzoogovinaa</territory>
+			<territory type="BB">Barbaaros</territory>
+			<territory type="BD">Banglaadish</territory>
+			<territory type="BE">Beeljiyeem</territory>
+			<territory type="BF">Burkiinaa Faasoo</territory>
+			<territory type="BG">Bulgaariyaa</territory>
+			<territory type="BH">Baahireen</territory>
+			<territory type="BI">Burundii</territory>
+			<territory type="BJ">Beenii</territory>
+			<territory type="BL">St. Barzeleemii</territory>
+			<territory type="BM">Beermudaa</territory>
+			<territory type="BN">Biruniyee</territory>
+			<territory type="BO">Boliiviyaa</territory>
+			<territory type="BQ">Neezerlaandota Kariibaan</territory>
+			<territory type="BR">Biraazil</territory>
+			<territory type="BS">Bahaamas</territory>
+			<territory type="BT">Bihuutan</territory>
+			<territory type="BV">Odola Bowuvet</territory>
+			<territory type="BW">Botosowaanaa</territory>
+			<territory type="BY">Beelaarus</territory>
+			<territory type="BZ">Belize</territory>
+			<territory type="CA">Kanaadaa</territory>
+			<territory type="CC">Odoloota Kokos (Keeliing)</territory>
+			<territory type="CD">Koongoo - Kinshaasaa</territory>
+			<territory type="CD" alt="variant">Koongoo (DRC)</territory>
+			<territory type="CF">Rippaablika Afrikaa Gidduugaleessaa</territory>
+			<territory type="CG">Koongoo - Biraazaavil</territory>
+			<territory type="CG" alt="variant">Koongoo (Rippaabilik)</territory>
+			<territory type="CH">Siwizerlaand</territory>
+			<territory type="CI">Koti divoor</territory>
+			<territory type="CI" alt="variant">Ayivoorii Koost</territory>
+			<territory type="CK">Odoloota Kuuk</territory>
+			<territory type="CL">Chiilii</territory>
+			<territory type="CM">Kaameruun</territory>
+			<territory type="CN">Chaayinaa</territory>
+			<territory type="CO">Kolombiyaa</territory>
+			<territory type="CP">Odola Kilippertoo</territory>
+			<territory type="CR">Kostaa Rikaa</territory>
+			<territory type="CU">Kuubaa</territory>
+			<territory type="CV">Keeppi Vaardee</territory>
+			<territory type="CW">Kurakowaa</territory>
+			<territory type="CX">Odola Kirismaas</territory>
+			<territory type="CY">Qoophiroos</territory>
+			<territory type="CZ">Cheechiya</territory>
+			<territory type="CZ" alt="variant">Cheek Rippaablik</territory>
+			<territory type="DE">Jarmanii</territory>
+			<territory type="DG">Diyeegoo Gaarshiyaa</territory>
+			<territory type="DJ">Jibuutii</territory>
+			<territory type="DK">Deenmaark</territory>
+			<territory type="DM">Dominiikaa</territory>
+			<territory type="DO">Dominikaa Rippaabilik</territory>
+			<territory type="DZ">Aljeeriyaa</territory>
+			<territory type="EA">Kewuta fi Mililaa</territory>
+			<territory type="EC">Ekuwaador</territory>
+			<territory type="EE">Istooniyaa</territory>
+			<territory type="EG">Missir</territory>
+			<territory type="EH">Sahaaraa Dhihaa</territory>
+			<territory type="ER">Eertiraa</territory>
+			<territory type="ES">Ispeen</territory>
 			<territory type="ET">Itoophiyaa</territory>
-			<territory type="FR">France</territory>
+			<territory type="EU">Gamtaa Awurooppaa</territory>
+			<territory type="EZ">Zooniiyuuroo</territory>
+			<territory type="FI">Fiinlaand</territory>
+			<territory type="FJ">Fiijii</territory>
+			<territory type="FK">Odoloota Faalklaand</territory>
+			<territory type="FK" alt="variant">Odoloota Faalklaand (Islaas Malviinas)</territory>
+			<territory type="FM">Maayikirooneeshiyaa</territory>
+			<territory type="FO">Odoloota Fafo’ee</territory>
+			<territory type="FR">Faransaay</territory>
+			<territory type="GA">Gaaboon</territory>
 			<territory type="GB">United Kingdom</territory>
-			<territory type="IN">India</territory>
-			<territory type="IT">Italy</territory>
-			<territory type="JP">Japan</territory>
+			<territory type="GB" alt="short">UK</territory>
+			<territory type="GD">Girinaada</territory>
+			<territory type="GE">Joorjiyaa</territory>
+			<territory type="GF">Faransaay Guyiinaa</territory>
+			<territory type="GG">Guwernisey</territory>
+			<territory type="GH">Gaanaa</territory>
+			<territory type="GI">Gibraaltar</territory>
+			<territory type="GL">Giriinlaand</territory>
+			<territory type="GM">Gaambiyaa</territory>
+			<territory type="GN">Giinii</territory>
+			<territory type="GP">Gowadelowape</territory>
+			<territory type="GQ">Ikkuwaatooriyaal Giinii</territory>
+			<territory type="GR">Giriik</territory>
+			<territory type="GS">Joorjikaa Kibba fi Odoloota Saanduwiich Kibbaa</territory>
+			<territory type="GT">Guwaatimaalaa</territory>
+			<territory type="GU">Guwama</territory>
+			<territory type="GW">Giinii-Bisaawoo</territory>
+			<territory type="GY">Guyaanaa</territory>
+			<territory type="HK">Hoong Koong SAR Chaayinaa</territory>
+			<territory type="HK" alt="short">Hoong Koong</territory>
+			<territory type="HM">Odoloota Herdii fi MaakDoonaald</territory>
+			<territory type="HN">Hondurus</territory>
+			<territory type="HR">Kirooshiyaa</territory>
+			<territory type="HT">Haayitii</territory>
+			<territory type="HU">Hangaarii</territory>
+			<territory type="IC">Odoloota Kanaarii</territory>
+			<territory type="ID">Indooneeshiyaa</territory>
+			<territory type="IE">Ayeerlaand</territory>
+			<territory type="IL">Israa’eel</territory>
+			<territory type="IM">Islee oof Maan</territory>
+			<territory type="IN">Hindii</territory>
+			<territory type="IO">Daangaa Galaana Hindii Biritish</territory>
+			<territory type="IO" alt="chagos">Chagos Arkipeloog</territory>
+			<territory type="IQ">Iraaq</territory>
+			<territory type="IR">Iraan</territory>
+			<territory type="IS">Ayeslaand</territory>
+			<territory type="IT">Xaaliyaan</territory>
+			<territory type="JE">Jeersii</territory>
+			<territory type="JM">Jamaayikaa</territory>
+			<territory type="JO">Jirdaan</territory>
+			<territory type="JP">Jaappaan</territory>
 			<territory type="KE">Keeniyaa</territory>
-			<territory type="RU">Russia</territory>
-			<territory type="US">United States</territory>
+			<territory type="KG">Kiyirigiyizistan</territory>
+			<territory type="KH">Kamboodiyaa</territory>
+			<territory type="KI">Kiribaatii</territory>
+			<territory type="KM">Komoroos</territory>
+			<territory type="KN">St. Kiitis fi Neevis</territory>
+			<territory type="KP">Kooriyaa Kaaba</territory>
+			<territory type="KR">Kooriyaa Kibbaa</territory>
+			<territory type="KW">Kuweet</territory>
+			<territory type="KY">Odoloota Saaymaan</territory>
+			<territory type="KZ">Kazakistaan</territory>
+			<territory type="LA">Laa’oos</territory>
+			<territory type="LB">Libaanoon</territory>
+			<territory type="LC">St. Suusiyaa</territory>
+			<territory type="LI">Lichistensteyin</territory>
+			<territory type="LK">Siri Laankaa</territory>
+			<territory type="LR">Laayibeeriyaa</territory>
+			<territory type="LS">Leseettoo</territory>
+			<territory type="LT">Lutaaniyaa</territory>
+			<territory type="LU">Luksembarg</territory>
+			<territory type="LV">Lativiyaa</territory>
+			<territory type="LY">Liibiyaa</territory>
+			<territory type="MA">Morookoo</territory>
+			<territory type="MC">Moonaakoo</territory>
+			<territory type="MD">Moldoovaa</territory>
+			<territory type="ME">Montenegiroo</territory>
+			<territory type="MF">St. Martiin</territory>
+			<territory type="MG">Madagaaskaar</territory>
+			<territory type="MH">Odoloota Maarshaal</territory>
+			<territory type="MK">Maqdooniyaa Kaabaa</territory>
+			<territory type="ML">Maalii</territory>
+			<territory type="MM">Maayinaamar (Burma)</territory>
+			<territory type="MN">Mongoliyaa</territory>
+			<territory type="MO">Maka’oo SAR Chaayinaa</territory>
+			<territory type="MO" alt="short">Maka’oo</territory>
+			<territory type="MP">Odola Maariyaanaa Kaabaa</territory>
+			<territory type="MQ">Martinikuwee</territory>
+			<territory type="MR">Mawuritaaniyaa</territory>
+			<territory type="MS">Montiseerat</territory>
+			<territory type="MT">Maaltaa</territory>
+			<territory type="MU">Moorishiyees</territory>
+			<territory type="MV">Maaldiivs</territory>
+			<territory type="MW">Maalaawwii</territory>
+			<territory type="MX">Meeksiikoo</territory>
+			<territory type="MY">Maleeshiyaa</territory>
+			<territory type="MZ">Moozaambik</territory>
+			<territory type="NA">Namiibiyaa</territory>
+			<territory type="NC">Neewu Kaaleedoniyaa</territory>
+			<territory type="NE">Niijer</territory>
+			<territory type="NF">Odola Noorfoolk</territory>
+			<territory type="NG">Naayijeeriyaa</territory>
+			<territory type="NI">Nikaraguwaa</territory>
+			<territory type="NL">Neezerlaand</territory>
+			<territory type="NO">Noorwey</territory>
+			<territory type="NP">Neeppal</territory>
+			<territory type="NR">Naawuruu</territory>
+			<territory type="NU">Niwu’e</territory>
+			<territory type="NZ">Neewu Zilaand</territory>
+			<territory type="NZ" alt="variant">Awoteyarowa Neewu Zilaand</territory>
+			<territory type="OM">Omaan</territory>
+			<territory type="PA">Paanamaa</territory>
+			<territory type="PE">Peeruu</territory>
+			<territory type="PF">Polineeshiyaa Faransaay</territory>
+			<territory type="PG">Papuwa Neawu Giinii</territory>
+			<territory type="PH">Filippiins</territory>
+			<territory type="PK">Paakistaan</territory>
+			<territory type="PL">Poolaand</territory>
+			<territory type="PM">Ql. Piyeeree fi Mikuyelon</territory>
+			<territory type="PN">Odoloota Pitikaayirin</territory>
+			<territory type="PR">Poortaar Riikoo</territory>
+			<territory type="PS">Daangaawwan Paalestaayin</territory>
+			<territory type="PS" alt="short">Paalestaayin</territory>
+			<territory type="PT">Poorchugaal</territory>
+			<territory type="PW">Palaawu</territory>
+			<territory type="PY">Paaraguwaay</territory>
+			<territory type="QA">Kuwaatar</territory>
+			<territory type="QO">Ooshiiniyaa Alaa</territory>
+			<territory type="RE">Riyuuniyeen</territory>
+			<territory type="RO">Roomaaniyaa</territory>
+			<territory type="RS">Serbiyaa</territory>
+			<territory type="RU">Raashiyaa</territory>
+			<territory type="RW">Ruwwandaa</territory>
+			<territory type="SA">Saawud Arabiyaa</territory>
+			<territory type="SB">Odoloota Solomoon</territory>
+			<territory type="SC">Siisheels</territory>
+			<territory type="SD">Sudaan</territory>
+			<territory type="SE">Siwiidin</territory>
+			<territory type="SG">Singaapoor</territory>
+			<territory type="SH">St. Helenaa</territory>
+			<territory type="SI">Islooveeniyaa</territory>
+			<territory type="SJ">Isvaalbaard fi Jan Mayeen</territory>
+			<territory type="SK">Isloovaakiyaa</territory>
+			<territory type="SL">Seeraaliyoon</territory>
+			<territory type="SM">Saan Mariinoo</territory>
+			<territory type="SN">Senegaal</territory>
+			<territory type="SO">Somaaliyaa</territory>
+			<territory type="SR">Suriname</territory>
+			<territory type="SS">Sudaan Kibbaa</territory>
+			<territory type="ST">Sa’oo Toomee fi Prinsippee</territory>
+			<territory type="SV">El Salvaadoor</territory>
+			<territory type="SX">Siint Maarteen</territory>
+			<territory type="SY">Sooriyaa</territory>
+			<territory type="SZ">Iswaatinii</territory>
+			<territory type="SZ" alt="variant">Siwaazilaand</territory>
+			<territory type="TA">Tiristaan da Kanhaa</territory>
+			<territory type="TC">Turkis fi Odoloota Kaayikos</territory>
+			<territory type="TD">Chaad</territory>
+			<territory type="TF">Daangaawwan Kibbaa Faransaay</territory>
+			<territory type="TG">Toogoo</territory>
+			<territory type="TH">Taayilaand</territory>
+			<territory type="TJ">Tajikistaan</territory>
+			<territory type="TK">Tokelau</territory>
+			<territory type="TL">Tiimoor-Leestee</territory>
+			<territory type="TL" alt="variant">Tiimoor Bahaa</territory>
+			<territory type="TM">Turkimenistaan</territory>
+			<territory type="TN">Tuniiziyaa</territory>
+			<territory type="TO">Tonga</territory>
+			<territory type="TR">Tarkiye</territory>
+			<territory type="TR" alt="variant">Turkii</territory>
+			<territory type="TT">Tirinidan fi Tobaagoo</territory>
+			<territory type="TV">Tuvalu</territory>
+			<territory type="TW">Taayiwwan</territory>
+			<territory type="TZ">Taanzaaniyaa</territory>
+			<territory type="UA">Yuukireen</territory>
+			<territory type="UG">Ugaandaa</territory>
+			<territory type="UM">U.S. Odoloota Alaa</territory>
+			<territory type="UN">Mootummoota Gamtooman</territory>
+			<territory type="US">Yiinaayitid Isteet</territory>
+			<territory type="US" alt="short">US</territory>
+			<territory type="UY">Yuraagaay</territory>
+			<territory type="UZ">Uzbeekistaan</territory>
+			<territory type="VA">Vaatikaan Siitii</territory>
+			<territory type="VC">St. Vinseet fi Gireenadines</territory>
+			<territory type="VE">Veenzuweelaa</territory>
+			<territory type="VG">Odoloota Varjiin Biritish</territory>
+			<territory type="VI">U.S. Odoloota Varjiin</territory>
+			<territory type="VN">Veetinaam</territory>
+			<territory type="VU">Vanuwaatu</territory>
+			<territory type="WF">Waalis fi Futtuuna</territory>
+			<territory type="WS">Saamowa</territory>
+			<territory type="XA">Loqoda Sobaa</territory>
+			<territory type="XB">Biidii Sobaa</territory>
+			<territory type="XK">Kosoovoo</territory>
+			<territory type="YE">Yemen</territory>
+			<territory type="YT">Maayootee</territory>
+			<territory type="ZA">Afrikaa Kibbaa</territory>
+			<territory type="ZM">Zaambiyaa</territory>
+			<territory type="ZW">Zimbaabuwee</territory>
+			<territory type="ZZ">Naannoo Hin Beekamne</territory>
 		</territories>
+		<types>
+			<type key="calendar" type="ethiopic">Dhaha Baraa Itoophiyaa</type>
+			<type key="calendar" type="gregorian">Dhaha Baraa Gorgooriyaa</type>
+			<type key="calendar" type="iso8601">Dhaba Baraa ISO-8601</type>
+			<type key="collation" type="standard">Ajaja Calallii Istaandaardii</type>
+			<type key="numbers" type="latn">Dijiitiiwwan Warra Dhihaa</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">Meetirikii</measurementSystemName>
+			<measurementSystemName type="UK">Inglizi</measurementSystemName>
+			<measurementSystemName type="US">Ameerikaa</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">Afaan: {0}</codePattern>
+			<codePattern type="script">Barreeffama: {0}</codePattern>
+			<codePattern type="territory">Naannoo: {0}</codePattern>
+		</codePatterns>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] @ * / # ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="ethiopic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">Ful</month>
+							<month type="2">Onk</month>
+							<month type="3">Sad</month>
+							<month type="4">Mud</month>
+							<month type="5">Ama</month>
+							<month type="6">Gur</month>
+							<month type="7">Bit</month>
+							<month type="8">Ebi</month>
+							<month type="9">Cam</month>
+							<month type="10">Wax</month>
+							<month type="11">Ado</month>
+							<month type="12">Hag</month>
+							<month type="13">Qam</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Fulbaana</month>
+							<month type="2">Guraandhala</month>
+							<month type="3">Sadaasa</month>
+							<month type="4">Mudde</month>
+							<month type="5">Amajji</month>
+							<month type="6">Waxabajjii</month>
+							<month type="7">Bitootessa</month>
+							<month type="8">Eebila</month>
+							<month type="9">Caamsaa</month>
+							<month type="10">Onkoloolessa</month>
+							<month type="11">Adoolessa</month>
+							<month type="12">Hagayya</month>
+							<month type="13">Qaam’ee</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">F</month>
+							<month type="2">O</month>
+							<month type="3">S</month>
+							<month type="4">M</month>
+							<month type="5">Am</month>
+							<month type="6">G</month>
+							<month type="7">B</month>
+							<month type="8">E</month>
+							<month type="9">C</month>
+							<month type="10">W</month>
+							<month type="11">Ad</month>
+							<month type="12">H</month>
+							<month type="13">Q</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Fulbaana</month>
+							<month type="2">Guraandhala</month>
+							<month type="3">Sadaasa</month>
+							<month type="4">Mudde</month>
+							<month type="5">Amajji</month>
+							<month type="6">Waxabajjii</month>
+							<month type="7">Bitootessa</month>
+							<month type="8">Eebila</month>
+							<month type="9">Caamsaa</month>
+							<month type="10">Onkoloolessa</month>
+							<month type="11">Adoolessa</month>
+							<month type="12">Hagayya</month>
+							<month type="13">Qaam’ee</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -132,31 +564,175 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>dd MMMM y G</pattern>
+							<pattern>MMMM d, y G</pattern>
 							<datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>dd-MMM-y G</pattern>
+							<pattern>MMM d, y G</pattern>
 							<datetimeSkeleton>GyMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>dd/MM/yy GGGGG</pattern>
+							<pattern>M/d/y GGGGG</pattern>
 							<datetimeSkeleton>GGGGGyyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0} 'tti'</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0} 'tti'</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="Md">M/d</dateFormatItem>
+						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
 						<dateFormatItem id="MMMMdd">dd MMMM</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yMM">MM/y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">MMM d, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/d/y GGGGG – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, M/d/y GGGGG – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
+							<greatestDifference id="G">MMM d, y G – MMM d, y G</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d, y G</greatestDifference>
+							<greatestDifference id="y">MMM d, y – MMM d, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="G">E, MMM d, y G – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M – M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">M/d – M/d</greatestDifference>
+							<greatestDifference id="M">M/d – M/d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="M">E, M/d – E, M/d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d, y G</greatestDifference>
+							<greatestDifference id="y">MMM d, y – MMM d, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
@@ -165,7 +741,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<monthWidth type="abbreviated">
 							<month type="1">Ama</month>
 							<month type="2">Gur</month>
-							<month type="3">Bit</month>
+							<month type="3">Bitootessa</month>
 							<month type="4">Elb</month>
 							<month type="5">Cam</month>
 							<month type="6">Wax</month>
@@ -173,38 +749,80 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="8">Hag</month>
 							<month type="9">Ful</month>
 							<month type="10">Onk</month>
-							<month type="11">Sad</month>
+							<month type="11">Sadaasa</month>
 							<month type="12">Mud</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">A</month>
+							<month type="2">G</month>
+							<month type="3">B</month>
+							<month type="4">E</month>
+							<month type="5">C</month>
+							<month type="6">W</month>
+							<month type="7">A</month>
+							<month type="8">H</month>
+							<month type="9">F</month>
+							<month type="10">O</month>
+							<month type="11">S</month>
+							<month type="12">M</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Amajjii</month>
 							<month type="2">Guraandhala</month>
-							<month type="3">Bitooteessa</month>
-							<month type="4">Elba</month>
-							<month type="5">Caamsa</month>
+							<month type="3">Bitootessa</month>
+							<month type="4">Eebila</month>
+							<month type="5">Caamsaa</month>
 							<month type="6">Waxabajjii</month>
-							<month type="7">Adooleessa</month>
+							<month type="7">Adoolessa</month>
 							<month type="8">Hagayya</month>
-							<month type="9">Fuulbana</month>
-							<month type="10">Onkololeessa</month>
+							<month type="9">Fulbaana</month>
+							<month type="10">Onkoloolessa</month>
 							<month type="11">Sadaasa</month>
-							<month type="12">Muddee</month>
+							<month type="12">Mudde</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">Ama</month>
+							<month type="2">Gur</month>
+							<month type="3">Bitootessa</month>
+							<month type="4">Elb</month>
+							<month type="5">Cam</month>
+							<month type="6">Wax</month>
+							<month type="7">Ado</month>
+							<month type="8">Hag</month>
+							<month type="9">Ful</month>
+							<month type="10">Onk</month>
+							<month type="11">Sadaasa</month>
+							<month type="12">Mud</month>
+						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1">J</month>
-							<month type="2">F</month>
-							<month type="3">M</month>
-							<month type="4">A</month>
-							<month type="5">M</month>
-							<month type="6">J</month>
-							<month type="7">J</month>
-							<month type="8">A</month>
-							<month type="9">S</month>
+							<month type="1">A</month>
+							<month type="2">G</month>
+							<month type="3">B</month>
+							<month type="4">E</month>
+							<month type="5">C</month>
+							<month type="6">W</month>
+							<month type="7">A</month>
+							<month type="8">H</month>
+							<month type="9">F</month>
 							<month type="10">O</month>
-							<month type="11">N</month>
-							<month type="12">D</month>
+							<month type="11">S</month>
+							<month type="12">M</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Amajjii</month>
+							<month type="2">Guraandhala</month>
+							<month type="3">Bitootessa</month>
+							<month type="4">Eebila</month>
+							<month type="5">Caamsaa</month>
+							<month type="6">Waxabajjii</month>
+							<month type="7">Adoolessa</month>
+							<month type="8">Hagayya</month>
+							<month type="9">Fulbaana</month>
+							<month type="10">Onkoloolessa</month>
+							<month type="11">Sadaasa</month>
+							<month type="12">Mudde</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -213,7 +831,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayWidth type="abbreviated">
 							<day type="sun">Dil</day>
 							<day type="mon">Wix</day>
-							<day type="tue">Qib</day>
+							<day type="tue">Kib</day>
+							<day type="wed">Rob</day>
+							<day type="thu">Kam</day>
+							<day type="fri">Jim</day>
+							<day type="sat">San</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">D</day>
+							<day type="mon">W</day>
+							<day type="tue">K</day>
+							<day type="wed">R</day>
+							<day type="thu">K</day>
+							<day type="fri">J</day>
+							<day type="sat">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">Dil</day>
+							<day type="mon">Wix</day>
+							<day type="tue">Kib</day>
 							<day type="wed">Rob</day>
 							<day type="thu">Kam</day>
 							<day type="fri">Jim</day>
@@ -222,9 +858,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayWidth type="wide">
 							<day type="sun">Dilbata</day>
 							<day type="mon">Wiixata</day>
-							<day type="tue">Qibxata</day>
+							<day type="tue">Kibxata</day>
 							<day type="wed">Roobii</day>
-							<day type="thu">Kamiisa</day>
+							<day type="thu">Kamisa</day>
+							<day type="fri">Jimaata</day>
+							<day type="sat">Sanbata</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">Dil</day>
+							<day type="mon">Wix</day>
+							<day type="tue">Kib</day>
+							<day type="wed">Rob</day>
+							<day type="thu">Kam</day>
+							<day type="fri">Jim</day>
+							<day type="sat">San</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">D</day>
+							<day type="mon">W</day>
+							<day type="tue">K</day>
+							<day type="wed">R</day>
+							<day type="thu">K</day>
+							<day type="fri">J</day>
+							<day type="sat">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">Dil</day>
+							<day type="mon">Wix</day>
+							<day type="tue">Kib</day>
+							<day type="wed">Rob</day>
+							<day type="thu">Kam</day>
+							<day type="fri">Jim</day>
+							<day type="sat">San</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Dilbata</day>
+							<day type="mon">Wiixata</day>
+							<day type="tue">Kibxata</day>
+							<day type="wed">Roobii</day>
+							<day type="thu">Kamisa</day>
 							<day type="fri">Jimaata</day>
 							<day type="sat">Sanbata</day>
 						</dayWidth>
@@ -233,16 +907,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<quarters>
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
-							<quarter type="1">Q1</quarter>
-							<quarter type="2">Q2</quarter>
-							<quarter type="3">Q3</quarter>
-							<quarter type="4">Q4</quarter>
+							<quarter type="1">K1</quarter>
+							<quarter type="2">K2</quarter>
+							<quarter type="3">K3</quarter>
+							<quarter type="4">K4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1">Kurmaana 1</quarter>
-							<quarter type="2">Kurmaana 2</quarter>
-							<quarter type="3">Kurmaana 3</quarter>
-							<quarter type="4">Kurmaana 4</quarter>
+							<quarter type="1">Kurmaana 1ffaa</quarter>
+							<quarter type="2">Kurmaana 2ffaa</quarter>
+							<quarter type="3">Kurmaana 3ffaa</quarter>
+							<quarter type="4">Kurmaana 4ffaa</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">K1</quarter>
+							<quarter type="2">K2</quarter>
+							<quarter type="3">K3</quarter>
+							<quarter type="4">K4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">Kurmaana 1ffaa</quarter>
+							<quarter type="2">Kurmaana 2ffaa</quarter>
+							<quarter type="3">Kurmaana 3ffaa</quarter>
+							<quarter type="4">Kurmaana 4ffaa</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -256,8 +944,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">Dheengadda Jeesu</era>
+						<era type="0">Dhaloota Kiristoos Dura</era>
+						<era type="0" alt="variant">Bara Waloo Dura</era>
+						<era type="1">Bara Araaraa</era>
+						<era type="1" alt="variant">Bara Waloo</era>
 					</eraNames>
+					<eraAbbr>
+						<era type="0">DhKD</era>
+						<era type="0" alt="variant">BWD</era>
+						<era type="1">BA</era>
+						<era type="1" alt="variant">BW</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0">Dh</era>
+						<era type="0" alt="variant">BWD</era>
+						<era type="1">B</era>
+						<era type="1" alt="variant">BW</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -267,19 +970,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>dd MMMM y</pattern>
+							<pattern>MMMM d, y</pattern>
 							<datetimeSkeleton>yMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>dd-MMM-y</pattern>
+							<pattern>MMM d, y</pattern>
 							<datetimeSkeleton>yMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>dd/MM/yy</pattern>
+							<pattern>M/d/yy</pattern>
 							<datetimeSkeleton>yyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -313,41 +1016,106 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0} 'tti'</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0} 'tti'</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
-						<dateFormatItem id="MMMMdd">dd MMMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMdd">MMMM dd</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'torbee' W 'kan' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'torbee' W 'kan' MMMM</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
 						<dateFormatItem id="yMM">MM/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">'torbee' w 'kan' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'torbee' w 'kan' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="G">M/d/y G – M/d/y G</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="G">E, M/d/y G – E, M/d/y G</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
+							<greatestDifference id="G">MMM d, y G – MMM d, y G</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d, y G</greatestDifference>
+							<greatestDifference id="y">MMM d, y – MMM d, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="G">E, MMM d, y G – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="a">h a – h a </greatestDifference>
 							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
@@ -364,59 +1132,1695 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="a">h a – h a v</greatestDifference>
 							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M – M</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="d">M/d – M/d</greatestDifference>
+							<greatestDifference id="M">M/d – M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
-							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="d">E, M/d – E, M/d</greatestDifference>
+							<greatestDifference id="M">E, M/d – E, M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d">M/d/y – M/d/y</greatestDifference>
+							<greatestDifference id="M">M/d/y – M/d/y</greatestDifference>
+							<greatestDifference id="y">M/d/y – M/d/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="d">E, M/d/y – E, M/d/y</greatestDifference>
+							<greatestDifference id="M">E, M/d/y – E, M/d/y</greatestDifference>
+							<greatestDifference id="y">E, M/d/y – E, M/d/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="y">y MMM – y MMM</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="M">y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">y MMM d – y MMM d</greatestDifference>
+							<greatestDifference id="d">MMM d – d, y</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d, y</greatestDifference>
+							<greatestDifference id="y">MMM d, y – MMM d, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">y MMM d, E – y MMM d, E</greatestDifference>
+							<greatestDifference id="d">E, MMM d – E, MMM d, y</greatestDifference>
+							<greatestDifference id="M">E, MMM d – E, MMM d, y</greatestDifference>
+							<greatestDifference id="y">E, MMM d, y – E, MMM d, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="y">y MMMM – y MMMM</greatestDifference>
+							<greatestDifference id="M">MMMM–MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>bara</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>bara</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>bara</displayName>
+			</field>
+			<field type="year">
+				<displayName>waggaa</displayName>
+				<relative type="-1">waggaa darbe</relative>
+				<relative type="0">waggaa kana</relative>
+				<relative type="1">waggaa dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">waggaa {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">waggoota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">waggaa {0} dura</relativeTimePattern>
+					<relativeTimePattern count="other">waggoota {0} dura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<displayName>wg.</displayName>
+				<relative type="-1">wg. darbe</relative>
+				<relative type="0">wg. kana</relative>
+				<relative type="1">wg. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">wg. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">wg. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">wg. {0} dura</relativeTimePattern>
+					<relativeTimePattern count="other">wg. {0} dura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<displayName>wg</displayName>
+				<relative type="-1">wg. darbe</relative>
+				<relative type="0">wg. kana</relative>
+				<relative type="1">wg. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">w {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">w {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">w {0} dura</relativeTimePattern>
+					<relativeTimePattern count="other">w {0} dura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<displayName>kurmaana</displayName>
+				<relative type="-1">kurmaana darbe</relative>
+				<relative type="0">kurmaana kana</relative>
+				<relative type="1">kurmaana dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">kurmaana {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">kurmaanota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">kurmaana {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">kurmaanota {0} darban</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<displayName>kr.</displayName>
+				<relative type="-1">kr. darbe</relative>
+				<relative type="0">kr. kana</relative>
+				<relative type="1">kr. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">kr. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">kr. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">kr. {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">kr. {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>kr</displayName>
+				<relative type="-1">q darbe</relative>
+				<relative type="0">q kana</relative>
+				<relative type="1">q dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">q {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">q {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">q {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">q {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month">
+				<displayName>ji’a</displayName>
+				<relative type="-1">ji’a darbe</relative>
+				<relative type="0">ji’a kana</relative>
+				<relative type="1">ji’a dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ji’a {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">ji’oota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ji’a {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">ji’oota {0} darban</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<displayName>ji.</displayName>
+				<relative type="-1">ji. darbe</relative>
+				<relative type="0">ji. kana</relative>
+				<relative type="1">ji. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ji. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">ji. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ji. {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">ji. {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<displayName>ji</displayName>
+				<relative type="-1">ji. darbe</relative>
+				<relative type="0">ji. kana</relative>
+				<relative type="1">ji. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ji {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">ji {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ji {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">ji {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week">
+				<displayName>torbee</displayName>
+				<relative type="-1">torbee darbe</relative>
+				<relative type="0">torbee kana</relative>
+				<relative type="1">torbee dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">torbee {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">torbanoota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">torbee {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">torbanoota {0} darban</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>torban {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName>tr.</displayName>
+				<relative type="-1">tr. darbe</relative>
+				<relative type="0">tr. kana</relative>
+				<relative type="1">tr. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">tr. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">tr. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">tr. {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">tr. {0} darbe</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>torban {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName>tr</displayName>
+				<relative type="-1">tr. darbe</relative>
+				<relative type="0">tr. kana</relative>
+				<relative type="1">tr. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">w {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">w {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">w {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">w {0} darbe</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>torban {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>torbrr ji’aa</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>tr. kan ji.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>tr kan ji</displayName>
+			</field>
+			<field type="day">
+				<displayName>guyyaa</displayName>
+				<relative type="-1">kaleessa</relative>
+				<relative type="0">har’a</relative>
+				<relative type="1">boru</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">guyyaa {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">guyyoota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">guyyaa {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">guyyoota {0} darban</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
+				<displayName>guyyaa</displayName>
+				<relative type="-1">kaleessa</relative>
+				<relative type="0">har’a</relative>
+				<relative type="1">boru</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">guyyaa {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">guyyoota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">guyyaa {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">guyyoota {0} darban</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<displayName>guyyaa</displayName>
+				<relative type="-1">kaleessa</relative>
+				<relative type="0">har’a</relative>
+				<relative type="1">boru</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">g {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">g {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">g {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">g {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>guyyaa waggaa</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>guyyaa kan wg.</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>guyyaa kan wg.</displayName>
+			</field>
+			<field type="weekday">
+				<displayName>guyyaa kan torbee</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>guyyaa kan tr.</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>guyyaa kan tr.</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>guyyaatorbee kan ji’aa</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>gytr. kan ji.</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>gytr. kan ji.</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">Dilbata darbe</relative>
+				<relative type="0">Dilbata kana</relative>
+				<relative type="1">Dilbata dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Dilbata {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Dilbatoota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Dilbata {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Dilbatoota {0} darban</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">Dil. darbe</relative>
+				<relative type="0">Dil. kana</relative>
+				<relative type="1">Dil. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Dil. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Dil. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Dil. {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Dil. {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1">Di darbe</relative>
+				<relative type="0">Di kana</relative>
+				<relative type="1">Di dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Dil {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Dil {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Dil {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Dil {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1">Wiixata darbe</relative>
+				<relative type="0">Wiixata kana</relative>
+				<relative type="1">Wiixata dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Wiixata {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Wiixatoota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Wiixata {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Wiixatoota {0} darban</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1">Wix. darbe</relative>
+				<relative type="0">Wix. kana</relative>
+				<relative type="1">Wix. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Wix. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Wix. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Wix. {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Wix. {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">W darbe</relative>
+				<relative type="0">W kana</relative>
+				<relative type="1">W dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">W {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">W {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">W {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">W {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">Kibxata darbe</relative>
+				<relative type="0">Kibxata kana</relative>
+				<relative type="1">Kibxata dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Kibxata {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Kibxatoota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Kibxata {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Kibxatoota {0} darban</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">Kib. darbe</relative>
+				<relative type="0">Kib. kana</relative>
+				<relative type="1">Kib. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Kin. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Kin. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Kin. {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Kin. {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">Ki darbe</relative>
+				<relative type="0">Ki kana</relative>
+				<relative type="1">Ki dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Ki {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Ki {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Ki {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Ki {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">Roobii darbe</relative>
+				<relative type="0">Roobii kana</relative>
+				<relative type="1">Roobii dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Roobii {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Roobiiwwan {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Roobii {0} dura</relativeTimePattern>
+					<relativeTimePattern count="other">Roobiiwwan {0} dura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">Rob. darbe</relative>
+				<relative type="0">Rob. kana</relative>
+				<relative type="1">Rob. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Rob. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Rob. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Rob. {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Rob. {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">R darbe</relative>
+				<relative type="0">R kana</relative>
+				<relative type="1">R dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">R {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">R {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">R {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">R {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">Kamisa darbe</relative>
+				<relative type="0">Kamisa kana</relative>
+				<relative type="1">Kamisa dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Kamisa {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Kamisoota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Kamisa {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Kamisoota {0} darban</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">Kam. darbe</relative>
+				<relative type="0">Kam. kana</relative>
+				<relative type="1">Kam. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Kam. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Kam. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Kam. {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Kam. {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1">Ka darbe</relative>
+				<relative type="0">Ka kana</relative>
+				<relative type="1">Ka dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Ka {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Ka {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Ka {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">Ka {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1">Jimaata darbe</relative>
+				<relative type="0">Jimaata kana</relative>
+				<relative type="1">Jimaata dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Jimaata {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Jimaatota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Jimaata {0} dura</relativeTimePattern>
+					<relativeTimePattern count="other">Jimaatota {0} dura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">Jim. darbe</relative>
+				<relative type="0">Jim. kana</relative>
+				<relative type="1">Jim. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Jim. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Jim. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Jim. {0} dura</relativeTimePattern>
+					<relativeTimePattern count="other">Jim. {0} dura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">J darbe</relative>
+				<relative type="0">J kana</relative>
+				<relative type="1">J dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">J {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">J {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">J {0} dura</relativeTimePattern>
+					<relativeTimePattern count="other">J {0} dura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1">Sanbata darbe</relative>
+				<relative type="0">Sanbata kana</relative>
+				<relative type="1">Sanbata dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">Sanbata {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">Sanbatoota {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Sanbata {0} dura</relativeTimePattern>
+					<relativeTimePattern count="other">Sanbatoota {0} dura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">San. darbe</relative>
+				<relative type="0">San. kana</relative>
+				<relative type="1">San. dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">San. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">San. {0} kkeessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">San. {0} dura</relativeTimePattern>
+					<relativeTimePattern count="other">San. {0} dura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">sa darbe</relative>
+				<relative type="0">sa kana</relative>
+				<relative type="1">sa dhufu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">sa {0} dura</relativeTimePattern>
+					<relativeTimePattern count="other">sa {0} dura</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>WD/WB</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>WD/WB</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>WD/WB</displayName>
+			</field>
+			<field type="hour">
+				<displayName>sa’aatii</displayName>
+				<relative type="0">sa’aatii kana</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa’aatii {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">sa’aatiiwwan {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">sa’aatii {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">sa’aatiiwwan {0} darban</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<displayName>sa.</displayName>
+				<relative type="0">sa’aatii kana</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sa. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">sa. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">sa. {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">sa. {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<displayName>sa</displayName>
+				<relative type="0">sa’aatii kana</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">h {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">h {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">h {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">h {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute">
+				<displayName>daqiiqaa</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">daqiiqaa {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">daqiiqaawwan {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">daqiiqaa {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">daqiiqaawwan {0} darban</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<displayName>dq.</displayName>
+				<relative type="0">daqiiqaa kana</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">daq. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">daq. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">daq. {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">daq. {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<displayName>dq</displayName>
+				<relative type="0">daqiiqaa kana</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">d {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">d {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">d {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">d {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second">
+				<displayName>sekoondii</displayName>
+				<relative type="0">amma</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sekoondii {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">sekoondiiwwan {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">sekoondii {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">sekoondiiwwan {0} darban</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<displayName>sek.</displayName>
+				<relative type="0">amma</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">sek. {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">sek. {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">sek. {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">sek. {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<displayName>sek</displayName>
+				<relative type="0">amma</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">s {0} keessatti</relativeTimePattern>
+					<relativeTimePattern count="other">s {0} keessatti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">s {0} darbe</relativeTimePattern>
+					<relativeTimePattern count="other">s {0} darbe</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="zone">
+				<displayName>zoonii yeroo</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>zoonii</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>zoonii</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat>Sa’aatii {0}</regionFormat>
+			<regionFormat type="daylight">Sa’aatii Guyyaa {0}</regionFormat>
+			<regionFormat type="standard">Sa’aatii Istaandardii {0}</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Sa’aatii Idil-Addunyaa Qindaa’e</standard>
+				</long>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight>Sa’aatii Bonaa Biritish</daylight>
+				</long>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight>Sa’aatii Istaandaardii Aayiriish</daylight>
+				</long>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>Sa’aatii Afgaanistaan</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Sa’aatii Afrikaa Gidduugaleessaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>Sa’aatii Baha Afrikaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>Sa’aatii Istaandaardii Afrikaa Kibbaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Sa’aatii Afrikaa Dhihaa</generic>
+					<standard>Sa’aatii Istaandaardii Afrikaa Dhihaa</standard>
+					<daylight>Sa’aatii Bonaa Afrikaa Dhihaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Sa’aatii Alaaskaa</generic>
+					<standard>Sa’aatii Istaandaardii Alaaskaa</standard>
+					<daylight>Sa’aatii Guyyaa Alaaskaa</daylight>
+				</long>
+				<short>
+					<generic draft="contributed">AKT</generic>
+					<standard draft="contributed">AKST</standard>
+					<daylight draft="contributed">AKDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Sa’aatii Amazoon</generic>
+					<standard>Sa’aatii Istaandaardii Amazoon</standard>
+					<daylight>Sa’aatii Bonaa Amazoon</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic>Sa’aatii Gidduugaleessaa</generic>
+					<standard>Sa’aatii Istaandaardii Gidduugaleessaa</standard>
+					<daylight>Sa’aatii Guyyaa Gidduugaleessaa</daylight>
+				</long>
+				<short>
+					<generic draft="contributed">CT</generic>
+					<standard draft="contributed">CST</standard>
+					<daylight draft="contributed">CDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>Sa’aatii Bahaa</generic>
+					<standard>Sa’aatii Istaandaardii Bahaa</standard>
+					<daylight>Sa’aatii Guyyaa Bahaa</daylight>
+				</long>
+				<short>
+					<generic draft="contributed">ET</generic>
+					<standard draft="contributed">EST</standard>
+					<daylight draft="contributed">EDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>Sa’aatii Maawonteen</generic>
+					<standard>Sa’aatii Istaandaardii Maawonteen</standard>
+					<daylight>Sa’aatii Guyyaa Maawonteen</daylight>
+				</long>
+				<short>
+					<generic draft="contributed">MT</generic>
+					<standard draft="contributed">MST</standard>
+					<daylight draft="contributed">MDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>Sa’aatii Paasfiik</generic>
+					<standard>Sa’aatii Istaandaardii Paasfiik</standard>
+					<daylight>Sa’aatii Guyyaa Paasfiik</daylight>
+				</long>
+				<short>
+					<generic draft="contributed">PT</generic>
+					<standard draft="contributed">PST</standard>
+					<daylight draft="contributed">PDT</daylight>
+				</short>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>Sa’aatii Apia</generic>
+					<standard>Sa’aatii Istaandaardii Apia</standard>
+					<daylight>Sa’aatii Guyyaa Apia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>Sa’aatii Arabaa</generic>
+					<standard>Sa’aatii Istaandaardii Arabaa</standard>
+					<daylight>Sa’aatii Guyyaa Arabaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>Sa’aatii Arjentiinaa</generic>
+					<standard>Sa’aatii Istaandaardii Arjentiinaa</standard>
+					<daylight>Sa’aatii Bonaa Arjentiinaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Sa’aatii Arjentiinaa Dhihaa</generic>
+					<standard>Sa’aatii Istaandaardii Arjentiinaa Dhihaa</standard>
+					<daylight>Sa’aatii Bonaa Arjentiinaa Dhihaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>Sa’aatii Armaaniyaa</generic>
+					<standard>Sa’aatii Istaandaardii Armaaniyaa</standard>
+					<daylight>Sa’aatii Bonaa Armaaniyaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>Sa’aatii Atilaantiik</generic>
+					<standard>Sa’aatii Istaandaardii Atilaantiik</standard>
+					<daylight>Sa’aatii Guyyaa Atilaantiik</daylight>
+				</long>
+				<short>
+					<generic draft="contributed">AT</generic>
+					<standard draft="contributed">AST</standard>
+					<daylight draft="contributed">ADT</daylight>
+				</short>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Sa’aatii Awustiraaliyaa Gidduugaleessaa</generic>
+					<standard>Sa’aatii Istaandaardii Awustiraaliyaa Gidduugaleessaa</standard>
+					<daylight>Sa’aatii Guyyaa Awustiraaliyaa Gidduugaleessaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>Sa’aatii Dhiha Awustiraaliyaa Gidduugaleessaa</generic>
+					<standard>Sa’aatii Istaandaardii Dhiha Awustiraaliyaa Gidduugaleessaa</standard>
+					<daylight>Sa’aatii Guyyaa Dhiha Awustiraaliyaa Gidduugaleessaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>Sa’aatii Awustiraaliyaa Bahaa</generic>
+					<standard>Sa’aatii Istaandaardii Awustiraaliyaa Bahaa</standard>
+					<daylight>Sa’aatii Guyyaa Awustiraaliyaa Bahaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>Sa’aatii Awustiraaliyaa Dhihaa</generic>
+					<standard>Sa’aatii Sa’aatii Istaandaardii Awustiraaliyaa DhihaaDhiha Awustiraaliyaa</standard>
+					<daylight>Sa’aatii Guuyyaa Awustiraaliyaa Dhihaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>Sa’aatii Azerbaajiyaan</generic>
+					<standard>Sa’aatii Istaandaardii Azerbaajiyaan</standard>
+					<daylight>Sa’aatii Bonaa Azerbaajiyaan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Sa’aatii Azeeroos</generic>
+					<standard>Sa’aatii Istaandaardii Azeeroos</standard>
+					<daylight>Sa’aatii Bonaa Azeeroos</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>Sa’aatii Baangilaadish</generic>
+					<standard>Sa’aatii Istaandaardii Baangilaadish</standard>
+					<daylight>Sa’aatii Bonaa Baangilaadish</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>Sa’aatii Bihutaan</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>Sa’aatii Boliiviyaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>Sa’aatii Biraaziliyaa</generic>
+					<standard>Sa’aatii Istaandaardii Biraaziliyaa</standard>
+					<daylight>Sa’aatii Bonaa Biraaziliyaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>Sa’aatii Bruunee Darusalaam</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>Sa’aatii Keep Veerdee</generic>
+					<standard>Sa’aatii Istaandaardii Keep Veerdee</standard>
+					<daylight>Sa’aatii Bonaa Keep Veerdee</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>Sa’aatii Istaandaardii Kamoroo</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>Sa’aatii Chatham</generic>
+					<standard>Sa’aatii Istaandaardii Chatham</standard>
+					<daylight>Sa’aatii Guyyaa Chatham</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>Sa’aatii Chiilii</generic>
+					<standard>Sa’aatii Istaandaardii Chiilii</standard>
+					<daylight>Sa’aatii Bonaa Chiilii</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>Sa’aatii Chaayinaa</generic>
+					<standard>Sa’aatii Istaandaardii Chaayinaa</standard>
+					<daylight>Sa’aatii Guyyaa Chaayinaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>Sa’aatii Odola Kirismaas</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>Sa’aatii Odoloota Kokos</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>Sa’aatii Kolombiyaa</generic>
+					<standard>Sa’aatii Istaandaardii Kolombiyaa</standard>
+					<daylight>Sa’aatii Bonaa Kolombiyaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>Sa’aatii Odoloota Kuuk</generic>
+					<standard>Sa’aatii Istaandaardii Odoloota Kuuk</standard>
+					<daylight>Sa’aatii Bona Walakkaa Odoloota Kuuk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>Sa’aatii Kuubaa</generic>
+					<standard>Sa’aatii Istaandaardii Kuubaa</standard>
+					<daylight>Sa’aatii Guyyaa Kuubaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>Sa’aatii Daaviis</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>Sa’aatii Dumont-d’Urville</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>Sa’aatii Tiimoor Bahaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>Sa’aatii Odola Bahaa</generic>
+					<standard>Sa’aatii Istaandaardii Odola Bahaa</standard>
+					<daylight>Sa’aatii Bonaa Odola Bahaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>Sa’aatii Ikkuwaadoor</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>Sa’aatii Awurooppaa Gidduugaleessaa</generic>
+					<standard>Sa’aatii Istaandaardii Awurooppaa Gidduugaleessaa</standard>
+					<daylight>Sa’aatii Bonaa Awurooppaa Gidduugaleessaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>Saaatii Awurooppaa Bahaa</generic>
+					<standard>Sa’aatii Istaandaardii Awurooppaa Bahaa</standard>
+					<daylight>Sa’aatii Bonaa Awurooppaa Bahaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard>Sa’aatii Awurooppaa Bahaa Dabalataa</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>Sa’aatii Awurooppaa Dhihaa</generic>
+					<standard>Sa’aatii Istaandaardii Awurooppaa Dhihaa</standard>
+					<daylight>Sa’aatii Bonaa Awurooppaa Dhihaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>Sa’aatii Odoloota Faalklaand</generic>
+					<standard>Sa’aatii Istaandaardii Odoloota Faalklaand</standard>
+					<daylight>Sa’aatii Bonaa Odoloota Faalklaand</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>Sa’aatii Fiijii</generic>
+					<standard>Sa’aatii Istaandaardii Fiijii</standard>
+					<daylight>Sa’aatii Bonaa Fiijii</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>Sa’aatii Fireench Guyinaa</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>Sa’aatii Firaans Kibbaa fi Antaarktikaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>Sa’aatii Galaapagoos</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>Sa’aatii Gaambiyeer</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>Sa’aatii Joorjiyaa</generic>
+					<standard>Sa’aatii Istaandaardii Joorjiyaa</standard>
+					<daylight>Sa’aatii Bonaa Joorjiyaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>Sa’aatii Odoloota Giilbert</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>Sa’aatii Giriinwiich Gidduugaleessaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>Sa’aatii Giriinlaand Bahaa</generic>
+					<standard>Sa’aatii Istaandaardii Giriinlaand Bahaa</standard>
+					<daylight>Sa’aatii Bonaa Giriinlaand Bahaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>Sa’aatii Giriinlaand Dhihaa</generic>
+					<standard>Sa’aatii Istaandaardii Giriinlaand Dhihaa</standard>
+					<daylight>Sa’aatii Bonaa Giriinlaand Dhihaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Guam">
+				<long>
+					<standard>Sa’aatii Istaandaardii Guwaam</standard>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>Sa’aatii Istaandaardii Gaalfii</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>Sa’aatii Guyaanaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>Sa’aatii Haawayi-Alewutiyan</generic>
+					<standard>Sa’aatii Istaandaardii Haawayi-Alewutiyan</standard>
+					<daylight>Sa’aatii Guyyaa Haawayi-Alewutiyan</daylight>
+				</long>
+				<short>
+					<generic draft="contributed">HAT</generic>
+					<standard draft="contributed">HAS</standard>
+					<daylight draft="contributed">HADT</daylight>
+				</short>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>Sa’aatii Hoong Koong</generic>
+					<standard>Sa’aatii Istaandaardii Hoong Koong</standard>
+					<daylight>Sa’aatii Bonaa Hoong Koong</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Sa’aatii Hoovd</generic>
+					<standard>Sa’aatii Istaandaardii Hoovd</standard>
+					<daylight>Sa’aatii Bonaa Hoovd</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>Sa’aatii Istaandaardii Hindii</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>Sa’aatii Galaana Hindii</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>Sa’aatii IndooChaayinaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>Sa’aatii Indooneeshiyaa Gidduugaleessaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>Sa’aatii Indooneshiyaa Bahaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>Sa’aatii Indooneeshiyaa Dhihaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>Sa’aatii Iraan</generic>
+					<standard>Sa’aatii Istaandaardii Iraan</standard>
+					<daylight>Sa’aatii Guyyaa Iraan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Sa’aatii Irkutsk</generic>
+					<standard>Sa’aatii Istaandaardii Irkutsk</standard>
+					<daylight>Sa’aatii Bonaa Irkutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>Sa’aatii Israa’eel</generic>
+					<standard>Sa’aatii Istaandaardii Israa’eel</standard>
+					<daylight>Sa’aatii Guyyaa Israa’eel</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>Sa’aatii Jaappaan</generic>
+					<standard>Sa’aatii Istaandaardii Jaappaan</standard>
+					<daylight>Sa’aatii Guyyaa Jaappaan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Sa’aatii Kaazaakistaan</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>Sa’aatii Kaazaakistaan Bahaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>Sa’aatii Kaazaakistaan Dhihaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>Sa’aatii Kooriyaa</generic>
+					<standard>Sa’aatii Istaandaardii Kooriyaa</standard>
+					<daylight>Sa’aatii Guyyaa Kooriyaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>Sa’aatii Koosreyaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>Sa’aatii Krasnoyarsk</generic>
+					<standard>Sa’aatii Istaandaardii Krasnoyarsk</standard>
+					<daylight>Sa’aatii Bonaa Krasnoyarsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>Sa’aatii Kiyirigiyistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Lanka">
+				<long>
+					<standard>Sa’aatii Laankaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>Sa’aatii Odoloota Line</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>Sa’aatii Lord Howe</generic>
+					<standard>Sa’aatii Istaandaardii Lord Howe</standard>
+					<daylight>Sa’aatii Guyyaa Lord Howe</daylight>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>Sa’aatii Magadan</generic>
+					<standard>Sa’aatii Istaandaardii Magadan</standard>
+					<daylight>Sa’aatii Bonaa Magadan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>Sa’aatii Maaleeshiyaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>Sa’aatii Maaldiivs</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>Sa’aatii Marquesas</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>Sa’aatii Odoloota Maarshaal</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Sa’aatii Mooriishiyees</generic>
+					<standard>Sa’aatii Istaandaardii Moorishiyees</standard>
+					<daylight>Sa’aatii Bonaa Moorishiyees</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>Sa’aatii Mawson</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Sa’aatii Paasfiik Meksiikaan</generic>
+					<standard>Sa’aatii Istaandaardii Paasfiik Meksiikaan</standard>
+					<daylight>Sa’aatii Guyyaa Paasfiik Meksiikaan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>Sa’aatii Ulaanbaatar</generic>
+					<standard>Sa’aatii Istaandaardii Ulaanbaatar</standard>
+					<daylight>Sa’aatii Bonaa Ulaanbaatar</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>Sa’aatii Mooskoo</generic>
+					<standard>Sa’aatii Istaandaardii Mooskoo</standard>
+					<daylight>Sa’aatii Bonaa Mooskoo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>Sa’aatii Maayinaamaar</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>Sa’aatii Naawuruu</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>Sa’aatii Neeppaal</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>Sa’aatii Kaaledooniyaa Haaraa</generic>
+					<standard>Sa’aatii Istaandaardii Kaaledooniyaa Haaraa</standard>
+					<daylight>Sa’aatii Bonaa Kaaledooniyaa Haaraa</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>Sa’aatii New Zealand</generic>
+					<standard>Sa’aatii Istaandaardii New Zealand</standard>
+					<daylight>Sa’aatii Guyyaa New Zealand</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Sa’aatii Newufaawondlaand</generic>
+					<standard>Sa’aatii Istaandaardii Newufaawondlaand</standard>
+					<daylight>Sa’aatii Guyyaa Newufaawondlaand</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>Sa’aatii Niue</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic>Sa’aatii Norfolk Island</generic>
+					<standard>Sa’aatii Istaandaardii Norfolk Island</standard>
+					<daylight>Sa’aatii Guyyaa Norfolk Island</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>Sa’aatii Fernando de Noronha</generic>
+					<standard>Sa’aatii Istaandaardii Fernando de Noronha</standard>
+					<daylight>Sa’aatii Bonaa Fernando de Noronha</daylight>
+				</long>
+			</metazone>
+			<metazone type="North_Mariana">
+				<long>
+					<standard>Sa’aatii Odoloota Maariyaanaa Kaabaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>Sa’aatii Novosibirisk</generic>
+					<standard>Sa’aatii Istaandaardii Novosibirisk</standard>
+					<daylight>Sa’aatii Bonaa Novosibirisk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>Sa’aatii Omsk</generic>
+					<standard>Sa’aatii Istaandaardii Omsk</standard>
+					<daylight>Sa’aatii Bonaa Omsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>Sa’aatii Paakistaan</generic>
+					<standard>Sa’aatii Istaandaardii Paakistaan</standard>
+					<daylight>Sa’aatii Bonaa Paakistaan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>Sa’aatii Palawu</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>Sa’aatii Paapuwaa Giinii Haaraa</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>Sa’aatii Paaraaguwaayi</generic>
+					<standard>Sa’aatii Istaandaardii Paaraaguwaayi</standard>
+					<daylight>Sa’aatii Bonaa Paaraaguwaayi</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>Sa’aatii Peeruu</generic>
+					<standard>Sa’aatii Istaandaardii Peeruu</standard>
+					<daylight>Sa’aatii Bonaa Peeruu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>Sa’aatii Filippiins</generic>
+					<standard>Sa’aatii Istaandaardii Filippiins</standard>
+					<daylight>Sa’aatii Bonaa Filippiins</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>Sa’aatii Odoloota Fooneeks</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Sa’aatii Ql. Piyeeree fi Mikuyelo</generic>
+					<standard>Sa’aatii Istaandaardii Ql. Piyeeree fi Mikuyelo</standard>
+					<daylight>Sa’aatii Guyyaa Ql. Piyeeree fi Mikuyelo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>Sa’aatii Pitcairn</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>Sa’aatii Ponape</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Sa’aatii Piyoongyaang</standard>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>Sa’aatii Riiyuuniyeen</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>Sa’aatii Rothera</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>Sa’aatii Sakhalin</generic>
+					<standard>Sa’aatii Istaandaardii Sakhalin</standard>
+					<daylight>Sa’aatii Bonaa Sakhalin</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>Sa’aatii Saamowaa</generic>
+					<standard>Sa’aatii Istaandaardii Saamowaa</standard>
+					<daylight>Sa’aatii Guyyaa Saamowaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>Sa’aatii Siisheels</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>Sa’aatii Istaandaardii Singaapoor</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>Sa’aatii Odoloota Solomoon</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>Sa’aatii Joorjiyaa Kibbaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>Sa’aatii Surinaame</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>Sa’aatii Syowa</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>Sa’aatii Tahiti</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>Sa’aatii Tayipeyi</generic>
+					<standard>Sa’aatii Istaandaardii Tayipeyi</standard>
+					<daylight>Sa’aatii Guyyaa Tayipeyi</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>Sa’aatii Tajikistaan</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>Sa’aatii Takelawu</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>Sa’aatii Tonga</generic>
+					<standard>Sa’aatii Istaandaardii Tonga</standard>
+					<daylight>Sa’aatii Bonaa Tonga</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>Sa’aatii Chuuk</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>Sa’aatii Turkemenistaan</generic>
+					<standard>Sa’aatii Istaandaardii Turkemenistaan</standard>
+					<daylight>Sa’aatii Bonaa Turkemenistaan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>Sa’aatii Tuvalu</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>Sa’aatii Yuraagaayi</generic>
+					<standard>Sa’aatii Istaandaardii Yuraagaayi</standard>
+					<daylight>Sa’aatii Bonaa Yuraagaayi</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>Sa’aatii Uzbeekistaan</generic>
+					<standard>Sa’aatii Istaandaardii Uzbeekistaan</standard>
+					<daylight>Sa’aatii Bonaa Uzbeekistaan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>Sa’aatii Vanuwatu</generic>
+					<standard>Sa’aatii Istaandaardii Vanuwatu</standard>
+					<daylight>Sa’aatii Bonaa Vanuwatu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>Sa’aatii Veenzuweelaa</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>Sa’aatii Vladivostok</generic>
+					<standard>Sa’aatii Istaandaardii Vladivostok</standard>
+					<daylight>Sa’aatii Bonaa Vladivostok</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>Sa’aatii Volgograd</generic>
+					<standard>Sa’aatii Istaandaardii Volgograd</standard>
+					<daylight>Sa’aatii Bonaa Volgograd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>Sa’aatii Vostok</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>Sa’aatii Odola Wake</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>Sa’aatii Wallis fi Futuna</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>Sa’aatii Yakutsk</generic>
+					<standard>Sa’aatii Istaandardii Yakutsk</standard>
+					<daylight>Sa’aatii Bonaa Yakutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>Sa’aatii Yekaterinburg</generic>
+					<standard>Sa’aatii Istaandaardii Yekaterinburg</standard>
+					<daylight>Sa’aatii Bonaa Yekaterinburg</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Sa’aatii Yuukoon</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
 	</dates>
 	<numbers>
 		<otherNumberingSystems>
 			<traditional>ethi</traditional>
 		</otherNumberingSystems>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="one">Kuma 0</pattern>
+					<pattern type="1000" count="other">kuma 0</pattern>
+					<pattern type="10000" count="one">kuma 00</pattern>
+					<pattern type="10000" count="other">kuma 00</pattern>
+					<pattern type="100000" count="one">kuma 000</pattern>
+					<pattern type="100000" count="other">kuma 000</pattern>
+					<pattern type="1000000" count="one">miiliyoona 0</pattern>
+					<pattern type="1000000" count="other">miiliyoona 0</pattern>
+					<pattern type="10000000" count="one">miiliyoona 00</pattern>
+					<pattern type="10000000" count="other">miiliyoona 00</pattern>
+					<pattern type="100000000" count="one">miiliyoona 000</pattern>
+					<pattern type="100000000" count="other">miiliyoona 000</pattern>
+					<pattern type="1000000000" count="one">biiliyoona 0</pattern>
+					<pattern type="1000000000" count="other">biiliyoona 0</pattern>
+					<pattern type="10000000000" count="one">biiliyoona 00</pattern>
+					<pattern type="10000000000" count="other">biiliyoona 00</pattern>
+					<pattern type="100000000000" count="one">biiliyoona 000</pattern>
+					<pattern type="100000000000" count="other">biiliyoona 000</pattern>
+					<pattern type="1000000000000" count="one">tiriiliyoona 0</pattern>
+					<pattern type="1000000000000" count="other">tiriiliyoona 0</pattern>
+					<pattern type="10000000000000" count="one">tiriiliyoona 00</pattern>
+					<pattern type="10000000000000" count="other">tiriiliyoona 00</pattern>
+					<pattern type="100000000000000" count="one">tiriiliyoona 000</pattern>
+					<pattern type="100000000000000" count="other">tiriiliyoona 000</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -426,65 +2830,83 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">¤0K</pattern>
+					<pattern type="1000" count="one">¤0K</pattern>
 					<pattern type="1000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0K</pattern>
-					<pattern type="1000" count="other" draft="provisional">¤0K</pattern>
+					<pattern type="1000" count="other">¤0K</pattern>
 					<pattern type="1000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0K</pattern>
-					<pattern type="10000" count="one" draft="provisional">¤00K</pattern>
+					<pattern type="10000" count="one">¤00K</pattern>
 					<pattern type="10000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤00K</pattern>
+					<pattern type="10000" count="other">¤00K</pattern>
 					<pattern type="10000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00K</pattern>
-					<pattern type="100000" count="one" draft="provisional">¤000K</pattern>
+					<pattern type="100000" count="one">¤000K</pattern>
 					<pattern type="100000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤000K</pattern>
+					<pattern type="100000" count="other">¤000K</pattern>
 					<pattern type="100000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000K</pattern>
-					<pattern type="1000000" count="one" draft="provisional">¤0M</pattern>
+					<pattern type="1000000" count="one">¤0M</pattern>
 					<pattern type="1000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0M</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤0M</pattern>
+					<pattern type="1000000" count="other">¤0M</pattern>
 					<pattern type="1000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0M</pattern>
-					<pattern type="10000000" count="one" draft="provisional">¤00M</pattern>
+					<pattern type="10000000" count="one">¤00M</pattern>
 					<pattern type="10000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤00M</pattern>
+					<pattern type="10000000" count="other">¤00M</pattern>
 					<pattern type="10000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00M</pattern>
-					<pattern type="100000000" count="one" draft="provisional">¤000M</pattern>
+					<pattern type="100000000" count="one">¤000M</pattern>
 					<pattern type="100000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤000M</pattern>
+					<pattern type="100000000" count="other">¤000M</pattern>
 					<pattern type="100000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000M</pattern>
-					<pattern type="1000000000" count="one" draft="provisional">¤0G</pattern>
+					<pattern type="1000000000" count="one">¤0G</pattern>
 					<pattern type="1000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0G</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤0G</pattern>
+					<pattern type="1000000000" count="other">¤0G</pattern>
 					<pattern type="1000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0G</pattern>
-					<pattern type="10000000000" count="one" draft="provisional">¤00G</pattern>
+					<pattern type="10000000000" count="one">¤00G</pattern>
 					<pattern type="10000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00G</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤00G</pattern>
+					<pattern type="10000000000" count="other">¤00G</pattern>
 					<pattern type="10000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00G</pattern>
-					<pattern type="100000000000" count="one" draft="provisional">¤000G</pattern>
+					<pattern type="100000000000" count="one">¤000G</pattern>
 					<pattern type="100000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000G</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤000G</pattern>
+					<pattern type="100000000000" count="other">¤000G</pattern>
 					<pattern type="100000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000G</pattern>
-					<pattern type="1000000000000" count="one" draft="provisional">¤0T</pattern>
+					<pattern type="1000000000000" count="one">¤0T</pattern>
 					<pattern type="1000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0T</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤0T</pattern>
+					<pattern type="1000000000000" count="other">¤0T</pattern>
 					<pattern type="1000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0T</pattern>
-					<pattern type="10000000000000" count="one" draft="provisional">¤00T</pattern>
+					<pattern type="10000000000000" count="one">¤00T</pattern>
 					<pattern type="10000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤00T</pattern>
+					<pattern type="10000000000000" count="other">¤00T</pattern>
 					<pattern type="10000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00T</pattern>
-					<pattern type="100000000000000" count="one" draft="provisional">¤000T</pattern>
+					<pattern type="100000000000000" count="one">¤000T</pattern>
 					<pattern type="100000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤000T</pattern>
+					<pattern type="100000000000000" count="other">¤000T</pattern>
 					<pattern type="100000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
+			<currency type="BMD">
+				<displayName>Doolaara Beermudaa</displayName>
+				<displayName count="one">Doolaara Beermudaa</displayName>
+				<displayName count="other">Doolaarota Beermudaa</displayName>
+			</currency>
 			<currency type="BRL">
 				<displayName>Brazilian Real</displayName>
 			</currency>
+			<currency type="BZD">
+				<displayName>Doolaara Beliizee</displayName>
+				<displayName count="one">Doolaara Beliizee</displayName>
+				<displayName count="other">Doolaarota Beliizee</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>Doolaara Kanaadaa</displayName>
+				<displayName count="one">Doolaara Kanaadaa</displayName>
+				<displayName count="other">Doolaarota Kanaadaa</displayName>
+			</currency>
 			<currency type="CNY">
 				<displayName>Chinese Yuan Renminbi</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>Koloonii Kostaa Rikaa</displayName>
+				<displayName count="one">Koloonii Kostaa Rikaa</displayName>
+				<displayName count="other">Koloonota Kostaa Rikaa</displayName>
 			</currency>
 			<currency type="ETB">
 				<displayName>Itoophiyaa Birrii</displayName>
@@ -506,7 +2928,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Russian Ruble</displayName>
 			</currency>
 			<currency type="USD">
-				<displayName>US Dollar</displayName>
+				<displayName>Doolaara Ameerikaa</displayName>
+				<displayName count="one">Doolaara Ameerikaa</displayName>
+				<displayName count="other">Doolarota Ameerikaa</displayName>
 			</currency>
 		</currencies>
 	</numbers>

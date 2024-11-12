@@ -30,10 +30,12 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
 
 /**
  * A row of header cells for an HTML table.
@@ -152,10 +154,10 @@ public class TableHeader extends Content {
         int i = 0;
         for (Content cellContent : cellContents) {
             HtmlStyle style = (styles != null) ? styles.get(i)
-                    : (i == 0) ? HtmlStyle.colFirst
-                    : (i == (cellContents.size() - 1)) ? HtmlStyle.colLast
-                    : (i == 1) ? HtmlStyle.colSecond : null;
-            var cell = HtmlTree.DIV(HtmlStyle.tableHeader, cellContent);
+                    : (i == 0) ? HtmlStyles.colFirst
+                    : (i == (cellContents.size() - 1)) ? HtmlStyles.colLast
+                    : (i == 1) ? HtmlStyles.colSecond : null;
+            var cell = HtmlTree.DIV(HtmlStyles.tableHeader, cellContent);
             if (style != null) {
                 cell.addStyle(style);
             }

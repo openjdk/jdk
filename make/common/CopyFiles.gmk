@@ -23,7 +23,7 @@
 # questions.
 #
 
-ifeq (,$(_MAKEBASE_GMK))
+ifeq ($(_MAKEBASE_GMK), )
   $(error You must include MakeBase.gmk prior to including CopyFiles.gmk)
 endif
 

@@ -343,6 +343,7 @@ narrowKlass CodeInstaller::record_narrow_metadata_reference(CodeSection* section
   int index = _oop_recorder->find_index(klass);
   section->relocate(dest, metadata_Relocation::spec(index));
   JVMCI_event_3("narrowKlass[%d of %d] = %s", index, _oop_recorder->metadata_count(), klass->name()->as_C_string());
+  guarantee(CompressedKlassPointers::is_encodable(klass), "klass cannot be compressed: %s", klass->external_name());
   return CompressedKlassPointers::encode(klass);
 }
 #endif
@@ -722,6 +723,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   jint entry_bci = -1;
   JVMCICompileState* compile_state = nullptr;
   bool has_unsafe_access = false;
+  bool has_scoped_access = false;
   jint id = -1;
 
   if (is_nmethod) {
@@ -729,6 +731,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     entry_bci = is_nmethod ? stream->read_s4("entryBCI") : -1;
     compile_state = (JVMCICompileState*) stream->read_u8("compileState");
     has_unsafe_access = stream->read_bool("hasUnsafeAccess");
+    has_scoped_access = stream->read_bool("hasScopedAccess");
     id = stream->read_s4("id");
   }
   stream->set_code_desc(name, method);
@@ -795,6 +798,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
                                         id,
                                         _has_monitors,
                                         has_unsafe_access,
+                                        has_scoped_access,
                                         _has_wide_vector,
                                         compiled_code,
                                         mirror,

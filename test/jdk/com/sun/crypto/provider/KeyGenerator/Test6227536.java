@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,8 @@ public class Test6227536 {
     String[] keyGensToTest = new String[]{"HmacSHA1", "HmacMD5"};
 
     public boolean execute(String algo) throws Exception {
-        KeyGenerator kg = KeyGenerator.getInstance(algo, "SunJCE");
+        KeyGenerator kg = KeyGenerator.getInstance(algo,
+                                System.getProperty("test.provider.name", "SunJCE"));
 
         Utils.runAndCheckException(() -> kg.init(0),
                 IllegalArgumentException.class);

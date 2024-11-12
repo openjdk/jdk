@@ -39,7 +39,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.hpp"
@@ -227,7 +226,6 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    const char* policy)
   : Generation(rs, initial_size),
     _promotion_failed(false),
-    _preserved_marks_set(false /* in_c_heap */),
     _promo_failure_drain_in_progress(false),
     _string_dedup_requests()
 {
@@ -572,11 +570,6 @@ HeapWord* DefNewGeneration::block_start(const void* p) const {
   return block_start_const(to(), p);
 }
 
-HeapWord* DefNewGeneration::expand_and_allocate(size_t size, bool is_tlab) {
-  // We don't attempt to expand the young generation (but perhaps we should.)
-  return allocate(size, is_tlab);
-}
-
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
   // Set the desired survivor size to half the real survivor space
   size_t const survivor_capacity = to()->capacity() / HeapWordSize;
@@ -614,8 +607,6 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
 
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
-  // The preserved marks should be empty at the start of the GC.
-  _preserved_marks_set.init(1);
 
   YoungGenScanClosure young_gen_cl(this);
   OldGenScanClosure   old_gen_cl(this);
@@ -686,8 +677,6 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
     // Reset the PromotionFailureALot counters.
     NOT_PRODUCT(heap->reset_promotion_should_fail();)
   }
-  // We should have processed and cleared all the preserved marks.
-  _preserved_marks_set.reclaim();
 
   heap->trace_heap_after_gc(_gc_tracer);
 
@@ -711,19 +700,17 @@ void DefNewGeneration::remove_forwarding_pointers() {
   // starts. (The mark word is overloaded: `is_marked()` == `is_forwarded()`.)
   struct ResetForwardedMarkWord : ObjectClosure {
     void do_object(oop obj) override {
-      if (obj->is_forwarded()) {
-        obj->init_mark();
+      if (obj->is_self_forwarded()) {
+        obj->unset_self_forwarded();
+      } else if (obj->is_forwarded()) {
+        // To restore the klass-bits in the header.
+        // Needed for object iteration to work properly.
+        obj->set_mark(obj->forwardee()->prototype_mark());
       }
     }
   } cl;
   eden()->object_iterate(&cl);
   from()->object_iterate(&cl);
-
-  restore_preserved_marks();
-}
-
-void DefNewGeneration::restore_preserved_marks() {
-  _preserved_marks_set.restore(nullptr);
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
@@ -731,12 +718,11 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
-  _preserved_marks_set.get()->push_if_necessary(old, old->mark());
 
   ContinuationGCSupport::transform_stack_chunk(old);
 
   // forward to self
-  old->forward_to(old);
+  old->forward_to_self();
 
   _promo_failure_scan_stack.push(old);
 
@@ -833,7 +819,6 @@ void DefNewGeneration::gc_epilogue(bool full) {
   assert(!GCLocker::is_active(), "We should not be executing here");
   // update the generation and space performance counters
   update_counters();
-  SerialHeap::heap()->counters()->update_counters();
 }
 
 void DefNewGeneration::update_counters() {
@@ -852,7 +837,15 @@ void DefNewGeneration::verify() {
 }
 
 void DefNewGeneration::print_on(outputStream* st) const {
-  Generation::print_on(st);
+  st->print(" %-10s", name());
+
+  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
+            capacity()/K, used()/K);
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               p2i(_virtual_space.low_boundary()),
+               p2i(_virtual_space.high()),
+               p2i(_virtual_space.high_boundary()));
+
   st->print("  eden");
   eden()->print_on(st);
   st->print("  from");
@@ -861,12 +854,7 @@ void DefNewGeneration::print_on(outputStream* st) const {
   to()->print_on(st);
 }
 
-
-const char* DefNewGeneration::name() const {
-  return "def new generation";
-}
-
-HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
+HeapWord* DefNewGeneration::allocate(size_t word_size) {
   // This is the slow-path allocation for the DefNewGeneration.
   // Most allocations are fast-path in compiled code.
   // We try to allocate from the eden.  If that works, we are happy.
@@ -876,8 +864,7 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   return result;
 }
 
-HeapWord* DefNewGeneration::par_allocate(size_t word_size,
-                                         bool is_tlab) {
+HeapWord* DefNewGeneration::par_allocate(size_t word_size) {
   return eden()->par_allocate(word_size);
 }
 

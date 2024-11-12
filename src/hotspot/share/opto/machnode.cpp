@@ -45,9 +45,9 @@ int MachOper::reg(PhaseRegAlloc *ra_, const Node *node, int idx) const {
 }
 intptr_t  MachOper::constant() const { return 0x00; }
 relocInfo::relocType MachOper::constant_reloc() const { return relocInfo::none; }
-jdouble MachOper::constantD() const { ShouldNotReachHere(); return 0.0; }
-jfloat  MachOper::constantF() const { ShouldNotReachHere(); return 0.0; }
-jlong   MachOper::constantL() const { ShouldNotReachHere(); return CONST64(0) ; }
+jdouble MachOper::constantD() const { ShouldNotReachHere(); }
+jfloat  MachOper::constantF() const { ShouldNotReachHere(); }
+jlong   MachOper::constantL() const { ShouldNotReachHere(); }
 TypeOopPtr *MachOper::oop() const { return nullptr; }
 int MachOper::ccode() const { return 0x00; }
 // A zero, default, indicates this value is not needed.
@@ -62,8 +62,8 @@ int MachOper::index_position() const { return -1; }  // no index input
 // Check for PC-Relative displacement
 relocInfo::relocType MachOper::disp_reloc() const { return relocInfo::none; }
 // Return the label
-Label*   MachOper::label()  const { ShouldNotReachHere(); return 0; }
-intptr_t MachOper::method() const { ShouldNotReachHere(); return 0; }
+Label*   MachOper::label()  const { ShouldNotReachHere(); }
+intptr_t MachOper::method() const { ShouldNotReachHere(); }
 
 
 //------------------------------negate-----------------------------------------
@@ -80,7 +80,6 @@ const Type *MachOper::type() const {
 //------------------------------in_RegMask-------------------------------------
 const RegMask *MachOper::in_RegMask(int index) const {
   ShouldNotReachHere();
-  return nullptr;
 }
 
 //------------------------------dump_spec--------------------------------------
@@ -93,14 +92,12 @@ void MachOper::dump_spec(outputStream *st) const { }
 // Print any per-operand special info
 uint MachOper::hash() const {
   ShouldNotCallThis();
-  return 5;
 }
 
 //------------------------------cmp--------------------------------------------
 // Print any per-operand special info
 bool MachOper::cmp( const MachOper &oper ) const {
   ShouldNotCallThis();
-  return opcode() == oper.opcode();
 }
 
 //------------------------------hash-------------------------------------------
@@ -207,7 +204,6 @@ void MachNode::fill_new_machnode(MachNode* node) const {
 // Return an equivalent instruction using memory for cisc_operand position
 MachNode *MachNode::cisc_version(int offset) {
   ShouldNotCallThis();
-  return nullptr;
 }
 
 void MachNode::use_cisc_RegMask() {
