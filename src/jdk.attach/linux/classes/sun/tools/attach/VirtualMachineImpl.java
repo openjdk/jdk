@@ -322,9 +322,9 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     private static final String FIELD = "field";
     private static final String MASK  = "mask";
 
-    private static final String SIGNAL_MASK_PATTERN = "(?<" + FIELD + ">Sig\\p{Alpha}{3}):\\s+(?<" + MASK + ">\\p{XDigit}{16}).*";
+    private static final Pattern SIGNAL_MASK_PATTERN = Pattern.compile("(?<" + FIELD + ">Sig\\p{Alpha}{3}):\\s+(?<" + MASK + ">\\p{XDigit}{16}).*");
 
-    private static final long SIGQUIT = 1L << 2;
+    private static final long SIGQUIT = 0b100; // mask bit for SIGQUIT
 
     private static boolean checkCatchesAndSendQuitTo(int pid, boolean throwIfNotReady) throws AttachNotSupportedException, IOException {
         var quitIgn = false;
@@ -332,8 +332,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         var quitCgt = false;
 
         final var procPid = PROC.resolve(Integer.toString(pid));
-
-        final var p = Pattern.compile(SIGNAL_MASK_PATTERN);
 
         var readBlk = false;
         var readIgn = false;
@@ -346,21 +344,21 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
             if (!line.startsWith("Sig")) continue; // to speed things up ... avoids the matcher/RE invocation...
 
-            final var m = p.matcher(line);
+            final var m = SIGNAL_MASK_PATTERN.matcher(line);
 
             if (!m.matches()) continue;
 
-            var       signals = m.group(MASK);
-            final var slen    = signals.length();
+            var       sigmask = m.group(MASK);
+            final var slen    = sigmask.length();
 
-            signals = signals.substring(slen / 2 , slen); // only really interested in the non r/t signals ...
+            sigmask = sigmask.substring(slen / 2 , slen); // only really interested in the non r/t signals ...
 
-            final var sigquit = (Long.valueOf(signals, 16) & SIGQUIT) != 0L;
+            final var sigquit = (Long.valueOf(sigmask, 16) & SIGQUIT) != 0L;
 
             switch (m.group(FIELD)) {
                 case "SigBlk": { quitBlk = sigquit; readBlk = true; break; }
-                case "SigIgn": { quitIgn = sigquit; readCgt = true; break; }
-                case "SigCgt": { quitCgt = sigquit; readIgn = true; break; }
+                case "SigIgn": { quitIgn = sigquit; readIgn = true; break; }
+                case "SigCgt": { quitCgt = sigquit; readCgt = true; break; }
             }
 
             if (readBlk && readIgn && readCgt) break;
