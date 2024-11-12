@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
 #include "runtime/mutexLocker.hpp"
 
 GrowableArrayCHeap<char*, mtClassShared>* LambdaFormInvokers::_lambdaform_lines = nullptr;
-Array<Array<char>*>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
+Array<u4>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
 
 #define NUM_FILTER 4
 static const char* filter[NUM_FILTER] = {"java.lang.invoke.Invokers$Holder",
@@ -216,7 +216,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
       }
     }
     if (count > 0) {
-      _static_archive_invokers = ArchiveBuilder::new_ro_array<Array<char>*>(count);
+      _static_archive_invokers = ArchiveBuilder::new_ro_array<u4>(count);
       int index = 0;
       for (int i = 0; i < len; i++) {
         char* str = _lambdaform_lines->at(i);
@@ -225,8 +225,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
           Array<char>* line = ArchiveBuilder::new_ro_array<char>((int)str_len);
           strncpy(line->adr_at(0), str, str_len);
 
-          _static_archive_invokers->at_put(index, line);
-          ArchivePtrMarker::mark_pointer(_static_archive_invokers->adr_at(index));
+          _static_archive_invokers->at_put(index, ArchiveBuilder::current()->any_to_offset_u4(line));
           index++;
         }
       }
@@ -239,7 +238,8 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
 void LambdaFormInvokers::read_static_archive_invokers() {
   if (_static_archive_invokers != nullptr) {
     for (int i = 0; i < _static_archive_invokers->length(); i++) {
-      Array<char>* line = _static_archive_invokers->at(i);
+      u4 offset = _static_archive_invokers->at(i);
+      Array<char>* line = ArchiveUtils::from_offset<Array<char>*>(offset);
       char* str = line->adr_at(0);
       append(str);
     }

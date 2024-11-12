@@ -651,23 +651,41 @@ void Metaspace::ergo_initialize() {
   MaxMetaspaceSize = MAX2(MaxMetaspaceSize, commit_alignment());
 
   if (UseCompressedClassPointers) {
-    // Let CCS size not be larger than 80% of MaxMetaspaceSize. Note that is
+    // Let Class Space not be larger than 80% of MaxMetaspaceSize. Note that is
     // grossly over-dimensioned for most usage scenarios; typical ratio of
     // class space : non class space usage is about 1:6. With many small classes,
     // it can get as low as 1:2. It is not a big deal though since ccs is only
     // reserved and will be committed on demand only.
-    size_t max_ccs_size = 8 * (MaxMetaspaceSize / 10);
-    size_t adjusted_ccs_size = MIN2(CompressedClassSpaceSize, max_ccs_size);
+    const size_t max_ccs_size = 8 * (MaxMetaspaceSize / 10);
+
+    // Sanity check.
+    const size_t max_klass_range = CompressedKlassPointers::max_klass_range_size();
+    assert(max_klass_range >= reserve_alignment(),
+           "Klass range (%zu) must cover at least a full root chunk (%zu)",
+           max_klass_range, reserve_alignment());
+
+    size_t adjusted_ccs_size = MIN3(CompressedClassSpaceSize, max_ccs_size, max_klass_range);
 
     // CCS must be aligned to root chunk size, and be at least the size of one
     //  root chunk.
     adjusted_ccs_size = align_up(adjusted_ccs_size, reserve_alignment());
     adjusted_ccs_size = MAX2(adjusted_ccs_size, reserve_alignment());
 
+    // Print a warning if the adjusted size differs from the users input
+    if (CompressedClassSpaceSize != adjusted_ccs_size) {
+      #define X "CompressedClassSpaceSize adjusted from user input " \
+                "%zu bytes to %zu bytes", CompressedClassSpaceSize, adjusted_ccs_size
+      if (FLAG_IS_CMDLINE(CompressedClassSpaceSize)) {
+        log_warning(metaspace)(X);
+      } else {
+        log_info(metaspace)(X);
+      }
+      #undef X
+    }
+
     // Note: re-adjusting may have us left with a CompressedClassSpaceSize
     //  larger than MaxMetaspaceSize for very small values of MaxMetaspaceSize.
     //  Lets just live with that, its not a big deal.
-
     if (adjusted_ccs_size != CompressedClassSpaceSize) {
       FLAG_SET_ERGO(CompressedClassSpaceSize, adjusted_ccs_size);
       log_info(metaspace)("Setting CompressedClassSpaceSize to " SIZE_FORMAT ".",
@@ -772,12 +790,13 @@ void Metaspace::global_initialize() {
     }
 
     // Mark class space as such
-    MemTracker::record_virtual_memory_type((address)rs.base(), mtClass);
+    MemTracker::record_virtual_memory_tag((address)rs.base(), mtClass);
 
     // Initialize space
     Metaspace::initialize_class_space(rs);
 
     // Set up compressed class pointer encoding.
+    // In CDS=off mode, we give the JVM some leeway to choose a favorable base/shift combination.
     CompressedKlassPointers::initialize((address)rs.base(), rs.size());
   }
 
@@ -830,7 +849,7 @@ size_t Metaspace::max_allocation_word_size() {
 // is suitable for calling from non-Java threads.
 // Callers are responsible for checking null.
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
-                              MetaspaceObj::Type type) {
+                              MetaspaceObj::Type type, bool use_class_space) {
   assert(word_size <= Metaspace::max_allocation_word_size(),
          "allocation size too large (" SIZE_FORMAT ")", word_size);
 
@@ -840,15 +859,23 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   // Deal with concurrent unloading failed allocation starvation
   MetaspaceCriticalAllocation::block_if_concurrent_purge();
 
-  MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
+  MetadataType mdtype = use_class_space ? ClassType : NonClassType;
 
   // Try to allocate metadata.
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
 
   if (result != nullptr) {
+#ifdef ASSERT
+    if (using_class_space() && mdtype == ClassType) {
+      assert(is_in_class_space(result) &&
+             is_aligned(result, CompressedKlassPointers::klass_alignment_in_bytes()), "Sanity");
+    } else {
+      assert((is_in_class_space(result) || is_in_nonclass_metaspace(result)) &&
+             is_aligned(result, Metaspace::min_allocation_alignment_bytes), "Sanity");
+    }
+#endif
     // Zero initialize.
     Copy::fill_to_words((HeapWord*)result, word_size, 0);
-
     log_trace(metaspace)("Metaspace::allocate: type %d return " PTR_FORMAT ".", (int)type, p2i(result));
   }
 
@@ -856,7 +883,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
 }
 
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
-                              MetaspaceObj::Type type, TRAPS) {
+                              MetaspaceObj::Type type, bool use_class_space, TRAPS) {
 
   if (HAS_PENDING_EXCEPTION) {
     assert(false, "Should not allocate with exception pending");
@@ -864,10 +891,10 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   }
   assert(!THREAD->owns_locks(), "allocating metaspace while holding mutex");
 
-  MetaWord* result = allocate(loader_data, word_size, type);
+  MetaWord* result = allocate(loader_data, word_size, type, use_class_space);
 
   if (result == nullptr) {
-    MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
+    MetadataType mdtype = use_class_space ? ClassType : NonClassType;
     tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
 
     // Allocation failed.

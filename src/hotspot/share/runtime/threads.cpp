@@ -65,6 +65,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -164,6 +165,9 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                           thread_group,
                           string,
                           CHECK);
+
+  JFR_ONLY(assert(JFR_JVM_THREAD_ID(thread) == static_cast<traceid>(java_lang_Thread::thread_id(thread_oop())),
+             "initial tid mismatch");)
 
   // Set thread status to running since main thread has
   // been started and running.
@@ -393,6 +397,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_ClassCastException(), CHECK);
   initialize_class(vmSymbols::java_lang_ArrayStoreException(), CHECK);
   initialize_class(vmSymbols::java_lang_ArithmeticException(), CHECK);
+  initialize_class(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), CHECK);
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
@@ -530,13 +535,15 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
   MACOS_AARCH64_ONLY(main_thread->init_wx());
 
-  if (!main_thread->set_as_starting_thread()) {
+  if (!Thread::set_as_starting_thread(main_thread)) {
     vm_shutdown_during_initialization(
                                       "Failed necessary internal allocation. Out of swap space");
     main_thread->smr_delete();
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return JNI_ENOMEM;
   }
+
+  JFR_ONLY(Jfr::initialize_main_thread(main_thread);)
 
   // Enable guard page *after* os::create_main_thread(), otherwise it would
   // crash Linux VM, see notes in os_linux.cpp.
@@ -663,6 +670,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif // INCLUDE_MANAGEMENT
 
   log_info(os)("Initialized VM with process ID %d", os::current_process_id());
+
+  if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && CreateCoredumpOnCrash) {
+    char buffer[2*JVM_MAXPATHLEN];
+    os::check_core_dump_prerequisites(buffer, sizeof(buffer), true);
+  }
 
   // Signal Dispatcher needs to be started before VMInit event is posted
   os::initialize_jdk_signal_support(CHECK_JNI_ERR);
@@ -1027,7 +1039,9 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 void Threads::remove(JavaThread* p, bool is_daemon) {
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice
-  { MonitorLocker ml(Threads_lock);
+  {
+    ConditionalMutexLocker throttle_ml(ThreadsLockThrottle_lock, UseThreadsLockThrottleLock);
+    MonitorLocker ml(Threads_lock);
 
     if (ThreadIdTable::is_initialized()) {
       // This cleanup must be done before the current thread's GC barrier
@@ -1075,7 +1089,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
 
     // Notify threads waiting in EscapeBarriers
     EscapeBarrier::thread_removed(p);
-  } // unlock Threads_lock
+  } // unlock Threads_lock and ThreadsLockThrottle_lock
 
   // Reduce the ObjectMonitor ceiling for the exiting thread.
   ObjectSynchronizer::dec_in_use_list_ceiling();

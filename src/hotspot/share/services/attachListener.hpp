@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
@@ -57,6 +58,20 @@ enum AttachListenerState {
   AL_NOT_INITIALIZED,
   AL_INITIALIZING,
   AL_INITIALIZED
+};
+
+/*
+Version 1 (since jdk6): attach operations always have 3 (AttachOperation::arg_count_max)
+  arguments, each up to 1024 (AttachOperation::arg_length_max) chars.
+Version 2 (since jdk24): attach operations may have any number of arguments of any length;
+  for safety default implementation restricts attach operation request size by 256KB.
+  To detect if target VM supports version 2, client sends "getversion" command.
+  Old VM reports "Operation not recognized" error, newer VM reports version supported by the implementation.
+  If the target VM does not support version 2, client uses version 1 to enqueue operations.
+*/
+enum AttachAPIVersion: int {
+    ATTACH_API_V1 = 1,
+    ATTACH_API_V2 = 2
 };
 
 class AttachListenerThread : public JavaThread {
@@ -93,7 +108,12 @@ class AttachListener: AllStatic {
  private:
   static volatile AttachListenerState _state;
 
+  static AttachAPIVersion _supported_version;
+
  public:
+  static void set_supported_version(AttachAPIVersion version);
+  static AttachAPIVersion get_supported_version();
+
   static void set_state(AttachListenerState new_state) {
     Atomic::store(&_state, new_state);
   }
@@ -136,8 +156,9 @@ class AttachListener: AllStatic {
 };
 
 #if INCLUDE_SERVICES
-class AttachOperation: public CHeapObj<mtInternal> {
- public:
+class AttachOperation: public CHeapObj<mtServiceability> {
+public:
+  // v1 constants
   enum {
     name_length_max = 16,       // maximum length of  name
     arg_length_max = 1024,      // maximum length of argument
@@ -148,51 +169,100 @@ class AttachOperation: public CHeapObj<mtInternal> {
   // clients detach
   static char* detachall_operation_name() { return (char*)"detachall"; }
 
- private:
-  char _name[name_length_max+1];
-  char _arg[arg_count_max][arg_length_max+1];
+private:
+  char* _name;
+  GrowableArrayCHeap<char*, mtServiceability> _args;
 
- public:
-  const char* name() const                      { return _name; }
+  static char* copy_str(const char* value) {
+    return value == nullptr ? nullptr : os::strdup(value, mtServiceability);
+  }
+
+public:
+  const char* name() const { return _name; }
 
   // set the operation name
   void set_name(const char* name) {
-    assert(strlen(name) <= name_length_max, "exceeds maximum name length");
-    size_t len = MIN2(strlen(name), (size_t)name_length_max);
-    memcpy(_name, name, len);
-    _name[len] = '\0';
+    os::free(_name);
+    _name = copy_str(name);
+  }
+
+  int arg_count() const {
+    return _args.length();
   }
 
   // get an argument value
   const char* arg(int i) const {
-    assert(i>=0 && i<arg_count_max, "invalid argument index");
-    return _arg[i];
+    // Historically clients expect empty string for absent or null arguments.
+    if (i >= _args.length() || _args.at(i) == nullptr) {
+      static char empty_str[] = "";
+      return empty_str;
+    }
+    return _args.at(i);
+  }
+
+  // appends an argument
+  void append_arg(const char* arg) {
+    _args.append(copy_str(arg));
   }
 
   // set an argument value
-  void set_arg(int i, char* arg) {
-    assert(i>=0 && i<arg_count_max, "invalid argument index");
-    if (arg == nullptr) {
-      _arg[i][0] = '\0';
-    } else {
-      assert(strlen(arg) <= arg_length_max, "exceeds maximum argument length");
-      size_t len = MIN2(strlen(arg), (size_t)arg_length_max);
-      memcpy(_arg[i], arg, len);
-      _arg[i][len] = '\0';
+  void set_arg(int i, const char* arg) {
+    _args.at_put_grow(i, copy_str(arg), nullptr);
+  }
+
+  // create an v1 operation of a given name (for compatibility, deprecated)
+  AttachOperation(const char* name) : _name(nullptr) {
+    set_name(name);
+    for (int i = 0; i < arg_count_max; i++) {
+      set_arg(i, nullptr);
     }
   }
 
-  // create an operation of a given name
-  AttachOperation(const char* name) {
-    set_name(name);
-    for (int i=0; i<arg_count_max; i++) {
-      set_arg(i, nullptr);
+  AttachOperation() : _name(nullptr) {
+  }
+
+  virtual ~AttachOperation() {
+    os::free(_name);
+    for (GrowableArrayIterator<char*> it = _args.begin(); it != _args.end(); ++it) {
+      os::free(*it);
     }
   }
 
   // complete operation by sending result code and any result data to the client
   virtual void complete(jint result, bufferedStream* result_stream) = 0;
+
+  // Helper classes/methods for platform-specific implementations.
+  class RequestReader {
+  public:
+    // Returns number of bytes read,
+    // 0 on EOF, negative value on error.
+    virtual int read(void* buffer, int size) = 0;
+
+    // Reads unsigned value, returns -1 on error.
+    int read_uint();
+  };
+
+  // Reads standard operation request (v1 or v2).
+  bool read_request(RequestReader* reader);
+
+  class ReplyWriter {
+  public:
+    // Returns number of bytes written, negative value on error.
+    virtual int write(const void* buffer, int size) = 0;
+
+    virtual void flush() {}
+
+    bool write_fully(const void* buffer, int size);
+  };
+
+  // Writes standard operation reply (to be called from 'complete' method).
+  bool write_reply(ReplyWriter* writer, jint result, bufferedStream* result_stream);
+
+private:
+  bool read_request_data(AttachOperation::RequestReader* reader, int buffer_size, int min_str_count, int min_read_size);
+
 };
+
 #endif // INCLUDE_SERVICES
 
 #endif // SHARE_SERVICES_ATTACHLISTENER_HPP

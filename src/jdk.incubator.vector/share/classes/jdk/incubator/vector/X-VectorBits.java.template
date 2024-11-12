@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,9 +509,16 @@ final class $vectortype$ extends $abstractvectortype$ {
                                    VectorMask<$Boxtype$> m) {
         return ($vectortype$)
             super.selectFromTemplate(($vectortype$) v,
-                                     ($masktype$) m);  // specialize
+                                     $masktype$.class, ($masktype$) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public $vectortype$ selectFrom(Vector<$Boxtype$> v1,
+                                   Vector<$Boxtype$> v2) {
+        return ($vectortype$)
+            super.selectFromTemplate(($vectortype$) v1, ($vectortype$) v2);  // specialize
+    }
 
 #if[FP]
     @ForceInline
@@ -561,7 +568,7 @@ final class $vectortype$ extends $abstractvectortype$ {
                      this, i,
                      (vec, ix) -> {
                      $type$[] vecarr = vec.vec();
-                     return (long)$Type$.$type$To$Bitstype$Bits(vecarr[ix]);
+                     return (long)$Type$.$type$ToRaw$Bitstype$Bits(vecarr[ix]);
                      });
     }
 
@@ -607,7 +614,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     public $vectortype$ withLaneHelper(int i, $type$ e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)$Type$.$type$To$Bitstype$Bits(e),
+                                this, i, (long)$Type$.$type$ToRaw$Bitstype$Bits(e),
                                 (v, ix, bits) -> {
                                     $type$[] res = v.vec().clone();
                                     res[ix] = $Type$.$bitstype$BitsTo$Type$(($bitstype$)bits);
@@ -1116,6 +1123,13 @@ final class $vectortype$ extends $abstractvectortype$ {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public $shuffletype$ wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, $shuffletype$.class, this, VLENGTH,
+                                                    (s) -> (($shuffletype$)(((AbstractShuffle<$Boxtype$>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

@@ -42,10 +42,6 @@ hotspot_compiler_xcomp = \
   :hotspot_compiler \
   -:tier1_compiler_not_xcomp
 
-hotspot_compiler_all_gcs = \
-  :hotspot_compiler \
-  -compiler/jvmci
-
 hotspot_gc = \
   gc
 
@@ -435,8 +431,11 @@ hotspot_cds_only = \
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
  -runtime/cds/appcds/cacheObject \
+ -runtime/cds/appcds/complexURI \
  -runtime/cds/appcds/customLoader \
  -runtime/cds/appcds/dynamicArchive \
+ -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndFMG.java \
+ -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \
  -runtime/cds/appcds/loaderConstraints/DynamicLoaderConstraintsTest.java \
  -runtime/cds/appcds/javaldr/ArrayTest.java \
  -runtime/cds/appcds/javaldr/ExceptionDuringDumpAtObjectsInitPhase.java \
@@ -445,6 +444,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestDynamicDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestFileSafety.java \
+ -runtime/cds/appcds/jvmti/redefineClasses/OldClassAndRedefineClass.java \
  -runtime/cds/appcds/lambdaForm/DefaultClassListLFInvokers.java \
  -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/sharedStrings \
@@ -453,6 +453,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
+ -runtime/cds/appcds/DumpRuntimeClassesTest.java \
  -runtime/cds/appcds/DumpingWithNoCoops.java \
  -runtime/cds/appcds/ExtraSymbols.java \
  -runtime/cds/appcds/LambdaContainsOldInf.java \

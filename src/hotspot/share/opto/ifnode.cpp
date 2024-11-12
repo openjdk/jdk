@@ -840,9 +840,9 @@ bool IfNode::is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* u
 }
 
 // Return projection that leads to an uncommon trap if any
-ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call) const {
+ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::DeoptReason reason) const {
   for (int i = 0; i < 2; i++) {
-    call = proj_out(i)->is_uncommon_trap_proj();
+    call = proj_out(i)->is_uncommon_trap_proj(reason);
     if (call != nullptr) {
       return proj_out(i);
     }
@@ -1524,6 +1524,14 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* prev_dom = search_identical(dist, igvn);
 
   if (prev_dom != nullptr) {
+    // Dominating CountedLoopEnd (left over from some now dead loop) will become the new loop exit. Outer strip mined
+    // loop will go away. Mark this loop as no longer strip mined.
+    if (is_CountedLoopEnd()) {
+      CountedLoopNode* counted_loop_node = as_CountedLoopEnd()->loopnode();
+      if (counted_loop_node != nullptr) {
+        counted_loop_node->clear_strip_mined();
+      }
+    }
     // Replace dominated IfNode
     return dominated_by(prev_dom, igvn, false);
   }
@@ -1848,6 +1856,9 @@ void IfNode::dump_spec(outputStream* st) const {
       break;
     case AssertionPredicateType::LastValue:
       st->print("#Last Value Assertion Predicate  ");
+      break;
+    case AssertionPredicateType::FinalIv:
+      st->print("#Final IV Assertion Predicate  ");
       break;
     case AssertionPredicateType::None:
       // No Assertion Predicate

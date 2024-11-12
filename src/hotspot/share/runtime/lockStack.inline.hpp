@@ -216,7 +216,9 @@ inline bool LockStack::contains(oop o) const {
 }
 
 inline void LockStack::oops_do(OopClosure* cl) {
-  verify("pre-oops-do");
+  // We don't perform pre oops_do verify here because this function
+  // is used by the GC to fix the oops.
+
   int end = to_index(_top);
   for (int i = 0; i < end; i++) {
     cl->do_oop(&_base[i]);

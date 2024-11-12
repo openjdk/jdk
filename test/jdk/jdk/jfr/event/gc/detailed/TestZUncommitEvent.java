@@ -34,19 +34,11 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
 /**
- * @test id=ZSinglegen
- * @requires vm.hasJFR & vm.gc.ZSinglegen
+ * @test id=Z
+ * @requires vm.hasJFR & vm.gc.Z
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xms32M -Xmx128M -Xlog:gc,gc+heap -XX:+ZUncommit -XX:ZUncommitDelay=1 jdk.jfr.event.gc.detailed.TestZUncommitEvent
- */
-
-/**
- * @test id=ZGenerational
- * @requires vm.hasJFR & vm.gc.ZGenerational
- * @key jfr
- * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xms32M -Xmx128M -Xlog:gc,gc+heap -XX:+ZUncommit -XX:ZUncommitDelay=1 jdk.jfr.event.gc.detailed.TestZUncommitEvent
+ * @run main/othervm -XX:+UseZGC -Xms32M -Xmx128M -Xlog:gc,gc+heap -XX:+ZUncommit -XX:ZUncommitDelay=1 jdk.jfr.event.gc.detailed.TestZUncommitEvent
  */
 
 public class TestZUncommitEvent {
