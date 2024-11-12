@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,8 @@ int jdk_internal_vm_StackChunk::_pc_offset;
 int jdk_internal_vm_StackChunk::_bottom_offset;
 int jdk_internal_vm_StackChunk::_flags_offset;
 int jdk_internal_vm_StackChunk::_maxThawingSize_offset;
+int jdk_internal_vm_StackChunk::_lockStackSize_offset;
+int jdk_internal_vm_StackChunk::_objectWaiter_offset;
 int jdk_internal_vm_StackChunk::_cont_offset;
 
 #define STACKCHUNK_FIELDS_DO(macro) \

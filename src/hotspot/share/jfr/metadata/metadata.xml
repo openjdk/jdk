@@ -156,6 +156,12 @@
     <Field type="ulong" name="id" label="Continuation ID" />
   </Event>
 
+  <Event name="VirtualThreadPinned" category="Java Application" label="Virtual Thread Pinned" thread="true" stackTrace="true">
+    <Field type="string" name="blockingOperation" label="Blocking Operation" />
+    <Field type="string" name="pinnedReason" label="Pinned Reason" />
+    <Field type="Thread" name="carrierThread" label="Carrier Thread" />
+  </Event>
+
   <Event name="ReservedStackActivation" category="Java Virtual Machine, Runtime" label="Reserved Stack Activation"
     description="Activation of Reserved Stack Area caused by stack overflow with ReservedStackAccess annotated method in call stack" thread="true" stackTrace="true"
     startTime="false">
