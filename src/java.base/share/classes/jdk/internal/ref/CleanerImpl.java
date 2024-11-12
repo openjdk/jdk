@@ -30,6 +30,7 @@ import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.ReferenceQueue;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -48,9 +49,9 @@ public final class CleanerImpl implements Runnable {
     private static Function<Cleaner, CleanerImpl> cleanerImplAccess = null;
 
     /**
-     * Heads of a CleanableList for each reference type.
+     * Currently active PhantomCleanable-s.
      */
-    final PhantomCleanable<?> phantomCleanableList;
+    final PhantomCleanableList activeList;
 
     // The ReferenceQueue of pending cleaning actions
     final ReferenceQueue<Object> queue;
@@ -82,7 +83,7 @@ public final class CleanerImpl implements Runnable {
      */
     public CleanerImpl() {
         queue = new ReferenceQueue<>();
-        phantomCleanableList = new PhantomCleanableRef();
+        activeList = new PhantomCleanableList();
     }
 
     /**
@@ -129,7 +130,7 @@ public final class CleanerImpl implements Runnable {
         InnocuousThread mlThread = (t instanceof InnocuousThread)
                 ? (InnocuousThread) t
                 : null;
-        while (!phantomCleanableList.isListEmpty()) {
+        while (!activeList.isEmpty()) {
             if (mlThread != null) {
                 // Clear the thread locals
                 mlThread.eraseThreadLocals();
@@ -163,14 +164,6 @@ public final class CleanerImpl implements Runnable {
         public PhantomCleanableRef(Object obj, Cleaner cleaner, Runnable action) {
             super(obj, cleaner);
             this.action = action;
-        }
-
-        /**
-         * Constructor used only for root of phantom cleanable list.
-         */
-        PhantomCleanableRef() {
-            super();
-            this.action = null;
         }
 
         @Override
@@ -229,6 +222,81 @@ public final class CleanerImpl implements Runnable {
         @Override
         protected void performCleanup() {
             // no action
+        }
+    }
+
+    /**
+     * A specialized implementation that tracks phantom cleanables.
+     * Backing storage is expanded and trimmed automatically.
+     * Insert/remove run in amortized constant time.
+     */
+    static final class PhantomCleanableList {
+        private final ArrayList<PhantomCleanable<?>> list = new ArrayList<>();
+        private int maxIdx;
+
+        /**
+         * Returns true if cleanable list is empty.
+         *
+         * @return true if the list is empty
+         */
+        public boolean isEmpty() {
+            synchronized (list) {
+                return list.isEmpty();
+            }
+        }
+
+        /**
+         * Insert this PhantomCleanable in the list.
+         */
+        public void insert(PhantomCleanable<?> phc) {
+            synchronized (list) {
+                // Inserting at the end, record the indexes.
+                int size = list.size();
+                phc.index = size;
+                maxIdx = size;
+                list.add(phc);
+            }
+        }
+
+        /**
+         * Remove this PhantomCleanable from the list.
+         *
+         * @return true if Cleanable was removed or false if not because
+         * it had already been removed before
+         */
+        public boolean remove(PhantomCleanable<?> phc) {
+            synchronized (list) {
+                int thisIdx = phc.index;
+                if (thisIdx == -1) {
+                    // Was already removed from the list.
+                    return false;
+                }
+
+                // Unlink PhantomCleanable.
+                phc.index = -1;
+
+                int lastIdx = list.size() - 1;
+                if (lastIdx != thisIdx) {
+                    // Move the last element at current index, overwriting it.
+                    // Update its index to a new location.
+                    PhantomCleanable<?> last = list.get(lastIdx);
+                    last.index = thisIdx;
+                    list.set(thisIdx, last);
+                }
+
+                // Cut the tail. Runs in constant time.
+                list.remove(lastIdx);
+
+                // Capacity control: trim the backing storage if it looks like
+                // we have a lot of wasted space there.
+                if (list.size() > maxIdx * 2) {
+                    list.trimToSize();
+                    maxIdx = list.size() - 1;
+                }
+
+                // Success!
+                return true;
+            }
         }
     }
 }
