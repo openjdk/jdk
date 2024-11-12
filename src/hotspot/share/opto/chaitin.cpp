@@ -641,7 +641,7 @@ void PhaseChaitin::Register_Allocate() {
   // Merge multidefs if multiple defs representing the same value are used in a single block.
   merge_multidefs();
 
-  C->print_method(PHASE_MERGE_MULTIDEFS, 4);
+  C->print_method(PHASE_MERGE_MULTI_DEFS, 4);
 
 #ifdef ASSERT
   // Verify the graph after RA.

@@ -100,7 +100,7 @@
   flags(ITERATIVE_SPILLING,             "Iterative spilling") \
   flags(AFTER_ITERATIVE_SPILLING,       "After iterative spilling") \
   flags(POST_ALLOCATION_COPY_REMOVAL,   "Post-allocation copy removal") \
-  flags(MERGE_MULTIDEFS,                "Merge multiple definitions") \
+  flags(MERGE_MULTI_DEFS,               "Merge multiple definitions") \
   flags(FIX_UP_SPILLS,                  "Fix up spills") \
   flags(REGISTER_ALLOCATION,            "Register Allocation") \
   flags(BLOCK_ORDERING,                 "Block Ordering") \
