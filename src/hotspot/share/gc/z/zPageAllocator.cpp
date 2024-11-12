@@ -885,6 +885,9 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
 }
 
 void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
+  // The page(s) in the allocation are either taken from the cache or a newly
+  // created, mapped and commited ZPage. These page(s) have not been inserted in
+  // the page table, nor allocated a remset, so prepare_to_recycle is not required.
   ZLocker<ZLock> locker(&_lock);
 
   // Only decrease the overall used and not the generation used,
