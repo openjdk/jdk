@@ -243,6 +243,11 @@ frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
   return fr;
 }
 
+JavaThread** frame::saved_thread_address(const frame& f) {
+  // The current thread (JavaThread*) is never stored on the stack
+  return nullptr;
+}
+
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   // This is the sp before any possible extension (adapter/locals).
   intptr_t* unextended_sp = interpreter_frame_sender_sp();

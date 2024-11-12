@@ -1686,6 +1686,7 @@ bool java_lang_Thread::is_in_VTMS_transition(oop java_thread) {
 }
 
 void java_lang_Thread::set_is_in_VTMS_transition(oop java_thread, bool val) {
+  assert(is_in_VTMS_transition(java_thread) != val, "already %s transition", val ? "inside" : "outside");
   java_thread->bool_field_put_volatile(_jvmti_is_in_VTMS_transition_offset, val);
 }
 
@@ -2021,12 +2022,20 @@ int java_lang_VirtualThread::static_vthread_scope_offset;
 int java_lang_VirtualThread::_carrierThread_offset;
 int java_lang_VirtualThread::_continuation_offset;
 int java_lang_VirtualThread::_state_offset;
+int java_lang_VirtualThread::_next_offset;
+int java_lang_VirtualThread::_onWaitingList_offset;
+int java_lang_VirtualThread::_notified_offset;
+int java_lang_VirtualThread::_timeout_offset;
 
 #define VTHREAD_FIELDS_DO(macro) \
   macro(static_vthread_scope_offset,       k, "VTHREAD_SCOPE",      continuationscope_signature, true);  \
   macro(_carrierThread_offset,             k, "carrierThread",      thread_signature,            false); \
   macro(_continuation_offset,              k, "cont",               continuation_signature,      false); \
-  macro(_state_offset,                     k, "state",              int_signature,               false)
+  macro(_state_offset,                     k, "state",              int_signature,               false); \
+  macro(_next_offset,                      k, "next",               vthread_signature,           false); \
+  macro(_onWaitingList_offset,             k, "onWaitingList",      bool_signature,              false); \
+  macro(_notified_offset,                  k, "notified",           bool_signature,              false); \
+  macro(_timeout_offset,                   k, "timeout",            long_signature,              false);
 
 
 void java_lang_VirtualThread::compute_offsets() {
@@ -2052,6 +2061,56 @@ int java_lang_VirtualThread::state(oop vthread) {
   return vthread->int_field_acquire(_state_offset);
 }
 
+void java_lang_VirtualThread::set_state(oop vthread, int state) {
+  vthread->release_int_field_put(_state_offset, state);
+}
+
+int java_lang_VirtualThread::cmpxchg_state(oop vthread, int old_state, int new_state) {
+  jint* addr = vthread->field_addr<jint>(_state_offset);
+  int res = Atomic::cmpxchg(addr, old_state, new_state);
+  return res;
+}
+
+oop java_lang_VirtualThread::next(oop vthread) {
+  return vthread->obj_field(_next_offset);
+}
+
+void java_lang_VirtualThread::set_next(oop vthread, oop next_vthread) {
+  vthread->obj_field_put(_next_offset, next_vthread);
+}
+
+// Add vthread to the waiting list if it's not already in it. Multiple threads
+// could be trying to add vthread to the list at the same time, so we control
+// access with a cmpxchg on onWaitingList. The winner adds vthread to the list.
+// Method returns true if we added vthread to the list, false otherwise.
+bool java_lang_VirtualThread::set_onWaitingList(oop vthread, OopHandle& list_head) {
+  jboolean* addr = vthread->field_addr<jboolean>(_onWaitingList_offset);
+  jboolean vthread_on_list = Atomic::load(addr);
+  if (!vthread_on_list) {
+    vthread_on_list = Atomic::cmpxchg(addr, (jboolean)JNI_FALSE, (jboolean)JNI_TRUE);
+    if (!vthread_on_list) {
+      for (;;) {
+        oop head = list_head.resolve();
+        java_lang_VirtualThread::set_next(vthread, head);
+        if (list_head.cmpxchg(head, vthread) == head) return true;
+      }
+    }
+  }
+  return false; // already on waiting list
+}
+
+void java_lang_VirtualThread::set_notified(oop vthread, jboolean value) {
+  vthread->bool_field_put_volatile(_notified_offset, value);
+}
+
+jlong java_lang_VirtualThread::timeout(oop vthread) {
+  return vthread->long_field(_timeout_offset);
+}
+
+void java_lang_VirtualThread::set_timeout(oop vthread, jlong value) {
+  vthread->long_field_put(_timeout_offset, value);
+}
+
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
   JavaThreadStatus status = JavaThreadStatus::NEW;
   switch (state & ~SUSPENDED) {
@@ -2065,6 +2124,9 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
     case UNPARKED:
     case YIELDING:
     case YIELDED:
+    case UNBLOCKED:
+    case WAITING:
+    case TIMED_WAITING:
       status = JavaThreadStatus::RUNNABLE;
       break;
     case PARKED:
@@ -2075,6 +2137,16 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
     case TIMED_PINNED:
       status = JavaThreadStatus::PARKED_TIMED;
       break;
+    case BLOCKING:
+    case BLOCKED:
+      status = JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER;
+      break;
+    case WAIT:
+      status = JavaThreadStatus::IN_OBJECT_WAIT;
+      break;
+    case TIMED_WAIT:
+      status = JavaThreadStatus::IN_OBJECT_WAIT_TIMED;
+      break;
     case TERMINATED:
       status = JavaThreadStatus::TERMINATED;
       break;
@@ -2082,6 +2154,13 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
       ShouldNotReachHere();
   }
   return status;
+}
+
+bool java_lang_VirtualThread::is_preempted(oop vthread) {
+  oop continuation = java_lang_VirtualThread::continuation(vthread);
+  assert(continuation != nullptr, "vthread with no continuation");
+  stackChunkOop chunk = jdk_internal_vm_Continuation::tail(continuation);
+  return chunk != nullptr && chunk->preempted();
 }
 
 #if INCLUDE_CDS
