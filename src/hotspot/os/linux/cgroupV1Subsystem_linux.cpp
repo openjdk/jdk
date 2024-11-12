@@ -51,7 +51,7 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   if (_root != nullptr && cgroup_path != nullptr) {
     ss.print_raw(_mount_point);
     if (strcmp(_root, "/") == 0) {
-      // host processes / containers w/private cgroup namespace
+      // host processes and containers with cgroupns=private
       if (strcmp(cgroup_path,"/") != 0) {
         // hosts only
         ss.print_raw(cgroup_path);
