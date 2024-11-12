@@ -146,7 +146,6 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 #endif
 
 void VTransform::apply_speculative_runtime_checks() {
-
   if (VLoop::vectors_should_be_aligned()) {
 #ifdef ASSERT
     if (_trace._align_vector) {
@@ -214,7 +213,7 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
 }
 
 void VTransform::add_speculative_check(BoolNode* bol) {
-  // TODO decide if predicate of unswitching!
+  // TODO decide if predicate or unswitching!
   ParsePredicateSuccessProj* parse_predicate_proj = _vloop.auto_vectorization_parse_predicate_proj();
   assert(parse_predicate_proj != nullptr, "we must be able to find the parse predicate");
 

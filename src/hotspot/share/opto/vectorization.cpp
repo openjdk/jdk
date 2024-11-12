@@ -1692,6 +1692,9 @@ AlignmentSolution* AlignmentSolver::solve() const {
     return new EmptyAlignmentSolution("non power-of-2 scale not supported");
   }
 
+  // TODO add the adr for native memory!!! - maybe piggy-back on invar? But then we might lose some cases...
+  // or can we make sure to win them back? Might require a big rewrite here...
+
   // We analyze the address of mem_ref. The idea is to disassemble it into a linear
   // expression, where we can use the constant factors as the basis for ensuring the
   // alignment of vector memory accesses.

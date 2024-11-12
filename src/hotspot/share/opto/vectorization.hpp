@@ -133,6 +133,10 @@ public:
     return _auto_vectorization_parse_predicate_proj;
   }
 
+  bool are_speculative_checks_possible() const {
+    return _auto_vectorization_parse_predicate_proj != nullptr;
+  }
+
   // Estimate maximum size for data structures, to avoid repeated reallocation
   int estimated_body_length() const { return lpt()->_body.size(); };
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
