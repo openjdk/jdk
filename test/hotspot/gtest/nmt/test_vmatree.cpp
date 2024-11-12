@@ -29,7 +29,6 @@
 #include "nmt/vmatree.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
-#include "gtest/gtest.h"
 
 using Tree = VMATree;
 using TreeNode = Tree::TreapNode;
