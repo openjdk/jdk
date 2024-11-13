@@ -140,7 +140,7 @@ static void test_canonicalize_constraints_random() {
     TypeIntPrototype<S, U> t{{lo, hi}, {ulo, uhi}, {zeros, ones}};
     auto new_t = t.canonicalize_constraints();
     if (new_t._present) {
-      new_t._data.verify_constraints();
+      DEBUG_ONLY(new_t._data.verify_constraints());
     }
     for (int j = 0; j < samples; j++) {
       S v = uniform_random<U>();
