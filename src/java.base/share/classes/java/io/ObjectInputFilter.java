@@ -728,11 +728,6 @@ public interface ObjectInputFilter {
          */
         public static void setSerialFilter(ObjectInputFilter filter) {
             Objects.requireNonNull(filter, "filter");
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
-            }
             if (invalidFilterMessage != null) {
                 throw new IllegalStateException(invalidFilterMessage);
             }
@@ -825,11 +820,6 @@ public interface ObjectInputFilter {
          */
         public static void setSerialFilterFactory(BinaryOperator<ObjectInputFilter> filterFactory) {
             Objects.requireNonNull(filterFactory, "filterFactory");
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
-            }
             if (filterFactoryNoReplace.getAndSet(true)) {
                 final String msg = serialFilterFactory != null
                         ? "Cannot replace filter factory: " + serialFilterFactory.getClass().getName()
