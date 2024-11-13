@@ -119,7 +119,7 @@ public class H3ServerPushCancel implements HttpServerAdapters {
         server = HttpTestServer.create(HTTP_3_ANY, new SimpleSSLContext().get());
         pushHandler = new ServerPushHandler(MAIN_RESPONSE_BODY, PUSH_PROMISES);
         server.addHandler(pushHandler, "/push/");
-        server.addHandler(new HttpHeadHandler(), "/head/");
+        server.addHandler(new HttpHeadOrGetHandler(), "/head/");
         server.start();
         err.println("Server listening on port " + server.serverAuthority());
         uri = new URI("https://" + server.serverAuthority() + "/push/a/b/c");

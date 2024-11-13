@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class H3ServerPush implements HttpServerAdapters {
         h2Server.addHandler(new PushHandler(tempFile, LOOPS), "/foo/");
         System.out.println("Using temp file:" + tempFile);
         server = HttpTestServer.of(h2Server);
-        server.addHandler(new HttpHeadHandler(), "/head/");
+        server.addHandler(new HttpHeadOrGetHandler(), "/head/");
         headURI = new URI("https://" + server.serverAuthority() + "/head/x");
         uri = new URI("https://" + server.serverAuthority() + "/foo/a/b/c");
 

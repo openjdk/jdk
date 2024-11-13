@@ -161,7 +161,7 @@ public class CancelledResponse2 implements HttpServerAdapters {
         h2h3TestServer = HttpTestServer.create(HTTP_3, sslContext);
         h2h3TestServer.addHandler(new CancelledResponseHandler(), "/h2h3");
         h2h3TestServerURI = URI.create("https://" + h2h3TestServer.serverAuthority() + "/h2h3");
-        h2h3TestServer.addHandler(new HttpHeadHandler(), "/h2h3/head");
+        h2h3TestServer.addHandler(new HttpHeadOrGetHandler(), "/h2h3/head");
         h2h3HeadTestServerURI = URI.create("https://" + h2h3TestServer.serverAuthority() + "/h2h3/head");
 
 

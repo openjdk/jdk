@@ -89,7 +89,7 @@ public class H3ImplicitPushCancel implements HttpServerAdapters {
         HttpTestHandler pushHandler = new ServerPushHandler(MAIN_RESPONSE_BODY,
                                                      PUSH_PROMISES);
         server.addHandler(pushHandler, "/push/");
-        server.addHandler(new HttpHeadHandler(), "/head/");
+        server.addHandler(new HttpHeadOrGetHandler(), "/head/");
         server.start();
         System.err.println("Server listening on port " + server.serverAuthority());
         uri = new URI("https://" + server.serverAuthority() + "/push/a/b/c");

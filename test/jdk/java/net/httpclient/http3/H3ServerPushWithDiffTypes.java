@@ -101,7 +101,7 @@ public class H3ServerPushWithDiffTypes implements HttpServerAdapters {
                     new ServerPushHandler("the main response body",
                             PUSH_PROMISES);
             server.addHandler(pushHandler, "/push/");
-            server.addHandler(new HttpHeadHandler(), "/head/");
+            server.addHandler(new HttpHeadOrGetHandler(), "/head/");
 
             server.start();
             System.err.println("Server listening on port " + server.serverAuthority());

@@ -653,7 +653,7 @@ public class CancelRequestTest implements HttpServerAdapters {
         h2h3TestServer = HttpTestServer.create(HTTP_3, sslContext);
         h2h3TestServer.addHandler(h3_chunkedHandler, "/h2h3/exec/");
         h2h3URI = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/exec/retry";
-        h2h3TestServer.addHandler(new HttpHeadHandler(), "/h2h3/head/");
+        h2h3TestServer.addHandler(new HttpHeadOrGetHandler(), "/h2h3/head/");
         h2h3Head = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/head/";
 
         h3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);

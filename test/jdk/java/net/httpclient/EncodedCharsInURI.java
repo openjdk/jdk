@@ -359,7 +359,7 @@ public class EncodedCharsInURI implements HttpServerAdapters {
         http3TestServer = HttpTestServer.create(HTTP_3, sslContext);
         http3TestServer.addHandler(h3_fixedLengthHandler, "/http3/fixed");
         http3TestServer.addHandler(h3_chunkedHandler, "/http3/chunk");
-        http3TestServer.addHandler(new HttpHeadHandler(), "/http3/head");
+        http3TestServer.addHandler(new HttpHeadOrGetHandler(), "/http3/head");
         http3URI_fixed = "https://" + http3TestServer.serverAuthority() + "/http3/fixed/x";
         http3URI_chunk = "https://" + http3TestServer.serverAuthority() + "/http3/chunk/x";
         http3URI_head = "https://" + http3TestServer.serverAuthority() + "/http3/head/x";

@@ -178,7 +178,7 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
 
             h3altSvcServer = HttpTestServer.create(HTTP_3_ANY, SSLContext.getDefault());
             h3altSvcServer.addHandler(new TestHandler(), "/AuthFilterCacheTest/h3-alt-svc/");
-            h3altSvcServer.addHandler(new HttpHeadHandler(RESPONSE_BODY),
+            h3altSvcServer.addHandler(new HttpHeadOrGetHandler(RESPONSE_BODY),
                     "/AuthFilterCacheTest/h3-alt-svc/direct/head/");
             h3altSvcURI = new URI("https://" + h3altSvcServer.serverAuthority()
                     + "/AuthFilterCacheTest/h3-alt-svc/");

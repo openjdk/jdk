@@ -291,7 +291,7 @@ public class BasicRedirectTest implements HttpServerAdapters {
         http3TestServer = HttpTestServer.create(HTTP_3_ANY, sslContext);
         http3TestServer.addHandler(new BasicHttpRedirectHandler(), "/http3/same/");
         https3URI = "https://" + http3TestServer.serverAuthority() + "/http3/same/redirect";
-        http3TestServer.addHandler(new HttpHeadHandler(), "/http3/head");
+        http3TestServer.addHandler(new HttpHeadOrGetHandler(), "/http3/head");
         https3HeadURI = "https://" + http3TestServer.serverAuthority() + "/http3/head";
 
 

@@ -288,8 +288,8 @@ class Stream<T> extends ExchangeImpl<T> {
             } catch (Throwable x) {
                 Log.logError("Subscriber::onError threw exception: {0}", t);
             } finally {
+                // cancelImpl will eventually call drainInputQueue();
                 cancelImpl(t);
-                drainInputQueue();
             }
         }
     }

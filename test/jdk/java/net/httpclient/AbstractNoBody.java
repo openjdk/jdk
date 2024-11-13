@@ -228,7 +228,7 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
         http3TestServer = HttpTestServer.create(HTTP_3, sslContext);
         http3TestServer.addHandler(h3_fixedLengthHandler, "/http3/noBodyFixed");
         http3TestServer.addHandler(h3_chunkedHandler, "/http3/noBodyChunk");
-        http3TestServer.addHandler(new HttpHeadHandler(), "/http3/noBodyHead");
+        http3TestServer.addHandler(new HttpHeadOrGetHandler(), "/http3/noBodyHead");
         http3URI_fixed = "https://" + http3TestServer.serverAuthority() + "/http3/noBodyFixed";
         http3URI_chunk = "https://" + http3TestServer.serverAuthority() + "/http3/noBodyChunk";
         http3URI_head = "https://" + http3TestServer.serverAuthority() + "/http3/noBodyHead";
