@@ -172,6 +172,6 @@ public class ReleaseBeforeFiles {
         var args = cmdline.split(" +");
         var code = tool.run(System.out, System.err, args);
         if (code == 0) return;
-        throw new RuntimeException("jat failed with non-zero error code: " + code);
+        throw new RuntimeException("jar failed with non-zero error code: " + code);
     }
 }

@@ -230,16 +230,15 @@ class GNUStyleOptions {
             },
             new Option(true, OptionType.OTHER, "--release") {
                 void process(Main jartool, String opt, String arg) throws BadArgs {
-                    int v = 0; // Main.BASE_VERSION
                     try {
-                        v = Integer.valueOf(arg);
+                        int value = Integer.valueOf(arg);
+                        if (value < 9) {
+                            throw new BadArgs("error.release.value.toosmall", arg).showUsage(true);
+                        }
+                        jartool.releaseValue = value;
                     } catch (NumberFormatException x) {
                         throw new BadArgs("error.release.value.notnumber", arg);
                     }
-                    if (v < 9) {
-                        throw new BadArgs("error.release.value.toosmall", arg).showUsage(true);
-                    }
-                    jartool.releaseValue = v;
                 }
                 boolean isHidden() { return true; }
             },
