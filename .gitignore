@@ -20,5 +20,3 @@ NashornProfile.txt
 /.settings/
 /compile_commands.json
 /.cache
-*.xml
-*.iml
