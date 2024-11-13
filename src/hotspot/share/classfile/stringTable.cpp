@@ -422,7 +422,6 @@ const jchar* StringTable::to_unicode(StringWrapper wrapped_str, int &len, TRAPS)
     len = static_cast<int>(wrapped_str.length);
     return wrapped_str.unicode_str;
   case StringType::OopStr:
-    len = static_cast<int>(wrapped_str.length);
     return java_lang_String::as_unicode_string(wrapped_str.oop_str(), len, CHECK_NULL);
   case StringType::SymbolStr: {
     const char* utf8_str = get_symbol_utf8(wrapped_str);
