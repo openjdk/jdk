@@ -625,7 +625,6 @@ class ShenandoahInitWorkerGCLABClosure : public ThreadClosure {
 public:
   void do_thread(Thread* thread) {
     assert(thread != nullptr, "Sanity");
-    assert(thread->is_Worker_thread(), "Only worker thread expected");
     ShenandoahThreadLocalData::initialize_gclab(thread);
   }
 };
@@ -638,6 +637,8 @@ void ShenandoahHeap::post_initialize() {
 
   ShenandoahInitWorkerGCLABClosure init_gclabs;
   _workers->threads_do(&init_gclabs);
+
+  init_gclabs.do_thread(control_thread());
 
   // gclab can not be initialized early during VM startup, as it can not determinate its max_size.
   // Now, we will let WorkerThreads to initialize gclab when new worker is created.
@@ -1274,6 +1275,10 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
 
   ShenandoahPrepareForUpdateRefs prepare_for_update_refs;
 
+  // The control thread handles transferring the reference processing list and may go through
+  // the LRB. It must therefore also keep the gc state locally.
+  prepare_for_update_refs.do_thread(control_thread());
+
   workers()->threads_do(&prepare_for_update_refs);
 
   // Safepoint workers may be asked to evacuate objects if they are visiting oops to create a heap dump
@@ -1490,6 +1495,8 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
     cl.do_thread(t);
   }
   workers()->threads_do(&cl);
+
+  cl.do_thread(control_thread());
 
   if (safepoint_workers() != nullptr) {
     safepoint_workers()->threads_do(&cl);
@@ -1999,6 +2006,14 @@ void ShenandoahHeap::propagate_gc_state_to_java_threads() {
   if (_gc_state_changed) {
     _gc_state_changed = false;
     char state = gc_state();
+
+    auto do_thread = [&](Thread* t) {
+      ShenandoahThreadLocalData::set_gc_state(t, state);
+    };
+
+    do_thread(control_thread());
+    _workers->threads_do_l(do_thread);
+
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
       ShenandoahThreadLocalData::set_gc_state(t, state);
     }

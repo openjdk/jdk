@@ -55,10 +55,24 @@ class ShenandoahWorkerThreads : public WorkerThreads {
 private:
   bool     _initialize_gclab;
 public:
-  ShenandoahWorkerThreads(const char* name,
-           uint workers) :
+  ShenandoahWorkerThreads(const char* name, uint workers) :
     WorkerThreads(name, workers), _initialize_gclab(false) {
     }
+
+  template<typename Function>
+  void threads_do_l(Function function) {
+    struct ShenandoahThreadClosureWrapper : public ThreadClosure {
+      Function _function;
+      explicit ShenandoahThreadClosureWrapper(const Function& function)
+        : _function(function) {}
+
+      void do_thread(Thread* thread) override {
+        _function(thread);
+      }
+    };
+    ShenandoahThreadClosureWrapper wrapper(function);
+    threads_do(&wrapper);
+  }
 
   // We need to initialize gclab for dynamic allocated workers
   void on_create_worker(WorkerThread* worker);
