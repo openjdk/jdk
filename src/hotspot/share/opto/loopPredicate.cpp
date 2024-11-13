@@ -283,9 +283,9 @@ IfProjNode* PhaseIdealLoop::clone_parse_predicate_to_unswitched_loop(ParsePredic
   return new_predicate_proj;
 }
 
-// Clones Assertion Predicates to both unswitched loops starting at 'old_predicate_proj' by following its control inputs.
-// It also rewires the control edges of data nodes with dependencies in the loop from the old predicates to the new
-// cloned predicates.
+// Clones Template Assertion Predicates to both unswitched loops starting at 'old_predicate_proj' by following its
+// control inputs. It also rewires the control edges of data nodes with dependencies in the loop from the old predicates
+// to the new  cloned predicates.
 void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
                                                                    ParsePredicateSuccessProj* old_parse_predicate_proj,
                                                                    ParsePredicateNode* true_path_loop_parse_predicate,
@@ -311,17 +311,17 @@ void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree
     for (DUIterator j = template_assertion_predicate_success_proj->outs();
          template_assertion_predicate_success_proj->has_out(j);
          j++) {
-      Node* fast_node = template_assertion_predicate_success_proj->out(j);
-      if (loop->is_member(get_loop(ctrl_or_self(fast_node)))) {
-        assert(fast_node->in(0) == template_assertion_predicate_success_proj, "only control edge");
-        Node* slow_node = old_new[fast_node->_idx];
-        assert(slow_node->in(0) == template_assertion_predicate_success_proj, "only control edge");
-        _igvn.replace_input_of(fast_node, 0, true_path_loop_proj);
-        to_process.push(slow_node);
+      Node* true_path_loop_node = template_assertion_predicate_success_proj->out(j);
+      if (loop->is_member(get_loop(ctrl_or_self(true_path_loop_node)))) {
+        assert(true_path_loop_node->in(0) == template_assertion_predicate_success_proj, "only control edge");
+        Node* false_path_loop_node = old_new[true_path_loop_node->_idx];
+        assert(false_path_loop_node->in(0) == template_assertion_predicate_success_proj, "only control edge");
+        _igvn.replace_input_of(true_path_loop_node, 0, true_path_loop_proj);
+        to_process.push(false_path_loop_node);
         --j;
       }
     }
-    // Have to delay updates to the slow loop so uses of predicate are not modified while we iterate on them.
+    // Have to delay updates to the false path loop so uses of predicate are not modified while we iterate on them.
     while (to_process.size() > 0) {
       Node* slow_node = to_process.pop();
       _igvn.replace_input_of(slow_node, 0, false_path_loop_proj);
