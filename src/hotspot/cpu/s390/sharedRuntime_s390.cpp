@@ -2387,6 +2387,11 @@ uint SharedRuntime::out_preserve_stack_slots() {
   return frame::z_jit_out_preserve_size/VMRegImpl::stack_slot_size;
 }
 
+VMReg SharedRuntime::thread_register() {
+  Unimplemented();
+  return nullptr;
+}
+
 //
 // Frame generation for deopt and uncommon trap blobs.
 //

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,6 +223,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleOpsWith2DifferentTypesAndInvariant() {
         short[] res1 = new short[SIZE];
@@ -236,6 +238,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleOpsWith2DifferentTypesAndComplexExpression() {
         short[] res1 = new short[SIZE];

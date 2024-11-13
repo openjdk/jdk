@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,8 +277,6 @@ public final class ImageIO {
      *
      * @see File#createTempFile(String, String, File)
      *
-     * @throws SecurityException if the security manager denies
-     * access to the directory.
      * @throws IllegalArgumentException if {@code cacheDir} is
      * non-{@code null} but is not a directory.
      *

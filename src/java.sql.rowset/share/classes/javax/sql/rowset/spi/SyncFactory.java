@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -620,20 +620,9 @@ public class SyncFactory {
      * <code>SyncProvider</code> implementations can log their events to
      * this object and the application can retrieve a handle to this
      * object using the <code>getLogger</code> method.
-     * <p>
-     * This method checks to see that there is an {@code SQLPermission}
-     * object  which grants the permission {@code setSyncFactory}
-     * before allowing the method to succeed.  If a
-     * {@code SecurityManager} exists and its
-     * {@code checkPermission} method denies calling {@code setLogger},
-     * this method throws a
-     * {@code java.lang.SecurityException}.
      *
      * @param logger A Logger object instance
-     * @throws java.lang.SecurityException if a security manager exists and its
-     *   {@code checkPermission} method denies calling {@code setLogger}
      * @throws NullPointerException if the logger is null
-     * @see SecurityManager#checkPermission
      */
     public static void setLogger(Logger logger) {
 
@@ -655,23 +644,11 @@ public class SyncFactory {
      * <code>SyncProvider</code> implementations can log their events
      * to this object and the application can retrieve a handle to this
      * object using the <code>getLogger</code> method.
-     * <p>
-     * This method checks to see that there is an {@code SQLPermission}
-     * object  which grants the permission {@code setSyncFactory}
-     * before allowing the method to succeed.  If a
-     * {@code SecurityManager} exists and its
-     * {@code checkPermission} method denies calling {@code setLogger},
-     * this method throws a
-     * {@code java.lang.SecurityException}.
      *
      * @param logger a Logger object instance
      * @param level a Level object instance indicating the degree of logging
      * required
-     * @throws java.lang.SecurityException if a security manager exists and its
-     *   {@code checkPermission} method denies calling {@code setLogger}
      * @throws NullPointerException if the logger is null
-     * @see SecurityManager#checkPermission
-     * @see LoggingPermission
      */
     public static void setLogger(Logger logger, Level level) {
         // singleton
@@ -709,20 +686,9 @@ public class SyncFactory {
     /**
      * Sets the initial JNDI context from which SyncProvider implementations
      * can be retrieved from a JNDI namespace
-     * <p>
-     *  This method checks to see that there is an {@code SQLPermission}
-     * object  which grants the permission {@code setSyncFactory}
-     * before allowing the method to succeed.  If a
-     * {@code SecurityManager} exists and its
-     * {@code checkPermission} method denies calling {@code setJNDIContext},
-     * this method throws a
-     * {@code java.lang.SecurityException}.
      *
      * @param ctx a valid JNDI context
      * @throws SyncFactoryException if the supplied JNDI context is null
-     * @throws java.lang.SecurityException if a security manager exists and its
-     *  {@code checkPermission} method denies calling {@code setJNDIContext}
-     * @see SecurityManager#checkPermission
      */
     public static synchronized void setJNDIContext(javax.naming.Context ctx)
             throws SyncFactoryException {
