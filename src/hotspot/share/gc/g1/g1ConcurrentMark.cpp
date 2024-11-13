@@ -2307,6 +2307,7 @@ void G1CMTask::decrease_limits() {
 }
 
 void G1CMTask::move_entries_to_global_stack() {
+  double start_vtime = os::elapsedVTime();
   // Local array where we'll store the entries that will be popped
   // from the local queue.
   G1TaskQueueEntry buffer[G1CMMarkStack::EntriesPerChunk];
@@ -2329,6 +2330,8 @@ void G1CMTask::move_entries_to_global_stack() {
 
   // This operation was quite expensive, so decrease the limits.
   decrease_limits();
+  double end_vtime = os::elapsedVTime();
+  log_debug(gc, ergo, heap) ("move_entries_to_global_stack %.4fms", (end_vtime - start_vtime) * 1000.0);
 }
 
 bool G1CMTask::get_entries_from_global_stack() {
