@@ -105,7 +105,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     protected static final Component component = createComponent();
 
     private static final Component createComponent() {
-        try { 
+        try {
             Component component = new Component() {};
             // 6482575 - clear the appContext field so as not to leak it
             AWTAccessor.getComponentAccessor().setAppContext(component, null);
