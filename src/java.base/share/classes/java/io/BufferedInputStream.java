@@ -238,7 +238,11 @@ public class BufferedInputStream extends FilterInputStream {
             throw new IllegalArgumentException("Buffer size <= 0");
         }
         initialSize = size;
-        buf = new byte[size];
+        if (getClass() == BufferedInputStream.class) {
+            buf = EMPTY;
+        } else {
+            buf = new byte[size];
+        }
     }
 
     /**
