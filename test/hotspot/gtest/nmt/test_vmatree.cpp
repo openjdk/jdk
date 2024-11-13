@@ -31,7 +31,7 @@
 #include "unittest.hpp"
 
 using Tree = VMATree;
-using Node = Tree::TreapNode;
+using TNode = Tree::TreapNode;
 using NCS = NativeCallStackStorage;
 
 class NMTVMATreeTest : public testing::Test {
@@ -77,7 +77,7 @@ public:
 
   int count_nodes(Tree& tree) {
     int count = 0;
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       ++count;
     });
     return count;
@@ -130,7 +130,7 @@ public:
     for (int i = 0; i < 10; i++) {
       tree.commit_mapping(i * 100, 100, rd);
     }
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       VMATree::StateType in = in_type_of(x);
       VMATree::StateType out = out_type_of(x);
       EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
@@ -155,7 +155,7 @@ public:
     };
 
     int i = 0;
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       if (i < 16) {
         found[i] = x->key();
       }
@@ -187,7 +187,7 @@ TEST_VM_F(NMTVMATreeTest, UseFlagInplace) {
   tree.reserve_mapping(0, 100, rd1);
   tree.commit_mapping(20, 50, rd2, true);
   tree.uncommit_mapping(30, 10, rd2);
-  tree.visit_in_order([&](Node* node) {
+  tree.visit_in_order([&](TNode* node) {
     if (node->key() != 100) {
       EXPECT_EQ(mtTest, node->val().out.mem_tag()) << "failed at: " << node->key();
       if (node->key() != 20 && node->key() != 40) {
@@ -227,7 +227,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     VMATree::RegionData rd2{si[1], mtNMT };
     tree.commit_mapping(50, 50, rd2);
     tree.reserve_mapping(0, 100, rd);
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
         EXPECT_EQ(x->val().out.regiondata().mem_tag, mtTest);
@@ -264,7 +264,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     Tree tree;
     tree.reserve_mapping(0, 100, rd);
     tree.commit_mapping(0, 100, rd2);
-    treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
+    treap(tree).visit_range_in_order(0, 99999, [&](TNode* x) {
       if (x->key() == 0) {
         EXPECT_EQ(mtTest, x->val().out.regiondata().mem_tag);
       }

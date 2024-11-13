@@ -27,8 +27,8 @@ import jdk.test.whitebox.WhiteBox;
 
 public final class Settings {
 
-    final static long rootChunkWordSize = 2048 * 1024;
-
+    final static long ROOT_CHUNK_WORD_SIZE = WhiteBox.getWhiteBox().rootChunkWordSize();
+    final static long WORD_SIZE = WhiteBox.getWhiteBox().wordSize();
     static Settings theSettings;
 
     static Settings settings()  {
