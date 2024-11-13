@@ -101,7 +101,7 @@ public class LintSuppression {
         return suppressionsFrom(Stream.of(annotation).map(anno -> anno.attribute));
     }
 
-    // Find the @SuppressWarnings annotation in the attriubte stream and extract the suppressions
+    // Find the @SuppressWarnings annotation in the attribute stream and extract the suppressions
     private EnumSet<LintCategory> suppressionsFrom(Stream<Attribute.Compound> attributes) {
         initializeIfNeeded();
         return attributes
