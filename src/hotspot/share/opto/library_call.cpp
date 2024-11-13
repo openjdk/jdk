@@ -3679,7 +3679,7 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
   // Change the lock_id of the JavaThread
   Node* tid = load_field_from_object(arr, "tid", "J");
   Node* thread_id_offset = basic_plus_adr(thread, in_bytes(JavaThread::lock_id_offset()));
-  Node* tid_memory = store_to_memory(control(), thread_id_offset, tid, T_LONG, Compile::AliasIdxRaw, MemNode::unordered, true);
+  Node* tid_memory = store_to_memory(control(), thread_id_offset, tid, T_LONG, MemNode::unordered, true);
 
   JFR_ONLY(extend_setCurrentThread(thread, arr);)
   return true;
