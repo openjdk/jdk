@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -785,13 +785,13 @@ $(eval $(call SetupTarget, build-microbenchmark, \
 $(eval $(call SetupTarget, test, \
     MAKEFILE := RunTests, \
     ARGS := TEST="$(TEST)", \
-    DEPS := jdk-image test-image, \
+    DEPS := jdk-image test-image $(TEST_DEPS), \
 ))
 
 $(eval $(call SetupTarget, exploded-test, \
     MAKEFILE := RunTests, \
     ARGS := TEST="$(TEST)" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR), \
-    DEPS := exploded-image test-image, \
+    DEPS := exploded-image test-image $(TEST_DEPS), \
 ))
 
 ifeq ($(JCOV_ENABLED), true)
@@ -1110,8 +1110,8 @@ else
   test-make-compile-commands: compile-commands
 
   # Declare dependency for all generated test targets
-  $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image))
-  $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image))
+  $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image $(TEST_DEPS)))
+  $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image $(TEST_DEPS)))
 
   interim-image: $(INTERIM_JMOD_TARGETS)
 
