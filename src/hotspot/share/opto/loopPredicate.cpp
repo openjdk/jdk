@@ -329,7 +329,7 @@ void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree
   }
 }
 
-// Put all Assertion Predicate projections on a list, starting at 'predicate' and going up in the tree. If 'get_opaque'
+// Put all Template Assertion Predicate projections on a list, starting at 'predicate' and going up in the tree. If 'get_opaque'
 // is set, then the OpaqueTemplateAssertionPredicateNode nodes of the Assertion Predicates are put on the list instead
 // of the projections.
 void PhaseIdealLoop::get_template_assertion_predicates(ParsePredicateSuccessProj* parse_predicate_proj, Unique_Node_List& list,
