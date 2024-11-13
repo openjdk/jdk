@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8343781
- * @summary Test for @since in java.management module
+ * @summary Test for `@since` in java.management module
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker java.management
  */
