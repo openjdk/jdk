@@ -251,10 +251,9 @@ public final class CleanerImpl implements Runnable {
         public void insert(PhantomCleanable<?> phc) {
             synchronized (list) {
                 // Inserting at the end, record the indexes.
-                int size = list.size();
-                phc.index = size;
-                maxIdx = size;
+                phc.index = maxIdx = list.size();
                 list.add(phc);
+                assert list.get(phc.index) == phc;
             }
         }
 
@@ -268,17 +267,18 @@ public final class CleanerImpl implements Runnable {
             synchronized (list) {
                 int thisIdx = phc.index;
                 if (thisIdx == -1) {
-                    // Was already removed from the list.
+                    // Not in the list.
                     return false;
                 }
 
                 // Unlink PhantomCleanable.
+                assert list.get(phc.index) == phc;
                 phc.index = -1;
 
                 int lastIdx = list.size() - 1;
                 if (lastIdx != thisIdx) {
-                    // Move the last element at current index, overwriting it.
-                    // Update its index to a new location.
+                    // Move the last, still alive element at current index,
+                    // overwriting the removed one. Update its index to a new location.
                     PhantomCleanable<?> last = list.get(lastIdx);
                     last.index = thisIdx;
                     list.set(thisIdx, last);
@@ -294,7 +294,6 @@ public final class CleanerImpl implements Runnable {
                     maxIdx = list.size() - 1;
                 }
 
-                // Success!
                 return true;
             }
         }
