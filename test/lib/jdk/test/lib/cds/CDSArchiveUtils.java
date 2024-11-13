@@ -503,8 +503,7 @@ public class CDSArchiveUtils {
 
     // used region size
     public static long usedRegionSizeAligned(File archiveFile, int region) throws Exception {
-        long offset = spOffset + cdsFileMapRegionSize * region + spUsedOffset;
-        long used = readInt(archiveFile, offset, sizetSize);
+        long used = usedRegionSize(archiveFile, region);
         return alignUpWithAlignment(used);
     }
 }
