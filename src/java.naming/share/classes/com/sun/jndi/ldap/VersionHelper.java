@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package com.sun.jndi.ldap;
-
-import jdk.internal.access.SharedSecrets;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -109,14 +107,8 @@ public final class VersionHelper {
         return Class.forName(className, true, getContextClassLoader());
     }
 
-    @SuppressWarnings("removal")
     Thread createThread(Runnable r) {
-        AccessControlContext acc = AccessController.getContext();
-        // 4290486: doPrivileged is needed to create a thread in
-        // an environment that restricts "modifyThreadGroup".
-        PrivilegedAction<Thread> act =
-                () -> SharedSecrets.getJavaLangAccess().newThreadWithAcc(r, acc);
-        return AccessController.doPrivileged(act);
+        return new Thread(r);
     }
 
     @SuppressWarnings("removal")
