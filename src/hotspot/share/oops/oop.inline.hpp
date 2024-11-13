@@ -34,7 +34,7 @@
 #include "oops/arrayOop.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/klassMode.inline.hpp"
+#include "oops/objLayout.inline.hpp"
 #include "oops/markWord.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
@@ -96,10 +96,10 @@ void oopDesc::init_mark() {
 }
 
 Klass* oopDesc::klass() const {
-  switch (KlassMode::klass_mode()) {
-    case KlassMode::Compact:
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
       return mark().klass();
-    case KlassMode::Compressed:
+    case ObjLayout::Compressed:
       return CompressedKlassPointers::decode_not_null(_metadata._compressed_klass);
     default:
       return _metadata._klass;
@@ -107,10 +107,10 @@ Klass* oopDesc::klass() const {
 }
 
 Klass* oopDesc::klass_or_null() const {
-  switch (KlassMode::klass_mode()) {
-    case KlassMode::Compact:
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
       return mark().klass_or_null();
-    case KlassMode::Compressed:
+    case ObjLayout::Compressed:
       return CompressedKlassPointers::decode(_metadata._compressed_klass);
     default:
       return _metadata._klass;
@@ -118,10 +118,10 @@ Klass* oopDesc::klass_or_null() const {
 }
 
 Klass* oopDesc::klass_or_null_acquire() const {
-  switch (KlassMode::klass_mode()) {
-    case KlassMode::Compact:
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
       return mark_acquire().klass();
-    case KlassMode::Compressed: {
+    case ObjLayout::Compressed: {
       narrowKlass narrow_klass = Atomic::load_acquire(&_metadata._compressed_klass);
       return CompressedKlassPointers::decode(narrow_klass);
     }
@@ -131,10 +131,10 @@ Klass* oopDesc::klass_or_null_acquire() const {
 }
 
 Klass* oopDesc::klass_without_asserts() const {
-  switch (KlassMode::klass_mode()) {
-    case KlassMode::Compact:
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
       return mark().klass_without_asserts();
-    case KlassMode::Compressed:
+    case ObjLayout::Compressed:
       return CompressedKlassPointers::decode_without_asserts(_metadata._compressed_klass);
     default:
       return _metadata._klass;

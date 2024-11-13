@@ -23,16 +23,16 @@
  */
 
 #include "precompiled.hpp"
-#include "oops/klassMode.hpp"
 #include "oops/markWord.hpp"
+#include "oops/objLayout.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
-KlassMode::Mode KlassMode::_klass_mode = KlassMode::Undefined;
-int KlassMode::_oop_base_offset_in_bytes = 0;
+ObjLayout::Mode ObjLayout::_klass_mode = ObjLayout::Undefined;
+int ObjLayout::_oop_base_offset_in_bytes = 0;
 
-void KlassMode::init_klass_mode() {
-  assert(_klass_mode == Undefined, "KlassMode initialized twice");
+void ObjLayout::initialize() {
+  assert(_klass_mode == Undefined, "ObjLayout initialized twice");
   if (UseCompactObjectHeaders) {
     _klass_mode = Compact;
     _oop_base_offset_in_bytes = sizeof(markWord);

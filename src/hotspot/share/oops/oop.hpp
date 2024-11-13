@@ -29,9 +29,9 @@
 #include "memory/memRegion.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/accessDecorators.hpp"
-#include "oops/klassMode.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
+#include "oops/objLayout.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -351,7 +351,7 @@ class oopDesc {
   }
 
   static int base_offset_in_bytes() {
-    return KlassMode::oop_base_offset_in_bytes();
+    return ObjLayout::oop_base_offset_in_bytes();
   }
 
   // for error reporting

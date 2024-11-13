@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_OOPS_KLASSMODE_HPP
-#define SHARE_OOPS_KLASSMODE_HPP
+#ifndef SHARE_OOPS_OBJLAYOUT_HPP
+#define SHARE_OOPS_OBJLAYOUT_HPP
 
 /*
  * This class helps to avoid loading more than one flag when
@@ -41,7 +41,7 @@
  * }
  *
  * we can do:
- * switch (KlassMode::klass_mode()) {
+ * switch (ObjLayout::klass_mode()) {
  * case Compact:
  *   ..
  * case Compressed:
@@ -50,7 +50,7 @@
  *   ..
  * }
  */
-class KlassMode {
+class ObjLayout {
 public:
   enum Mode {
     // +UseCompactObjectHeaders (implies +UseCompressedClassPointers)
@@ -68,11 +68,11 @@ private:
   static int  _oop_base_offset_in_bytes;
 
 public:
-  static void init_klass_mode();
+  static void initialize();
   static inline Mode klass_mode();
   static inline int oop_base_offset_in_bytes() {
     return _oop_base_offset_in_bytes;
   }
 };
 
-#endif // SHARE_OOPS_KLASSMODE_HPP
+#endif // SHARE_OOPS_OBJLAYOUT_HPP

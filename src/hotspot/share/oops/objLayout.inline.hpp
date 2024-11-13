@@ -22,12 +22,12 @@
  *
  */
 
-#ifndef SHARE_OOPS_KLASSMODE_INLINE_HPP
-#define SHARE_OOPS_KLASSMODE_INLINE_HPP
+#ifndef SHARE_OOPS_OBJLAYOUT_INLINE_HPP
+#define SHARE_OOPS_OBJLAYOUT_INLINE_HPP
 
-#include "oops/klassMode.hpp"
+#include "oops/objLayout.hpp"
 
-inline KlassMode::Mode KlassMode::klass_mode() {
+inline ObjLayout::Mode ObjLayout::klass_mode() {
 #ifdef ASSERT
   assert(_klass_mode != Undefined, "KlassMode not yet initialized");
   if (UseCompactObjectHeaders) {
@@ -45,4 +45,4 @@ inline KlassMode::Mode KlassMode::klass_mode() {
 #endif
 }
 
-#endif // SHARE_OOPS_KLASSMODE_INLINE_HPP
+#endif // SHARE_OOPS_OBJLAYOUT_INLINE_HPP
