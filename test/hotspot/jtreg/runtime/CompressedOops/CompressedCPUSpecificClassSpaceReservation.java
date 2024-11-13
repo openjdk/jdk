@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
                 "-Xshare:" + (CDS ? "on" : "off"),
                 "-Xmx128m",
                 "-XX:CompressedClassSpaceSize=128m",
+                "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
                 "-Xlog:metaspace*", "-Xlog:metaspace+map=trace", "-Xlog:os+map=trace",
                 "-XX:+SimulateFullAddressSpace", // So that no resevation attempt will succeed
                 "-version");

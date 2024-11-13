@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Google, Inc.  All Rights Reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,16 +19,9 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/** A documented class. */
-public class DocumentedClass extends UndocumentedClass {
-  /** {@link #method} */
-  public void m1() {}
-  /** {@link #publicMethod} */
-  public void m2() {}
-  /** {@link #protectedMethod} */
-  public void m3() {}
-  /** {@link #privateMethod} */
-  public void m4() {}
+public class BootChild extends BootSuper {
+    // Does not override BootSuper::doit()
 }

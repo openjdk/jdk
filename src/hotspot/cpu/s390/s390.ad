@@ -2547,7 +2547,7 @@ operand uimmI8() %{
 //   operand type int
 // Unsigned Integer Immediate: 9-bit
 operand SSlenDW() %{
-  predicate(Immediate::is_uimm8(n->get_long()-1));
+  predicate(Immediate::is_uimm8((julong)n->get_long()-1));
   match(ConL);
   op_cost(1);
   format %{ %}
@@ -4410,12 +4410,28 @@ instruct loadN(iRegN dst, memory mem) %{
 
 // Load narrow Klass Pointer
 instruct loadNKlass(iRegN dst, memory mem) %{
+  predicate(!UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "LoadNKlass $dst,$mem\t # (klass cOop)" %}
   opcode(LLGF_ZOPC, LLGF_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, mem));
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct loadNKlassCompactHeaders(iRegN dst, memory mem, flagsReg cr) %{
+  match(Set dst (LoadNKlass mem));
+  predicate(UseCompactObjectHeaders);
+  effect(KILL cr);
+  ins_cost(MEMORY_REF_COST);
+  format %{ "load_narrow_klass_compact $dst,$mem \t# compressed class ptr" %}
+  // TODO: size()
+  ins_encode %{
+    __ block_comment("load_narrow_klass_compact_c2 {");
+    __ load_narrow_klass_compact_c2($dst$$Register, $mem$$Address);
+    __ block_comment("} load_narrow_klass_compact");
+  %}
   ins_pipe(pipe_class_dummy);
 %}
 

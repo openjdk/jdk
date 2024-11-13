@@ -1288,7 +1288,6 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
 
   if (call_opt_stub) {
-    assert(arrayOopDesc::base_offset_in_bytes(T_BYTE) >= 16, "Needed for indexOf");
     Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
                                    StubRoutines::_string_indexof_array[ae],
                                    "stringIndexOf", TypePtr::BOTTOM, src_start,
@@ -7750,11 +7749,11 @@ bool LibraryCallKit::inline_intpoly_montgomeryMult_P256() {
   r = must_be_not_null(r, true);
 
   Node* a_start = array_element_address(a, intcon(0), T_LONG);
-  assert(a_start, "a array is NULL");
+  assert(a_start, "a array is null");
   Node* b_start = array_element_address(b, intcon(0), T_LONG);
-  assert(b_start, "b array is NULL");
+  assert(b_start, "b array is null");
   Node* r_start = array_element_address(r, intcon(0), T_LONG);
-  assert(r_start, "r array is NULL");
+  assert(r_start, "r array is null");
 
   Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
                                  OptoRuntime::intpoly_montgomeryMult_P256_Type(),
@@ -7779,9 +7778,9 @@ bool LibraryCallKit::inline_intpoly_assign() {
   b = must_be_not_null(b, true);
 
   Node* a_start = array_element_address(a, intcon(0), T_LONG);
-  assert(a_start, "a array is NULL");
+  assert(a_start, "a array is null");
   Node* b_start = array_element_address(b, intcon(0), T_LONG);
-  assert(b_start, "b array is NULL");
+  assert(b_start, "b array is null");
 
   Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
                                  OptoRuntime::intpoly_assign_Type(),
