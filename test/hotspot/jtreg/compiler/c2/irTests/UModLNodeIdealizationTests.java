@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8267265
+ * @bug 8332268
  * @summary Test that Ideal transformations of DivINode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UModLNodeIdealizationTests

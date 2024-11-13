@@ -219,11 +219,10 @@ static Node* transform_unsigned_int_divide(PhaseGVN* phase, Node* dividend, jint
     // division by a power of 2
     return new URShiftINode(dividend, phase->intcon(log2i_graceful(divisor)));
   } else {
-    /* TODO: we could implement the optimizations by
-     * Granlund and Montgomery: Division by Invariant Integers using Multiplication
-     * as was done for signed division.
-     * https://dl.acm.org/doi/pdf/10.1145/178243.178249
-     */
+    // We could implement the optimizations by
+    // Granlund and Montgomery: Division by Invariant Integers using Multiplication
+    // as was done for signed division.
+    // https://dl.acm.org/doi/pdf/10.1145/178243.178249
   }
 
   return nullptr;
@@ -534,11 +533,10 @@ static Node* transform_unsigned_long_divide(PhaseGVN* phase, Node* dividend, jlo
     // division by a power of 2
     return new URShiftLNode(dividend, phase->intcon(log2i_graceful(divisor)));
   } else {
-    /* TODO: we could implement the optimizations by
-     * Granlund and Montgomery: Division by Invariant Integers using Multiplication
-     * as was done for signed division.
-     * https://dl.acm.org/doi/pdf/10.1145/178243.178249
-     */
+    // We could implement the optimizations by
+    // Granlund and Montgomery: Division by Invariant Integers using Multiplication
+    // as was done for signed division.
+    // https://dl.acm.org/doi/pdf/10.1145/178243.178249
   }
 
   return nullptr;
