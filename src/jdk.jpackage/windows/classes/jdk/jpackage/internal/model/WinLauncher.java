@@ -59,11 +59,4 @@ public interface WinLauncher extends Launcher, WinLauncherMixin {
     public static WinLauncher create(Launcher launcher, WinLauncherMixin mixin) {
         return CompositeProxy.create(WinLauncher.class, launcher, mixin);
     }
-    
-    // This override is needed to make default Launcher methods invoke overriden
-    // WinLauncher methods.
-    @Override
-    default String executableNameWithSuffix() {
-        return Launcher.super.executableNameWithSuffix();
-    }
 }

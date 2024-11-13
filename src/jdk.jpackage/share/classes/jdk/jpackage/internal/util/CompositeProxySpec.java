@@ -36,43 +36,32 @@ final class CompositeProxySpec {
         return interfaceDispatch;
     }
 
-    static CompositeProxySpec createForImpl(Class<?> interfaceType, Object obj) {
+    static CompositeProxySpec create(Class<?> interfaceType, Object... slices) {
         validateTypeIsInterface(interfaceType);
-        if (!interfaceType.isAssignableFrom(interfaceType)) {
-            throw new IllegalArgumentException(String.format(
-                    "supplied object must implement %s interface", obj));
-        }
-        return new CompositeProxySpec(interfaceType, new Class<?>[]{interfaceType},
-                new Object[]{obj});
+        return new CompositeProxySpec(interfaceType, interfaceType.getInterfaces(), slices);
     }
 
-    static CompositeProxySpec createForPieces(Class<?> interfaceType, Object... pieces) {
-        validateTypeIsInterface(interfaceType);
-        return new CompositeProxySpec(interfaceType, interfaceType.getInterfaces(),
-                pieces);
-    }
-
-    private CompositeProxySpec(Class<?> interfaceType, Class<?>[] interfaces, Object[] pieces) {
+    private CompositeProxySpec(Class<?> interfaceType, Class<?>[] interfaces, Object[] slices) {
         List.of(interfaces).forEach(CompositeProxySpec::validateTypeIsInterface);
 
-        if (interfaces.length != pieces.length) {
+        if (interfaces.length != slices.length) {
             throw new IllegalArgumentException(String.format(
                     "type %s must extend %d interfaces", interfaceType.getName(),
-                    pieces.length));
+                    slices.length));
         }
 
-        this.interfaceDispatch = createInterfaceDispatch(interfaces, pieces);
+        this.interfaceDispatch = createInterfaceDispatch(interfaces, slices);
     }
 
     private static Map<Class<?>, Object> createInterfaceDispatch(
-            Class<?>[] interfaces, Object[] pieces) {
+            Class<?>[] interfaces, Object[] slices) {
 
         final Map<Class<?>, Object> interfaceDispatch = Stream.of(interfaces).collect(toMap(x -> x, iface -> {
-            return Stream.of(pieces).filter(obj -> {
+            return Stream.of(slices).filter(obj -> {
                 return Set.of(obj.getClass().getInterfaces()).contains(iface);
             }).reduce((a, b) -> {
                 throw new IllegalArgumentException(String.format(
-                        "both [%s] and [%s] pieces implement %s", a, b, iface));
+                        "both [%s] and [%s] slices implement %s", a, b, iface));
             }).orElseThrow(() -> createInterfaceNotImplementedException(List.of(iface)));
         }));
 
@@ -97,7 +86,7 @@ final class CompositeProxySpec {
     private static IllegalArgumentException createInterfaceNotImplementedException(
             Collection<Class<?>> missingInterfaces) {
         return new IllegalArgumentException(String.format(
-                "none of the pieces implement %s", missingInterfaces));
+                "none of the slices implement %s", missingInterfaces));
     }
 
     private static void validateTypeIsInterface(Class<?> type) {

@@ -57,26 +57,4 @@ public interface LinuxPackage extends Package, LinuxPackageMixin {
     public static LinuxPackage create(Package pkg, LinuxPackageMixin mixin) {
         return CompositeProxy.create(LinuxPackage.class, pkg, mixin);
     }
-
-    // These overrides are needed to make default Package methods invoke overriden
-    // LinuxPackage methods.
-    @Override
-    default String packageFileNameWithSuffix() {
-        return Package.super.packageFileNameWithSuffix();
-    }
-
-    @Override
-    default AppImageLayout installedPackageLayout() {
-        return Package.super.installedPackageLayout();
-    }
-
-    @Override
-    default ApplicationLayout asInstalledPackageApplicationLayout() {
-        return Package.super.asInstalledPackageApplicationLayout();
-    }
-
-    @Override
-    default ApplicationLayout asPackageApplicationLayout() {
-        return Package.super.asPackageApplicationLayout();
-    }
 }

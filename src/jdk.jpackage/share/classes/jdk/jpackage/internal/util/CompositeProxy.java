@@ -26,9 +26,11 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BinaryOperator;
+import java.util.function.Predicate;
 import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
 
@@ -36,9 +38,9 @@ public final class CompositeProxy {
 
     public final static class Builder {
 
-        public <T> T create(Class<T> interfaceType, Object... pieces) {
+        public <T> T create(Class<T> interfaceType, Object... slices) {
             return CompositeProxy.createCompositeProxy(interfaceType, conflictResolver,
-                    invokeTunnel, pieces);
+                    invokeTunnel, slices);
         }
 
         public Builder conflictResolver(BinaryOperator<Method> v) {
@@ -64,16 +66,16 @@ public final class CompositeProxy {
         return new Builder();
     }
 
-    public static <T> T create(Class<T> interfaceType, Object... pieces) {
-        return build().create(interfaceType, pieces);
+    public static <T> T create(Class<T> interfaceType, Object... slices) {
+        return build().create(interfaceType, slices);
     }
 
     private static <T> T createCompositeProxy(Class<T> interfaceType,
             BinaryOperator<Method> conflictResolver, InvokeTunnel invokeTunnel,
-            Object... pieces) {
+            Object... slices) {
 
-        final Map<Class<?>, Object> interfaceDispatch = CompositeProxySpec.createForPieces(
-                interfaceType, pieces).getInterfaceDispatch();
+        final Map<Class<?>, Object> interfaceDispatch = CompositeProxySpec.create(
+                interfaceType, slices).getInterfaceDispatch();
 
         final Map<Method, Handler> methodDispatch = getProxyableMethods(interfaceType).map(method -> {
             var handler = createHandler(interfaceType, method, interfaceDispatch,
@@ -87,12 +89,11 @@ public final class CompositeProxy {
 
         @SuppressWarnings("unchecked")
         T proxy = (T) Proxy.newProxyInstance(interfaceType.getClassLoader(),
-                new Class<?>[]{interfaceType, DynamicProxyTag.class},
+                new Class<?>[]{interfaceType},
                 new DynamicProxyInvocationHandler(methodDispatch));
 
         return proxy;
     }
-
 
     private static Handler createHandler(Class<?> interfaceType, Method method,
             Map<Class<?>, Object> interfaceDispatch,
@@ -102,18 +103,23 @@ public final class CompositeProxy {
         final var methodDeclaringClass = method.getDeclaringClass();
 
         if (!methodDeclaringClass.equals(interfaceType)) {
-            // The method is declared in one of the superintarfaces.
-            var piece = interfaceDispatch.get(methodDeclaringClass);
-            return createHandlerForMethod(piece, method, invokeTunnel);
+            // The method is declared in one of the superinterfaces.
+            final var slice = interfaceDispatch.get(methodDeclaringClass);
+
+            if (isInvokeDefault(method, slice)) {
+                return createHandlerForDefaultMethod(method, invokeTunnel);
+            } else {
+                return createHandlerForMethod(slice, method, invokeTunnel);
+            }
         } else if (method.isDefault()) {
             return createHandlerForDefaultMethod(method, invokeTunnel);
         } else {
-            // Find a piece handling the method.
+            // Find a slice handling the method.
             var handler = interfaceDispatch.entrySet().stream().map(e -> {
                 try {
                     Class<?> iface = e.getKey();
-                    Object piece = e.getValue();
-                    return createHandlerForMethod(piece, iface.getMethod(
+                    Object slice = e.getValue();
+                    return createHandlerForMethod(slice, iface.getMethod(
                             method.getName(), method.getParameterTypes()),
                             invokeTunnel);
                 } catch (NoSuchMethodException ex) {
@@ -121,7 +127,7 @@ public final class CompositeProxy {
                 }
             }).filter(Objects::nonNull).reduce(new ConflictResolverAdapter(conflictResolver)).orElseThrow(() -> {
                 return new IllegalArgumentException(String.format(
-                        "none of the pieces can handle %s", method));
+                        "none of the slices can handle %s", method));
             });
 
             return handler;
@@ -131,6 +137,37 @@ public final class CompositeProxy {
     private static Stream<Method> getProxyableMethods(Class<?> interfaceType) {
         return Stream.of(interfaceType.getMethods()).filter(
                 method -> !Modifier.isStatic(method.getModifiers()));
+    }
+
+    private static boolean isInvokeDefault(Method method, Object slice) {
+        if (!method.isDefault()) {
+            return false;
+        }
+
+        // The "method" is default.
+        // See if is overriden by any non-abstract method in the "slice".
+        // If it is, InvocationHandler.invokeDefault() should not be used to call it.
+
+        final var sliceClass = slice.getClass();
+
+        final var methodOverriden = Stream.of(sliceClass.getMethods())
+                .filter(Predicate.not(Predicate.isEqual(method)))
+                .filter(sliceMethod -> !Modifier.isAbstract(sliceMethod.getModifiers()))
+                .anyMatch(sliceMethod -> signatureEquals(sliceMethod, method));
+
+        return !methodOverriden;
+    }
+
+    private static boolean signatureEquals(Method a, Method b) {
+        if (!Objects.equals(a.getName(), b.getName())) {
+            return false;
+        }
+
+        if (!Arrays.equals(a.getParameterTypes(), b.getParameterTypes())) {
+            return false;
+        }
+
+        return Objects.equals(a.getReturnType(), b.getReturnType());
     }
 
     private record DynamicProxyInvocationHandler(Map<Method, Handler> dispatch) implements InvocationHandler {
@@ -220,7 +257,4 @@ public final class CompositeProxy {
             return b;
         }
     };
-
-    public static interface DynamicProxyTag {
-    }
 }

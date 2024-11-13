@@ -222,4 +222,36 @@ public class CompositeProxyTest {
         assertEquals("hello", proxyC.m());
         assertEquals("bye", proxyC.n());
     }
+
+    @Test
+    public void testComposite() {
+        interface A {
+            String sayHello();
+            String sayBye();
+            default String talk() {
+                return String.join(",", sayHello(), sayBye());
+            }
+        }
+
+        interface B extends A {
+            @Override
+            default String sayHello() {
+                return "ciao";
+            }
+        }
+
+        var proxy = CompositeProxy.create(B.class, new A() {
+            @Override
+            public String sayHello() {
+                return "hello";
+            }
+
+            @Override
+            public String sayBye() {
+                return "bye";
+            }
+        });
+
+        assertEquals("ciao,bye", proxy.talk());
+    }
 }
