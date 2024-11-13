@@ -1151,7 +1151,7 @@ public class MergeStoreBench {
     }
 
     @Fork(value = 1, jvmArgs = {
-            "-XX:+UnlockDiagnosticVMOptions", "-XX:-MergeStores"
+            "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED", "-XX:+UnlockDiagnosticVMOptions", "-XX:-MergeStores"
     })
     public static class MergeStoresDisabled extends MergeStoreBench {}
 }
