@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary FnnClass FnnUnmarshal NonpublicInterface
  *     NonpublicInterface1 PublicInterface PublicInterface1
- * @run main/othervm/policy=security.policy
+ * @run main/othervm
  *     -Djava.rmi.server.useCodebaseOnly=false LoadProxyClasses
  */
 
@@ -73,16 +73,18 @@ import java.util.zip.Checksum;
  *  interface (java.util.zip.CheckSum) loaded from bootclasspath,
  *  proxy class defined in null/boot class loader.  Should succeed.
  *
- *  3. Public interface classes loaded in FNNL are also available in
+ *  3. Disabled. Public interface classes loaded in FNNL are also available in
  *  RMI loader parent.  FNNL is grandparent of RMI loader. Proxy class
  *  must be defined in RMI class loader. Should succeed. public
- *  interface must be defined in FNNL.
+ *  interface must be defined in FNNL. Disabled because the default
+ *  RMIClassLoader provider no longer creates class loaders.
  *
  *  4. Non-public interfaces have multiple class loaders. Should fail
  *  with a LinkageError.
  *
- *  5. Interface classes loaded from RMI class loader. Proxy class
- *  defined in RMI class loader.
+ *  5. Disabled. Interface classes loaded from RMI class loader. Proxy class
+ *  defined in RMI class loader. Disabled because the default RMIClassLoader
+ *  provider no longer creates class loaders.
  *
  *  6. Not all interfaces classes can be loaded from a single class
  *  loader; should fail with ClassNotFoundException.  All interface
@@ -126,9 +128,6 @@ public class LoadProxyClasses {
                                                "bothNonpublic");
             URL fnnUrl =
                 TestLibrary.installClassInCodebase("FnnClass", "fnn");
-
-            TestLibrary.suggestSecurityManager(null);
-
 
             /* Case 1 */
             ClassLoader grandParentPublic =
@@ -180,8 +179,8 @@ public class LoadProxyClasses {
                 new Class[] {publicInterface3},
                 new TestInvocationHandler());
 
-            unmarshalProxyClass(proxy3, fnnLoader3, fnnLoader3,
-                3, new Case3Checker());
+//            unmarshalProxyClass(proxy3, fnnLoader3, fnnLoader3,
+//                3, new Case3Checker());
 
             currentThread.setContextClassLoader(currentCtxLoader);
 
@@ -240,8 +239,8 @@ public class LoadProxyClasses {
             currentCtxLoader =
                 currentThread.getContextClassLoader();
             currentThread.setContextClassLoader(publicLoader);
-            unmarshalProxyClass(proxy5, fnnLoader2, publicLoader, 5,
-                                new Case5Checker());
+//            unmarshalProxyClass(proxy5, fnnLoader2, publicLoader, 5,
+//                                new Case5Checker());
             currentThread.setContextClassLoader(currentCtxLoader);
 
 

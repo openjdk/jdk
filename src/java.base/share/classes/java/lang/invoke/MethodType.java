@@ -234,7 +234,7 @@ class MethodType
     }
 
     static final ReferencedKeySet<MethodType> internTable =
-        ReferencedKeySet.create(false, true, new Supplier<>() {
+        ReferencedKeySet.create(false, new Supplier<>() {
             @Override
             public Map<ReferenceKey<MethodType>, ReferenceKey<MethodType>> get() {
                 return new ConcurrentHashMap<>(512);
@@ -1194,9 +1194,6 @@ class MethodType
      * @throws NullPointerException if the string is {@code null}
      * @throws IllegalArgumentException if the string is not a method descriptor
      * @throws TypeNotPresentException if a named type cannot be found
-     * @throws SecurityException if the security manager is present and
-     *         {@code loader} is {@code null} and the caller does not have the
-     *         {@link RuntimePermission}{@code ("getClassLoader")}
      * @jvms 4.3.3 Method Descriptors
      */
     public static MethodType fromMethodDescriptorString(String descriptor, ClassLoader loader)
