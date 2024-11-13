@@ -71,11 +71,8 @@ final class P11KeyAgreement extends KeyAgreementSpi {
 
     private static class AllowKDF {
 
-        private static final boolean VALUE = getValue();
-
-        private static boolean getValue() {
-            return Boolean.getBoolean("jdk.crypto.KeyAgreement.legacyKDF");
-        }
+        private static final boolean VALUE =
+            Boolean.getBoolean("jdk.crypto.KeyAgreement.legacyKDF");
     }
 
     P11KeyAgreement(Token token, String algorithm, long mechanism) {

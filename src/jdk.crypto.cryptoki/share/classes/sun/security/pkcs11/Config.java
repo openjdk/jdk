@@ -56,8 +56,6 @@ final class Config {
     // will accept single threaded modules regardless of the setting in their
     // config files.
     private static final boolean staticAllowSingleThreadedModules;
-    private static final String osName;
-    private static final String osArch;
 
     static {
         String allowSingleThreadedModules =
@@ -68,8 +66,6 @@ final class Config {
         } else {
             staticAllowSingleThreadedModules = true;
         }
-        osName = System.getProperty("os.name");
-        osArch = System.getProperty("os.arch");
     }
 
     private static final boolean DEBUG = false;
