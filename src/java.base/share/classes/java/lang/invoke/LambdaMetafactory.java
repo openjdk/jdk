@@ -238,9 +238,12 @@ import java.util.Objects;
  *
  * @implNote In the reference implementation, the classes implementing the created
  * function objects are strongly reachable from the defining class loader of the
- * caller.  This technique reduces heap memory use, but it prevents the
- * implementation class from unloading when the caller is a {@linkplain
- * MethodHandles.Lookup.ClassOption#STRONG hidden class} and is unloaded.
+ * caller, like classes and interfaces in Java source code.  This technique
+ * reduces heap memory use, but as a consequence, the implementation classes can
+ * be unloaded only if the caller class can be unloaded.  In particular, if the
+ * caller is a {@linkplain MethodHandles.Lookup.ClassOption#STRONG weak hidden
+ * class}, the implementation class, a strong hidden class, may not be unloaded
+ * even if the caller may be unloaded.
  *
  * @since 1.8
  */
