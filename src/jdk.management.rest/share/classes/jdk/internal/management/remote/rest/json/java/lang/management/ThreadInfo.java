@@ -33,6 +33,12 @@ import jdk.internal.management.remote.rest.json.JSONObject;
 
 public class ThreadInfo extends java.lang.management.ThreadInfo {
 
+    // Definitions in ManagementFactoryHelper.java but private:
+    // These values are defined in jmm.h
+    private static final int JMM_THREAD_STATE_FLAG_MASK = 0xFFF00000;
+    private static final int JMM_THREAD_STATE_FLAG_SUSPENDED = 0x00100000;
+    private static final int JMM_THREAD_STATE_FLAG_NATIVE = 0x00400000;
+
     protected ThreadInfo(long threadId, String threadName, boolean daemon, int priority,
                          int state, LockInfo lockInfo,
                          long lockOwnerId, String lockOwnerName,
@@ -64,13 +70,21 @@ public class ThreadInfo extends java.lang.management.ThreadInfo {
         String       lockName     = JSONObject.getObjectFieldString(json, "lockName");
         long         lockOwnerId  = JSONObject.getObjectFieldLong(json, "lockOwnerId");
         String       lockOwnerName= JSONObject.getObjectFieldString(json, "lockOwnerName");
+
+        // Thread State, plus isSuspended and inNative flags.
+        int state = 0;
         boolean      inNative     = JSONObject.getObjectFieldBoolean(json, "inNative");
         boolean      suspended    = JSONObject.getObjectFieldBoolean(json, "suspended");
-        int state = 0;
+        if (inNative) {
+            state |= JMM_THREAD_STATE_FLAG_NATIVE;
+        }
+        if (suspended) {
+            state |= JMM_THREAD_STATE_FLAG_SUSPENDED;
+        }
         try {
             String s = JSONObject.getObjectFieldString(json, "threadState"); // e.g. RUNNABLE
             Thread.State threadState  = Thread.State.valueOf(Thread.State.class, s);
-            state = threadState.ordinal();
+            state |= threadState.ordinal();
         } catch (IllegalArgumentException iae) {
 
         }
