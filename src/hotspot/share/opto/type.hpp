@@ -670,7 +670,7 @@ public:
  *   b. t._hi < 0. Similarly, t._lo == jint(t._ulo) and t._hi == jint(t._uhi)
  *
  *   c. t._lo < 0, t._hi >= 0.
- * 
+ *
  *     Since t._ulo <= juint(t._hi), we must have jint(t._ulo) >= 0 because all
  *     negative values is larger than all positive values in the unsigned domain.
  *
@@ -679,11 +679,11 @@ public:
  *
  *     In this case, all elements of t belongs to either [t._lo, jint(t._uhi)] or
  *     [jint(t._ulo), t._hi].
- * 
+ *
  *     Below is an illustration of the TypeInt in this case, the intervals that the
  *     elements can be in are marked using the = symbol. Note how the negative range
  *     in the signed domain wrap around in the unsigned domain.
- * 
+ *
  *     Signed:
  *     -----lo=========uhi---------0--------ulo==========hi-----
  *     Unsigned:
