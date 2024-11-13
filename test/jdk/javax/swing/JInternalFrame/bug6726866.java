@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6726866 8186617 8343123
+ * @bug 6726866 8186617
  * @summary Repainting artifacts when resizing or dragging JInternalFrames in
             non-opaque toplevel
  * @library /java/awt/regtesthelpers
@@ -34,6 +34,7 @@
 import java.awt.Color;
 import java.awt.Window;
 
+import javax.swing.JApplet;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
