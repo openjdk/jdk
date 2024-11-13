@@ -165,6 +165,8 @@ class Klass : public Metadata {
   uintx    _secondary_supers_bitmap;
   uint8_t  _hash_slot;
 
+  markWord _prototype_header;   // Used to initialize objects' header
+
   int _vtable_len;              // vtable length. This field may be read very often when we
                                 // have lots of itable dispatches (e.g., lambdas and streams).
                                 // Keep it away from the beginning of a Klass to avoid cacheline
@@ -707,6 +709,10 @@ public:
   bool is_cloneable() const;
   void set_is_cloneable();
 
+  inline markWord prototype_header() const;
+  inline void set_prototype_header(markWord header);
+  static ByteSize prototype_header_offset() { return in_ByteSize(offset_of(Klass, _prototype_header)); }
+
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
@@ -761,6 +767,10 @@ public:
   static bool is_valid(Klass* k);
 
   static void on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg);
+
+  // Returns true if this Klass needs to be addressable via narrow Klass ID.
+  inline bool needs_narrow_id() const;
+
 };
 
 #endif // SHARE_OOPS_KLASS_HPP

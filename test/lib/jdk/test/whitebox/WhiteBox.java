@@ -55,11 +55,6 @@ public class WhiteBox {
    * untrusted code.
    */
   public synchronized static WhiteBox getWhiteBox() {
-    @SuppressWarnings("removal")
-    SecurityManager sm = System.getSecurityManager();
-    if (sm != null) {
-      sm.checkPermission(new WhiteBoxPermission("getInstance"));
-    }
     return instance;
   }
 
@@ -540,14 +535,18 @@ public class WhiteBox {
   public native void destroyMetaspaceTestContext(long context);
   public native void purgeMetaspaceTestContext(long context);
   public native void printMetaspaceTestContext(long context);
-  public native long getTotalCommittedWordsInMetaspaceTestContext(long context);
-  public native long getTotalUsedWordsInMetaspaceTestContext(long context);
+  public native long getTotalCommittedBytesInMetaspaceTestContext(long context);
+  public native long getTotalUsedBytesInMetaspaceTestContext(long context);
   public native long createArenaInTestContext(long context, boolean is_micro);
   public native void destroyMetaspaceTestArena(long arena);
-  public native long allocateFromMetaspaceTestArena(long arena, long word_size);
-  public native void deallocateToMetaspaceTestArena(long arena, long p, long word_size);
+  public native long allocateFromMetaspaceTestArena(long arena, long size);
+  public native void deallocateToMetaspaceTestArena(long arena, long p, long size);
 
   public native long maxMetaspaceAllocationSize();
+
+  // Word size measured in bytes
+  public native long wordSize();
+  public native long rootChunkWordSize();
 
   // Don't use these methods directly
   // Use jdk.test.whitebox.gc.GC class instead.

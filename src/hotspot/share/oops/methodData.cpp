@@ -59,9 +59,14 @@ bool DataLayout::needs_array_len(u1 tag) {
 // Perform generic initialization of the data.  More specific
 // initialization occurs in overrides of ProfileData::post_initialize.
 void DataLayout::initialize(u1 tag, u2 bci, int cell_count) {
-  _header._bits = (intptr_t)0;
-  _header._struct._tag = tag;
-  _header._struct._bci = bci;
+  DataLayout temp;
+  temp._header._bits = (intptr_t)0;
+  temp._header._struct._tag = tag;
+  temp._header._struct._bci = bci;
+  // Write the header using a single intptr_t write.  This ensures that if the layout is
+  // reinitialized readers will never see the transient state where the header is 0.
+  _header = temp._header;
+
   for (int i = 0; i < cell_count; i++) {
     set_cell_at(i, (intptr_t)0);
   }
@@ -1223,6 +1228,28 @@ MethodData::MethodData(const methodHandle& method)
     _parameters_type_data_di(parameters_uninitialized) {
   initialize();
 }
+
+// Reinitialize the storage of an existing MDO at a safepoint.  Doing it this way will ensure it's
+// not being accessed while the contents are being rewritten.
+class VM_ReinitializeMDO: public VM_Operation {
+ private:
+  MethodData* _mdo;
+ public:
+  VM_ReinitializeMDO(MethodData* mdo): _mdo(mdo) {}
+  VMOp_Type type() const                         { return VMOp_ReinitializeMDO; }
+  void doit() {
+    // The extra data is being zero'd, we'd like to acquire the extra_data_lock but it can't be held
+    // over a safepoint.  This means that we don't actually need to acquire the lock.
+    _mdo->initialize();
+  }
+  bool allow_nested_vm_operations() const        { return true; }
+};
+
+void MethodData::reinitialize() {
+  VM_ReinitializeMDO op(this);
+  VMThread::execute(&op);
+}
+
 
 void MethodData::initialize() {
   Thread* thread = Thread::current();
