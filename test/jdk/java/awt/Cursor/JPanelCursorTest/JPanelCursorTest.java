@@ -44,12 +44,12 @@ import javax.swing.border.BevelBorder;
 
 public class JPanelCursorTest {
     public static void main(String[] args) throws Exception {
-        String INSTRUCTIONS = """
+        final String INSTRUCTIONS = """
                 This test checks for setCursor in a JPanel when added to a
                 JFrame's contentPane.
 
                 1. Verify that the cursor in the left side of the test window
-                    is a move cursor (or default cursor in MacOS).
+                    is a wait cursor.
                 2. Verify that the cursor changes to the crosshair cursor when
                     pointing over the button.
                 3. Verify that the cursor changes to the hand cursor when in
@@ -68,7 +68,7 @@ public class JPanelCursorTest {
     }
 
     public static JFrame createUI() {
-        JFrame frame = new JFrame();
+        JFrame frame = new JFrame("Cursor Test Frame");
 
         JSplitPane j = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         ExtJComponent pane = new ExtJComponent();
@@ -80,8 +80,7 @@ public class JPanelCursorTest {
         j.setContinuousLayout(true);
 
         frame.getContentPane().add("Center", j);
-        pane.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
-        frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        pane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         frame.pack();
         return frame;
     }
@@ -96,7 +95,7 @@ class ExtJComponent extends JComponent {
         setBorder(new BevelBorder(BevelBorder.RAISED));
     }
     public void paintComponent(Graphics g) {
-        g.drawString("Move", 20, 30);
+        g.drawString("Wait", 20, 30);
     }
     public Dimension getPreferredSize() {
         return new Dimension(100, 100);
