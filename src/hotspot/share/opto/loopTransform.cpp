@@ -2051,7 +2051,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   // Kill the clone's backedge
   Node *newcle = old_new[loop_end->_idx];
   _igvn.hash_delete(newcle);
-  Node *one = intcon(1);
+  Node* one = intcon(1);
   newcle->set_req(1, one);
   // Force clone into same loop body
   uint max = loop->_body.size();
