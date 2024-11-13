@@ -43,13 +43,13 @@ import java.util.function.Supplier;
  * A stable value is a holder of deferred immutable data.
  * <p>
  * A {@linkplain StableValue {@code StableValue<T>}} is created using the factory method
- * {@linkplain StableValue#empty()}. When created, the stable value is <em>unset</em>, which
- * means it holds no value. It's holder value of type {@code T} can be <em>set</em> by
- * passing a value to {@linkplain #trySet(Object) trySet()},
+ * {@linkplain StableValue#empty()}. When created, the stable value is <em>unset</em>,
+ * which means it holds no value. It's holder value of type {@code T} can be <em>set</em>
+ * by passing a value via {@linkplain #trySet(Object) trySet()},
  * {@linkplain #setOrThrow(Object) setOrThrow()}, or
  * {@linkplain #computeIfUnset(Supplier) computeIfUnset()}. Once set, the value held
  * by a {@code StableValue} can never change and can be retrieved by calling
- * {@linkplain #orElseThrow() orElseThrow()}, {@linkplain #orElse(Object)}, or
+ * {@linkplain #orElseThrow() orElseThrow()}, {@linkplain #orElse(Object) orElse()}, or
  * {@linkplain #computeIfUnset(Supplier) computeIfUnset()}.
  * <p>
  * A stable value that is <em>set</em> is treated as a constant by the JVM, enabling
