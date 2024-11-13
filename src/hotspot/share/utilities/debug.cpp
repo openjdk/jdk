@@ -74,7 +74,7 @@
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 static char g_dummy;
 char* g_assert_poison = &g_dummy;
-const char* g_assert_poison_page_for_reporting = nullptr;
+const char* g_assert_poison_read_only = &g_dummy;
 static intx g_asserting_thread = 0;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
@@ -721,12 +721,12 @@ void initialize_assert_poison() {
     if (os::commit_memory(page, os::vm_page_size(), false) &&
         os::protect_memory(page, os::vm_page_size(), os::MEM_PROT_NONE)) {
       g_assert_poison = page;
+      g_assert_poison_read_only = page;
     }
   }
 }
 
 void disarm_assert_poison() {
-  g_assert_poison_page_for_reporting = g_assert_poison;
   g_assert_poison = &g_dummy;
 }
 

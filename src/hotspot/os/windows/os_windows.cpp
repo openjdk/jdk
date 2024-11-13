@@ -2144,13 +2144,12 @@ void os::print_siginfo(outputStream *st, const void* siginfo) {
   // If we are here because of an assert/guarantee, we suppress
   // printing the siginfo, because it is only an implementation
   // detail capturing the context for said assert/guarantee.
-  const EXCEPTION_RECORD* const er = (EXCEPTION_RECORD*)siginfo;
-  if (er->ExceptionCode == EXCEPTION_ACCESS_VIOLATION && er->NumberParameters >= 2) {
-    if ((void*)er->ExceptionInformation[1] == g_assert_poison_page_for_reporting) {
-      return;
-    }
+  if (VMError::was_assert_poison_crash(siginfo)) {
+    return;
   }
 #endif
+
+  const EXCEPTION_RECORD* const er = (EXCEPTION_RECORD*)siginfo;
 
   st->print("siginfo:");
 
@@ -2797,12 +2796,9 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if ((exception_code == EXCEPTION_ACCESS_VIOLATION) && exception_record->NumberParameters >= 2) {
-    // Handle TOUCH_ASSERT_POISON page faults for an assert or guarantee.
-    if ((void*)exception_record->ExceptionInformation[1] == g_assert_poison) {
-      if (handle_assert_poison_fault(exceptionInfo)) {
-        return EXCEPTION_CONTINUE_EXECUTION;
-      }
+  if (VMError::was_assert_poison_crash(exception_record)) {
+    if (handle_assert_poison_fault(exceptionInfo)) {
+      return EXCEPTION_CONTINUE_EXECUTION;
     }
   }
 #endif

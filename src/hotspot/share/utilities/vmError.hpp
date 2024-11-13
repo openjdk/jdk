@@ -225,6 +225,7 @@ public:
   // permissions.
   static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
 
+  static bool was_assert_poison_crash(const void* sigInfo);
 };
 
 class VMErrorCallback {
