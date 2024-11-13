@@ -2675,7 +2675,6 @@ public class Thread implements Runnable {
     /**
      * Holder class for constants.
      */
-    @SuppressWarnings("removal")
     private static class Constants {
         // Thread group for virtual threads.
         static final ThreadGroup VTHREAD_GROUP;
