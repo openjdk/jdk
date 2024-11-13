@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,12 +120,6 @@ public class ProtectionDomainBench {
             Class c = loader1.findClass(classNames[index]);
             loadedClasses[index] = c;
         }
-    }
-
-    @Benchmark
-    @Fork(value = 3, jvmArgs={"-Djava.security.manager=allow"})
-    public void withSecurityManager()  throws ClassNotFoundException {
-        work();
     }
 
     @Benchmark

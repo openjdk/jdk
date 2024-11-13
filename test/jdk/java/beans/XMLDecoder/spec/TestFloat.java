@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tests <float> element
- * @run main/othervm -Djava.security.manager=allow TestFloat
+ * @run main/othervm TestFloat
  * @author Sergey Malenkov
  */
 
@@ -40,7 +40,7 @@ public final class TestFloat extends AbstractTest {
             + "</java>";
 
     public static void main(String[] args) {
-        new TestFloat().test(true);
+        new TestFloat().test();
     }
 
     @Override

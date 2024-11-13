@@ -1242,7 +1242,7 @@ static char decode_percent_encoded(const char *str, size_t& index) {
     hex[1] = str[index + 2];
     hex[2] = '\0';
     index += 2;
-    return (char) strtol(hex, NULL, 16);
+    return (char) strtol(hex, nullptr, 16);
   }
   return str[index];
 }

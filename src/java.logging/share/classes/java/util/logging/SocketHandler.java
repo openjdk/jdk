@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,12 +151,9 @@ public class SocketHandler extends StreamHandler {
 
     /**
      * Close this output stream.
-     *
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      */
     @Override
-    public void close() throws SecurityException {
+    public void close() {
         if (tryUseLock()) {
             try {
                 close0();
