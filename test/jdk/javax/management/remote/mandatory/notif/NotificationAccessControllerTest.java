@@ -30,7 +30,8 @@
  *          java.management/com.sun.jmx.remote.security
  * @run clean NotificationAccessControllerTest
  * @run build NotificationAccessControllerTest
- * @run main/othervm -Djava.security.manager=allow NotificationAccessControllerTest
+ *
+ * @run main/othervm NotificationAccessControllerTest
  */
 
 import com.sun.jmx.remote.security.NotificationAccessController;

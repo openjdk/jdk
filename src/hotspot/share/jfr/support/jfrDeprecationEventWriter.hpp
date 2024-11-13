@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -56,12 +56,17 @@ class JfrDeprecatedEventWriter : public StackObj {
  private:
   JfrTicks _now;
   JfrChunkWriter& _cw;
+  JfrCheckpointWriter& _tsw;
   bool _for_removal;
   bool _stacktrace;
-  bool _did_write;
  public:
-  JfrDeprecatedEventWriter(JfrChunkWriter& cw, bool stacktrace);
-  bool did_write() const { return _did_write; }
+  JfrDeprecatedEventWriter(JfrChunkWriter& cw, JfrCheckpointWriter& tsw, bool stacktrace);
+  bool process(const JfrDeprecatedEdge* edge);
+};
+
+class JfrDeprecatedEventClear : public StackObj {
+ public:
+  JfrDeprecatedEventClear();
   bool process(const JfrDeprecatedEdge* edge);
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * A representation of color profile data for device independent and device
  * dependent color spaces based on the International Color Consortium
  * Specification ICC.1:2001-12, File Format for Color Profiles, (see
- * <a href="http://www.color.org"> http://www.color.org</a>).
+ * <a href="https://www.color.org"> https://www.color.org</a>).
  * <p>
  * An {@code ICC_ColorSpace} object can be constructed from an appropriate
  * {@code ICC_Profile}. Typically, an {@code ICC_ColorSpace} would be associated
@@ -859,8 +859,6 @@ public sealed class ICC_Profile implements Serializable
      *         error occurs while reading the file
      * @throws IllegalArgumentException If the file does not contain valid ICC
      *         Profile data
-     * @throws SecurityException If a security manager is installed and it does
-     *         not permit read access to the given file
      * @throws NullPointerException if {@code fileName} is {@code null}
      */
     public static ICC_Profile getInstance(String fileName) throws IOException {

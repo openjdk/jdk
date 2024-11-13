@@ -27,7 +27,6 @@
  * @test
  * @bug 8267374
  * @key headful
- * @requires (os.family == "mac")
  * @summary Verifies menu closes when main window is resized
  * @run main TestUngrab
  */

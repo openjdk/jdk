@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
+#ifdef _LP64
 #define SUPPORT_MONITOR_COUNT
+#endif
 
 #define CPU_MULTI_COPY_ATOMIC
 
@@ -50,11 +52,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define DEFAULT_PADDING_SIZE (DEFAULT_CACHE_LINE_SIZE*2)
 #else
 #define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
-#endif
-
-#if defined(COMPILER2)
-// Include Restricted Transactional Memory lock eliding optimization
-#define INCLUDE_RTM_OPT 1
 #endif
 
 #if defined(LINUX) || defined(__APPLE__)

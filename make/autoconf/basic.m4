@@ -26,7 +26,7 @@
 m4_include([basic_tools.m4])
 m4_include([basic_windows.m4])
 
-###############################################################################
+################################################################################
 AC_DEFUN_ONCE([BASIC_INIT],
 [
   # Save the original command line. This is passed to us by the wrapper configure script.
@@ -46,7 +46,7 @@ AC_DEFUN_ONCE([BASIC_INIT],
   AC_MSG_NOTICE([Configuration created at $DATE_WHEN_CONFIGURED.])
 ])
 
-###############################################################################
+################################################################################
 # Check that there are no unprocessed overridden variables left.
 # If so, they are an incorrect argument and we will exit with an error.
 AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
@@ -58,7 +58,7 @@ AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
 # Make sure to only use tools set up in BASIC_SETUP_FUNDAMENTAL_TOOLS.
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
@@ -76,6 +76,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   fi
 
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
+      AC_MSG_ERROR([32-bit Windows builds are not supported])
+    fi
     BASIC_SETUP_PATHS_WINDOWS
   fi
 
@@ -102,7 +105,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   AUTOCONF_DIR=$TOPDIR/make/autoconf
 ])
 
-###############################################################################
+################################################################################
 # Setup what kind of build environment type we have (CI or local developer)
 AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
 [
@@ -141,7 +144,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
   AC_SUBST(LOCALE_USED)
 ])
 
-###############################################################################
+################################################################################
 # Evaluates platform specific overrides for devkit variables.
 # $1: Name of variable
 AC_DEFUN([BASIC_EVAL_DEVKIT_VARIABLE],
@@ -151,7 +154,7 @@ AC_DEFUN([BASIC_EVAL_DEVKIT_VARIABLE],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Evaluates platform specific overrides for build devkit variables.
 # $1: Name of variable
 AC_DEFUN([BASIC_EVAL_BUILD_DEVKIT_VARIABLE],
@@ -161,7 +164,7 @@ AC_DEFUN([BASIC_EVAL_BUILD_DEVKIT_VARIABLE],
   fi
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
 [
   AC_MSG_CHECKING([for sdk name])
@@ -246,7 +249,7 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
   fi
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 [
   AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
@@ -380,7 +383,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
   AC_MSG_RESULT([$EXTRA_PATH])
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
 [
 
@@ -477,7 +480,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_CONFIG_FILES([$OUTPUTDIR/Makefile:$AUTOCONF_DIR/Makefile.template])
 ])
 
-###############################################################################
+################################################################################
 # Check if build directory is on local disk. If not possible to determine,
 # we prefer to claim it's local.
 # Argument 1: directory to test
@@ -514,7 +517,7 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Check that source files have basic read permissions set. This might
 # not be the case in cygwin in certain conditions.
 AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
@@ -529,7 +532,7 @@ AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
   fi
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
 [
   AC_MSG_CHECKING([if build directory is on local disk])
@@ -572,7 +575,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEFAULT_MAKE_TARGET],
   AC_SUBST(DEFAULT_MAKE_TARGET)
 ])
 
-###############################################################################
+################################################################################
 # Setup the default value for LOG=
 #
 AC_DEFUN_ONCE([BASIC_SETUP_DEFAULT_LOG],
@@ -591,7 +594,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEFAULT_LOG],
   AC_SUBST(DEFAULT_LOG)
 ])
 
-###############################################################################
+################################################################################
 # Code to run after AC_OUTPUT
 AC_DEFUN_ONCE([BASIC_POST_CONFIG_OUTPUT],
 [

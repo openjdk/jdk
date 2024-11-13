@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import static org.testng.Assert.*;
  * @modules jdk.zipfs
  * @compile NewFileSystemTests.java
  * @run testng NewFileSystemTests
- * @run testng/othervm/java.security.policy=test.policy  NewFileSystemTests
  */
 public class NewFileSystemTests {
 

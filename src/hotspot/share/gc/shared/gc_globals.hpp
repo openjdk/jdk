@@ -43,7 +43,7 @@
 #include "gc/shenandoah/shenandoah_globals.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/z/shared/z_shared_globals.hpp"
+#include "gc/z/z_globals.hpp"
 #endif
 
 #define GC_FLAGS(develop,                                                   \
@@ -93,7 +93,7 @@
     range,                                                                  \
     constraint))                                                            \
                                                                             \
-  ZGC_ONLY(GC_Z_SHARED_FLAGS(                                               \
+  ZGC_ONLY(GC_Z_FLAGS(                                                      \
     develop,                                                                \
     develop_pd,                                                             \
     product,                                                                \
@@ -117,9 +117,6 @@
                                                                             \
   product(bool, UseZGC, false,                                              \
           "Use the Z garbage collector")                                    \
-                                                                            \
-  product(bool, ZGenerational, true,                                        \
-          "Use the generational version of ZGC")                            \
                                                                             \
   product(bool, UseShenandoahGC, false,                                     \
           "Use the Shenandoah garbage collector")                           \
@@ -422,10 +419,6 @@
           "Initial ratio of young generation/survivor space size")          \
           range(0, max_uintx)                                               \
                                                                             \
-  product(size_t, BaseFootPrintEstimate, 256*M,                             \
-          "Estimate of footprint other than Java Heap")                     \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(bool, UseGCOverheadLimit, true,                                   \
           "Use policy to limit of proportion of time spent in GC "          \
           "before an OutOfMemory error is thrown")                          \
@@ -539,10 +532,6 @@
   product(size_t, SoftMaxHeapSize, 0, MANAGEABLE,                           \
           "Soft limit for maximum heap size (in bytes)")                    \
           constraint(SoftMaxHeapSizeConstraintFunc,AfterMemoryInit)         \
-                                                                            \
-  product(size_t, OldSize, ScaleForWordSize(4*M),                           \
-          "(Deprecated) Initial tenured generation size (in bytes)")        \
-          range(0, max_uintx)                                               \
                                                                             \
   product(size_t, NewSize, ScaleForWordSize(1*M),                           \
           "Initial new generation size (in bytes)")                         \

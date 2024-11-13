@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.io.IOException;
 
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Executor;
@@ -87,6 +88,14 @@ public class SigningCheck {
                 .orElseThrow(() -> TKit.throwSkippedException(
                         "Certifcate not trusted by current user: " + name))
                 .apply(result.stream());
+    }
+
+    public static void isXcodeDevToolsInstalled() {
+        int code = Executor.of("/usr/bin/xcrun", "--help")
+                .executeWithoutExitCodeCheck().getExitCode();
+        if (code != 0) {
+            TKit.throwSkippedException("Missing Xcode with command line developer tools");
+        }
     }
 
 }

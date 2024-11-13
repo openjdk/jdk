@@ -203,7 +203,7 @@ class StringConcat : public ResourceObj {
       Node* uct = _uncommon_traps.at(u);
 
       // Build a new call using the jvms state of the allocate
-      address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();
+      address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
       const TypeFunc* call_type = OptoRuntime::uncommon_trap_Type();
       const TypePtr* no_memory_effects = nullptr;
       Compile* C = _stringopts->C;

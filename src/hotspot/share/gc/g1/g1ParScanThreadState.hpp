@@ -32,8 +32,8 @@
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
-#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
@@ -47,8 +47,6 @@ class G1EvacuationRootClosures;
 class G1OopStarChunkedList;
 class G1PLABAllocator;
 class G1HeapRegion;
-class PreservedMarks;
-class PreservedMarksSet;
 class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
@@ -86,8 +84,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Indicates whether in the last generation (old) there is no more space
   // available for allocation.
   bool _old_gen_is_full;
-  // Size (in elements) of a partial objArray task chunk.
-  int _partial_objarray_chunk_size;
+  PartialArrayStateAllocator* _partial_array_state_allocator;
   PartialArrayTaskStepper _partial_array_stepper;
   StringDedup::Requests _string_dedup_requests;
 
@@ -106,7 +103,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Per-thread evacuation failure data structures.
   ALLOCATION_FAILURE_INJECTOR_ONLY(size_t _allocation_failure_inject_counter;)
 
-  PreservedMarks* _preserved_marks;
   EvacuationFailedInfo _evacuation_failed_info;
   G1EvacFailureRegions* _evac_failure_regions;
   // Number of additional cards into evacuation failed regions enqueued into
@@ -125,11 +121,11 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
                        G1RedirtyCardsQueueSet* rdcqs,
-                       PreservedMarks* preserved_marks,
                        uint worker_id,
                        uint num_workers,
                        G1CollectionSet* collection_set,
-                       G1EvacFailureRegions* evac_failure_regions);
+                       G1EvacFailureRegions* evac_failure_regions,
+                       PartialArrayStateAllocator* partial_array_state_allocator);
   virtual ~G1ParScanThreadState();
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) { _scanner.set_ref_discoverer(rd); }
@@ -140,7 +136,7 @@ public:
 
   void verify_task(narrowOop* task) const NOT_DEBUG_RETURN;
   void verify_task(oop* task) const NOT_DEBUG_RETURN;
-  void verify_task(PartialArrayScanTask task) const NOT_DEBUG_RETURN;
+  void verify_task(PartialArrayState* task) const NOT_DEBUG_RETURN;
   void verify_task(ScannerTask task) const NOT_DEBUG_RETURN;
 
   void push_on_queue(ScannerTask task);
@@ -169,11 +165,11 @@ public:
   size_t flush_stats(size_t* surviving_young_words, uint num_workers, BufferNodeList* buffer_log);
 
 private:
-  void do_partial_array(PartialArrayScanTask task);
+  void do_partial_array(PartialArrayState* state);
   void start_partial_objarray(G1HeapRegionAttr dest_dir, oop from, oop to);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
-                               oop old,
+                               Klass* klass,
                                size_t word_sz,
                                uint age,
                                uint node_index);
@@ -208,7 +204,7 @@ private:
   inline G1HeapRegionAttr next_region_attr(G1HeapRegionAttr const region_attr, markWord const m, uint& age);
 
   void report_promotion_event(G1HeapRegionAttr const dest_attr,
-                              oop const old, size_t word_sz, uint age,
+                              Klass* klass, size_t word_sz, uint age,
                               HeapWord * const obj_ptr, uint node_index) const;
 
   void trim_queue_to_threshold(uint threshold);
@@ -245,13 +241,13 @@ class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
   G1CollectionSet* _collection_set;
   G1RedirtyCardsQueueSet _rdcqs;
-  PreservedMarksSet _preserved_marks_set;
   G1ParScanThreadState** _states;
   BufferNodeList* _rdc_buffers;
   size_t* _surviving_young_words_total;
   uint _num_workers;
   bool _flushed;
   G1EvacFailureRegions* _evac_failure_regions;
+  PartialArrayStateAllocator _partial_array_state_allocator;
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
@@ -262,7 +258,6 @@ class G1ParScanThreadStateSet : public StackObj {
 
   G1RedirtyCardsQueueSet* rdcqs() { return &_rdcqs; }
   BufferNodeList* rdc_buffers() { return _rdc_buffers; }
-  PreservedMarksSet* preserved_marks_set() { return &_preserved_marks_set; }
 
   void flush_stats();
   void record_unused_optional_region(G1HeapRegion* hr);

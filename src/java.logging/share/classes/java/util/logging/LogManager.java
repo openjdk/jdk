@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1347,11 +1347,9 @@ public class LogManager {
      * {@link #updateConfiguration(java.io.InputStream, java.util.function.Function)}
      * methods instead.
      *
-     * @throws   SecurityException  if a security manager exists and if
-     *              the caller does not have LoggingPermission("control").
      * @throws   IOException if there are IO problems reading the configuration.
      */
-    public void readConfiguration() throws IOException, SecurityException {
+    public void readConfiguration() throws IOException {
         checkPermission();
 
         // if a configuration class is specified, load it and use it.
@@ -1412,12 +1410,9 @@ public class LogManager {
      * {@link #updateConfiguration(java.io.InputStream, java.util.function.Function)
      * updateConfiguration(InputStream, Function)} method can be used to
      * properly update to a new configuration.
-     *
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
      */
 
-    public void reset() throws SecurityException {
+    public void reset() {
         checkPermission();
 
         List<CloseOnReset> persistent;
@@ -1553,13 +1548,11 @@ public class LogManager {
      * method instead.
      *
      * @param ins  stream to read properties from
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
      * @throws  IOException if there are problems reading from the stream,
      *             or the given stream is not in the
      *             {@linkplain java.util.Properties properties file} format.
      */
-    public void readConfiguration(InputStream ins) throws IOException, SecurityException {
+    public void readConfiguration(InputStream ins) throws IOException {
         checkPermission();
 
         // We don't want reset() and readConfiguration() to run
@@ -1853,12 +1846,6 @@ public class LogManager {
      *   <br>A {@code null} value for <i>o</i> or <i>n</i> indicates that no
      *   value was present for <i>k</i> in the corresponding configuration.
      *
-     * @throws  SecurityException  if a security manager exists and if
-     *          the caller does not have LoggingPermission("control"), or
-     *          does not have the permissions required to set up the
-     *          configuration (e.g. open file specified for FileHandlers
-     *          etc...)
-     *
      * @throws  NullPointerException  if {@code mapper} returns a {@code null}
      *         function when invoked.
      *
@@ -2055,11 +2042,6 @@ public class LogManager {
      *   <i>k</i> in the new configuration (i.e. <i>n</i>).
      *   <br>A {@code null} value for <i>o</i> or <i>n</i> indicates that no
      *   value was present for <i>k</i> in the corresponding configuration.
-     *
-     * @throws  SecurityException if a security manager exists and if
-     *          the caller does not have LoggingPermission("control"), or
-     *          does not have the permissions required to set up the
-     *          configuration (e.g. open files specified for FileHandlers)
      *
      * @throws  NullPointerException if {@code ins} is null or if
      *          {@code mapper} returns a null function when invoked.
@@ -2439,25 +2421,16 @@ public class LogManager {
     }
 
     /**
-     * Check that the current context is trusted to modify the logging
-     * configuration.  This requires LoggingPermission("control").
-     * <p>
-     * If the check fails we throw a SecurityException, otherwise
-     * we return normally.
+     * Does nothing.
      *
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have LoggingPermission("control").
-     * @deprecated This method is only useful in conjunction with
-     *       {@linkplain SecurityManager the Security Manager}, which is
-     *       deprecated and subject to removal in a future release.
-     *       Consequently, this method is also deprecated and subject to
-     *       removal. There is no replacement for the Security Manager or this
-     *       method.
+     * @deprecated This method originally checked that the current context was
+     * trusted to modify the logging configuration. This method was only useful
+     * in conjunction with {@linkplain SecurityManager the Security Manager},
+     * which is no longer supported. There is no replacement for the Security
+     * Manager or this method.
      */
     @Deprecated(since="17", forRemoval=true)
-    public void checkAccess() throws SecurityException {
-        checkPermission();
-    }
+    public void checkAccess() { }
 
     // Nested class to represent a node in our tree of named loggers.
     private static class LogNode {
@@ -2611,8 +2584,6 @@ public class LogManager {
      * @param listener A configuration listener that will be invoked after the
      *        configuration changed.
      * @return This LogManager.
-     * @throws SecurityException if a security manager exists and if the
-     * caller does not have LoggingPermission("control").
      * @throws NullPointerException if the listener is null.
      *
      * @since 9
@@ -2642,8 +2613,6 @@ public class LogManager {
      *
      * @param listener the configuration listener to remove.
      * @throws NullPointerException if the listener is null.
-     * @throws SecurityException if a security manager exists and if the
-     * caller does not have LoggingPermission("control").
      *
      * @since 9
      */
@@ -2704,9 +2673,6 @@ public class LogManager {
          *         or {@code module} is {@code null}.
          * @throws IllegalArgumentException if {@code manager} is not the default
          *         LogManager.
-         * @throws SecurityException if a security manager is present and the
-         *         calling code doesn't have the
-         *        {@link LoggingPermission LoggingPermission("demandLogger", null)}.
          */
         @Override
         public Logger demandLoggerFor(LogManager manager, String name, Module module) {

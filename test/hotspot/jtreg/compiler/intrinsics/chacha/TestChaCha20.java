@@ -38,7 +38,7 @@ import jdk.test.whitebox.cpuinfo.CPUInfo;
  * @library /test/lib
  * @requires (vm.cpu.features ~= ".*avx512.*" | vm.cpu.features ~= ".*avx2.*" | vm.cpu.features ~= ".*avx.*") |
  *           (os.arch=="aarch64" & vm.cpu.features ~= ".*simd.*") |
- *           (os.arch == "riscv64" & vm.cpu.features ~= ".*v,.*")
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @build   compiler.intrinsics.chacha.ExerciseChaCha20
  *          jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -60,13 +60,9 @@ public class TestChaCha20 {
         return n;
     }
 
-    private static boolean containsFuzzy(List<String> list, String sub, Boolean matchExactly) {
+    private static boolean containsFuzzy(List<String> list, String sub) {
         for (String s : list) {
-            if (matchExactly) {
-                if (s.equals(sub)) return true;
-            } else {
-                if (s.contains(sub)) return true;
-            }
+            if (s.contains(sub)) return true;
         }
         return false;
     }
@@ -86,27 +82,27 @@ public class TestChaCha20 {
             }
 
             // Otherwise, select the tests that make sense on current platform.
-            if (containsFuzzy(cpuFeatures, "avx512", false)) {
+            if (containsFuzzy(cpuFeatures, "avx512")) {
                 System.out.println("Setting up AVX512 worker");
                 configs.add(List.of("-XX:UseAVX=3"));
             }
-            if (containsFuzzy(cpuFeatures, "avx2", false)) {
+            if (containsFuzzy(cpuFeatures, "avx2")) {
                 System.out.println("Setting up AVX2 worker");
                 configs.add(List.of("-XX:UseAVX=2"));
             }
-            if (containsFuzzy(cpuFeatures, "avx", false)) {
+            if (containsFuzzy(cpuFeatures, "avx")) {
                 System.out.println("Setting up AVX worker");
                 configs.add(List.of("-XX:UseAVX=1"));
             }
         } else if (Platform.isAArch64()) {
             // AArch64 intrinsics require the advanced simd instructions
-            if (containsFuzzy(cpuFeatures, "simd", false)) {
+            if (containsFuzzy(cpuFeatures, "simd")) {
                 System.out.println("Setting up ASIMD worker");
                 configs.add(new ArrayList());
             }
         } else if (Platform.isRISCV64()) {
             // Riscv64 intrinsics require the vector instructions
-            if (containsFuzzy(cpuFeatures, "v", true)) {
+            if (containsFuzzy(cpuFeatures, "rvv")) {
                 System.out.println("Setting up vector worker");
                 configs.add(List.of("-XX:+UseRVV"));
             }

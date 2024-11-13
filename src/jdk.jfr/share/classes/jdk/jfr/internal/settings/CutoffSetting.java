@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.jfr.internal.settings;
 
+import static jdk.jfr.internal.util.ValueParser.MISSING;
+
 import java.util.Objects;
 import java.util.Set;
 
@@ -43,8 +45,8 @@ import jdk.jfr.internal.util.ValueParser;
 @Name(Type.SETTINGS_PREFIX + "Cutoff")
 @Timespan
 public final class CutoffSetting extends JDKSettingControl {
-
-    private String value = "0 ns";
+    public static final String DEFAULT_VALUE = ValueParser.INFINITY;
+    private String value = DEFAULT_VALUE;
     private final PlatformEventType eventType;
 
     public CutoffSetting(PlatformEventType eventType) {
@@ -54,22 +56,24 @@ public final class CutoffSetting extends JDKSettingControl {
     @Override
     public String combine(Set<String> values) {
         long max = 0;
-        String text = "0 ns";
+        String text = null;
         for (String value : values) {
-            long l =  ValueParser.parseTimespanWithInfinity(value);
-            if (l > max) {
+            long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
+            if (nanos != MISSING && nanos > max) {
                 text = value;
-                max = l;
+                max = nanos;
             }
         }
-        return text;
+        return Objects.requireNonNullElse(text, DEFAULT_VALUE);
     }
 
     @Override
     public void setValue(String value) {
-        long l =  ValueParser.parseTimespanWithInfinity(value);
-        this.value = value;
-        eventType.setCutoff(l);
+        long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
+        if (nanos != MISSING) {
+            eventType.setCutoff(nanos);
+            this.value = value;
+        }
     }
 
     @Override
@@ -81,10 +85,6 @@ public final class CutoffSetting extends JDKSettingControl {
         if (value == null) {
             return 0L;
         }
-        try {
-            return ValueParser.parseTimespanWithInfinity(value);
-        } catch (NumberFormatException nfe) {
-            return 0L;
-        }
+        return ValueParser.parseTimespanWithInfinity(value, 0L);
     }
 }

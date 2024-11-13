@@ -38,8 +38,6 @@ import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 
 import sun.reflect.ReflectionFactory;
@@ -56,7 +54,6 @@ import org.testng.TestNG;
  * @summary Basic test for the unsupported ReflectionFactory
  * @modules jdk.unsupported
  * @run testng ReflectionFactoryTest
- * @run testng/othervm/policy=security.policy ReflectionFactoryTest
  */
 
 public class ReflectionFactoryTest {
@@ -374,7 +371,7 @@ public class ReflectionFactoryTest {
         Assert.assertNotNull(writeObject, "writeObject not created");
         boolean[] called = new boolean[19];
         @SuppressWarnings("removal")
-        ObjectOutputStream oos = AccessController.doPrivileged((PrivilegedExceptionAction<ObjectOutputStream>) () -> new ObjectOutputStream() {
+        ObjectOutputStream oos = new ObjectOutputStream() {
             protected void writeObjectOverride(final Object obj) throws IOException {
                 throw new IOException("Wrong method called");
             }
@@ -521,7 +518,7 @@ public class ReflectionFactoryTest {
                     }
                 };
             }
-        });
+        };
         writeObject.invokeExact(ser, oos);
         for (int i = 0; i < 19; i ++) {
             Assert.assertTrue(called[i], names[i]);
@@ -530,7 +527,7 @@ public class ReflectionFactoryTest {
         MethodHandle readObject = factory.defaultReadObjectForSerialization(Ser2.class);
         Assert.assertNotNull(readObject, "readObject not created");
         @SuppressWarnings("removal")
-        ObjectInputStream ois = AccessController.doPrivileged((PrivilegedExceptionAction<ObjectInputStream>) () -> new ObjectInputStream() {
+        ObjectInputStream ois = new ObjectInputStream() {
             protected Object readObjectOverride() throws IOException {
                 throw new IOException("Wrong method called");
             }
@@ -672,7 +669,7 @@ public class ReflectionFactoryTest {
                     }
                 };
             }
-        });
+        };
         // all the same methods, except for `writeFields`
         Arrays.fill(called, false);
         Constructor<?> ctor = factory.newConstructorForSerialization(Ser2.class, Object.class.getDeclaredConstructor());

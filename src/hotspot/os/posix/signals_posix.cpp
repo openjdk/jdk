@@ -1719,7 +1719,7 @@ static int SR_initialize() {
   struct sigaction act;
   char *s;
   // Get signal number to use for suspend/resume
-  if ((s = ::getenv("_JAVA_SR_SIGNUM")) != 0) {
+  if ((s = ::getenv("_JAVA_SR_SIGNUM")) != nullptr) {
     int sig;
     bool result = parse_integer(s, &sig);
     if (result && sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
@@ -1742,7 +1742,7 @@ static int SR_initialize() {
   pthread_sigmask(SIG_BLOCK, nullptr, &act.sa_mask);
   remove_error_signals_from_set(&(act.sa_mask));
 
-  if (sigaction(PosixSignals::SR_signum, &act, 0) == -1) {
+  if (sigaction(PosixSignals::SR_signum, &act, nullptr) == -1) {
     return -1;
   }
 

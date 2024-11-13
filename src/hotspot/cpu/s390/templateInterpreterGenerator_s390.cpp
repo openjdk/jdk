@@ -721,6 +721,11 @@ address TemplateInterpreterGenerator::generate_safept_entry_for (TosState state,
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  return nullptr;
+}
+
+
 //
 // Helpers for commoning out cases in the various type of method entries.
 //
@@ -850,9 +855,9 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_
 
   // Note also that the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
-  AddressLiteral stub(StubRoutines::throw_StackOverflowError_entry());
-  __ load_absolute_address(tmp1, StubRoutines::throw_StackOverflowError_entry());
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
+  AddressLiteral stub(SharedRuntime::throw_StackOverflowError_entry());
+  __ load_absolute_address(tmp1, SharedRuntime::throw_StackOverflowError_entry());
   __ z_br(tmp1);
 
   // If you get to here, then there is enough stack space.
@@ -1224,6 +1229,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_sin  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);   break;
     case Interpreter::java_lang_math_cos  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);   break;
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
+    case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
     case Interpreter::java_lang_math_sqrt : /* runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt); not available */ break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;

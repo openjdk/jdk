@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.jfr.internal.dcmd;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -37,12 +36,8 @@ import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.RepositoryChunk;
 import jdk.jfr.internal.query.Configuration;
-import jdk.jfr.internal.query.QueryPrinter;
-import jdk.jfr.internal.query.ViewPrinter;
 import jdk.jfr.internal.query.Configuration.Truncate;
 import jdk.jfr.internal.util.UserDataException;
-import jdk.jfr.internal.util.UserSyntaxException;
-import jdk.jfr.internal.util.Output;
 
 /**
  * Helper class that holds recording chunks alive during a query. It also helps

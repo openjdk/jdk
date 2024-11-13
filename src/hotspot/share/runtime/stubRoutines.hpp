@@ -36,7 +36,34 @@
 
 // StubRoutines provides entry points to assembly routines used by
 // compiled code and the run-time system. Platform-specific entry
-// points are defined in the platform-specific inner class.
+// points are defined in the platform-specific inner class. Most
+// routines have a single (main) entry point. However, a few routines
+// do provide alternative entry points.
+//
+// Stub routines whose entries are advertised via class StubRoutines
+// are generated in batches at well-defined stages during JVM init:
+// initial stubs, continuation stubs, compiler stubs, final stubs.
+// Each batch is embedded in a single, associated blob (an instance of
+// BufferBlob) i.e. the blob to entry relationship is 1-m.
+//
+// Note that this constrasts with the much smaller number of stub
+// routines generated via classes SharedRuntime, c1_Runtime1 and
+// OptoRuntime. The latter routines are also generated at well-defined
+// points during JVM init. However, each stub routine has its own
+// unique blob (various subclasses of RuntimeBlob) i.e. the blob to
+// entry relationship is 1-1. The difference arises because
+// SharedRuntime routines may need to be relocatable or advertise
+// properties such as a frame size via their blob.
+//
+// Staging of stub routine generation is needed in order to manage
+// init dependencies between 1) stubs and other stubs or 2) stubs and
+// other runtime components. For example, some exception throw stubs
+// need to be generated before compiler stubs (such as the
+// deoptimization stub) so that the latter can invoke the thrwo rotine
+// in bail-out code. Likewise, stubs that access objects (such as the
+// object array copy stub) need to be created after initialization of
+// some GC constants and generation of the GC barrier stubs they might
+// need to invoke.
 //
 // Class scheme:
 //
@@ -49,8 +76,7 @@
 //           |                                  |
 //           |                                  |
 //    stubRoutines.cpp                   stubRoutines_<arch>.cpp
-//    stubRoutines_<os_family>.cpp       stubGenerator_<arch>.cpp
-//    stubRoutines_<os_arch>.cpp
+//                                       stubGenerator_<arch>.cpp
 //
 // Note 1: The important thing is a clean decoupling between stub
 //         entry points (interfacing to the whole vm; i.e., 1-to-n
@@ -75,6 +101,8 @@
 // 3. add a public accessor function to the instance variable
 // 4. implement the corresponding generator function in the platform-dependent
 //    stubGenerator_<arch>.cpp file and call the function in generate_all() of that file
+// 5. ensure the entry is generated in the right blob to satisfy initialization
+//    dependencies between it and other stubs or runtime components.
 
 class UnsafeMemoryAccess : public CHeapObj<mtCode> {
  private:
@@ -137,11 +165,6 @@ class StubRoutines: AllStatic {
   static address _call_stub_entry;
   static address _forward_exception_entry;
   static address _catch_exception_entry;
-  static address _throw_AbstractMethodError_entry;
-  static address _throw_IncompatibleClassChangeError_entry;
-  static address _throw_NullPointerException_at_call_entry;
-  static address _throw_StackOverflowError_entry;
-  static address _throw_delayed_StackOverflowError_entry;
 
   static address _atomic_xchg_entry;
   static address _atomic_cmpxchg_entry;
@@ -232,6 +255,8 @@ class StubRoutines: AllStatic {
   static address _updateBytesCRC32;
   static address _crc_table_adr;
 
+  static address _string_indexof_array[4];
+
   static address _crc32c_table_addr;
   static address _updateBytesCRC32C;
   static address _updateBytesAdler32;
@@ -256,6 +281,7 @@ class StubRoutines: AllStatic {
   static address _dlibm_reduce_pi04l;
   static address _dlibm_tan_cot_huge;
   static address _dtan;
+  static address _dtanh;
   static address _fmod;
 
   static address _f2hf;
@@ -266,17 +292,14 @@ class StubRoutines: AllStatic {
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
-
-  JFR_ONLY(static RuntimeStub* _jfr_write_checkpoint_stub;)
-  JFR_ONLY(static address _jfr_write_checkpoint;)
-  JFR_ONLY(static RuntimeStub* _jfr_return_lease_stub;)
-  JFR_ONLY(static address _jfr_return_lease;)
+  static address _cont_preempt_stub;
 
   // Vector Math Routines
-  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
-  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
+  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
+  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
 
   static address _upcall_stub_exception_handler;
+  static address _upcall_stub_load_target;
 
   static address _lookup_secondary_supers_table_stubs[];
   static address _lookup_secondary_supers_table_slow_path_stub;
@@ -327,12 +350,6 @@ class StubRoutines: AllStatic {
 
   // Exceptions
   static address forward_exception_entry()                 { return _forward_exception_entry; }
-  // Implicit exceptions
-  static address throw_AbstractMethodError_entry()         { return _throw_AbstractMethodError_entry; }
-  static address throw_IncompatibleClassChangeError_entry(){ return _throw_IncompatibleClassChangeError_entry; }
-  static address throw_NullPointerException_at_call_entry(){ return _throw_NullPointerException_at_call_entry; }
-  static address throw_StackOverflowError_entry()          { return _throw_StackOverflowError_entry; }
-  static address throw_delayed_StackOverflowError_entry()  { return _throw_delayed_StackOverflowError_entry; }
 
   static address atomic_xchg_entry()                       { return _atomic_xchg_entry; }
   static address atomic_cmpxchg_entry()                    { return _atomic_cmpxchg_entry; }
@@ -390,7 +407,7 @@ class StubRoutines: AllStatic {
 
   static address unsafe_setmemory()     { return _unsafe_setmemory; }
 
-  typedef void (*UnsafeSetMemoryStub)(const void* src, size_t count, char byte);
+  typedef void (*UnsafeSetMemoryStub)(void* dst, size_t count, char byte);
   static UnsafeSetMemoryStub UnsafeSetMemory_stub()         { return CAST_TO_FN_PTR(UnsafeSetMemoryStub,  _unsafe_setmemory); }
 
   static address generic_arraycopy()   { return _generic_arraycopy; }
@@ -458,6 +475,7 @@ class StubRoutines: AllStatic {
   static address dlibm_sin_cos_huge()  { return _dlibm_sin_cos_huge; }
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
+  static address dtanh()               { return _dtanh; }
 
   // These are versions of the java.lang.Float::floatToFloat16() and float16ToFloat()
   // methods which perform the same operations as the intrinsic version.
@@ -484,13 +502,16 @@ class StubRoutines: AllStatic {
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }
   static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }
-
-  JFR_ONLY(static address jfr_write_checkpoint() { return _jfr_write_checkpoint; })
-  JFR_ONLY(static address jfr_return_lease() { return _jfr_return_lease; })
+  static address cont_preempt_stub()   { return _cont_preempt_stub; }
 
   static address upcall_stub_exception_handler() {
     assert(_upcall_stub_exception_handler != nullptr, "not implemented");
     return _upcall_stub_exception_handler;
+  }
+
+  static address upcall_stub_load_target() {
+    assert(_upcall_stub_load_target != nullptr, "not implemented");
+    return _upcall_stub_load_target;
   }
 
   static address lookup_secondary_supers_table_stub(u1 slot) {

@@ -39,7 +39,7 @@ import jdk.internal.misc.InnocuousThread;
  * @since    1.2
  */
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "restricted"})
 class GC {
 
     private GC() { }            /* To prevent instantiation */

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,6 +350,7 @@ class Assembler : public AbstractAssembler {
 
     SETBC_OPCODE  = (31u << OPCODE_SHIFT | 384u << 1),
     SETNBC_OPCODE = (31u << OPCODE_SHIFT | 448u << 1),
+    SETBCR_OPCODE = (31u << OPCODE_SHIFT | 416u << 1),
 
     // condition register logic instructions
     CRAND_OPCODE  = (19u << OPCODE_SHIFT | 257u << 1),
@@ -1780,6 +1781,8 @@ class Assembler : public AbstractAssembler {
   inline void setbc( Register d, ConditionRegister cr, Condition cc);
   inline void setnbc(Register d, int biint);
   inline void setnbc(Register d, ConditionRegister cr, Condition cc);
+  inline void setbcr(Register d, int biint);
+  inline void setbcr(Register d, ConditionRegister cr, Condition cc);
 
   // Special purpose registers
   // Exception Register
@@ -1813,6 +1816,7 @@ class Assembler : public AbstractAssembler {
                          relocInfo::relocType rt = relocInfo::none);
 
   // helper function for b, bcxx
+  inline bool is_branch(address a);
   inline bool is_within_range_of_b(address a, address pc);
   inline bool is_within_range_of_bcxx(address a, address pc);
 
@@ -2499,21 +2503,36 @@ class Assembler : public AbstractAssembler {
   // load the constant are emitted beforehand. Store instructions need a
   // tmp reg if the constant is not encodable as immediate.
   // Size unpredictable.
-  void ld(  Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void lwa( Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void lwz( Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void lha( Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void lhz( Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void lbz( Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void std( Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
-  void stw( Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
-  void sth( Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
-  void stb( Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
-  void add( Register d, RegisterOrConstant roc, Register s1);
-  void subf(Register d, RegisterOrConstant roc, Register s1);
-  void cmpd(ConditionRegister d, RegisterOrConstant roc, Register s1);
+  void ld( Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void lwa(Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void lwz(Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void lha(Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void lhz(Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void lbz(Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void std(Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
+  void stw(Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
+  void sth(Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
+  void stb(Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
+  void add(Register d, Register s, RegisterOrConstant roc);
+  void add(Register d, RegisterOrConstant roc, Register s) { add(d, s, roc); }
+  void sub(Register d, Register s, RegisterOrConstant roc);
+  void xorr(Register d, Register s, RegisterOrConstant roc);
+  void xorr(Register d, RegisterOrConstant roc, Register s) { xorr(d, s, roc); }
+  void cmpw(ConditionRegister d, Register s, RegisterOrConstant roc);
+  void cmpd(ConditionRegister d, Register s, RegisterOrConstant roc);
   // Load pointer d from s1+roc.
   void ld_ptr(Register d, RegisterOrConstant roc, Register s1 = noreg) { ld(d, roc, s1); }
+
+  void ld( Register d, Address &a);
+  void lwa(Register d, Address &a);
+  void lwz(Register d, Address &a);
+  void lha(Register d, Address &a);
+  void lhz(Register d, Address &a);
+  void lbz(Register d, Address &a);
+  void std(Register d, Address &a, Register tmp = noreg);
+  void stw(Register d, Address &a, Register tmp = noreg);
+  void sth(Register d, Address &a, Register tmp = noreg);
+  void stb(Register d, Address &a, Register tmp = noreg);
 
   // Emit several instructions to load a 64 bit constant. This issues a fixed
   // instruction pattern so that the constant can be patched later on.

@@ -184,6 +184,9 @@ public class RichDiagnosticFormatter extends
         if (arg instanceof Type type) {
             preprocessType(type);
         }
+        else if (arg instanceof JCDiagnostic.AnnotatedType type) {
+            preprocessType(type.type());
+        }
         else if (arg instanceof Symbol symbol) {
             preprocessSymbol(symbol);
         }

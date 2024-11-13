@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -40,7 +42,7 @@ import sun.security.action.GetPropertyAction;
  * Polls file descriptors. Virtual threads invoke the poll method to park
  * until a given file descriptor is ready for I/O.
  */
-abstract class Poller {
+public abstract class Poller {
     private static final Pollers POLLERS;
     static {
         try {
@@ -143,6 +145,20 @@ abstract class Poller {
     }
 
     /**
+     * Parks the current thread until a Selector's file descriptor is ready.
+     * @param fdVal the Selector's file descriptor
+     * @param nanos the waiting time or 0 to wait indefinitely
+     */
+    static void pollSelector(int fdVal, long nanos) throws IOException {
+        assert nanos >= 0L;
+        Poller poller = POLLERS.masterPoller();
+        if (poller == null) {
+            poller = POLLERS.readPoller(fdVal);
+        }
+        poller.poll(fdVal, nanos, () -> true);
+    }
+
+    /**
      * If there is a thread polling the given file descriptor for the given event then
      * the thread is unparked.
      */
@@ -190,7 +206,12 @@ abstract class Poller {
     private void register(int fdVal) throws IOException {
         Thread previous = map.put(fdVal, Thread.currentThread());
         assert previous == null;
-        implRegister(fdVal);
+        try {
+            implRegister(fdVal);
+        } catch (Throwable t) {
+            map.remove(fdVal);
+            throw t;
+        }
     }
 
     /**
@@ -251,6 +272,18 @@ abstract class Poller {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Returns the number I/O operations currently registered with this poller.
+     */
+    public int registered() {
+        return map.size();
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toIdentityString(this) + " [registered = " + registered() + "]";
     }
 
     /**
@@ -340,6 +373,13 @@ abstract class Poller {
         }
 
         /**
+         * Returns the master poller, or null if there is no master poller.
+         */
+        Poller masterPoller() {
+            return masterPoller;
+        }
+
+        /**
          * Returns the read poller for the given file descriptor.
          */
         Poller readPoller(int fdVal) {
@@ -354,6 +394,21 @@ abstract class Poller {
             int index = provider.fdValToIndex(fdVal, writePollers.length);
             return writePollers[index];
         }
+
+        /**
+         * Return the list of read pollers.
+         */
+        List<Poller> readPollers() {
+            return List.of(readPollers);
+        }
+
+        /**
+         * Return the list of write pollers.
+         */
+        List<Poller> writePollers() {
+            return List.of(writePollers);
+        }
+
 
         /**
          * Reads the given property name to get the poller count. If the property is

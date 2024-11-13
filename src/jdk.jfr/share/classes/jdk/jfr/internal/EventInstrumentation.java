@@ -222,7 +222,7 @@ final class EventInstrumentation {
     // Only supports String, String[] and Boolean values
     private static <T> T annotationValue(ClassModel classModel, ClassDesc classDesc, Class<T> type) {
         String typeDescriptor = classDesc.descriptorString();
-        for (ClassElement ce : classModel.elements()) {
+        for (ClassElement ce : classModel) {
             if (ce instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
                 for (Annotation a : rvaa.annotations()) {
                     if (a.className().equalsString(typeDescriptor)) {
@@ -260,7 +260,7 @@ final class EventInstrumentation {
         Set<String> methodSet = new HashSet<>();
         List<SettingDesc> settingDescs = new ArrayList<>();
         for (MethodModel m : classModel.methods()) {
-            for (var me : m.elements()) {
+            for (var me : m) {
                 if (me instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
                     for (Annotation a : rvaa.annotations()) {
                         // We can't really validate the method at this
@@ -461,7 +461,7 @@ final class EventInstrumentation {
                     catchAllHandler.dup();
                     // stack: [ex] [EW] [EW]
                     Label rethrow = catchAllHandler.newLabel();
-                    catchAllHandler.if_null(rethrow);
+                    catchAllHandler.ifnull(rethrow);
                     // stack: [ex] [EW]
                     catchAllHandler.dup();
                     // stack: [ex] [EW] [EW]
@@ -486,7 +486,7 @@ final class EventInstrumentation {
             Label fail = codeBuilder.newLabel();
             if (guardEventConfiguration) {
                 getEventConfiguration(codeBuilder);
-                codeBuilder.if_null(fail);
+                codeBuilder.ifnull(fail);
             }
             // if (!eventConfiguration.shouldCommit(duration) goto fail;
             getEventConfiguration(codeBuilder);
@@ -499,7 +499,7 @@ final class EventInstrumentation {
                 // if (!settingsMethod(eventConfiguration.settingX)) goto fail;
                 codeBuilder.aload(0);
                 getEventConfiguration(codeBuilder);
-                codeBuilder.ldc(index);
+                codeBuilder.loadConstant(index);
                 invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_GET_SETTING);
                 MethodTypeDesc mdesc = MethodTypeDesc.ofDescriptor("(" + sd.paramType().descriptorString() + ")Z");
                 codeBuilder.checkcast(sd.paramType());
@@ -525,7 +525,7 @@ final class EventInstrumentation {
                 if (guardEventConfiguration) {
                     // if (eventConfiguration == null) goto fail;
                     getEventConfiguration(codeBuilder);
-                    codeBuilder.if_null(fail);
+                    codeBuilder.ifnull(fail);
                 }
                 // return eventConfiguration.shouldCommit(duration);
                 getEventConfiguration(codeBuilder);
@@ -562,7 +562,7 @@ final class EventInstrumentation {
         // write begin event
         getEventConfiguration(blockCodeBuilder);
         // stack: [EW], [EW], [EventConfiguration]
-        blockCodeBuilder.loadConstant(Opcode.LDC2_W, eventTypeId);
+        blockCodeBuilder.loadConstant(eventTypeId);
         // stack: [EW], [EW], [EventConfiguration] [long]
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
         // stack: [EW], [integer]
@@ -676,7 +676,7 @@ final class EventInstrumentation {
         // stack: [EW] [EW]
         getEventConfiguration(blockCodeBuilder);
         // stack: [EW] [EW] [EC]
-        blockCodeBuilder.loadConstant(Opcode.LDC2_W, eventTypeId);
+        blockCodeBuilder.loadConstant(eventTypeId);
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
         // stack: [EW] [int]
         blockCodeBuilder.ifeq(excluded);
@@ -738,7 +738,7 @@ final class EventInstrumentation {
             Label nullLabel = codeBuilder.newLabel();
             if (guardEventConfiguration) {
                 getEventConfiguration(codeBuilder);
-                codeBuilder.if_null(nullLabel);
+                codeBuilder.ifnull(nullLabel);
             }
             getEventConfiguration(codeBuilder);
             invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_IS_ENABLED);

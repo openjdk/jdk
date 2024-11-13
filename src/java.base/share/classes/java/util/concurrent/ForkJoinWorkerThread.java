@@ -39,6 +39,8 @@ import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A thread managed by a {@link ForkJoinPool}, which executes
@@ -90,9 +92,8 @@ public class ForkJoinWorkerThread extends Thread {
      * pool, and with the given policy for preserving ThreadLocals.
      *
      * @param group if non-null, the thread group for this
-     * thread. Otherwise, the thread group is chosen by the security
-     * manager if present, else set to the current thread's thread
-     * group.
+     * thread. Otherwise, the thread group is set to the current thread's
+     * thread group.
      * @param pool the pool this thread works in
      * @param preserveThreadLocals if true, always preserve the values of
      * ThreadLocal variables across tasks; otherwise they may be cleared.
@@ -203,6 +204,30 @@ public class ForkJoinWorkerThread extends Thread {
     }
 
     /**
+     * Returns true if the current task is being executed by a
+     * ForkJoinWorkerThread that is momentarily known to have one or
+     * more queued tasks that it could execute immediately. This
+     * method is approximate and useful only as a heuristic indicator
+     * within a running task.
+     *
+     * @return true if the current task is being executed by a worker
+     * that has queued work
+     */
+    static boolean hasKnownQueuedWork() {
+        ForkJoinWorkerThread wt; ForkJoinPool.WorkQueue q, sq;
+        ForkJoinPool p; ForkJoinPool.WorkQueue[] qs; int i;
+        Thread c = JLA.currentCarrierThread();
+        return ((c instanceof ForkJoinWorkerThread) &&
+                (p = (wt = (ForkJoinWorkerThread)c).pool) != null &&
+                (q = wt.workQueue) != null &&
+                (i = q.source) >= 0 && // check local and current source queues
+                (((qs = p.queues) != null && qs.length > i &&
+                  (sq = qs[i]) != null && sq.top - sq.base > 0) ||
+                 q.top - q.base > 0));
+    }
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
+    /**
      * A worker thread that has no permissions, is not a member of any
      * user-defined ThreadGroup, uses the system class loader as
      * thread context class loader, and clears all ThreadLocals after
@@ -210,17 +235,9 @@ public class ForkJoinWorkerThread extends Thread {
      */
     static final class InnocuousForkJoinWorkerThread extends ForkJoinWorkerThread {
         /** The ThreadGroup for all InnocuousForkJoinWorkerThreads */
-        private static final ThreadGroup innocuousThreadGroup;
-        @SuppressWarnings("removal")
-        private static final AccessControlContext innocuousACC;
+        private static final ThreadGroup innocuousThreadGroup = createGroup();
         InnocuousForkJoinWorkerThread(ForkJoinPool pool) {
             super(innocuousThreadGroup, pool, true, true);
-        }
-
-        @Override @SuppressWarnings("removal")
-        protected void onStart() {
-            Thread t = Thread.currentThread();
-            ThreadLocalRandom.setInheritedAccessControlContext(t, innocuousACC);
         }
 
         @Override // to silently fail
@@ -232,32 +249,11 @@ public class ForkJoinWorkerThread extends Thread {
                 throw new SecurityException("setContextClassLoader");
         }
 
-        @SuppressWarnings("removal")
-        static AccessControlContext createACC() {
-            return new AccessControlContext(
-                new ProtectionDomain[] { new ProtectionDomain(null, null) });
-        }
         static ThreadGroup createGroup() {
             ThreadGroup group = Thread.currentThread().getThreadGroup();
             for (ThreadGroup p; (p = group.getParent()) != null; )
                 group = p;
             return new ThreadGroup(group, "InnocuousForkJoinWorkerThreadGroup");
-        }
-        static {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            @SuppressWarnings("removal")
-            ThreadGroup g = innocuousThreadGroup =
-                (sm == null) ? createGroup() :
-                AccessController.doPrivileged(new PrivilegedAction<>() {
-                        public ThreadGroup run() {
-                            return createGroup(); }});
-            @SuppressWarnings("removal")
-            AccessControlContext a = innocuousACC =
-                (sm == null) ? createACC() :
-                AccessController.doPrivileged(new PrivilegedAction<>() {
-                        public AccessControlContext run() {
-                            return createACC(); }});
         }
     }
 }

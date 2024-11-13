@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339
+ * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896
  * @summary Test source launcher
  * @library /tools/lib
  * @enablePreview
@@ -241,25 +241,6 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
-    public void testSecurityManager(Path base) throws IOException {
-        Path sourceFile = base.resolve("HelloWorld.java");
-        tb.writeJavaFiles(base,
-                "class HelloWorld {\n" +
-                        "    public static void main(String... args) {\n" +
-                        "        System.out.println(\"Hello World!\");\n" +
-                        "    }\n" +
-                        "}");
-
-        String log = new JavaTask(tb)
-                .vmOptions("-Djava.security.manager=default")
-                .className(sourceFile.toString())
-                .run(Task.Expect.FAIL)
-                .getOutput(Task.OutputKind.STDERR);
-        checkContains("stderr", log,
-                "error: cannot use source-code launcher with a security manager enabled");
-    }
-
-    @Test
     public void testSystemProperty(Path base) throws IOException {
         tb.writeJavaFiles(base,
             "class ShowProperty {\n" +
@@ -274,6 +255,27 @@ public class SourceLauncherTest extends TestRunner {
                 .run(Task.Expect.SUCCESS)
                 .getOutput(Task.OutputKind.STDOUT);
         checkEqual("stdout", log.trim(), file.toAbsolutePath().toString());
+    }
+
+    @Test
+    public void testThreadContextClassLoader(Path base) throws IOException {
+        tb.writeJavaFiles(base, //language=java
+                """
+                class ThreadContextClassLoader {
+                    public static void main(String... args) {
+                        var expected = ThreadContextClassLoader.class.getClassLoader();
+                        var actual = Thread.currentThread().getContextClassLoader();
+                        System.out.println(expected == actual);
+                    }
+                }
+                """);
+
+        Path file = base.resolve("ThreadContextClassLoader.java");
+        String log = new JavaTask(tb)
+                .className(file.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log.trim(), "true");
     }
 
     void testSuccess(Path file, String expect) throws IOException {
@@ -743,7 +745,7 @@ public class SourceLauncherTest extends TestRunner {
         private static void markModuleAsIncubator(Path moduleInfoFile) throws Exception {
             ClassModel cf = ClassFile.of().parse(moduleInfoFile);
             ModuleResolutionAttribute newAttr = ModuleResolutionAttribute.of(WARN_INCUBATING);
-            byte[] newBytes = ClassFile.of().transform(cf,
+            byte[] newBytes = ClassFile.of().transformClass(cf,
                     ClassTransform.endHandler(classBuilder -> classBuilder.with(newAttr)));
             try (OutputStream out = Files.newOutputStream(moduleInfoFile)) {
                 out.write(newBytes);

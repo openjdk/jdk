@@ -376,11 +376,22 @@ class StubGenerator: public StubCodeGenerator {
   void roundDec(XMMRegister key, int rnum);
   void lastroundDec(XMMRegister key, int rnum);
   void gfmul_avx512(XMMRegister ghash, XMMRegister hkey);
-  void generateHtbl_48_block_zmm(Register htbl, Register avx512_subkeyHtbl, Register rscratch);
-  void ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx,
-                                  XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
-                                  XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
-                                  bool final_reduction, int index, XMMRegister counter_inc_mask);
+  void ghash16_encrypt_parallel16_avx512(Register in, Register out, Register ct, Register pos, Register avx512_subkeyHtbl,
+                                         Register CTR_CHECK, Register NROUNDS, Register key, XMMRegister CTR, XMMRegister GHASH,
+                                         XMMRegister ADDBE_4x4, XMMRegister ADDBE_1234, XMMRegister ADD_1234, XMMRegister SHUF_MASK,
+                                         bool hk_broadcast, bool is_hash_start, bool do_hash_reduction, bool do_hash_hxor,
+                                         bool no_ghash_in, int ghashin_offset, int aesout_offset, int hashkey_offset);
+  void generateHtbl_32_blocks_avx512(Register htbl, Register avx512_htbl);
+  void initial_blocks_16_avx512(Register in, Register out, Register ct, Register pos, Register key, Register avx512_subkeyHtbl,
+                                Register CTR_CHECK, Register rounds, XMMRegister CTR, XMMRegister GHASH,  XMMRegister ADDBE_4x4,
+                                XMMRegister ADDBE_1234, XMMRegister ADD_1234, XMMRegister SHUF_MASK, int stack_offset);
+  void gcm_enc_dec_last_avx512(Register len, Register in, Register pos, XMMRegister HASH, XMMRegister SHUFM, Register subkeyHtbl,
+                               int ghashin_offset, int hashkey_offset, bool start_ghash, bool do_reduction);
+  void ghash16_avx512(bool start_ghash, bool do_reduction, bool uload_shuffle, bool hk_broadcast, bool do_hxor,
+                      Register in, Register pos, Register subkeyHtbl, XMMRegister HASH, XMMRegister SHUFM, int in_offset,
+                      int in_disp, int displacement, int hashkey_offset);
+  void aesgcm_avx512(Register in, Register len, Register ct, Register out, Register key,
+                     Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter);
   // AVX2 AES-GCM related functions
   void initial_blocks_avx2(XMMRegister ctr, Register rounds, Register key, Register len,
                            Register in, Register out, Register ct, XMMRegister aad_hashx, Register pos);
@@ -486,6 +497,10 @@ class StubGenerator: public StubCodeGenerator {
   address generate_intpoly_montgomeryMult_P256();
   address generate_intpoly_assign();
 
+  // SHA3 stubs
+  void generate_sha3_stubs();
+  address generate_sha3_implCompress(bool multiBlock, const char *name);
+
   // BASE64 stubs
 
   address base64_shuffle_addr();
@@ -546,6 +561,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_libmSin();
   address generate_libmCos();
   address generate_libmTan();
+  address generate_libmTanh();
   address generate_libmExp();
   address generate_libmPow();
   address generate_libmLog();
@@ -575,6 +591,9 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_libm_stubs();
 
+#ifdef COMPILER2
+  void generate_string_indexof(address *fnptrs);
+#endif
 
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
   address generate_cont_thaw();
@@ -583,15 +602,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_returnBarrier();
   address generate_cont_returnBarrier_exception();
 
-#if INCLUDE_JFR
-  void generate_jfr_stubs();
-  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
-  // It returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  RuntimeStub* generate_jfr_write_checkpoint();
-  // For c2: call to runtime to return a buffer lease.
-  RuntimeStub* generate_jfr_return_lease();
-#endif // INCLUDE_JFR
+  address generate_cont_preempt_stub();
 
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
@@ -615,6 +626,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // shared exception handler for FFM upcall stubs
   address generate_upcall_stub_exception_handler();
+  address generate_upcall_stub_load_target();
 
   // Specialized stub implementations for UseSecondarySupersTable.
   address generate_lookup_secondary_supers_table_stub(u1 super_klass_index);

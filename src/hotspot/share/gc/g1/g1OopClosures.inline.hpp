@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
     return;
   }
 
-  HeapRegionRemSet* to_rem_set = _g1h->heap_region_containing(obj)->rem_set();
+  G1HeapRegionRemSet* to_rem_set = _g1h->heap_region_containing(obj)->rem_set();
 
   assert(to_rem_set != nullptr, "Need per-region 'into' remsets.");
   if (to_rem_set->is_tracked()) {
@@ -228,7 +228,7 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
     oop forwardee;
     markWord m = obj->mark();
     if (m.is_forwarded()) {
-      forwardee = m.forwardee();
+      forwardee = obj->forwardee(m);
     } else {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }
@@ -266,7 +266,7 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   }
 
   G1HeapRegion* to = _g1h->heap_region_containing(obj);
-  HeapRegionRemSet* rem_set = to->rem_set();
+  G1HeapRegionRemSet* rem_set = to->rem_set();
   if (rem_set->is_tracked()) {
     rem_set->add_reference(p, _worker_id);
   }

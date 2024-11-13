@@ -51,7 +51,6 @@ import sun.reflect.misc.ReflectUtil;
 import static javax.management.remote.rmi.RMIConnector.Util.cast;
 import com.sun.jmx.remote.internal.ServerCommunicatorAdmin;
 import com.sun.jmx.remote.internal.ServerNotifForwarder;
-import com.sun.jmx.remote.security.JMXSubjectDomainCombiner;
 import com.sun.jmx.remote.util.ClassLoaderWithRepository;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
@@ -108,15 +107,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         this.rmiServer = rmiServer;
         this.connectionId = connectionId;
         this.defaultClassLoader = defaultClassLoader;
-
         this.subject = subject;
-        if (subject == null) {
-            this.acc = null;
-        } else {
-            // An authenticated Subject was provided.
-            // Subject Delegation has been removed.
-            this.acc = JMXSubjectDomainCombiner.getContext(subject);
-        }
         this.mbeanServer = rmiServer.getMBeanServer();
 
         final ClassLoader dcl = defaultClassLoader;
@@ -1292,10 +1283,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                         return getServerNotifFwd().fetchNotifs(csn, t, mn);
                     }
             };
-            if (acc == null)
+            if (subject == null) {
                 return action.run();
-            else
-                return AccessController.doPrivileged(action, acc);
+            } else {
+                return Subject.doAs(subject, action);
+            }
         } finally {
             serverCommunicatorAdmin.rspOutgoing();
         }
@@ -1411,16 +1403,18 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         serverCommunicatorAdmin.reqIncoming();
         try {
             PrivilegedOperation op = new PrivilegedOperation(operation, params);
-            if (acc == null) {
+            if (subject == null) {
                 try {
                     return op.run();
                 } catch (Exception e) {
-                    if (e instanceof RuntimeException)
+                    if (e instanceof RuntimeException) {
                         throw (RuntimeException) e;
-                    throw new PrivilegedActionException(e);
+                    } else {
+                        throw new PrivilegedActionException(e);
+                    }
                 }
             } else {
-                return AccessController.doPrivileged(op, acc);
+                return Subject.doAs(subject, op);
             }
         } catch (Error e) {
             throw new JMXServerErrorException(e.toString(),e);
@@ -1585,15 +1579,13 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
         try {
             final ClassLoader old = AccessController.doPrivileged(new SetCcl(cl));
-            try{
-                if (acc != null) {
-                    return AccessController.doPrivileged(
-                            (PrivilegedExceptionAction<T>) () ->
-                                    wrappedClass.cast(mo.get()), acc);
-                }else{
+            try {
+                if (subject != null) {
+                    return Subject.doAs(subject, (PrivilegedExceptionAction<T>) () -> wrappedClass.cast(mo.get()));
+                } else {
                     return wrappedClass.cast(mo.get());
                 }
-            }finally{
+            } finally {
                 AccessController.doPrivileged(new SetCcl(old));
             }
         } catch (PrivilegedActionException pe) {
@@ -1707,9 +1699,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     //------------------------------------------------------------------------
 
     private final Subject subject;
-
-    @SuppressWarnings("removal")
-    private final AccessControlContext acc;
 
     private final RMIServerImpl rmiServer;
 

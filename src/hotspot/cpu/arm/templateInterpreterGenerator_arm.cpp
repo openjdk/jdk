@@ -175,6 +175,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     break;
   case Interpreter::java_lang_math_fmaD:
   case Interpreter::java_lang_math_fmaF:
+  case Interpreter::java_lang_math_tanh:
     // TODO: Implement intrinsic
     break;
   default:
@@ -458,6 +459,10 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  return nullptr;
+}
+
 
 // Helpers for commoning out cases in the various type of method entries.
 //
@@ -560,7 +565,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   __ cmp(Rtemp, R0);
 
   __ mov(SP, Rsender_sp, ls);  // restore SP
-  __ b(StubRoutines::throw_StackOverflowError_entry(), ls);
+  __ b(SharedRuntime::throw_StackOverflowError_entry(), ls);
 }
 
 

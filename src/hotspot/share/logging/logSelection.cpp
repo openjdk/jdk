@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,11 @@
 
 const LogSelection LogSelection::Invalid;
 
-LogSelection::LogSelection() : _ntags(0), _wildcard(false), _level(LogLevel::Invalid), _tag_sets_selected(0) {
+LogSelection::LogSelection() : _ntags(0), _tags(), _wildcard(false), _level(LogLevel::Invalid), _tag_sets_selected(0) {
 }
 
 LogSelection::LogSelection(const LogTagType tags[LogTag::MaxTags], bool wildcard, LogLevelType level)
-    : _ntags(0), _wildcard(wildcard), _level(level), _tag_sets_selected(0) {
+  : _ntags(0), _tags(), _wildcard(wildcard), _level(level), _tag_sets_selected(0) {
   while (_ntags < LogTag::MaxTags && tags[_ntags] != LogTag::__NO_TAG) {
     _tags[_ntags] = tags[_ntags];
     _ntags++;
@@ -67,6 +67,23 @@ bool LogSelection::operator==(const LogSelection& ref) const {
 
 bool LogSelection::operator!=(const LogSelection& ref) const {
   return !operator==(ref);
+}
+
+bool LogSelection::superset_of(const LogSelection& other) const {
+  bool match;
+  for (size_t i = 0; i < other.ntags(); ++i) {
+    match = false;
+    for (size_t j = 0; j < _ntags; ++j) {
+      if (other._tags[i] == _tags[j]) {
+        match = true;
+        break;
+      }
+    }
+
+    if (!match) return false;
+  }
+
+  return true;
 }
 
 static LogSelection parse_internal(char *str, outputStream* errstream) {
@@ -322,7 +339,7 @@ void LogSelection::suggest_similar_matching(outputStream* out) const {
 
   // Sort found suggestions to suggest the best one first
   SimilarityComparator sc(*this);
-  QuickSort::sort(suggestions, nsuggestions, sc, false);
+  QuickSort::sort(suggestions, nsuggestions, sc);
 
   out->print("Did you mean any of the following?");
   for (size_t i = 0; i < nsuggestions; i++) {

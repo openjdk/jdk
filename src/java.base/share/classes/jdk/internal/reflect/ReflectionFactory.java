@@ -186,41 +186,6 @@ public class ReflectionFactory {
     //
     //
 
-    /** Creates a new java.lang.reflect.Constructor. Access checks as
-        per java.lang.reflect.AccessibleObject are not overridden. */
-    public Constructor<?> newConstructor(Class<?> declaringClass,
-                                         Class<?>[] parameterTypes,
-                                         Class<?>[] checkedExceptions,
-                                         int modifiers,
-                                         int slot,
-                                         String signature,
-                                         byte[] annotations,
-                                         byte[] parameterAnnotations)
-    {
-        return langReflectAccess.newConstructor(declaringClass,
-                                                parameterTypes,
-                                                checkedExceptions,
-                                                modifiers,
-                                                slot,
-                                                signature,
-                                                annotations,
-                                                parameterAnnotations);
-    }
-
-    /** Gets the ConstructorAccessor object for a
-        java.lang.reflect.Constructor */
-    public ConstructorAccessor getConstructorAccessor(Constructor<?> c) {
-        return langReflectAccess.getConstructorAccessor(c);
-    }
-
-    /** Sets the ConstructorAccessor object for a
-        java.lang.reflect.Constructor */
-    public void setConstructorAccessor(Constructor<?> c,
-                                       ConstructorAccessor accessor)
-    {
-        langReflectAccess.setConstructorAccessor(c, accessor);
-    }
-
     /** Makes a copy of the passed method. The returned method is a
         "child" of the passed one; see the comments in Method.java for
         details. */
@@ -232,9 +197,9 @@ public class ReflectionFactory {
      * a "child" but a "sibling" of the Method in arg. Should only be
      * used on non-root methods. */
     public Method leafCopyMethod(Method arg) {
-        return langReflectAccess.leafCopyMethod(arg);
+        Method root = langReflectAccess.getRoot(arg);
+        return langReflectAccess.copyMethod(root);
     }
-
 
     /** Makes a copy of the passed field. The returned field is a
         "child" of the passed one; see the comments in Field.java for
@@ -376,26 +341,12 @@ public class ReflectionFactory {
 
     private final Constructor<?> generateConstructor(Class<?> cl,
                                                      Constructor<?> constructorToCall) {
-
-        Constructor<?> ctor = newConstructor(constructorToCall.getDeclaringClass(),
-                                             constructorToCall.getParameterTypes(),
-                                             constructorToCall.getExceptionTypes(),
-                                             constructorToCall.getModifiers(),
-                                             langReflectAccess.getConstructorSlot(constructorToCall),
-                                             langReflectAccess.getConstructorSignature(constructorToCall),
-                                             langReflectAccess.getConstructorAnnotations(constructorToCall),
-                                             langReflectAccess.getConstructorParameterAnnotations(constructorToCall));
-        ConstructorAccessor acc;
-        if (useOldSerializableConstructor()) {
-            acc = new SerializationConstructorAccessorGenerator().
-                                generateSerializationConstructor(cl,
-                                                                 constructorToCall.getParameterTypes(),
-                                                                 constructorToCall.getModifiers(),
-                                                                 constructorToCall.getDeclaringClass());
-        } else {
-            acc = MethodHandleAccessorFactory.newSerializableConstructorAccessor(cl, ctor);
-        }
-        setConstructorAccessor(ctor, acc);
+        ConstructorAccessor acc = MethodHandleAccessorFactory
+                .newSerializableConstructorAccessor(cl, constructorToCall);
+        // Unlike other root constructors, this constructor is not copied for mutation
+        // but directly mutated, as it is not cached. To cache this constructor,
+        // setAccessible call must be done on a copy and return that copy instead.
+        Constructor<?> ctor = langReflectAccess.newConstructorWithAccessor(constructorToCall, acc);
         ctor.setAccessible(true);
         return ctor;
     }
@@ -617,10 +568,6 @@ public class ReflectionFactory {
         return config().useNativeAccessorOnly;
     }
 
-    static boolean useOldSerializableConstructor() {
-        return config().useOldSerializableConstructor;
-    }
-
     private static boolean disableSerialConstructorChecks() {
         return config().disableSerialConstructorChecks;
     }
@@ -637,7 +584,6 @@ public class ReflectionFactory {
     private static @Stable Config config;
 
     private static final Config DEFAULT_CONFIG = new Config(false, // useNativeAccessorOnly
-                                                            false,  // useOldSerializeableConstructor
                                                             false); // disableSerialConstructorChecks
 
     /**
@@ -652,7 +598,6 @@ public class ReflectionFactory {
      * is to override them.
      */
     private record Config(boolean useNativeAccessorOnly,
-                          boolean useOldSerializableConstructor,
                           boolean disableSerialConstructorChecks) {
     }
 
@@ -676,12 +621,10 @@ public class ReflectionFactory {
         Properties props = GetPropertyAction.privilegedGetProperties();
         boolean useNativeAccessorOnly =
             "true".equals(props.getProperty("jdk.reflect.useNativeAccessorOnly"));
-        boolean useOldSerializableConstructor =
-            "true".equals(props.getProperty("jdk.reflect.useOldSerializableConstructor"));
         boolean disableSerialConstructorChecks =
             "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
-        return new Config(useNativeAccessorOnly, useOldSerializableConstructor, disableSerialConstructorChecks);
+        return new Config(useNativeAccessorOnly, disableSerialConstructorChecks);
     }
 
     /**

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,24 +56,23 @@ class Immediate {
     }
 
     // Test if x is within signed immediate range for nbits.
-    static bool is_uimm(int64_t x, unsigned int nbits) {
+    static bool is_uimm(uint64_t x, unsigned int nbits) {
       // nbits == 0  --> false
       // nbits >= 64 --> true
       assert(1 <= nbits && nbits < 64, "don't call, use statically known result");
-      const uint64_t xu       = (unsigned long)x;
       const uint64_t maxplus1 = 1UL << nbits;
-      return xu < maxplus1; // Unsigned comparison. Negative inputs appear to be very large.
+      return x < maxplus1; // Unsigned comparison. Negative inputs appear to be very large.
     }
-    static bool is_uimm32(int64_t x) {
+    static bool is_uimm32(uint64_t x) {
       return is_uimm(x, 32);
     }
-    static bool is_uimm16(int64_t x) {
+    static bool is_uimm16(uint64_t x) {
       return is_uimm(x, 16);
     }
-    static bool is_uimm12(int64_t x) {
+    static bool is_uimm12(uint64_t x) {
       return is_uimm(x, 12);
     }
-    static bool is_uimm8(int64_t x) {
+    static bool is_uimm8(uint64_t x) {
       return is_uimm(x,  8);
     }
 };
@@ -795,8 +794,8 @@ class Assembler : public AbstractAssembler {
 #define DSGF_ZOPC   (unsigned long)(227L << 40 | 29L)
 #define DSG_ZOPC    (unsigned long)(227L << 40 | 13L)
 // RR, unsigned
-#define DLR_ZOPC    (unsigned  int)(185 << 24 | 151 << 16)
-#define DLGR_ZOPC   (unsigned  int)(185 << 24 | 135 << 16)
+#define DLR_ZOPC    (unsigned  int)(0xb997 << 16)
+#define DLGR_ZOPC   (unsigned  int)(0xb987 << 16)
 // RM, unsigned
 #define DL_ZOPC     (unsigned long)(227L << 40 | 151L)
 #define DLG_ZOPC    (unsigned long)(227L << 40 | 135L)
@@ -986,6 +985,9 @@ class Assembler : public AbstractAssembler {
 #define BCR_ZOPC    (unsigned  int)(7 << 8)
 #define BALR_ZOPC   (unsigned  int)(5 << 8)
 #define BASR_ZOPC   (unsigned  int)(13 << 8)
+#define BCT_ZOPC    (unsigned  int)(70 << 24)
+#define BCTR_ZOPC   (unsigned  int)(6 << 8)
+#define BCTG_ZOPC   (unsigned  int)(227L << 40 | 70)
 #define BCTGR_ZOPC  (unsigned long)(0xb946 << 16)
 // Absolute
 #define BC_ZOPC     (unsigned  int)(71 << 24)
@@ -1607,6 +1609,9 @@ class Assembler : public AbstractAssembler {
   static int inv_simm32(long x)    { return (inv_s_field(x, 31,  0)); }                         // 6-byte instructions only
   static int inv_uimm12(long x)    { return (inv_u_field(x, 11,  0)); }                         // 4-byte instructions only
 
+  // NOTE: PLEASE DON'T USE IT NAKED UNTIL WE DROP SUPPORT FOR MACHINES OLDER THAN Z15!!!!
+  inline void z_popcnt(Register r1, Register r2, int64_t m3);   // population count
+
  private:
 
   // Encode u_field from long value.
@@ -1887,7 +1892,14 @@ class Assembler : public AbstractAssembler {
   //inline void z_brcl(branch_condition i1, int64_t i2);                        // branch  i1 ? pc = pc + i2_imm32
   inline void z_brcl(branch_condition i1, address a);                           // branch  i1 ? pc = a
   inline void z_brcl(branch_condition i1, Label& L);                            // branch  i1 ? pc = Label
-  inline void z_bctgr(Register r1, Register r2);         // branch on count r1 -= 1; (r1!=0) ? pc = r2  ; r1 is int64
+
+  // branch on count Instructions
+  inline void z_bct(  Register r1, int64_t d2, Register x2, Register b2); // branch on count r1 -= 1; (r1!=0) ? pc = (d2_uimm12+x2+b2) ; r1 is int32
+  inline void z_bct(  Register r1, const Address &a);                     // branch on count r1 -= 1; (r1!=0) ? pc = *(a); r1 is int32
+  inline void z_bctr( Register r1, Register r2);                          // branch on count r1 -= 1; (r1!=0) ? pc = r2  ; r1 is int32
+  inline void z_bctgr(Register r1, Register r2);                          // branch on count r1 -= 1; (r1!=0) ? pc = r2  ; r1 is int64
+  inline void z_bctg( Register r1, const Address &a);                     // branch on count r1 -= 1; (r1!=0) ? pc = *(a); r1 is int64
+  inline void z_bctg( Register r1, int64_t d2, Register x2, Register b2); // branch on count r1 -= 1; (r1!=0) ? pc = (d2_imm20+x2+b2)  ; r1 is int64
 
   // branch unconditional / always
   inline void z_br(Register r2);                         // branch to r2, nop if r2 == Z_R0
@@ -2244,6 +2256,8 @@ class Assembler : public AbstractAssembler {
   inline void z_mghi( Register r1, int64_t i2);   // mult r1 = r1 * i2_imm16;   int64
 
   // Division instructions
+  inline void z_dlr(  Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
+  inline void z_dlgr( Register r1, Register r2);      // div  r1 = r1 / r2               ; int128/int64 needs reg pair!
   inline void z_dsgr( Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
   inline void z_dsgfr(Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
 
@@ -3061,6 +3075,10 @@ class Assembler : public AbstractAssembler {
   inline void z_braz(Label& L);
   inline void z_brnp(Label& L);
 
+  // Branch on count;
+  inline void z_bct( Register r1, int64_t d2, Register b2);
+  inline void z_bctg(Register r1, int64_t d2, Register b2);
+
   inline void z_btrue( Label& L);
   inline void z_bfalse(Label& L);
 
@@ -3092,7 +3110,6 @@ class Assembler : public AbstractAssembler {
 
   // Ppopulation count intrinsics.
   inline void z_flogr(Register r1, Register r2);    // find leftmost one
-  inline void z_popcnt(Register r1, Register r2);   // population count
   inline void z_ahhhr(Register r1, Register r2, Register r3);   // ADD halfword high high
   inline void z_ahhlr(Register r1, Register r2, Register r3);   // ADD halfword high low
 

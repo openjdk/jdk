@@ -28,9 +28,6 @@ package java.lang.invoke;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
@@ -42,8 +39,12 @@ import sun.invoke.util.Wrapper;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.LambdaForm.BasicType;
+import java.lang.invoke.MethodHandleImpl.Intrinsic;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -62,8 +63,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import static java.lang.classfile.ClassFile.*;
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
-import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
@@ -164,8 +165,6 @@ public class MethodHandles {
      * <em>Discussion:</em>
      * The lookup class can be changed to any other class {@code C} using an expression of the form
      * {@link Lookup#in publicLookup().in(C.class)}.
-     * A public lookup object is always subject to
-     * <a href="MethodHandles.Lookup.html#secmgr">security manager checks</a>.
      * Also, it cannot access
      * <a href="MethodHandles.Lookup.html#callsens">caller sensitive methods</a>.
      * @return a lookup object which is trusted minimally
@@ -185,9 +184,6 @@ public class MethodHandles {
      * allowed to do deep reflection on module {@code M2} and package of the target class
      * if and only if all of the following conditions are {@code true}:
      * <ul>
-     * <li>If there is a security manager, its {@code checkPermission} method is
-     * called to check {@code ReflectPermission("suppressAccessChecks")} and
-     * that must return normally.
      * <li>The caller lookup object must have {@linkplain Lookup#hasFullPrivilegeAccess()
      * full privilege access}.  Specifically:
      *   <ul>
@@ -237,7 +233,6 @@ public class MethodHandles {
      * @return a lookup object for the target class, with private access
      * @throws IllegalArgumentException if {@code targetClass} is a primitive type or void or array class
      * @throws NullPointerException if {@code targetClass} or {@code caller} is {@code null}
-     * @throws SecurityException if denied by the security manager
      * @throws IllegalAccessException if any of the other access checks specified above fails
      * @since 9
      * @see Lookup#dropLookupMode
@@ -458,14 +453,10 @@ public class MethodHandles {
      * on the target to obtain its symbolic reference, and then called
      * {@link java.lang.invoke.MethodHandleInfo#reflectAs MethodHandleInfo.reflectAs}
      * to resolve the symbolic reference to a member.
-     * <p>
-     * If there is a security manager, its {@code checkPermission} method
-     * is called with a {@code ReflectPermission("suppressAccessChecks")} permission.
      * @param <T> the desired type of the result, either {@link Member} or a subtype
-     * @param target a direct method handle to crack into symbolic reference components
      * @param expected a class object representing the desired result type {@code T}
+     * @param target a direct method handle to crack into symbolic reference components
      * @return a reference to the method, constructor, or field object
-     * @throws    SecurityException if the caller is not privileged to call {@code setAccessible}
      * @throws    NullPointerException if either argument is {@code null}
      * @throws    IllegalArgumentException if the target is not a direct method handle
      * @throws    ClassCastException if the member is not of the expected type
@@ -615,10 +606,6 @@ public class MethodHandles {
      * the lookup can still succeed.
      * For example, lookups for {@code MethodHandle.invokeExact} and
      * {@code MethodHandle.invoke} will always succeed, regardless of requested type.
-     * <li>If there is a security manager installed, it can forbid the lookup
-     * on various grounds (<a href="MethodHandles.Lookup.html#secmgr">see below</a>).
-     * By contrast, the {@code ldc} instruction on a {@code CONSTANT_MethodHandle}
-     * constant is not subject to security manager checks.
      * <li>If the looked-up method has a
      * <a href="MethodHandle.html#maxarity">very large arity</a>,
      * the method handle creation may fail with an
@@ -1316,74 +1303,6 @@ public class MethodHandles {
      * all access modes are dropped.</li>
      * </ul>
      *
-     * <h2><a id="secmgr"></a>Security manager interactions</h2>
-     * Although bytecode instructions can only refer to classes in
-     * a related class loader, this API can search for methods in any
-     * class, as long as a reference to its {@code Class} object is
-     * available.  Such cross-loader references are also possible with the
-     * Core Reflection API, and are impossible to bytecode instructions
-     * such as {@code invokestatic} or {@code getfield}.
-     * There is a {@linkplain java.lang.SecurityManager security manager API}
-     * to allow applications to check such cross-loader references.
-     * These checks apply to both the {@code MethodHandles.Lookup} API
-     * and the Core Reflection API
-     * (as found on {@link java.lang.Class Class}).
-     * <p>
-     * If a security manager is present, member and class lookups are subject to
-     * additional checks.
-     * From one to three calls are made to the security manager.
-     * Any of these calls can refuse access by throwing a
-     * {@link java.lang.SecurityException SecurityException}.
-     * Define {@code smgr} as the security manager,
-     * {@code lookc} as the lookup class of the current lookup object,
-     * {@code refc} as the containing class in which the member
-     * is being sought, and {@code defc} as the class in which the
-     * member is actually defined.
-     * (If a class or other type is being accessed,
-     * the {@code refc} and {@code defc} values are the class itself.)
-     * The value {@code lookc} is defined as <em>not present</em>
-     * if the current lookup object does not have
-     * {@linkplain #hasFullPrivilegeAccess() full privilege access}.
-     * The calls are made according to the following rules:
-     * <ul>
-     * <li><b>Step 1:</b>
-     *     If {@code lookc} is not present, or if its class loader is not
-     *     the same as or an ancestor of the class loader of {@code refc},
-     *     then {@link SecurityManager#checkPackageAccess
-     *     smgr.checkPackageAccess(refcPkg)} is called,
-     *     where {@code refcPkg} is the package of {@code refc}.
-     * <li><b>Step 2a:</b>
-     *     If the retrieved member is not public and
-     *     {@code lookc} is not present, then
-     *     {@link SecurityManager#checkPermission smgr.checkPermission}
-     *     with {@code RuntimePermission("accessDeclaredMembers")} is called.
-     * <li><b>Step 2b:</b>
-     *     If the retrieved class has a {@code null} class loader,
-     *     and {@code lookc} is not present, then
-     *     {@link SecurityManager#checkPermission smgr.checkPermission}
-     *     with {@code RuntimePermission("getClassLoader")} is called.
-     * <li><b>Step 3:</b>
-     *     If the retrieved member is not public,
-     *     and if {@code lookc} is not present,
-     *     and if {@code defc} and {@code refc} are different,
-     *     then {@link SecurityManager#checkPackageAccess
-     *     smgr.checkPackageAccess(defcPkg)} is called,
-     *     where {@code defcPkg} is the package of {@code defc}.
-     * </ul>
-     * Security checks are performed after other access checks have passed.
-     * Therefore, the above rules presuppose a member or class that is public,
-     * or else that is being accessed from a lookup class that has
-     * rights to access the member or class.
-     * <p>
-     * If a security manager is present and the current lookup object does not have
-     * {@linkplain #hasFullPrivilegeAccess() full privilege access}, then
-     * {@link #defineClass(byte[]) defineClass},
-     * {@link #defineHiddenClass(byte[], boolean, ClassOption...) defineHiddenClass},
-     * {@link #defineHiddenClassWithClassData(byte[], Object, boolean, ClassOption...)
-     * defineHiddenClassWithClassData}
-     * calls {@link SecurityManager#checkPermission smgr.checkPermission}
-     * with {@code RuntimePermission("defineClass")}.
-     *
      * <h2><a id="callsens"></a>Caller sensitive methods</h2>
      * A small number of Java methods have a special property called caller sensitivity.
      * A <em>caller-sensitive</em> method can behave differently depending on the
@@ -1824,10 +1743,6 @@ public class MethodHandles {
          * run at a later time, as detailed in section 12.4 of the <em>The Java Language
          * Specification</em>. </p>
          *
-         * <p> If there is a security manager and this lookup does not have {@linkplain
-         * #hasFullPrivilegeAccess() full privilege access}, its {@code checkPermission} method
-         * is first called to check {@code RuntimePermission("defineClass")}. </p>
-         *
          * @param bytes the class bytes
          * @return the {@code Class} object for the class
          * @throws IllegalAccessException if this lookup does not have {@code PACKAGE} access
@@ -1837,8 +1752,6 @@ public class MethodHandles {
          * ({@code ACC_MODULE} flag is set in the value of the {@code access_flags} item)
          * @throws VerifyError if the newly created class cannot be verified
          * @throws LinkageError if the newly created class cannot be linked for any other reason
-         * @throws SecurityException if a security manager is present and it
-         *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if {@code bytes} is {@code null}
          * @since 9
          * @see MethodHandles#privateLookupIn
@@ -1907,9 +1820,12 @@ public class MethodHandles {
                 this.flag = flag;
             }
 
-            static int optionsToFlag(Set<ClassOption> options) {
+            static int optionsToFlag(ClassOption[] options) {
                 int flags = 0;
                 for (ClassOption cp : options) {
+                    if ((flags & cp.flag) != 0) {
+                        throw new IllegalArgumentException("Duplicate ClassOption " + cp);
+                    }
                     flags |= cp.flag;
                 }
                 return flags;
@@ -2093,8 +2009,6 @@ public class MethodHandles {
          *
          * @throws IllegalAccessException if this {@code Lookup} does not have
          * {@linkplain #hasFullPrivilegeAccess() full privilege} access
-         * @throws SecurityException if a security manager is present and it
-         * <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws ClassFormatError if {@code bytes} is not a {@code ClassFile} structure
          * @throws UnsupportedClassVersionError if {@code bytes} is not of a supported major or minor version
          * @throws IllegalArgumentException if {@code bytes} denotes a class in a different package
@@ -2127,14 +2041,13 @@ public class MethodHandles {
                 throws IllegalAccessException
         {
             Objects.requireNonNull(bytes);
-            Objects.requireNonNull(options);
-
+            int flags = ClassOption.optionsToFlag(options);
             ensureDefineClassPermission();
             if (!hasFullPrivilegeAccess()) {
                 throw new IllegalAccessException(this + " does not have full privilege access");
             }
 
-            return makeHiddenClassDefiner(bytes.clone(), Set.of(options), false).defineClassAsLookup(initialize);
+            return makeHiddenClassDefiner(bytes.clone(), false, flags).defineClassAsLookup(initialize);
         }
 
         /**
@@ -2177,8 +2090,6 @@ public class MethodHandles {
          *
          * @throws IllegalAccessException if this {@code Lookup} does not have
          * {@linkplain #hasFullPrivilegeAccess() full privilege} access
-         * @throws SecurityException if a security manager is present and it
-         * <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws ClassFormatError if {@code bytes} is not a {@code ClassFile} structure
          * @throws UnsupportedClassVersionError if {@code bytes} is not of a supported major or minor version
          * @throws IllegalArgumentException if {@code bytes} denotes a class in a different package
@@ -2207,21 +2118,22 @@ public class MethodHandles {
          * @jvms 5.3.5 Deriving a {@code Class} from a {@code class} File Representation
          * @jvms 5.4 Linking
          * @jvms 5.5 Initialization
-         * @jls 12.7 Unloading of Classes and Interface
+         * @jls 12.7 Unloading of Classes and Interfaces
          */
         public Lookup defineHiddenClassWithClassData(byte[] bytes, Object classData, boolean initialize, ClassOption... options)
                 throws IllegalAccessException
         {
             Objects.requireNonNull(bytes);
             Objects.requireNonNull(classData);
-            Objects.requireNonNull(options);
+
+            int flags = ClassOption.optionsToFlag(options);
 
             ensureDefineClassPermission();
             if (!hasFullPrivilegeAccess()) {
                 throw new IllegalAccessException(this + " does not have full privilege access");
             }
 
-            return makeHiddenClassDefiner(bytes.clone(), Set.of(options), false)
+            return makeHiddenClassDefiner(bytes.clone(), false, flags)
                        .defineClassAsLookup(initialize, classData);
         }
 
@@ -2240,96 +2152,70 @@ public class MethodHandles {
         private static final ClassFileDumper DEFAULT_DUMPER = ClassFileDumper.getInstance(
                 "jdk.invoke.MethodHandle.dumpClassFiles", "DUMP_CLASS_FILES");
 
-        static class ClassFile {
-            final String name;  // internal name
-            final int accessFlags;
-            final byte[] bytes;
-            ClassFile(String name, int accessFlags, byte[] bytes) {
-                this.name = name;
-                this.accessFlags = accessFlags;
-                this.bytes = bytes;
+        /**
+         * This method checks the class file version and the structure of `this_class`.
+         * and checks if the bytes is a class or interface (ACC_MODULE flag not set)
+         * that is in the named package.
+         *
+         * @throws IllegalArgumentException if ACC_MODULE flag is set in access flags
+         * or the class is not in the given package name.
+         */
+        static String validateAndFindInternalName(byte[] bytes, String pkgName) {
+            int magic = readInt(bytes, 0);
+            if (magic != ClassFile.MAGIC_NUMBER) {
+                throw new ClassFormatError("Incompatible magic value: " + magic);
+            }
+            // We have to read major and minor this way as ClassFile API throws IAE
+            // yet we want distinct ClassFormatError and UnsupportedClassVersionError
+            int minor = readUnsignedShort(bytes, 4);
+            int major = readUnsignedShort(bytes, 6);
+
+            if (!VM.isSupportedClassFileVersion(major, minor)) {
+                throw new UnsupportedClassVersionError("Unsupported class file version " + major + "." + minor);
             }
 
-            static ClassFile newInstanceNoCheck(String name, byte[] bytes) {
-                return new ClassFile(name, 0, bytes);
+            String name;
+            ClassDesc sym;
+            int accessFlags;
+            try {
+                ClassModel cm = ClassFile.of().parse(bytes);
+                var thisClass = cm.thisClass();
+                name = thisClass.asInternalName();
+                sym = thisClass.asSymbol();
+                accessFlags = cm.flags().flagsMask();
+            } catch (IllegalArgumentException e) {
+                ClassFormatError cfe = new ClassFormatError();
+                cfe.initCause(e);
+                throw cfe;
+            }
+            // must be a class or interface
+            if ((accessFlags & ACC_MODULE) != 0) {
+                throw newIllegalArgumentException("Not a class or interface: ACC_MODULE flag is set");
             }
 
-            /**
-             * This method checks the class file version and the structure of `this_class`.
-             * and checks if the bytes is a class or interface (ACC_MODULE flag not set)
-             * that is in the named package.
-             *
-             * @throws IllegalArgumentException if ACC_MODULE flag is set in access flags
-             * or the class is not in the given package name.
-             */
-            static ClassFile newInstance(byte[] bytes, String pkgName) {
-                var cf = readClassFile(bytes);
-
-                // check if it's in the named package
-                int index = cf.name.lastIndexOf('/');
-                String pn = (index == -1) ? "" : cf.name.substring(0, index).replace('/', '.');
-                if (!pn.equals(pkgName)) {
-                    throw newIllegalArgumentException(cf.name + " not in same package as lookup class");
-                }
-                return cf;
+            String pn = sym.packageName();
+            if (!pn.equals(pkgName)) {
+                throw newIllegalArgumentException(name + " not in same package as lookup class");
             }
 
-            private static ClassFile readClassFile(byte[] bytes) {
-                int magic = readInt(bytes, 0);
-                if (magic != 0xCAFEBABE) {
-                    throw new ClassFormatError("Incompatible magic value: " + magic);
-                }
-                int minor = readUnsignedShort(bytes, 4);
-                int major = readUnsignedShort(bytes, 6);
-                if (!VM.isSupportedClassFileVersion(major, minor)) {
-                    throw new UnsupportedClassVersionError("Unsupported class file version " + major + "." + minor);
-                }
+            return name;
+        }
 
-                String name;
-                int accessFlags;
-                try {
-                    ClassReader reader = new ClassReader(bytes);
-                    // ClassReader does not check if `this_class` is CONSTANT_Class_info
-                    // workaround to read `this_class` using readConst and validate the value
-                    int thisClass = reader.readUnsignedShort(reader.header + 2);
-                    Object constant = reader.readConst(thisClass, new char[reader.getMaxStringLength()]);
-                    if (!(constant instanceof Type type)) {
-                        throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
-                    }
-                    if (!type.getDescriptor().startsWith("L")) {
-                        throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
-                    }
-                    name = type.getInternalName();
-                    accessFlags = reader.readUnsignedShort(reader.header);
-                } catch (RuntimeException e) {
-                    // ASM exceptions are poorly specified
-                    ClassFormatError cfe = new ClassFormatError();
-                    cfe.initCause(e);
-                    throw cfe;
-                }
-                // must be a class or interface
-                if ((accessFlags & Opcodes.ACC_MODULE) != 0) {
-                    throw newIllegalArgumentException("Not a class or interface: ACC_MODULE flag is set");
-                }
-                return new ClassFile(name, accessFlags, bytes);
+        private static int readInt(byte[] bytes, int offset) {
+            if ((offset + 4) > bytes.length) {
+                throw new ClassFormatError("Invalid ClassFile structure");
             }
+            return ((bytes[offset] & 0xFF) << 24)
+                    | ((bytes[offset + 1] & 0xFF) << 16)
+                    | ((bytes[offset + 2] & 0xFF) << 8)
+                    | (bytes[offset + 3] & 0xFF);
+        }
 
-            private static int readInt(byte[] bytes, int offset) {
-                if ((offset+4) > bytes.length) {
-                    throw new ClassFormatError("Invalid ClassFile structure");
-                }
-                return ((bytes[offset] & 0xFF) << 24)
-                        | ((bytes[offset + 1] & 0xFF) << 16)
-                        | ((bytes[offset + 2] & 0xFF) << 8)
-                        | (bytes[offset + 3] & 0xFF);
+        private static int readUnsignedShort(byte[] bytes, int offset) {
+            if ((offset+2) > bytes.length) {
+                throw new ClassFormatError("Invalid ClassFile structure");
             }
-
-            private static int readUnsignedShort(byte[] bytes, int offset) {
-                if ((offset+2) > bytes.length) {
-                    throw new ClassFormatError("Invalid ClassFile structure");
-                }
-                return ((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF);
-            }
+            return ((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF);
         }
 
         /*
@@ -2343,23 +2229,22 @@ public class MethodHandles {
          * {@code bytes} denotes a class in a different package than the lookup class
          */
         private ClassDefiner makeClassDefiner(byte[] bytes) {
-            ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return new ClassDefiner(this, cf, STRONG_LOADER_LINK, defaultDumper());
+            var internalName = validateAndFindInternalName(bytes, lookupClass().getPackageName());
+            return new ClassDefiner(this, internalName, bytes, STRONG_LOADER_LINK, defaultDumper());
         }
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a normal class
          * from the given bytes.  No package name check on the given bytes.
          *
-         * @param name    internal name
+         * @param internalName internal name
          * @param bytes   class bytes
          * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a normal class of the given bytes.
          */
-        ClassDefiner makeClassDefiner(String name, byte[] bytes, ClassFileDumper dumper) {
+        ClassDefiner makeClassDefiner(String internalName, byte[] bytes, ClassFileDumper dumper) {
             // skip package name validation
-            ClassFile cf = ClassFile.newInstanceNoCheck(name, bytes);
-            return new ClassDefiner(this, cf, STRONG_LOADER_LINK, dumper);
+            return new ClassDefiner(this, internalName, bytes, STRONG_LOADER_LINK, dumper);
         }
 
         /**
@@ -2377,8 +2262,8 @@ public class MethodHandles {
          * {@code bytes} denotes a class in a different package than the lookup class
          */
         ClassDefiner makeHiddenClassDefiner(byte[] bytes, ClassFileDumper dumper) {
-            ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, Set.of(), false, dumper);
+            var internalName = validateAndFindInternalName(bytes, lookupClass().getPackageName());
+            return makeHiddenClassDefiner(internalName, bytes, false, dumper, 0);
         }
 
         /**
@@ -2390,7 +2275,7 @@ public class MethodHandles {
          * before calling this factory method.
          *
          * @param bytes   class bytes
-         * @param options class options
+         * @param flags   class option flag mask
          * @param accessVmAnnotations true to give the hidden class access to VM annotations
          * @return ClassDefiner that defines a hidden class of the given bytes and options
          *
@@ -2398,69 +2283,71 @@ public class MethodHandles {
          * {@code bytes} denotes a class in a different package than the lookup class
          */
         private ClassDefiner makeHiddenClassDefiner(byte[] bytes,
-                                                    Set<ClassOption> options,
-                                                    boolean accessVmAnnotations) {
-            ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, options, accessVmAnnotations, defaultDumper());
+                                                    boolean accessVmAnnotations,
+                                                    int flags) {
+            var internalName = validateAndFindInternalName(bytes, lookupClass().getPackageName());
+            return makeHiddenClassDefiner(internalName, bytes, accessVmAnnotations, defaultDumper(), flags);
         }
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
          * from the given bytes and the given options.  No package name check on the given bytes.
          *
-         * @param name    internal name that specifies the prefix of the hidden class
+         * @param internalName internal name that specifies the prefix of the hidden class
          * @param bytes   class bytes
-         * @param options class options
          * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options, ClassFileDumper dumper) {
+        ClassDefiner makeHiddenClassDefiner(String internalName, byte[] bytes, ClassFileDumper dumper) {
             Objects.requireNonNull(dumper);
             // skip name and access flags validation
-            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), options, false, dumper);
+            return makeHiddenClassDefiner(internalName, bytes, false, dumper, 0);
+        }
+
+        /**
+         * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
+         * from the given bytes and the given options.  No package name check on the given bytes.
+         *
+         * @param internalName internal name that specifies the prefix of the hidden class
+         * @param bytes   class bytes
+         * @param flags   class options flag mask
+         * @param dumper  dumper to write the given bytes to the dumper's output directory
+         * @return ClassDefiner that defines a hidden class of the given bytes and options.
+         */
+        ClassDefiner makeHiddenClassDefiner(String internalName, byte[] bytes, ClassFileDumper dumper, int flags) {
+            Objects.requireNonNull(dumper);
+            // skip name and access flags validation
+            return makeHiddenClassDefiner(internalName, bytes, false, dumper, flags);
         }
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
          * from the given class file and options.
          *
-         * @param cf ClassFile
-         * @param options class options
+         * @param internalName internal name
+         * @param bytes Class byte array
+         * @param flags class option flag mask
          * @param accessVmAnnotations true to give the hidden class access to VM annotations
          * @param dumper dumper to write the given bytes to the dumper's output directory
          */
-        private ClassDefiner makeHiddenClassDefiner(ClassFile cf,
-                                                    Set<ClassOption> options,
+        private ClassDefiner makeHiddenClassDefiner(String internalName,
+                                                    byte[] bytes,
                                                     boolean accessVmAnnotations,
-                                                    ClassFileDumper dumper) {
-            int flags = HIDDEN_CLASS | ClassOption.optionsToFlag(options);
+                                                    ClassFileDumper dumper,
+                                                    int flags) {
+            flags |= HIDDEN_CLASS;
             if (accessVmAnnotations | VM.isSystemDomainLoader(lookupClass.getClassLoader())) {
                 // jdk.internal.vm.annotations are permitted for classes
                 // defined to boot loader and platform loader
                 flags |= ACCESS_VM_ANNOTATIONS;
             }
 
-            return new ClassDefiner(this, cf, flags, dumper);
+            return new ClassDefiner(this, internalName, bytes, flags, dumper);
         }
 
-        static class ClassDefiner {
-            private final Lookup lookup;
-            private final String name;  // internal name
-            private final byte[] bytes;
-            private final int classFlags;
-            private final ClassFileDumper dumper;
-
-            private ClassDefiner(Lookup lookup, ClassFile cf, int flags, ClassFileDumper dumper) {
-                assert ((flags & HIDDEN_CLASS) != 0 || (flags & STRONG_LOADER_LINK) == STRONG_LOADER_LINK);
-                this.lookup = lookup;
-                this.bytes = cf.bytes;
-                this.name = cf.name;
-                this.classFlags = flags;
-                this.dumper = dumper;
-            }
-
-            String internalName() {
-                return name;
+        record ClassDefiner(Lookup lookup, String internalName, byte[] bytes, int classFlags, ClassFileDumper dumper) {
+            ClassDefiner {
+                assert ((classFlags & HIDDEN_CLASS) != 0 || (classFlags & STRONG_LOADER_LINK) == STRONG_LOADER_LINK);
             }
 
             Class<?> defineClass(boolean initialize) {
@@ -2489,7 +2376,7 @@ public class MethodHandles {
                 Class<?> c = null;
                 try {
                     c = SharedSecrets.getJavaLangAccess()
-                            .defineClass(loader, lookupClass, name, bytes, pd, initialize, classFlags, classData);
+                            .defineClass(loader, lookupClass, internalName, bytes, pd, initialize, classFlags, classData);
                     assert !isNestmate() || c.getNestHost() == lookupClass.getNestHost();
                     return c;
                 } finally {
@@ -2652,8 +2539,6 @@ assertEquals("[x, y]", MH_asList.invoke("x", "y").toString());
          *                                or if the method is not {@code static},
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findStatic(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
@@ -2736,8 +2621,6 @@ assertEquals("", (String) MH_newString.invokeExact());
          *                                or if the method is {@code static},
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findVirtual(Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
@@ -2810,8 +2693,6 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @throws IllegalAccessException if access checking fails
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findConstructor(Class<?> refc, MethodType type) throws NoSuchMethodException, IllegalAccessException {
@@ -2840,8 +2721,6 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @param targetName the {@linkplain ClassLoader##binary-name binary name} of the class
          *                   or the string representing an array class
          * @return the requested class.
-         * @throws SecurityException if a security manager is present and it
-         *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws LinkageError if the linkage fails
          * @throws ClassNotFoundException if the class cannot be loaded by the lookup class' loader.
          * @throws IllegalAccessException if the class is not accessible, using the allowed access
@@ -2877,8 +2756,6 @@ assertEquals("[x, y, z]", pb.command().toString());
          *          {@linkplain #accessClass accessible} to this lookup
          * @throws  ExceptionInInitializerError if the class initialization provoked
          *          by this method fails
-         * @throws  SecurityException if a security manager is present and it
-         *          <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @since 15
          * @jvms 5.5 Initialization
          */
@@ -2987,8 +2864,6 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @return {@code targetClass} that has been access-checked
          * @throws IllegalAccessException if the class is not accessible from the lookup class
          * and previous lookup class, if present, using the allowed access modes.
-         * @throws SecurityException if a security manager is present and it
-         *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if {@code targetClass} is {@code null}
          * @since 9
          * @see <a href="#cross-module-lookup">Cross-module lookups</a>
@@ -3071,8 +2946,6 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          *                                or if the method is {@code static},
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findSpecial(Class<?> refc, String name, MethodType type,
@@ -3096,8 +2969,6 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @return a method handle which can load values from the field
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is {@code static}
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          * @see #findVarHandle(Class, String, Class)
          */
@@ -3120,8 +2991,6 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is {@code static}
          *                                or {@code final}
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          * @see #findVarHandle(Class, String, Class)
          */
@@ -3193,8 +3062,6 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @return a VarHandle giving access to non-static fields.
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is {@code static}
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          * @since 9
          */
@@ -3219,8 +3086,6 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @return a method handle which can load values from the field
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is not {@code static}
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findStaticGetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
@@ -3244,8 +3109,6 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is not {@code static}
          *                                or is {@code final}
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          */
         public MethodHandle findStaticSetter(Class<?> refc, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
@@ -3318,8 +3181,6 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @return a VarHandle giving access to a static field
          * @throws NoSuchFieldException if the field does not exist
          * @throws IllegalAccessException if access checking fails, or if the field is not {@code static}
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          * @since 9
          */
@@ -3372,8 +3233,6 @@ return mh1;
          * @throws IllegalAccessException if access checking fails
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if any argument is null
          * @see MethodHandle#bindTo
          * @see #findVirtual
@@ -3706,8 +3565,6 @@ return mh1;
          * and was created by a lookup object for a different class.
          * @param target a direct method handle to crack into symbolic reference components
          * @return a symbolic reference which can be used to reconstruct this method handle from this lookup object
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws IllegalArgumentException if the target is not a direct method handle or if access checking fails
          * @throws    NullPointerException if the target is {@code null}
          * @see MethodHandleInfo
@@ -4677,7 +4534,7 @@ int spreadArgCount = type.parameterCount() - leadingArgCount;
 invoker = invoker.asSpreader(Object[].class, spreadArgCount);
 return invoker;
      * }
-     * This method throws no reflective or security exceptions.
+     * This method throws no reflective exceptions.
      * @param type the desired target type
      * @param leadingArgCount number of fixed arguments, to be passed unchanged to the target
      * @return a method handle suitable for invoking any method handle of the given type
@@ -4723,7 +4580,7 @@ return invoker;
      * on the declared {@code invokeExact} or {@code invoke} method will raise an
      * {@link java.lang.UnsupportedOperationException UnsupportedOperationException}.)</em>
      * <p>
-     * This method throws no reflective or security exceptions.
+     * This method throws no reflective exceptions.
      * @param type the desired target type
      * @return a method handle suitable for invoking any method handle of the given type
      * @throws IllegalArgumentException if the resulting method handle's type would have
@@ -4761,7 +4618,7 @@ return invoker;
      * on the declared {@code invokeExact} or {@code invoke} method will raise an
      * {@link java.lang.UnsupportedOperationException UnsupportedOperationException}.)</em>
      * <p>
-     * This method throws no reflective or security exceptions.
+     * This method throws no reflective exceptions.
      * @param type the desired target type
      * @return a method handle suitable for invoking any method handle convertible to the given type
      * @throws IllegalArgumentException if the resulting method handle's type would have

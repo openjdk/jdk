@@ -11,7 +11,7 @@
 #
 # A test flagged with cgroups uses cgroups.
 #
-# Notes on "client" keywords : headful sound printer multimon 
+# Notes on "client" keywords : headful sound printer multimon
 # ===========================================================
 #
 # These keywords are there to help with test selection so that
@@ -31,7 +31,7 @@
 # Tests may not fail if there is none, instead just silently return.
 # But they also may legitimately throw an Exception depending on the test.
 # Also printer tests are not necessarily headful, but some are, and some are automated.
-# 
+#
 # "sound". Similarly, not all sound tests require audio devices, but many do.
 # A test flagged with key "sound" needs audio devices on the system.
 # Also they are not necessarily "headful", since they don't require a display etc.
@@ -84,8 +84,6 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
-    vm.gc.ZGenerational \
-    vm.gc.ZSinglegen \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
@@ -99,13 +97,17 @@ requires.properties= \
     vm.jvmci \
     vm.jvmci.enabled \
     vm.jvmti \
-    docker.support \
+    vm.cpu.features \
+    container.support \
+    systemd.support \
     release.implementor \
     jdk.containerized \
-    jdk.foreign.linker
+    jdk.foreign.linker \
+    jlink.runtime.linkable \
+    jlink.packagedModules
 
 # Minimum jtreg version
-requiredVersion=7.3.1+1
+requiredVersion=7.4+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

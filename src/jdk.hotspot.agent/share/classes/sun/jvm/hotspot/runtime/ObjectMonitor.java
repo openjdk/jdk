@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,14 @@ public class ObjectMonitor extends VMObject {
     heap = VM.getVM().getObjectHeap();
     Type type  = db.lookupType("ObjectMonitor");
 
-    sun.jvm.hotspot.types.Field f = type.getField("_header");
-    headerFieldOffset = f.getOffset();
+    sun.jvm.hotspot.types.Field f = type.getField("_metadata");
+    metadataFieldOffset = f.getOffset();
     f = type.getField("_object");
     objectFieldOffset = f.getOffset();
     f = type.getField("_owner");
     ownerFieldOffset = f.getOffset();
+    f = type.getField("_stack_locker");
+    stackLockerFieldOffset = f.getOffset();
     f = type.getField("_next_om");
     nextOMFieldOffset = f.getOffset();
     contentionsField  = new CIntField(type.getCIntegerField("_contentions"), 0);
@@ -65,7 +67,7 @@ public class ObjectMonitor extends VMObject {
   }
 
   public Mark header() {
-    return new Mark(addr.addOffsetTo(headerFieldOffset));
+    return new Mark(addr.addOffsetTo(metadataFieldOffset));
   }
 
   // FIXME
@@ -87,6 +89,7 @@ public class ObjectMonitor extends VMObject {
   }
 
   public Address owner() { return addr.getAddressAt(ownerFieldOffset); }
+  public Address stackLocker() { return addr.getAddressAt(stackLockerFieldOffset); }
   // FIXME
   //  void      set_owner(void* owner);
 
@@ -114,9 +117,10 @@ public class ObjectMonitor extends VMObject {
   // vmStructs.cpp because they aren't strongly typed in the VM, or
   // would confuse the SA's type system.
   private static ObjectHeap    heap;
-  private static long          headerFieldOffset;
+  private static long          metadataFieldOffset;
   private static long          objectFieldOffset;
   private static long          ownerFieldOffset;
+  private static long          stackLockerFieldOffset;
   private static long          nextOMFieldOffset;
   private static CIntField     contentionsField;
   private static CIntField     waitersField;

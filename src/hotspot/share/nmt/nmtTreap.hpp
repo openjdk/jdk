@@ -25,13 +25,12 @@
 #ifndef SHARE_NMT_NMTTREAP_HPP
 #define SHARE_NMT_NMTTREAP_HPP
 
-#include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
-#include <stdint.h>
+#include "utilities/powerOfTwo.hpp"
 
 // A Treap is a self-balanced binary tree where each node is equipped with a
 // priority. It adds the invariant that the priority of a parent P is strictly larger
@@ -53,8 +52,8 @@
 
 template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class Treap {
-  friend class VMATreeTest;
-  friend class TreapTest;
+  friend class NMTVMATreeTest;
+  friend class NMTTreapTest;
 public:
   class TreapNode {
     friend Treap;
@@ -84,16 +83,16 @@ public:
 private:
   ALLOCATOR _allocator;
   TreapNode* _root;
+
+  // A random number
+  static constexpr const uint64_t _initial_seed = 0xC8DD2114AE0543A3;
   uint64_t _prng_seed;
   int _node_count;
 
   uint64_t prng_next() {
-    // Taken directly off of JFRPrng
-    static const constexpr uint64_t PrngMult = 0x5DEECE66DLL;
-    static const constexpr uint64_t PrngAdd = 0xB;
-    static const constexpr uint64_t PrngModPower = 48;
-    static const constexpr uint64_t PrngModMask = (static_cast<uint64_t>(1) << PrngModPower) - 1;
-    _prng_seed = (PrngMult * _prng_seed + PrngAdd) & PrngModMask;
+    uint64_t first_half = os::next_random(_prng_seed);
+    uint64_t second_half = os::next_random(_prng_seed >> 32);
+    _prng_seed = first_half | (second_half << 32);
     return _prng_seed;
   }
 
@@ -173,9 +172,9 @@ private:
 #ifdef ASSERT
   void verify_self() {
     // A balanced binary search tree should have a depth on the order of log(N).
-    // We take the ceiling of log_2(N + 1) * 2.5 as our maximum bound.
+    // We take the ceiling of log_2(N + 1) * 3 as our maximum bound.
     // For comparison, a RB-tree has a proven max depth of log_2(N + 1) * 2.
-    const int expected_maximum_depth = ceil((log(this->_node_count+1) / log(2)) * 2.5);
+    const int expected_maximum_depth = ceil(log2i(this->_node_count+1) * 3);
     // Find the maximum depth through DFS and ensure that the priority invariant holds.
     int maximum_depth_found = 0;
 
@@ -225,11 +224,10 @@ private:
 public:
   NONCOPYABLE(Treap);
 
-  Treap(uint64_t seed = static_cast<uint64_t>(os::random())
-                        | (static_cast<uint64_t>(os::random()) << 32))
+  Treap()
   : _allocator(),
     _root(nullptr),
-    _prng_seed(seed),
+    _prng_seed(_initial_seed),
     _node_count(0) {}
 
   ~Treap() {

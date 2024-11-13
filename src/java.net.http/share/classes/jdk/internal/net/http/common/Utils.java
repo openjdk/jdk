@@ -82,6 +82,8 @@ import sun.net.www.HeaderParser;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.stream.Collectors.joining;
+import static java.net.Authenticator.RequestorType.PROXY;
+import static java.net.Authenticator.RequestorType.SERVER;
 
 /**
  * Miscellaneous utilities
@@ -210,24 +212,10 @@ public final class Utils {
                 return true;
             };
 
-    // Headers that are not generally restricted, and can therefore be set by users,
-    // but can in some contexts be overridden by the implementation.
-    // Currently, only contains "Authorization" which will
-    // be overridden, when an Authenticator is set on the HttpClient.
-    // Needs to be BiPred<String,String> to fit with general form of predicates
-    // used by caller.
-
-    public static final BiPredicate<String, String> CONTEXT_RESTRICTED(HttpClient client) {
-        return (k, v) -> client.authenticator().isEmpty() ||
-                (!k.equalsIgnoreCase("Authorization")
-                        && !k.equalsIgnoreCase("Proxy-Authorization"));
-    }
-
     public record ProxyHeaders(HttpHeaders userHeaders, HttpHeaders systemHeaders) {}
 
-    private static final BiPredicate<String, String> HOST_RESTRICTED = (k,v) -> !"host".equalsIgnoreCase(k);
-    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED(HttpClient client)  {
-        return CONTEXT_RESTRICTED(client).and(HOST_RESTRICTED);
+    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED()  {
+        return (k,v) -> !"host".equalsIgnoreCase(k);
     }
 
     private static final Predicate<String> IS_HOST = "host"::equalsIgnoreCase;
@@ -310,6 +298,19 @@ public final class Utils {
     public static final BiPredicate<String, String> NO_PROXY_HEADERS_FILTER =
             (n,v) -> Utils.NO_PROXY_HEADER.test(n);
 
+    /**
+     * Check the user headers to see if the Authorization or ProxyAuthorization
+     * were set. We need to set special flags in the request if so. Otherwise
+     * we can't distinguish user set from Authenticator set headers
+     */
+    public static void setUserAuthFlags(HttpRequestImpl request, HttpHeaders userHeaders) {
+        if (userHeaders.firstValue("Authorization").isPresent()) {
+            request.setUserSetAuthFlag(SERVER, true);
+        }
+        if (userHeaders.firstValue("Proxy-Authorization").isPresent()) {
+            request.setUserSetAuthFlag(PROXY, true);
+        }
+    }
 
     public static boolean proxyHasDisabledSchemes(boolean tunnel) {
         return tunnel ? ! PROXY_AUTH_TUNNEL_DISABLED_SCHEMES.isEmpty()
@@ -616,6 +617,19 @@ public final class Utils {
                 Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue))));
     }
 
+    public static int getIntegerNetProperty(String property, int min, int max, int defaultValue, boolean log) {
+        int value =  Utils.getIntegerNetProperty(property, defaultValue);
+        // use default value if misconfigured
+        if (value < min || value > max) {
+            if (log && Log.errors()) {
+                Log.logError("Property value for {0}={1} not in [{2}..{3}]: " +
+                        "using default={4}", property, value, min, max, defaultValue);
+            }
+            value = defaultValue;
+        }
+        return value;
+    }
+
     public static SSLParameters copySSLParameters(SSLParameters p) {
         SSLParameters p1 = new SSLParameters();
         p1.setAlgorithmConstraints(p.getAlgorithmConstraints());
@@ -746,6 +760,7 @@ public final class Utils {
     }
 
     public static long remaining(ByteBuffer[] bufs) {
+        if (bufs == null) return 0;
         long remain = 0;
         for (ByteBuffer buf : bufs) {
             remain += buf.remaining();
@@ -754,6 +769,7 @@ public final class Utils {
     }
 
     public static boolean hasRemaining(List<ByteBuffer> bufs) {
+        if (bufs == null) return false;
         for (ByteBuffer buf : bufs) {
             if (buf.hasRemaining())
                 return true;
@@ -762,6 +778,7 @@ public final class Utils {
     }
 
     public static boolean hasRemaining(ByteBuffer[] bufs) {
+        if (bufs == null) return false;
         for (ByteBuffer buf : bufs) {
             if (buf.hasRemaining())
                 return true;
@@ -770,6 +787,7 @@ public final class Utils {
     }
 
     public static long remaining(List<ByteBuffer> bufs) {
+        if (bufs == null) return 0L;
         long remain = 0;
         for (ByteBuffer buf : bufs) {
             remain += buf.remaining();
@@ -778,12 +796,14 @@ public final class Utils {
     }
 
     public static long synchronizedRemaining(List<ByteBuffer> bufs) {
+        if (bufs == null) return 0L;
         synchronized (bufs) {
             return remaining(bufs);
         }
     }
 
-    public static int remaining(List<ByteBuffer> bufs, int max) {
+    public static long remaining(List<ByteBuffer> bufs, long max) {
+        if (bufs == null) return 0;
         long remain = 0;
         for (ByteBuffer buf : bufs) {
             remain += buf.remaining();
@@ -794,7 +814,13 @@ public final class Utils {
         return (int) remain;
     }
 
-    public static int remaining(ByteBuffer[] refs, int max) {
+    public static int remaining(List<ByteBuffer> bufs, int max) {
+        // safe cast since max is an int
+        return (int) remaining(bufs, (long) max);
+    }
+
+    public static long remaining(ByteBuffer[] refs, long max) {
+        if (refs == null) return 0;
         long remain = 0;
         for (ByteBuffer b : refs) {
             remain += b.remaining();
@@ -803,6 +829,11 @@ public final class Utils {
             }
         }
         return (int) remain;
+    }
+
+    public static int remaining(ByteBuffer[] refs, int max) {
+        // safe cast since max is an int
+        return (int) remaining(refs, (long) max);
     }
 
     public static void close(Closeable... closeables) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,13 @@ import java.lang.classfile.AnnotationValue;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code AnnotationDefault} attribute {@jvms 4.7.22}, which can
+ * Models the {@code AnnotationDefault} attribute (JVMS {@jvms 4.7.22}), which can
  * appear on methods of annotation types, and records the default value
  * {@jls 9.6.2} for the element corresponding to this method.  Delivered as a
  * {@link MethodElement} when traversing the elements of a {@link MethodModel}.
@@ -66,5 +67,4 @@ public sealed interface AnnotationDefaultAttribute
     static AnnotationDefaultAttribute of(AnnotationValue annotationDefault) {
         return new UnboundAttribute.UnboundAnnotationDefaultAttribute(annotationDefault);
     }
-
 }

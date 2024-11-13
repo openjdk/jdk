@@ -57,12 +57,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bez" draft="contributed">Bena</language>
 			<language type="bfd" draft="contributed">Bafut</language>
 			<language type="bg" draft="contributed">Bulgaarsk</language>
+			<language type="bgc" draft="unconfirmed">Haryanvi</language>
 			<language type="bho" draft="contributed">Bhojpuri</language>
 			<language type="bi" draft="contributed">Bislama</language>
 			<language type="bik" draft="contributed">Bikol</language>
 			<language type="bin" draft="contributed">Bini</language>
 			<language type="bkm" draft="contributed">Kom</language>
 			<language type="bla" draft="contributed">Siksika</language>
+			<language type="blo" draft="unconfirmed">Anii</language>
 			<language type="bm" draft="contributed">Bambara</language>
 			<language type="bn" draft="contributed">Bengaalsk</language>
 			<language type="bo" draft="contributed">Tibetaansk</language>
@@ -101,6 +103,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="crh" draft="contributed">Krim-Tataarsk</language>
 			<language type="cs" draft="contributed">Tsjechysk</language>
 			<language type="csb" draft="contributed">Kasjoebysk</language>
+			<language type="csw" draft="unconfirmed">Swampy Cree</language>
 			<language type="cu" draft="contributed">Kerkslavysk</language>
 			<language type="cv" draft="contributed">Tsjoevasjysk</language>
 			<language type="cy" draft="contributed">Welsk</language>
@@ -190,6 +193,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="haw" draft="contributed">Hawaïaansk</language>
 			<language type="he" draft="contributed">Hebreeuwsk</language>
 			<language type="hi" draft="contributed">Hindi</language>
+			<language type="hi_Latn" draft="unconfirmed">Hindy (Latyn)</language>
+			<language type="hi_Latn" alt="variant" draft="unconfirmed">Hinglysk (Latyn)</language>
 			<language type="hil" draft="contributed">Hiligaynon</language>
 			<language type="hit" draft="contributed">Hettitysk</language>
 			<language type="hmn" draft="contributed">Hmong</language>
@@ -236,6 +241,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kea" draft="contributed">Kaapverdysk Creools</language>
 			<language type="kfo" draft="contributed">Koro</language>
 			<language type="kg" draft="contributed">Kongo</language>
+			<language type="kgp" draft="unconfirmed">Kaingang</language>
 			<language type="kha" draft="contributed">Khasi</language>
 			<language type="kho" draft="contributed">Khotaneesk</language>
 			<language type="khq" draft="contributed">Koyra Chiini</language>
@@ -265,6 +271,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kut" draft="contributed">Kutenai</language>
 			<language type="kv" draft="contributed">Komi</language>
 			<language type="kw" draft="contributed">Cornish</language>
+			<language type="kxv" draft="unconfirmed">Kuvy</language>
 			<language type="ky" draft="contributed">Kirgizysk</language>
 			<language type="la" draft="contributed">Latyn</language>
 			<language type="lad" draft="contributed">Ladino</language>
@@ -275,7 +282,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lez" draft="contributed">Lezgysk</language>
 			<language type="lg" draft="contributed">Ganda</language>
 			<language type="li" draft="contributed">Limburgs</language>
+			<language type="lij" draft="unconfirmed">Liguriaansk</language>
 			<language type="lkt" draft="contributed">Lakota</language>
+			<language type="lmo" draft="unconfirmed">Lombardysk</language>
 			<language type="ln" draft="contributed">Lingala</language>
 			<language type="lo" draft="contributed">Laotiaansk</language>
 			<language type="lol" draft="contributed">Mongo</language>
@@ -371,11 +380,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pam" draft="contributed">Pampanga</language>
 			<language type="pap" draft="contributed">Papiaments</language>
 			<language type="pau" draft="contributed">Palauaansk</language>
+			<language type="pcm" draft="unconfirmed">Nigeriaansk Pidgin</language>
 			<language type="peo" draft="contributed">Aldperzysk</language>
 			<language type="phn" draft="contributed">Foenisysk</language>
 			<language type="pi" draft="contributed">Pali</language>
 			<language type="pl" draft="contributed">Poalsk</language>
 			<language type="pon" draft="contributed">Pohnpeiaansk</language>
+			<language type="prg" draft="unconfirmed">Aldprusysk</language>
 			<language type="pro" draft="contributed">Aldprovençaals</language>
 			<language type="ps" draft="contributed">Pasjtoe</language>
 			<language type="ps" alt="variant" draft="contributed">Pashto</language>
@@ -450,6 +461,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="swb" draft="contributed">Shimaore</language>
 			<language type="syc" draft="contributed">Klassiek Syrysk</language>
 			<language type="syr" draft="contributed">Syrysk</language>
+			<language type="szl" draft="unconfirmed">Silesysk</language>
 			<language type="ta" draft="contributed">Tamil</language>
 			<language type="te" draft="contributed">Telugu</language>
 			<language type="tem" draft="contributed">Timne</language>
@@ -493,7 +505,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="uz" draft="contributed">Oezbeeks</language>
 			<language type="vai" draft="contributed">Vai</language>
 			<language type="ve" draft="contributed">Venda</language>
+			<language type="vec" draft="unconfirmed">Venetiaansk</language>
 			<language type="vi" draft="contributed">Vietnamees</language>
+			<language type="vmw" draft="unconfirmed">Makhuwa</language>
 			<language type="vo" draft="contributed">Volapük</language>
 			<language type="vot" draft="contributed">Votysk</language>
 			<language type="vun" draft="contributed">Vunjo</language>
@@ -505,6 +519,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="wo" draft="contributed">Wolof</language>
 			<language type="xal" draft="contributed">Kalmyk</language>
 			<language type="xh" draft="contributed">Xhosa</language>
+			<language type="xnr" draft="unconfirmed">Kangri</language>
 			<language type="xog" draft="contributed">Soga</language>
 			<language type="yao" draft="contributed">Yao</language>
 			<language type="yap" draft="contributed">Yapees</language>
@@ -512,6 +527,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ybb" draft="contributed">Yemba</language>
 			<language type="yi" draft="contributed">Jiddysk</language>
 			<language type="yo" draft="contributed">Yoruba</language>
+			<language type="yrl" draft="unconfirmed">Nheengatu</language>
 			<language type="yue" draft="contributed">Kantoneesk</language>
 			<language type="za" draft="contributed">Zhuang</language>
 			<language type="zap" draft="contributed">Zapotec</language>
@@ -519,17 +535,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zen" draft="contributed">Zenaga</language>
 			<language type="zgh" draft="contributed">Standert Marokkaanske Tamazight</language>
 			<language type="zh" draft="contributed">Sineesk</language>
+			<language type="zh" alt="menu" draft="unconfirmed">Mandarynsk</language>
 			<language type="zh_Hans" draft="contributed">Ferienfâldich Sineesk</language>
+			<language type="zh_Hans" alt="long" draft="unconfirmed">Mandarynsk (ferienfâldige)</language>
 			<language type="zh_Hant" draft="contributed">Tradisjoneel Sineesk</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">Mandarynsk (tradisjoneel)</language>
 			<language type="zu" draft="contributed">Zulu</language>
 			<language type="zun" draft="contributed">Zuni</language>
 			<language type="zxx" draft="contributed">Gjin linguïstyske ynhâld</language>
 			<language type="zza" draft="contributed">Zaza</language>
 		</languages>
 		<scripts>
+			<script type="Adlm" draft="unconfirmed">Adlam</script>
 			<script type="Afak" draft="contributed">Defaka</script>
 			<script type="Arab" draft="contributed">Arabysk</script>
 			<script type="Arab" alt="variant" draft="contributed">Perso-Arabysk</script>
+			<script type="Aran" draft="unconfirmed">Nastaliq</script>
 			<script type="Armi" draft="contributed">Keizerlijk Aramees</script>
 			<script type="Armn" draft="contributed">Armeens</script>
 			<script type="Avst" draft="contributed">Avestaansk</script>
@@ -569,6 +590,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Grek" draft="contributed">Grieks</script>
 			<script type="Gujr" draft="contributed">Gujarati</script>
 			<script type="Guru" draft="contributed">Gurmukhi</script>
+			<script type="Hanb" draft="unconfirmed">Han mei Bopomofo</script>
 			<script type="Hang" draft="contributed">Hangul</script>
 			<script type="Hani" draft="contributed">Han</script>
 			<script type="Hano" draft="contributed">Hanunoo</script>
@@ -642,6 +664,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Plrd" draft="contributed">Pollard-fonetysk</script>
 			<script type="Prti" draft="contributed">Inscriptioneel Parthysk</script>
 			<script type="Rjng" draft="contributed">Rejang</script>
+			<script type="Rohg" draft="unconfirmed">Hanifi Rohingya</script>
 			<script type="Roro" draft="contributed">Rongorongo</script>
 			<script type="Runr" draft="contributed">Runic</script>
 			<script type="Samr" draft="contributed">Samaritaansk</script>
@@ -685,6 +708,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Yiii" draft="contributed">Yi</script>
 			<script type="Zinh" draft="contributed">Oergeërfd</script>
 			<script type="Zmth" draft="contributed">Wiskundige notatie</script>
+			<script type="Zsye" draft="unconfirmed">emoji</script>
 			<script type="Zsym" draft="contributed">Symbolen</script>
 			<script type="Zxxx" draft="contributed">Ongeschreven</script>
 			<script type="Zyyy" draft="contributed">Algemeen</script>
@@ -720,6 +744,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="151" draft="contributed">East-Europa</territory>
 			<territory type="154" draft="contributed">Noard-Europa</territory>
 			<territory type="155" draft="contributed">West-Europa</territory>
+			<territory type="202" draft="unconfirmed">Sub-Saharaansk Afrika</territory>
 			<territory type="419" draft="contributed">Latynsk-Amearika</territory>
 			<territory type="AC" draft="contributed">Ascension</territory>
 			<territory type="AD" draft="contributed">Andorra</territory>
@@ -768,6 +793,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CG" alt="variant" draft="contributed">Congo (Republyk)</territory>
 			<territory type="CH" draft="contributed">Switserlân</territory>
 			<territory type="CI" draft="contributed">Ivoorkust</territory>
+			<territory type="CI" alt="variant" draft="unconfirmed">Ivoarkust</territory>
 			<territory type="CK" draft="contributed">Cookeilannen</territory>
 			<territory type="CL" draft="contributed">Chili</territory>
 			<territory type="CM" draft="contributed">Kameroen</territory>
@@ -781,6 +807,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CX" draft="contributed">Krysteilan</territory>
 			<territory type="CY" draft="contributed">Syprus</territory>
 			<territory type="CZ" draft="contributed">Tsjechje</territory>
+			<territory type="CZ" alt="variant" draft="unconfirmed">Tsjechië</territory>
 			<territory type="DE" draft="contributed">Dútslân</territory>
 			<territory type="DG" draft="contributed">Diego Garcia</territory>
 			<territory type="DJ" draft="contributed">Djibouti</territory>
@@ -797,6 +824,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ES" draft="contributed">Spanje</territory>
 			<territory type="ET" draft="contributed">Ethiopië</territory>
 			<territory type="EU" draft="contributed">Europeeske Unie</territory>
+			<territory type="EZ" draft="unconfirmed">eurosône</territory>
 			<territory type="FI" draft="contributed">Finlân</territory>
 			<territory type="FJ" draft="contributed">Fiji</territory>
 			<territory type="FK" draft="contributed">Falklâneilannen</territory>
@@ -838,6 +866,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IM" draft="contributed">Isle of Man</territory>
 			<territory type="IN" draft="contributed">India</territory>
 			<territory type="IO" draft="provisional">Britse Gebieden yn de Indyske Oseaan</territory>
+			<territory type="IO" alt="biot" draft="unconfirmed">Britske Gebieten yn de Yndyske Oseaan</territory>
+			<territory type="IO" alt="chagos" draft="unconfirmed">Britske Gebieten yn de Yndyske Oseaan</territory>
 			<territory type="IQ" draft="contributed">Irak</territory>
 			<territory type="IR" draft="contributed">Iran</territory>
 			<territory type="IS" draft="contributed">Yslân</territory>
@@ -875,6 +905,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF" draft="contributed">Saint-Martin</territory>
 			<territory type="MG" draft="contributed">Madeiaskar</territory>
 			<territory type="MH" draft="contributed">Marshalleilannen</territory>
+			<territory type="MK" draft="unconfirmed">Noard-Masedoanië</territory>
 			<territory type="ML" draft="contributed">Mali</territory>
 			<territory type="MM" draft="contributed">Myanmar (Birma)</territory>
 			<territory type="MN" draft="contributed">Mongolië</territory>
@@ -967,6 +998,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UA" draft="contributed">Oekraïne</territory>
 			<territory type="UG" draft="contributed">Oeganda</territory>
 			<territory type="UM" draft="contributed">Lyts ôflizzen eilannen fan de Ferienigde Staten</territory>
+			<territory type="UN" draft="unconfirmed">FN</territory>
 			<territory type="US" draft="contributed">Ferienigde Staten</territory>
 			<territory type="US" alt="short" draft="contributed">VS</territory>
 			<territory type="UY" draft="contributed">Uruguay</territory>
@@ -980,6 +1012,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU" draft="contributed">Vanuatu</territory>
 			<territory type="WF" draft="contributed">Wallis en Futuna</territory>
 			<territory type="WS" draft="contributed">Samoa</territory>
+			<territory type="XA" draft="unconfirmed">Pseudo-Aksinten</territory>
+			<territory type="XB" draft="unconfirmed">Pseudo-Bidi</territory>
 			<territory type="XK" draft="contributed">Kosovo</territory>
 			<territory type="YE" draft="contributed">Jemen</territory>
 			<territory type="YT" draft="contributed">Mayotte</territory>
@@ -1053,6 +1087,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</variants>
 		<keys>
 			<key type="calendar" draft="contributed">Kalender</key>
+			<key type="cf" draft="unconfirmed">falutanotaasje</key>
 			<key type="colAlternate" draft="contributed">sortearje van symbolen negeren</key>
 			<key type="colBackwards" draft="contributed">Omgekeerd sortearje op accenten</key>
 			<key type="colCaseFirst" draft="contributed">Yndiele op haad/lytse letters</key>
@@ -1062,6 +1097,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="colNumeric" draft="contributed">Numeriek sortearje</key>
 			<key type="colStrength" draft="contributed">Sorteervoorrang</key>
 			<key type="currency" draft="contributed">Valuta</key>
+			<key type="hc" draft="unconfirmed">oeresysteem (12 of 24)</key>
+			<key type="lb" draft="unconfirmed">styl regelôfbrekking</key>
+			<key type="ms" draft="unconfirmed">maatsysteem</key>
 			<key type="numbers" draft="contributed">Sifers</key>
 			<key type="timezone" draft="contributed">Tijdzone</key>
 			<key type="va" draft="contributed">Landvariant</key>
@@ -1071,6 +1109,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="buddhist" draft="contributed">Boeddhistyske kalinder</type>
 			<type key="calendar" type="chinese" draft="contributed">Sineeske kalinder</type>
 			<type key="calendar" type="coptic" draft="contributed">Koptyske kalinder</type>
+			<type key="calendar" type="dangi" draft="unconfirmed">Dangi-kalinder</type>
 			<type key="calendar" type="ethiopic" draft="contributed">Ethiopyske kalinder</type>
 			<type key="calendar" type="ethiopic-amete-alem" draft="contributed">Ethiopyske Amete Alem-kalinder</type>
 			<type key="calendar" type="gregorian" draft="contributed">Gregoriaanske kalinder</type>
@@ -1078,9 +1117,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="indian" draft="contributed">Indiase natjonale kalinder</type>
 			<type key="calendar" type="islamic" draft="provisional">Islamityske kalinder</type>
 			<type key="calendar" type="islamic-civil" draft="provisional">Islamityske kalinder (cyclysk)</type>
+			<type key="calendar" type="islamic-umalqura" draft="unconfirmed">Islamityske kalinder (Umm al-Qura)</type>
+			<type key="calendar" type="iso8601" draft="unconfirmed">ISO-8601-kalinder</type>
 			<type key="calendar" type="japanese" draft="contributed">Japanske kalinder</type>
 			<type key="calendar" type="persian" draft="contributed">Perzyske kalinder</type>
 			<type key="calendar" type="roc" draft="contributed">Kalinder fan de Sineeske Republyk</type>
+			<type key="cf" type="account" draft="unconfirmed">finansjele falutanotaasje</type>
+			<type key="cf" type="standard" draft="unconfirmed">standert falutanotaasje</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">Symbolen sortearje</type>
 			<type key="colAlternate" type="shifted" draft="contributed">Sortearje zonder symbolen</type>
 			<type key="colBackwards" type="no" draft="contributed">Normaal sortearje neffens accenten</type>
@@ -1116,14 +1159,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="d0" type="fwidth" draft="contributed">Volledige breedte</type>
 			<type key="d0" type="hwidth" draft="contributed">Halve breedte</type>
 			<type key="d0" type="npinyin" draft="contributed">Numeriek</type>
+			<type key="hc" type="h11" draft="unconfirmed">12-oeresysteem (0-11)</type>
+			<type key="hc" type="h12" draft="unconfirmed">12-oeresysteem (1-12)</type>
+			<type key="hc" type="h23" draft="unconfirmed">12-oeresysteem (0-23)</type>
+			<type key="hc" type="h24" draft="unconfirmed">12-oeresysteem (1-24)</type>
+			<type key="lb" type="loose" draft="unconfirmed">losse styl regelôfbrekking</type>
+			<type key="lb" type="normal" draft="unconfirmed">normale styl regelôfbrekking</type>
+			<type key="lb" type="strict" draft="unconfirmed">strikte styl regelôfbrekking</type>
 			<type key="m0" type="bgn" draft="contributed">BGN</type>
 			<type key="m0" type="ungegn" draft="contributed">UNGEGN</type>
+			<type key="ms" type="metric" draft="unconfirmed">metrysk stelsel</type>
+			<type key="ms" type="uksystem" draft="unconfirmed">Britsk ymperiaal stelsel</type>
+			<type key="ms" type="ussystem" draft="unconfirmed">Amerikaansk ymperiaal stelsel</type>
 			<type key="numbers" type="arab" draft="contributed">Arabysk-Indyske sifers</type>
 			<type key="numbers" type="arabext" draft="contributed">Utwreide Arabysk-Indyske sifers</type>
 			<type key="numbers" type="armn" draft="contributed">Armeense sifers</type>
 			<type key="numbers" type="armnlow" draft="contributed">Kleine Armeense sifers</type>
 			<type key="numbers" type="bali" draft="contributed">Balinese sifers</type>
 			<type key="numbers" type="beng" draft="contributed">Bengaalse sifers</type>
+			<type key="numbers" type="cakm" draft="unconfirmed">Chakma sifers</type>
 			<type key="numbers" type="deva" draft="contributed">Devanagari sifers</type>
 			<type key="numbers" type="ethi" draft="contributed">Ethiopyske sifers</type>
 			<type key="numbers" type="finance" draft="contributed">Finansjele sifers</type>
@@ -1148,8 +1202,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="latn" draft="contributed">Westerse sifers</type>
 			<type key="numbers" type="mlym" draft="contributed">Malayalam sifers</type>
 			<type key="numbers" type="mong" draft="contributed">Mongoolse sifers</type>
+			<type key="numbers" type="mtei" draft="unconfirmed">Meetei Mayek sifers</type>
 			<type key="numbers" type="mymr" draft="contributed">Myanmarese sifers</type>
 			<type key="numbers" type="native" draft="contributed">Binnenlânse sifers</type>
+			<type key="numbers" type="olck" draft="unconfirmed">Ol Chiki sifers</type>
 			<type key="numbers" type="orya" draft="contributed">Oriya sifers</type>
 			<type key="numbers" type="roman" draft="contributed">Romeinske sifers</type>
 			<type key="numbers" type="romanlow" draft="contributed">Lytse Romeinske sifers</type>
@@ -1199,6 +1255,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="auxiliary">[æ ò ù]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P R S T U V W X Z]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample=":" draft="unconfirmed">[\: ∶]</parseLenient>
+		</parseLenients>
 	</characters>
 	<dates>
 		<calendars>
@@ -1374,25 +1433,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'om' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'om' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Ed" draft="contributed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm" draft="unconfirmed">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehms" draft="unconfirmed">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy" draft="contributed">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="unconfirmed">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM" draft="contributed">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd" draft="contributed">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="contributed">E d MMM y G</dateFormatItem>
@@ -1417,6 +1491,49 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="unconfirmed">h B – h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="unconfirmed">h:mm B – h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">G y – G y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="unconfirmed">M-y – M-y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M-y – M-y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M-y – M-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="unconfirmed">d-M-y – d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d-M-y GGGGG – d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d-M-y – d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d-M-y – d-M-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="unconfirmed">E d-M-y – E d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E d-M-y GGGGG – E d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d-M-y – E d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E d-M-y – E d-M-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="unconfirmed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d–d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E d MMM y G – E d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E d MMM y – E d MMM y G</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
 							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
@@ -1671,15 +1788,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="unconfirmed">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
@@ -1708,6 +1832,50 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">'wike' w 'fan' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B" draft="unconfirmed">h B – h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="unconfirmed">h:mm B – h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="unconfirmed">GGGGG y-MM – GGGGG y-MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="unconfirmed">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">M/d/y G – M/d/y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M/d/y – M/d/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/d/y – M/d/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E, M/d/y G – E, M/d/y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, M/d/y – E, M/d/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, M/d/y – E, M/d/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="unconfirmed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="unconfirmed">MMM d – d, y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">MMM d, y G – MMM d, y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d, y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM d, y – MMM d, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E, MMM d, y G – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MMM d – E, MMM d, y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, MMM d, y – E, MMM d, y G</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h–h a</greatestDifference>
@@ -1884,6 +2052,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName draft="contributed">Tiidsrin</displayName>
 			</field>
+			<field type="era-short">
+				<displayName draft="unconfirmed">tiidrek</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName draft="unconfirmed">tiidrek</displayName>
+			</field>
 			<field type="year">
 				<displayName draft="contributed">Jier</displayName>
 				<relative type="-1" draft="contributed">foarich jier</relative>
@@ -1898,8 +2072,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="contributed">{0} jier lyn</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="year-short">
+				<displayName draft="unconfirmed">jr.</displayName>
+				<relative type="-1" draft="unconfirmed">foarich jr.</relative>
+				<relative type="0" draft="unconfirmed">dit jr.</relative>
+				<relative type="1" draft="unconfirmed">folgjend jr.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} jr</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} jr</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} jr lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} jr lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<displayName draft="unconfirmed">jr</displayName>
+				<relative type="-1" draft="unconfirmed">foarich jr.</relative>
+				<relative type="0" draft="unconfirmed">dit jr.</relative>
+				<relative type="1" draft="unconfirmed">folgjend jr.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} jier</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} jier</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="quarter">
-				<displayName draft="unconfirmed">Fearnsjier</displayName>
+				<displayName draft="unconfirmed">fearnsjier</displayName>
 				<relative type="-1" draft="unconfirmed">foarich fearnsjier</relative>
 				<relative type="0" draft="unconfirmed">dit fearnsjier</relative>
 				<relative type="1" draft="unconfirmed">folgjend fearnsjier</relative>
@@ -1929,6 +2127,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="contributed">{0} moannen lyn</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="month-short">
+				<displayName draft="unconfirmed">mn.</displayName>
+				<relative type="-1" draft="unconfirmed">foarige mo.</relative>
+				<relative type="0" draft="unconfirmed">dizze moanne</relative>
+				<relative type="1" draft="unconfirmed">folgjende mo.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} moanne</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} moannen</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<displayName draft="unconfirmed">mn</displayName>
+				<relative type="-1" draft="unconfirmed">foarige mo.</relative>
+				<relative type="0" draft="unconfirmed">dizze moanne</relative>
+				<relative type="1" draft="unconfirmed">folgjende mo.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} moanne</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} moannen</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="week">
 				<displayName draft="contributed">Wike</displayName>
 				<relative type="-1" draft="contributed">foarige wike</relative>
@@ -1942,6 +2160,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one" draft="contributed">{0} wike lyn</relativeTimePattern>
 					<relativeTimePattern count="other" draft="contributed">{0} wiken lyn</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod draft="unconfirmed">de wike fan {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName draft="unconfirmed">wk.</displayName>
+				<relative type="-1" draft="unconfirmed">foarige wk.</relative>
+				<relative type="0" draft="unconfirmed">dizze wk.</relative>
+				<relative type="1" draft="unconfirmed">folgjende wk.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} wike</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} wiken</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod draft="unconfirmed">de wike fan {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName draft="unconfirmed">wk</displayName>
+				<relative type="-1" draft="unconfirmed">foarige wk.</relative>
+				<relative type="0" draft="unconfirmed">dizze wk.</relative>
+				<relative type="1" draft="unconfirmed">folgjende wk.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} wike</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} wiken</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod draft="unconfirmed">de wike fan {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName draft="unconfirmed">wike fan de moanne</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName draft="unconfirmed">wk fan de mn</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName draft="unconfirmed">wk fan de mn</displayName>
 			</field>
 			<field type="day">
 				<displayName draft="contributed">dei</displayName>
@@ -1959,49 +2209,341 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="contributed">{0} deien lyn</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="day-short">
+				<relative type="-1" draft="unconfirmed">juster</relative>
+				<relative type="0" draft="unconfirmed">hjoed</relative>
+				<relative type="1" draft="unconfirmed">moarn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} dei</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} dagen</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} dei lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} dagen lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<relative type="-1" draft="unconfirmed">juster</relative>
+				<relative type="0" draft="unconfirmed">hjoed</relative>
+				<relative type="1" draft="unconfirmed">moarn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} dei</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} dagen</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} dei lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} dagen lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName draft="unconfirmed">dei fan it jier</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName draft="unconfirmed">dei fan it jr</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName draft="unconfirmed">dei f. i. jr</displayName>
+			</field>
 			<field type="weekday">
 				<displayName draft="contributed">dei van de wike</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName draft="unconfirmed">dei fan de wk.</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName draft="unconfirmed">dei f. d. wk.</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName draft="unconfirmed">wikedei fan de moanne</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName draft="unconfirmed">wkdei fan de mo</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName draft="unconfirmed">wkdei f. d. mo</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1" draft="contributed">ôfrûne snein</relative>
 				<relative type="0" draft="contributed">dizze snein</relative>
 				<relative type="1" draft="contributed">folgjende wike snein</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} snein</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} sneins</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} snein lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} sneins lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1" draft="unconfirmed">ôfrûne snei</relative>
+				<relative type="0" draft="unconfirmed">dizze snei</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike snei</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} snei</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} snei</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} snei lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} snei lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1" draft="unconfirmed">ôfrûne sni</relative>
+				<relative type="0" draft="unconfirmed">dizze sni</relative>
+				<relative type="1" draft="unconfirmed">folgjende wk sni</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} snei</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} snei</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} snei lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} snei lyn</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1" draft="contributed">ôfrûne moandei</relative>
 				<relative type="0" draft="contributed">dizze moandei</relative>
 				<relative type="1" draft="contributed">folgjende wike moandei</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} moandei</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} moandeis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} moandei lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} moandeis lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1" draft="unconfirmed">ôfrûne moan</relative>
+				<relative type="0" draft="unconfirmed">dizze moan</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike moan</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} moan.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} moan.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} moan. lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} moan. lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1" draft="unconfirmed">ôfrûne mo</relative>
+				<relative type="0" draft="unconfirmed">dizze mo</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike mo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} mo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} mo</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} mo lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} mo lyn</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1" draft="contributed">ôfrûne tiisdei</relative>
 				<relative type="0" draft="contributed">dizze tiisdei</relative>
 				<relative type="1" draft="contributed">folgjende wike tiisdei</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} tiisdei</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} tiisdeis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} tiisdei lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} tiisdeis lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1" draft="unconfirmed">ôfrûne tiis.</relative>
+				<relative type="0" draft="unconfirmed">dizze tiis.</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike tiis.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} tiis.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} tiis.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} tiis. lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} tiis. lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1" draft="unconfirmed">ôfrûne ti</relative>
+				<relative type="0" draft="unconfirmed">dizze ti</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike ti</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} ti</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} ti</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} ti lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} ti lyn</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1" draft="contributed">ôfrûne woansdei</relative>
 				<relative type="0" draft="contributed">dizze woansdei</relative>
 				<relative type="1" draft="contributed">folgjende wike woansdei</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} woansdei</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} woansdeis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} woansdei lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} woansdeis lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1" draft="unconfirmed">ôfrûne woans.</relative>
+				<relative type="0" draft="unconfirmed">dizze woans.</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike woans.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} woans.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} woans.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} woans. lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} woans. lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1" draft="unconfirmed">ôfrûne wo</relative>
+				<relative type="0" draft="unconfirmed">dizze wo</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike wo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} wo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} wo</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} wo lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} wo lyn</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1" draft="contributed">ôfrûne tongersdei</relative>
 				<relative type="0" draft="contributed">dizze tongersdei</relative>
 				<relative type="1" draft="contributed">folgjende wike tongersdei</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} tongersdei</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} tongersdeis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} tongersdei lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} tongersdeis lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1" draft="unconfirmed">ôfrûne tongers.</relative>
+				<relative type="0" draft="unconfirmed">dizze tongers.</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike tongers.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} tongers.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} tongers.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} tongers. lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} tongers. lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1" draft="unconfirmed">ôfrûne to</relative>
+				<relative type="0" draft="unconfirmed">dizze to</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike to</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} to</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} to</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} to lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} to lyn</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1" draft="contributed">ôfrûne freed</relative>
 				<relative type="0" draft="contributed">dizze freed</relative>
 				<relative type="1" draft="contributed">folgjende wike freed</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} freed</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} freeds</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} freed lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} freeds lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} freed</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} freeds</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} freed lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} freeds lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1" draft="unconfirmed">ôfrûne fr</relative>
+				<relative type="0" draft="unconfirmed">dizze fr</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike fr</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} fr</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} fr</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} fr lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} fr lyn</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1" draft="contributed">ôfrûne sneon</relative>
 				<relative type="0" draft="contributed">dizze sneon</relative>
 				<relative type="1" draft="contributed">folgjende wike sneon</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} sneon</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} sneons</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} sneon lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} sneons lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1" draft="unconfirmed">ôfrûne sneo</relative>
+				<relative type="0" draft="unconfirmed">dizze sneo</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike sneo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} sneo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} sneo</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} sneo lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} sneo lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1" draft="unconfirmed">ôfrûne sneo</relative>
+				<relative type="0" draft="unconfirmed">dizze sneo</relative>
+				<relative type="1" draft="unconfirmed">folgjende wike sneo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} sneo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} sneo</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} sneo lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} sneo lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName draft="unconfirmed">a.m./p.m.</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName draft="contributed">AM/PM</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName draft="unconfirmed">a.m./p.m.</displayName>
+			</field>
 			<field type="hour">
 				<displayName draft="contributed">oere</displayName>
+				<relative type="0" draft="unconfirmed">dit oere</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="contributed">Oer {0} oere</relativeTimePattern>
 					<relativeTimePattern count="other" draft="contributed">Oer {0} oere</relativeTimePattern>
@@ -2011,8 +2553,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="contributed">{0} oere lyn</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="hour-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} oere</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} oeren</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} oere lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} oeren lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<displayName draft="unconfirmed">o</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} oere</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} oeren</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">{0} oere lyn</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} oeren lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="minute">
 				<displayName draft="contributed">Minút</displayName>
+				<relative type="0" draft="unconfirmed">dizze minút</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="contributed">Oer {0} minút</relativeTimePattern>
 					<relativeTimePattern count="other" draft="contributed">Oer {0} minuten</relativeTimePattern>
@@ -2020,6 +2584,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="past">
 					<relativeTimePattern count="one" draft="contributed">{0} minút lyn</relativeTimePattern>
 					<relativeTimePattern count="other" draft="contributed">{0} minuten lyn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<displayName draft="unconfirmed">min.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} minút</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} minuten</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<displayName draft="unconfirmed">min</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} minút</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} minuten</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second">
@@ -2034,11 +2612,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="contributed">{0} sekonden lyn</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="second-short">
+				<displayName draft="unconfirmed">sek.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} sekonde</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} sekonden</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<displayName draft="unconfirmed">sek</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">oer {0} sekonde</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">oer {0} sekonden</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="zone-short">
+				<displayName draft="unconfirmed">sône</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName draft="unconfirmed">sône</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<regionFormat draft="contributed">{0}-tiid</regionFormat>
 			<regionFormat type="daylight" draft="contributed">Zomertiid {0}</regionFormat>
 			<regionFormat type="standard" draft="contributed">Standaardtiid {0}</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard draft="unconfirmed">koördinearre wrâldtiid</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity draft="contributed">Unbekende stêd</exemplarCity>
 			</zone>
@@ -2206,9 +2809,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Luxembourg">
 				<exemplarCity draft="contributed">Luxemburg</exemplarCity>
 			</zone>
-			<zone type="Europe/Monaco">
-				<exemplarCity draft="unconfirmed">Monako</exemplarCity>
-			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity draft="contributed">Maldiven</exemplarCity>
 			</zone>
@@ -2217,6 +2817,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Mexico_City">
 				<exemplarCity draft="contributed">Mexico-stad</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity draft="unconfirmed">Cancun</exemplarCity>
 			</zone>
 			<zone type="Pacific/Noumea">
 				<exemplarCity draft="contributed">Nouméa</exemplarCity>
@@ -2416,6 +3019,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="contributed">Anadyr-simmertiid</daylight>
 				</long>
 			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic draft="unconfirmed">Apia-tiid</generic>
+					<standard draft="unconfirmed">Apia-standerttiid</standard>
+					<daylight draft="unconfirmed">Apia-simmertiid</daylight>
+				</long>
+			</metazone>
 			<metazone type="Aqtau">
 				<long>
 					<generic draft="contributed">Aqtau-tiid</generic>
@@ -2569,13 +3179,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="contributed">Sineeske simmertiid</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic draft="contributed">Tsjojbalsan tiid</generic>
-					<standard draft="contributed">Tsjojbalsan standerttiid</standard>
-					<daylight draft="contributed">Tsjojbalsan simmertiid</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard draft="contributed">Krysteilânske tiid</standard>
@@ -2657,6 +3260,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="contributed">EET</standard>
 					<daylight draft="contributed">EEST</daylight>
 				</short>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="unconfirmed">Fierder-eastlik-Europeeske tiid</standard>
+				</long>
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
@@ -2836,6 +3444,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="contributed">Petropavlovsk-Kamtsjatski-simmertiid</daylight>
 				</long>
 			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard draft="unconfirmed">Kazakhstan-tiid</standard>
+				</long>
+			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
 					<standard draft="contributed">East-Kazachse tiid</standard>
@@ -2931,6 +3544,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard draft="contributed">Mawson tiid</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic draft="unconfirmed">Meksikaanske Pacific-tiid</generic>
+					<standard draft="unconfirmed">Meksikaanske Pacific-standerttiid</standard>
+					<daylight draft="unconfirmed">Meksikaanske Pacific-simmerttiid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
@@ -3079,6 +3699,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Ponape">
 				<long>
 					<standard draft="contributed">Pohnpei tiid</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard draft="unconfirmed">Pyongyang-tiid</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -3264,6 +3889,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="contributed">Jekaterinenburg-simmertiid</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard draft="unconfirmed">Yukon-tiid</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -3330,6 +3960,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -3557,6 +4188,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CLP">
 				<displayName draft="contributed">Sileenske peso</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName draft="unconfirmed">Sineeske yuan (offshore)</displayName>
+				<displayName count="one" draft="unconfirmed">Sineeske yuan (offshore)</displayName>
+				<displayName count="other" draft="unconfirmed">Sineeske yuan (offshore)</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName draft="contributed">Sineeske yuan renminbi</displayName>
@@ -4295,11 +4931,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one" draft="unconfirmed">{0} dei</pluralMinimalPairs>
+			<pluralMinimalPairs count="other" draft="unconfirmed">{0} dagen</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">Nim de {0}e ôfslach rjochts.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
 			<compoundUnit type="per">
 				<compoundUnitPattern draft="contributed">{0} per {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="one" draft="contributed">{0} G-kracht</unitPattern>
@@ -4461,8 +5105,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0} liter</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} liter</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<displayName draft="unconfirmed">haadwynstreek</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} easterlingte</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} noarderbreedte</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} suderbreedte</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} westerlingte</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName draft="contributed">G-krachten</displayName>
 			</unit>
@@ -4602,8 +5256,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-cubic-mile">
 				<displayName draft="contributed">kubike myl</displayName>
 			</unit>
+			<coordinateUnit>
+				<displayName draft="unconfirmed">wynstreek</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} EL</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} NB</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} SB</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} WL</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="area-acre">
 				<unitPattern count="one" draft="contributed">{0} acre</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} acres</unitPattern>
@@ -4644,12 +5308,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<displayName draft="unconfirmed">wynstreek</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} EL</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} NB</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} SB</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} WL</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 	</units>
 	<listPatterns>
 		<listPattern>
 			<listPatternPart type="end" draft="contributed">{0} en {1}</listPatternPart>
 			<listPatternPart type="2" draft="contributed">{0} en {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end" draft="unconfirmed">{0} of {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} of {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0} of {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} of {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="end" draft="unconfirmed">{0} of {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} of {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="end" draft="unconfirmed">{0}, &amp; {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} &amp; {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="2" draft="contributed">{0} en {1}</listPatternPart>
@@ -4665,4 +5356,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr draft="contributed">nee:n</nostr>
 		</messages>
 	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst" draft="unconfirmed">und fy</nameOrderLocales>
+		<parameterDefault parameter="formality" draft="unconfirmed">informal</parameterDefault>
+		<initialPattern type="initialSequence" draft="unconfirmed">{0}{1}</initialPattern>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="unconfirmed">Fatima</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="unconfirmed">Irene</nameField>
+			<nameField type="surname" draft="unconfirmed">Bakker</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

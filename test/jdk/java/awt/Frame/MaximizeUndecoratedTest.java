@@ -50,7 +50,7 @@ import jtreg.SkippedException;
 
 public class MaximizeUndecoratedTest {
     private static final int SIZE = 300;
-    private static final int OFFSET = 2;
+    private static final int OFFSET = 5;
 
     private static Frame frame;
     private static Robot robot;

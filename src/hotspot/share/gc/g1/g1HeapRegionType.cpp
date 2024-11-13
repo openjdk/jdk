@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1HeapRegionType.hpp"
 
-const HeapRegionType HeapRegionType::Eden      = HeapRegionType(EdenTag);
-const HeapRegionType HeapRegionType::Survivor  = HeapRegionType(SurvTag);
-const HeapRegionType HeapRegionType::Old       = HeapRegionType(OldTag);
-const HeapRegionType HeapRegionType::Humongous = HeapRegionType(StartsHumongousTag);
+const G1HeapRegionType G1HeapRegionType::Eden      = G1HeapRegionType(EdenTag);
+const G1HeapRegionType G1HeapRegionType::Survivor  = G1HeapRegionType(SurvTag);
+const G1HeapRegionType G1HeapRegionType::Old       = G1HeapRegionType(OldTag);
+const G1HeapRegionType G1HeapRegionType::Humongous = G1HeapRegionType(StartsHumongousTag);
 
-bool HeapRegionType::is_valid(Tag tag) {
+bool G1HeapRegionType::is_valid(Tag tag) {
   switch (tag) {
     case FreeTag:
     case EdenTag:
@@ -45,7 +45,7 @@ bool HeapRegionType::is_valid(Tag tag) {
   }
 }
 
-const char* HeapRegionType::get_str() const {
+const char* G1HeapRegionType::get_str() const {
   hrt_assert_is_valid(_tag);
   switch (_tag) {
     case FreeTag:               return "FREE";
@@ -60,7 +60,7 @@ const char* HeapRegionType::get_str() const {
   }
 }
 
-const char* HeapRegionType::get_short_str() const {
+const char* G1HeapRegionType::get_short_str() const {
   hrt_assert_is_valid(_tag);
   switch (_tag) {
     case FreeTag:               return "F";
@@ -75,7 +75,7 @@ const char* HeapRegionType::get_short_str() const {
   }
 }
 
-G1HeapRegionTraceType::Type HeapRegionType::get_trace_type() {
+G1HeapRegionTraceType::Type G1HeapRegionType::get_trace_type() {
   hrt_assert_is_valid(_tag);
   switch (_tag) {
     case FreeTag:               return G1HeapRegionTraceType::Free;

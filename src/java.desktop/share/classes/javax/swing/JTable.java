@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1266,6 +1266,12 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             autoResizeMode = mode;
             resizeAndRepaint();
             if (tableHeader != null) {
+                if (mode == JTable.AUTO_RESIZE_LAST_COLUMN) {
+                    int colCnt = columnModel.getColumnCount();
+                    if (colCnt > 0) {
+                        tableHeader.setResizingColumn(columnModel.getColumn(colCnt - 1));
+                    }
+                }
                 tableHeader.resizeAndRepaint();
             }
             firePropertyChange("autoResizeMode", old, autoResizeMode);
@@ -6147,8 +6153,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * occurs on the default printer.
      *
      * @return true, unless printing is cancelled by the user
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6173,8 +6177,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @param  printMode        the printing mode that the printable should use
      * @return true, unless printing is cancelled by the user
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6205,8 +6207,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                          to be used in printing a footer,
      *                          or null for none
      * @return true, unless printing is cancelled by the user
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6247,8 +6247,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                           dialog or run interactively, and
      *                           <code>GraphicsEnvironment.isHeadless</code>
      *                           returns <code>true</code>
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6342,9 +6340,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                           dialog or run interactively, and
      *                           <code>GraphicsEnvironment.isHeadless</code>
      *                           returns <code>true</code>
-     * @throws  SecurityException if a security manager exists and its
-     *          {@link java.lang.SecurityManager#checkPrintJobAccess}
-     *          method disallows this thread from creating a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #getPrintable

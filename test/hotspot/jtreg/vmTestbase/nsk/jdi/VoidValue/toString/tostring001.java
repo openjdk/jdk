@@ -140,6 +140,10 @@ public class tostring001 {
 
         try {
             testedObject = testedClass.newInstance(thread, ctor, params, 0);
+            // Disable collection on testedObject. invokeMethod() will essentially do a
+            // vm.resume(), which gives GC a chance to run, which might result in this
+            // object being collected.
+            testedObject.disableCollection();
         } catch (Exception e) {
             throw new Failure("unexpected " + e + " when invoking debuggee's constructor");
         }
@@ -178,6 +182,7 @@ public class tostring001 {
         }
 
         display("Checking of debuggee's void value methods completed!");
+        testedObject.enableCollection();
         debuggee.resume();
     }
 

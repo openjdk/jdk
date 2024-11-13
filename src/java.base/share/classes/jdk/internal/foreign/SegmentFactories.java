@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,14 +57,18 @@ public class SegmentFactories {
     // associated with MemorySegment::ofAddress.
 
     @ForceInline
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, MemorySessionImpl sessionImpl, Runnable action) {
+    public static MemorySegment makeNativeSegmentUnchecked(long min,
+                                                           long byteSize,
+                                                           MemorySessionImpl sessionImpl,
+                                                           boolean readOnly,
+                                                           Runnable action) {
         ensureInitialized();
         if (action == null) {
             sessionImpl.checkValidState();
         } else {
             sessionImpl.addCloseAction(action);
         }
-        return new NativeMemorySegmentImpl(min, byteSize, false, sessionImpl);
+        return new NativeMemorySegmentImpl(min, byteSize, readOnly, sessionImpl);
     }
 
     @ForceInline
@@ -134,6 +138,64 @@ public class SegmentFactories {
         long byteSize = (long)arr.length * Utils.BaseAndScale.LONG.scale();
         return new OfLong(Utils.BaseAndScale.LONG.base(), arr, byteSize, false,
                 MemorySessionImpl.createHeap(arr));
+    }
+
+    // Buffer conversion factories
+
+    public static AbstractMemorySegmentImpl arrayOfByteSegment(Object base,
+                                                               long offset,
+                                                               long length,
+                                                               boolean readOnly,
+                                                               MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfByte(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfShortSegment(Object base,
+                                                                long offset,
+                                                                long length,
+                                                                boolean readOnly,
+                                                                MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfShort(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfCharSegment(Object base,
+                                                               long offset,
+                                                               long length,
+                                                               boolean readOnly,
+                                                               MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfChar(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfIntSegment(Object base,
+                                                              long offset,
+                                                              long length,
+                                                              boolean readOnly,
+                                                              MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfInt(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfFloatSegment(Object base,
+                                                                long offset,
+                                                                long length,
+                                                                boolean readOnly,
+                                                                MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfFloat(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfLongSegment(Object base,
+                                                               long offset,
+                                                               long length,
+                                                               boolean readOnly,
+                                                               MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfLong(offset, base, length, readOnly, bufferScope);
+    }
+
+    public static AbstractMemorySegmentImpl arrayOfDoubleSegment(Object base,
+                                                                 long offset,
+                                                                 long length,
+                                                                 boolean readOnly,
+                                                                 MemorySessionImpl bufferScope) {
+        return new HeapMemorySegmentImpl.OfDouble(offset, base, length, readOnly, bufferScope);
     }
 
     public static MemorySegment allocateSegment(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,

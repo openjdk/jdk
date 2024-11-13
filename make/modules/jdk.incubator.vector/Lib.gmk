@@ -37,3 +37,35 @@ ifeq ($(call isTargetOs, linux windows)+$(call isTargetCpu, x86_64)+$(INCLUDE_CO
 
   TARGETS += $(BUILD_LIBJSVML)
 endif
+
+################################################################################
+## Build libsleef
+################################################################################
+
+ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, riscv64)+$(INCLUDE_COMPILER2), true+true+true)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBSLEEF, \
+      NAME := sleef, \
+      OPTIMIZATION := HIGH, \
+      SRC := libsleef/lib, \
+      EXTRA_SRC := libsleef/generated, \
+      DISABLED_WARNINGS_gcc := unused-function sign-compare tautological-compare ignored-qualifiers, \
+      DISABLED_WARNINGS_clang := unused-function sign-compare tautological-compare ignored-qualifiers, \
+      CFLAGS := -march=rv64gcv, \
+  ))
+
+  TARGETS += $(BUILD_LIBSLEEF)
+endif
+
+ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64)+$(INCLUDE_COMPILER2), true+true+true)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBSLEEF, \
+      NAME := sleef, \
+      OPTIMIZATION := HIGH, \
+      SRC := libsleef/lib, \
+      EXTRA_SRC := libsleef/generated, \
+      DISABLED_WARNINGS_gcc := unused-function sign-compare tautological-compare ignored-qualifiers, \
+      DISABLED_WARNINGS_clang := unused-function sign-compare tautological-compare ignored-qualifiers, \
+      CFLAGS := $(SVE_CFLAGS), \
+  ))
+
+  TARGETS += $(BUILD_LIBSLEEF)
+endif

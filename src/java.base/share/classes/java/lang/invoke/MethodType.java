@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ class MethodType
     }
 
     static final ReferencedKeySet<MethodType> internTable =
-        ReferencedKeySet.create(false, true, new Supplier<>() {
+        ReferencedKeySet.create(false, new Supplier<>() {
             @Override
             public Map<ReferenceKey<MethodType>, ReferenceKey<MethodType>> get() {
                 return new ConcurrentHashMap<>(512);
@@ -1178,9 +1178,6 @@ class MethodType
      * @throws NullPointerException if the string is {@code null}
      * @throws IllegalArgumentException if the string is not a method descriptor
      * @throws TypeNotPresentException if a named type cannot be found
-     * @throws SecurityException if the security manager is present and
-     *         {@code loader} is {@code null} and the caller does not have the
-     *         {@link RuntimePermission}{@code ("getClassLoader")}
      * @jvms 4.3.3 Method Descriptors
      */
     public static MethodType fromMethodDescriptorString(String descriptor, ClassLoader loader)
@@ -1291,15 +1288,21 @@ class MethodType
      */
     @Override
     public Optional<MethodTypeDesc> describeConstable() {
-        try {
-            return Optional.of(MethodTypeDesc.of(returnType().describeConstable().orElseThrow(),
-                                                 Stream.of(parameterArray())
-                                                      .map(p -> p.describeConstable().orElseThrow())
-                                                      .toArray(ClassDesc[]::new)));
-        }
-        catch (NoSuchElementException e) {
+        var retDesc = returnType().describeConstable();
+        if (retDesc.isEmpty())
             return Optional.empty();
+
+        if (parameterCount() == 0)
+            return Optional.of(MethodTypeDesc.of(retDesc.get()));
+
+        var params = new ClassDesc[parameterCount()];
+        for (int i = 0; i < params.length; i++) {
+            var paramDesc = parameterType(i).describeConstable();
+            if (paramDesc.isEmpty())
+                return Optional.empty();
+            params[i] = paramDesc.get();
         }
+        return Optional.of(MethodTypeDesc.of(retDesc.get(), params));
     }
 
     //--- Serialization.

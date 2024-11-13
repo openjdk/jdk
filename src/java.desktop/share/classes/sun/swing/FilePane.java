@@ -1317,13 +1317,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             detailsTable.addFocusListener(repaintListener);
         }
 
-        // TAB/SHIFT-TAB should transfer focus and ENTER should select an item.
-        // We don't want them to navigate within the table
-        ActionMap am = SwingUtilities.getUIActionMap(detailsTable);
-        am.remove("selectNextRowCell");
-        am.remove("selectPreviousRowCell");
-        am.remove("selectNextColumnCell");
-        am.remove("selectPreviousColumnCell");
         detailsTable.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
                      null);
         detailsTable.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,

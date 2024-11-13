@@ -116,51 +116,45 @@ public:
   // Return true if this split info is valid (i.e., if a split has been
   // recorded).  The very first region cannot have a partial object and thus is
   // never split, so 0 is the 'invalid' value.
-  bool is_valid() const { return _src_region_idx > 0; }
+  bool is_valid() const { return _split_region_idx > 0; }
 
   // Return true if this split holds data for the specified source region.
-  inline bool is_split(size_t source_region) const;
+  inline bool is_split(size_t region_idx) const;
 
-  // The index of the split region, the size of the partial object on that
-  // region and the destination of the partial object.
-  size_t    partial_obj_size() const { return _partial_obj_size; }
-  HeapWord* destination() const      { return _destination; }
+  // Obj at the split point doesn't fit the previous space and will be relocated to the next space.
+  HeapWord* split_point() const { return _split_point; }
 
-  // The destination count of the partial object referenced by this split
-  // (either 1 or 2).  This must be added to the destination count of the
-  // remainder of the source region.
-  unsigned int destination_count() const { return _destination_count; }
+  // Number of live words before the split point on this region.
+  size_t preceding_live_words() const { return _preceding_live_words; }
 
-  // If a word within the partial object will be written to the first word of a
-  // destination region, this is the address of the destination region;
-  // otherwise this is null.
-  HeapWord* dest_region_addr() const     { return _dest_region_addr; }
+  // A split region has two "destinations", living in two spaces. This method
+  // returns the first one -- destination for the first live word on
+  // this split region.
+  HeapWord* preceding_destination() const {
+    assert(_preceding_destination != nullptr, "inv");
+    return _preceding_destination;
+  }
 
-  // If a word within the partial object will be written to the first word of a
-  // destination region, this is the address of that word within the partial
-  // object; otherwise this is null.
-  HeapWord* first_src_addr() const       { return _first_src_addr; }
+  // Number of regions the preceding live words are relocated into.
+  uint preceding_destination_count() const { return _preceding_destination_count; }
 
-  // Record the data necessary to split the region src_region_idx.
-  void record(size_t src_region_idx, size_t partial_obj_size,
-              HeapWord* destination);
+  void record(size_t split_region_idx, HeapWord* split_point, size_t preceding_live_words);
 
   void clear();
 
   DEBUG_ONLY(void verify_clear();)
 
 private:
-  size_t       _src_region_idx;
-  size_t       _partial_obj_size;
-  HeapWord*    _destination;
-  unsigned int _destination_count;
-  HeapWord*    _dest_region_addr;
-  HeapWord*    _first_src_addr;
+  size_t       _split_region_idx;
+  HeapWord*    _split_point;
+  size_t       _preceding_live_words;
+  HeapWord*    _preceding_destination;
+  uint         _preceding_destination_count;
 };
 
 inline bool SplitInfo::is_split(size_t region_idx) const
 {
-  return _src_region_idx == region_idx && is_valid();
+  return _split_region_idx == region_idx && is_valid();
 }
 
 class SpaceInfo
@@ -215,10 +209,18 @@ public:
   class RegionData
   {
   public:
-    // Destination address of the region.
+    // Destination for the first live word in this region.
+    // Therefore, the new addr for every live obj on this region can be calculated as:
+    //
+    // new_addr := _destination + live_words_offset(old_addr);
+    //
+    // where, live_words_offset is the number of live words accumulated from
+    // region-start to old_addr.
     HeapWord* destination() const { return _destination; }
 
-    // The first region containing data destined for this region.
+    // A destination region can have multiple source regions; only the first
+    // one is recorded. Since all live objs are slided down, subsequent source
+    // regions can be found via plain heap-region iteration.
     size_t source_region() const { return _source_region; }
 
     // Reuse _source_region to store the corresponding shadow region index
@@ -313,8 +315,11 @@ public:
     // Return to the normal path here
     inline void shadow_to_normal();
 
-
     int shadow_state() { return _shadow_state; }
+
+    bool is_clear();
+
+    void verify_clear() NOT_DEBUG_RETURN;
 
   private:
     // The type used to represent object sizes within a region.
@@ -374,9 +379,6 @@ public:
                  HeapWord** target_next);
 
   void clear_range(size_t beg_region, size_t end_region);
-  void clear_range(HeapWord* beg, HeapWord* end) {
-    clear_range(addr_to_region_idx(beg), addr_to_region_idx(end));
-  }
 
   // Return the number of words between addr and the start of the region
   // containing addr.
@@ -393,7 +395,6 @@ public:
   inline bool       is_region_aligned(HeapWord* addr) const;
 
 #ifdef  ASSERT
-  void verify_clear(const PSVirtualSpace* vspace);
   void verify_clear();
 #endif  // #ifdef ASSERT
 
@@ -695,8 +696,6 @@ public:
     virtual bool do_object_b(oop p);
   };
 
-  friend class PSParallelCompactTest;
-
 private:
   static STWGCTimer           _gc_timer;
   static ParallelOldTracer    _gc_tracer;
@@ -725,10 +724,9 @@ private:
   static void pre_compact();
   static void post_compact();
 
-  static bool reassess_maximum_compaction(bool maximum_compaction,
-                                          size_t total_live_words,
-                                          MutableSpace* const old_space,
-                                          HeapWord* full_region_prefix_end);
+  static bool check_maximum_compaction(size_t total_live_words,
+                                       MutableSpace* const old_space,
+                                       HeapWord* full_region_prefix_end);
 
   // Mark live objects
   static void marking_phase(ParallelOldTracer *gc_tracer);
@@ -741,7 +739,7 @@ private:
   // make the heap parsable.
   static void fill_dense_prefix_end(SpaceId id);
 
-  static void summary_phase(bool maximum_compaction);
+  static void summary_phase();
 
   static void adjust_pointers();
   static void forward_to_new_addr();
@@ -754,13 +752,6 @@ private:
 
   // Add available regions to the stack and draining tasks to the task queue.
   static void prepare_region_draining_tasks(uint parallel_gc_threads);
-
-#ifndef PRODUCT
-  // Print generic summary data
-  static void print_generic_summary_data(ParallelCompactData& summary_data,
-                                         HeapWord* const beg_addr,
-                                         HeapWord* const end_addr);
-#endif  // #ifndef PRODUCT
 
   static void fill_range_in_dense_prefix(HeapWord* start, HeapWord* end);
 
@@ -857,16 +848,6 @@ public:
 
   static void print_on_error(outputStream* st);
 
-#ifndef PRODUCT
-  // Debugging support.
-  static const char* space_names[last_space_id];
-  static void print_region_ranges();
-  static void summary_phase_msg(SpaceId dst_space_id,
-                                HeapWord* dst_beg, HeapWord* dst_end,
-                                SpaceId src_space_id,
-                                HeapWord* src_beg, HeapWord* src_end);
-#endif  // #ifndef PRODUCT
-
 #ifdef  ASSERT
   // Sanity check the new location of a word in the heap.
   static inline void check_new_location(HeapWord* old_addr, HeapWord* new_addr);
@@ -897,7 +878,10 @@ public:
   size_t    words_remaining()    const { return _words_remaining; }
   bool      is_full()            const { return _words_remaining == 0; }
   HeapWord* source()             const { return _source; }
-  void      set_source(HeapWord* addr) { _source = addr; }
+  void      set_source(HeapWord* addr) {
+    assert(addr != nullptr, "precondition");
+    _source = addr;
+  }
 
   // If the object will fit (size <= words_remaining()), copy it to the current
   // destination, update the interior oops and the start array.
@@ -914,8 +898,7 @@ public:
   // updated.
   void copy_partial_obj(size_t partial_obj_size);
 
-  virtual void complete_region(ParCompactionManager* cm, HeapWord* dest_addr,
-                               PSParallelCompact::RegionData* region_ptr);
+  virtual void complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr);
 };
 
 inline void MoveAndUpdateClosure::decrement_words_remaining(size_t words) {
@@ -927,9 +910,8 @@ inline size_t MoveAndUpdateClosure::calculate_words_remaining(size_t region) {
   HeapWord* dest_addr = PSParallelCompact::summary_data().region_to_addr(region);
   PSParallelCompact::SpaceId dest_space_id = PSParallelCompact::space_id(dest_addr);
   HeapWord* new_top = PSParallelCompact::new_top(dest_space_id);
-  assert(dest_addr < new_top, "sanity");
-
-  return MIN2(pointer_delta(new_top, dest_addr), ParallelCompactData::RegionSize);
+  return MIN2(pointer_delta(new_top, dest_addr),
+              ParallelCompactData::RegionSize);
 }
 
 inline
@@ -951,11 +933,9 @@ inline void MoveAndUpdateClosure::update_state(size_t words)
 class MoveAndUpdateShadowClosure: public MoveAndUpdateClosure {
   inline size_t calculate_shadow_offset(size_t region_idx, size_t shadow_idx);
 public:
-  inline MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, ParCompactionManager* cm,
-                       size_t region, size_t shadow);
+  inline MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, size_t region, size_t shadow);
 
-  virtual void complete_region(ParCompactionManager* cm, HeapWord* dest_addr,
-                               PSParallelCompact::RegionData* region_ptr);
+  virtual void complete_region(HeapWord* dest_addr, PSParallelCompact::RegionData* region_ptr);
 
 private:
   size_t _shadow;
@@ -969,10 +949,7 @@ inline size_t MoveAndUpdateShadowClosure::calculate_shadow_offset(size_t region_
 }
 
 inline
-MoveAndUpdateShadowClosure::MoveAndUpdateShadowClosure(ParMarkBitMap *bitmap,
-                                                       ParCompactionManager *cm,
-                                                       size_t region,
-                                                       size_t shadow) :
+MoveAndUpdateShadowClosure::MoveAndUpdateShadowClosure(ParMarkBitMap* bitmap, size_t region, size_t shadow) :
   MoveAndUpdateClosure(bitmap, region),
   _shadow(shadow) {
   _offset = calculate_shadow_offset(region, shadow);
