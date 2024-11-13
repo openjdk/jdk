@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,10 @@ import java.security.BasicPermission;
  * and the third one denotes a concrete principal name
  * <code>delegate</code> of the concrete principal class
  * <code>javax.management.remote.JMXPrincipal</code>.</p>
+ *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @since 1.5
  */

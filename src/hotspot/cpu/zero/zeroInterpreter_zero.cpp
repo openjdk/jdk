@@ -346,9 +346,6 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
           success = false;
         }
       }
-      if (success) {
-        THREAD->inc_held_monitor_count();
-      }
     }
     if (!success) {
       CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
@@ -498,9 +495,6 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
           monitor->set_obj(rcvr);
           success = false;
         }
-      }
-      if (success) {
-        THREAD->dec_held_monitor_count();
       }
     }
     if (!success) {

@@ -42,7 +42,7 @@ static bool is_vector_shuffle(ciKlass* klass) {
 
 
 void PhaseVector::optimize_vector_boxes() {
-  Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
+  Compile::TracePhase tp(_t_vector_elimination);
 
   // Signal GraphKit it's post-parse phase.
   assert(C->inlining_incrementally() == false, "sanity");
@@ -66,13 +66,13 @@ void PhaseVector::optimize_vector_boxes() {
 void PhaseVector::do_cleanup() {
   if (C->failing())  return;
   {
-    Compile::TracePhase tp("vector_pru", &timers[_t_vector_pru]);
+    Compile::TracePhase tp(_t_vector_pru);
     ResourceMark rm;
     PhaseRemoveUseless pru(C->initial_gvn(), *C->igvn_worklist());
     if (C->failing())  return;
   }
   {
-    Compile::TracePhase tp("incrementalInline_igvn", &timers[_t_vector_igvn]);
+    Compile::TracePhase tp(_t_vector_igvn);
     _igvn.reset_from_gvn(C->initial_gvn());
     _igvn.optimize();
     if (C->failing())  return;

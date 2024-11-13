@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8237470 8299015
  * @summary Confirm HttpResponse.BodySubscribers#ofFile(Path)
  *          works with default and non-default file systems
- *          when SecurityManager is enabled
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer
@@ -37,7 +36,6 @@
  *        jdk.httpclient.test.lib.http2.Queue jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
  * @run testng/othervm BodySubscriberOfFileTest
- * @run testng/othervm/java.security.policy=ofFile.policy BodySubscriberOfFileTest
  */
 
 import com.sun.net.httpserver.HttpServer;
@@ -67,8 +65,6 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.Flow;
 import java.util.stream.IntStream;
@@ -194,11 +190,7 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
                 .POST(BodyPublishers.noBody())
                 .build();
 
-            // Retrieve handler with caller's privileges enabled
-            PrivilegedAction<BodySubscriber<Path>> action = () ->
-                    BodySubscribers.ofFile(path);
-            BodyHandler<Path> handler = respInfo ->
-                    AccessController.doPrivileged(action);
+            BodyHandler<Path> handler = respInfo -> BodySubscribers.ofFile(path);
             var resp = client.send(req, handler);
             String msg = Files.readString(path, StandardCharsets.UTF_8);
             out.printf("Resp code: %s\n", resp.statusCode());
