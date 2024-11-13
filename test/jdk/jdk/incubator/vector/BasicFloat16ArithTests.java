@@ -177,8 +177,8 @@ public class BasicFloat16ArithTests {
             {-1.0f,   1.0f},
             { 1.0f,  -1.0f},
 
-            {InfinityF, -InfinityF},
-            {-InfinityF, InfinityF},
+            { InfinityF, -InfinityF},
+            {-InfinityF,  InfinityF},
 
             {NaNf,       NaNf},
         };
@@ -383,16 +383,20 @@ public class BasicFloat16ArithTests {
 
     private static void checkGetExponent() {
         float[][] testCases = {
+            // Non-finite values
             { InfinityF, MAX_EXPONENT + 1},
             {-InfinityF, MAX_EXPONENT + 1},
             { NaNf,      MAX_EXPONENT + 1},
 
+            // Subnormal and almost subnormal values
             {-0.0f,       MIN_EXPONENT - 1},
             {+0.0f,       MIN_EXPONENT - 1},
             { 0x1.0p-24f, MIN_EXPONENT - 1}, // Float16.MIN_VALUE
             {-0x1.0p-24f, MIN_EXPONENT - 1}, // Float16.MIN_VALUE
             { 0x1.0p-14f, MIN_EXPONENT},     // Float16.MIN_NORMAL
             {-0x1.0p-14f, MIN_EXPONENT},     // Float16.MIN_NORMAL
+
+            // Normal values
             { 1.0f,       0},
             { 2.0f,       1},
             { 4.0f,       2},

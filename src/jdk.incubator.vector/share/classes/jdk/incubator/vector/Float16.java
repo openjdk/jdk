@@ -31,6 +31,10 @@ import java.math.BigInteger;
 
 // import jdk.internal.math.*;
 
+import static jdk.incubator.vector.Float16Consts.SIGN_BIT_MASK;
+import static jdk.incubator.vector.Float16Consts.EXP_BIT_MASK;
+import static jdk.incubator.vector.Float16Consts.SIGNIF_BIT_MASK;
+
 import static java.lang.Float.float16ToFloat;
 import static java.lang.Float.floatToFloat16;
 import static java.lang.Integer.numberOfLeadingZeros;
@@ -44,7 +48,8 @@ import static java.lang.Math.multiplyHigh;
  *   S EEEEE  MMMMMMMMMM<br>
  *   Sign        - 1 bit<br>
  *   Exponent    - 5 bits<br>
- *   Significand - 10 bits (does not include the <i>implicit bit</i> inferred from the exponent, see {@link #PRECISION})<br>
+ *   Significand - 10 bits (does not include the <i>implicit bit</i>
+ *                    inferred from the exponent, see {@link #PRECISION})<br>
  *
  * <p>Unless otherwise specified, the methods in this class use a
  * <em>rounding policy</em> (JLS {@jls 15.4}) of {@linkplain
@@ -101,6 +106,7 @@ public final class Float16
     // Functionality for future consideration:
     // IEEEremainder / remainder operator remainder
 
+    // Do *not* define any public constructors
    /**
     * Returns a {@code Float16} instance wrapping IEEE 754 binary16
     * encoded {@code short} value.
@@ -110,8 +116,6 @@ public final class Float16
     private Float16(short bits) {
         this.value = bits;
     }
-
-    // Do *not* define any public constructors
 
     /**
      * A constant holding the positive infinity of type {@code
@@ -465,7 +469,7 @@ public final class Float16
             boolean isSigned = (startingChar == '-') || (startingChar == '+');
             // Hex literal will start "-0x..." or "+0x..." or "0x...""
             // A valid hex literal must be at least three characters
-            // long "0xD" where D is a hex digit.
+            // long "0xH" where H is a hex digit.
             boolean hexInput = (s.length() >= 3 ) && isX(s.charAt(isSigned ? 2 : 1));
 
             if (!hexInput) { // Decimal input
@@ -574,6 +578,9 @@ public final class Float16
         return BigDecimalConversion.float16Value(v);
     }
 
+    // TODO: Host this functionality in this class for now until
+    // java.base has Float16 support and this logic can be moved to
+    // BigDecimal.
     private class BigDecimalConversion {
         /*
          * Let l = log_2(10).
@@ -726,7 +733,8 @@ public final class Float16
      * @see Double#isInfinite(double)
      */
     public static boolean isInfinite(Float16 f16) {
-        return ((float16ToRawShortBits(f16) ^ float16ToRawShortBits(POSITIVE_INFINITY)) & 0x7fff) == 0;
+        return ((float16ToRawShortBits(f16) ^
+                 float16ToRawShortBits(POSITIVE_INFINITY)) & 0x7fff) == 0;
     }
 
     /**
@@ -746,7 +754,8 @@ public final class Float16
      * @see Double#isFinite(double)
      */
     public static boolean isFinite(Float16 f16) {
-        return (float16ToRawShortBits(f16) & (short)0x0000_7FFF) <= float16ToRawShortBits(MAX_VALUE);
+        return (float16ToRawShortBits(f16) & (short)0x0000_7FFF) <=
+            float16ToRawShortBits(MAX_VALUE);
      }
 
     /**
@@ -863,6 +872,7 @@ public final class Float16
      * @return a hash code value for a {@code Float16} value.
      */
     public static int hashCode(Float16 value) {
+        // Use bit-pattern of canonical NaN for hashing.
         Float16 f16 = isNaN(value) ? Float16.NaN : value;
         return (int)float16ToRawShortBits(f16);
     }
@@ -1004,8 +1014,7 @@ public final class Float16
      * @see Math#max(float, float)
      */
     public static Float16 max(Float16 a, Float16 b) {
-        return shortBitsToFloat16(floatToFloat16(Math.max(a.floatValue(),
-                                                          b.floatValue() )));
+        return valueOf(Math.max(a.floatValue(), b.floatValue()));
     }
 
     /**
@@ -1026,8 +1035,7 @@ public final class Float16
      * @see Math#min(float, float)
      */
     public static Float16 min(Float16 a, Float16 b) {
-        return shortBitsToFloat16(floatToFloat16(Math.min(a.floatValue(),
-                                                          b.floatValue()) ));
+        return valueOf(Math.min(a.floatValue(), b.floatValue()));
     }
 
     // Skipping for now
@@ -1670,11 +1678,9 @@ public final class Float16
      * @see Math#copySign(double, double)
      */
     public static Float16 copySign(Float16 magnitude, Float16 sign) {
-        return shortBitsToFloat16((short) ((float16ToRawShortBits(sign) &
-                        (Float16Consts.SIGN_BIT_MASK)) |
-                        (float16ToRawShortBits(magnitude) &
-                                (Float16Consts.EXP_BIT_MASK |
-                                        Float16Consts.SIGNIF_BIT_MASK))));
+        return shortBitsToFloat16((short) ((float16ToRawShortBits(sign) & SIGN_BIT_MASK) |
+                                           (float16ToRawShortBits(magnitude) &
+                                            (EXP_BIT_MASK | SIGNIF_BIT_MASK) )));
     }
 
     /**
@@ -1699,7 +1705,8 @@ public final class Float16
         return (f.floatValue() == 0.0f || isNaN(f)) ? f : copySign(valueOf(1), f);
     }
 
-    /* TODO Temporary hack while Float16 resides in incubator */
+    // TODO: Temporary location for this functionality while Float16
+    // resides in incubator.
     private static final class Float16ToDecimal {
         /*
          * For full details about this code see the following references:
@@ -2343,5 +2350,4 @@ public final class Float16
         };
 
     }
-
 }
