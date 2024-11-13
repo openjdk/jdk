@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1362,7 +1362,7 @@ public class Modules extends JCTree.Visitor {
                     .collect(Collectors.joining(","));
 
             if (!incubatingModules.isEmpty()) {
-                log.warning(Warnings.IncubatingModules(incubatingModules));
+                log.warning(LintCategory.INCUBATING, null, Warnings.IncubatingModules(incubatingModules));
             }
         }
 
@@ -1751,7 +1751,7 @@ public class Modules extends JCTree.Visitor {
             ModuleSymbol msym = syms.enterModule(names.fromString(sourceName));
             if (!allModules.contains(msym)) {
                 if (lintOptions) {
-                    log.warning(Warnings.ModuleForOptionNotFound(Option.ADD_READS, msym));
+                    log.warning(LintCategory.OPTIONS, null, Warnings.ModuleForOptionNotFound(Option.ADD_READS, msym));
                 }
                 continue;
             }

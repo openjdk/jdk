@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,10 +94,13 @@ public abstract class BaseFileManager implements JavaFileManager {
         classLoaderClass = options.get("procloader");
 
         // Detect Lint options, but use Options.isLintSet() to avoid initializing the Lint class
-        boolean warn = options.isLintSet("path");
+        boolean warn = options.isLintSet(LintCategory.PATH.option);
+        boolean fileClashOption = options.isLintSet(LintCategory.OUTPUT_FILE_CLASH.option);
         locations.update(log, warn, FSInfo.instance(context));
+
+        // Only track file clashes if enabled
         synchronized (this) {
-            outputFilesWritten = options.isLintSet("output-file-clash") ? new HashSet<>() : null;
+            outputFilesWritten = fileClashOption ? new HashSet<>() : null;
         }
 
         // Setting this option is an indication that close() should defer actually closing
