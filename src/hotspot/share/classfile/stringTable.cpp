@@ -136,7 +136,7 @@ struct StringWrapperInternal {
   };
   const StringType type;
   const size_t length;
-  
+
   StringWrapperInternal(const Handle oop_str, const size_t length)     : oop_str(oop_str),         type(StringType::OopStr), length(length)     {}
   StringWrapperInternal(const jchar* unicode_str, const size_t length) : unicode_str(unicode_str), type(StringType::UnicodeStr), length(length) {}
   StringWrapperInternal(const Symbol* symbol_str, const size_t length) : symbol_str(symbol_str),   type(StringType::SymbolStr), length(length)  {}
