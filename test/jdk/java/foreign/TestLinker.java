@@ -204,6 +204,15 @@ public class TestLinker extends NativeTestHelper {
     }
 
     @Test
+    public void paddingUnion() {
+        Linker linker = Linker.nativeLinker();
+        var union = MemoryLayout.unionLayout(MemoryLayout.paddingLayout(5), ValueLayout.JAVA_INT);
+        var fd = FunctionDescriptor.of(union, union, union);
+        var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertEquals(e.getMessage(), "Superfluous padding x5 in [x5|i4]");
+    }
+
+    @Test
     public void sequenceOfZeroElements() {
         Linker linker = Linker.nativeLinker();
         var sequence0a8 = MemoryLayout.sequenceLayout(0, JAVA_LONG);

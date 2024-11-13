@@ -188,6 +188,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             checkHasNaturalAlignment(layout);
             long offset = 0;
             long lastUnpaddedOffset = 0;
+            PaddingLayout preceedingPadding = null;
             for (MemoryLayout member : sl.memberLayouts()) {
                 // check element offset before recursing so that an error points at the
                 // outermost layout first
@@ -195,10 +196,22 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 checkStructMember(member, offset);
 
                 offset += member.byteSize();
-                if (!(member instanceof PaddingLayout)) {
+                if (!(member instanceof PaddingLayout pl)) {
                     lastUnpaddedOffset = offset;
+                    if (preceedingPadding != null) {
+                        assertIsAlignedBy(sl, preceedingPadding, member);
+                        preceedingPadding = null;
+                    }
+                } else {
+                    if (preceedingPadding != null) {
+                        throw new IllegalArgumentException("The padding layout " + pl +
+                                " was preceded by another padding layout " + preceedingPadding +
+                                inMessage(sl));
+                    }
+                    preceedingPadding = pl;
                 }
             }
+            checkNotAllPadding(sl);
             checkGroup(sl, lastUnpaddedOffset);
         } else if (layout instanceof UnionLayout ul) {
             checkHasNaturalAlignment(layout);
@@ -207,6 +220,8 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 checkLayoutRecursive(member);
                 if (!(member instanceof PaddingLayout)) {
                     maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.byteSize());
+                } else {
+                    throw new IllegalArgumentException("Superfluous padding " + member + inMessage(ul));
                 }
             }
             checkGroup(ul, maxUnpaddedLayout);
@@ -220,35 +235,15 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
-    // check elements are not all padding layouts and for trailing padding
-    private static void checkGroup(GroupLayout gl, long maxUnpaddedOffset) {
-        PaddingLayout preceedingPadding = null;
-        List<MemoryLayout> memberLayouts = gl.memberLayouts();
-        for (int i = 0; i < memberLayouts.size(); i++) {
-            MemoryLayout current = memberLayouts.get(i);
-            if (current instanceof PaddingLayout pl) {
-                if (preceedingPadding != null) {
-                    throw new IllegalArgumentException("The padding layout " + pl +
-                            " was preceded by another padding layout " + preceedingPadding +
-                            inMessage(gl));
-                }
-                preceedingPadding = pl;
-            } else {
-                if (preceedingPadding != null) {
-                    assertIsAlignedBy(gl, i, preceedingPadding, current);
-                    preceedingPadding = null;
-                }
-            }
+    // check elements are not all padding layouts
+    private static void checkNotAllPadding(StructLayout sl) {
+        if (!sl.memberLayouts().isEmpty() && sl.memberLayouts().stream().allMatch(e -> e instanceof PaddingLayout)) {
+            throw new IllegalArgumentException("Layout '" + sl + "' is non-empty and only has padding layouts");
         }
-        // Check an optional trailing padding in a struct layout used to align any previous members
-        if (gl instanceof StructLayout && (gl.memberLayouts().size() > 1) &&
-                gl.memberLayouts().getLast() instanceof PaddingLayout pl) {
-            assertIsAlignedBy(null, 0, pl, gl);
-        }
+    }
 
-        if (!gl.memberLayouts().isEmpty() && gl.memberLayouts().stream().allMatch(e -> e instanceof PaddingLayout)) {
-            throw new IllegalArgumentException("Layout '" + gl + "' is non-empty and only has padding layouts");
-        }
+    // check trailing padding
+    private static void checkGroup(GroupLayout gl, long maxUnpaddedOffset) {
         long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.byteAlignment());
         if (gl.byteSize() != expectedSize) {
             throw new IllegalArgumentException("Layout '" + gl + "' has unexpected size: "
@@ -256,7 +251,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
-    private static void assertIsAlignedBy(GroupLayout gl, long index, PaddingLayout padding, MemoryLayout element) {
+    private static void assertIsAlignedBy(StructLayout gl, PaddingLayout padding, MemoryLayout element) {
         if (padding.byteSize() > element.byteAlignment()) {
             throw new IllegalArgumentException("The padding layout " + padding +
                     " is not of minimum size to align " + element +
