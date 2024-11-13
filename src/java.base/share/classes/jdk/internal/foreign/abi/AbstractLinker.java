@@ -218,10 +218,12 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             long maxUnpaddedLayout = 0;
             for (MemoryLayout member : ul.memberLayouts()) {
                 checkLayoutRecursive(member);
-                if (!(member instanceof PaddingLayout)) {
+                if (!(member instanceof PaddingLayout pl)) {
                     maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.byteSize());
                 } else {
-                    throw new IllegalArgumentException("Superfluous padding " + member + inMessage(ul));
+                    if (pl.byteSize() != ul.byteSize()) {
+                        throw new IllegalArgumentException("Superfluous padding " + pl + inMessage(ul));
+                    }
                 }
             }
             checkGroup(ul, maxUnpaddedLayout);
