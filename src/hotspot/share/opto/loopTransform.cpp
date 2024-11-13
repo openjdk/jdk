@@ -2431,7 +2431,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
       *p_scale = scale;
     }
     if (p_offset != nullptr) {
-      Node *zero = zerocon(bt);
+      Node* zero = zerocon(bt);
       *p_offset = zero;
     }
     return true;
