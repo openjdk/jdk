@@ -5020,7 +5020,7 @@ bool LibraryCallKit::inline_relaxed_math(vmIntrinsics::ID id) {
 
   switch (id) {
   case vmIntrinsics::_RelaxedMath_float_add:
-    result = new AddFNode(n1, n2);
+    result = new RelaxedMathAddFNode(n1, n2);
     break;
   case vmIntrinsics::_RelaxedMath_float_mul:
     result = new MulFNode(n1, n2);
