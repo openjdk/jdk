@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import static org.testng.Assert.assertNull;
 
 import java.util.Enumeration;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.helpers.NamespaceSupport;
 
@@ -37,10 +36,8 @@ import org.xml.sax.helpers.NamespaceSupport;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.xml.sax.ptests.NSSupportTest
  * @run testng/othervm org.xml.sax.ptests.NSSupportTest
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class NSSupportTest {
     /**
      * Empty prefix name.

@@ -77,7 +77,6 @@ public abstract class PKCS11Test {
     static final char SEP = File.separatorChar;
     // directory corresponding to BASE in the /closed hierarchy
     static final String CLOSED_BASE;
-    private static final String DEFAULT_POLICY = BASE + SEP + ".." + SEP + "policy";
     private static final String PKCS11_REL_PATH = "sun/security/pkcs11";
     private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
     private static final SecureRandom srdm = new SecureRandom();
@@ -111,9 +110,6 @@ public abstract class PKCS11Test {
         String p1 = absBase.substring(0, k);
         String p2 = absBase.substring(k);
         CLOSED_BASE = p1 + "/../closed" + p2;
-
-        // set it as a system property to make it available in policy file
-        System.setProperty("closed.base", CLOSED_BASE);
     }
 
     static {
@@ -123,8 +119,6 @@ public abstract class PKCS11Test {
             // ignore
         }
     }
-
-    private boolean enableSM = false;
 
     public static Provider newPKCS11Provider() {
         ServiceLoader<Provider> sl = ServiceLoader.load(java.security.Provider.class);
@@ -172,22 +166,6 @@ public abstract class PKCS11Test {
     }
 
     public static void main(PKCS11Test test, String[] args) throws Exception {
-        if (args != null) {
-            if (args.length > 0) {
-                if ("sm".equals(args[0])) {
-                    test.enableSM = true;
-                } else {
-                    throw new RuntimeException("Unknown Command, use 'sm' as "
-                            + "first argument to enable security manager");
-                }
-            }
-            if (test.enableSM) {
-                System.setProperty("java.security.policy",
-                        (args.length > 1) ? BASE + SEP + args[1]
-                                : DEFAULT_POLICY);
-            }
-        }
-
         Provider[] oldProviders = Security.getProviders();
         try {
             System.out.println("Beginning test run " + test.getClass().getName() + "...");
@@ -783,7 +761,6 @@ public abstract class PKCS11Test {
                         + "\nPlease make sure the artifact is available.", e);
             }
         }
-        Policy.setPolicy(null); // Clear the policy created by JIB if any
         return path;
     }
 
@@ -833,25 +810,13 @@ public abstract class PKCS11Test {
             return;
         }
 
-        // set a security manager and policy before a test case runs,
-        // and disable them after the test case finished
-        try {
-            if (enableSM) {
-                System.setSecurityManager(new SecurityManager());
-            }
-            long start = System.currentTimeMillis();
-            System.out.printf(
-                    "Running test with provider %s (security manager %s) ...%n",
-                    p.getName(), enableSM ? "enabled" : "disabled");
-            main(p);
-            long stop = System.currentTimeMillis();
-            System.out.println("Completed test with provider " + p.getName() +
-                    " (" + (stop - start) + " ms).");
-        } finally {
-            if (enableSM) {
-                System.setSecurityManager(null);
-            }
-        }
+        long start = System.currentTimeMillis();
+        System.out.printf(
+                "Running test with provider %s...%n", p.getName());
+        main(p);
+        long stop = System.currentTimeMillis();
+        System.out.println("Completed test with provider " + p.getName() +
+                " (" + (stop - start) + " ms).");
     }
 
     // Check support for a curve with a provided Vector of EC support

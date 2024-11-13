@@ -728,8 +728,6 @@ public interface ObjectInputFilter {
          * Set the static JVM-wide filter if it has not already been configured or set.
          *
          * @param filter the deserialization filter to set as the JVM-wide filter; not null
-         * @throws SecurityException if there is security manager and the
-         *       {@code SerializablePermission("serialFilter")} is not granted
          * @throws IllegalStateException if the filter has already been set or the initialization
          *       of the filter from the system property {@code jdk.serialFilter} or
          *       the security property {@code jdk.serialFilter} fails.
@@ -829,8 +827,6 @@ public interface ObjectInputFilter {
          * @throws IllegalStateException if the builtin deserialization filter factory
          *         has already been replaced or any instance of {@link ObjectInputStream}
          *         has been created.
-         * @throws SecurityException if there is security manager and the
-         *       {@code SerializablePermission("serialFilter")} is not granted
          * @since 17
          */
         public static void setSerialFilterFactory(BinaryOperator<ObjectInputFilter> filterFactory) {

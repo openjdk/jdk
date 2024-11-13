@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 
@@ -39,11 +38,9 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 4992788
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow xpath.Bug4992788
  * @run testng/othervm xpath.Bug4992788
  * @summary Test XPath.evaluate(expression,source,returnType) throws NPE if source is null.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4992788 {
 
     private static String expression = "/widgets/widget[@name='a']/@quantity";
