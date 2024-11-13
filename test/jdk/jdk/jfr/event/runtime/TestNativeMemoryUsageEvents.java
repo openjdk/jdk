@@ -44,6 +44,7 @@ import jdk.test.lib.jfr.Events;
  * @library /test/lib
  * @modules jdk.jfr
  *          jdk.management
+ * @run main/othervm -XX:+UseZGC -XX:NativeMemoryTracking=summary -Xms16m -Xmx128m -XX:-UseLargePages -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents true
  * @run main/othervm -XX:NativeMemoryTracking=summary -Xms16m -Xmx128m -XX:-UseLargePages -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents true
  * @run main/othervm -XX:NativeMemoryTracking=off -Xms16m -Xmx128m -XX:-UseLargePages -Xlog:gc jdk.jfr.event.runtime.TestNativeMemoryUsageEvents false
  */
