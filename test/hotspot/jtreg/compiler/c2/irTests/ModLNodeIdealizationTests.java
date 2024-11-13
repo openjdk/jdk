@@ -37,7 +37,7 @@ public class ModLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "constantAgain", "powerOf2"})
+    @Run(test = {"constant", "constantAgain", "powerOf2", "powerOf2Minus1"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         a = (a == 0) ? 2 : a;
@@ -63,6 +63,7 @@ public class ModLNodeIdealizationTests {
         }
 
         Asserts.assertEQ(Math.abs(a) % 8589934592L, powerOf2(a));
+        Asserts.assertEQ(a % 8589934591L, powerOf2Minus1(a));
         Asserts.assertEQ(a % 1, constantAgain(a));
     }
 
@@ -87,5 +88,13 @@ public class ModLNodeIdealizationTests {
     // If the dividend is positive, and divisor is of the form 2^k, we can use a simple bit mask.
     public long powerOf2(long x) {
         return Math.abs(x) % 8589934592L;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MOD_L})
+    @IR(counts = {IRNode.AND_L, ">=1", IRNode.RSHIFT, ">=1", IRNode.CMP_L, "2"})
+    // Special optimization for the case 2^k-1 for bigger k
+    public long powerOf2Minus1(long x) {
+        return x % 8589934591L;
     }
 }
