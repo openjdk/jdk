@@ -359,8 +359,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
      */
     protected boolean isAPIv2Enabled() {
         // if "jdk.attach.compat" property is set, only v1 is enabled.
-        String value = System.getProperty("jdk.attach.compat");
-        return !("true".equalsIgnoreCase(value));
+        return !Boolean.getBoolean("jdk.attach.compat");
     }
 
     /*
