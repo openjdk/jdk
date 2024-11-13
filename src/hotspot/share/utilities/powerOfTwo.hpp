@@ -124,9 +124,8 @@ inline T next_power_of_2(T value)  {
 template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T ceil_log2(T value) {
   assert(value > 0, "Invalid value");
-  if (value == 1) return 0;
   T ret;
-  for (ret = 1; ((T)1 << ret) < value; ++ret);
+  for (ret = 0; ((T)1 << ret) < value; ++ret);
   return ret;
 }
 
