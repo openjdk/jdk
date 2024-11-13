@@ -2482,7 +2482,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
       }
       if (p_offset != nullptr) {
         if (which == 1) {  // must negate the extracted offset
-          Node *zero = integercon(0, exp_bt);
+          Node* zero = integercon(0, exp_bt);
           Node *ctrl_off = get_ctrl(offset);
           offset = SubNode::make(zero, offset, exp_bt);
           register_new_node(offset, ctrl_off);
