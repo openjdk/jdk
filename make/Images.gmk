@@ -96,6 +96,10 @@ JLINK_DISABLE_WARNINGS := | ( $(GREP) -v -e "WARNING: Using incubator module" ||
 JDK_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk
 JRE_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre
 
+ifeq ($(JLINK_PRODUCE_LINKABLE_RUNTIME), true)
+  JLINK_JDK_EXTRA_OPTS += --generate-linkable-runtime
+endif
+
 $(eval $(call SetupExecute, jlink_jdk, \
     WARN := Creating jdk image, \
     DEPS := $(JDK_JMODS) $(BASE_RELEASE_FILE) \
