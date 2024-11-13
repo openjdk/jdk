@@ -57,11 +57,9 @@ class BsdFileAttributeViews {
         // a path more than once as the file at that path could change.
         // if path is a symlink, then the open should fail with ELOOP and
         // the path will be used instead of the file descriptor.
-        boolean haveFd = false;
         int fd = -1;
         try {
             fd = path.openForAttributeAccess(followLinks);
-            haveFd = true;
         } catch (UnixException x) {
             if (!(x.errno() == ENXIO || (x.errno() == ELOOP))) {
                 x.rethrowAsIOException(path);
@@ -75,7 +73,7 @@ class BsdFileAttributeViews {
                 // if not changing both attributes then need existing attributes
                 if (lastModifiedTime == null || lastAccessTime == null) {
                     try {
-                        UnixFileAttributes attrs = haveFd ?
+                        UnixFileAttributes attrs = fd >= 0 ?
                             UnixFileAttributes.get(fd) :
                             UnixFileAttributes.get(path, followLinks);
                         if (lastModifiedTime == null)
@@ -94,7 +92,7 @@ class BsdFileAttributeViews {
                 boolean retry = false;
                 int flags = followLinks ? 0 : UnixConstants.AT_SYMLINK_NOFOLLOW;
                 try {
-                    if (haveFd)
+                    if (fd >= 0)
                         futimens(fd, accessValue, modValue);
                     else
                         utimensat(UnixConstants.AT_FDCWD, path, accessValue,
@@ -114,7 +112,7 @@ class BsdFileAttributeViews {
                     if (modValue < 0L) modValue = 0L;
                     if (accessValue < 0L) accessValue= 0L;
                     try {
-                        if (haveFd)
+                        if (fd >= 0)
                             futimens(fd, accessValue, modValue);
                         else
                             utimensat(UnixConstants.AT_FDCWD, path, accessValue,
@@ -130,12 +128,12 @@ class BsdFileAttributeViews {
                 long createValue = createTime.to(TimeUnit.NANOSECONDS);
                 int commonattr = UnixConstants.ATTR_CMN_CRTIME;
                 try {
-                    if (haveFd)
+                    if (fd >= 0)
                         fsetattrlist(fd, commonattr, 0L, 0L, createValue,
-                                     followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
+                                     followLinks ? 0 : UnixConstants.FSOPT_NOFOLLOW);
                     else
                         setattrlist(path, commonattr, 0L, 0L, createValue,
-                                    followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
+                                    followLinks ? 0 : UnixConstants.FSOPT_NOFOLLOW);
                 } catch (UnixException x) {
                     x.rethrowAsIOException(path);
                 }

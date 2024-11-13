@@ -77,11 +77,9 @@ class UnixFileAttributeViews {
             // change.
             // if path is a symlink, then the open should fail with ELOOP and
             // the path will be used instead of the file descriptor.
-            boolean haveFd = false;
             int fd = -1;
             try {
                 fd = file.openForAttributeAccess(followLinks);
-                haveFd = true;
             } catch (UnixException x) {
                 if (!(x.errno() == ENXIO || (x.errno() == ELOOP))) {
                     x.rethrowAsIOException(file);
@@ -92,7 +90,7 @@ class UnixFileAttributeViews {
                 // if not changing both attributes then need existing attributes
                 if (lastModifiedTime == null || lastAccessTime == null) {
                     try {
-                        UnixFileAttributes attrs = haveFd ?
+                        UnixFileAttributes attrs = fd >= 0 ?
                             UnixFileAttributes.get(fd) :
                             UnixFileAttributes.get(file, followLinks);
                         if (lastModifiedTime == null)
@@ -110,7 +108,7 @@ class UnixFileAttributeViews {
 
                 boolean retry = false;
                 try {
-                    if (haveFd)
+                    if (fd >= 0)
                         futimens(fd, accessValue, modValue);
                     else
                         utimensat(AT_FDCWD, file, accessValue, modValue,
@@ -130,7 +128,7 @@ class UnixFileAttributeViews {
                     if (modValue < 0L) modValue = 0L;
                     if (accessValue < 0L) accessValue= 0L;
                     try {
-                        if (haveFd)
+                        if (fd >= 0)
                             futimens(fd, accessValue, modValue);
                         else
                             utimensat(AT_FDCWD, file, accessValue, modValue,
