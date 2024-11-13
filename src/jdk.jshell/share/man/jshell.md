@@ -835,7 +835,7 @@ Key or Key Combination   Action
 -----------------------  -------
 Return                   Enter the current line.
 Left arrow               Move the cursor to the left one character.
-Right arrow	         Move the cursor to the right one character.
+Right arrow              Move the cursor to the right one character.
 Ctrl+A                   Move the cursor to the beginning of the line.
 Ctrl+E                   Move the cursor to the end of the line.
 Meta+B                   Move the cursor to the left one word.

@@ -385,8 +385,7 @@ Use `jfr --version` or `jfr version` to view the version string information for 
 
 To get help on any of the jfr subcommands, use:
 
-`jfr <--help|help>`
-	\[*subcommand*\]
+`jfr <--help|help>` \[*subcommand*\]
 
 where:
 

@@ -1534,9 +1534,9 @@ of the options that can be used.
          [`-Xbootclasspath/a:`](#option-Xbootclasspath-a),
          [`-endorseddirs`](#option-endorseddirs),
          [`-Djava.endorsed.dirs`](#option-Djava.endorsed.dirs),
-	     [`-extdirs`](#option-extdirs),
-	     [`-Djava.ext.dirs`](#option-Djava.ext.dirs),
-	     [`-profile`](#option-profile)
+         [`-extdirs`](#option-extdirs),
+         [`-Djava.ext.dirs`](#option-Djava.ext.dirs),
+         [`-profile`](#option-profile)
 
     If you use the `--source`/`-source` or `--target`/`-target` options,
     you should also set the  appropriate platform classes using the `--system`

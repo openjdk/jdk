@@ -362,10 +362,10 @@ The following commands are available:
     *options*:
 
     -   `begin`: (Optional) Specify the time from which recording data will be included
-	     in the dump file. The format is specified as local time. (STRING, no default value)
+        in the dump file. The format is specified as local time. (STRING, no default value)
 
     -   `end`: (Optional) Specify the time to which recording data will be included in the
-	     dump file. The format is specified as local time. (STRING, no default value)
+        dump file. The format is specified as local time. (STRING, no default value)
 
         **Note:** For both `begin` and `end`, the time must be in a format that can be read
         by java.time.LocalTime::parse(STRING), java.time.LocalDateTime::parse(STRING)
@@ -373,7 +373,7 @@ The following commands are available:
         or "2020-03-17T09:00:00Z".
 
         **Note:** `begin` and `end` times correspond to the timestamps found within the recorded
-		information in the flight recording data.
+        information in the flight recording data.
 
         Another option is to use a time relative to the current time that is specified
         by a negative integer followed by "s", "m" or "h".  For example, "-12h", "-15m" or "-30s"
