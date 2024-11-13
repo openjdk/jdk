@@ -59,6 +59,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -82,6 +83,16 @@ DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_dumptime_lambda_pro
 
 // Used by NoClassLoadingMark
 DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
+
+#ifdef ASSERT
+static void check_klass_after_loading(const Klass* k) {
+#ifdef _LP64
+  if (k != nullptr && UseCompressedClassPointers && k->needs_narrow_id()) {
+    CompressedKlassPointers::check_encodable(k);
+  }
+#endif
+}
+#endif
 
 InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
                  Symbol* class_name, Handle class_loader, TRAPS) {
@@ -425,6 +436,9 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
       }
     }
   }
+
+  DEBUG_ONLY(check_klass_after_loading(k);)
+
   return k;
 }
 
@@ -1345,7 +1359,7 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
                                                name);
   if (record != nullptr) {
     assert(!record->klass()->is_hidden(), "hidden class cannot be looked up by name");
-    assert(check_alignment(record->klass()), "Address not aligned");
+    DEBUG_ONLY(check_klass_after_loading(record->klass());)
     // We did not save the classfile data of the generated LambdaForm invoker classes,
     // so we cannot support CLFH for such classes.
     if (record->klass()->is_generated_shared_class() && JvmtiExport::should_post_class_file_load_hook()) {

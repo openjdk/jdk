@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,58 +26,11 @@
 package java.lang.management;
 
 /**
- * The permission which the SecurityManager will check when code
- * that is running with a SecurityManager calls methods defined
- * in the management interface for the Java platform.
- * <P>
- * The following table
- * provides a summary description of what the permission allows,
- * and discusses the risks of granting code the permission.
+ * This class is for management permissions.
  *
- * <table class="striped">
- * <caption style="display:none">Table shows permission target name, what the permission allows, and associated risks</caption>
- * <thead>
- * <tr>
- * <th scope="col">Permission Target Name</th>
- * <th scope="col">What the Permission Allows</th>
- * <th scope="col">Risks of Allowing this Permission</th>
- * </tr>
- * </thead>
- * <tbody style="text=align:left">
- *
- * <tr>
- *   <th scope="row">control</th>
- *   <td>Ability to control the runtime characteristics of the Java virtual
- *       machine, for example, enabling and disabling the verbose output for
- *       the class loading or memory system, setting the threshold of a memory
- *       pool, and enabling and disabling the thread contention monitoring
- *       support. Some actions controlled by this permission can disclose
- *       information about the running application, like the -verbose:class
- *       flag.
- *   </td>
- *   <td>This allows an attacker to control the runtime characteristics
- *       of the Java virtual machine and cause the system to misbehave. An
- *       attacker can also access some information related to the running
- *       application.
- *   </td>
- * </tr>
- * <tr>
- *   <th scope="row">monitor</th>
- *   <td>Ability to retrieve runtime information about
- *       the Java virtual machine such as thread
- *       stack trace, a list of all loaded class names, and input arguments
- *       to the Java virtual machine.</td>
- *   <td>This allows malicious code to monitor runtime information and
- *       uncover vulnerabilities.</td>
- * </tr>
- *
- * </tbody>
- * </table>
- *
- * <p>
- * Programmers do not normally create ManagementPermission objects directly.
- * Instead they are created by the security policy code based on reading
- * the security policy file.
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @author  Mandy Chung
  * @since   1.5

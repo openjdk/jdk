@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,17 +94,13 @@ public class AccessibleObject implements AnnotatedElement {
 
     /**
      * Convenience method to set the {@code accessible} flag for an
-     * array of reflected objects with a single security check (for efficiency).
+     * array of reflected objects.
      *
      * <p> This method may be used to enable access to all reflected objects in
      * the array when access to each reflected object can be enabled as
      * specified by {@link #setAccessible(boolean) setAccessible(boolean)}. </p>
      *
-     * <p>If there is a security manager, its
-     * {@code checkPermission} method is first called with a
-     * {@code ReflectPermission("suppressAccessChecks")} permission.
-     *
-     * <p>A {@code SecurityException} is also thrown if any of the elements of
+     * <p>A {@code SecurityException} is thrown if any of the elements of
      * the input {@code array} is a {@link java.lang.reflect.Constructor}
      * object for the class {@code java.lang.Class} and {@code flag} is true.
      *
@@ -113,11 +109,8 @@ public class AccessibleObject implements AnnotatedElement {
      *              in each object
      * @throws InaccessibleObjectException if access cannot be enabled for all
      *         objects in the array
-     * @throws SecurityException if the request is denied by the security manager
-     *         or an element in the array is a constructor for {@code
+     * @throws SecurityException if an element in the array is a constructor for {@code
      *         java.lang.Class}
-     * @see SecurityManager#checkPermission
-     * @see ReflectPermission
      */
     @CallerSensitive
     public static void setAccessible(AccessibleObject[] array, boolean flag) {
@@ -194,13 +187,8 @@ public class AccessibleObject implements AnnotatedElement {
      * control checks to only enable {@linkplain Field#get <em>read</em>} access to
      * these non-modifiable final fields.
      *
-     * <p> If there is a security manager, its
-     * {@code checkPermission} method is first called with a
-     * {@code ReflectPermission("suppressAccessChecks")} permission.
-     *
      * @param flag the new value for the {@code accessible} flag
      * @throws InaccessibleObjectException if access cannot be enabled
-     * @throws SecurityException if the request is denied by the security manager
      *
      * @spec jni/index.html Java Native Interface Specification
      * @see #trySetAccessible
@@ -260,13 +248,8 @@ public class AccessibleObject implements AnnotatedElement {
      * only be set if the member and the declaring class are public, and
      * the class is in a package that is exported unconditionally. </p>
      *
-     * <p> If there is a security manager, its {@code checkPermission} method
-     * is first called with a {@code ReflectPermission("suppressAccessChecks")}
-     * permission. </p>
-     *
      * @return {@code true} if the {@code accessible} flag is set to {@code true};
      *         {@code false} if access cannot be enabled.
-     * @throws SecurityException if the request is denied by the security manager
      *
      * @spec jni/index.html Java Native Interface Specification
      * @since 9

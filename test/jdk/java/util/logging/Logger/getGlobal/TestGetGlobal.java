@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,17 +30,11 @@ import java.util.logging.Logger;
  * @summary checks that java.util.logging.Logger.getGlobal().info() logs without configuration
  * @build TestGetGlobal testgetglobal.HandlerImpl testgetglobal.LogManagerImpl1 testgetglobal.LogManagerImpl2 testgetglobal.LogManagerImpl3 testgetglobal.BadLogManagerImpl testgetglobal.DummyLogManagerImpl
  * @run main/othervm TestGetGlobal
- * @run main/othervm/policy=policy -Djava.security.manager TestGetGlobal
  * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobal
- * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobal
  * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobal
- * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobal
  * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobal
- * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobal
  * @run main/othervm -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobal
- * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobal
  * @run main/othervm -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobal
- * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobal
  * @author danielfuchs
  */
 public class TestGetGlobal {
@@ -60,8 +54,6 @@ public class TestGetGlobal {
         final String manager = System.getProperty("java.util.logging.manager", null);
 
         final String description = "TestGetGlobal"
-            + (System.getSecurityManager() == null ? " " :
-               " -Djava.security.manager ")
             + (manager == null ? "" : "-Djava.util.logging.manager=" + manager);
 
         Logger.global.info(messages[0]); // at this point LogManager is not

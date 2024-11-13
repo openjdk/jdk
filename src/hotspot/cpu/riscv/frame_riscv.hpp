@@ -111,7 +111,8 @@
     sender_sp_offset                                 =  0,
 
     // Interpreter frames
-    interpreter_frame_oop_temp_offset                =  1, // for native calls only
+    interpreter_frame_result_handler_offset          =  1, // for native calls only
+    interpreter_frame_oop_temp_offset                =  0, // for native calls only
 
     interpreter_frame_sender_sp_offset               = -3,
     // outgoing sp before a call to an invoked method
