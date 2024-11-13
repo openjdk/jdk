@@ -30,8 +30,6 @@ import java.util.Locale;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import jdk.internal.access.JavaIOPrintStreamAccess;
-import jdk.internal.access.SharedSecrets;
 
 /**
  * A {@code PrintStream} adds functionality to another output stream,
@@ -1376,13 +1374,5 @@ public class PrintStream extends FilterOutputStream
      */
     public Charset charset() {
         return charset;
-    }
-
-    static {
-        SharedSecrets.setJavaIOCPrintStreamAccess(new JavaIOPrintStreamAccess() {
-            public Object lock(PrintStream ps) {
-                return ps;
-            }
-        });
     }
 }

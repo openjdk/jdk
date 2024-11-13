@@ -27,7 +27,6 @@ package java.lang;
 
 import java.io.*;
 import java.util.*;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.ThrowableTracer;
 
 /**
@@ -784,7 +783,7 @@ public class Throwable implements Serializable {
         }
 
         Object lock() {
-            return SharedSecrets.getJavaIOPrintStreamAccess().lock(printStream);
+            return printStream;
         }
 
         void println(Object o) {
@@ -800,7 +799,7 @@ public class Throwable implements Serializable {
         }
 
         Object lock() {
-            return SharedSecrets.getJavaIOPrintWriterAccess().lock(printWriter);
+            return printWriter;
         }
 
         void println(Object o) {
