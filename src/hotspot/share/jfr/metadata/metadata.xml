@@ -1202,7 +1202,7 @@
     <Field type="string" name="state" label="State" />
   </Type>
 
-  <Event name="ShenandoahEvacInfo" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Evacuation Information" startTime="false">
+  <Event name="ShenandoahEvacuationInformation" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Evacuation Information" startTime="false">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="ulong" name="cSetRegions" label="Collection Set Regions" />
     <Field type="ulong" contentType="bytes" name="cSetUsedBefore" label="Collection Set Before" description="Memory usage before GC in the collection set regions" />

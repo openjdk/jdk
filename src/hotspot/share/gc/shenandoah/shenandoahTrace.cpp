@@ -27,12 +27,12 @@
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "jfr/jfrEvents.hpp"
 
-void ShenandoahTracer::report_evacuation_info(ShenandoahEvacInfo* info) {
+void ShenandoahTracer::report_evacuation_info(ShenandoahEvacuationInformation* info) {
   send_evacuation_info_event(info);
 }
 
-void ShenandoahTracer::send_evacuation_info_event(ShenandoahEvacInfo* info) {
-  EventShenandoahEvacInfo e;
+void ShenandoahTracer::send_evacuation_info_event(ShenandoahEvacuationInformation* info) {
+  EventShenandoahEvacuationInformation e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
     e.set_cSetRegions(info->collection_set_regions());

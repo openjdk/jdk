@@ -27,8 +27,8 @@
 
 #include "memory/allocation.hpp"
 
-class ShenandoahEvacInfo : public StackObj {
-  // Values for ShenandoahEvacInfo jfr event, sizes stored as bytes
+class ShenandoahEvacuationInformation : public StackObj {
+  // Values for ShenandoahEvacuationInformation jfr event, sizes stored as bytes
   size_t _collection_set_regions;
   size_t _collection_set_used_before;
   size_t _collection_set_used_after;
@@ -44,7 +44,7 @@ class ShenandoahEvacInfo : public StackObj {
   size_t _immediate_size;
 
 public:
-  ShenandoahEvacInfo() :
+  ShenandoahEvacuationInformation() :
     _collection_set_regions(0), _collection_set_used_before(0), _collection_set_used_after(0),
     _collected_old(0), _collected_promoted(0), _collected_young(0), _regions_promoted_humongous(0),
     _regions_promoted_regular(0), _regular_promoted_garbage(0), _regular_promoted_free(0),

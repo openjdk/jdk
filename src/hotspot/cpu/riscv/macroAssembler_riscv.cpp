@@ -1567,7 +1567,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   Label L_vector_entry,
         L_unroll_loop,
         L_by4_loop_entry, L_by4_loop,
-        L_by1_loop, L_exit;
+        L_by1_loop, L_exit, L_skip1, L_skip2;
 
   const int64_t single_table_size = 256;
   const int64_t unroll = 16;
@@ -1580,6 +1580,27 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   add(table1, table0, 1*single_table_size*sizeof(juint), tmp1);
   add(table2, table0, 2*single_table_size*sizeof(juint), tmp1);
   add(table3, table2, 1*single_table_size*sizeof(juint), tmp1);
+
+  // Ensure basic 4-byte alignment of input byte buffer
+  mv(tmp1, 4);
+  blt(len, tmp1, L_by1_loop);
+  test_bit(tmp1, buf, 0);
+  beqz(tmp1, L_skip1);
+    subw(len, len, 1);
+    lbu(tmp1, Address(buf));
+    add(buf, buf, 1);
+    update_byte_crc32(crc, tmp1, table0);
+  bind(L_skip1);
+    test_bit(tmp1, buf, 1);
+    beqz(tmp1, L_skip2);
+    subw(len, len, 2);
+    lhu(tmp1, Address(buf));
+    add(buf, buf, 2);
+    andi(tmp2, tmp1, right_8_bits);
+    update_byte_crc32(crc, tmp2, table0);
+    srli(tmp2, tmp1, 8);
+    update_byte_crc32(crc, tmp2, table0);
+  bind(L_skip2);
 
 #ifdef COMPILER2
   if (UseRVV) {
@@ -1625,21 +1646,18 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     beqz(len, L_exit);
 
     subw(len, len, 1);
-    lwu(tmp1, Address(buf));
-    andi(tmp2, tmp1, right_8_bits);
-    update_byte_crc32(crc, tmp2, table0);
+    lbu(tmp1, Address(buf));
+    update_byte_crc32(crc, tmp1, table0);
     beqz(len, L_exit);
 
     subw(len, len, 1);
-    srli(tmp2, tmp1, 8);
-    andi(tmp2, tmp2, right_8_bits);
-    update_byte_crc32(crc, tmp2, table0);
+    lbu(tmp1, Address(buf, 1));
+    update_byte_crc32(crc, tmp1, table0);
     beqz(len, L_exit);
 
     subw(len, len, 1);
-    srli(tmp2, tmp1, 16);
-    andi(tmp2, tmp2, right_8_bits);
-    update_byte_crc32(crc, tmp2, table0);
+    lbu(tmp1, Address(buf, 2));
+    update_byte_crc32(crc, tmp1, table0);
 
 #ifdef COMPILER2
   // put vector code here, otherwise "offset is too large" error occurs.
@@ -2485,20 +2503,19 @@ void MacroAssembler::orptr(Address adr, RegisterOrConstant src, Register tmp1, R
   sd(tmp1, adr);
 }
 
-void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp1, Register tmp2, Label &L) {
-  assert_different_registers(oop, trial_klass, tmp1, tmp2);
-  if (UseCompressedClassPointers) {
-    lwu(tmp1, Address(oop, oopDesc::klass_offset_in_bytes()));
-    if (CompressedKlassPointers::base() == nullptr) {
-      slli(tmp1, tmp1, CompressedKlassPointers::shift());
-      beq(trial_klass, tmp1, L);
-      return;
-    }
-    decode_klass_not_null(tmp1, tmp2);
+void MacroAssembler::cmp_klass_compressed(Register oop, Register trial_klass, Register tmp, Label &L, bool equal) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(tmp, oop);
+  } else if (UseCompressedClassPointers) {
+    lwu(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
   } else {
-    ld(tmp1, Address(oop, oopDesc::klass_offset_in_bytes()));
+    ld(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
   }
-  beq(trial_klass, tmp1, L);
+  if (equal) {
+    beq(trial_klass, tmp, L);
+  } else {
+    bne(trial_klass, tmp, L);
+  }
 }
 
 // Move an oop into a register.
@@ -2704,10 +2721,19 @@ void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
   }
 }
 
+void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
+  assert(UseCompactObjectHeaders, "expects UseCompactObjectHeaders");
+  ld(dst, Address(src, oopDesc::mark_offset_in_bytes()));
+  srli(dst, dst, markWord::klass_shift);
+}
+
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(dst, tmp);
   assert_different_registers(src, tmp);
-  if (UseCompressedClassPointers) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+    decode_klass_not_null(dst, tmp);
+  } else if (UseCompressedClassPointers) {
     lwu(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_klass_not_null(dst, tmp);
   } else {
@@ -2718,6 +2744,7 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   // FIXME: Should this be a store release? concurrent gcs assumes
   // klass length is valid if klass field is not null.
+  assert(!UseCompactObjectHeaders, "not with compact headers");
   if (UseCompressedClassPointers) {
     encode_klass_not_null(src, tmp);
     sw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
@@ -2727,6 +2754,7 @@ void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
 }
 
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
+  assert(!UseCompactObjectHeaders, "not with compact headers");
   if (UseCompressedClassPointers) {
     // Store to klass gap in destination
     sw(src, Address(dst, oopDesc::klass_gap_offset_in_bytes()));
@@ -2743,8 +2771,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
 
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
-      assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-      slli(dst, src, LogKlassAlignmentInBytes);
+      slli(dst, src, CompressedKlassPointers::shift());
     } else {
       mv(dst, src);
     }
@@ -2760,9 +2787,9 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
   mv(xbase, (uintptr_t)CompressedKlassPointers::base());
 
   if (CompressedKlassPointers::shift() != 0) {
-    assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    assert_different_registers(t0, xbase);
-    shadd(dst, src, xbase, t0, LogKlassAlignmentInBytes);
+    Register t = src == dst ? dst : t0;
+    assert_different_registers(t, xbase);
+    shadd(dst, src, xbase, t, CompressedKlassPointers::shift());
   } else {
     add(dst, xbase, src);
   }
@@ -2778,8 +2805,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
 
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
-      assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-      srli(dst, src, LogKlassAlignmentInBytes);
+      srli(dst, src, CompressedKlassPointers::shift());
     } else {
       mv(dst, src);
     }
@@ -2801,8 +2827,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
   mv(xbase, (uintptr_t)CompressedKlassPointers::base());
   sub(dst, src, xbase);
   if (CompressedKlassPointers::shift() != 0) {
-    assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    srli(dst, dst, LogKlassAlignmentInBytes);
+    srli(dst, dst, CompressedKlassPointers::shift());
   }
 }
 
@@ -3910,7 +3935,7 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // Initialize result value to 1 which means mismatch.
   mv(result, 1);
 
-  ld(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+  ld(r_bitmap, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
 
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
@@ -4297,7 +4322,7 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
 int MacroAssembler::ic_check_size() {
   // No compressed
   return (MacroAssembler::instruction_size * (2 /* 2 loads */ + 1 /* branch */)) +
-          far_branch_size();
+          far_branch_size() + (UseCompactObjectHeaders ? MacroAssembler::instruction_size * 1 : 0);
 }
 
 int MacroAssembler::ic_check(int end_alignment) {
@@ -4317,7 +4342,10 @@ int MacroAssembler::ic_check(int end_alignment) {
   align(end_alignment, ic_check_size());
   int uep_offset = offset();
 
-  if (UseCompressedClassPointers) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(tmp1, receiver);
+    lwu(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+  } else if (UseCompressedClassPointers) {
     lwu(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
     lwu(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
   } else {

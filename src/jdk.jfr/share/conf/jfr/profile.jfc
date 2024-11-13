@@ -516,7 +516,7 @@
       <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 
-    <event name="jdk.ShenandoahEvacInfo">
+    <event name="jdk.ShenandoahEvacuationInformation">
       <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 

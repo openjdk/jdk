@@ -22,8 +22,10 @@
  *
  */
 
+
 #include "precompiled.hpp"
 
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationalFullGC.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -333,7 +335,7 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
     shenandoah_assert_not_forwarded(nullptr, p);
     if (_old_compact_point != cast_from_oop<HeapWord*>(p)) {
       _preserved_marks->push_if_necessary(p, p->mark());
-      p->forward_to(cast_to_oop(_old_compact_point));
+      FullGCForwarding::forward_to(p, cast_to_oop(_old_compact_point));
     }
     _old_compact_point += obj_size;
   } else {
@@ -381,7 +383,7 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
 
     if (_young_compact_point != cast_from_oop<HeapWord*>(p)) {
       _preserved_marks->push_if_necessary(p, p->mark());
-      p->forward_to(cast_to_oop(_young_compact_point));
+      FullGCForwarding::forward_to(p, cast_to_oop(_young_compact_point));
     }
     _young_compact_point += obj_size;
   }
