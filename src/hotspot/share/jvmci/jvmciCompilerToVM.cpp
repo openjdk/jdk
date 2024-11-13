@@ -1382,7 +1382,8 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   if (method_data == nullptr) {
     method_data = get_profiling_method_data(method, CHECK);
   } else {
-    method_data->initialize();
+    CompilerThreadCanCallJava canCallJava(THREAD, true);
+    method_data->reinitialize();
   }
 C2V_END
 

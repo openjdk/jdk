@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 package stream;
 
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
-import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -34,22 +32,17 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Properties;
-
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
-
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.FactoryFindTest
  * @run testng/othervm stream.FactoryFindTest
  * @summary Test SaTX factory using factory property and using ContextClassLoader.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class FactoryFindTest {
 
     boolean myClassLoaderUsed = false;
@@ -109,11 +102,11 @@ public class FactoryFindTest {
             XMLInputFactory factory = XMLInputFactory.newInstance();
             Assert.assertTrue(factory.getClass().getClassLoader() == null);
 
-            runWithAllPerm(() -> Thread.currentThread().setContextClassLoader(null));
+            Thread.currentThread().setContextClassLoader(null);
             factory = XMLInputFactory.newInstance();
             Assert.assertTrue(factory.getClass().getClassLoader() == null);
 
-            runWithAllPerm(() -> Thread.currentThread().setContextClassLoader(new MyClassLoader()));
+            Thread.currentThread().setContextClassLoader(new MyClassLoader());
             factory = XMLInputFactory.newInstance();
             // because it's decided by having sm or not in FactoryFind code
             if (System.getSecurityManager() == null)
@@ -124,11 +117,11 @@ public class FactoryFindTest {
             XMLOutputFactory ofactory = XMLOutputFactory.newInstance();
             Assert.assertTrue(ofactory.getClass().getClassLoader() == null);
 
-            runWithAllPerm(() -> Thread.currentThread().setContextClassLoader(null));
+            Thread.currentThread().setContextClassLoader(null);
             ofactory = XMLOutputFactory.newInstance();
             Assert.assertTrue(ofactory.getClass().getClassLoader() == null);
 
-            runWithAllPerm(() -> Thread.currentThread().setContextClassLoader(new MyClassLoader()));
+            Thread.currentThread().setContextClassLoader(new MyClassLoader());
             ofactory = XMLOutputFactory.newInstance();
             if (System.getSecurityManager() == null)
                 Assert.assertTrue(myClassLoaderUsed);
