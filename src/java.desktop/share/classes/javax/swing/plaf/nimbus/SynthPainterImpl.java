@@ -30,7 +30,6 @@ import java.awt.geom.NoninvertibleTransformException;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import javax.swing.*;
-import javax.swing.plaf.UIResource;
 import javax.swing.plaf.synth.SynthContext;
 import javax.swing.plaf.synth.SynthPainter;
 import javax.swing.plaf.synth.SynthConstants;
@@ -532,11 +531,7 @@ class SynthPainterImpl extends SynthPainter {
     public void paintDesktopPaneBackground(SynthContext context,
                                            Graphics g, int x, int y,
                                            int w, int h) {
-        if (context.getComponent() instanceof JDesktopPane pane) {
-            if (pane.getBackground() instanceof UIResource) {
-                paintBackground(context, g, x, y, w, h, null);
-            }
-        }
+        paintBackground(context, g, x, y, w, h, null);
     }
 
     /**
