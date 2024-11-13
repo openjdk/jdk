@@ -210,25 +210,6 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
   return q;
 }
 
-static Node* transform_unsigned_int_divide(PhaseGVN* phase, Node* dividend, jint divisor) {
-  // Check for invalid divisors
-  assert(divisor != 0 && divisor != min_jint,
-         "bad divisor for transforming to long multiply");
-
-  if (is_power_of_2(divisor)) {
-    // division by a power of 2
-    return new URShiftINode(dividend, phase->intcon(log2i_graceful(divisor)));
-  } else {
-    // We could implement the optimizations by
-    // Granlund and Montgomery: Division by Invariant Integers using Multiplication
-    // as was done for signed division.
-    // https://dl.acm.org/doi/pdf/10.1145/178243.178249
-  }
-
-  return nullptr;
-}
-
-
 //---------------------magic_long_divide_constants-----------------------------
 // Compute magic multiplier and shift constant for converting a 64 bit divide
 // by constant into a multiply/shift/add series. Return false if calculations
@@ -479,9 +460,21 @@ Node* make_and<TypeInt>(Node* a, Node* b) {
   return new AndINode(a, b);
 }
 
+template <typename TypeClass>
+Node* make_urshift(Node* a, Node* b);
+
+template <>
+Node* make_urshift<TypeLong>(Node* a, Node* b) {
+  return new URShiftLNode(a, b);
+}
+
+template <>
+Node* make_urshift<TypeInt>(Node* a, Node* b) {
+  return new URShiftINode(a, b);
+}
+
 template <typename TypeClass, typename Signed>
-Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div,
-                         Node* (*transform)(PhaseGVN* phase, Node* dividend, Signed divisor)) {
+Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
   // Check for dead control input
   if (div->in(0) && div->remove_dead_region(phase, can_reshape)) {
     return div;
@@ -521,26 +514,13 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div,
     return nullptr;
   }
 
-  return transform(phase, div->in(1), l);
-}
-
-static Node* transform_unsigned_long_divide(PhaseGVN* phase, Node* dividend, jlong divisor) {
-  // Check for invalid divisors
-  assert(divisor != 0 && divisor != min_jint,
-         "bad divisor for transforming to long multiply");
-
-  if (is_power_of_2(divisor)) {
-    // division by a power of 2
-    return new URShiftLNode(dividend, phase->intcon(log2i_graceful(divisor)));
-  } else {
-    // We could implement the optimizations by
-    // Granlund and Montgomery: Division by Invariant Integers using Multiplication
-    // as was done for signed division.
-    // https://dl.acm.org/doi/pdf/10.1145/178243.178249
+  if (is_power_of_2(l)) {
+    return make_urshift<TypeClass>(div->in(1), phase->intcon(log2i_graceful(l)));
   }
 
   return nullptr;
 }
+
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
@@ -968,7 +948,7 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return unsigned_div_ideal<TypeInt, jint>(phase, can_reshape, this, transform_unsigned_int_divide);
+  return unsigned_div_ideal<TypeInt, jint>(phase, can_reshape, this);
 }
 
 //=============================================================================
@@ -1004,9 +984,8 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return unsigned_div_ideal<TypeLong, jlong>(phase, can_reshape, this, transform_unsigned_long_divide);
+  return unsigned_div_ideal<TypeLong, jlong>(phase, can_reshape, this);
 }
-
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
