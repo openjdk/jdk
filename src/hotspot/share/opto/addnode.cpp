@@ -1546,7 +1546,7 @@ const Type* MinLNode::add_ring(const Type* t0, const Type* t1) const {
   const TypeLong* r0 = t0->is_long();
   const TypeLong* r1 = t1->is_long();
 
-  return TypeLong::make(MIN2(r0->_lo, r1->_lo), MIN2(r0->_hi, r1->_hi), MIN2(r0->_widen, r1->_widen));
+  return TypeLong::make(MIN2(r0->_lo, r1->_lo), MIN2(r0->_hi, r1->_hi), MAX2(r0->_widen, r1->_widen));
 }
 
 Node* MinLNode::Identity(PhaseGVN* phase) {
