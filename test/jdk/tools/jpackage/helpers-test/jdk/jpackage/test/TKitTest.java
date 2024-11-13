@@ -143,7 +143,7 @@ public class TKitTest {
                         return prefix + line;
                     }).toArray(String[]::new);
                 }
-                return new MethodCallConfig(method, args, expectFail,  effectiveExpectLog);
+                return new MethodCallConfig(method, args, expectFail, effectiveExpectLog);
             }
 
             MethodCallConfig[] createForMessage(String msg) {
