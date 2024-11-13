@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2865,15 +2865,6 @@ public class Basic {
     static boolean isLocked(BufferedInputStream bis) throws Exception {
         Field lockField = BufferedInputStream.class.getDeclaredField("lock");
         lockField.setAccessible(true);
-        var lock = (jdk.internal.misc.InternalLock) lockField.get(bis);
-        if (lock != null) {
-            if (lock.tryLock()) {
-                lock.unlock();
-                return false;
-            } else {
-                return true;
-            }
-        }
         return new Thread() {
             volatile boolean unlocked;
 
