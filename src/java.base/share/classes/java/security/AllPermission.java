@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,22 +31,14 @@ import java.util.Enumeration;
 
 /**
  * The {@code AllPermission} is a permission that implies all other permissions.
- * <p>
- * <b>Note:</b> Granting {@code AllPermission} should be done with extreme care,
- * as it implies all other permissions. Thus, it grants code the ability
- * to run with security
- * disabled.  Extreme caution should be taken before granting such
- * a permission to code.  This permission should be used only during testing,
- * or in extremely rare cases where an application or applet is
- * completely trusted and adding the necessary permissions to the policy
- * is prohibitively cumbersome.
+ *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @see java.security.Permission
- * @see java.security.AccessController
  * @see java.security.Permissions
  * @see java.security.PermissionCollection
- * @see java.lang.SecurityManager
- *
  *
  * @author Roland Schemers
  * @since 1.2

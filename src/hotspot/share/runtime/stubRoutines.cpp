@@ -186,6 +186,7 @@ address StubRoutines::_array_partition  = nullptr;
 address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
 address StubRoutines::_cont_returnBarrierExc = nullptr;
+address StubRoutines::_cont_preempt_stub = nullptr;
 
 address StubRoutines::_upcall_stub_exception_handler = nullptr;
 address StubRoutines::_upcall_stub_load_target = nullptr;

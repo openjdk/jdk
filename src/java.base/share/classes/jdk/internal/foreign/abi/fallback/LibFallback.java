@@ -36,23 +36,18 @@ final class LibFallback {
 
     static final boolean SUPPORTED = tryLoadLibrary();
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings({"restricted"})
     private static boolean tryLoadLibrary() {
-        return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<>() {
-                    public Boolean run() {
-                        try {
-                            System.loadLibrary("fallbackLinker");
-                        } catch (UnsatisfiedLinkError ule) {
-                            return false;
-                        }
-                        if (!init()) {
-                            // library failed to initialize. Do not silently mark as unsupported
-                            throw new ExceptionInInitializerError("Fallback library failed to initialize");
-                        }
-                        return true;
-                    }
-                });
+        try {
+            System.loadLibrary("fallbackLinker");
+        } catch (UnsatisfiedLinkError ule) {
+            return false;
+        }
+        if (!init()) {
+            // library failed to initialize. Do not silently mark as unsupported
+            throw new ExceptionInInitializerError("Fallback library failed to initialize");
+        }
+        return true;
     }
 
     static int defaultABI() { return NativeConstants.DEFAULT_ABI; }
