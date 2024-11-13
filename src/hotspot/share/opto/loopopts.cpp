@@ -4476,6 +4476,32 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   return AutoVectorizeStatus::Success;
 }
 
+// TODO desc
+void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt) {
+  tty->print_cr("###### about to PreMainPost");
+  CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+  LoopNode* outer_loop = cl->skip_strip_mined();
+  Node* entry = outer_loop->in(LoopNode::EntryControl);
+
+  // Check that we do not have a parse-predicate where we can add the runtime checks
+  // during auto-vectorization.
+  const Predicates predicates(entry);
+  predicates.dump();
+  const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
+  if (predicate_block->has_parse_predicate()) { return; }
+
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print("MultiVersionForAutoVectorization ");
+    lpt->dump_head();
+  }
+#endif
+  C->set_major_progress();
+
+  // TODO model a bit after insert_pre_post_loops and unswitching?
+  //C->print_method(PHASE_BEFORE_PRE_MAIN_POST, 4, main_head);
+}
+
 // Returns true if the Reduction node is unordered.
 static bool is_unordered_reduction(Node* n) {
   return n->is_Reduction() && !n->as_Reduction()->requires_strict_order();

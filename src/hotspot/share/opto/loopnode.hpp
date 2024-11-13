@@ -1472,6 +1472,8 @@ public:
   };
   AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
 
+  void maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt);
+
   // Move an unordered Reduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
 
