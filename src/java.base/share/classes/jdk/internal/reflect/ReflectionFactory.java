@@ -46,7 +46,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import jdk.internal.access.JavaLangReflectAccess;
-import jdk.internal.access.JavaObjectStreamReflectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.Stable;
@@ -74,10 +73,9 @@ public class ReflectionFactory {
     private static volatile Method hasStaticInitializerMethod;
 
     private final JavaLangReflectAccess langReflectAccess;
-    private final JavaObjectStreamReflectionAccess javaObjectStreamReflectionAccess;
+
     private ReflectionFactory() {
         this.langReflectAccess = SharedSecrets.getJavaLangReflectAccess();
-        this.javaObjectStreamReflectionAccess = SharedSecrets.getJavaObjectStreamReflectionAccess();
     }
 
     /**
@@ -393,7 +391,7 @@ public class ReflectionFactory {
             return null;
         }
 
-        return javaObjectStreamReflectionAccess.defaultReadObject(cl);
+        return SharedSecrets.getJavaObjectStreamReflectionAccess().defaultReadObject(cl);
     }
 
     public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
@@ -401,7 +399,7 @@ public class ReflectionFactory {
             return null;
         }
 
-        return javaObjectStreamReflectionAccess.defaultWriteObject(cl);
+        return SharedSecrets.getJavaObjectStreamReflectionAccess().defaultWriteObject(cl);
     }
 
     /**
