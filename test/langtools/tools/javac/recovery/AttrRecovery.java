@@ -117,7 +117,7 @@ public class AttrRecovery extends TestRunner {
         Path curPath = Path.of(".");
         List<String> actual = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-XDdev",
-                         "-XDshould-stop.at=FLOW", "-Xlint:this-escape")
+                         "-XDshould-stop.at=WARN", "-Xlint:this-escape")
                 .sources(code)
                 .outdir(curPath)
                 .run(Expect.FAIL)

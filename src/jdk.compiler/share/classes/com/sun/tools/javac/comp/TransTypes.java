@@ -1168,7 +1168,7 @@ public class TransTypes extends TreeTranslator {
     private Env<AttrContext> env;
 
     private static final String statePreviousToFlowAssertMsg =
-            "The current compile state [%s] of class %s is previous to FLOW";
+            "The current compile state [%s] of class %s is previous to WARN";
 
     void translateClass(ClassSymbol c) {
         Type st = types.supertype(c.type);
@@ -1189,7 +1189,7 @@ public class TransTypes extends TreeTranslator {
          *  1) has no compile state being it the most outer class.
          *     We accept this condition for inner classes.
          *
-         *  2) has a compile state which is previous to Flow state.
+         *  2) has a compile state which is previous to WARN state.
          */
         boolean envHasCompState = compileStates.get(myEnv) != null;
         if (!envHasCompState && c.outermostClass() == c) {
@@ -1197,7 +1197,7 @@ public class TransTypes extends TreeTranslator {
         }
 
         if (envHasCompState &&
-                CompileState.FLOW.isAfter(compileStates.get(myEnv))) {
+                CompileState.WARN.isAfter(compileStates.get(myEnv))) {
             Assert.error(String.format(statePreviousToFlowAssertMsg,
                     compileStates.get(myEnv), myEnv.enclClass.sym));
         }
