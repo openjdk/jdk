@@ -4150,7 +4150,7 @@ void getWindowsInstallationType(char* buffer, int bufferSize) {
   }
 
   // Query the value
-  if (RegQueryValueExA(hKey, valueName, NULL, NULL, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
+  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
     RegCloseKey(hKey);
     buffer[0] = '\0';
     return;
@@ -5753,7 +5753,15 @@ void PlatformEvent::park() {
   // TODO: consider a brief spin here, gated on the success of recent
   // spin attempts by this thread.
   while (_Event < 0) {
+    // The following code is only here to maintain the
+    // characteristics/performance from when an ObjectMonitor
+    // "responsible" thread used to issue timed parks.
+    HighResolutionInterval *phri = nullptr;
+    if (!ForceTimeHighResolution) {
+      phri = new HighResolutionInterval((jlong)1);
+    }
     DWORD rv = ::WaitForSingleObject(_ParkHandle, INFINITE);
+    delete phri; // if it is null, harmless
     assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
     assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", rv);
   }

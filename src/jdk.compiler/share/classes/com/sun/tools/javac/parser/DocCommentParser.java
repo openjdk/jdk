@@ -1147,7 +1147,6 @@ public class DocCommentParser {
         ListBuffer<DCTree> attrs = new ListBuffer<>();
         skipWhitespace();
 
-        loop:
         while (bp < buflen && isIdentifierStart(ch)) {
             int namePos = bp;
             Name name = readAttributeName();
@@ -1165,14 +1164,6 @@ public class DocCommentParser {
                     nextChar();
                     textStart = bp;
                     while (bp < buflen && ch != quote) {
-                        if (newline && ch == '@') {
-                            attrs.add(erroneous("dc.unterminated.string", namePos));
-                            // No point trying to read more.
-                            // In fact, all attrs get discarded by the caller
-                            // and superseded by a malformed.html node because
-                            // the html tag itself is not terminated correctly.
-                            break loop;
-                        }
                         attrValueChar(v);
                     }
                     addPendingText(v, bp - 1, DocTree.Kind.TEXT);
