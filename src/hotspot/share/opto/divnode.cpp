@@ -210,15 +210,12 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
   return q;
 }
 
-//--------------------------transform_unsigned_int_divide------------------------
-// Convert a unsigned division by constant divisor into an alternate Ideal graph.
-// Return null if no transformation occurs.
-static Node *transform_unsigned_int_divide( PhaseGVN *phase, Node *dividend, jint divisor ) {
+static Node* transform_unsigned_int_divide(PhaseGVN* phase, Node* dividend, jint divisor) {
   // Check for invalid divisors
-  assert( divisor != 0 && divisor != min_jint,
-          "bad divisor for transforming to long multiply" );
+  assert(divisor != 0 && divisor != min_jint,
+         "bad divisor for transforming to long multiply");
 
-  if ( is_power_of_2(divisor) ) {
+  if (is_power_of_2(divisor)) {
     // division by a power of 2
     return new URShiftINode(dividend, phase->intcon(log2i_graceful(divisor)));
   } else {
@@ -528,12 +525,12 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div,
   return transform(phase, div->in(1), l);
 }
 
-static Node *transform_unsigned_long_divide( PhaseGVN *phase, Node *dividend, jlong divisor ) {
+static Node* transform_unsigned_long_divide(PhaseGVN* phase, Node* dividend, jlong divisor) {
   // Check for invalid divisors
-  assert( divisor != 0 && divisor != min_jint,
-          "bad divisor for transforming to long multiply" );
+  assert(divisor != 0 && divisor != min_jint,
+         "bad divisor for transforming to long multiply");
 
-  if ( is_power_of_2(divisor) ) {
+  if (is_power_of_2(divisor)) {
     // division by a power of 2
     return new URShiftLNode(dividend, phase->intcon(log2i_graceful(divisor)));
   } else {
