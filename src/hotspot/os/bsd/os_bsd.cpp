@@ -2148,13 +2148,12 @@ jint os::init_2(void) {
 
       // On macOS according to setrlimit(2), OPEN_MAX must be used instead
       // of RLIM_INFINITY, but testing on macOS >= 10.6, reveals that
-      // we can, in fact, use even RLIM_INFINITY, so try the max value
-      // that the system claims can be used first, same as other BSD OSes.
-      // However, some terminals (ksh) will internally use "int" type
-      // to store this value and since RLIM_INFINITY overflows an "int"
-      // we might end up with a negative value, so cap the system limit max
-      // at INT_MAX instead, just in case, for everyone.
-      nbr_files.rlim_cur = MIN(INT_MAX, nbr_files.rlim_max);
+      // we can, in fact, use even RLIM_INFINITY.
+      // However, we need to limit the value to 0x100000 (which is the max value
+      // allowed on Linux) so that any existing code that iterates over all allowed
+      // file descriptors, finishes in a reasonable time, without appearing
+      // to hang.
+      nbr_files.rlim_cur = MIN(0x100000, nbr_files.rlim_max);
 
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {
