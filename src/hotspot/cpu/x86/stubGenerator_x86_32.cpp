@@ -612,7 +612,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_count_leading_zeros_lut() {
     __ align64();
-    StubGenStubId stub_id = StubGenStubId::count_leading_zeros_lut_id;
+    StubGenStubId stub_id = StubGenStubId::vector_count_leading_zeros_lut_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ emit_data(0x02020304, relocInfo::none, 0);
@@ -1322,27 +1322,27 @@ class StubGenerator: public StubCodeGenerator {
     bool aligned;
     switch(stub_id) {
     case jbyte_fill_id:
-      t == T_BYTE;
+      t = T_BYTE;
       aligned = false;
       break;
     case jshort_fill_id:
-      t == T_SHORT;
+      t = T_SHORT;
       aligned = false;
       break;
     case jint_fill_id:
-      t == T_INT;
+      t = T_INT;
       aligned = false;
       break;
     case arrayof_jbyte_fill_id:
-      t == T_BYTE;
+      t = T_BYTE;
       aligned = true;
       break;
     case arrayof_jshort_fill_id:
-      t == T_SHORT;
+      t = T_SHORT;
       aligned = true;
       break;
     case arrayof_jint_fill_id:
-      t == T_INT;
+      t = T_INT;
       aligned = true;
       break;
     default:
@@ -1619,7 +1619,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
-  address generate_disjoint_long_copy(address* entry, const char *name) {
+  address generate_disjoint_long_copy(address* entry) {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::jlong_disjoint_arraycopy_id;
     StubCodeMark mark(this, stub_id);
@@ -1665,8 +1665,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_conjoint_long_copy(address nooverlap_target,
-                                      address* entry, const char *name) {
+  address generate_conjoint_long_copy(address nooverlap_target, address* entry) {
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::jlong_arraycopy_id;
     StubCodeMark mark(this, stub_id);
@@ -1796,8 +1795,8 @@ class StubGenerator: public StubCodeGenerator {
     case checkcast_arraycopy_id:
       dest_uninitialized = false;
       break;
-    case checkcast_arraycopy_id:
-      dest_uninitialized = false;
+    case checkcast_arraycopy_uninit_id:
+      dest_uninitialized = true;
       break;
     default:
       ShouldNotReachHere();
@@ -1967,7 +1966,7 @@ class StubGenerator: public StubCodeGenerator {
     Label L_long_aligned, L_int_aligned, L_short_aligned;
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::unsafe_copy_id;
+    StubGenStubId stub_id = StubGenStubId::unsafe_arraycopy_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
@@ -2079,7 +2078,7 @@ class StubGenerator: public StubCodeGenerator {
       if (advance < 0)  advance += modulus;
       if (advance > 0)  __ nop(advance);
     }
-    StubGenStubId stub_id = StubGenStubId::generic_copy_id;
+    StubGenStubId stub_id = StubGenStubId::generic_arraycopy_id;
     StubCodeMark mark(this, stub_id);
 
     // Short-hop target to L_failed.  Makes for denser prologue code.
@@ -2397,7 +2396,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jbyte_arraycopy =
         generate_conjoint_copy(StubGenStubId::arrayof_jbyte_arraycopy_id, entry, nullptr);
     StubRoutines::_jbyte_disjoint_arraycopy =
-        generate_disjoint_copy(StubGenStubId::jbyte_disjoint_arraycopy_id&entry);
+      generate_disjoint_copy(StubGenStubId::jbyte_disjoint_arraycopy_id, &entry);
     StubRoutines::_jbyte_arraycopy =
         generate_conjoint_copy(StubGenStubId::jbyte_arraycopy_id,  entry, &entry_jbyte_arraycopy);
 
@@ -2451,7 +2450,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_checkcast_arraycopy =
       generate_checkcast_copy(StubGenStubId::checkcast_arraycopy_id, &entry_checkcast_arraycopy);
     StubRoutines::_checkcast_arraycopy_uninit =
-      generate_checkcast_copy(StubGenStubId::checkcast_arraycopy_uninit_id, nullptr, /*dest_uninitialized*/true);
+      generate_checkcast_copy(StubGenStubId::checkcast_arraycopy_uninit_id, nullptr);
 
     StubRoutines::_unsafe_arraycopy =
         generate_unsafe_copy(entry_jbyte_arraycopy,
@@ -3386,7 +3385,7 @@ class StubGenerator: public StubCodeGenerator {
     switch(stub_id) {
     case StubGenStubId::md5_implCompress_id:
       multi_block = false;
-      break
+      break;
     case StubGenStubId::md5_implCompressMB_id:
       multi_block = true;
       break;
@@ -3433,7 +3432,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_upper_word_mask() {
     __ align64();
-    StubGenStubId stubId = StubGenStubId::upper_word_mask_id;
+    StubGenStubId stub_id = StubGenStubId::upper_word_mask_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ emit_data(0x00000000, relocInfo::none, 0);
@@ -3445,7 +3444,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_shuffle_byte_flip_mask() {
     __ align64();
-    StubGenStubId stubId = StubGenStubId::shuffle_byte_flip_mask;
+    StubGenStubId stub_id = StubGenStubId::shuffle_byte_flip_mask_id;
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     __ emit_data(0x0c0d0e0f, relocInfo::none, 0);
@@ -3457,12 +3456,12 @@ class StubGenerator: public StubCodeGenerator {
 
   // ofs and limit are use for multi-block byte array.
   // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
-  address generate_sha1_implCompress(StubGenStubId stubId) {
+  address generate_sha1_implCompress(StubGenStubId stub_id) {
     bool multi_block;
     switch(stub_id) {
     case StubGenStubId::sha1_implCompress_id:
       multi_block = false;
-      break
+      break;
     case StubGenStubId::sha1_implCompressMB_id:
       multi_block = true;
       break;
@@ -3534,7 +3533,7 @@ class StubGenerator: public StubCodeGenerator {
     switch(stub_id) {
     case StubGenStubId::sha256_implCompress_id:
       multi_block = false;
-      break
+      break;
     case StubGenStubId::sha256_implCompressMB_id:
       multi_block = true;
       break;
@@ -3920,7 +3919,7 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libm_reduce_pi04l() {
-   StubGenStubId stub_id = StubGenStubId::libm_reduce_pi04l;
+   StubGenStubId stub_id = StubGenStubId::libm_reduce_pi04l_id;
    StubCodeMark mark(this, stub_id);
 
    address start = __ pc();
@@ -3933,7 +3932,7 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libm_sin_cos_huge() {
-   StubGenStubId stub_id = StubGenStubId::libm_sin_cos_huge;
+   StubGenStubId stub_id = StubGenStubId::libm_sin_cos_huge_id;
    StubCodeMark mark(this, stub_id);
 
    address start = __ pc();
@@ -3946,7 +3945,7 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libmSin() {
-   StubGenStubId stub_id = StubGenStubId::dsin;
+   StubGenStubId stub_id = StubGenStubId::dsin_id;
    StubCodeMark mark(this, stub_id);
 
    address start = __ pc();
@@ -3963,7 +3962,7 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libmCos() {
-   StubGenStubId stub_id = StubGenStubId::dcos;
+   StubGenStubId stub_id = StubGenStubId::dcos_id;
    StubCodeMark mark(this, stub_id);
 
    address start = __ pc();
@@ -3980,7 +3979,7 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libm_tan_cot_huge() {
-   StubGenStubId stub_id = StubGenStubId::libm_tan_cot_huge;
+   StubGenStubId stub_id = StubGenStubId::libm_tan_cot_huge_id;
    StubCodeMark mark(this, stub_id);
 
    address start = __ pc();
@@ -3993,7 +3992,7 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libmTan() {
-   StubGenStubId stub_id = StubGenStubId::dtan;
+   StubGenStubId stub_id = StubGenStubId::dtan_id;
    StubCodeMark mark(this, stub_id);
 
    address start = __ pc();
@@ -4011,7 +4010,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::method_entry_barrier;
+    StubGenStubId stub_id = StubGenStubId::method_entry_barrier_id;
     StubCodeMark mark(this, stub_id);
 
     Label deoptimize_label;
@@ -4289,7 +4288,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::x86::_k256_adr = (address)StubRoutines::x86::_k256;
       StubRoutines::x86::_pshuffle_byte_flip_mask_addr = generate_pshuffle_byte_flip_mask();
       StubRoutines::_sha256_implCompress = generate_sha256_implCompress(StubGenStubId::sha256_implCompress_id);
-      StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(StubGenStubId::sha256_implCompressMB_id");
+      StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(StubGenStubId::sha256_implCompressMB_id);
     }
 
     // Generate GHASH intrinsics code
