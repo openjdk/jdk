@@ -122,6 +122,13 @@ inline vframeStream::vframeStream(JavaThread* thread, bool stop_at_java_call_stu
 
   if (thread->is_vthread_mounted()) {
     _frame = vthread_carrier ? _thread->carrier_last_frame(&_reg_map) : _thread->vthread_last_frame();
+    if (Continuation::is_continuation_enterSpecial(_frame)) {
+      // This can happen when calling async_get_stack_trace() and catching the target
+      // vthread at the JRT_BLOCK_END in freeze_internal() or when posting the Monitor
+      // Waited event after target vthread was preempted. Since all continuation frames
+      // are freezed we get the top frame from the stackChunk instead.
+      _frame = Continuation::last_frame(java_lang_VirtualThread::continuation(_thread->vthread()), &_reg_map);
+    }
   } else {
     _frame = _thread->last_frame();
   }

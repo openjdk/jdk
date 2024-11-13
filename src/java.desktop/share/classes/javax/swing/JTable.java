@@ -6153,8 +6153,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * occurs on the default printer.
      *
      * @return true, unless printing is cancelled by the user
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6179,8 +6177,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @param  printMode        the printing mode that the printable should use
      * @return true, unless printing is cancelled by the user
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6211,8 +6207,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                          to be used in printing a footer,
      *                          or null for none
      * @return true, unless printing is cancelled by the user
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6253,8 +6247,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                           dialog or run interactively, and
      *                           <code>GraphicsEnvironment.isHeadless</code>
      *                           returns <code>true</code>
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #print(JTable.PrintMode, MessageFormat, MessageFormat,
@@ -6348,9 +6340,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                           dialog or run interactively, and
      *                           <code>GraphicsEnvironment.isHeadless</code>
      *                           returns <code>true</code>
-     * @throws  SecurityException if a security manager exists and its
-     *          {@link java.lang.SecurityManager#checkPrintJobAccess}
-     *          method disallows this thread from creating a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #getPrintable

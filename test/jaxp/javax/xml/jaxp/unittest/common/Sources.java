@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package common;
 
-import static jaxp.library.JAXPTestUtilities.runWithTmpPermission;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -46,7 +45,6 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -57,12 +55,10 @@ import org.xml.sax.XMLReader;
  * @test
  * @bug 8144967
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.Sources
  * @run testng/othervm common.Sources
  * @summary Tests related to the javax.xml.transform.Source
  * and org.xml.sax.InputSource
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Sources {
 
     /**
@@ -129,7 +125,7 @@ public class Sources {
         return new Object[][] {
             // This will set a non-null systemId on the resulting
             // StreamSource
-            { runWithTmpPermission(() -> new StreamSource(new File("")), new PropertyPermission("user.dir", "read")) },
+            { new StreamSource(new File("")) },
             // Can't tell because XMLStreamReader is a pull parser, cursor
             // advancement
             // would have been required in order to examine the reader.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,18 +36,15 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 6688002
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.Bug6688002Test
  * @run testng/othervm stream.Bug6688002Test
  * @summary Test single instance of XMLOutputFactory/XMLInputFactory create multiple Writer/Readers in parallel.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6688002Test {
 
     private static final XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
