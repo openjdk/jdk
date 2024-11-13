@@ -59,7 +59,6 @@
 #include "services/diagnosticCommand.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/utf8.hpp"
