@@ -553,10 +553,10 @@ public final class Float16
         // be skipped since the double-rounding would be known not to
         // have occurred.
         long dAsLong = Double.doubleToRawLongBits(d);
-        long mask = 0x01FF_FFFF_FFFFL; // 41 low-order bits
+        long mask = 0x03FF_FFFF_FFFFL; // 42 low-order bits
         long maskedValue = dAsLong & mask;
-        // Can't have all-zeros or all-ones in low-order bits
-        return maskedValue != 0L && maskedValue != mask;
+        // not half-way between two adjacent Float16 values
+        return maskedValue != 0x0200_0000_0000L;
     }
 
     private static boolean isX(int character) {
