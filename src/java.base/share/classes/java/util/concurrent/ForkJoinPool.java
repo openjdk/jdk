@@ -2602,15 +2602,15 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (w == null)
                     w = new WorkQueue(null, id, 0, false);
                 w.phase = id;
-                long shutdown = lockRunState() & SHUTDOWN;
-                if (shutdown == 0L && queues == qs && qs[i] == null) {
+                long isShutdown = lockRunState() & SHUTDOWN;
+                if (isShutdown == 0L && queues == qs && qs[i] == null) {
                     q = qs[i] = w;                   // else retry
                     w = null;
                 }
                 unlockRunState();
                 if (q != null)
                     return q;
-                if (shutdown != 0L)
+                if (isShutdown != 0L)
                     break;
             }
             else if (!q.tryLockPhase())              // move index
