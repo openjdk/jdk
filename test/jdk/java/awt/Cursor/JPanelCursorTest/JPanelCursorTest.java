@@ -49,7 +49,7 @@ public class JPanelCursorTest {
                 JFrame's contentPane.
 
                 1. Verify that the cursor in the left side of the test window
-                    is a default cursor.
+                    is a move cursor (or default cursor in MacOS).
                 2. Verify that the cursor changes to the crosshair cursor when
                     pointing over the button.
                 3. Verify that the cursor changes to the hand cursor when in
@@ -61,7 +61,7 @@ public class JPanelCursorTest {
         PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
-                .columns(35)
+                .columns(37)
                 .testUI(JPanelCursorTest::createUI)
                 .build()
                 .awaitAndCheck();
@@ -96,7 +96,7 @@ class ExtJComponent extends JComponent {
         setBorder(new BevelBorder(BevelBorder.RAISED));
     }
     public void paintComponent(Graphics g) {
-        g.drawString("Default", 20, 30);
+        g.drawString("Move", 20, 30);
     }
     public Dimension getPreferredSize() {
         return new Dimension(100, 100);
