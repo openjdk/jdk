@@ -17,8 +17,14 @@ public final class StableValueFactories {
 
     // Factories
 
-    public static <T> StableValueImpl<T> of() {
+    public static <T> StableValueImpl<T> empty() {
         return StableValueImpl.newInstance();
+    }
+
+    public static <T> StableValueImpl<T> of(T value) {
+        final StableValueImpl<T> stableValue = empty();
+        stableValue.trySet(value);
+        return stableValue;
     }
 
     public static <T> Supplier<T> ofSupplier(Supplier<? extends T> original) {

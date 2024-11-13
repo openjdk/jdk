@@ -56,13 +56,13 @@ public class CachingSupplierBenchmark {
     private static final int VALUE = 42;
     private static final int VALUE2 = 23;
 
-    private static final StableValue<Integer> STABLE = init(StableValue.of(), VALUE);
-    private static final StableValue<Integer> STABLE2 = init(StableValue.of(), VALUE2);
+    private static final StableValue<Integer> STABLE = init(StableValue.empty(), VALUE);
+    private static final StableValue<Integer> STABLE2 = init(StableValue.empty(), VALUE2);
     private static final Supplier<Integer> SUPPLIER = StableValue.ofSupplier(() -> VALUE);
     private static final Supplier<Integer> SUPPLIER2 = StableValue.ofSupplier(() -> VALUE);
 
-    private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
-    private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
+    private final StableValue<Integer> stable = init(StableValue.empty(), VALUE);
+    private final StableValue<Integer> stable2 = init(StableValue.empty(), VALUE2);
     private final Supplier<Integer> supplier = StableValue.ofSupplier(() -> VALUE);
     private final Supplier<Integer> supplier2 = StableValue.ofSupplier(() -> VALUE2);
 

@@ -40,14 +40,15 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A stable value is an object that represents deferred immutable data.
+ * A stable value is a holder of deferred immutable data.
  * <p>
- * A {@linkplain StableValue} is created using the factory method
- * {@linkplain StableValue#of()}. When created, a stable value is <em>unset</em>, which
- * means it holds no value. It can be <em>set</em> by passing a value to
- * {@linkplain #trySet(Object) trySet()}, {@linkplain #setOrThrow(Object) setOrThrow()},
- * or {@linkplain #computeIfUnset(Supplier) computeIfUnset()}. Once set, the value held
- * by a {@code StableValue<T>} can never change and can be retrieved by calling
+ * A {@linkplain StableValue {@code StableValue<T>}} is created using the factory method
+ * {@linkplain StableValue#empty()}. When created, the stable value is <em>unset</em>, which
+ * means it holds no value. It's holder value of type {@code T} can be <em>set</em> by
+ * passing a value to {@linkplain #trySet(Object) trySet()},
+ * {@linkplain #setOrThrow(Object) setOrThrow()}, or
+ * {@linkplain #computeIfUnset(Supplier) computeIfUnset()}. Once set, the value held
+ * by a {@code StableValue} can never change and can be retrieved by calling
  * {@linkplain #orElseThrow() orElseThrow()}, {@linkplain #orElse(Object)}, or
  * {@linkplain #computeIfUnset(Supplier) computeIfUnset()}.
  * <p>
@@ -55,16 +56,17 @@ import java.util.function.Supplier;
  * the same performance optimizations that are possible by marking a field {@code final}.
  * Yet, stable values offer greater flexibility as to the timing of initialization
  * <p>
- * Consider the following example with a stable value "{@code logger}" which here is an
- * immutable holder of a value of type {@code  Logger} and that is initially created as
- * <em>unset</em>, which means it holds no value. Later in the example, the holder value
- * is <em>set</em>:
+ * Consider the following example where a stable value field "{@code logger}" is an
+ * immutable holder of a value of type {@code  Logger} and that is initially created
+ * as <em>unset</em>, which means it holds no value. Later in the example, the
+ * state of the "{@code logger}" field is checked and if it is still <em>unset</em>,
+ * a holder value is <em>set</em>:
  * {@snippet lang = java:
  * class Component {
  *
  *    // Creates a new stable value with no holder value
- *    // @link substring="of" target="#of" :
- *    private final StableValue<Logger> logger = StableValue.of();
+ *    // @link substring="empty" target="#empty" :
+ *    private final StableValue<Logger> logger = StableValue.empty();
  *
  *    Logger getLogger() {
  *        if (!logger.isSet()) {
@@ -83,16 +85,17 @@ import java.util.function.Supplier;
  * Note that the holder value can only be set at most once, even when several threads are
  * racing to set the holder value. Only one thread is selected as the winner.
  * <p>
- * While this more low-level approach works, it does not guarantee that only one Logger
- * is ever created. This can be fixed by using the {@linkplain #computeIfUnset(Supplier)}
- * method where the holder is lazily computed using a provided lambda expression:
+ * While this more low-level approach works, it does not guarantee that only one
+ * {@code Logger} instance is ever created. This problem can be fixed easily by using the
+ * {@linkplain #computeIfUnset(Supplier)} method instead, where the holder is lazily
+ * computed using a provided lambda expression:
  *
  * {@snippet lang = java:
  * class Component {
  *
  *    // Creates a new stable value with no holder value
- *    // @link substring="of" target="#of" :
- *    private final StableValue<Logger> logger = StableValue.of();
+ *    // @link substring="empty" target="#empty" :
+ *    private final StableValue<Logger> logger = StableValue.empty();
  *
  *    Logger getLogger() {
  *        return logger.computeIfUnset(() -> Logger.create(Component.class));
@@ -362,7 +365,7 @@ public sealed interface StableValue<T>
     // Factories
 
     /**
-     * {@return a new stable value with no holder value}
+     * {@return a new empty stable value with no holder value}
      * <p>
      * The returned {@linkplain StableValue stable value} is a thin, atomic, thread-safe,
      * set-at-most-once, stable value with no holder value eligible for certain JVM
@@ -370,8 +373,21 @@ public sealed interface StableValue<T>
      *
      * @param <T> type of the holder value
      */
-    static <T> StableValue<T> of() {
-        return StableValueFactories.of();
+    static <T> StableValue<T> empty() {
+        return StableValueFactories.empty();
+    }
+
+    /**
+     * {@return a new set stable value with the provided {@code value} as holder value}
+     * <p>
+     * The returned {@linkplain StableValue stable value} is a thin, atomic, thread-safe,
+     * stable value with a set holder value eligible for certain JVM optimizations.
+     *
+     * @param value holder value to set
+     * @param <T>   type of the holder value
+     */
+    static <T> StableValue<T> of(T value) {
+        return StableValueFactories.of(value);
     }
 
     /**

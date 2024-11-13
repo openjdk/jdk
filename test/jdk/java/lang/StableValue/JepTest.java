@@ -132,7 +132,7 @@ final class JepTest {
 
     class Foo {
         // 1. Declare a Stable field
-        private static final StableValue<Logger> LOGGER = StableValue.of();
+        private static final StableValue<Logger> LOGGER = StableValue.empty();
 
         static Logger logger() {
 
@@ -241,7 +241,7 @@ final class JepTest {
 
         public CachingPredicate(Set<? extends T> inputs, Predicate<T> original) {
             this(inputs.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.of())),
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.empty())),
                     original::test
             );
         }
@@ -292,7 +292,7 @@ final class JepTest {
         static <T, U, R> CachingBiFunction<T, U, R> of(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
 
             Map<Pair<T, U>, StableValue<R>> map = inputs.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.of()));
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.empty()));
 
             return new CachingBiFunction<>(map, pair -> original.apply(pair.left(), pair.right()));
         }
@@ -315,7 +315,7 @@ final class JepTest {
         static <T, U, R> BiFunction<T, U, R> of(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
 
             Map<Pair<T, U>, StableValue<R>> map = inputs.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.of()));
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.empty()));
 
             return new CachingBiFunction2<>(map, original);
         }
@@ -324,7 +324,7 @@ final class JepTest {
 
     static
     class Application {
-        private final StableValue<Logger> LOGGER = StableValue.of();
+        private final StableValue<Logger> LOGGER = StableValue.empty();
 
         public Logger getLogger() {
             return LOGGER.computeIfUnset(() -> Logger.getLogger("com.company.Foo"));
@@ -335,7 +335,7 @@ final class JepTest {
                                IntPredicate resultFunction) implements IntPredicate {
 
         CachingIntPredicate(int size, IntPredicate resultFunction) {
-            this(Stream.generate(StableValue::<Boolean>of).limit(size).toList(), resultFunction);
+            this(Stream.generate(StableValue::<Boolean>empty).limit(size).toList(), resultFunction);
         }
 
         @Override
@@ -351,7 +351,7 @@ final class JepTest {
         private final StableValue<E>[] elements;
 
         FixedStableList(int size) {
-            this.elements = Stream.generate(StableValue::<E>of)
+            this.elements = Stream.generate(StableValue::<E>empty)
                     .limit(size)
                     .toArray(StableValue[]::new);
         }

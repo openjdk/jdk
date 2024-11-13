@@ -47,19 +47,19 @@ public class StableValueBenchmark {
     private static final int VALUE = 42;
     private static final int VALUE2 = 23;
 
-    private static final StableValue<Integer> STABLE = init(StableValue.of(), VALUE);
-    private static final StableValue<Integer> STABLE2 = init(StableValue.of(), VALUE2);
-    private static final StableValue<Integer> DCL = init(StableValue.of(), VALUE);
-    private static final StableValue<Integer> DCL2 = init(StableValue.of(), VALUE2);
+    private static final StableValue<Integer> STABLE = init(StableValue.empty(), VALUE);
+    private static final StableValue<Integer> STABLE2 = init(StableValue.empty(), VALUE2);
+    private static final StableValue<Integer> DCL = init(StableValue.empty(), VALUE);
+    private static final StableValue<Integer> DCL2 = init(StableValue.empty(), VALUE2);
     private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
     private static final AtomicReference<Integer> ATOMIC2 = new AtomicReference<>(VALUE2);
     private static final Holder HOLDER = new Holder(VALUE);
     private static final Holder HOLDER2 = new Holder(VALUE2);
 
-    private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
-    private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
-    private final StableValue<Integer> stableNull = StableValue.of();
-    private final StableValue<Integer> stableNull2 = StableValue.of();
+    private final StableValue<Integer> stable = init(StableValue.empty(), VALUE);
+    private final StableValue<Integer> stable2 = init(StableValue.empty(), VALUE2);
+    private final StableValue<Integer> stableNull = StableValue.empty();
+    private final StableValue<Integer> stableNull2 = StableValue.empty();
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
     private final Supplier<Integer> dcl2 = new Dcl<>(() -> VALUE2);
     private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
@@ -78,7 +78,7 @@ public class StableValueBenchmark {
             final int v = i;
             Dcl<Integer> dclX = new Dcl<>(() -> v);
             sum += dclX.get();
-            StableValue<Integer> stableX = StableValue.of();
+            StableValue<Integer> stableX = StableValue.empty();
             stableX.trySet(i);
             sum += stableX.orElseThrow();
         }
@@ -141,7 +141,7 @@ public class StableValueBenchmark {
     // because StableValue fields have a special meaning.
     private static final class Holder {
 
-        private final StableValue<Integer> delegate = StableValue.of();
+        private final StableValue<Integer> delegate = StableValue.empty();
 
         Holder(int value) {
             delegate.setOrThrow(value);
