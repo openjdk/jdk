@@ -205,12 +205,14 @@ intptr_t NativeMovConstReg::data() const {
     // Therefore we use raw decoding.
     if (CompressedOops::is_null(no)) return 0;
     return cast_from_oop<intptr_t>(CompressedOops::decode_raw(no));
-  } else {
-    assert(MacroAssembler::is_load_const_from_method_toc_at(addr), "must be load_const_from_pool");
-
+  } else if (MacroAssembler::is_load_const_from_method_toc_at(addr)) {
     address ctable = cb->content_begin();
     int offset = MacroAssembler::get_offset_of_load_const_from_method_toc_at(addr);
     return *(intptr_t *)(ctable + offset);
+  } else {
+    assert(MacroAssembler::is_calculate_address_from_global_toc_at(addr, addr - BytesPerInstWord),
+           "must be calculate_address_from_global_toc");
+    return (intptr_t) MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr, addr - BytesPerInstWord);
   }
 }
 

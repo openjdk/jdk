@@ -22,19 +22,21 @@
  */
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import jdk.tools.jlink.plugin.PluginException;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import jdk.tools.jlink.internal.TaskHelper;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
+import jdk.tools.jlink.plugin.PluginException;
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageValidator;
 import tests.Result;
+
 
 /*
  * @test
@@ -59,14 +61,14 @@ import tests.Result;
  */
 public class IncludeLocalesPluginTest {
 
-    private final static String moduleName = "IncludeLocalesTest";
+    private static final String moduleName = "IncludeLocalesTest";
     private static Helper helper;
-    private final static int INCLUDE_LOCALES_OPTION = 0;
-    private final static int ADDMODS_OPTION         = 1;
-    private final static int EXPECTED_LOCATIONS     = 2;
-    private final static int UNEXPECTED_PATHS       = 3;
-    private final static int AVAILABLE_LOCALES      = 4;
-    private final static int ERROR_MESSAGE          = 5;
+    private static final int INCLUDE_LOCALES_OPTION = 0;
+    private static final int ADDMODS_OPTION         = 1;
+    private static final int EXPECTED_LOCATIONS     = 2;
+    private static final int UNEXPECTED_PATHS       = 3;
+    private static final int AVAILABLE_LOCALES      = 4;
+    private static final int ERROR_MESSAGE          = 5;
 
     private static int errors;
 
@@ -233,9 +235,9 @@ public class IncludeLocalesPluginTest {
                 "bn", "bn_IN", "bo", "bo_IN", "brx", "brx_IN", "brx_IN_#Deva", "ccp", "ccp_IN", "doi", "doi_IN",
                 "doi_IN_#Deva", "en", "en_001", "en_IN", "en_US", "en_US_#Latn", "en_US_POSIX", "gu", "gu_IN",
                 "gu_IN_#Gujr", "hi", "hi__#Latn", "hi_IN", "hi_IN_#Deva", "hi_IN_#Latn", "kn", "kn_IN", "kn_IN_#Knda",
-                "kok", "kok_IN", "kok_IN_#Deva", "ks", "ks__#Arab", "ks__#Deva", "ks_IN", "ks_IN_#Arab", "ks_IN_#Deva",
-                "kxv", "kxv_IN", "kxv_IN_#Deva", "kxv_IN_#Latn", "kxv_IN_#Orya", "kxv_IN_#Telu",
-                "kxv__#Deva", "kxv__#Latn", "kxv__#Orya", "kxv__#Telu",
+                "kok", "kok__#Deva", "kok__#Latn", "kok_IN", "kok_IN_#Deva", "kok_IN_#Latn", "ks", "ks__#Arab",
+                "ks__#Deva", "ks_IN", "ks_IN_#Arab", "ks_IN_#Deva", "kxv", "kxv_IN", "kxv_IN_#Deva", "kxv_IN_#Latn",
+                "kxv_IN_#Orya", "kxv_IN_#Telu", "kxv__#Deva", "kxv__#Latn", "kxv__#Orya", "kxv__#Telu",
                 "mai", "mai_IN", "mai_IN_#Deva", "mni", "mni__#Beng", "mni_IN", "mni_IN_#Beng", "ml", "ml_IN",
                 "ml_IN_#Mlym", "mr", "mr_IN", "mr_IN_#Deva", "ne", "ne_IN", "or", "or_IN", "or_IN_#Orya", "pa",
                 "pa__#Guru", "pa_IN", "pa_IN_#Guru", "raj", "raj_IN", "raj_IN_#Deva", "sa", "sa_IN", "sa_IN_#Deva",
@@ -299,8 +301,9 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             List.of(
-                "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "zh", "zh__#Hans", "zh_CN",
-                "zh_CN_#Hans", "zh_HK", "zh_HK_#Hans", "zh_MO", "zh_MO_#Hans", "zh_SG", "zh_SG_#Hans"),
+                "(root)", "en", "en_US", "en_US_#Latn", "en_US_POSIX", "zh", "zh__#Latn", "zh__#Hans", "zh_CN",
+                "zh_CN_#Latn", "zh_CN_#Hans", "zh_HK", "zh_HK_#Hans", "zh_MO", "zh_MO_#Hans", "zh_MY_#Hans", "zh_SG",
+                "zh_SG_#Hans"),
             "",
         },
 
@@ -412,11 +415,18 @@ public class IncludeLocalesPluginTest {
     };
 
     public static void main(String[] args) throws Exception {
-        helper = Helper.newHelper();
+        boolean isLinkableRuntime = LinkableRuntimeImage.isLinkableRuntime();
+        System.out.println("Running test on " +
+                           (isLinkableRuntime ? "enabled" : "disabled") +
+                           " capability of linking from the run-time image.");
+        System.out.println("Default module-path, 'jmods', " +
+                           (Helper.jdkHasPackagedModules() ? "" : "NOT ") +
+                           "present.");
+
+        helper = Helper.newHelper(isLinkableRuntime);
         if (helper == null) {
             throw new RuntimeException("Helper could not be initialized");
         }
-        helper.generateDefaultModules();
 
         for (Object[] data : testData) {
             // create image for each test data
@@ -424,14 +434,12 @@ public class IncludeLocalesPluginTest {
             if (data[INCLUDE_LOCALES_OPTION].toString().isEmpty()) {
                 System.out.println("Invoking jlink with no --include-locales option");
                 result = JImageGenerator.getJLinkTask()
-                    .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods((String) data[ADDMODS_OPTION])
                     .call();
             } else {
                 System.out.println("Invoking jlink with \"" + data[INCLUDE_LOCALES_OPTION] + "\"");
                 result = JImageGenerator.getJLinkTask()
-                    .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods((String) data[ADDMODS_OPTION])
                     .option((String) data[INCLUDE_LOCALES_OPTION])

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,6 @@ public final class InnocuousThread extends Thread {
     private static final long THREAD_LOCALS;
     private static final long INHERITABLE_THREAD_LOCALS;
     private static final ThreadGroup INNOCUOUSTHREADGROUP;
-    private static final AccessControlContext ACC;
-    private static final long INHERITEDACCESSCONTROLCONTEXT;
     private static final long CONTEXTCLASSLOADER;
 
     private static final AtomicInteger threadNumber = new AtomicInteger(1);
@@ -150,7 +148,6 @@ public final class InnocuousThread extends Thread {
     private InnocuousThread(ThreadGroup group, Runnable target, String name,
                             long stackSize, ClassLoader tccl) {
         super(group, target, name, stackSize, false);
-        UNSAFE.putReferenceRelease(this, INHERITEDACCESSCONTROLCONTEXT, ACC);
         UNSAFE.putReferenceRelease(this, CONTEXTCLASSLOADER, tccl);
     }
 
@@ -190,10 +187,6 @@ public final class InnocuousThread extends Thread {
     // Use Unsafe to access Thread group and ThreadGroup parent fields
     static {
         try {
-            ACC = new AccessControlContext(new ProtectionDomain[] {
-                new ProtectionDomain(null, null)
-            });
-
             // Find and use topmost ThreadGroup as parent of new group
             UNSAFE = jdk.internal.misc.Unsafe.getUnsafe();
             Class<?> tk = Thread.class;
@@ -202,8 +195,6 @@ public final class InnocuousThread extends Thread {
             THREAD_LOCALS = UNSAFE.objectFieldOffset(tk, "threadLocals");
             INHERITABLE_THREAD_LOCALS = UNSAFE.objectFieldOffset
                     (tk, "inheritableThreadLocals");
-            INHERITEDACCESSCONTROLCONTEXT = UNSAFE.objectFieldOffset
-                (tk, "inheritedAccessControlContext");
             CONTEXTCLASSLOADER = UNSAFE.objectFieldOffset
                 (tk, "contextClassLoader");
 

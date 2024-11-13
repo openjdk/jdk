@@ -44,7 +44,6 @@ import static jdk.jpackage.test.TKit.assertAssert;
  * @summary Test TKit.DirectoryContentVerifier from jpackage test library
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile DirectoryContentVerifierTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.test.DirectoryContentVerifierTest

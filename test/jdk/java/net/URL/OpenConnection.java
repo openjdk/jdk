@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 5086348
  * @summary URL.openConnection(Proxy.NO_PROXY) throws NULLPointerException
- * @run main/othervm -Djava.security.manager=allow OpenConnection
+ * @run main/othervm OpenConnection
  */
 
 import java.io.*;
@@ -32,7 +32,6 @@ import java.net.*;
 
 public class OpenConnection {
     public static void main(String[] args) throws IOException {
-        System.setSecurityManager( new SecurityManager() );
         URL u = new URL("http://foo.bar.baz/");
         try {
             // Will throw NullPointerException if not fixed
