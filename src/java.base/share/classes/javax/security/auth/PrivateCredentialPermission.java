@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,59 +47,9 @@ import sun.security.util.ResourcesMgr;
  *      CredentialClass {PrincipalClass "PrincipalName"}*
  * </pre>
  *
- * For example, the following permission grants access to the
- * com.sun.PrivateCredential owned by Subjects which have
- * a com.sun.Principal with the name, "duke".  Note that although
- * this example, as well as all the examples below, do not contain
- * Codebase, SignedBy, or Principal information in the grant statement
- * (for simplicity reasons), actual policy configurations should
- * specify that information when appropriate.
- *
- * <pre>
- *
- *    grant {
- *      permission javax.security.auth.PrivateCredentialPermission
- *              "com.sun.PrivateCredential com.sun.Principal \"duke\"",
- *              "read";
- *    };
- * </pre>
- *
- * If CredentialClass is "*", then access is granted to
- * all private Credentials belonging to the specified
- * {@code Subject}.
- * If "PrincipalName" is "*", then access is granted to the
- * specified Credential owned by any {@code Subject} that has the
- * specified {@code Principal} (the actual PrincipalName doesn't matter).
- * For example, the following grants access to the
- * a.b.Credential owned by any {@code Subject} that has
- * an a.b.Principal.
- *
- * <pre>
- *    grant {
- *      permission javax.security.auth.PrivateCredentialPermission
- *              "a.b.Credential a.b.Principal "*"",
- *              "read";
- *    };
- * </pre>
- *
- * If both the PrincipalClass and "PrincipalName" are "*",
- * then access is granted to the specified Credential owned by
- * any {@code Subject}.
- *
- * <p> In addition, the PrincipalClass/PrincipalName pairing may be repeated:
- *
- * <pre>
- *    grant {
- *      permission javax.security.auth.PrivateCredentialPermission
- *              "a.b.Credential a.b.Principal "duke" c.d.Principal "dukette"",
- *              "read";
- *    };
- * </pre>
- *
- * The above grants access to the private Credential, "a.b.Credential",
- * belonging to a {@code Subject} with at least two associated Principals:
- * "a.b.Principal" with the name, "duke", and "c.d.Principal", with the name,
- * "dukette".
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @since 1.4
  */

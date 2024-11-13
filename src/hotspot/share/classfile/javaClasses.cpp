@@ -412,12 +412,6 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
   if (_to_java_string_fn == nullptr) {
     void *lib_handle = os::native_java_library();
     _to_java_string_fn = CAST_TO_FN_PTR(to_java_string_fn_t, os::dll_lookup(lib_handle, "JNU_NewStringPlatform"));
-#if defined(_WIN32) && !defined(_WIN64)
-    if (_to_java_string_fn == nullptr) {
-      // On 32 bit Windows, also try __stdcall decorated name
-      _to_java_string_fn = CAST_TO_FN_PTR(to_java_string_fn_t, os::dll_lookup(lib_handle, "_JNU_NewStringPlatform@8"));
-    }
-#endif
     if (_to_java_string_fn == nullptr) {
       fatal("JNU_NewStringPlatform missing");
     }
@@ -1599,7 +1593,6 @@ oop java_lang_Thread_Constants::get_VTHREAD_GROUP() {
 int java_lang_Thread::_holder_offset;
 int java_lang_Thread::_name_offset;
 int java_lang_Thread::_contextClassLoader_offset;
-int java_lang_Thread::_inheritedAccessControlContext_offset;
 int java_lang_Thread::_eetop_offset;
 int java_lang_Thread::_jvmti_thread_state_offset;
 int java_lang_Thread::_jvmti_VTMS_transition_disable_count_offset;
@@ -1616,7 +1609,6 @@ JFR_ONLY(int java_lang_Thread::_jfr_epoch_offset;)
   macro(_holder_offset,        k, "holder", thread_fieldholder_signature, false); \
   macro(_name_offset,          k, vmSymbols::name_name(), string_signature, false); \
   macro(_contextClassLoader_offset, k, vmSymbols::contextClassLoader_name(), classloader_signature, false); \
-  macro(_inheritedAccessControlContext_offset, k, vmSymbols::inheritedAccessControlContext_name(), accesscontrolcontext_signature, false); \
   macro(_eetop_offset,         k, "eetop", long_signature, false); \
   macro(_interrupted_offset,   k, "interrupted", bool_signature, false); \
   macro(_interruptLock_offset, k, "interruptLock", object_signature, false); \
@@ -1686,6 +1678,7 @@ bool java_lang_Thread::is_in_VTMS_transition(oop java_thread) {
 }
 
 void java_lang_Thread::set_is_in_VTMS_transition(oop java_thread, bool val) {
+  assert(is_in_VTMS_transition(java_thread) != val, "already %s transition", val ? "inside" : "outside");
   java_thread->bool_field_put_volatile(_jvmti_is_in_VTMS_transition_offset, val);
 }
 
@@ -1791,10 +1784,6 @@ void java_lang_Thread::set_daemon(oop java_thread) {
 
 oop java_lang_Thread::context_class_loader(oop java_thread) {
   return java_thread->obj_field(_contextClassLoader_offset);
-}
-
-oop java_lang_Thread::inherited_access_control_context(oop java_thread) {
-  return java_thread->obj_field(_inheritedAccessControlContext_offset);
 }
 
 
@@ -2021,12 +2010,20 @@ int java_lang_VirtualThread::static_vthread_scope_offset;
 int java_lang_VirtualThread::_carrierThread_offset;
 int java_lang_VirtualThread::_continuation_offset;
 int java_lang_VirtualThread::_state_offset;
+int java_lang_VirtualThread::_next_offset;
+int java_lang_VirtualThread::_onWaitingList_offset;
+int java_lang_VirtualThread::_notified_offset;
+int java_lang_VirtualThread::_timeout_offset;
 
 #define VTHREAD_FIELDS_DO(macro) \
   macro(static_vthread_scope_offset,       k, "VTHREAD_SCOPE",      continuationscope_signature, true);  \
   macro(_carrierThread_offset,             k, "carrierThread",      thread_signature,            false); \
   macro(_continuation_offset,              k, "cont",               continuation_signature,      false); \
-  macro(_state_offset,                     k, "state",              int_signature,               false)
+  macro(_state_offset,                     k, "state",              int_signature,               false); \
+  macro(_next_offset,                      k, "next",               vthread_signature,           false); \
+  macro(_onWaitingList_offset,             k, "onWaitingList",      bool_signature,              false); \
+  macro(_notified_offset,                  k, "notified",           bool_signature,              false); \
+  macro(_timeout_offset,                   k, "timeout",            long_signature,              false);
 
 
 void java_lang_VirtualThread::compute_offsets() {
@@ -2052,6 +2049,56 @@ int java_lang_VirtualThread::state(oop vthread) {
   return vthread->int_field_acquire(_state_offset);
 }
 
+void java_lang_VirtualThread::set_state(oop vthread, int state) {
+  vthread->release_int_field_put(_state_offset, state);
+}
+
+int java_lang_VirtualThread::cmpxchg_state(oop vthread, int old_state, int new_state) {
+  jint* addr = vthread->field_addr<jint>(_state_offset);
+  int res = Atomic::cmpxchg(addr, old_state, new_state);
+  return res;
+}
+
+oop java_lang_VirtualThread::next(oop vthread) {
+  return vthread->obj_field(_next_offset);
+}
+
+void java_lang_VirtualThread::set_next(oop vthread, oop next_vthread) {
+  vthread->obj_field_put(_next_offset, next_vthread);
+}
+
+// Add vthread to the waiting list if it's not already in it. Multiple threads
+// could be trying to add vthread to the list at the same time, so we control
+// access with a cmpxchg on onWaitingList. The winner adds vthread to the list.
+// Method returns true if we added vthread to the list, false otherwise.
+bool java_lang_VirtualThread::set_onWaitingList(oop vthread, OopHandle& list_head) {
+  jboolean* addr = vthread->field_addr<jboolean>(_onWaitingList_offset);
+  jboolean vthread_on_list = Atomic::load(addr);
+  if (!vthread_on_list) {
+    vthread_on_list = Atomic::cmpxchg(addr, (jboolean)JNI_FALSE, (jboolean)JNI_TRUE);
+    if (!vthread_on_list) {
+      for (;;) {
+        oop head = list_head.resolve();
+        java_lang_VirtualThread::set_next(vthread, head);
+        if (list_head.cmpxchg(head, vthread) == head) return true;
+      }
+    }
+  }
+  return false; // already on waiting list
+}
+
+void java_lang_VirtualThread::set_notified(oop vthread, jboolean value) {
+  vthread->bool_field_put_volatile(_notified_offset, value);
+}
+
+jlong java_lang_VirtualThread::timeout(oop vthread) {
+  return vthread->long_field(_timeout_offset);
+}
+
+void java_lang_VirtualThread::set_timeout(oop vthread, jlong value) {
+  vthread->long_field_put(_timeout_offset, value);
+}
+
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
   JavaThreadStatus status = JavaThreadStatus::NEW;
   switch (state & ~SUSPENDED) {
@@ -2065,6 +2112,9 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
     case UNPARKED:
     case YIELDING:
     case YIELDED:
+    case UNBLOCKED:
+    case WAITING:
+    case TIMED_WAITING:
       status = JavaThreadStatus::RUNNABLE;
       break;
     case PARKED:
@@ -2075,6 +2125,16 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
     case TIMED_PINNED:
       status = JavaThreadStatus::PARKED_TIMED;
       break;
+    case BLOCKING:
+    case BLOCKED:
+      status = JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER;
+      break;
+    case WAIT:
+      status = JavaThreadStatus::IN_OBJECT_WAIT;
+      break;
+    case TIMED_WAIT:
+      status = JavaThreadStatus::IN_OBJECT_WAIT_TIMED;
+      break;
     case TERMINATED:
       status = JavaThreadStatus::TERMINATED;
       break;
@@ -2082,6 +2142,13 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
       ShouldNotReachHere();
   }
   return status;
+}
+
+bool java_lang_VirtualThread::is_preempted(oop vthread) {
+  oop continuation = java_lang_VirtualThread::continuation(vthread);
+  assert(continuation != nullptr, "vthread with no continuation");
+  stackChunkOop chunk = jdk_internal_vm_Continuation::tail(continuation);
+  return chunk != nullptr && chunk->preempted();
 }
 
 #if INCLUDE_CDS
@@ -4782,17 +4849,11 @@ oop java_lang_ClassLoader::unnamedModule(oop loader) {
 int java_lang_System::_static_in_offset;
 int java_lang_System::_static_out_offset;
 int java_lang_System::_static_err_offset;
-int java_lang_System::_static_security_offset;
-int java_lang_System::_static_allow_security_offset;
-int java_lang_System::_static_never_offset;
 
 #define SYSTEM_FIELDS_DO(macro) \
   macro(_static_in_offset,  k, "in",  input_stream_signature, true); \
   macro(_static_out_offset, k, "out", print_stream_signature, true); \
-  macro(_static_err_offset, k, "err", print_stream_signature, true); \
-  macro(_static_security_offset, k, "security", security_manager_signature, true); \
-  macro(_static_allow_security_offset, k, "allowSecurityManager", int_signature, true); \
-  macro(_static_never_offset, k, "NEVER", int_signature, true)
+  macro(_static_err_offset, k, "err", print_stream_signature, true);
 
 void java_lang_System::compute_offsets() {
   InstanceKlass* k = vmClasses::System_klass();
@@ -4802,21 +4863,12 @@ void java_lang_System::compute_offsets() {
 // This field tells us that a security manager can never be installed so we
 // can completely skip populating the ProtectionDomainCacheTable.
 bool java_lang_System::allow_security_manager() {
-  static int initialized = false;
-  static bool allowed = true; // default
-  if (!initialized) {
-    oop base = vmClasses::System_klass()->static_field_base_raw();
-    int never = base->int_field(_static_never_offset);
-    allowed = (base->int_field(_static_allow_security_offset) != never);
-    initialized = true;
-  }
-  return allowed;
+  return false;
 }
 
 // This field tells us that a security manager is installed.
 bool java_lang_System::has_security_manager() {
-  oop base = vmClasses::System_klass()->static_field_base_raw();
-  return base->obj_field(_static_security_offset) != nullptr;
+  return false;
 }
 
 #if INCLUDE_CDS

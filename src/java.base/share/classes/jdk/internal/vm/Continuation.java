@@ -59,7 +59,9 @@ public class Continuation {
     public enum Pinned {
         /** Native frame on stack */ NATIVE,
         /** Monitor held */          MONITOR,
-        /** In critical section */   CRITICAL_SECTION }
+        /** In critical section */   CRITICAL_SECTION,
+        /** Exception (OOME/SOE) */  EXCEPTION
+    }
 
     /** Preemption attempt result */
     public enum PreemptStatus {
@@ -85,6 +87,7 @@ public class Continuation {
             case 2 -> Pinned.CRITICAL_SECTION;
             case 3 -> Pinned.NATIVE;
             case 4 -> Pinned.MONITOR;
+            case 5 -> Pinned.EXCEPTION;
             default -> throw new AssertionError("Unknown pinned reason: " + reason);
         };
     }
@@ -358,8 +361,6 @@ public class Continuation {
     @Hidden
     @JvmtiHideEvents
     private boolean yield0(ContinuationScope scope, Continuation child) {
-        preempted = false;
-
         if (scope != this.scope)
             this.yieldInfo = scope;
         int res = doYield();
