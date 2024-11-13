@@ -26,5 +26,5 @@
  * @bug 8343781
  * @summary Test for `@since` in jdk.jconsole module
  * @library /test/lib /test/jdk/tools/sincechecker
- * @run main SinceChecker jdk.jartool
+ * @run main SinceChecker jdk.jconsole
  */
