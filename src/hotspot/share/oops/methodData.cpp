@@ -1558,7 +1558,8 @@ void MethodData::print_value_on(outputStream* st) const {
 }
 
 void MethodData::print_data_on(outputStream* st) const {
-  MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(extra_data_lock(), !extra_data_lock()->owned_by_self(),
+                            Mutex::_no_safepoint_check_flag);
   ResourceMark rm;
   ProfileData* data = first_data();
   if (_parameters_type_data_di != no_parameters) {
