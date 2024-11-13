@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4631471 6972468
  * @summary Tests DefaultTreeModel encoding
- * @run main/othervm -Djava.security.manager=allow Test4631471
+ * @run main/othervm Test4631471
  * @author Sergey Malenkov, Mark Davidson
  */
 
@@ -38,8 +38,6 @@ import javax.swing.tree.TreeNode;
 public abstract class Test4631471 extends AbstractTest {
     public static void main(String[] args) throws Exception {
         main();
-        System.setSecurityManager(new SecurityManager());
-        main();
     }
 
     private static void main() throws Exception {
@@ -48,14 +46,14 @@ public abstract class Test4631471 extends AbstractTest {
             protected Object getObject() {
                 return getRoot();
             }
-        }.test(false);
+        }.test();
 
         // the DefaultTreeModel will also archive correctly
         new Test4631471() {
             protected Object getObject() {
                 return getModel();
             }
-        }.test(false);
+        }.test();
 
         // create a new model from the root node
         // this simulates the MetaData ctor:
@@ -64,14 +62,14 @@ public abstract class Test4631471 extends AbstractTest {
             protected Object getObject() {
                 return new DefaultTreeModel((TreeNode) getModel().getRoot());
             }
-        }.test(false);
+        }.test();
 
         // the JTree will archive correctly too
         new Test4631471() {
             protected Object getObject() {
                 return getTree();
             }
-        }.test(false);
+        }.test();
     }
 
     protected final void validate(Object before, Object after) {

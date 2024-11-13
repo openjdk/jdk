@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assumptions.*;
 /**
  * @test
  * @summary Tests the API and contract of Gatherers.scan
- * @enablePreview
  * @run junit GatherersScanTest
  */
 
