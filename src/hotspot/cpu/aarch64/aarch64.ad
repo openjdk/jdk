@@ -2632,6 +2632,23 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
 // to be subsumed into complex addressing expressions or compute them
 // into registers?
 bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
+
+  // Loads and stores with indirect memory input (e.g., volatile loads and
+  // stores) do not subsume the input into complex addressing expressions. If
+  // the addressing expression is input to at least one such load or store, do
+  // not clone the addressing expression. Query needs_acquiring_load and
+  // needs_releasing_store as a proxy for indirect memory input, as it is not
+  // possible to directly query for indirect memory input at this stage.
+  for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
+    Node* n = m->fast_out(i);
+    if (n->is_Load() && needs_acquiring_load(n)) {
+      return false;
+    }
+    if (n->is_Store() && needs_releasing_store(n)) {
+      return false;
+    }
+  }
+
   if (clone_base_plus_offset_address(m, mstack, address_visited)) {
     return true;
   }
