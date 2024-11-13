@@ -167,7 +167,10 @@ public abstract class ZoneRulesProvider {
             try {
                 provider = it.next();
             } catch (ServiceConfigurationError ex) {
-                throw new Error(ex);
+                if (ex.getCause() instanceof SecurityException) {
+                    continue;  // ignore the security exception, try the next provider
+                }
+                throw ex;
             }
             boolean found = false;
             for (ZoneRulesProvider p : loaded) {
