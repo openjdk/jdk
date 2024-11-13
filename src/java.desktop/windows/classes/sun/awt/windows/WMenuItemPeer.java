@@ -29,8 +29,6 @@ import java.util.MissingResourceException;
 import java.awt.*;
 import java.awt.peer.*;
 import java.awt.event.ActionEvent;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import sun.util.logging.PlatformLogger;
 
 @SuppressWarnings("removal")
@@ -146,20 +144,15 @@ class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
     private static Font defaultMenuFont;
 
     static {
-        defaultMenuFont = AccessController.doPrivileged(
-            new PrivilegedAction <Font> () {
-                public Font run() {
-                    try {
-                        ResourceBundle rb = ResourceBundle.getBundle("sun.awt.windows.awtLocalization");
-                        return Font.decode(rb.getString("menuFont"));
-                    } catch (MissingResourceException e) {
-                        if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                            log.fine("WMenuItemPeer: " + e.getMessage()+". Using default MenuItem font.", e);
-                        }
-                        return new Font("SanSerif", Font.PLAIN, 11);
-                    }
-                }
-            });
+        try {
+            ResourceBundle rb = ResourceBundle.getBundle("sun.awt.windows.awtLocalization");
+            defaultMenuFont = Font.decode(rb.getString("menuFont"));
+        } catch (MissingResourceException e) {
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
+                log.fine("WMenuItemPeer: " + e.getMessage()+". Using default MenuItem font.", e);
+            }
+            defaultMenuFont = new Font("SanSerif", Font.PLAIN, 11);
+        }
     }
 
     static Font getDefaultFont() {

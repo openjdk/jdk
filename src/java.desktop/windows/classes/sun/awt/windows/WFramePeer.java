@@ -32,7 +32,6 @@ import java.awt.GraphicsConfiguration;
 import java.awt.MenuBar;
 import java.awt.Rectangle;
 import java.awt.peer.FramePeer;
-import java.security.AccessController;
 
 import sun.awt.AWTAccessor;
 import sun.awt.im.InputMethodManager;
@@ -80,11 +79,9 @@ class WFramePeer extends WWindowPeer implements FramePeer {
     private native void setMaximizedBounds(int x, int y, int w, int h);
     private native void clearMaximizedBounds();
 
-    @SuppressWarnings("removal")
     private static final boolean keepOnMinimize = "true".equals(
-        AccessController.doPrivileged(
             new GetPropertyAction(
-            "sun.awt.keepWorkingSetOnMinimize")));
+            "sun.awt.keepWorkingSetOnMinimize"));
 
     @Override
     public final void setMaximizedBounds(Rectangle b) {

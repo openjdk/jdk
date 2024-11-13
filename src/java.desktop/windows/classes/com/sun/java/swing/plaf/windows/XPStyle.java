@@ -55,7 +55,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.WritableRaster;
-import java.security.AccessController;
 import java.util.HashMap;
 
 import javax.swing.AbstractButton;
@@ -124,7 +123,6 @@ class XPStyle {
      * @return the singleton instance of this class or null if XP styles
      * are not active or if this is not Windows XP
      */
-    @SuppressWarnings("removal")
     static synchronized XPStyle getXP() {
         if (themeActive == null) {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -136,7 +134,7 @@ class XPStyle {
             if (themeActive.booleanValue()) {
                 GetPropertyAction propertyAction =
                     new GetPropertyAction("swing.noxp");
-                if (AccessController.doPrivileged(propertyAction) == null &&
+                if (propertyAction == null &&
                     ThemeReader.isThemed() &&
                     !(UIManager.getLookAndFeel()
                       instanceof WindowsClassicLookAndFeel)) {

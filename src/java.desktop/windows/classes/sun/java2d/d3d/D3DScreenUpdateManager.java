@@ -32,8 +32,6 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Window;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -94,22 +92,19 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
     @SuppressWarnings("removal")
     public D3DScreenUpdateManager() {
         done = false;
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            Runnable shutdownRunnable = () -> {
-                done = true;
-                wakeUpUpdateThread();
-            };
-            Thread shutdown = new Thread(
-                    ThreadGroupUtils.getRootThreadGroup(), shutdownRunnable,
-                    "ScreenUpdater", 0, false);
-            shutdown.setContextClassLoader(null);
-            try {
-                Runtime.getRuntime().addShutdownHook(shutdown);
-            } catch (Exception e) {
-                done = true;
-            }
-            return null;
-        });
+        Runnable shutdownRunnable = () -> {
+            done = true;
+            wakeUpUpdateThread();
+        };
+        Thread shutdown = new Thread(
+                ThreadGroupUtils.getRootThreadGroup(), shutdownRunnable,
+                "ScreenUpdater", 0, false);
+        shutdown.setContextClassLoader(null);
+        try {
+            Runtime.getRuntime().addShutdownHook(shutdown);
+        } catch (Exception e) {
+            done = true;
+        }
     }
 
     /**
@@ -348,16 +343,13 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
     @SuppressWarnings("removal")
     private synchronized void startUpdateThread() {
         if (screenUpdater == null) {
-            screenUpdater = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                String name = "D3D Screen Updater";
-                Thread t = new Thread(
+            String name = "D3D Screen Updater";
+            screenUpdater = new Thread(
                         ThreadGroupUtils.getRootThreadGroup(), this, name,
                         0, false);
-                // REMIND: should it be higher?
-                t.setPriority(Thread.NORM_PRIORITY + 2);
-                t.setDaemon(true);
-                return t;
-            });
+            // REMIND: should it be higher?
+            screenUpdater.setPriority(Thread.NORM_PRIORITY + 2);
+            screenUpdater.setDaemon(true);
             screenUpdater.start();
         } else {
             wakeUpUpdateThread();

@@ -25,7 +25,6 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import java.security.AccessController;
 import sun.security.action.GetBooleanAction;
 
 import java.util.*;
@@ -69,7 +68,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
 
     @SuppressWarnings("removal")
     private static final boolean VISTA_ANIMATION_DISABLED =
-        AccessController.doPrivileged(new GetBooleanAction("swing.disablevistaanimation"));
+        Boolean.parseBoolean(System.getProperty("swing.disablevistaanimation"));
 
 
     private static final Object ANIMATION_CONTROLLER_KEY =

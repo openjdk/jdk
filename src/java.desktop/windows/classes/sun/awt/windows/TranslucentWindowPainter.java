@@ -35,7 +35,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.VolatileImage;
-import java.security.AccessController;
 import sun.awt.image.BufImgSurfaceData;
 import sun.java2d.DestSurfaceProvider;
 import sun.java2d.InvalidPipeException;
@@ -66,14 +65,10 @@ abstract class TranslucentWindowPainter {
     protected WWindowPeer peer;
 
     // REMIND: we probably would want to remove this later
-    @SuppressWarnings("removal")
     private static final boolean forceOpt  =
-        Boolean.parseBoolean(AccessController.doPrivileged(
-            new GetPropertyAction("sun.java2d.twp.forceopt", "false")));
-    @SuppressWarnings("removal")
+        Boolean.parseBoolean(System.getProperty("sun.java2d.twp.forceopt", "false"));
     private static final boolean forceSW  =
-        Boolean.parseBoolean(AccessController.doPrivileged(
-            new GetPropertyAction("sun.java2d.twp.forcesw", "false")));
+        Boolean.parseBoolean(System.getProperty("sun.java2d.twp.forcesw", "false"));
 
     /**
      * Creates an instance of the painter for particular peer.
