@@ -45,7 +45,7 @@ import java.util.stream.Gatherer.Integrator;
  * The performance-critical code below contains some more complicated encodings:
  * therefore, make sure to run benchmarks to verify changes to prevent regressions.
  *
- * @since 22
+ * @since 24
  */
 final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     @SuppressWarnings("unchecked")
@@ -589,6 +589,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
                 // The completion of this task *and* the dumping of elements
                 // "happens-before" completion of the associated left-most leaf task
                 // of right subtree (if any, which can be this task's right sibling)
+                @SuppressWarnings("unchecked")
                 var leftDescendant = (Hybrid) NEXT.getAndSet(this, null);
                 if (leftDescendant != null) {
                     leftDescendant.tryComplete();

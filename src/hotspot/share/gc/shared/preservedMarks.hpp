@@ -114,8 +114,6 @@ public:
   // is null, perform the work serially in the current thread.
   void restore(WorkerThreads* workers);
 
-  WorkerTask* create_task();
-
   // Reclaim stack array.
   void reclaim();
 

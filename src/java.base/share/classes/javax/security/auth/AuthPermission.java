@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,100 +30,10 @@ package javax.security.auth;
  * contains a name (also referred to as a "target name") but no actions
  * list; you either have the named permission or you don't.
  *
- * <p> The target name is the name of a security configuration parameter
- * (see below).  Currently, the {@code AuthPermission} object is used to
- * guard access to the {@link Subject},
- * {@link javax.security.auth.login.LoginContext}, and
- * {@link javax.security.auth.login.Configuration} objects.
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
- * <p> The standard target names for an Authentication Permission are:
- *
- * <pre>
- *      doAs -                  allow the caller to invoke the
- *                              {@code Subject.doAs} methods.
- *
- *      doAsPrivileged -        allow the caller to invoke the
- *                              {@code Subject.doAsPrivileged} methods.
- *
- *      getSubject -            allow for the retrieval of the
- *                              Subject(s) associated with the
- *                              current Thread.
- *
- *      getSubjectFromDomainCombiner -  allow for the retrieval of the
- *                              Subject associated with the
- *                              a {@code SubjectDomainCombiner}.
- *
- *      setReadOnly -           allow the caller to set a Subject
- *                              to be read-only.
- *
- *      modifyPrincipals -      allow the caller to modify the {@code Set}
- *                              of Principals associated with a
- *                              {@code Subject}
- *
- *      modifyPublicCredentials - allow the caller to modify the
- *                              {@code Set} of public credentials
- *                              associated with a {@code Subject}
- *
- *      modifyPrivateCredentials - allow the caller to modify the
- *                              {@code Set} of private credentials
- *                              associated with a {@code Subject}
- *
- *      refreshCredential -     allow code to invoke the {@code refresh}
- *                              method on a credential which implements
- *                              the {@code Refreshable} interface.
- *
- *      destroyCredential -     allow code to invoke the {@code destroy}
- *                              method on a credential {@code object}
- *                              which implements the {@code Destroyable}
- *                              interface.
- *
- *      createLoginContext.{name} -  allow code to instantiate a
- *                              {@code LoginContext} with the
- *                              specified {@code name}.  {@code name}
- *                              is used as the index into the installed login
- *                              {@code Configuration}
- *                              (that returned by
- *                              {@code Configuration.getConfiguration()}).
- *                              <i>name</i> can be wildcarded (set to '*')
- *                              to allow for any name.
- *
- *      getLoginConfiguration - allow for the retrieval of the system-wide
- *                              login Configuration.
- *
- *      createLoginConfiguration.{type} - allow code to obtain a Configuration
- *                              object via
- *                              {@code Configuration.getInstance}.
- *
- *      setLoginConfiguration - allow for the setting of the system-wide
- *                              login Configuration.
- *
- *      refreshLoginConfiguration - allow for the refreshing of the system-wide
- *                              login Configuration.
- * </pre>
- *
- * <p>Please note that granting this permission with the "modifyPrincipals",
- * "modifyPublicCredentials" or "modifyPrivateCredentials" target allows
- * a JAAS login module to populate principal or credential objects into
- * the Subject. Although reading information inside the private credentials
- * set requires a {@link PrivateCredentialPermission} of the credential type to
- * be granted, reading information inside the principals set and the public
- * credentials set requires no additional permission. These objects can contain
- * potentially sensitive information. For example, login modules that read
- * local user information or perform a Kerberos login are able to add
- * potentially sensitive information such as user ids, groups and domain names
- * to the principals set.
- *
- * <p> The following target name has been deprecated in favor of
- * {@code createLoginContext.{name}}.
- *
- * <pre>
- *      createLoginContext -    allow code to instantiate a
- *                              {@code LoginContext}.
- * </pre>
- *
- * @implNote
- * Implementations may define additional target names, but should use naming
- * conventions such as reverse domain name notation to avoid name clashes.
  * @since 1.4
  */
 public final class AuthPermission extends

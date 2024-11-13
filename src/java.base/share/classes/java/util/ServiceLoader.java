@@ -362,15 +362,6 @@ import jdk.internal.reflect.Reflection;
  *
  * </ul>
  *
- * <h2> Security </h2>
- *
- * <p> Service loaders always execute in the security context of the caller
- * of the iterator or stream methods and may also be restricted by the security
- * context of the caller that created the service loader.
- * Trusted system code should typically invoke the methods in this class, and
- * the methods of the iterators which they return, from within a privileged
- * security context.
- *
  * <h2> Concurrency </h2>
  *
  * <p> Instances of this class are not safe for use by multiple concurrent

@@ -68,7 +68,6 @@ public final class JDKEvents {
         jdk.internal.event.TLSHandshakeEvent.class,
         jdk.internal.event.VirtualThreadStartEvent.class,
         jdk.internal.event.VirtualThreadEndEvent.class,
-        jdk.internal.event.VirtualThreadPinnedEvent.class,
         jdk.internal.event.VirtualThreadSubmitFailedEvent.class,
         jdk.internal.event.X509CertificateEvent.class,
         jdk.internal.event.X509ValidationEvent.class,

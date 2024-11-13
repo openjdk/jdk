@@ -169,7 +169,6 @@ public final class Method extends Executable {
 
     /**
      * @throws InaccessibleObjectException {@inheritDoc}
-     * @throws SecurityException {@inheritDoc}
      */
     @Override
     @CallerSensitive

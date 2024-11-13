@@ -56,15 +56,9 @@
 #undef REG_SP
 #undef REG_FP
 #undef REG_PC
-#ifdef AMD64
 #define REG_SP Rsp
 #define REG_FP Rbp
 #define REG_PC Rip
-#else
-#define REG_SP Esp
-#define REG_FP Ebp
-#define REG_PC Eip
-#endif // AMD64
 
 JNIEXPORT
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -72,51 +66,11 @@ extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
 // Install a win32 structured exception handler around thread.
 void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread) {
   __try {
-
-#ifndef AMD64
-    // We store the current thread in this wrapperthread location
-    // and determine how far away this address is from the structured
-    // exception pointer that FS:[0] points to.  This get_thread
-    // code can then get the thread pointer via FS.
-    //
-    // Warning:  This routine must NEVER be inlined since we'd end up with
-    //           multiple offsets.
-    //
-    volatile Thread* wrapperthread = thread;
-
-    if (os::win32::get_thread_ptr_offset() == 0) {
-      int thread_ptr_offset;
-      __asm {
-        lea eax, dword ptr wrapperthread;
-        sub eax, dword ptr FS:[0H];
-        mov thread_ptr_offset, eax
-      };
-      os::win32::set_thread_ptr_offset(thread_ptr_offset);
-    }
-#ifdef ASSERT
-    // Verify that the offset hasn't changed since we initially captured
-    // it. This might happen if we accidentally ended up with an
-    // inlined version of this routine.
-    else {
-      int test_thread_ptr_offset;
-      __asm {
-        lea eax, dword ptr wrapperthread;
-        sub eax, dword ptr FS:[0H];
-        mov test_thread_ptr_offset, eax
-      };
-      assert(test_thread_ptr_offset == os::win32::get_thread_ptr_offset(),
-             "thread pointer offset from SEH changed");
-    }
-#endif // ASSERT
-#endif // !AMD64
-
     f(value, method, args, thread);
   } __except(topLevelExceptionFilter((_EXCEPTION_POINTERS*)_exception_info())) {
       // Nothing to do.
   }
 }
-
-#ifdef AMD64
 
 // This is the language specific handler for exceptions
 // originating from dynamically generated code.
@@ -157,7 +111,6 @@ typedef struct {
   UNWIND_INFO_EH_ONLY unw;
 } DynamicCodeData, *pDynamicCodeData;
 
-#endif // AMD64
 //
 // Register our CodeCache area with the OS so it will dispatch exceptions
 // to our topLevelExceptionFilter when we take an exception in our
@@ -167,8 +120,6 @@ typedef struct {
 // codeCache area
 //
 bool os::win32::register_code_area(char *low, char *high) {
-#ifdef AMD64
-
   ResourceMark rm;
 
   pDynamicCodeData pDCD;
@@ -206,7 +157,6 @@ bool os::win32::register_code_area(char *low, char *high) {
   guarantee(RtlAddFunctionTable(prt, 1, (ULONGLONG)low),
             "Failed to register Dynamic Code Exception Handler with RtlAddFunctionTable");
 
-#endif // AMD64
   return true;
 }
 
@@ -334,20 +284,6 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   return frame(sp, fp, epc);
 }
 
-#ifndef AMD64
-// Ignore "C4172: returning address of local variable or temporary" on 32bit
-PRAGMA_DIAG_PUSH
-PRAGMA_DISABLE_MSVC_WARNING(4172)
-// Returns an estimate of the current stack pointer. Result must be guaranteed
-// to point into the calling threads stack, and be no lower than the current
-// stack pointer.
-address os::current_stack_pointer() {
-  int dummy;
-  address sp = (address)&dummy;
-  return sp;
-}
-PRAGMA_DIAG_POP
-#else
 // Returns the current stack pointer. Accurate value needed for
 // os::verify_stack_alignment().
 address os::current_stack_pointer() {
@@ -356,7 +292,6 @@ address os::current_stack_pointer() {
                                      StubRoutines::x86::get_previous_sp_entry());
   return (*func)();
 }
-#endif
 
 bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
         struct _EXCEPTION_POINTERS* exceptionInfo, address pc, frame* fr) {
@@ -414,7 +349,6 @@ void os::print_context(outputStream *st, const void *context) {
   const CONTEXT* uc = (const CONTEXT*)context;
 
   st->print_cr("Registers:");
-#ifdef AMD64
   st->print(  "RAX=" INTPTR_FORMAT, uc->Rax);
   st->print(", RBX=" INTPTR_FORMAT, uc->Rbx);
   st->print(", RCX=" INTPTR_FORMAT, uc->Rcx);
@@ -446,26 +380,12 @@ void os::print_context(outputStream *st, const void *context) {
                  i, xmm[1], xmm[0]);
   }
   st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->MxCsr);
-#else
-  st->print(  "EAX=" INTPTR_FORMAT, uc->Eax);
-  st->print(", EBX=" INTPTR_FORMAT, uc->Ebx);
-  st->print(", ECX=" INTPTR_FORMAT, uc->Ecx);
-  st->print(", EDX=" INTPTR_FORMAT, uc->Edx);
-  st->cr();
-  st->print(  "ESP=" INTPTR_FORMAT, uc->Esp);
-  st->print(", EBP=" INTPTR_FORMAT, uc->Ebp);
-  st->print(", ESI=" INTPTR_FORMAT, uc->Esi);
-  st->print(", EDI=" INTPTR_FORMAT, uc->Edi);
-  st->cr();
-  st->print(  "EIP=" INTPTR_FORMAT, uc->Eip);
-  st->print(", EFLAGS=" INTPTR_FORMAT, uc->EFlags);
-#endif // AMD64
   st->cr();
   st->cr();
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
-  const int register_count = AMD64_ONLY(16) NOT_AMD64(8);
+  const int register_count = 16;
   int n = continuation;
   assert(n >= 0 && n <= register_count, "Invalid continuation value");
   if (context == nullptr || n == register_count) {
@@ -478,7 +398,6 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
     continuation = n + 1;
 # define CASE_PRINT_REG(n, str, id) case n: st->print(str); print_location(st, uc->id);
     switch (n) {
-#ifdef AMD64
     CASE_PRINT_REG( 0, "RAX=", Rax); break;
     CASE_PRINT_REG( 1, "RBX=", Rbx); break;
     CASE_PRINT_REG( 2, "RCX=", Rcx); break;
@@ -495,16 +414,6 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
     CASE_PRINT_REG(13, "R13=", R13); break;
     CASE_PRINT_REG(14, "R14=", R14); break;
     CASE_PRINT_REG(15, "R15=", R15); break;
-#else
-    CASE_PRINT_REG(0, "EAX=", Eax); break;
-    CASE_PRINT_REG(1, "EBX=", Ebx); break;
-    CASE_PRINT_REG(2, "ECX=", Ecx); break;
-    CASE_PRINT_REG(3, "EDX=", Edx); break;
-    CASE_PRINT_REG(4, "ESP=", Esp); break;
-    CASE_PRINT_REG(5, "EBP=", Ebp); break;
-    CASE_PRINT_REG(6, "ESI=", Esi); break;
-    CASE_PRINT_REG(7, "EDI=", Edi); break;
-#endif // AMD64
     }
 # undef CASE_PRINT_REG
     ++n;
@@ -512,17 +421,7 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
 }
 
 extern "C" int SpinPause () {
-#ifdef AMD64
    return 0 ;
-#else
-   // pause == rep:nop
-   // On systems that don't support pause a rep:nop
-   // is executed as a nop.  The rep: prefix is ignored.
-   _asm {
-      pause ;
-   };
-   return 1 ;
-#endif // AMD64
 }
 
 juint os::cpu_microcode_revision() {
@@ -544,21 +443,15 @@ juint os::cpu_microcode_revision() {
 }
 
 void os::setup_fpu() {
-#ifndef AMD64
-  int fpu_cntrl_word = StubRoutines::x86::fpu_cntrl_wrd_std();
-  __asm fldcw fpu_cntrl_word;
-#endif // !AMD64
 }
 
 #ifndef PRODUCT
 void os::verify_stack_alignment() {
-#ifdef AMD64
   // The current_stack_pointer() calls generated get_previous_sp stub routine.
   // Only enable the assert after the routine becomes available.
   if (StubRoutines::initial_stubs_code() != nullptr) {
     assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
   }
-#endif
 }
 #endif
 

@@ -31,84 +31,50 @@ ifeq ($(call isTargetOs, windows), true)
   ACCESSIBILITY_SRCDIR := $(TOPDIR)/src/jdk.accessibility/windows/native
 
   ##############################################################################
-  # Setup rules to create 32/64 bit version of javaaccessbridge
-  #
-  # Parameter 1 Suffix
-  # Parameter 2 ACCESSBRIDGE_ARCH_ suffix
+  ## Build libjavaaccessbridge
   ##############################################################################
-  define SetupJavaDLL
-    $(call SetupJdkLibrary, BUILD_LIBJAVAACCESSBRIDGE$1, \
-        NAME := javaaccessbridge$1, \
-        SRC := libjavaaccessbridge, \
-        EXTRA_SRC := common, \
-        OPTIMIZATION := LOW, \
-        DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
-        CXXFLAGS_FILTER_OUT := -MD, \
-        CXXFLAGS := -MT -DACCESSBRIDGE_ARCH_$2, \
-        EXTRA_HEADER_DIRS := \
-            include/bridge \
-            java.desktop:include, \
-        JDK_LIBS := java.desktop:libjawt, \
-        LIBS_windows := advapi32.lib comdlg32.lib gdi32.lib kernel32.lib \
-            odbc32.lib odbccp32.lib ole32.lib oleaut32.lib shell32.lib \
-            user32.lib uuid.lib winspool.lib, \
-        VERSIONINFO_RESOURCE := \
-            $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
-    )
 
-    TARGETS += $$(BUILD_LIBJAVAACCESSBRIDGE$1)
-  endef
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAACCESSBRIDGE, \
+      NAME := javaaccessbridge, \
+      EXTRA_SRC := common, \
+      OPTIMIZATION := LOW, \
+      DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
+      CXXFLAGS_FILTER_OUT := -MD, \
+      CXXFLAGS := -MT -DACCESSBRIDGE_ARCH_64, \
+      EXTRA_HEADER_DIRS := \
+          include/bridge \
+          java.desktop:include, \
+      JDK_LIBS := java.desktop:libjawt, \
+      LIBS_windows := advapi32.lib comdlg32.lib gdi32.lib kernel32.lib \
+          odbc32.lib odbccp32.lib ole32.lib oleaut32.lib shell32.lib \
+          user32.lib uuid.lib winspool.lib, \
+      VERSIONINFO_RESOURCE := \
+          $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
+  ))
+
+  TARGETS += $(BUILD_LIBJAVAACCESSBRIDGE)
 
   ##############################################################################
-  # Setup rules to create 32/64 bit version of windowsaccessbridge
-  #
-  # Parameter 1 Suffix
-  # Parameter 2 ACCESSBRIDGE_ARCH_ suffix
+  ## Build libwindowsaccessbridge
   ##############################################################################
-  define SetupWinDLL
-    $(call SetupJdkLibrary, BUILD_LIBWINDOWSACCESSBRIDGE$1, \
-        NAME := windowsaccessbridge$1, \
-        SRC := libwindowsaccessbridge, \
-        EXTRA_SRC := common, \
-        OPTIMIZATION := LOW, \
-        DISABLED_WARNINGS_microsoft_WinAccessBridge.cpp := 4302 4311, \
-        CXXFLAGS := -DACCESSBRIDGE_ARCH_$2, \
-        EXTRA_HEADER_DIRS := \
-            include/bridge, \
-        LDFLAGS := \
-            -def:$(ACCESSIBILITY_SRCDIR)/libwindowsaccessbridge/WinAccessBridge.DEF, \
-        LIBS_windows := advapi32.lib comdlg32.lib gdi32.lib kernel32.lib \
-            odbc32.lib odbccp32.lib ole32.lib oleaut32.lib shell32.lib \
-            user32.lib uuid.lib winspool.lib, \
-        VERSIONINFO_RESOURCE := \
-            $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
-    )
 
-    TARGETS += $$(BUILD_LIBWINDOWSACCESSBRIDGE$1)
-  endef
+  $(eval $(call SetupJdkLibrary, BUILD_LIBWINDOWSACCESSBRIDGE, \
+      NAME := windowsaccessbridge-64, \
+      SRC := libwindowsaccessbridge, \
+      EXTRA_SRC := common, \
+      OPTIMIZATION := LOW, \
+      DISABLED_WARNINGS_microsoft_WinAccessBridge.cpp := 4302 4311, \
+      CXXFLAGS := -DACCESSBRIDGE_ARCH_64, \
+      EXTRA_HEADER_DIRS := \
+          include/bridge, \
+      LDFLAGS := \
+          -def:$(ACCESSIBILITY_SRCDIR)/libwindowsaccessbridge/WinAccessBridge.DEF, \
+      LIBS_windows := advapi32.lib comdlg32.lib gdi32.lib kernel32.lib \
+          odbc32.lib odbccp32.lib ole32.lib oleaut32.lib shell32.lib \
+          user32.lib uuid.lib winspool.lib, \
+      VERSIONINFO_RESOURCE := \
+          $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
+  ))
 
-  ifeq ($(call isTargetCpuBits, 32), true)
-    ############################################################################
-    # Build libjabsysinfo
-    ############################################################################
-
-    $(eval $(call SetupJdkLibrary, BUILD_LIBJABSYSINFO, \
-        NAME := jabsysinfo, \
-        OPTIMIZATION := LOW, \
-        VERSIONINFO_RESOURCE := \
-            $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
-    )
-
-    TARGETS += $(BUILD_LIBJABSYSINFO)
-  endif
-
-  ifeq ($(call isTargetCpuBits, 32), true)
-    $(eval $(call SetupJavaDLL,-32,32))
-    $(eval $(call SetupJavaDLL,,LEGACY))
-    $(eval $(call SetupWinDLL,-32,32))
-    $(eval $(call SetupWinDLL,,LEGACY))
-  else
-    $(eval $(call SetupJavaDLL,,64))
-    $(eval $(call SetupWinDLL,-64,64))
-  endif
+  TARGETS += $(BUILD_LIBWINDOWSACCESSBRIDGE)
 endif
