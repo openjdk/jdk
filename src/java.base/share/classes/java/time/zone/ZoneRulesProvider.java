@@ -144,7 +144,6 @@ public abstract class ZoneRulesProvider {
     static {
         // if the property java.time.zone.DefaultZoneRulesProvider is
         // set then its value is the class name of the default provider
-        @SuppressWarnings("removal")
         final List<ZoneRulesProvider> loaded = new ArrayList<>();
         String prop = System.getProperty("java.time.zone.DefaultZoneRulesProvider");
         if (prop != null) {
@@ -168,10 +167,7 @@ public abstract class ZoneRulesProvider {
             try {
                 provider = it.next();
             } catch (ServiceConfigurationError ex) {
-                if (ex.getCause() instanceof SecurityException) {
-                    continue;  // ignore the security exception, try the next provider
-                }
-                throw ex;
+                throw new Error(ex);
             }
             boolean found = false;
             for (ZoneRulesProvider p : loaded) {
