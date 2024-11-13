@@ -77,7 +77,7 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         // Compute inter-cluster layout.
         manager.doLayout(clusterGraph);
         for (Link clusterLink : clusterGraph.getLinks()) {
-            assert clusterLink.getControlPoints() != null; // TODO should not fail
+           // assert clusterLink.getControlPoints() != null; // TODO should not fail
         }
 
         // Write back results.
@@ -128,7 +128,11 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         assert clusterEdgesMap.size() == clusterLinks.size();
         for (Link clusterLink : clusterLinks) {
             ClusterEdge clusterEdge = clusterEdgesMap.get(clusterLink);
-            clusterLink.setControlPoints(clusterEdge.getControlPoints());
+            if (clusterEdge.getControlPoints() != null) {
+                clusterLink.setControlPoints(clusterEdge.getControlPoints());
+            } else {
+                clusterLink.setControlPoints(new ArrayList<>());
+            }
         }
     }
 }

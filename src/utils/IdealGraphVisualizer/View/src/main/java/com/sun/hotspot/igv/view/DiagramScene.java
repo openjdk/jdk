@@ -822,6 +822,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         updateVisibleFigureWidgets();
         updateNodeHull();
         updateVisibleBlockWidgets();
+        validateAll();
 
         Set<Figure> visibleFigures = getVisibleFigures();
         Set<Connection> visibleConnections = getVisibleConnections();
