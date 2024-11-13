@@ -31,8 +31,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import java.security.*;
-
 import sun.security.util.PropertyExpander;
 
 import sun.security.pkcs11.wrapper.*;
@@ -62,27 +60,16 @@ final class Config {
     private static final String osArch;
 
     static {
-        @SuppressWarnings("removal")
-        List<String> props = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                @Override
-                public List<String> run() {
-                    return List.of(
-                        System.getProperty(
-                            "sun.security.pkcs11.allowSingleThreadedModules",
-                            "true"),
-                        System.getProperty("os.name"),
-                        System.getProperty("os.arch"));
-                }
-            }
-        );
-        if ("false".equalsIgnoreCase(props.get(0))) {
+        String allowSingleThreadedModules =
+            System.getProperty(
+                "sun.security.pkcs11.allowSingleThreadedModules", "true");
+        if ("false".equalsIgnoreCase(allowSingleThreadedModules)) {
             staticAllowSingleThreadedModules = false;
         } else {
             staticAllowSingleThreadedModules = true;
         }
-        osName = props.get(1);
-        osArch = props.get(2);
+        osName = System.getProperty("os.name");
+        osArch = System.getProperty("os.arch");
     }
 
     private static final boolean DEBUG = false;
