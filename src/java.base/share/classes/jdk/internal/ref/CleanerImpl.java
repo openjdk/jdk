@@ -30,12 +30,13 @@ import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.ReferenceQueue;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import jdk.internal.misc.InnocuousThread;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * CleanerImpl manages a set of object references and corresponding cleaning actions.
@@ -231,8 +232,15 @@ public final class CleanerImpl implements Runnable {
      * Insert/remove run in amortized constant time.
      */
     static final class PhantomCleanableList {
-        private final ArrayList<PhantomCleanable<?>> list = new ArrayList<>();
-        private int maxIdx;
+        private static final int MIN_CAPACITY = 16;
+        private final Object lock = new Object();
+        private PhantomCleanable<?>[] arr;
+        private int size;
+
+        public PhantomCleanableList() {
+            this.arr = new PhantomCleanable<?>[MIN_CAPACITY];
+            this.size = 0;
+        }
 
         /**
          * Returns true if cleanable list is empty.
@@ -240,8 +248,8 @@ public final class CleanerImpl implements Runnable {
          * @return true if the list is empty
          */
         public boolean isEmpty() {
-            synchronized (list) {
-                return list.isEmpty();
+            synchronized (lock) {
+                return size == 0;
             }
         }
 
@@ -249,11 +257,17 @@ public final class CleanerImpl implements Runnable {
          * Insert this PhantomCleanable in the list.
          */
         public void insert(PhantomCleanable<?> phc) {
-            synchronized (list) {
+            synchronized (lock) {
+                // Resize if needed.
+                int oldLen = arr.length;
+                if (oldLen <= size) {
+                    int newLen = ArraysSupport.newLength(oldLen, 1, oldLen);
+                    arr = Arrays.copyOf(arr, newLen);
+                }
                 // Inserting at the end, record the indexes.
-                phc.index = maxIdx = list.size();
-                list.add(phc);
-                assert list.get(phc.index) == phc;
+                phc.index = size;
+                arr[size] = phc;
+                size++;
             }
         }
 
@@ -264,7 +278,7 @@ public final class CleanerImpl implements Runnable {
          * it had already been removed before
          */
         public boolean remove(PhantomCleanable<?> phc) {
-            synchronized (list) {
+            synchronized (lock) {
                 int thisIdx = phc.index;
                 if (thisIdx == -1) {
                     // Not in the list.
@@ -272,26 +286,30 @@ public final class CleanerImpl implements Runnable {
                 }
 
                 // Unlink PhantomCleanable.
-                assert list.get(phc.index) == phc;
+                assert arr[phc.index] == phc;
                 phc.index = -1;
 
-                int lastIdx = list.size() - 1;
+                int lastIdx = size - 1;
                 if (lastIdx != thisIdx) {
                     // Move the last, still alive element at current index,
                     // overwriting the removed one. Update its index to a new location.
-                    PhantomCleanable<?> last = list.get(lastIdx);
+                    PhantomCleanable<?> last = arr[lastIdx];
                     last.index = thisIdx;
-                    list.set(thisIdx, last);
+                    arr[thisIdx] = last;
                 }
 
-                // Cut the tail. Runs in constant time.
-                list.remove(lastIdx);
+                // Cut the tail.
+                arr[lastIdx] = null;
+                size--;
 
                 // Capacity control: trim the backing storage if it looks like
-                // we have a lot of wasted space there.
-                if (list.size() > maxIdx * 2) {
-                    list.trimToSize();
-                    maxIdx = list.size() - 1;
+                // we have a lot of wasted space there. Resizing on insertion would
+                // double the array size, so this is our best case. Therefore, we want
+                // to check if less than a quarter of the array is busy. We also do not
+                // want to cause an immediate resize on next insertion.
+                if ((size < arr.length / 4) && (size > MIN_CAPACITY)) {
+                    int newLen = ArraysSupport.newLength(size, 1, size);
+                    arr = Arrays.copyOf(arr, newLen);
                 }
 
                 return true;

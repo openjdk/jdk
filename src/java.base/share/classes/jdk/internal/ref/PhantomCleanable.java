@@ -66,8 +66,8 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
     @SuppressWarnings("this-escape")
     public PhantomCleanable(T referent, Cleaner cleaner) {
         super(Objects.requireNonNull(referent), CleanerImpl.getCleanerImpl(cleaner).queue);
-        this.index = -1;
-        this.list = CleanerImpl.getCleanerImpl(cleaner).activeList;
+        index = -1;
+        list = CleanerImpl.getCleanerImpl(cleaner).activeList;
         list.insert(this);
 
         // Check that list insertion populated the index.
