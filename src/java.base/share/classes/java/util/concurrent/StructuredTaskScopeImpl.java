@@ -133,7 +133,7 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     /**
      * Interrupts all threads in this scope, except the current thread.
      */
-    private void implInterruptAll() {
+    private void interruptAll() {
         flock.threads()
                 .filter(t -> t != Thread.currentThread())
                 .forEach(t -> {
@@ -141,19 +141,6 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
                         t.interrupt();
                     } catch (Throwable ignore) { }
                 });
-    }
-
-    @SuppressWarnings("removal")
-    private void interruptAll() {
-        if (System.getSecurityManager() == null) {
-            implInterruptAll();
-        } else {
-            PrivilegedAction<Void> pa = () -> {
-                implInterruptAll();
-                return null;
-            };
-            AccessController.doPrivileged(pa);
-        }
     }
 
     /**

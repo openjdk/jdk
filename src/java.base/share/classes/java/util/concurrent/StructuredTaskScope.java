@@ -642,7 +642,7 @@ public sealed interface StructuredTaskScope<T, R>
          * that do not return a result.
          *
          * <p> This Joiner can also be used for <em>fan-in</em> scenarios where subtasks
-         * for forked to handle incoming connections and the number of subtasks is unbounded.
+         * are forked to handle incoming connections and the number of subtasks is unbounded.
          * In this example, the thread executing the {@code acceptLoop} method will only
          * stop when interrupted or the listener socket is closed asynchronously.
          * {@snippet lang=java :
@@ -917,9 +917,10 @@ public sealed interface StructuredTaskScope<T, R>
     }
 
     /**
-     * Starts a new thread in this scope to execute a value-returning task, thus creating
-     * a <em>subtask</em>. The value-returning task is provided to this method as a
-     * {@link Callable}, the thread executes its {@link Callable#call() call} method.
+     * Fork a subtask by starting a new thread in this scope to execute a value-returning
+     * method. The new thread executes the subtask concurrently with the current thread.
+     * The parameter to this method is a {@link Callable}, the new thread executes its
+     * {@link Callable#call() call()} method.
      *
      * <p> This method first creates a {@link Subtask Subtask} object to represent the
      * <em>forked subtask</em>. It invokes the joiner's {@link Joiner#onFork(Subtask) onFork}
@@ -969,12 +970,13 @@ public sealed interface StructuredTaskScope<T, R>
     <U extends T> Subtask<U> fork(Callable<? extends U> task);
 
     /**
-     * Starts a new thread in this scope to execute a task that does not return a
-     * result, creating a <em>subtask</em>.
+     * Fork a subtask by starting a new thread in this scope to execute a method that
+     * does not return a result.
      *
-     * <p> This method works exactly the same as {@link #fork(Callable)} except that
-     * the task is provided to this method as a {@link Runnable}, the thread executes
-     * the task's {@link Runnable#run() run} method, and its result is {@code null}.
+     * <p> This method works exactly the same as {@link #fork(Callable)} except that the
+     * parameter to this method is a {@link Runnable}, the new thread executes its
+     * {@link Runnable#run() run} method, and {@link Subtask#get() Subtask.get()} returns
+     * {@code null} if the subtask completes successfully.
      *
      * @param task the task for the thread to execute
      * @param <U> the result type
@@ -991,24 +993,20 @@ public sealed interface StructuredTaskScope<T, R>
     <U extends T> Subtask<U> fork(Runnable task);
 
     /**
-     * Waits for all subtasks started in this scope to complete or the scope is cancelled.
-     * If a {@linkplain Config#withTimeout(Duration) timeout} has been set then the scope
-     * is cancelled if the timeout expires before or while waiting.
-     * Once finished waiting, the {@code Joiner}'s {@link Joiner#result() result} method
-     * is invoked to get the result or throw an exception. If the {@code result} method
-     * throws then this method throws {@code FailedException} with the exception thrown
-     * by the {@code result()} method as the cause.
+     * Returns the result, or throws, after waiting for all subtasks to complete or
+     * the scope to be <a href="#Cancallation">cancelled</a>.
      *
-     * <p> This method waits for all subtasks by waiting for all threads {@linkplain
-     * #fork(Callable) started} in this scope to finish execution. It stops waiting
-     * when all threads finish, the {@code Joiner}'s {@link Joiner#onFork(Subtask)
-     * onFork} or {@link Joiner#onComplete(Subtask) onComplete} returns {@code true}
-     * to cancel the scope, the timeout (if set) expires, or the current thread is
-     * {@linkplain Thread#interrupt() interrupted}.
+     * <p> This method waits for all subtasks started in this scope to complete or the
+     * scope to be cancelled. If a {@linkplain Config#withTimeout(Duration) timeout} is
+     * configured and the timeout expires before or while waiting, then the scope is
+     * cancelled and {@link TimeoutException TimeoutException} is thrown. Once finished
+     * waiting, the {@code Joiner}'s {@link Joiner#result() result()} method is invoked
+     * to get the result or throw an exception. If the {@code result()} method throws
+     * then this method throws {@code FailedException} with the exception as the cause.
      *
      * <p> This method may only be invoked by the scope owner, and only once.
      *
-     * @return the {@link Joiner#result() result}
+     * @return the result
      * @throws WrongThreadException if the current thread is not the scope owner
      * @throws IllegalStateException if already joined or this scope is closed
      * @throws FailedException if the <i>outcome</i> is an exception, thrown with the
