@@ -74,7 +74,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       # Clang needs the lld linker to work correctly
       BASIC_LDFLAGS="-fuse-ld=lld -Wl,--exclude-libs,ALL"
       if test "x$CXX_IS_USER_SUPPLIED" = xfalse && test "x$CC_IS_USER_SUPPLIED" = xfalse; then
-        UTIL_REQUIRE_PROGS(LLD, lld)
+        UTIL_REQUIRE_PROGS(LLD, lld, $TOOLCHAIN_PATH:$PATH)
       fi
     fi
     if test "x$OPENJDK_TARGET_OS" = xaix; then
