@@ -149,14 +149,14 @@ public:
   static const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<S, U>&, int, bool), bool dual);
 
   template <class CT>
-  static bool int_type_equal(const CT* t1, const CT* t2) {
+  static bool int_type_is_equal(const CT* t1, const CT* t2) {
     return t1->_lo == t2->_lo && t1->_hi == t2->_hi &&
            t1->_ulo == t2->_ulo && t1->_uhi == t2->_uhi &&
            t1->_bits._zeros == t2->_bits._zeros && t1->_bits._ones == t2->_bits._ones;
   }
 
   template <class CT>
-  static bool int_type_subset(const CT* super, const CT* sub) {
+  static bool int_type_is_subset(const CT* super, const CT* sub) {
     return super->_lo <= sub->_lo && super->_hi >= sub->_hi &&
            super->_ulo <= sub->_ulo && super->_uhi >= sub->_uhi &&
            (super->_bits._zeros &~ sub->_bits._zeros) == 0 && (super->_bits._ones &~ sub->_bits._ones) == 0;

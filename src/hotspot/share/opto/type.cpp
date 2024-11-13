@@ -1627,7 +1627,7 @@ bool TypeInt::contains(jint i) const {
 }
 
 bool TypeInt::contains(const TypeInt* t) const {
-  return TypeIntHelper::int_type_subset(this, t);
+  return TypeIntHelper::int_type_is_subset(this, t);
 }
 
 const Type* TypeInt::xmeet(const Type* t) const {
@@ -1674,7 +1674,7 @@ const Type* TypeInt::filter_helper(const Type* kills, bool include_speculative) 
 // Structural equality check for Type representations
 bool TypeInt::eq(const Type* t) const {
   const TypeInt* r = t->is_int();
-  return TypeIntHelper::int_type_equal(this, r) && _widen == r->_widen && _is_dual == r->_is_dual;
+  return TypeIntHelper::int_type_is_equal(this, r) && _widen == r->_widen && _is_dual == r->_is_dual;
 }
 
 //------------------------------hash-------------------------------------------
@@ -1751,7 +1751,7 @@ bool TypeLong::contains(jlong i) const {
 }
 
 bool TypeLong::contains(const TypeLong* t) const {
-  return TypeIntHelper::int_type_subset(this, t);
+  return TypeIntHelper::int_type_is_subset(this, t);
 }
 
 const Type *TypeLong::xmeet(const Type* t) const {
@@ -1798,7 +1798,7 @@ const Type* TypeLong::filter_helper(const Type* kills, bool include_speculative)
 // Structural equality check for Type representations
 bool TypeLong::eq(const Type* t) const {
   const TypeLong* r = t->is_long();
-  return TypeIntHelper::int_type_equal(this, r) && _widen == r->_widen && _is_dual == r->_is_dual;
+  return TypeIntHelper::int_type_is_equal(this, r) && _widen == r->_widen && _is_dual == r->_is_dual;
 }
 
 //------------------------------hash-------------------------------------------
@@ -2099,6 +2099,7 @@ const Type *TypeAry::xmeet( const Type *t ) const {
     const Type* size = _size->xmeet(a->_size);
     const TypeInt* isize = size->isa_int();
     if (isize == nullptr) {
+      assert(size == Type::TOP || size == Type::BOTTOM, "");
       return size;
     }
     return TypeAry::make(_elem->meet_speculative(a->_elem),
@@ -4688,6 +4689,7 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     const Type* tm = _ary->meet_speculative(tap->_ary);
     const TypeAry* tary = tm->isa_ary();
     if (tary == nullptr) {
+      assert(tm == Type::TOP || tm == Type::BOTTOM, "");
       return tm;
     }
     PTR ptr = meet_ptr(tap->ptr());

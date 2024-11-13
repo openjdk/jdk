@@ -30,8 +30,6 @@
 
 #include <limits>
 
-#ifdef ASSERT
-
 template <class U>
 static U uniform_random();
 
@@ -162,5 +160,3 @@ TEST_VM(opto, canonicalize_constraints) {
   test_canonicalize_constraints_random<jint, juint>();
   test_canonicalize_constraints_random<jlong, julong>();
 }
-
-#endif // ASSERT

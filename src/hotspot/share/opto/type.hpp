@@ -610,38 +610,88 @@ public:
  * also makes it trivial to determine if a TypeInt instance is a subset of
  * another.
  *
- * Properties:
+ * Lemmas:
  *
  * 1. Since every TypeInt instance is canonicalized, all the bounds must also
- * be elements of such TypeInt. Or else, we can tighted the bounds by narrowing
+ * be elements of such TypeInt. Or else, we can tighten the bounds by narrowing
  * it by one, which contradicts the assumption of the TypeInt being canonical.
  *
- * 2. Either _lo == jint(_ulo) and _hi == jint(_uhi), or all elements of a
- * TypeInt lie in the intervals [_lo, jint(_uhi)] or [jint(_ulo), _hi]
+ * 2. _lo <= jint(_ulo)
+ *    _lo <= _hi
+ *    _lo <= jint(_uhi)
+ *    _ulo <= juint(_lo)
+ *    _ulo <= _uhi
+ *    _ulo <= juint(_hi)
+ *    _hi >= jint(_uhi)
+ *    _hi >= _lo
+ *    _hi >= jint(_ulo)
+ *    _hi >= jint(_uhi)
+ *    _uhi >= juint(_hi)
+ *    _uhi >= juint(_lo)
+ *    _uhi >= _ulo
  *
- * Proof: For 2 jint value x, y such that they are both >= 0 or < 0. Then:
+ *   Proof of lemma 2:
  *
- * x <= y iff juint(x) <= juint(y)
+ *   _lo <= jint(_ulo):
+ *   According the lemma 1, _ulo is an element of the TypeInt, so in the signed
+ *   domain, it must not be less than the smallest element of that TypeInt, which
+ *   is _lo. Which means that _lo <= _ulo in the signed domain, or in a more
+ *   programmatical way, _lo <= jint(_ulo).
+ *   The other inequalities can be proved in a similar manner.
  *
- * Then, we have:
+ * 3. Either _lo == jint(_ulo) and _hi == jint(_uhi), or all elements of a
+ * TypeInt lie in the intervals [_lo, jint(_uhi)] or [jint(_ulo), _hi] (note
+ * that these intervals are disjoint in this case).
  *
- * For a TypeInt t, there are 3 possible cases:
+ *   Proof of lemma 3:
+ *   We have a preliminary: For 2 jint value x, y such that they are both >= 0
+ *   or both < 0. Then:
  *
- * a. t._lo >= 0. Since 0 <= t._lo <= jint(t._ulo), we have:
+ *   x <= y iff juint(x) <= juint(y)
+ *   I.e. x <= y in the signed domain iff x <= y in the unsigned domain
  *
- * juint(t._lo) <= juint(jint(t._ulo)) == t._ulo <= juint(t._lo)
+ *   Then, we have:
  *
- * Which means that t._lo == jint(t._ulo). Similarly, t._hi == jint(t._uhi).
+ *   For a TypeInt t, there are 3 possible cases:
  *
- * b. t._hi < 0. Similarly, t._lo == jint(t._ulo) and t._hi == jint(t._uhi)
+ *   a. t._lo >= 0. Since 0 <= t._lo <= jint(t._ulo) (lemma 2), we have:
  *
- * c. t._lo < 0, t._hi >= 0. Then jint(t._ulo) >= 0 and jint(t._uhi) < 0. In
- * this case, all elements of t belongs to either [t._lo, jint(t._uhi)] or
- * [jint(t._ulo), t._hi].
+ *     juint(t._lo) <= juint(jint(t._ulo)) == t._ulo <= juint(t._lo)
  *
- * This property is useful for our analysis of TypeInt values. Additionally, it
- * can be seen that _lo and jint(_uhi) are both < 0 or >= 0, and the same
- * applies to jint(_ulo) and _hi.
+ *     Which means that t._lo == jint(t._ulo).
+ *
+ *     Furthermore, 0 <= t._lo <= t._hi and 0 <= t._lo <= jint(t._uhi) (lemma 2),
+ *     since t._hi >= jint(t._uhi), we have:
+ *
+ *     juint(t._hi) >= juint(jint(t._uhi)) == t._uhi >= juint(t._hi)
+ *
+ *     Which means that t._hi = jint(t._uhi)
+ *
+ *   b. t._hi < 0. Similarly, t._lo == jint(t._ulo) and t._hi == jint(t._uhi)
+ *
+ *   c. t._lo < 0, t._hi >= 0.
+ * 
+ *     Since t._ulo <= juint(t._hi), we must have jint(t._ulo) >= 0 because all
+ *     negative values is larger than all positive values in the unsigned domain.
+ *
+ *     Since t._uhi >= juint(t._lo), we must have jint(t._uhi) < 0, similar to the
+ *     reasoning above.
+ *
+ *     In this case, all elements of t belongs to either [t._lo, jint(t._uhi)] or
+ *     [jint(t._ulo), t._hi].
+ * 
+ *     Below is an illustration of the TypeInt in this case, the intervals that the
+ *     elements can be in are marked using the = symbol. Note how the negative range
+ *     in the signed domain wrap around in the unsigned domain.
+ * 
+ *     Signed:
+ *     -----lo=========uhi---------0--------ulo==========hi-----
+ *     Unsigned:
+ *                                 0--------ulo==========hi----------lo=========uhi---------
+ *
+ *   This property is useful for our analysis of TypeInt values. Additionally, it
+ *   can be seen that _lo and jint(_uhi) are both < 0 or both >= 0, and the same
+ *   applies to jint(_ulo) and _hi.
  */
 class TypeInt : public TypeInteger {
   TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual);

@@ -27,7 +27,9 @@
 #include "opto/type.hpp"
 #include "utilities/tuple.hpp"
 
-constexpr juint SMALLINT = 3; // a value too insignificant to consider widening
+// If the cardinality of a TypeInt is below this threshold, use min widen, see
+// TypeIntPrototype<S, U>::normalize_widen
+constexpr juint SMALL_TYPEINT_THRESHOLD = 3;
 
 // This represents the result of an iterative calculation
 template <class T>
@@ -437,8 +439,8 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
 template <class S, class U>
 int TypeIntPrototype<S, U>::normalize_widen(int w) const {
   // Certain normalizations keep us sane when comparing types.
-  // The 'SMALLINT' covers constants and also CC and its relatives.
-  if (TypeIntHelper::cardinality_from_bounds(_srange, _urange) <= SMALLINT) {
+  // The 'SMALL_TYPEINT_THRESHOLD' covers constants and also CC and its relatives.
+  if (TypeIntHelper::cardinality_from_bounds(_srange, _urange) <= SMALL_TYPEINT_THRESHOLD) {
     return Type::WidenMin;
   }
   if (_srange._lo == std::numeric_limits<S>::min() && _srange._hi == std::numeric_limits<S>::max() &&
@@ -557,18 +559,18 @@ const Type* TypeIntHelper::int_type_widen(const CT* new_type, const CT* old_type
   }
 
   // If new guy is equal to old guy, no widening
-  if (int_type_equal(new_type, old_type)) {
+  if (int_type_is_equal(new_type, old_type)) {
     return old_type;
   }
 
   // If old guy contains new, then we probably widened too far & dropped to
   // bottom. Return the wider fellow.
-  if (int_type_subset(old_type, new_type)) {
+  if (int_type_is_subset(old_type, new_type)) {
     return old_type;
   }
 
   // Neither contains each other, weird?
-  if (!int_type_subset(new_type, old_type)) {
+  if (!int_type_is_subset(new_type, old_type)) {
     return CT::TYPE_DOMAIN;
   }
 
@@ -624,17 +626,17 @@ const Type* TypeIntHelper::int_type_narrow(const CT* new_type, const CT* old_typ
   }
 
   // If new guy is equal to old guy, no narrowing
-  if (int_type_equal(new_type, old_type)) {
+  if (int_type_is_equal(new_type, old_type)) {
     return old_type;
   }
 
   // If old guy was maximum range, allow the narrowing
-  if (int_type_equal(old_type, CT::TYPE_DOMAIN)) {
+  if (int_type_is_equal(old_type, CT::TYPE_DOMAIN)) {
     return new_type;
   }
 
   // Doesn't narrow; pretty weird
-  if (!int_type_subset(old_type, new_type)) {
+  if (!int_type_is_subset(old_type, new_type)) {
     return new_type;
   }
 
@@ -648,7 +650,7 @@ const Type* TypeIntHelper::int_type_narrow(const CT* new_type, const CT* old_typ
                                  RangeInt<U>{old_type->_ulo, old_type->_uhi});
   U nc = cardinality_from_bounds(RangeInt<S>{new_type->_lo, new_type->_hi},
                                  RangeInt<U>{new_type->_ulo, new_type->_uhi});
-  return (nc > (oc >> 1) + (SMALLINT * 2)) ? old_type : new_type;
+  return (nc > (oc >> 1) + (SMALL_TYPEINT_THRESHOLD * 2)) ? old_type : new_type;
 }
 template const Type* TypeIntHelper::int_type_narrow(const TypeInt* new_type, const TypeInt* old_type);
 template const Type* TypeIntHelper::int_type_narrow(const TypeLong* new_type, const TypeLong* old_type);
@@ -784,17 +786,17 @@ template const char* TypeIntHelper::bitname(char* buf, size_t buf_size, julong z
 
 void TypeIntHelper::int_type_dump(const TypeInt* t, outputStream* st, bool verbose) {
   char buf1[40], buf2[40], buf3[40], buf4[40], buf5[40];
-  if (int_type_equal(t, TypeInt::INT)) {
+  if (int_type_is_equal(t, TypeInt::INT)) {
     st->print("int");
   } else if (t->is_con()) {
     st->print("int:%s", intname(buf1, sizeof(buf1), t->get_con()));
-  } else if (int_type_equal(t, TypeInt::BOOL)) {
+  } else if (int_type_is_equal(t, TypeInt::BOOL)) {
     st->print("bool");
-  } else if (int_type_equal(t, TypeInt::BYTE)) {
+  } else if (int_type_is_equal(t, TypeInt::BYTE)) {
     st->print("byte");
-  } else if (int_type_equal(t, TypeInt::CHAR)) {
+  } else if (int_type_is_equal(t, TypeInt::CHAR)) {
     st->print("char");
-  } else if (int_type_equal(t, TypeInt::SHORT)) {
+  } else if (int_type_is_equal(t, TypeInt::SHORT)) {
     st->print("short");
   } else {
     if (verbose) {
@@ -831,7 +833,7 @@ void TypeIntHelper::int_type_dump(const TypeInt* t, outputStream* st, bool verbo
 
 void TypeIntHelper::int_type_dump(const TypeLong* t, outputStream* st, bool verbose) {
   char buf1[80], buf2[80], buf3[80], buf4[80], buf5[80];
-  if (int_type_equal(t, TypeLong::LONG)) {
+  if (int_type_is_equal(t, TypeLong::LONG)) {
     st->print("long");
   } else if (t->is_con()) {
     st->print("long:%s", longname(buf1, sizeof(buf1), t->get_con()));
