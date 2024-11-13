@@ -80,6 +80,8 @@ public class TestDeepVirtualStackTrace {
 
     private static void deepsleep(int depth) {
         if (depth == 0) {
+            // The TLAB max size is not limited explicitly
+            // So the test limit max size of young generation to allocate outside TLAB
             allocated = new Object[10_000_000];
             System.out.println("Emitted ObjectAllocationOutsideTLAB event");
             return;
