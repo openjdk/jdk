@@ -759,16 +759,6 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
     }
 
     protected static Object getObjectForType(String originalType, String openType, JSONElement json) {
-    /*
-     * Figure out a Java Object for type information and some JSON.
-     * May use JSONMapper for a named object type, or possibly parse a CompositeType description.
-     * e.g.
-     * "openType": "javax.management.openmbean.SimpleType(name=java.lang.Boolean)",
-     * "originalType": "boolean"
-     * or:
-     * "openType": "javax.management.openmbean.CompositeType(name=java.lang.management.MemoryUsage,items=((itemName=committed,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long)),(itemName=init,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long)),(itemName=max,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long)),(itemName=used,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long))))",
-     * "originalType": "java.lang.management.MemoryUsage"
-     */
         try {
             JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(originalType);
             if (typeMapper != null) {
@@ -789,9 +779,6 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
             e.printStackTrace(System.err);
         }
 
-        // Parse openType:
-//        typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(openType);
-//        return typeMapper;
         return null;
     }
 
@@ -802,7 +789,7 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
 
         System.err.println("XXX HttpRestConnection.invoke name = " + name + " op = " + operationName
                            + " params: " + params + " (len=" + params.length + "), signature: " + signature);
-/*        for (int i = 0; i<params.length; i++) {
+        /* for (int i = 0; i<params.length; i++) {
             System.err.println("XXX " + i + " = param " + params[i] + ", sig " + signature[i]);
         } */
         if (params.length != signature.length) {
@@ -847,7 +834,7 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
         }
 //        System.err.println("XXX invoke -> found descriptor: " + descriptor.toJsonString());
         
-        // From the HTTP/REST request, with given params.
+        // Form the HTTP/REST request, with given params.
         String href = JSONObject.getObjectFieldString(op, "href"); // includes base and operation name
         String method = JSONObject.getObjectFieldString(op, "method");
         String returnType = JSONObject.getObjectFieldString(op, "returnType");
@@ -858,47 +845,52 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
         if (!method.equals("POST")) {
             throw new IOException("Not a POST operation.");
         }
-        // Need a JSON object of the params to send: { "p0": param1value }
+        // Create a JSON object of the params to send: { "p0": param1value }
         JSONObject postBody = buildJSONForParams(op, params, signature);
 //        System.out.println("POSTBODY: '" + postBody.toJsonString() + "'");
         // Call.
         String s = executeHttpPostRequest(url(href), postBody.toJsonString());
 
         if (s == null) {
-            throw new IOException("null resonse");
+            throw new IOException("null response");
         }
         try {
             // Parse result.
             JSONParser parser = new JSONParser(s);
             JSONElement json = parser.parse();
-//        System.err.println("INVOKE gets: " + s);
         // Result can be a simple result or a JSON object.
-
-        // On failure:
-        // INVOKE gets: {"status": 400,"message": "Invalid JSON : {}","details": "Encountered \" \"}\" \"} \"\" at line 1, column 2.
-
-        // Return type.
-        // descriptor has members openType, originalType.
+        // Return type: descriptor has members openType, originalType.
         // e.g. originalType java.lang.management.ThreadInfo, returnType javax.management.openmbean.CompositeData
             String originalType = JSONObject.getObjectFieldString(descriptor, "originalType");
             String openType     = JSONObject.getObjectFieldString(descriptor, "openType");
-        System.err.println("RETTYPE openType = " + openType + "\nRETTYPE originalType " + originalType + "\nRETTYPE returnType " + returnType ); 
+            System.err.println("RETTYPE openType = " + openType + "\nRETTYPE originalType " + originalType + "\nRETTYPE returnType " + returnType ); 
 
+    /*
+     * Figure out a Java Object for type information and some JSON.
+     * May use JSONMapper for a named object type, or possibly parse a CompositeType description.
+     * e.g.
+     * "openType": "javax.management.openmbean.SimpleType(name=java.lang.Boolean)",
+     * "originalType": "boolean"
+     * or:
+     * "openType": "javax.management.openmbean.CompositeType(name=java.lang.management.MemoryUsage,items=((itemName=committed,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long)),(itemName=init,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long)),(itemName=max,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long)),(itemName=used,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long))))",
+     * "originalType": "java.lang.management.MemoryUsage"
+     */
+
+        // Parse openType:
+        JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(json);
+        if (typeMapper != null) {
+            System.err.println("RETURN using mapper: " + typeMapper);
+            result = typeMapper.toJavaObject(json);
+            System.err.println("RETURN using mapper: " + typeMapper + " gets: " + result.getClass());
+        } else {
             result = getObjectForType(originalType, openType, json);
-//        System.err.println("XX invoke result = " + result);
-
+        }
 /*        JSONMapper typeMapper = typeMapperFor(originalType, openType);
-        System.err.println("RETURNING: typeMapper: " + typeMapper);
         if (typeMapper == null) {
             typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(returnType);
             System.err.println("RETURNING: typeMapper: " + typeMapper);
         } 
-        if (typeMapper == null) {
-            throw new IOException("No type mapper for '" + originalType + "' for JSON: " + s);
-        } 
-        Object result = typeMapper.toJavaObject(json);
  */
-
         } catch (Exception e) {
             // JSOMappingException, ParseException
             e.printStackTrace(System.err);

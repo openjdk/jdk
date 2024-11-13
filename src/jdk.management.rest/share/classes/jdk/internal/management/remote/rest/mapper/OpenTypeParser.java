@@ -388,20 +388,25 @@ public final class OpenTypeParser {
         }
         OpenType<?> elementType = parse();
 //        System.err.println("ZZZZZZZZZZZZZZZZZZZZZZZ parseArrayType: elementType = " + elementType);
+        OpenType<?> type = null;
         if (!consume(",")) {
             error("missing ,");
         }
         if (!consume("primitiveArray=")) {
             error("missing primitiveArray=");
         }
-        boolean primitiveArray = false;
-        OpenType<?> type = null;
-        try {
-            type = new ArrayType<OpenType<?>>(dim, elementType);
-        } catch (OpenDataException ode) {
-            ode.printStackTrace(System.err);
+        if (consume("false")) {
+            try {
+                type = new ArrayType<OpenType<?>>(dim, elementType);
+    //        System.err.println("ZZZZZZZZZZZZZZZZZZZZZZZ parseArrayType: arrayType = " + type);
+            } catch (OpenDataException ode) {
+                ode.printStackTrace(System.err);
+            }
+        } else if (consume("true")) {
+
+        } else {
+            error("primitiveArray specification problem?");
         }
-//        System.err.println("ZZZZZZZZZZZZZZZZZZZZZZZ parseArrayType: arrayType = " + type);
 
         // Caller parses )
         return type;
