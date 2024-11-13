@@ -431,41 +431,44 @@ public interface HttpServerAdapters {
      * an empty body.
      * The response is always returned with fixed length.
      */
-    public static class HttpHeadHandler implements HttpTestHandler {
+    public static class HttpHeadOrGetHandler implements HttpTestHandler {
         final String responseBody;
-        public HttpHeadHandler() {
+        public HttpHeadOrGetHandler() {
             this("pâté de tête persillé");
         }
-        public HttpHeadHandler(String responseBody) {
+        public HttpHeadOrGetHandler(String responseBody) {
             this.responseBody = Objects.requireNonNull(responseBody);
         }
 
         @Override
         public void handle(HttpTestExchange t) throws IOException {
-            t.getRequestBody().readAllBytes();
-            String method = t.getRequestMethod();
-            switch (method) {
-                case "HEAD" -> {
-                    byte[] resp = responseBody.getBytes(StandardCharsets.UTF_8);
-                    if (t.getExchangeVersion() != HTTP_1_1) {
-                        // with HTTP/2 or HTTP/3 the server will not send content-length
-                        t.getResponseHeaders().addHeader("Content-Length", String.valueOf(resp.length));
+            try (var exchg = t) {
+                exchg.getRequestBody().readAllBytes();
+                String method = exchg.getRequestMethod();
+                switch (method) {
+                    case "HEAD" -> {
+                        byte[] resp = responseBody.getBytes(StandardCharsets.UTF_8);
+                        if (exchg.getExchangeVersion() != HTTP_1_1) {
+                            // with HTTP/2 or HTTP/3 the server will not send content-length
+                            exchg.getResponseHeaders()
+                                    .addHeader("Content-Length", String.valueOf(resp.length));
+                        }
+                        exchg.sendResponseHeaders(200, resp.length);
+                        exchg.getResponseBody().close();
                     }
-                    t.sendResponseHeaders(200, resp.length);
-                }
-                case "GET" -> {
-                    byte[] resp = responseBody.getBytes(StandardCharsets.UTF_8);
-                    t.sendResponseHeaders(200, resp.length);
-                    try (var os = t.getResponseBody()) {
-                        os.write(resp);
+                    case "GET" -> {
+                        byte[] resp = responseBody.getBytes(StandardCharsets.UTF_8);
+                        exchg.sendResponseHeaders(200, resp.length);
+                        try (var os = exchg.getResponseBody()) {
+                            os.write(resp);
+                        }
                     }
-                }
-                default -> {
-                    t.sendResponseHeaders(405, 0);
+                    default -> {
+                        exchg.sendResponseHeaders(405, 0);
+                        exchg.getResponseBody().close();
+                    }
                 }
             }
-            t.getResponseBody().close();
-            t.close();
         }
     }
 

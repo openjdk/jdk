@@ -40,7 +40,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -48,14 +47,12 @@ import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpHeadHandler;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpHeadOrGetHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.httpclient.test.lib.http2.BodyOutputStream;
 import jdk.httpclient.test.lib.http2.Http2Handler;
@@ -269,7 +266,7 @@ public class StreamFlowControlTest {
         var https2TestServer = new Http2TestServer("localhost", true, sslContext);
         https2TestServer.addHandler(new Http2TestHandler(), "/https2/");
         this.https2TestServer = HttpTestServer.of(https2TestServer);
-        this.https2TestServer.addHandler(new HttpHeadHandler(), "/https2/head/");
+        this.https2TestServer.addHandler(new HttpHeadOrGetHandler(), "/https2/head/");
         https2URI = "https://" + this.https2TestServer.serverAuthority() + "/https2/x";
         String h2Head = "https://" + this.https2TestServer.serverAuthority() + "/https2/head/z";
 
@@ -352,8 +349,10 @@ public class StreamFlowControlTest {
             } finally {
                 if (t instanceof FCHttp2TestExchange fct) {
                     fct.responseSent(query);
-                } else fail("Exchange is not %s but %s"
-                        .formatted(FCHttp2TestExchange.class.getName(), t.getClass().getName()));
+                } else {
+                    fail("Exchange is not %s but %s"
+                            .formatted(FCHttp2TestExchange.class.getName(), t.getClass().getName()));
+                }
             }
         }
     }
