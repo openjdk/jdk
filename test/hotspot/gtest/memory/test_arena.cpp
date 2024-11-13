@@ -26,6 +26,9 @@
 #include "precompiled.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "memory/arena.hpp"
+#ifdef LINUX
+#include "os_linux.hpp"
+#endif
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
