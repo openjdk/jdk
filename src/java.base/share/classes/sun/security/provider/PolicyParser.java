@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,51 +25,33 @@
 
 package sun.security.provider;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StreamTokenizer;
 import java.security.GeneralSecurityException;
-import java.security.Principal;
-import java.util.*;
-import javax.security.auth.x500.X500Principal;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
-import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 import sun.security.util.LocalizedMessage;
 
 /**
- * The policy for a Java runtime (specifying
- * which permissions are available for code from various principals)
- * is represented as a separate
- * persistent configuration.  The configuration may be stored as a
- * flat ASCII file, as a serialized binary file of
- * the Policy class, or as a database.
+ * Configuration data that specifies the keystores in a DKS keystore.
+ * A keystore domain is a collection of keystores that are presented as a
+ * single logical keystore. The configuration data is used during KeyStore
+ * load and store operations.
  *
- * <p>The Java runtime creates one global Policy object, which is used to
- * represent the static policy configuration file.  It is consulted by
- * a ProtectionDomain when the protection domain initializes its set of
- * permissions.
+ * The following syntax is supported for configuration data:
  *
- * <p>The Policy <code>init</code> method parses the policy
- * configuration file, and then
- * populates the Policy object.  The Policy object is agnostic in that
- * it is not involved in making policy decisions.  It is merely the
- * Java runtime representation of the persistent policy configuration
- * file.
- *
- * <p>When a protection domain needs to initialize its set of
- * permissions, it executes code such as the following
- * to ask the global Policy object to populate a
- * Permissions object with the appropriate permissions:
- * <pre>
- *  policy = Policy.getPolicy();
- *  Permissions perms = policy.getPermissions(protectiondomain)
- * </pre>
- *
- * <p>The protection domain contains a CodeSource
- * object, which encapsulates its codebase (URL) and public key attributes.
- * It also contains the principals associated with the domain.
- * The Policy object evaluates the global policy in light of whom the
- * principal is and what the code source is and returns an appropriate
- * Permissions object.
+ *     domain <domainName> [<property> ...] {
+ *        keystore <keystoreName> [<property> ...] ;
+ *        ...
+ *    };
+ *    ...
  *
  * @author Roland Schemers
  * @author Ram Marti
@@ -79,19 +61,11 @@ import sun.security.util.LocalizedMessage;
 
 public class PolicyParser {
 
-    private final Vector<GrantEntry> grantEntries;
     private Map<String, DomainEntry> domainEntries;
 
-    // Convenience variables for parsing
-    private static final Debug debug = Debug.getInstance("parser",
-                                                "\t[Policy Parser]");
     private StreamTokenizer st;
     private int lookahead;
     private boolean expandProp = false;
-    private String keyStoreUrlString = null; // unexpanded
-    private String keyStoreType = null;
-    private String keyStoreProvider = null;
-    private String storePassURL = null;
 
     private String expand(String value)
         throws PropertyExpander.ExpandException
@@ -112,14 +86,7 @@ public class PolicyParser {
     /**
      * Creates a PolicyParser object.
      */
-
-    public PolicyParser() {
-        grantEntries = new Vector<>();
-    }
-
-
     public PolicyParser(boolean expandProp) {
-        this();
         this.expandProp = expandProp;
     }
 
@@ -135,7 +102,6 @@ public class PolicyParser {
      * @exception IOException if an error occurs while reading the policy
      *          configuration.
      */
-
     public void read(Reader policy)
         throws ParsingException, IOException
     {
@@ -171,31 +137,14 @@ public class PolicyParser {
 
         /*
          * The main parsing loop.  The loop is executed once
-         * for each entry in the config file.      The entries
-         * are delimited by semicolons.   Once we've read in
-         * the information for an entry, go ahead and try to
-         * add it to the policy vector.
+         * for each entry in the config file. The entries
+         * are delimited by semicolons.
          *
          */
 
         lookahead = st.nextToken();
-        GrantEntry ge = null;
         while (lookahead != StreamTokenizer.TT_EOF) {
-            if (peek("grant")) {
-                ge = parseGrantEntry();
-                // could be null if we couldn't expand a property
-                if (ge != null)
-                    add(ge);
-            } else if (peek("keystore") && keyStoreUrlString==null) {
-                // only one keystore entry per policy file, others will be
-                // ignored
-                parseKeyStoreEntry();
-            } else if (peek("keystorePasswordURL") && storePassURL==null) {
-                // only one keystore passwordURL per policy file, others will be
-                // ignored
-                parseStorePassURL();
-            } else if (ge == null && keyStoreUrlString == null &&
-                storePassURL == null && peek("domain")) {
+            if (peek("domain")) {
                 if (domainEntries == null) {
                     domainEntries = new TreeMap<>();
                 }
@@ -214,397 +163,10 @@ public class PolicyParser {
             }
             match(";");
         }
-
-        if (keyStoreUrlString == null && storePassURL != null) {
-            throw new ParsingException(LocalizedMessage.getNonlocalized
-                ("keystorePasswordURL.can.not.be.specified.without.also.specifying.keystore"));
-        }
-    }
-
-    public void add(GrantEntry ge)
-    {
-        grantEntries.addElement(ge);
-    }
-
-    public void replace(GrantEntry origGe, GrantEntry newGe)
-    {
-        grantEntries.setElementAt(newGe, grantEntries.indexOf(origGe));
-    }
-
-    public boolean remove(GrantEntry ge)
-    {
-        return grantEntries.removeElement(ge);
-    }
-
-    /**
-     * Returns the (possibly expanded) keystore location, or null if the
-     * expansion fails.
-     */
-    public String getKeyStoreUrl() {
-        try {
-            if (keyStoreUrlString!=null && keyStoreUrlString.length()!=0) {
-                return expand(keyStoreUrlString, true).replace
-                                                (File.separatorChar, '/');
-            }
-        } catch (PropertyExpander.ExpandException peee) {
-            if (debug != null) {
-                debug.println(peee.toString());
-            }
-            return null;
-        }
-        return null;
-    }
-
-    public void setKeyStoreUrl(String url) {
-        keyStoreUrlString = url;
-    }
-
-    public String getKeyStoreType() {
-        return keyStoreType;
-    }
-
-    public void setKeyStoreType(String type) {
-        keyStoreType = type;
-    }
-
-    public String getKeyStoreProvider() {
-        return keyStoreProvider;
-    }
-
-    public void setKeyStoreProvider(String provider) {
-        keyStoreProvider = provider;
-    }
-
-    public String getStorePassURL() {
-        try {
-            if (storePassURL!=null && storePassURL.length()!=0) {
-                return expand(storePassURL, true).replace
-                                                (File.separatorChar, '/');
-            }
-        } catch (PropertyExpander.ExpandException peee) {
-            if (debug != null) {
-                debug.println(peee.toString());
-            }
-            return null;
-        }
-        return null;
-    }
-
-    public void setStorePassURL(String storePassURL) {
-        this.storePassURL = storePassURL;
-    }
-
-    /**
-     * Enumerate all the entries in the global policy object.
-     * This method is used by policy admin tools.   The tools
-     * should use the Enumeration methods on the returned object
-     * to fetch the elements sequentially.
-     */
-    public Enumeration<GrantEntry> grantElements(){
-        return grantEntries.elements();
     }
 
     public Collection<DomainEntry> getDomainEntries() {
         return domainEntries.values();
-    }
-
-    /**
-     * write out the policy
-     */
-
-    public void write(Writer policy)
-    {
-        PrintWriter out = new PrintWriter(new BufferedWriter(policy));
-
-        out.println("/* AUTOMATICALLY GENERATED ON "+
-                    (new java.util.Date()) + "*/");
-        out.println("/* DO NOT EDIT */");
-        out.println();
-
-        // write the (unexpanded) keystore entry as the first entry of the
-        // policy file
-        if (keyStoreUrlString != null) {
-            writeKeyStoreEntry(out);
-        }
-        if (storePassURL != null) {
-            writeStorePassURL(out);
-        }
-
-        // write "grant" entries
-        for (GrantEntry ge : grantEntries) {
-            ge.write(out);
-            out.println();
-        }
-        out.flush();
-    }
-
-    /**
-     * parses a keystore entry
-     */
-    private void parseKeyStoreEntry() throws ParsingException, IOException {
-        match("keystore");
-        keyStoreUrlString = match("quoted string");
-
-        // parse keystore type
-        if (!peek(",")) {
-            return; // default type
-        }
-        match(",");
-
-        if (peek("\"")) {
-            keyStoreType = match("quoted string");
-        } else {
-            throw new ParsingException(st.lineno(),
-                LocalizedMessage.getNonlocalized("expected.keystore.type"));
-        }
-
-        // parse keystore provider
-        if (!peek(",")) {
-            return; // provider optional
-        }
-        match(",");
-
-        if (peek("\"")) {
-            keyStoreProvider = match("quoted string");
-        } else {
-            throw new ParsingException(st.lineno(),
-                LocalizedMessage.getNonlocalized("expected.keystore.provider"));
-        }
-    }
-
-    private void parseStorePassURL() throws ParsingException, IOException {
-        match("keyStorePasswordURL");
-        storePassURL = match("quoted string");
-    }
-
-    /**
-     * writes the (unexpanded) keystore entry
-     */
-    private void writeKeyStoreEntry(PrintWriter out) {
-        out.print("keystore \"");
-        out.print(keyStoreUrlString);
-        out.print('"');
-        if (keyStoreType != null && !keyStoreType.isEmpty())
-            out.print(", \"" + keyStoreType + "\"");
-        if (keyStoreProvider != null && !keyStoreProvider.isEmpty())
-            out.print(", \"" + keyStoreProvider + "\"");
-        out.println(";");
-        out.println();
-    }
-
-    private void writeStorePassURL(PrintWriter out) {
-        out.print("keystorePasswordURL \"");
-        out.print(storePassURL);
-        out.print('"');
-        out.println(";");
-        out.println();
-    }
-
-    /**
-     * parse a Grant entry
-     */
-    private GrantEntry parseGrantEntry()
-        throws ParsingException, IOException
-    {
-        GrantEntry e = new GrantEntry();
-        LinkedList<PrincipalEntry> principals = null;
-        boolean ignoreEntry = false;
-
-        match("grant");
-
-        while(!peek("{")) {
-
-            if (peekAndMatch("Codebase")) {
-                if (e.codeBase != null)
-                    throw new ParsingException(
-                            st.lineno(),
-                            LocalizedMessage.getNonlocalized
-                                ("multiple.Codebase.expressions"));
-                e.codeBase = match("quoted string");
-                peekAndMatch(",");
-            } else if (peekAndMatch("SignedBy")) {
-                if (e.signedBy != null)
-                    throw new ParsingException(
-                            st.lineno(),
-                            LocalizedMessage.getNonlocalized
-                                ("multiple.SignedBy.expressions"));
-                e.signedBy = match("quoted string");
-
-                // verify syntax of the aliases
-                StringTokenizer aliases = new StringTokenizer(e.signedBy,
-                                                              ",", true);
-                int actr = 0;
-                int cctr = 0;
-                while (aliases.hasMoreTokens()) {
-                    String alias = aliases.nextToken().trim();
-                    if (alias.equals(","))
-                        cctr++;
-                    else if (!alias.isEmpty())
-                        actr++;
-                }
-                if (actr <= cctr)
-                    throw new ParsingException(
-                            st.lineno(),
-                            LocalizedMessage.getNonlocalized
-                                ("SignedBy.has.empty.alias"));
-
-                peekAndMatch(",");
-            } else if (peekAndMatch("Principal")) {
-                if (principals == null) {
-                    principals = new LinkedList<>();
-                }
-
-                String principalClass;
-                String principalName;
-
-                if (peek("\"")) {
-                    // both the principalClass and principalName
-                    // will be replaced later
-                    principalClass = PrincipalEntry.REPLACE_NAME;
-                    principalName = match("principal type");
-                } else {
-                    // check for principalClass wildcard
-                    if (peek("*")) {
-                        match("*");
-                        principalClass = PrincipalEntry.WILDCARD_CLASS;
-                    } else {
-                        principalClass = match("principal type");
-                    }
-
-                    // check for principalName wildcard
-                    if (peek("*")) {
-                        match("*");
-                        principalName = PrincipalEntry.WILDCARD_NAME;
-                    } else {
-                        principalName = match("quoted string");
-                    }
-
-                    // disallow WILDCARD_CLASS && actual name
-                    if (principalClass.equals(PrincipalEntry.WILDCARD_CLASS) &&
-                        !principalName.equals(PrincipalEntry.WILDCARD_NAME)) {
-                        if (debug != null) {
-                                debug.println("disallowing principal that " +
-                                    "has WILDCARD class but no WILDCARD name");
-                        }
-                        throw new ParsingException
-                                (st.lineno(),
-                                LocalizedMessage.getNonlocalized
-                                    ("can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name"));
-                    }
-                }
-
-                try {
-                    principalName = expand(principalName);
-
-                    if (principalClass.equals
-                                ("javax.security.auth.x500.X500Principal") &&
-                        !principalName.equals(PrincipalEntry.WILDCARD_NAME)) {
-
-                        // 4702543:  X500 names with an EmailAddress
-                        // were encoded incorrectly.  construct a new
-                        // X500Principal with correct encoding.
-
-                        X500Principal p = new X500Principal
-                                ((new X500Principal(principalName)).toString());
-                        principalName = p.getName();
-                    }
-
-                    principals.add
-                        (new PrincipalEntry(principalClass, principalName));
-                } catch (PropertyExpander.ExpandException peee) {
-                    // ignore the entire policy entry
-                    // but continue parsing all the info
-                    // so we can get to the next entry
-                    if (debug != null) {
-                        debug.println("principal name expansion failed: " +
-                                        principalName);
-                    }
-                    ignoreEntry = true;
-                }
-                peekAndMatch(",");
-
-            } else {
-                throw new ParsingException(st.lineno(),
-                    LocalizedMessage.getNonlocalized
-                        ("expected.codeBase.or.SignedBy.or.Principal"));
-            }
-        }
-
-        if (principals != null) e.principals = principals;
-        match("{");
-
-        while(!peek("}")) {
-            if (peek("Permission")) {
-                try {
-                    PermissionEntry pe = parsePermissionEntry();
-                    e.add(pe);
-                } catch (PropertyExpander.ExpandException peee) {
-                    // ignore. The add never happened
-                    if (debug != null) {
-                        debug.println(peee.toString());
-                    }
-                    skipEntry();  // BugId 4219343
-                }
-                match(";");
-            } else {
-                throw new
-                    ParsingException(st.lineno(),
-                        LocalizedMessage.getNonlocalized
-                            ("expected.permission.entry"));
-            }
-        }
-        match("}");
-
-        try {
-            if (e.signedBy != null) e.signedBy = expand(e.signedBy);
-            if (e.codeBase != null) {
-                e.codeBase = expand(e.codeBase, true).replace
-                                    (File.separatorChar, '/');
-            }
-        } catch (PropertyExpander.ExpandException peee) {
-            if (debug != null) {
-                debug.println(peee.toString());
-            }
-            return null;
-        }
-
-        return (ignoreEntry) ? null : e;
-    }
-
-    /**
-     * parse a Permission entry
-     */
-    private PermissionEntry parsePermissionEntry()
-        throws ParsingException, IOException, PropertyExpander.ExpandException
-    {
-        PermissionEntry e = new PermissionEntry();
-
-        // Permission
-        match("Permission");
-        e.permission = match("permission type");
-
-        if (peek("\"")) {
-            // Permission name
-            e.name = expand(match("quoted string"));
-        }
-
-        if (!peek(",")) {
-            return e;
-        }
-        match(",");
-
-        if (peek("\"")) {
-                e.action = expand(match("quoted string"));
-                if (!peek(",")) {
-                    return e;
-                }
-                match(",");
-        }
-
-        if (peekAndMatch("SignedBy")) {
-            e.signedBy = expand(match("quoted string"));
-        }
-        return e;
     }
 
     /**
@@ -735,12 +297,6 @@ public class PolicyParser {
         case StreamTokenizer.TT_WORD:
             if (expect.equalsIgnoreCase(st.sval)) {
                 lookahead = st.nextToken();
-            } else if (expect.equalsIgnoreCase("permission type")) {
-                value = st.sval;
-                lookahead = st.nextToken();
-            } else if (expect.equalsIgnoreCase("principal type")) {
-                value = st.sval;
-                lookahead = st.nextToken();
             } else if (expect.equalsIgnoreCase("domain name") ||
                        expect.equalsIgnoreCase("keystore name") ||
                        expect.equalsIgnoreCase("property name")) {
@@ -753,12 +309,6 @@ public class PolicyParser {
             break;
         case '"':
             if (expect.equalsIgnoreCase("quoted string")) {
-                value = st.sval;
-                lookahead = st.nextToken();
-            } else if (expect.equalsIgnoreCase("permission type")) {
-                value = st.sval;
-                lookahead = st.nextToken();
-            } else if (expect.equalsIgnoreCase("principal type")) {
                 value = st.sval;
                 lookahead = st.nextToken();
             } else {
@@ -824,340 +374,6 @@ public class PolicyParser {
             default:
                 lookahead = st.nextToken();
             }
-        }
-    }
-
-    /**
-     * Each grant entry in the policy configuration file is
-     * represented by a GrantEntry object.
-     *
-     * <p>
-     * For example, the entry
-     * <pre>
-     *      grant signedBy "Duke" {
-     *          permission java.io.FilePermission "/tmp", "read,write";
-     *      };
-     *
-     * </pre>
-     * is represented internally
-     * <pre>
-     *
-     * pe = new PermissionEntry("java.io.FilePermission",
-     *                           "/tmp", "read,write");
-     *
-     * ge = new GrantEntry("Duke", null);
-     *
-     * ge.add(pe);
-     *
-     * </pre>
-     *
-     * @author Roland Schemers
-     *
-     * version 1.19, 05/21/98
-     */
-
-    public static class GrantEntry {
-
-        public String signedBy;
-        public String codeBase;
-        public LinkedList<PrincipalEntry> principals;
-        public Vector<PermissionEntry> permissionEntries;
-
-        public GrantEntry() {
-            principals = new LinkedList<>();
-            permissionEntries = new Vector<>();
-        }
-
-        public GrantEntry(String signedBy, String codeBase) {
-            this.codeBase = codeBase;
-            this.signedBy = signedBy;
-            principals = new LinkedList<>();
-            permissionEntries = new Vector<>();
-        }
-
-        public void add(PermissionEntry pe)
-        {
-            permissionEntries.addElement(pe);
-        }
-
-        public boolean remove(PrincipalEntry pe)
-        {
-            return principals.remove(pe);
-        }
-
-        public boolean remove(PermissionEntry pe)
-        {
-            return permissionEntries.removeElement(pe);
-        }
-
-        public boolean contains(PrincipalEntry pe)
-        {
-            return principals.contains(pe);
-        }
-
-        public boolean contains(PermissionEntry pe)
-        {
-            return permissionEntries.contains(pe);
-        }
-
-        /**
-         * Enumerate all the permission entries in this GrantEntry.
-         */
-        public Enumeration<PermissionEntry> permissionElements(){
-            return permissionEntries.elements();
-        }
-
-
-        public void write(PrintWriter out) {
-            out.print("grant");
-            if (signedBy != null) {
-                out.print(" signedBy \"");
-                out.print(signedBy);
-                out.print('"');
-                if (codeBase != null)
-                    out.print(", ");
-            }
-            if (codeBase != null) {
-                out.print(" codeBase \"");
-                out.print(codeBase);
-                out.print('"');
-                if (principals != null && principals.size() > 0)
-                    out.print(",\n");
-            }
-            if (principals != null && principals.size() > 0) {
-                Iterator<PrincipalEntry> pli = principals.iterator();
-                while (pli.hasNext()) {
-                    out.print("      ");
-                    PrincipalEntry pe = pli.next();
-                    pe.write(out);
-                    if (pli.hasNext())
-                        out.print(",\n");
-                }
-            }
-            out.println(" {");
-            for (PermissionEntry pe : permissionEntries) {
-                out.write("  ");
-                pe.write(out);
-            }
-            out.println("};");
-        }
-
-        public Object clone() {
-            GrantEntry ge = new GrantEntry();
-            ge.codeBase = this.codeBase;
-            ge.signedBy = this.signedBy;
-            ge.principals = new LinkedList<>(this.principals);
-            ge.permissionEntries = new Vector<>(this.permissionEntries);
-            return ge;
-        }
-    }
-
-    /**
-     * Principal info (class and name) in a grant entry
-     */
-    public static class PrincipalEntry implements Principal {
-
-        public static final String WILDCARD_CLASS = "WILDCARD_PRINCIPAL_CLASS";
-        public static final String WILDCARD_NAME = "WILDCARD_PRINCIPAL_NAME";
-        public static final String REPLACE_NAME = "PolicyParser.REPLACE_NAME";
-
-        String principalClass;
-        String principalName;
-
-        /**
-         * A PrincipalEntry consists of the Principal class and Principal name.
-         *
-         * @param principalClass the Principal class
-         * @param principalName the Principal name
-         * @throws NullPointerException if principalClass or principalName
-         *                              are null
-         */
-        public PrincipalEntry(String principalClass, String principalName) {
-            if (principalClass == null || principalName == null)
-                throw new NullPointerException(LocalizedMessage.getNonlocalized
-                    ("null.principalClass.or.principalName"));
-            this.principalClass = principalClass;
-            this.principalName = principalName;
-        }
-
-        boolean isWildcardName() {
-            return principalName.equals(WILDCARD_NAME);
-        }
-
-        boolean isWildcardClass() {
-            return principalClass.equals(WILDCARD_CLASS);
-        }
-
-        boolean isReplaceName() {
-            return principalClass.equals(REPLACE_NAME);
-        }
-
-        public String getPrincipalClass() {
-            return principalClass;
-        }
-
-        public String getPrincipalName() {
-            return principalName;
-        }
-
-        public String getDisplayClass() {
-            if (isWildcardClass()) {
-                return "*";
-            } else if (isReplaceName()) {
-                return "";
-            }
-            else return principalClass;
-        }
-
-        public String getDisplayName() {
-            return getDisplayName(false);
-        }
-
-        public String getDisplayName(boolean addQuote) {
-            if (isWildcardName()) {
-                return "*";
-            }
-            else {
-                if (addQuote) return "\"" + principalName + "\"";
-                else return principalName;
-            }
-        }
-
-        @Override
-        public String getName() {
-            return principalName;
-        }
-
-        @Override
-        public String toString() {
-            if (!isReplaceName()) {
-                return getDisplayClass() + "/" + getDisplayName();
-            } else {
-                return getDisplayName();
-            }
-        }
-
-        /**
-         * Test for equality between the specified object and this object.
-         * Two PrincipalEntries are equal if their class and name values
-         * are equal.
-         *
-         * @param obj the object to test for equality with this object
-         * @return true if the objects are equal, false otherwise
-         */
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-
-            if (!(obj instanceof PrincipalEntry that))
-                return false;
-
-            return (principalClass.equals(that.principalClass) &&
-                    principalName.equals(that.principalName));
-        }
-
-        /**
-         * {@return a hashcode for this PrincipalEntry}
-         */
-        @Override
-        public int hashCode() {
-            return principalClass.hashCode();
-        }
-
-        public void write(PrintWriter out) {
-            out.print("principal " + getDisplayClass() + " " +
-                      getDisplayName(true));
-        }
-    }
-
-    /**
-     * Each permission entry in the policy configuration file is
-     * represented by a
-     * PermissionEntry object.
-     *
-     * <p>
-     * For example, the entry
-     * <pre>
-     *          permission java.io.FilePermission "/tmp", "read,write";
-     * </pre>
-     * is represented internally
-     * <pre>
-     *
-     * pe = new PermissionEntry("java.io.FilePermission",
-     *                           "/tmp", "read,write");
-     * </pre>
-     *
-     * @author Roland Schemers
-     *
-     * version 1.19, 05/21/98
-     */
-
-    public static class PermissionEntry {
-
-        public String permission;
-        public String name;
-        public String action;
-        public String signedBy;
-
-        public PermissionEntry() {
-        }
-
-        public PermissionEntry(String permission,
-                        String name,
-                        String action) {
-            this.permission = permission;
-            this.name = name;
-            this.action = action;
-        }
-
-        /**
-         * Calculates a hash code value for the object.  Objects
-         * which are equal will also have the same hashcode.
-         */
-        @Override
-        public int hashCode() {
-            return Objects.hash(permission, name, action);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this)
-                return true;
-
-            return obj instanceof PermissionEntry that
-                    && Objects.equals(this.permission, that.permission)
-                    && Objects.equals(this.name, that.name)
-                    && Objects.equals(this.action, that.action)
-                    && Objects.equals(this.signedBy, that.signedBy);
-        }
-
-        public void write(PrintWriter out) {
-            out.print("permission ");
-            out.print(permission);
-            if (name != null) {
-                out.print(" \"");
-
-                // ATTENTION: regex with double escaping,
-                // the normal forms look like:
-                // $name =~ s/\\/\\\\/g; and
-                // $name =~ s/\"/\\\"/g;
-                // and then in a java string, it's escaped again
-
-                out.print(name.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\\\""));
-                out.print('"');
-            }
-            if (action != null) {
-                out.print(", \"");
-                out.print(action);
-                out.print('"');
-            }
-            if (signedBy != null) {
-                out.print(", signedBy \"");
-                out.print(signedBy);
-                out.print('"');
-            }
-            out.println(";");
         }
     }
 
@@ -1310,15 +526,6 @@ public class PolicyParser {
         public String getNonlocalizedMessage() {
             return i18nMessage != null ? i18nMessage :
                 localizedMsg.formatNonlocalized(source);
-        }
-    }
-
-    public static void main(String[] arg) throws Exception {
-        try (FileReader fr = new FileReader(arg[0]);
-             FileWriter fw = new FileWriter(arg[1])) {
-            PolicyParser pp = new PolicyParser(true);
-            pp.read(fr);
-            pp.write(fw);
         }
     }
 }
