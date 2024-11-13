@@ -153,6 +153,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
@@ -165,6 +167,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
@@ -176,6 +180,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     public static void testByteLong1c(byte[] dest, long[] src) {
         long base = 64; // make sure it is big enough and 8 byte aligned (required for 32-bit)
@@ -186,6 +192,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
@@ -235,6 +243,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
@@ -247,6 +257,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
@@ -298,6 +310,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
@@ -310,6 +324,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
@@ -328,6 +344,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
@@ -340,6 +358,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
@@ -357,6 +377,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
@@ -369,6 +391,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.

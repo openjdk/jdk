@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,12 @@ class jdk_internal_vm_Continuation: AllStatic {
 
 // Interface to jdk.internal.vm.StackChunk objects
 #define STACKCHUNK_INJECTED_FIELDS(macro)                                          \
-  macro(jdk_internal_vm_StackChunk, cont,           continuation_signature, false) \
-  macro(jdk_internal_vm_StackChunk, flags,          byte_signature,         false) \
-  macro(jdk_internal_vm_StackChunk, pc,             intptr_signature,       false) \
-  macro(jdk_internal_vm_StackChunk, maxThawingSize, int_signature,          false) \
+  macro(jdk_internal_vm_StackChunk, cont,            continuation_signature, false) \
+  macro(jdk_internal_vm_StackChunk, flags,           byte_signature,         false) \
+  macro(jdk_internal_vm_StackChunk, pc,              intptr_signature,       false) \
+  macro(jdk_internal_vm_StackChunk, maxThawingSize,  int_signature,          false) \
+  macro(jdk_internal_vm_StackChunk, lockStackSize,   byte_signature,         false) \
+  macro(jdk_internal_vm_StackChunk, objectWaiter,    intptr_signature,       false) \
 
 class jdk_internal_vm_StackChunk: AllStatic {
   friend class JavaClasses;
@@ -86,6 +88,8 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static int _bottom_offset;
   static int _flags_offset;
   static int _maxThawingSize_offset;
+  static int _lockStackSize_offset;
+  static int _objectWaiter_offset;
   static int _cont_offset;
 
 
@@ -123,6 +127,12 @@ class jdk_internal_vm_StackChunk: AllStatic {
 
   static inline int maxThawingSize(oop chunk);
   static inline void set_maxThawingSize(oop chunk, int value);
+
+  static inline uint8_t lockStackSize(oop chunk);
+  static inline void set_lockStackSize(oop chunk, uint8_t value);
+
+  static inline address objectWaiter(oop chunk);
+  static inline void set_objectWaiter(oop chunk, address mon);
 
   // cont oop's processing is essential for the chunk's GC protocol
   static inline oop cont(oop chunk);

@@ -375,9 +375,9 @@ public final class Double extends Number
     public static final double NEGATIVE_INFINITY = -1.0 / 0.0;
 
     /**
-     * A constant holding a Not-a-Number (NaN) value of type
-     * {@code double}. It is equivalent to the value returned by
-     * {@code Double.longBitsToDouble(0x7ff8000000000000L)}.
+     * A constant holding a Not-a-Number (NaN) value of type {@code double}.
+     * It is {@linkplain Double##equivalenceRelation equivalent} to the
+     * value returned by {@code Double.longBitsToDouble(0x7ff8000000000000L)}.
      */
     public static final double NaN = 0.0d / 0.0;
 
