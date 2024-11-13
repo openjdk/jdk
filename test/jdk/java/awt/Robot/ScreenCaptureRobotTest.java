@@ -71,7 +71,8 @@ public class ScreenCaptureRobotTest {
     private static void initializeGUI() {
         frame = new Frame("ScreenCaptureRobotTest Frame");
         realImage = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice().getDefaultConfiguration()
+                .getDefaultScreenDevice()
+                .getDefaultConfiguration()
                 .createCompatibleImage(IMAGE_WIDTH, IMAGE_HEIGHT);
 
         Graphics g = realImage.createGraphics();
@@ -98,9 +99,7 @@ public class ScreenCaptureRobotTest {
         robot.waitForIdle();
         robot.delay(500);
 
-        EventQueue.invokeAndWait(() -> {
-            point = canvas.getLocationOnScreen();
-        });
+        EventQueue.invokeAndWait(() -> point = canvas.getLocationOnScreen());
 
         Rectangle rect = new Rectangle(point.x + OFFSET, point.y + OFFSET,
                 IMAGE_WIDTH, IMAGE_HEIGHT);
@@ -124,8 +123,7 @@ public class ScreenCaptureRobotTest {
         int imgHeight = capturedImg.getHeight();
 
         if (imgWidth != IMAGE_WIDTH || imgHeight != IMAGE_HEIGHT) {
-            System.out
-                    .println("Captured and real images are different in size");
+            System.out.println("Captured and real images are different in size");
             return false;
         }
 
@@ -135,8 +133,8 @@ public class ScreenCaptureRobotTest {
                 realPixel = realImg.getRGB(i, j);
                 if (capturedPixel != realPixel) {
                     System.out.println("Captured pixel ("
-                            + Integer.toHexString(capturedPixel) + ") at (" + i
-                            + ", " + j + ") is not equal to real pixel ("
+                            + Integer.toHexString(capturedPixel) + ") at "
+                            + "(" + i + ", " + j + ") is not equal to real pixel ("
                             + Integer.toHexString(realPixel) + ")");
                     return false;
                 }
@@ -152,9 +150,12 @@ public class ScreenCaptureRobotTest {
         }
     }
 
-    private static void saveImage(BufferedImage image, String fileName)
-            throws IOException {
-        ImageIO.write(image, "png", new File(fileName));
+    private static void saveImage(BufferedImage image, String fileName) {
+        try {
+            ImageIO.write(image, "png", new File(fileName));
+        } catch (IOException ignored) {
+            System.err.println(ignored.getMessage());
+        }
     }
 
     private static void disposeFrame() {
