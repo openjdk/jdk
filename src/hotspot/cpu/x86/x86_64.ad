@@ -4370,7 +4370,8 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   ins_cost(125); // XXX
   format %{ "load_narrow_klass_compact    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
-    __ load_narrow_klass_compact_c2($dst$$Register, $mem$$Address);
+    __ movl($dst$$Register, $mem$$Address);
+    __ shrl($dst$$Register, markWord::klass_shift_at_offset);
   %}
   ins_pipe(pipe_slow); // XXX
 %}
