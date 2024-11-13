@@ -240,8 +240,7 @@ import java.util.Objects;
  * function objects are strongly reachable from the defining class loader of the
  * caller.  This technique reduces heap memory use, but it prevents the
  * implementation class from unloading when the caller is a {@linkplain
- * MethodHandles.Lookup.ClassOption#STRONG hidden class} and is unloaded, or when
- * the returned call site is no longer strongly reachable.
+ * MethodHandles.Lookup.ClassOption#STRONG hidden class} and is unloaded.
  *
  * @since 1.8
  */
