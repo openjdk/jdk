@@ -1223,9 +1223,8 @@ private:
 public:
   explicit ShenandoahRetireGCLABClosure(bool resize) : _resize(resize) {}
   void do_thread(Thread* thread) override {
-    Thread* thread1;
     PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
-    assert(gclab != nullptr, "GCLAB should be initialized for %s", thread1->name());
+    assert(gclab != nullptr, "GCLAB should be initialized for %s", thread->name());
     gclab->retire();
     if (_resize && ShenandoahThreadLocalData::gclab_size(thread) > 0) {
       ShenandoahThreadLocalData::set_gclab_size(thread, 0);
@@ -1233,7 +1232,7 @@ public:
 
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
       PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-      assert(plab != nullptr, "PLAB should be initialized for %s", thread1->name());
+      assert(plab != nullptr, "PLAB should be initialized for %s", thread->name());
 
       // There are two reasons to retire all plabs between old-gen evacuation passes.
       //  1. We need to make the plab memory parsable by remembered-set scanning.
