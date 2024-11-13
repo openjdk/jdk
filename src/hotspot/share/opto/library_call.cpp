@@ -5014,21 +5014,22 @@ bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
 }
 
 bool LibraryCallKit::inline_relaxed_math(vmIntrinsics::ID id) {
-  Node* arg = argument(0);
+  Node* n1 = argument(0);
+  Node* n2 = argument(1);
   Node* result = nullptr;
 
   switch (id) {
   case vmIntrinsics::_RelaxedMath_float_add:
-    assert(false, "TODO");
+    result = new AddFNode(n1, n2);
     break;
   case vmIntrinsics::_RelaxedMath_float_mul:
-    assert(false, "TODO");
+    result = new MulFNode(n1, n2);
     break;
   case vmIntrinsics::_RelaxedMath_double_add:
-    assert(false, "TODO");
+    result = new AddDNode(n1, n2);
     break;
   case vmIntrinsics::_RelaxedMath_double_mul:
-    assert(false, "TODO");
+    result = new MulDNode(n1, n2);
     break;
   default:
     fatal_unexpected_iid(id);
