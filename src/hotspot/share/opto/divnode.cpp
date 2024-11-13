@@ -471,19 +471,6 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
 }
 
 template <typename TypeClass>
-const TypeClass* is(const Type* t);
-
-template <>
-const TypeInt* is<TypeInt>(const Type* t) {
-  return t->is_int();
-}
-
-template <>
-const TypeLong* is<TypeLong>(const Type* t) {
-  return t->is_long();
-}
-
-template <typename TypeClass>
 Node* make_and(Node* a, Node* b);
 
 template <>
@@ -513,7 +500,7 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div,
     return nullptr;          // Skip it
   }
 
-  const TypeClass* tl = is<TypeClass>(t);
+  const TypeClass* tl = t->is<TypeClass>();
   if (!tl) {
     return nullptr;
   }
@@ -1209,7 +1196,7 @@ Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
   if (t == Type::TOP) {
     return nullptr;
   }
-  const TypeClass* ti = is<TypeClass>(t);
+  const TypeClass* ti = t->is<TypeClass>();
 
   // Check for useless control input
   // Check for excluding mod-zero case
@@ -1264,8 +1251,8 @@ const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
     return bot;
   }
 
-  const TypeClass* i1 = is<TypeClass>(t1);
-  const TypeClass* i2 = is<TypeClass>(t2);
+  const TypeClass* i1 = t1->is<TypeClass>();
+  const TypeClass* i2 = t2->is<TypeClass>();
   if (i1->is_con() && i2->is_con()) {
     Unsigned au = static_cast<Unsigned>(i1->get_con());
     Unsigned bu = static_cast<Unsigned>(i2->get_con());
