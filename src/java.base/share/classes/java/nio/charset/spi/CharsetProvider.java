@@ -82,24 +82,10 @@ import java.util.Iterator;
 
 public abstract class CharsetProvider {
 
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("charsetProvider"));
-        return null;
-    }
-    private CharsetProvider(Void ignore) { }
-
     /**
      * Initializes a new charset provider.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("charsetProvider")}
      */
     protected CharsetProvider() {
-        this(checkPermission());
     }
 
     /**

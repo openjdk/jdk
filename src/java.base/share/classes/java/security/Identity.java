@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,21 +168,12 @@ public abstract class Identity implements Principal, Serializable {
      * Sets this identity's public key. The old key and all of this
      * identity's certificates are removed by this operation.
      *
-     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
-     * method is called with {@code "setIdentityPublicKey"}
-     * as its argument to see if it's ok to set the public key.
-     *
      * @param key the public key for this {@code Identity}.
      *
      * @throws    KeyManagementException if another identity in the
      * identity's scope has the same public key, or if another exception occurs.
      *
-     * @throws     SecurityException  if a security manager exists and its
-     * {@code checkSecurityAccess} method doesn't allow
-     * setting the public key.
-     *
      * @see #getPublicKey
-     * @see SecurityManager#checkSecurityAccess
      */
     /* Should we throw an exception if this is already set? */
     public void setPublicKey(PublicKey key) throws KeyManagementException {
@@ -195,18 +186,9 @@ public abstract class Identity implements Principal, Serializable {
     /**
      * Specifies a general information string for this {@code Identity}.
      *
-     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
-     * method is called with {@code "setIdentityInfo"}
-     * as its argument to see if it's ok to specify the information string.
-     *
      * @param info the information string.
      *
-     * @throws     SecurityException  if a security manager exists and its
-     * {@code checkSecurityAccess} method doesn't allow
-     * setting the information string.
-     *
      * @see #getInfo
-     * @see SecurityManager#checkSecurityAccess
      */
     public void setInfo(String info) {
         check("setIdentityInfo");
@@ -230,21 +212,11 @@ public abstract class Identity implements Principal, Serializable {
      * the {@code Identity} does not have a public key, the identity's
      * public key is set to be that specified in the certificate.
      *
-     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
-     * method is called with {@code "addIdentityCertificate"}
-     * as its argument to see if it's ok to add a certificate.
-     *
      * @param certificate the certificate to be added.
      *
      * @throws    KeyManagementException if the certificate is not valid,
      * if the public key in the certificate being added conflicts with
      * this identity's public key, or if another exception occurs.
-     *
-     * @throws     SecurityException  if a security manager exists and its
-     * {@code checkSecurityAccess} method doesn't allow
-     * adding a certificate.
-     *
-     * @see SecurityManager#checkSecurityAccess
      */
     public void addCertificate(Certificate certificate)
     throws KeyManagementException {
@@ -281,20 +253,10 @@ public abstract class Identity implements Principal, Serializable {
     /**
      * Removes a certificate from this {@code Identity}.
      *
-     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
-     * method is called with {@code "removeIdentityCertificate"}
-     * as its argument to see if it's ok to remove a certificate.
-     *
      * @param certificate the certificate to be removed.
      *
      * @throws    KeyManagementException if the certificate is
      * missing, or if another exception occurs.
-     *
-     * @throws     SecurityException  if a security manager exists and its
-     * {@code checkSecurityAccess} method doesn't allow
-     * removing a certificate.
-     *
-     * @see SecurityManager#checkSecurityAccess
      */
     public void removeCertificate(Certificate certificate)
     throws KeyManagementException {
@@ -392,18 +354,8 @@ public abstract class Identity implements Principal, Serializable {
      * Returns a short string describing this {@code Identity}, telling its
      * name and its scope (if any).
      *
-     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
-     * method is called with {@code "printIdentity"}
-     * as its argument to see if it's ok to return the string.
-     *
      * @return information about this {@code Identity}, such as its name and the
      * name of its scope (if any).
-     *
-     * @throws     SecurityException  if a security manager exists and its
-     * {@code checkSecurityAccess} method doesn't allow
-     * returning a string describing this {@code Identity}.
-     *
-     * @see SecurityManager#checkSecurityAccess
      */
     public String toString() {
         check("printIdentity");
@@ -419,22 +371,13 @@ public abstract class Identity implements Principal, Serializable {
      * optionally more details than that provided by the
      * {@code toString} method without any arguments.
      *
-     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
-     * method is called with {@code "printIdentity"}
-     * as its argument to see if it's ok to return the string.
-     *
      * @param detailed whether or not to provide detailed information.
      *
      * @return information about this {@code Identity}. If {@code detailed}
      * is {@code true}, then this method returns more information than that
      * provided by the {@code toString} method without any arguments.
      *
-     * @throws     SecurityException  if a security manager exists and its
-     * {@code checkSecurityAccess} method doesn't allow
-     * returning a string describing this {@code Identity}.
-     *
      * @see #toString
-     * @see SecurityManager#checkSecurityAccess
      */
     public String toString(boolean detailed) {
         String out = toString();
