@@ -2007,17 +2007,23 @@ void ShenandoahHeap::propagate_gc_state_to_java_threads() {
     _gc_state_changed = false;
     char state = gc_state();
 
-    auto do_thread = [&](Thread* t) {
-      ShenandoahThreadLocalData::set_gc_state(t, state);
-    };
-
-    do_thread(control_thread());
-    _workers->threads_do_l(do_thread);
+    propagate_gc_state_to_worker_threads();
 
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
       ShenandoahThreadLocalData::set_gc_state(t, state);
     }
   }
+}
+
+void ShenandoahHeap::propagate_gc_state_to_worker_threads() {
+  char state = gc_state();
+
+  auto do_thread = [&](Thread* t) {
+    ShenandoahThreadLocalData::set_gc_state(t, state);
+  };
+
+  do_thread(control_thread());
+  _workers->threads_do_l(do_thread);
 }
 
 void ShenandoahHeap::set_gc_state(uint mask, bool value) {

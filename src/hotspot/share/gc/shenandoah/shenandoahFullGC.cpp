@@ -192,6 +192,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
       update_roots(true /*full_gc*/);
     }
 
+    heap->propagate_gc_state_to_worker_threads();
+
     // d. Reset the bitmaps for new marking
     heap->global_generation()->reset_mark_bitmap();
     assert(heap->marking_context()->is_bitmap_clear(), "sanity");
@@ -230,6 +232,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   heap->set_has_forwarded_objects(false);
 
   heap->set_full_gc_move_in_progress(true);
+
+  heap->propagate_gc_state_to_worker_threads();
 
   // Setup workers for the rest
   OrderAccess::fence();
