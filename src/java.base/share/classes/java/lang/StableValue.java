@@ -30,6 +30,7 @@ import jdk.internal.lang.stable.StableValueImpl;
 import jdk.internal.lang.stable.StableValueFactories;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -61,6 +62,7 @@ import java.util.function.Supplier;
  * as <em>unset</em>, which means it holds no value. Later in the example, the
  * state of the "{@code logger}" field is checked and if it is still <em>unset</em>,
  * a holder value is <em>set</em>:
+ *
  * {@snippet lang = java:
  * class Component {
  *
@@ -82,13 +84,12 @@ import java.util.function.Supplier;
  * }
  *}
  * <p>
- * Note that the holder value can only be set at most once, even when several threads are
- * racing to set the holder value. Only one thread is selected as the winner.
+ * Note that the holder value can only be set at most once.
  * <p>
- * While this more low-level approach works, it does not guarantee that only one
- * {@code Logger} instance is ever created. This problem can be fixed easily by using the
- * {@linkplain #computeIfUnset(Supplier)} method instead, where the holder is lazily
- * computed using a provided lambda expression:
+ * To guarantee that only one instance of {@code Logger} instance is ever created, the
+ * {@linkplain #computeIfUnset(Supplier) computeIfUnset()} method can be used instead as
+ * shown in this improved example, where the holder is atomically and lazily computed via
+ * a lambda expression:
  *
  * {@snippet lang = java:
  * class Component {
@@ -98,7 +99,7 @@ import java.util.function.Supplier;
  *    private final StableValue<Logger> logger = StableValue.empty();
  *
  *    Logger getLogger() {
- *        return logger.computeIfUnset(() -> Logger.create(Component.class));
+ *        return logger.computeIfUnset( () -> Logger.create(Component.class) );
  *    }
  *
  *    void process() {
@@ -127,17 +128,12 @@ import java.util.function.Supplier;
  * passed as a method parameter.
  *
  * <h2 id="stable-functions">Stable Functions</h2>
- * Stable functions are thread-safe, caching, and lazily computed functions that, for each
- * allowed input (if any), record the values of some original function upon being first
- * accessed via the stable function's sole abstract method.
+ * Stable functions are backed by one or more {@code StableValue} objects that cache
+ * results computed as a result of initial invocations.
  * <p>
- * All the stable functions guarantee the provided original function is invoked
- * successfully at most once per valid input even in a multithreaded environment.
- * <p>
- * A <em>stable supplier</em> allows a more convenient construct compared to a
- * {@linkplain StableValue} in the sense that a field declaration can also specify how
- * the holder value of a stable value is to be set, but without actually setting its
- * holder value upfront:
+ * A <em>stable supplier</em> is backed by a single {@code StableValue} and allows clients
+ * to specify how the holder value of the stable value is to be set, but without actually
+ * setting its holder value upfront:
  * {@snippet lang = java:
  *     class Component {
  *
@@ -154,7 +150,7 @@ import java.util.function.Supplier;
  * This also allows the stable supplier to be accessed directly, without going through
  * an accessor method like {@code getLogger()} in the previous example.
  * <p>
- * A <em>stable int function</em> stores values in an array of stable values where
+ * A <em>stable int function</em> is backed by an array of stable values where
  * the elements' holder value are computed the first time a particular input value
  * is provided.
  * When the stable int function is first created --
@@ -177,14 +173,14 @@ import java.util.function.Supplier;
  *     }
  *}
  * <p>
- * A <em>stable function</em> stores values in an array of stable values where
+ * A <em>stable function</em> is backed by an array of stable values where
  * the elements' holder value are computed the first time a particular input value
  * is provided.
  * When the stable function is first created --
  * via the {@linkplain StableValue#ofFunction(Set, Function) StableValue.ofFunction()}
- * factory -- the input Set is specified together with an original {@linkplain Function}
- * which is invoked at most once per input value. In effect, the stable function will act
- * like a cache for the original {@code Function}:
+ * factory -- the input {@linkplain  Set} is specified together with an original
+ * {@linkplain Function} which is invoked at most once per input value. In effect, the
+ * stable function will act like a cache for the original {@code Function}:
  * {@snippet lang = java:
  *     class SqrtUtil {
  *
@@ -200,12 +196,9 @@ import java.util.function.Supplier;
  *}
  *
  * <h2 id="stable-collections">Stable Collections</h2>
- * Stable collections are thread-safe, caching, lazily computed, shallowly immutable
- * collections that, for each allowed input, record the values of some original mapper
- * upon being first accessed (directly or indirectly) via the collection's get method.
- * <p>
- * All the stable collections guarantee the provided original mapper is invoked
- * successfully at most once per valid input even in a multithreaded environment.
+ * Stable collections are similar to {@linkplain ##stable-functions stable functions} but
+ * provides additional support for the collection specific methods such as
+ * {@linkplain Collection#size()}.
  * <p>
  * A <em>stable list</em> is similar to a stable int function but provides a full
  * implementation of an immutable {@linkplain List}. This is useful when interacting with
@@ -247,11 +240,18 @@ import java.util.function.Supplier;
  *     }
  *}
  * <h2 id="thread-safety">Thread Safety</h2>
- * Updates to an object before it is set as a holder value is guaranteed to be seen by
- * all other threads discovering the holder value via a stable value. A holder value is
- * guaranteed to only be settable at most once. If competing threads are racing to set
- * a holder value, only the first is accepted and the other threads are blocked until the
- * holder value is set.
+ * All stable value holders, functions, and collections are thread safe.
+ * <p>
+ * Updates to an object before it is set as a holder value is guaranteed to be seen by all
+ * other threads discovering the holder value via a stable value.
+ *
+ * A holder value is guaranteed to only be settable at most once. If competing threads are
+ * racing to set a holder value, only the first is accepted and the other threads are
+ * blocked until the holder value is set.
+ *
+ * All the stable functions and collections guarantee the provided original function
+ * is invoked successfully at most once per valid input even in a multithreaded
+ * environment.
  *
  * <h2 id="miscellaneous">Miscellaneous</h2>
  * Except for a StableValue's holder value itself, all method parameters must be
@@ -425,7 +425,7 @@ public sealed interface StableValue<T>
      * <p>
      * The provided {@code original} int function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
-     * threads invoking the returned inr function's
+     * threads invoking the returned int function's
      * {@linkplain IntFunction#apply(int) apply()} method when a value is already under
      * computation will block until a value is computed or an exception is thrown by
      * the computing thread.
