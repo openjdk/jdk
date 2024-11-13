@@ -245,7 +245,7 @@ public class JMXBench {
             attrResults = mbsc.setAttributes(o,  attrsJMimpl);
         } catch (Exception e) {
             e.printStackTrace(System.err);
-            Asserts.fail("NOT expected: " + e);
+            Asserts.fail("setAttributes: NOT expected: " + e);
         }
         t.stop();
             System.out.println("setAttributes attrResults = " + attrResults);
@@ -256,7 +256,7 @@ public class JMXBench {
             t = new Timer(id + " addNotificationListener: null Listener"); 
             try {
                 mbsc.addNotificationListener(o, (NotificationListener) null, (NotificationFilter) null, (Object) null); 
-                Asserts.fail(id + ": No expected Exception.");
+                Asserts.fail(id + ": addNotificationListener(null): No expected Exception.");
             } catch (Exception e) {
                 System.err.println("As expected: " + e);
             }
@@ -289,7 +289,7 @@ public class JMXBench {
                     mbeanInfoClassLoading = mbsc.getMBeanInfo(o);
                 } catch (Exception e) {
                     e.printStackTrace(System.err);
-                    Asserts.fail(id + ": unexpected Exception: " + e);
+                    Asserts.fail(id + ": getMBeanInfo: unexpected Exception: " + e);
                 }
                 t.stop();
                 System.out.println("MBeanInfo ClassLoading: " + mbeanInfoClassLoading);
@@ -348,7 +348,7 @@ public class JMXBench {
                     attrResults = mbsc.setAttributes(o,  attrsSet);
                 } catch (Exception e) {
                     e.printStackTrace(System.err);
-                    Asserts.fail("NOT expected: " + e);
+                    Asserts.fail("setAttributes: NOT expected: " + e);
                 }
                 t.stop();
                 System.out.println("setAttributes, attrResults = " + attrResults);
@@ -365,7 +365,7 @@ public class JMXBench {
                 t = new Timer(id + " invoke(Threading.notAKnownOperation()) 1");
                 try {
                     invokeResult = mbsc.invoke(o, "notAKnownOperation", new Object[] { }, new String [] { });
-                    Asserts.fail("NO expected exception on invoke");
+                    Asserts.fail("invoke(unknown): NO expected exception on invoke");
                 } catch (Exception e) {
                     System.out.println("Got expected: " + e);
                 }
@@ -435,6 +435,19 @@ public class JMXBench {
                                           );
                 t.stop();
                 System.out.println("invokeResult = " + invokeResult);
+
+                // Using MBean Proxy:
+                // java.lang:type=Threading == ThreadMXBean
+                ThreadMXBean threadMXBean = null;
+                t = new Timer(id + " newPlatformMXBeanProxy");
+                threadMXBean = ManagementFactory.newPlatformMXBeanProxy(mbsc, ManagementFactory.THREAD_MXBEAN_NAME, ThreadMXBean.class);
+                t.stop();
+                System.out.println("MXBeanProxy: threadMXBean = " + threadMXBean);
+
+                t = new Timer(id + " MXBeanProxy.getThreadInfo");
+                ThreadInfo threadInfo = threadMXBean.getThreadInfo(Thread.currentThread().getId());
+                t.stop();
+                System.out.println("threadInfo = " + threadInfo);
                     
                 } catch (Exception e) {
                     e.printStackTrace(System.err);
