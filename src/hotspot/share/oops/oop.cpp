@@ -153,7 +153,7 @@ bool oopDesc::is_objArray_noinline()    const { return is_objArray();    }
 bool oopDesc::is_typeArray_noinline()   const { return is_typeArray();   }
 
 bool oopDesc::has_klass_gap() {
-  return UseCompressedClassPointers && !UseCompactObjectHeaders;
+  return ObjLayout::oop_has_klass_gap();
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

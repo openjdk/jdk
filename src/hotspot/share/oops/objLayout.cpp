@@ -30,17 +30,21 @@
 
 ObjLayout::Mode ObjLayout::_klass_mode = ObjLayout::Undefined;
 int ObjLayout::_oop_base_offset_in_bytes = 0;
+bool ObjLayout::_oop_has_klass_gap = false;
 
 void ObjLayout::initialize() {
   assert(_klass_mode == Undefined, "ObjLayout initialized twice");
   if (UseCompactObjectHeaders) {
     _klass_mode = Compact;
     _oop_base_offset_in_bytes = sizeof(markWord);
+    _oop_has_klass_gap = false;
   } else if (UseCompressedClassPointers) {
     _klass_mode = Compressed;
     _oop_base_offset_in_bytes = sizeof(markWord) + sizeof(narrowKlass);
+    _oop_has_klass_gap = true;
   } else {
     _klass_mode = Uncompressed;
     _oop_base_offset_in_bytes = sizeof(markWord) + sizeof(Klass*);
+    _oop_has_klass_gap = false;
   }
 }

@@ -66,12 +66,16 @@ public:
 private:
   static Mode _klass_mode;
   static int  _oop_base_offset_in_bytes;
+  static bool _oop_has_klass_gap;
 
 public:
   static void initialize();
   static inline Mode klass_mode();
   static inline int oop_base_offset_in_bytes() {
     return _oop_base_offset_in_bytes;
+  }
+  static inline bool oop_has_klass_gap() {
+    return _oop_has_klass_gap;
   }
 };
 
