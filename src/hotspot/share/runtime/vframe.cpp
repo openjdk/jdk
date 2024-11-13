@@ -280,13 +280,14 @@ intptr_t* interpretedVFrame::locals_addr_at(int offset) const {
 }
 
 GrowableArray<MonitorInfo*>* interpretedVFrame::monitors() const {
+  bool heap_frame = stack_chunk() != nullptr;
+  frame f = !heap_frame ? _fr : stack_chunk()->derelativize(_fr);
   GrowableArray<MonitorInfo*>* result = new GrowableArray<MonitorInfo*>(5);
-  if (stack_chunk() == nullptr) { // no monitors in continuations
-    for (BasicObjectLock* current = (fr().previous_monitor_in_interpreter_frame(fr().interpreter_frame_monitor_begin()));
-        current >= fr().interpreter_frame_monitor_end();
-        current = fr().previous_monitor_in_interpreter_frame(current)) {
-      result->push(new MonitorInfo(current->obj(), current->lock(), false, false));
-    }
+  for (BasicObjectLock* current = (f.previous_monitor_in_interpreter_frame(f.interpreter_frame_monitor_begin()));
+      current >= f.interpreter_frame_monitor_end();
+      current = f.previous_monitor_in_interpreter_frame(current)) {
+      oop owner = !heap_frame ? current->obj() : StackValue::create_stack_value_from_oop_location(stack_chunk(), (void*)current->obj_adr())->get_obj()();
+    result->push(new MonitorInfo(owner, current->lock(), false, false));
   }
   return result;
 }

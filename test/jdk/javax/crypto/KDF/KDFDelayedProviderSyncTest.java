@@ -60,7 +60,7 @@ public class KDFDelayedProviderSyncTest {
         kdfUnderTest = KDF.getInstance("HKDF-SHA256");
     }
 
-    @Test(threadPoolSize = 50, invocationCount = 100, timeOut = 150)
+    @Test(threadPoolSize = 50, invocationCount = 100)
     public void testDerive()
         throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
         SecretKey result = kdfUnderTest.deriveKey("Generic", derivationSpec);

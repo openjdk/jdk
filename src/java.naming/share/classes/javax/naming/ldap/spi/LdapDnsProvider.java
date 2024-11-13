@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,6 @@ public abstract class LdapDnsProvider {
 
     /**
      * Creates a new instance of {@code LdapDnsProvider}.
-     *
-     * @throws SecurityException if a security manager is present and its
-     *                           {@code checkPermission} method doesn't allow
-     *                           the {@code RuntimePermission("ldapDnsProvider")}.
      */
     protected LdapDnsProvider() {
         this(checkPermission());

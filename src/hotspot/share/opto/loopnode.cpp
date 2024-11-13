@@ -4971,7 +4971,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Auto-vectorize main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
-    Compile::TracePhase tp("autoVectorize", &timers[_t_autoVectorize]);
+    Compile::TracePhase tp(_t_autoVectorize);
 
     // Shared data structures for all AutoVectorizations, to reduce allocations
     // of large arrays.

@@ -43,6 +43,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -274,6 +275,23 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
   return nullptr;
 }
 
+static markWord make_prototype(const Klass* kls) {
+  markWord prototype = markWord::prototype();
+#ifdef _LP64
+  if (UseCompactObjectHeaders) {
+    // With compact object headers, the narrow Klass ID is part of the mark word.
+    // We therfore seed the mark word with the narrow Klass ID.
+    // Note that only those Klass that can be instantiated have a narrow Klass ID.
+    // For those who don't, we leave the klass bits empty and assert if someone
+    // tries to use those.
+    const narrowKlass nk = CompressedKlassPointers::is_encodable(kls) ?
+        CompressedKlassPointers::encode(const_cast<Klass*>(kls)) : 0;
+    prototype = prototype.set_narrow_klass(nk);
+  }
+#endif
+  return prototype;
+}
+
 Klass::Klass() : _kind(UnknownKlassKind) {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for cds");
 }
@@ -283,6 +301,7 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
 Klass::Klass(KlassKind kind) : _kind(kind),
+                               _prototype_header(make_prototype(this)),
                                _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
@@ -985,6 +1004,10 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
      // print header
      obj->mark().print_on(st);
      st->cr();
+     if (UseCompactObjectHeaders) {
+       st->print(BULLET"prototype_header: " INTPTR_FORMAT, _prototype_header.value());
+       st->cr();
+     }
   }
 
   // print class
@@ -1007,7 +1030,14 @@ void Klass::verify_on(outputStream* st) {
 
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
-  assert(Metaspace::contains((address)this), "Should be");
+#ifdef ASSERT
+  if (UseCompressedClassPointers && needs_narrow_id()) {
+    // Stricter checks for both correct alignment and placement
+    CompressedKlassPointers::check_encodable(this);
+  } else {
+    assert(Metaspace::contains((address)this), "Should be");
+  }
+#endif // ASSERT
 
   guarantee(this->is_klass(),"should be klass");
 
@@ -1035,6 +1065,8 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 
+// Note: this function is called with an address that may or may not be a Klass.
+// The point is not to assert it is but to check if it could be.
 bool Klass::is_valid(Klass* k) {
   if (!is_aligned(k, sizeof(MetaWord))) return false;
   if ((size_t)k < os::min_page_size()) return false;

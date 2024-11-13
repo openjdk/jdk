@@ -4083,15 +4083,6 @@ public class CompletableFutureTest extends JSR166TestCase {
     //--- tests of implementation details; not part of official tck ---
 
     Object resultOf(CompletableFuture<?> f) {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                System.setSecurityManager(null);
-            } catch (SecurityException giveUp) {
-                return "Reflection not available";
-            }
-        }
-
         try {
             java.lang.reflect.Field resultField
                 = CompletableFuture.class.getDeclaredField("result");
@@ -4099,8 +4090,6 @@ public class CompletableFutureTest extends JSR166TestCase {
             return resultField.get(f);
         } catch (Throwable t) {
             throw new AssertionError(t);
-        } finally {
-            if (sm != null) System.setSecurityManager(sm);
         }
     }
 
