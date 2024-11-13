@@ -305,7 +305,6 @@ public final class Subject implements java.io.Serializable {
      * @see #callAs(Subject, Callable)
      * @since 18
      */
-    @SuppressWarnings("removal")
     public static Subject current() {
         return SCOPED_SUBJECT.orElse(null);
     }
