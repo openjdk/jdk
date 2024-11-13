@@ -73,6 +73,8 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import jtreg.SkippedException;
+
 public class TestDefaultArchiveLoading {
 
     private static String archiveName(String archiveSuffix) {
@@ -84,31 +86,10 @@ public class TestDefaultArchiveLoading {
                          "server", archiveName(archiveSuffix));
     }
 
-    // Returns false if the COH archive already exists.
-    private static boolean createCOHArchive(char coops, char coh,
-                                         String archiveSuffix) throws Exception {
+    private static boolean isCOHArchiveAvailable(char coops, char coh,
+                                                 String archiveSuffix) throws Exception {
         Path archive= archivePath(archiveSuffix);
-        if (Files.exists(archive)) {
-            return false;
-        }
-
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-XX:+UnlockExperimentalVMOptions",
-                "-XX:" + coh + "UseCompactObjectHeaders",
-                "-XX:" + coops + "UseCompressedOops",
-                "-Xlog:cds",
-                "-Xshare:dump");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0)
-              .shouldContain(archiveName(archiveSuffix));
-        return true;
-    }
-
-    private static void deleteArchive(String archiveSuffix) throws Exception {
-        Path archive= archivePath(archiveSuffix);
-        Files.deleteIfExists(archive);
-        System.out.println("Deleted archive: " + archive.toString());
+        return Files.exists(archive);
     }
 
     public static void main(String[] args) throws Exception {
@@ -119,7 +100,6 @@ public class TestDefaultArchiveLoading {
 
         String archiveSuffix;
         char coh, coops;
-        boolean needsCleanup = false;;
 
         switch (args[0]) {
             case "nocoops_nocoh":
@@ -130,7 +110,10 @@ public class TestDefaultArchiveLoading {
                 coops = '-';
                 coh = '+';
                 archiveSuffix = "_nocoops_coh";
-                needsCleanup = createCOHArchive(coops, coh, archiveSuffix);
+                if (!isCOHArchiveAvailable(coops, coh, archiveSuffix)) {
+                    throw new SkippedException("Skipping test due to " +
+                                               archivePath(archiveSuffix).toString() + " not available");
+                }
                 break;
             case "coops_nocoh":
                 coops = '+';
@@ -140,7 +123,10 @@ public class TestDefaultArchiveLoading {
             case "coops_coh":
                 coh = coops = '+';
                 archiveSuffix = "_coh";
-                needsCleanup = createCOHArchive(coops, coh, archiveSuffix);
+                if (!isCOHArchiveAvailable(coops, coh, archiveSuffix)) {
+                    throw new SkippedException("Skipping test due to " +
+                                               archivePath(archiveSuffix).toString() + " not available");
+                }
                 break;
             default: throw new RuntimeException("Invalid argument " + args[0]);
         }
@@ -157,10 +143,5 @@ public class TestDefaultArchiveLoading {
         output.shouldHaveExitValue(0);
 
         output.shouldContain(archiveName(archiveSuffix));
-
-        if (needsCleanup) {
-            deleteArchive(archiveSuffix);
-        }
-
     }
 }
