@@ -799,7 +799,7 @@ public final class CPrinterJob extends RasterPrinterJob {
                     painter.print(g2, FlipPageFormat.getOriginal(page), pageIndex);
                     g2.dispose();
                     monochromeConverter.filter(bufferedImage, bufferedImage);
-                    pathGraphics.drawImage(bufferedImage, null, 0,0);
+                    pathGraphics.drawImage(bufferedImage, null, 0, 0);
                 } else {
                     painter.print(pathGraphics, FlipPageFormat.getOriginal(page), pageIndex);
                 }
