@@ -37,7 +37,7 @@ public class ModINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "constantAgain"})
+    @Run(test = {"constant", "constantAgain", "powerOf2"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         a = (a == 0) ? 2 : a;
@@ -62,6 +62,7 @@ public class ModINodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
         }
 
+        Asserts.assertEQ(Math.abs(a) % 32, powerOf2(a));
         Asserts.assertEQ(a % 1, constantAgain(a));
     }
 
@@ -80,5 +81,11 @@ public class ModINodeIdealizationTests {
         return x % 1;
     }
 
-    // TODO: mod 2^k or 2^k-1
+    @Test
+    @IR(failOn = {IRNode.MOD_I, IRNode.RSHIFT, IRNode.ADD})
+    @IR(counts = {IRNode.AND_I, "1"})
+    // If the dividend is positive, and divisor is of the form 2^k, we can use a simple bit mask.
+    public int powerOf2(int x) {
+        return Math.abs(x) % 32;
+    }
 }

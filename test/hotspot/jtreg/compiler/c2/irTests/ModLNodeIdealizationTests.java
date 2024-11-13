@@ -37,7 +37,7 @@ public class ModLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "constantAgain"})
+    @Run(test = {"constant", "constantAgain", "powerOf2"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         a = (a == 0) ? 2 : a;
@@ -62,6 +62,7 @@ public class ModLNodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
         }
 
+        Asserts.assertEQ(Math.abs(a) % 8589934592L, powerOf2(a));
         Asserts.assertEQ(a % 1, constantAgain(a));
     }
 
@@ -78,5 +79,13 @@ public class ModLNodeIdealizationTests {
     // Checks x % 1 => 0
     public long constantAgain(long x) {
         return x % 1;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MOD_L, IRNode.RSHIFT, IRNode.ADD})
+    @IR(counts = {IRNode.AND_L, "1"})
+    // If the dividend is positive, and divisor is of the form 2^k, we can use a simple bit mask.
+    public long powerOf2(long x) {
+        return Math.abs(x) % 8589934592L;
     }
 }
