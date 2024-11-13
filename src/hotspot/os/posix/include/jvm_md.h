@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,6 @@
 #include <unistd.h>             /* For F_OK, R_OK, W_OK */
 #include <stddef.h>             /* For ptrdiff_t */
 #include <stdint.h>             /* For uintptr_t */
-
-#define JNI_ONLOAD_SYMBOLS   {"JNI_OnLoad"}
-#define JNI_ONUNLOAD_SYMBOLS {"JNI_OnUnload"}
-#define JVM_ONLOAD_SYMBOLS      {"JVM_OnLoad"}
-#define AGENT_ONLOAD_SYMBOLS    {"Agent_OnLoad"}
-#define AGENT_ONUNLOAD_SYMBOLS  {"Agent_OnUnload"}
-#define AGENT_ONATTACH_SYMBOLS  {"Agent_OnAttach"}
 
 #define JNI_LIB_PREFIX "lib"
 #ifdef __APPLE__

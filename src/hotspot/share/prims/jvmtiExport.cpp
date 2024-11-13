@@ -2870,6 +2870,19 @@ void JvmtiExport::post_monitor_waited(JavaThread *thread, ObjectMonitor *obj_mnt
   }
 }
 
+void JvmtiExport::vthread_post_monitor_waited(JavaThread *current, ObjectMonitor *obj_mntr, jboolean timed_out) {
+  Handle vthread(current, current->vthread());
+
+  // Finish the VTMS transition temporarily to post the event.
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)vthread.raw_value(), false);
+
+  // Post event.
+  JvmtiExport::post_monitor_waited(current, obj_mntr, timed_out);
+
+  // Go back to VTMS transition state.
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount((jthread)vthread.raw_value(), true);
+}
+
 void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
   if (object == nullptr) {
     return;

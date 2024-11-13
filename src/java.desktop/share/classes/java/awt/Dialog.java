@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,13 +181,6 @@ public class Dialog extends Window {
          * toolkit; thus, a toolkit-modal dialog displayed by an applet may affect
          * other applets and all windows of the browser instance which embeds the
          * Java runtime environment for this toolkit.
-         * Special {@code AWTPermission} "toolkitModality" must be granted to use
-         * toolkit-modal dialogs. If a {@code TOOLKIT_MODAL} dialog is being created
-         * and this permission is not granted, a {@code SecurityException} will be
-         * thrown, and no dialog will be created. If a modality type is being changed
-         * to {@code TOOLKIT_MODAL} and this permission is not granted, a
-         * {@code SecurityException} will be thrown, and the modality type will
-         * be left unchanged.
          */
         TOOLKIT_MODAL
     }
@@ -264,11 +257,6 @@ public class Dialog extends Window {
          * won't be blocked by  application-modal or toolkit-modal dialogs. Also,
          * it isn't blocked by document-modal dialogs from outside of its
          * child hierarchy.
-         * The "toolkitModality" {@code AWTPermission} must be granted
-         * for this exclusion. If an exclusion property is being changed to
-         * {@code TOOLKIT_EXCLUDE} and this permission is not granted, a
-         * {@code SecurityException} will be thrown, and the exclusion
-         * property will be left unchanged.
          */
         TOOLKIT_EXCLUDE
     }
@@ -624,8 +612,6 @@ public class Dialog extends Window {
      *    {@code GraphicsConfiguration} is not from a screen device
      * @throws HeadlessException when
      *    {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException if the calling thread does not have permission
-     *    to create modal dialogs with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -659,8 +645,6 @@ public class Dialog extends Window {
      *     {@code GraphicsConfiguration} is not from a screen device
      * @throws HeadlessException when
      *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException if the calling thread does not have permission
-     *     to create modal dialogs with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -710,8 +694,6 @@ public class Dialog extends Window {
      *     is not from a screen device
      * @throws HeadlessException when
      *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException if the calling thread does not have permission
-     *     to create modal dialogs with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -847,8 +829,6 @@ public class Dialog extends Window {
      * @param type specifies whether dialog blocks input to other
      *     windows when shown. {@code null} value and unsupported modality
      *     types are equivalent to {@code MODELESS}
-     * @throws SecurityException if the calling thread does not have permission
-     *     to create modal dialogs with the given {@code modalityType}
      *
      * @see       java.awt.Dialog#getModalityType
      * @see       java.awt.Toolkit#isModalityTypeSupported
