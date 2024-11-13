@@ -145,9 +145,9 @@ static void test_canonicalize_constraints_random() {
     for (int j = 0; j < samples; j++) {
       S v = uniform_random<U>();
       if (!new_t._present) {
-        ASSERT_FALSE(t.contains(v));
+        DEBUG_ONLY(ASSERT_FALSE(t.contains(v)));
       } else {
-        ASSERT_EQ(t.contains(v), new_t._data.contains(v));
+        DEBUG_ONLY(ASSERT_EQ(t.contains(v), new_t._data.contains(v)));
       }
     }
   }
