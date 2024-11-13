@@ -2862,8 +2862,6 @@ public class Basic {
                 else unexpected(t);}}
 
     static boolean isLocked(BufferedInputStream bis) throws Exception {
-        Field lockField = BufferedInputStream.class.getDeclaredField("lock");
-        lockField.setAccessible(true);
         return new Thread() {
             volatile boolean unlocked;
 
