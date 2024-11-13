@@ -23,14 +23,12 @@
 
 /*
  * @test
- * @bug 8167237
+ * @bug 8167237 8316804
  * @summary test that both old style command line options and new gnu style
  *          command line options work with the --release option whether or
  *          not the --release option is preceded by a file name.
  * @library /test/lib
- * @modules jdk.jartool/sun.tools.jar
- * @build jdk.test.lib.Platform
- *        jdk.test.lib.util.FileUtils
+ * @build jdk.test.lib.util.FileUtils
  * @run testng ReleaseBeforeFiles
  */
 
@@ -45,6 +43,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 
 import jdk.test.lib.util.FileUtils;
@@ -116,6 +115,16 @@ public class ReleaseBeforeFiles {
         rm("test.jar test1 test2");
     }
 
+    @Test  // 8316804
+    public void test6() throws IOException {
+        System.out.println("=====");
+        touch("testfile");
+        jar("--create --file=test.jar testfile");
+        jar("--describe-module --release 9 --file test.jar");
+        jar("--validate        --release 9 --file test.jar");
+        rm("test.jar testfile");
+    }
+
     private Stream<Path> mkpath(String... args) {
         return Arrays.stream(args).map(d -> Paths.get(".", d.split("/")));
     }
@@ -159,8 +168,10 @@ public class ReleaseBeforeFiles {
 
     private void jar(String cmdline) throws IOException {
         System.out.println("jar " + cmdline);
-        boolean ok = new sun.tools.jar.Main(System.out, System.err, "jar")
-                .run(cmdline.split(" +"));
-        Assert.assertTrue(ok);
+        var tool = ToolProvider.findFirst("jar").orElseThrow();
+        var args = cmdline.split(" +");
+        var code = tool.run(System.out, System.err, args);
+        if (code == 0) return;
+        throw new RuntimeException("jat failed with non-zero error code: " + code);
     }
 }

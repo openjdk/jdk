@@ -228,6 +228,21 @@ class GNUStyleOptions {
                 }
                 boolean isHidden() { return true; }
             },
+            new Option(true, OptionType.OTHER, "--release") {
+                void process(Main jartool, String opt, String arg) throws BadArgs {
+                    int v = 0; // Main.BASE_VERSION
+                    try {
+                        v = Integer.valueOf(arg);
+                    } catch (NumberFormatException x) {
+                        throw new BadArgs("error.release.value.notnumber", arg);
+                    }
+                    if (v < 9) {
+                        throw new BadArgs("error.release.value.toosmall", arg).showUsage(true);
+                    }
+                    jartool.releaseValue = v;
+                }
+                boolean isHidden() { return true; }
+            },
 
             // Other options
             new Option(true, true, OptionType.OTHER, "--help", "-h", "-?") {
@@ -326,11 +341,17 @@ class GNUStyleOptions {
 
         // process options
         for (; count < args.length; count++) {
-            if (args[count].charAt(0) != '-' || args[count].equals("-C") ||
-                args[count].equals("--release"))
-                break;
-
             String name = args[count];
+            if (name.charAt(0) != '-' || name.equals("-C"))
+                break;
+            if (name.equals("--release")) {
+                // JDK-8316804: stay here when in `--describe-module`
+                // or in `--validate` operation mode in order to process
+                // the `--release` option before parsing file arguments
+                if (!(jartool.dflag || jartool.validate))
+                    break;
+            }
+
             if (name.equals("-XDsuppress-tool-removal-message")) {
                 jartool.suppressDeprecateMsg = true;
                 continue;
