@@ -993,7 +993,7 @@ class Assembler : public AbstractAssembler {
 #define BCT_ZOPC    (unsigned  int)(70 << 24)
 #define BCTR_ZOPC   (unsigned  int)(6 << 8)
 #define BCTG_ZOPC   (unsigned  long)(227L << 40 | 70)
-#define BCTGR_ZOPC  (unsigned long)(0xb946 << 16)
+#define BCTGR_ZOPC  (unsigned int)(0xb946 << 16)
 // Absolute
 #define BC_ZOPC     (unsigned  int)(71 << 24)
 #define BAL_ZOPC    (unsigned  int)(69 << 24)
