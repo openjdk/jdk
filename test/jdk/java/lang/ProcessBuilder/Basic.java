@@ -32,7 +32,6 @@
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
- *          java.base/jdk.internal.misc
  * @requires !vm.musl
  * @requires vm.flagless
  * @library /test/lib
