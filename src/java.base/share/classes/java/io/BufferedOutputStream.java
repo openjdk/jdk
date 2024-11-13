@@ -85,9 +85,9 @@ public class BufferedOutputStream extends FilterOutputStream {
             throw new IllegalArgumentException("Buffer size <= 0");
         }
 
-        this.buf = new byte[initialSize]; // resizable if initialSize < maxSize
         if (getClass() == BufferedOutputStream.class) {
-            this.buf = new byte[initialSize];    // resizable
+            // resizable if initialSize < maxSize
+            this.buf = new byte[initialSize];
         } else {
             this.buf = new byte[maxSize];
         }

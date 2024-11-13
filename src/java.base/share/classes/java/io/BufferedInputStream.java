@@ -239,6 +239,7 @@ public class BufferedInputStream extends FilterInputStream {
         }
         initialSize = size;
         if (getClass() == BufferedInputStream.class) {
+            // lazily create buffer when not subclassed
             buf = EMPTY;
         } else {
             buf = new byte[size];

@@ -419,7 +419,6 @@ public class PrintWriter extends Writer {
      * @see #checkError()
      */
     public void close() {
-        Object lock = this.lock;
         synchronized (lock) {
             try {
                 if (out != null) {
