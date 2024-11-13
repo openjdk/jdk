@@ -1783,21 +1783,21 @@ void C2_MacroAssembler::load_vector_mask(KRegister dst, XMMRegister src, XMMRegi
 void C2_MacroAssembler::load_vector(BasicType bt, XMMRegister dst, Address src, int vlen_in_bytes) {
   if (is_integral_type(bt)) {
     switch (vlen_in_bytes) {
-    case 4:  movdl(dst, src);   break;
-    case 8:  movq(dst, src);    break;
-    case 16: movdqu(dst, src);  break;
-    case 32: vmovdqu(dst, src); break;
-    case 64: evmovdqul(dst, src, Assembler::AVX_512bit); break;
-    default: ShouldNotReachHere();
+      case 4:  movdl(dst, src);   break;
+      case 8:  movq(dst, src);    break;
+      case 16: movdqu(dst, src);  break;
+      case 32: vmovdqu(dst, src); break;
+      case 64: evmovdqul(dst, src, Assembler::AVX_512bit); break;
+      default: ShouldNotReachHere();
     }
   } else {
     switch (vlen_in_bytes) {
-    case 4:  movflt(dst, src); break;
-    case 8:  movdbl(dst, src); break;
-    case 16: movups(dst, src); break;
-    case 32: vmovups(dst, src, Assembler::AVX_256bit); break;
-    case 64: vmovups(dst, src, Assembler::AVX_512bit); break;
-    default: ShouldNotReachHere();
+      case 4:  movflt(dst, src); break;
+      case 8:  movdbl(dst, src); break;
+      case 16: movups(dst, src); break;
+      case 32: vmovups(dst, src, Assembler::AVX_256bit); break;
+      case 64: vmovups(dst, src, Assembler::AVX_512bit); break;
+      default: ShouldNotReachHere();
     }
   }
 }
