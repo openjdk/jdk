@@ -70,16 +70,17 @@ public @interface PreviewFeature {
         //---
         @JEP(number=477, title="Implicitly Declared Classes and Instance Main Methods", status="Third Preview")
         IMPLICIT_CLASSES,
-        @JEP(number=481, title="Scoped Values", status="Third Preview")
+        @JEP(number=487, title="Scoped Values", status="Fourth Preview")
         SCOPED_VALUES,
         @JEP(number=480, title="Structured Concurrency", status="Third Preview")
         STRUCTURED_CONCURRENCY,
         @JEP(number=466, title="ClassFile API", status="Second Preview")
         CLASSFILE_API,
-        @JEP(number=473, title="Stream Gatherers", status="Second Preview")
         STREAM_GATHERERS,
         @JEP(number=476, title="Module Import Declarations", status="Preview")
         MODULE_IMPORTS,
+        @JEP(number=478, title="Key Derivation Function API", status="Preview")
+        KEY_DERIVATION,
         LANGUAGE_MODEL,
         /**
          * A key for testing.

@@ -163,7 +163,7 @@ void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
 
 jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods);
 
-jlong JNICALL jfr_unregister_stack_filter(JNIEnv* env, jclass jvm, jlong id);
+void JNICALL jfr_unregister_stack_filter(JNIEnv* env, jclass jvm, jlong id);
 
 jlong JNICALL jfr_nanos_now(JNIEnv* env, jclass jvm);
 

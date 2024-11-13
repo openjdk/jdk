@@ -12,12 +12,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="af">aprikaans</language>
+			<language type="am">aarmenia</language>
 			<language type="ar">arabic</language>
 			<language type="ar_001">punijuga mānānka arabic</language>
+			<language type="as">aasamis</language>
+			<language type="az">ajerbaijani</language>
+			<language type="az" alt="short">ājeri</language>
+			<language type="be">belarusiati</language>
+			<language type="bg">bulgeriati</language>
 			<language type="bn">bangali</language>
+			<language type="bo">tibetī</language>
+			<language type="brx">boḍo</language>
+			<language type="bs">bajniati</language>
+			<language type="ca">keṭelan</language>
+			<language type="chr">cerokī</language>
+			<language type="cs">cek</language>
+			<language type="da">denis</language>
 			<language type="de">jerman</language>
 			<language type="de_AT">ausṭriati jerman</language>
 			<language type="de_CH">svis high jerman</language>
+			<language type="doi">ḍogri</language>
+			<language type="el">grīk</language>
 			<language type="en">ingrajī</language>
 			<language type="en_AU">ausṭreliati ingarjī</language>
 			<language type="en_CA">kanaḍati ingarjī</language>
@@ -29,41 +45,106 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="es_419">laṭin americati spenis</language>
 			<language type="es_ES">yuropīyati spenis</language>
 			<language type="es_MX">meksikoti spenis</language>
+			<language type="et">esṭoniyati</language>
+			<language type="eu">bask</language>
+			<language type="fa">persiati</language>
+			<language type="fa_AF">ḍari</language>
+			<language type="fi">pinnis</language>
+			<language type="fil">pilipino</language>
 			<language type="fr">prenc</language>
 			<language type="fr_CA">kanaḍati prenc</language>
 			<language type="fr_CH">svis prenc</language>
+			<language type="gl">galesiati</language>
+			<language type="gu">gujraṭī</language>
+			<language type="he">hibru</language>
 			<language type="hi_Latn">hindi</language>
+			<language type="hr">kroesiati</language>
+			<language type="hu">hngeriyati</language>
+			<language type="hy">aarmeniati</language>
 			<language type="id">inḍonesiyati</language>
+			<language type="is">aislanḍik</language>
 			<language type="it">iṭaliti</language>
 			<language type="ja">japanij</language>
+			<language type="ka">jorjiati</language>
+			<language type="kk">kjaak</language>
+			<language type="km">kmer</language>
+			<language type="kn">knnaḍa</language>
 			<language type="ko">koriati</language>
+			<language type="kok">konkanī</language>
+			<language type="ks">kasmīrī</language>
 			<language type="kxv">kuvi</language>
+			<language type="ky">kyrgyj</language>
+			<language type="lo">lao</language>
+			<language type="lt">lituaniyati</language>
+			<language type="lv">laṭviati</language>
+			<language type="mai">maitilī</language>
+			<language type="mk">mesiḍoniyati</language>
+			<language type="ml">malyalam</language>
+			<language type="mn">mongoliyati</language>
+			<language type="mni">maṇipurī</language>
+			<language type="mr">maraṭi</language>
+			<language type="ms">malei</language>
+			<language type="my">burmij</language>
+			<language type="nb">norvejiati būkmal</language>
+			<language type="ne">nepaḷī</language>
 			<language type="nl">ḍc</language>
 			<language type="nl_BE">vlaams</language>
+			<language type="or">oḍiaa</language>
+			<language type="pa">pnjabī</language>
 			<language type="pl">polis</language>
 			<language type="pt">portugīj</language>
 			<language type="pt_BR">brajilian portugīj</language>
 			<language type="pt_PT">yuropīyati portugīj</language>
+			<language type="ro">romaniyati</language>
+			<language type="ro_MD">molḍaviati</language>
 			<language type="ru">rusiyati</language>
+			<language type="sa">sanskrit</language>
+			<language type="sat">santalī</language>
+			<language type="sd">sindi</language>
+			<language type="si">sinhali</language>
+			<language type="sk">slovak</language>
+			<language type="sl">sloveniyati</language>
+			<language type="sq">albaniyati</language>
+			<language type="sr">sarbiyati</language>
+			<language type="sv">sviḍis</language>
+			<language type="sw">svahili</language>
+			<language type="sw_CD">kongo svahili</language>
+			<language type="ta">tamiḷ</language>
+			<language type="te">telugu</language>
 			<language type="th">tae</language>
 			<language type="tr">turkis</language>
+			<language type="uk">yukraniyati</language>
+			<language type="ur">urdu</language>
+			<language type="uz">ujbek</language>
+			<language type="vi">vietnaamti</language>
+			<language type="xnr">kangri</language>
 			<language type="zh">cainati</language>
 			<language type="zh" alt="menu">cainati, manḍarin</language>
 			<language type="zh_Hans">sahaj cainati</language>
 			<language type="zh_Hans" alt="long">sahaj manḍarin cainati</language>
 			<language type="zh_Hant">hirudlu cainati</language>
 			<language type="zh_Hant" alt="long">hirudlu manḍarin cainati</language>
+			<language type="zu">julu</language>
 		</languages>
 		<scripts>
 			<script type="Arab">aarabic</script>
+			<script type="Beng">bangalī</script>
+			<script type="Brah">brahmi</script>
+			<script type="Cher">cerokī</script>
 			<script type="Cyrl">sirilik</script>
 			<script type="Deva">devnagrī</script>
+			<script type="Gujr">gujraṭī</script>
+			<script type="Guru">gurmukī</script>
 			<script type="Hans">sahaj</script>
 			<script type="Hans" alt="stand-alone">sahaj han</script>
 			<script type="Hant">hirudlu</script>
 			<script type="Hant" alt="stand-alone">hirudlu han</script>
+			<script type="Knda">knnaḍa</script>
 			<script type="Latn">laṭin</script>
+			<script type="Mlym">malayalam</script>
 			<script type="Orya">oḍiaa</script>
+			<script type="Saur">saurastra</script>
+			<script type="Taml">tamiḷ</script>
 			<script type="Telu">telugu</script>
 			<script type="Zxxx">raciaahalee</script>
 			<script type="Zzzz">puṇāātiakr</script>
@@ -335,13 +416,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZM">jambiya</territory>
 			<territory type="ZW">jimbabve</territory>
 		</territories>
+		<keys>
+			<key type="calendar">kelenḍr</key>
+			<key type="cf">ṭakã pormat</key>
+			<key type="collation">mila krm</key>
+			<key type="currency">ṭakã</key>
+			<key type="hc">veḍiti gila (12 vrses 24)</key>
+			<key type="lb">daḍi ḍikihin aaḍa</key>
+			<key type="ms">laṭini leka</key>
+			<key type="numbers">sṅkya</key>
+		</keys>
 		<types>
 			<type key="calendar" type="gregorian">gregoriyan kelenḍr</type>
 			<type key="calendar" type="indian">barat jatiya kelenḍr</type>
+			<type key="cf" type="standard">mānānka takã</type>
+			<type key="collation" type="ducet">ḍepalt yunikoḍ baga lẽ</type>
+			<type key="collation" type="phonebook">pnbhi baga lẽ</type>
+			<type key="collation" type="search">samani udesya parin</type>
 			<type key="collation" type="standard">mānānka baga lẽ</type>
+			<type key="hc" type="h11">12 gṇṭati pddti (0 - 11)</type>
+			<type key="hc" type="h12">12 gṇṭati pddti (1–12)</type>
+			<type key="hc" type="h23">24 gṇṭati pddti (0 - 23)</type>
+			<type key="hc" type="h24">24 gṇṭati pddti (1 - 24)</type>
+			<type key="ms" type="metric">meṭrik pddti</type>
+			<type key="ms" type="uksystem">samrajyti aaṭini map pddti</type>
+			<type key="ms" type="ussystem">aamerikati map pddti</type>
+			<type key="numbers" type="arab">arabic-bartiya nmbr</type>
+			<type key="numbers" type="arabext">nkiaati arabic - bartiya nmbr</type>
+			<type key="numbers" type="beng">bngalī nmbr</type>
 			<type key="numbers" type="deva">devnagrī nmbr</type>
+			<type key="numbers" type="gujr">gujraṭī nmbr</type>
+			<type key="numbers" type="guru">gurumukī nmbr</type>
+			<type key="numbers" type="knda">knnaḍ nmbr</type>
 			<type key="numbers" type="latn">veḍa kuṇpu nmbr</type>
+			<type key="numbers" type="mlym">malayalam nmbr</type>
 			<type key="numbers" type="orya">oḍiya nmbr</type>
+			<type key="numbers" type="roman">roman nmbr</type>
+			<type key="numbers" type="romanlow">roman mila kase nmbr</type>
+			<type key="numbers" type="taml">hirudulu tamiḷ nmbr</type>
+			<type key="numbers" type="tamldec">tamiḷ nmbr</type>
 			<type key="numbers" type="telu">telugū nmbr</type>
 		</types>
 		<measurementSystemNames>
@@ -412,6 +525,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="GyMd">GGGGG d/M/y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G d MMM y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G E, d MMM y</dateFormatItem>
@@ -431,6 +549,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">QQQQ G y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">B h – B h</greatestDifference>
+							<greatestDifference id="h">B h–h</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B">B h:mm – B h:mm</greatestDifference>
+							<greatestDifference id="h">B h:mm–h:mm</greatestDifference>
+							<greatestDifference id="m">B h:mm–h:mm</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
@@ -597,14 +724,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4">4th kuarṭr</quarter>
 						</quarterWidth>
 					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">Q1</quarter>
-							<quarter type="2">Q2</quarter>
-							<quarter type="3">Q3</quarter>
-							<quarter type="4">Q4</quarter>
-						</quarterWidth>
-					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
@@ -711,7 +830,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Bh">B h</dateFormatItem>
-						<dateFormatItem id="Bhm">&gt;B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
@@ -728,6 +847,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM 'tã' 'vara' W</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
@@ -737,6 +857,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y 'tã' 'vara' w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="M">
@@ -1594,9 +1715,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>ulanbaṭar</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>koibalsan</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>mkao</exemplarCity>
 			</zone>
@@ -2337,13 +2455,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>cin delāiṭ belā</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>koibālsn belā</generic>
-					<standard>koibālsn mānānka belā</standard>
-					<daylight>koibālsn kār~ā belā</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>krismās dīp belā</standard>
@@ -2580,6 +2691,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>jāpān belā</generic>
 					<standard>jāpān mānānka belā</standard>
 					<daylight>jāpān ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>kājākstān belā</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3000,6 +3116,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern>#,##,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="other">0 hjar</pattern>
+					<pattern type="10000" count="other">00 hjar</pattern>
+					<pattern type="100000" count="other">000 hjar</pattern>
+					<pattern type="1000000" count="other">0 million</pattern>
+					<pattern type="10000000" count="other">00 million</pattern>
+					<pattern type="100000000" count="other">000 million</pattern>
+					<pattern type="1000000000" count="other">0 billion</pattern>
+					<pattern type="10000000000" count="other">00 billion</pattern>
+					<pattern type="100000000000" count="other">000 billion</pattern>
+					<pattern type="1000000000000" count="other">0 trillion</pattern>
+					<pattern type="10000000000000" count="other">00 trillion</pattern>
+					<pattern type="100000000000000" count="other">000 trillion</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" count="other">0 h</pattern>
+					<pattern type="10000" count="other">00 h</pattern>
+					<pattern type="100000" count="other">000 h</pattern>
+					<pattern type="1000000" count="other">0 mi</pattern>
+					<pattern type="10000000" count="other">00 mi</pattern>
+					<pattern type="100000000" count="other">000 mi</pattern>
+					<pattern type="1000000000" count="other">0 bi</pattern>
+					<pattern type="10000000000" count="other">00 bi</pattern>
+					<pattern type="100000000000" count="other">000 bi</pattern>
+					<pattern type="1000000000000" count="other">0 tri</pattern>
+					<pattern type="10000000000000" count="other">00 tri</pattern>
+					<pattern type="100000000000000" count="other">000 tri</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
 		</decimalFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
@@ -3011,7 +3159,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="other">¤0h</pattern>
+					<pattern type="10000" count="other">¤00h</pattern>
+					<pattern type="100000" count="other">¤000h</pattern>
+					<pattern type="1000000" count="other">¤0mi</pattern>
+					<pattern type="10000000" count="other">¤00mi</pattern>
+					<pattern type="100000000" count="other">¤000mi</pattern>
+					<pattern type="1000000000" count="other">¤0bi</pattern>
+					<pattern type="10000000000" count="other">¤00bi</pattern>
+					<pattern type="100000000000" count="other">¤000bi</pattern>
+					<pattern type="1000000000000" count="other">¤0tri</pattern>
+					<pattern type="10000000000000" count="other">¤00tri</pattern>
+					<pattern type="100000000000000" count="other">¤000tri</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
 			<currency type="BRL">
@@ -3051,10 +3214,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<listPattern type="or">
 			<listPatternPart type="end">{0}, aadtẽ {1}</listPatternPart>
 			<listPatternPart type="2">{0} aaḍẽ {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="end">{0}, {1}</listPatternPart>
-			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start">{0} {1}</listPatternPart>

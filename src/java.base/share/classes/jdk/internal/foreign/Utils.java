@@ -48,14 +48,10 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.Wrapper;
 
-import static sun.security.action.GetPropertyAction.privilegedGetProperty;
-
 /**
  * This class contains misc helper functions to support creation of memory segments.
  */
 public final class Utils {
-
-    public static final boolean IS_WINDOWS = privilegedGetProperty("os.name").startsWith("Windows");
 
     // Suppresses default constructor, ensuring non-instantiability.
     private Utils() {}

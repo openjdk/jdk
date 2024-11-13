@@ -170,16 +170,18 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
   worklist.push(xroot);
   while (worklist.size() > 0) {
     Node* n = worklist.pop();
-    visited.set(n->_idx);
+    if (visited.test_set(n->_idx)) {
+      continue;
+    }
     assert(C->node_arena()->contains(n), "dead node");
     for (uint j = 0; j < n->req(); j++) {
       Node* in = n->in(j);
       if (in != nullptr) {
-        assert(C->node_arena()->contains(in), "dead node");
-        if (!visited.test(in->_idx)) {
-          worklist.push(in);
-        }
+        worklist.push(in);
       }
+    }
+    for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+      worklist.push(n->fast_out(j));
     }
   }
 }
@@ -432,7 +434,7 @@ void Matcher::match( ) {
   Fixup_Save_On_Entry( );
 
   { // Cleanup mach IR after selection phase is over.
-    Compile::TracePhase tp("postselect_cleanup", &timers[_t_postselect_cleanup]);
+    Compile::TracePhase tp(_t_postselect_cleanup);
     do_postselect_cleanup();
     if (C->failing())  return;
     assert(verify_after_postselect_cleanup(), "");

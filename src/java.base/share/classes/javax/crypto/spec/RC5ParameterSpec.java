@@ -39,6 +39,8 @@ import java.util.Arrays;
  * <p> This class can be used to initialize a {@code Cipher} object that
  * implements the <i>RC5</i> algorithm.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2040
+ *      RFC 2040: The RC5, RC5-CBC, RC5-CBC-Pad, and RC5-CTS Algorithms
  * @author Jan Luehe
  *
  * @since 1.4

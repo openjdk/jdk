@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,9 +82,9 @@ public class HttpURLConnectionExpect100Test {
         conn.setRequestProperty("Expect", "100-continue");
         sendRequest(conn);
         getHeaderField(conn);
-        assertEquals(1, server.getServerHitCount());
         // Server rejects the expect 100-continue request with 417 response
         assertEquals(417, conn.getResponseCode());
+        assertEquals(1, server.getServerHitCount());
     }
 
     @Test
@@ -99,12 +99,12 @@ public class HttpURLConnectionExpect100Test {
         conn.setRequestMethod("PUT");
         sendRequest(conn);
         getHeaderField(conn);
-        assertEquals(1, server.getServerHitCount());
         assertEquals(200, conn.getResponseCode());
         try ( InputStream in = conn.getInputStream()) {
             byte[] data = in.readAllBytes();
             assertEquals(RESPONSE.length(), data.length);
         }
+        assertEquals(1, server.getServerHitCount());
     }
 
     private void sendRequest(final HttpURLConnection conn) throws Exception {
@@ -116,6 +116,7 @@ public class HttpURLConnectionExpect100Test {
             os.flush();
         } catch (IOException e) {
             // intentional, server will reject the expect 100
+            System.err.println("Got expected exception: " + e);
         }
     }
 
@@ -179,7 +180,7 @@ public class HttpURLConnectionExpect100Test {
         @Override
         public void run() {
             Socket client;
-            try {
+            try (ss) {
                 while (isRunning) {
                     client = ss.accept();
                     System.out.println(client.getRemoteSocketAddress().toString());
@@ -191,29 +192,16 @@ public class HttpURLConnectionExpect100Test {
                 if (isRunning) {
                     throw new RuntimeException(ex);
                 }
-            } finally {
-                if (ss != null && !ss.isClosed()) {
-                    try {
-                        ss.close();
-                    } catch (IOException ex) {
-                        //ignore
-                    }
-                }
             }
         }
 
         private void handleConnection(Socket client) throws IOException {
-            try ( BufferedReader in = new BufferedReader(
+            try (client; BufferedReader in = new BufferedReader(
                 new InputStreamReader(client.getInputStream()));
                 PrintStream out = new PrintStream(client.getOutputStream())) {
                 handle_connection(in, out);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-            } finally {
-                try {
-                    client.close();
-                } catch (IOException e) {
-                }
             }
         }
 
@@ -229,6 +217,10 @@ public class HttpURLConnectionExpect100Test {
                 rejectExpect100Continue(out);
             } else {
                 defaultResponse(out);
+            }
+            // wait until the client closes the socket
+            while (line != null) {
+                line = in.readLine();
             }
         }
 

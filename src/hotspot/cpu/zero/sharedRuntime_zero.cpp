@@ -85,6 +85,11 @@ uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }
 
+VMReg SharedRuntime::thread_register() {
+  Unimplemented();
+  return nullptr;
+}
+
 JRT_LEAF(void, zero_stub())
   ShouldNotCallThis();
 JRT_END
