@@ -194,25 +194,6 @@ public final class ML_KEM {
             -108, -108, -308, -308, 996, 996, 991, 991,
             958, 958, -1460, -1460, 1522, 1522, 1628, 1628
     };
-    private static final int[] MONT_ZETAS_FOR_INVERSE_NTT = new int[]{
-            584, -1049, 57, 1317, 789, 709, 1599, -1601,
-            -990, 604, 348, 857, 612, 474, 1177, -1014,
-            -88, -982, -191, 668, 1386, 486, -1153, -534,
-            514, 137, 586, -1178, 227, 339, -907, 244,
-            1200, -833, 1394, -30, 1074, 636, -317, -1192,
-            -1259, -355, -425, -884, -977, 1430, 868, 607,
-            184, 1448, 702, 1327, 431, 497, 595, -94,
-            1649, -1497, -620, 42, -172, 1107, -222, 1003,
-            426, -845, 395, -510, 1613, 825, 1269, -290,
-            -1429, 623, -567, 1617, 36, 1007, 1440, 332,
-            -201, 1313, -1382, -744, 669, -1538, 128, -1598,
-            1401, 1183, -553, 714, 405, -1155, -445, 406,
-            -1496, -49, 82, 1369, 259, 1604, 373, 909,
-            -1249, -1000, -25, -52, 530, -895, 1226, 819,
-            -185, 281, -742, 1253, 417, 1400, 35, -593,
-            97, -1263, 551, -585, 969, -914, -1188
-    };
-
     private static final short[] MONT_ZETAS_FOR_VECTOR_INVERSE_NTT_ARR = new short[]{
             // level 0
             -1628, -1628, -1522, -1522, 1460, 1460, -958, -958,
@@ -415,15 +396,15 @@ public final class ML_KEM {
     /*
     Classes for the internal K_PKE scheme
      */
-    public record K_PKE_EncryptionKey(byte[] keyBytes) {}
+    private record K_PKE_EncryptionKey(byte[] keyBytes) {}
 
-    public record K_PKE_DecryptionKey(byte[] keyBytes) {}
+    private record K_PKE_DecryptionKey(byte[] keyBytes) {}
 
-    public record K_PKE_KeyPair(
-            K_PKE_DecryptionKey privateKey, K_PKE_EncryptionKey publicKey) {
+    private record K_PKE_KeyPair(
+            K_PKE_EncryptionKey publicKey, K_PKE_DecryptionKey privateKey) {
     }
 
-    public record K_PKE_CipherText(byte[] encryptedBytes) {
+    protected record K_PKE_CipherText(byte[] encryptedBytes) {
     }
 
     private boolean isValidCipherText(K_PKE_CipherText cipherText) {
@@ -433,24 +414,22 @@ public final class ML_KEM {
     /*
     Classes for internal KEM scheme
      */
-    public record ML_KEM_EncapsulationKey(byte[] keyBytes) {
+    protected record ML_KEM_EncapsulationKey(byte[] keyBytes) {
     }
 
-    public record ML_KEM_DecapsulationKey(byte[] keyBytes) {
+    protected record ML_KEM_DecapsulationKey(byte[] keyBytes) {
     }
 
-    public record ML_KEM_KeyPair(ML_KEM_EncapsulationKey encapsulationKey,
+    protected record ML_KEM_KeyPair(ML_KEM_EncapsulationKey encapsulationKey,
                                  ML_KEM_DecapsulationKey decapsulationKey) {
     }
 
-    public record ML_KEM_EncapsulateResult(
+    protected record ML_KEM_EncapsulateResult(
             K_PKE_CipherText cipherText, byte[] sharedSecret) {
     }
 
-    /*
-    Key check functions from the beginning of sections 7.2 and 7.3 of the spec
-     */
-    public Object checkPublicKey(byte[] pk) throws InvalidKeyException {
+    // Encapsulation key checks from section 7.2 of spec
+    protected Object checkPublicKey(byte[] pk) throws InvalidKeyException {
         //Encapsulation key type check
         if (pk.length != mlKem_k * 384 + 32) {
             throw new InvalidKeyException("Public key is not the correct size");
@@ -471,7 +450,8 @@ public final class ML_KEM {
         return null;
     }
 
-    public Object checkPrivateKey(byte[] sk) throws InvalidKeyException {
+    // Decapsulation key checks from Section 7.3 of spec
+    protected Object checkPrivateKey(byte[] sk) throws InvalidKeyException {
         MessageDigest mlKemH;
         try {
             mlKemH = MessageDigest.getInstance(HASH_H_NAME);
@@ -496,7 +476,7 @@ public final class ML_KEM {
     /*
     Main internal algorithms from Section 6 of specification
      */
-    public ML_KEM_KeyPair generateKemKeyPair(
+    protected ML_KEM_KeyPair generateKemKeyPair(
         byte[] kem_d, byte[] kem_z)
         throws NoSuchAlgorithmException, DigestException {
         var mlKemH = MessageDigest.getInstance(HASH_H_NAME);
@@ -521,7 +501,7 @@ public final class ML_KEM {
             new ML_KEM_DecapsulationKey(decapsKey));
     }
 
-    public ML_KEM_EncapsulateResult encapsulate(
+    protected ML_KEM_EncapsulateResult encapsulate(
             ML_KEM_EncapsulationKey encapsulationKey, byte[] randomMessage)
             throws NoSuchAlgorithmException, InvalidKeyException {
         var mlKemH = MessageDigest.getInstance(HASH_H_NAME);
@@ -541,7 +521,7 @@ public final class ML_KEM {
         return new ML_KEM_EncapsulateResult(cipherText, sharedSecret);
     }
 
-    public byte[] decapsulate(ML_KEM_DecapsulationKey decapsulationKey,
+    protected byte[] decapsulate(ML_KEM_DecapsulationKey decapsulationKey,
                               K_PKE_CipherText cipherText)
             throws NoSuchAlgorithmException,
             InvalidKeyException, DecapsulateException {
@@ -661,8 +641,8 @@ public final class ML_KEM {
 
 
         return new K_PKE_KeyPair(
-            new K_PKE_DecryptionKey(skEncoded),
-            new K_PKE_EncryptionKey(pkEncoded));
+            new K_PKE_EncryptionKey(pkEncoded),
+            new K_PKE_DecryptionKey(skEncoded));
     }
 
     private K_PKE_CipherText kPkeEncrypt(
@@ -707,7 +687,7 @@ public final class ML_KEM {
         encryptU = mlKemAddVec(encryptU, encryptE1);
         var encryptVHat = mlKemVectorScalarMult(encryptTHat, encryptRHat);
         var encryptV = mlKemInverseNTT(encryptVHat);
-        encryptV = mlKemAddPoly(encryptV, encryptE2, decompressDecode1(message));
+        encryptV = mlKemAddPoly(encryptV, encryptE2, decompressDecode(message));
         var encryptC1 = encodeVector(mlKem_du, compressVector10_11(encryptU, mlKem_du));
         var encryptC2 = encodePoly(mlKem_dv, compressPoly4_5(encryptV, mlKem_dv));
 
@@ -735,7 +715,7 @@ public final class ML_KEM {
                 mlKemVectorScalarMult(decryptSHat, mlKemVectorNTT(decryptU)));
         decryptV = mlKemSubtractPoly(decryptV, decryptSU);
 
-        return encodeCompress1(decryptV);
+        return encodeCompress(decryptV);
     }
 
     /*
@@ -763,64 +743,69 @@ public final class ML_KEM {
         int[] ofs = new int[nrPar];
         Arrays.fill(ofs, 0);
         short[][] aij = new short[nrPar][];
-        Shake128Parallel parXof = new Shake128Parallel(xofBufArr);
+        try {
+            Shake128Parallel parXof = new Shake128Parallel(xofBufArr);
 
-        for (int i = 0; i < mlKem_k; i++) {
-            for (int j = 0; j < mlKem_k; j++) {
-                xofBufArr[parInd] = seedBuf.clone();
-                if (transposed) {
-                    xofBufArr[parInd][rhoLen] = (byte) i;
-                    xofBufArr[parInd][rhoLen + 1] = (byte) j;
-                } else {
-                    xofBufArr[parInd][rhoLen] = (byte) j;
-                    xofBufArr[parInd][rhoLen + 1] = (byte) i;
-                }
-                iIndex[parInd] = i;
-                jIndex[parInd] = j;
-                ofs[parInd] = 0;
-                aij[parInd] = new short[ML_KEM_N];
-                parInd++;
+            for (int i = 0; i < mlKem_k; i++) {
+                for (int j = 0; j < mlKem_k; j++) {
+                    xofBufArr[parInd] = seedBuf.clone();
+                    if (transposed) {
+                        xofBufArr[parInd][rhoLen] = (byte) i;
+                        xofBufArr[parInd][rhoLen + 1] = (byte) j;
+                    } else {
+                        xofBufArr[parInd][rhoLen] = (byte) j;
+                        xofBufArr[parInd][rhoLen + 1] = (byte) i;
+                    }
+                    iIndex[parInd] = i;
+                    jIndex[parInd] = j;
+                    ofs[parInd] = 0;
+                    aij[parInd] = new short[ML_KEM_N];
+                    parInd++;
 
-                if ((parInd == nrPar) ||
-                        ((i == mlKem_k - 1) && (j == mlKem_k - 1))) {
-                    parXof.reset(xofBufArr);
+                    if ((parInd == nrPar) ||
+                            ((i == mlKem_k - 1) && (j == mlKem_k - 1))) {
+                        parXof.reset(xofBufArr);
 
-                    allDone = false;
-                    while (!allDone) {
-                        allDone = true;
-                        parXof.squeezeBlock();
-                        for (int k = 0; k < parInd; k++) {
-                            int parsedOfs = 0;
-                            int tmp;
-                            if (ofs[k] < ML_KEM_N) {
-                                twelve2Sixteen(xofBufArr[k], 0,
-                                        parsedBuf, (XOF_BLOCK_LEN / 3) * 2);
-                            }
-                            while ((ofs[k] < ML_KEM_N) &&
-                                    (parsedOfs < (XOF_BLOCK_LEN / 3) * 2)) {
-                                tmp = parsedBuf[parsedOfs++] & 0xFFFF;
-                                if (tmp < ML_KEM_Q) {
-                                    aij[k][ofs[k]] = (short) tmp;
-                                    ofs[k]++;
+                        allDone = false;
+                        while (!allDone) {
+                            allDone = true;
+                            parXof.squeezeBlock();
+                            for (int k = 0; k < parInd; k++) {
+                                int parsedOfs = 0;
+                                int tmp;
+                                if (ofs[k] < ML_KEM_N) {
+                                    twelve2Sixteen(xofBufArr[k], 0,
+                                            parsedBuf, (XOF_BLOCK_LEN / 3) * 2);
                                 }
-                                tmp = parsedBuf[parsedOfs++] & 0xFFFF;
-                                if ((ofs[k] < ML_KEM_N) && (tmp < ML_KEM_Q)) {
-                                    aij[k][ofs[k]] = (short) tmp;
-                                    ofs[k]++;
+                                while ((ofs[k] < ML_KEM_N) &&
+                                        (parsedOfs < (XOF_BLOCK_LEN / 3) * 2)) {
+                                    tmp = parsedBuf[parsedOfs++] & 0xFFFF;
+                                    if (tmp < ML_KEM_Q) {
+                                        aij[k][ofs[k]] = (short) tmp;
+                                        ofs[k]++;
+                                    }
+                                    tmp = parsedBuf[parsedOfs++] & 0xFFFF;
+                                    if ((ofs[k] < ML_KEM_N) && (tmp < ML_KEM_Q)) {
+                                        aij[k][ofs[k]] = (short) tmp;
+                                        ofs[k]++;
+                                    }
                                 }
-                            }
-                            if (ofs[k] < ML_KEM_N) {
-                                allDone = false;
+                                if (ofs[k] < ML_KEM_N) {
+                                    allDone = false;
+                                }
                             }
                         }
-                    }
 
-                    for (int k = 0; k < parInd; k ++) {
-                        a[iIndex[k]][jIndex[k]] = aij[k];
+                        for (int k = 0; k < parInd; k++) {
+                            a[iIndex[k]][jIndex[k]] = aij[k];
+                        }
+                        parInd = 0;
                     }
-                    parInd = 0;
                 }
             }
+        } catch (InvalidAlgorithmParameterException e) {
+            // This cannot happen since xofBufArr is of the correct size
+            throw new RuntimeException("Internal error.");
         }
 
         return a;
@@ -949,7 +934,7 @@ public final class ML_KEM {
         return 1;
     }
 
-    static void implMlKemNttJava(short[] poly) {
+    private static void implMlKemNttJava(short[] poly) {
         int[] coeffs = new int[ML_KEM_N];
         for (int m = 0; m < ML_KEM_N; m++) {
             coeffs[m] = poly[m];
@@ -973,7 +958,7 @@ public final class ML_KEM {
         return 1;
     }
 
-    static void implMlKemInverseNttJava(short[] poly) {
+    private static void implMlKemInverseNttJava(short[] poly) {
         int[] coeffs = new int[ML_KEM_N];
         for (int m = 0; m < ML_KEM_N; m++) {
             coeffs[m] = poly[m];
@@ -1021,7 +1006,7 @@ public final class ML_KEM {
     // The output elements will be in the range (-MONT_Q, MONT_Q).
     private static void seilerInverseNTT(int[] coeffs) {
         int dimension = ML_KEM_N;
-        int zetaIndex = 0;
+        int zetaIndex = MONT_ZETAS_FOR_NTT.length - 1;
         for (int l = 2; l < dimension; l *= 2) {
             for (int s = 0; s < dimension; s += 2 * l) {
                 for (int j = s; j < s + l; j++) {
@@ -1029,9 +1014,9 @@ public final class ML_KEM {
                     coeffs[j] = (tmp + coeffs[j + l]);
                     coeffs[j + l] = montMul(
                             tmp - coeffs[j + l],
-                            MONT_ZETAS_FOR_INVERSE_NTT[zetaIndex]);
+                            -MONT_ZETAS_FOR_NTT[zetaIndex]);
                 }
-                zetaIndex++;
+                zetaIndex--;
             }
         }
 
@@ -1089,7 +1074,7 @@ public final class ML_KEM {
         return 1;
     }
 
-    static void implMlKemNttMultJava(short[] result, short[] ntta, short[] nttb) {
+    private static void implMlKemNttMultJava(short[] result, short[] ntta, short[] nttb) {
         for (int m = 0; m < ML_KEM_N / 2; m++) {
             int a0 = ntta[2 * m];
             int a1 = ntta[2 * m + 1];
@@ -1130,7 +1115,7 @@ public final class ML_KEM {
         return 1;
     }
 
-    static void implMlKemAddPolyJava(short[] result, short[] a, short[] b) {
+    private static void implMlKemAddPolyJava(short[] result, short[] a, short[] b) {
         for (int m = 0; m < ML_KEM_N; m++) {
             int r = a[m] + b[m] + ML_KEM_Q; // This makes r > -ML_KEM_Q
             result[m] = (short) r;
@@ -1152,7 +1137,7 @@ public final class ML_KEM {
         return 1;
     }
 
-    static void implMlKemAddPolyJava(short[] result, short[] a, short[] b, short[] c) {
+    private static void implMlKemAddPolyJava(short[] result, short[] a, short[] b, short[] c) {
         for (int m = 0; m < ML_KEM_N; m++) {
             int r = a[m] + b[m] + c[m] + 2 * ML_KEM_Q; // This makes r > - ML_KEM_Q
             result[m] = (short) r;
@@ -1255,7 +1240,7 @@ public final class ML_KEM {
         return result;
     }
 
-    static byte[] encodeCompress1(short[] poly) {
+    private static byte[] encodeCompress(short[] poly) {
         byte[] result = new byte[ML_KEM_N / 8];
         int xx;
         int currentByte;
@@ -1287,20 +1272,6 @@ public final class ML_KEM {
         for (int i = 0; i < mlKem_k; i++) {
             result[i] = decodePoly(l, encodedVector, (i * ML_KEM_N * l) / 8);
         }
-        return result;
-    }
-
-    public static byte[] normalizeDecapsKeyBytes(byte[] decapsKeyBytes) {
-        byte[] result = decapsKeyBytes.clone();
-        int k = (decapsKeyBytes.length - 64) / ((ML_KEM_N * 3) / 2);
-        short[][] vector = new short[k][];
-        for (int i = 0; i < k; i++) {
-            vector[i] = new short[ML_KEM_N];
-            implMlKem12To16(decapsKeyBytes, i * ((ML_KEM_N * 3)/ 2), vector[i], ML_KEM_N);
-            implMlKemBarrettReduce(vector[i]);
-        }
-        var normalized = encodeVector(12, vector, k);
-        System.arraycopy(normalized, 0, result, 0, normalized.length);
         return result;
     }
 
@@ -1451,7 +1422,7 @@ public final class ML_KEM {
         return poly;
     }
 
-    private static short[] decompressDecode1 (byte[] input) {
+    private static short[] decompressDecode(byte[] input) {
         short[] result = new short[256];
         for (int i = 0; i < 32; i++) {
             int currentByte = input[i] & 0xFF;
@@ -1473,7 +1444,7 @@ public final class ML_KEM {
         return 1;
     }
 
-    static void implMlKemBarrettReduceJava(short[] coeffs) {
+    private static void implMlKemBarrettReduceJava(short[] coeffs) {
         for (int m = 0; m < ML_KEM_N; m++) {
             int tmp = ((int) coeffs[m] * BARRETT_MULTIPLIER) >>
                     BARRETT_SHIFT;
