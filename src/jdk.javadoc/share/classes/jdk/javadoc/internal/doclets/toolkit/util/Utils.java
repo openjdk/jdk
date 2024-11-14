@@ -2710,6 +2710,27 @@ public class Utils {
                  .anyMatch(am -> "jdk.internal.javac.NoPreview".equals(getQualifiedTypeName(am.getAnnotationType())));
     }
 
+    public boolean isNonPreviewExtendingPreview(Element el) {
+        if (!configuration.workArounds.isPreviewAPI(el) && (el.getKind().isDeclaredType())) {
+            Element enclosingElement = el.getEnclosingElement();
+            while (enclosingElement != null) {
+                if (configuration.workArounds.isPreviewAPI(enclosingElement)) {
+                    return false; // inner class of preview feature
+                }
+                enclosingElement = enclosingElement.getEnclosingElement();  // deal with nested inner classes
+            }
+
+            TypeElement typeElement = (TypeElement) el;
+            for (TypeMirror supertype : typeElement.getInterfaces()) {
+                Element superElement = ((DeclaredType) supertype).asElement();
+                if (configuration.workArounds.isPreviewAPI(superElement)) {
+                    return true;  // non preview extending a preview interface
+                }
+            }
+        }
+        return false;  // Either it's a preview API or has no preview parent
+    }
+
     private PreviewFlagProvider previewFlagProvider = new PreviewFlagProvider() {
         @Override
         public boolean isPreview(Element el) {
@@ -2723,7 +2744,8 @@ public class Utils {
                        || !previewAPIs.previewAPI.isEmpty()
                        || !previewAPIs.reflectivePreviewAPI.isEmpty()
                        || !previewAPIs.declaredUsingPreviewFeature.isEmpty())
-                   && !hasNoPreviewAnnotation(el);
+                    && !hasNoPreviewAnnotation(el)
+                    && !isNonPreviewExtendingPreview(el);
         }
     };
 

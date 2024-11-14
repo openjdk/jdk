@@ -2531,9 +2531,13 @@ public abstract class HtmlDocletWriter {
                     ul.add(HtmlTree.LI(note));
                 }
                 previewDiv.add(ul);
+                String previewUseNote =
+                        utils.isNonPreviewExtendingPreview(forWhat)
+                                ? "doclet.NonPreviewPreview"
+                                : "doclet.PreviewTrailingNote1";
                 Content note1 =
-                        contents.getContent("doclet.PreviewTrailingNote1",
-                                            nameCode);
+                        contents.getContent(previewUseNote,
+                                nameCode);
                 previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment, note1));
                 Content note2 =
                         contents.getContent("doclet.PreviewTrailingNote2",
