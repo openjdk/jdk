@@ -3055,46 +3055,6 @@ JVM_ENTRY(void, JVM_SetScopedValueCache(JNIEnv* env, jclass threadClass,
   thread->set_scopedValueCache(objs);
 JVM_END
 
-// java.lang.SecurityManager ///////////////////////////////////////////////////////////////////////
-
-JVM_ENTRY(jobjectArray, JVM_GetClassContext(JNIEnv *env))
-  ResourceMark rm(THREAD);
-  JvmtiVMObjectAllocEventCollector oam;
-  vframeStream vfst(thread);
-
-  if (vmClasses::reflect_CallerSensitive_klass() != nullptr) {
-    // This must only be called from SecurityManager.getClassContext
-    // Also this?
-    Method* m = vfst.method();
-    if (!(m->method_holder() == vmClasses::SecurityManager_klass() &&
-          m->name()          == vmSymbols::getClassContext_name() &&
-          m->signature()     == vmSymbols::void_class_array_signature())) {
-      THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVM_GetClassContext must only be called from SecurityManager.getClassContext");
-    }
-  }
-
-  // Collect method holders
-  GrowableArray<Klass*>* klass_array = new GrowableArray<Klass*>();
-  for (; !vfst.at_end(); vfst.security_next()) {
-    Method* m = vfst.method();
-    // Native frames are not returned
-    if (!m->is_ignored_by_security_stack_walk() && !m->is_native()) {
-      Klass* holder = m->method_holder();
-      assert(holder->is_klass(), "just checking");
-      klass_array->append(holder);
-    }
-  }
-
-  // Create result array of type [Ljava/lang/Class;
-  objArrayOop result = oopFactory::new_objArray(vmClasses::Class_klass(), klass_array->length(), CHECK_NULL);
-  // Fill in mirrors corresponding to method holders
-  for (int i = 0; i < klass_array->length(); i++) {
-    result->obj_at_put(i, klass_array->at(i)->java_mirror());
-  }
-
-  return (jobjectArray) JNIHandles::make_local(THREAD, result);
-JVM_END
-
 
 // java.lang.Package ////////////////////////////////////////////////////////////////
 

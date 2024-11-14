@@ -434,9 +434,6 @@ class SerializeClosure;
   template(getCause_name,                             "getCause")                                 \
   template(initCause_name,                            "initCause")                                \
   template(getProperty_name,                          "getProperty")                              \
-  template(context_name,                              "context")                                  \
-  template(contextClassLoader_name,                   "contextClassLoader")                       \
-  template(getClassContext_name,                      "getClassContext")                          \
   template(wait_name,                                 "wait0")                                    \
   template(forName_name,                              "forName")                                  \
   template(forName0_name,                             "forName0")                                 \

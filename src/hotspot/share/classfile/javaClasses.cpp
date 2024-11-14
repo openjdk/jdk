@@ -1614,7 +1614,7 @@ JFR_ONLY(int java_lang_Thread::_jfr_epoch_offset;)
 #define THREAD_FIELDS_DO(macro) \
   macro(_holder_offset,        k, "holder", thread_fieldholder_signature, false); \
   macro(_name_offset,          k, vmSymbols::name_name(), string_signature, false); \
-  macro(_contextClassLoader_offset, k, vmSymbols::contextClassLoader_name(), classloader_signature, false); \
+  macro(_contextClassLoader_offset, k, "contextClassLoader", classloader_signature, false); \
   macro(_eetop_offset,         k, "eetop", long_signature, false); \
   macro(_interrupted_offset,   k, "interrupted", bool_signature, false); \
   macro(_interruptLock_offset, k, "interruptLock", object_signature, false); \
