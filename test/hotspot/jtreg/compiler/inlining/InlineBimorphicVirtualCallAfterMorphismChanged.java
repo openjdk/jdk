@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8326369 8339299
+ * @bug 8339299
  * @summary C2 doesn't perform bimorphic inlining on a call site that was monomorphic during tier 3 compilation.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
