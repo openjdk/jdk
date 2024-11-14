@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ public class BuiltinClassLoader
             url = findResourceOnClassPath(name);
         }
 
-        return checkURL(url);  // check access before returning
+        return url;
     }
 
     /**
@@ -292,14 +292,7 @@ public class BuiltinClassLoader
     public InputStream findResourceAsStream(String mn, String name)
         throws IOException
     {
-        // Need URL to resource when running with a security manager so that
-        // the right permission check is done.
-        if (System.getSecurityManager() != null || mn == null) {
-            URL url = findResource(mn, name);
-            return (url != null) ? url.openStream() : null;
-        }
-
-        // find in module defined to this loader, no security manager
+        // Find in module defined to this loader
         ModuleReference mref = nameToModule.get(mn);
         if (mref != null) {
             return moduleReaderFor(mref).open(name).orElse(null);
@@ -322,7 +315,7 @@ public class BuiltinClassLoader
             if (module.loader() == this) {
                 URL url;
                 try {
-                    url = findResource(module.name(), name); // checks URL
+                    url = findResource(module.name(), name);
                 } catch (IOException ioe) {
                     return null;
                 }
@@ -342,7 +335,7 @@ public class BuiltinClassLoader
                 if (!urls.isEmpty()) {
                     URL url = urls.get(0);
                     if (url != null) {
-                        return checkURL(url); // check access before returning
+                        return url;
                     }
                 }
             } catch (IOException ioe) {
@@ -352,8 +345,7 @@ public class BuiltinClassLoader
         }
 
         // search class path
-        URL url = findResourceOnClassPath(name);
-        return checkURL(url);
+        return findResourceOnClassPath(name);
     }
 
     /**
@@ -363,70 +355,36 @@ public class BuiltinClassLoader
      */
     @Override
     public Enumeration<URL> findResources(String name) throws IOException {
-        List<URL> checked = new ArrayList<>();  // list of checked URLs
+        List<URL> urls = new ArrayList<>();
 
+        // Add module path URLs
         String pn = Resources.toPackageName(name);
         LoadedModule module = packageToModule.get(pn);
         if (module != null) {
 
             // resource is in a package of a module defined to this loader
             if (module.loader() == this) {
-                URL url = findResource(module.name(), name); // checks URL
+                URL url = findResource(module.name(), name);
                 if (url != null
                     && (name.endsWith(".class")
                         || url.toString().endsWith("/")
                         || isOpen(module.mref(), pn))) {
-                    checked.add(url);
+                    urls.add(url);
                 }
             }
 
         } else {
             // not in a package of a module defined to this loader
-            for (URL url : findMiscResource(name)) {
-                url = checkURL(url);
-                if (url != null) {
-                    checked.add(url);
-                }
-            }
+            urls.addAll(findMiscResource(name));
         }
 
-        // class path (not checked)
+        // Add class path URLs
         Enumeration<URL> e = findResourcesOnClassPath(name);
+        while (e.hasMoreElements()) {
+            urls.add(e.nextElement());
+        }
 
-        // concat the checked URLs and the (not checked) class path
-        return new Enumeration<>() {
-            final Iterator<URL> iterator = checked.iterator();
-            URL next;
-            private boolean hasNext() {
-                if (next != null) {
-                    return true;
-                } else if (iterator.hasNext()) {
-                    next = iterator.next();
-                    return true;
-                } else {
-                    // need to check each URL
-                    while (e.hasMoreElements() && next == null) {
-                        next = checkURL(e.nextElement());
-                    }
-                    return next != null;
-                }
-            }
-            @Override
-            public boolean hasMoreElements() {
-                return hasNext();
-            }
-            @Override
-            public URL nextElement() {
-                if (hasNext()) {
-                    URL result = next;
-                    next = null;
-                    return result;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-        };
-
+        return Collections.enumeration(urls);
     }
 
     /**
@@ -534,9 +492,9 @@ public class BuiltinClassLoader
     private URL findResourceOnClassPath(String name) {
         if (hasClassPath()) {
             if (System.getSecurityManager() == null) {
-                return ucp.findResource(name, false);
+                return ucp.findResource(name);
             } else {
-                PrivilegedAction<URL> pa = () -> ucp.findResource(name, false);
+                PrivilegedAction<URL> pa = () -> ucp.findResource(name);
                 return AccessController.doPrivileged(pa);
             }
         } else {
@@ -552,10 +510,10 @@ public class BuiltinClassLoader
     private Enumeration<URL> findResourcesOnClassPath(String name) {
         if (hasClassPath()) {
             if (System.getSecurityManager() == null) {
-                return ucp.findResources(name, false);
+                return ucp.findResources(name);
             } else {
                 PrivilegedAction<Enumeration<URL>> pa;
-                pa = () -> ucp.findResources(name, false);
+                pa = () -> ucp.findResources(name);
                 return AccessController.doPrivileged(pa);
             }
         } else {
@@ -754,7 +712,7 @@ public class BuiltinClassLoader
     private Class<?> findClassOnClassPathOrNull(String cn) {
         String path = cn.replace('.', '/').concat(".class");
         if (System.getSecurityManager() == null) {
-            Resource res = ucp.getResource(path, false);
+            Resource res = ucp.getResource(path);
             if (res != null) {
                 try {
                     return defineClass(cn, res);
@@ -767,7 +725,7 @@ public class BuiltinClassLoader
             // avoid use of lambda here
             PrivilegedAction<Class<?>> pa = new PrivilegedAction<>() {
                 public Class<?> run() {
-                    Resource res = ucp.getResource(path, false);
+                    Resource res = ucp.getResource(path);
                     if (res != null) {
                         try {
                             return defineClass(cn, res);
@@ -1070,14 +1028,6 @@ public class BuiltinClassLoader
             }
         }
         return false;
-    }
-
-    /**
-     * Checks access to the given URL. We use URLClassPath for consistent
-     * checking with java.net.URLClassLoader.
-     */
-    private static URL checkURL(URL url) {
-        return URLClassPath.checkURL(url);
     }
 
     // Called from VM only, during -Xshare:dump

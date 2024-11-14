@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReaderFactory;
 
-import jdk.internal.loader.URLClassPath;
 import jdk.internal.loader.Resource;
 import sun.net.www.ParseUtil;
 import sun.net.www.URLConnection;
@@ -92,7 +91,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
         if (reader != null) {
             URL url = toJrtURL(module, name);
             ImageLocation location = reader.findLocation(module, name);
-            if (location != null && URLClassPath.checkURL(url) != null) {
+            if (location != null && url != null) {
                 return new Resource() {
                     @Override
                     public String getName() {

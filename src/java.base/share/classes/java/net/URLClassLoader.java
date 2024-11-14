@@ -379,7 +379,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
                 new PrivilegedExceptionAction<>() {
                     public Class<?> run() throws ClassNotFoundException {
                         String path = name.replace('.', '/').concat(".class");
-                        Resource res = ucp.getResource(path, false);
+                        Resource res = ucp.getResource(path);
                         if (res != null) {
                             try {
                                 return defineClass(name, res);
@@ -582,11 +582,11 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         URL url = AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 public URL run() {
-                    return ucp.findResource(name, true);
+                    return ucp.findResource(name);
                 }
             }, acc);
 
-        return url != null ? URLClassPath.checkURL(url) : null;
+        return url;
     }
 
     /**
@@ -601,45 +601,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     public Enumeration<URL> findResources(final String name)
         throws IOException
     {
-        final Enumeration<URL> e = ucp.findResources(name, true);
-
-        return new Enumeration<>() {
-            private URL url = null;
-
-            private boolean next() {
-                if (url != null) {
-                    return true;
-                }
-                do {
-                    @SuppressWarnings("removal")
-                    URL u = AccessController.doPrivileged(
-                        new PrivilegedAction<>() {
-                            public URL run() {
-                                if (!e.hasMoreElements())
-                                    return null;
-                                return e.nextElement();
-                            }
-                        }, acc);
-                    if (u == null)
-                        break;
-                    url = URLClassPath.checkURL(u);
-                } while (url == null);
-                return url != null;
-            }
-
-            public URL nextElement() {
-                if (!next()) {
-                    throw new NoSuchElementException();
-                }
-                URL u = url;
-                url = null;
-                return u;
-            }
-
-            public boolean hasMoreElements() {
-                return next();
-            }
-        };
+        return ucp.findResources(name);
     }
 
     /**
