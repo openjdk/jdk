@@ -56,7 +56,7 @@ public class ML_DSA_Impls {
         }
     }
 
-    public static class KPG extends NamedKeyPairGenerator {
+    public sealed static class KPG extends NamedKeyPairGenerator permits KPG2, KPG3, KPG5 {
         public KPG() {
             // ML-DSA-65 is default
             super("ML-DSA", "ML-DSA-65", "ML-DSA-44", "ML-DSA-87");
@@ -67,7 +67,7 @@ public class ML_DSA_Impls {
         }
 
         @Override
-        public byte[][] implGenerateKeyPair(String name, SecureRandom sr) {
+        protected byte[][] implGenerateKeyPair(String name, SecureRandom sr) {
             byte[] seed = new byte[32];
             var r = sr != null ? sr : JCAUtil.getDefSecureRandom();
             r.nextBytes(seed);
@@ -85,25 +85,25 @@ public class ML_DSA_Impls {
         }
     }
 
-    public static class KPG2 extends KPG {
+    public final static class KPG2 extends KPG {
         public KPG2() {
             super("ML-DSA-44");
         }
     }
 
-    public static class KPG3 extends KPG {
+    public final static class KPG3 extends KPG {
         public KPG3() {
             super("ML-DSA-65");
         }
     }
 
-    public static class KPG5 extends KPG {
+    public final static class KPG5 extends KPG {
         public KPG5() {
             super("ML-DSA-87");
         }
     }
 
-    public static class KF extends NamedKeyFactory {
+    public sealed static class KF extends NamedKeyFactory permits KF2, KF3, KF5 {
         public KF() {
             super("ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
         }
@@ -112,25 +112,25 @@ public class ML_DSA_Impls {
         }
     }
 
-    public static class KF2 extends KF {
+    public final static class KF2 extends KF {
         public KF2() {
             super("ML-DSA-44");
         }
     }
 
-    public static class KF3 extends KF {
+    public final static class KF3 extends KF {
         public KF3() {
             super("ML-DSA-65");
         }
     }
 
-    public static class KF5 extends KF {
+    public final static class KF5 extends KF {
         public KF5() {
             super("ML-DSA-87");
         }
     }
 
-    public static class SIG extends NamedSignature {
+    public sealed static class SIG extends NamedSignature permits SIG2, SIG3, SIG5 {
         public SIG() {
             super("ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
         }
@@ -139,7 +139,7 @@ public class ML_DSA_Impls {
         }
 
         @Override
-        public byte[] implSign(String name, byte[] skBytes, Object sk2, byte[] msg, SecureRandom sr) {
+        protected byte[] implSign(String name, byte[] skBytes, Object sk2, byte[] msg, SecureRandom sr) {
             var size = name2int(name);
             var r = sr != null ? sr : JCAUtil.getDefSecureRandom();
             byte[] rnd = new byte[32];
@@ -157,7 +157,7 @@ public class ML_DSA_Impls {
         }
 
         @Override
-        public boolean implVerify(String name, byte[] pkBytes, Object pk2, byte[] msg, byte[] sigBytes)
+        protected boolean implVerify(String name, byte[] pkBytes, Object pk2, byte[] msg, byte[] sigBytes)
                 throws SignatureException {
             var size = name2int(name);
             var mlDsa = new ML_DSA(size);
@@ -172,31 +172,31 @@ public class ML_DSA_Impls {
         }
 
         @Override
-        public Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
+        protected Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
             ML_DSA mlDsa = new ML_DSA(name2int(name));
             return mlDsa.checkPublicKey(pk);
         }
 
         @Override
-        public Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+        protected Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
             ML_DSA mlDsa = new ML_DSA(name2int(name));
             return mlDsa.checkPrivateKey(sk);
         }
     }
 
-    public static class SIG2 extends SIG {
+    public final static class SIG2 extends SIG {
         public SIG2() {
             super("ML-DSA-44");
         }
     }
 
-    public static class SIG3 extends SIG {
+    public final static class SIG3 extends SIG {
         public SIG3() {
             super("ML-DSA-65");
         }
     }
 
-    public static class SIG5 extends SIG {
+    public final static class SIG5 extends SIG {
         public SIG5() {
             super("ML-DSA-87");
         }
