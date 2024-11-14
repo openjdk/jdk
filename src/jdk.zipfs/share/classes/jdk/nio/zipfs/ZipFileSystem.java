@@ -236,7 +236,6 @@ class ZipFileSystem extends FileSystem {
     // If not specified in env, it is the owner of the archive. If no owner can
     // be determined, we try to go with system property "user.name". If that's not
     // accessible, we return "<zipfs_default>".
-    @SuppressWarnings("removal")
     private UserPrincipal initOwner(Path zfpath, Map<String, ?> env) throws IOException {
         Object o = env.get(PROPERTY_DEFAULT_OWNER);
         if (o == null) {
@@ -266,7 +265,6 @@ class ZipFileSystem extends FileSystem {
     // If not specified in env, we try to determine the group of the zip archive itself.
     // If this is not possible/unsupported, we will return a group principal going by
     // the same name as the default owner.
-    @SuppressWarnings("removal")
     private GroupPrincipal initGroup(Path zfpath, Map<String, ?> env) throws IOException {
         Object o = env.get(PROPERTY_DEFAULT_GROUP);
         if (o == null) {
@@ -439,7 +437,6 @@ class ZipFileSystem extends FileSystem {
         return (path)->pattern.matcher(path.toString()).matches();
     }
 
-    @SuppressWarnings("removal")
     @Override
     public void close() throws IOException {
         beginWrite();

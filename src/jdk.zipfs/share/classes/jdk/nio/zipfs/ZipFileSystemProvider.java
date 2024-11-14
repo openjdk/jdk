@@ -314,7 +314,6 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     //////////////////////////////////////////////////////////////
-    @SuppressWarnings("removal")
     void removeFileSystem(Path zfpath, ZipFileSystem zfs) throws IOException {
         synchronized (filesystems) {
             filesystems.remove(zfpath.toRealPath(), zfs);
