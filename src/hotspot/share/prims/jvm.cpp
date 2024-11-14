@@ -378,7 +378,7 @@ JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
   // Add the sun.management.compiler property for the compiler's name
   {
 #undef CSIZE
-#if defined(_LP64) || defined(_WIN64)
+#if defined(_LP64)
   #define CSIZE "64-Bit "
 #else
   #define CSIZE
@@ -917,7 +917,7 @@ static jclass jvm_define_class_common(const char *name,
                                            CHECK_NULL);
 
   ResourceMark rm(THREAD);
-  ClassFileStream st((u1*)buf, len, source, ClassFileStream::verify);
+  ClassFileStream st((u1*)buf, len, source);
   Handle class_loader (THREAD, JNIHandles::resolve(loader));
   Handle protection_domain (THREAD, JNIHandles::resolve(pd));
   ClassLoadInfo cl_info(protection_domain);
@@ -1003,7 +1003,7 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
 
   Handle protection_domain (THREAD, JNIHandles::resolve(pd));
   const char* source = is_nestmate ? host_class->external_name() : "__JVM_LookupDefineClass__";
-  ClassFileStream st((u1*)buf, len, source, ClassFileStream::verify);
+  ClassFileStream st((u1*)buf, len, source);
 
   InstanceKlass* ik = nullptr;
   if (!is_hidden) {
@@ -1268,87 +1268,6 @@ JVM_ENTRY(jobject, JVM_GetProtectionDomain(JNIEnv *env, jclass cls))
   return (jobject) JNIHandles::make_local(THREAD, pd);
 JVM_END
 
-
-// Returns the inherited_access_control_context field of the running thread.
-JVM_ENTRY(jobject, JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls))
-  oop result = java_lang_Thread::inherited_access_control_context(thread->threadObj());
-  return JNIHandles::make_local(THREAD, result);
-JVM_END
-
-JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
-  if (!UsePrivilegedStack) return nullptr;
-
-  ResourceMark rm(THREAD);
-  GrowableArray<Handle>* local_array = new GrowableArray<Handle>(12);
-  JvmtiVMObjectAllocEventCollector oam;
-
-  // count the protection domains on the execution stack. We collapse
-  // duplicate consecutive protection domains into a single one, as
-  // well as stopping when we hit a privileged frame.
-
-  oop previous_protection_domain = nullptr;
-  Handle privileged_context(thread, nullptr);
-  bool is_privileged = false;
-  oop protection_domain = nullptr;
-
-  // Iterate through Java frames
-  vframeStream vfst(thread);
-  for(; !vfst.at_end(); vfst.next()) {
-    // get method of frame
-    Method* method = vfst.method();
-
-    // stop at the first privileged frame
-    if (method->method_holder() == vmClasses::AccessController_klass() &&
-      method->name() == vmSymbols::executePrivileged_name())
-    {
-      // this frame is privileged
-      is_privileged = true;
-
-      javaVFrame *priv = vfst.asJavaVFrame();       // executePrivileged
-
-      StackValueCollection* locals = priv->locals();
-      StackValue* ctx_sv = locals->at(1); // AccessControlContext context
-      StackValue* clr_sv = locals->at(2); // Class<?> caller
-      assert(!ctx_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
-      assert(!clr_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
-      privileged_context    = ctx_sv->get_obj();
-      Handle caller         = clr_sv->get_obj();
-
-      Klass *caller_klass = java_lang_Class::as_Klass(caller());
-      protection_domain  = caller_klass->protection_domain();
-    } else {
-      protection_domain = method->method_holder()->protection_domain();
-    }
-
-    if ((previous_protection_domain != protection_domain) && (protection_domain != nullptr)) {
-      local_array->push(Handle(thread, protection_domain));
-      previous_protection_domain = protection_domain;
-    }
-
-    if (is_privileged) break;
-  }
-
-
-  // either all the domains on the stack were system domains, or
-  // we had a privileged system domain
-  if (local_array->is_empty()) {
-    if (is_privileged && privileged_context.is_null()) return nullptr;
-
-    oop result = java_security_AccessControlContext::create(objArrayHandle(), is_privileged, privileged_context, CHECK_NULL);
-    return JNIHandles::make_local(THREAD, result);
-  }
-
-  objArrayOop context = oopFactory::new_objArray(vmClasses::ProtectionDomain_klass(),
-                                                 local_array->length(), CHECK_NULL);
-  objArrayHandle h_context(thread, context);
-  for (int index = 0; index < local_array->length(); index++) {
-    h_context->obj_at_put(index, local_array->at(index)());
-  }
-
-  oop result = java_security_AccessControlContext::create(h_context, is_privileged, privileged_context, CHECK_NULL);
-
-  return JNIHandles::make_local(THREAD, result);
-JVM_END
 
 class ScopedValueBindingsResolver {
 public:

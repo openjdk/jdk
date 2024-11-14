@@ -724,13 +724,6 @@ JNIEXPORT jobjectArray JNICALL
 JVM_GetMethodParameters(JNIEnv *env, jobject method);
 
 /*
- * java.security.*
- */
-
-JNIEXPORT jobject JNICALL
-JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls);
-
-/*
  * Ensure that code doing a stackwalk and using javaVFrame::locals() to
  * get the value will see a materialized value and not a scalar-replaced
  * null value.
@@ -740,9 +733,6 @@ JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls);
                    // through a native method is enough.
 JNIEXPORT void JNICALL
 JVM_EnsureMaterializedForStackWalk_func(JNIEnv* env, jobject vthread, jobject value);
-
-JNIEXPORT jobject JNICALL
-JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls);
 
 /*
  * Signal support, used to implement the shutdown sequence.  Every VM must
@@ -1162,6 +1152,13 @@ JVM_GetClassFileVersion(JNIEnv *env, jclass current);
  */
 JNIEXPORT jboolean JNICALL
 JVM_PrintWarningAtDynamicAgentLoad(void);
+
+#define JNI_ONLOAD_SYMBOLS   {"JNI_OnLoad"}
+#define JNI_ONUNLOAD_SYMBOLS {"JNI_OnUnload"}
+#define JVM_ONLOAD_SYMBOLS      {"JVM_OnLoad"}
+#define AGENT_ONLOAD_SYMBOLS    {"Agent_OnLoad"}
+#define AGENT_ONUNLOAD_SYMBOLS  {"Agent_OnUnload"}
+#define AGENT_ONATTACH_SYMBOLS  {"Agent_OnAttach"}
 
 /*
  * This structure is used by the launcher to get the default thread

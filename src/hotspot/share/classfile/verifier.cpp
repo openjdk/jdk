@@ -105,8 +105,8 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
 
 // Methods in Verifier
 
-bool Verifier::should_verify_for(oop class_loader, bool should_verify_class) {
-  return (class_loader == nullptr || !should_verify_class) ?
+bool Verifier::should_verify_for(oop class_loader) {
+  return class_loader == nullptr ?
     BytecodeVerificationLocal : BytecodeVerificationRemote;
 }
 
@@ -276,7 +276,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
 bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
   Symbol* name = klass->name();
 
-  return (should_verify_for(klass->class_loader(), should_verify_class) &&
+  return (should_verify_class &&
     // return if the class is a bootstrapping class
     // or defineClass specified not to verify by default (flags override passed arg)
     // We need to skip the following four for bootstraping

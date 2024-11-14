@@ -515,23 +515,6 @@ static BOOL shouldUsePressAndHold() {
     [super drawRect:dirtyRect];
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     if (env != NULL) {
-        /*
-         if ([self inLiveResize]) {
-         NSRect rs[4];
-         NSInteger count;
-         [self getRectsExposedDuringLiveResize:rs count:&count];
-         for (int i = 0; i < count; i++) {
-         JNU_CallMethodByName(env, NULL, [m_awtWindow cPlatformView],
-         "deliverWindowDidExposeEvent", "(FFFF)V",
-         (jfloat)rs[i].origin.x, (jfloat)rs[i].origin.y,
-         (jfloat)rs[i].size.width, (jfloat)rs[i].size.height);
-         if ((*env)->ExceptionOccurred(env)) {
-         (*env)->ExceptionDescribe(env);
-         (*env)->ExceptionClear(env);
-         }
-         }
-         } else {
-         */
         DECLARE_CLASS(jc_CPlatformView, "sun/lwawt/macosx/CPlatformView");
         DECLARE_METHOD(jm_deliverWindowDidExposeEvent, jc_CPlatformView, "deliverWindowDidExposeEvent", "()V");
         jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
@@ -540,9 +523,6 @@ static BOOL shouldUsePressAndHold() {
             CHECK_EXCEPTION();
             (*env)->DeleteLocalRef(env, jlocal);
         }
-        /*
-         }
-         */
     }
 }
 
