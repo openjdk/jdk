@@ -42,4 +42,6 @@
  * @compile/ref=Test4b.out -XDrawDiagnostics -nowarn -Xlint:unchecked -Xmaxwarns 1 A.java B.java
  * @compile/ref=Test4c.out -XDrawDiagnostics -nowarn -Xlint:unchecked -Xmaxwarns 2 A.java B.java
  * @compile/ref=Test4d.out -XDrawDiagnostics -nowarn -Xlint:unchecked -Xmaxwarns 3 A.java B.java
+ * @compile/ref=PolymorphicMethodTest.out -XDrawDiagnostics -Xlint:unchecked PolymorphicMethodTest.java
+ * @compile/ref=PolymorphicMethodTest_Source23.out -XDrawDiagnostics -Xlint:unchecked -source 23 PolymorphicMethodTest.java
  */

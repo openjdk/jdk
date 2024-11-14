@@ -28,9 +28,12 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Functional.ThrowingRunnable;
@@ -226,6 +229,90 @@ public class WindowsHelper {
 
         throw new RuntimeException(String.format(
                 "Failed to get file description of [%s]", pathToExeFile));
+    }
+
+    public static void killProcess(long pid) {
+        Executor.of("taskkill", "/F", "/PID", Long.toString(pid)).dumpOutput(true).execute();
+    }
+
+    public static void killAppLauncherProcess(JPackageCommand cmd,
+            String launcherName, int expectedCount) {
+        var pids = findAppLauncherPIDs(cmd, launcherName);
+        try {
+            TKit.assertEquals(expectedCount, pids.length, String.format(
+                    "Check [%d] %s app launcher processes found running",
+                    expectedCount, Optional.ofNullable(launcherName).map(
+                            str -> "[" + str + "]").orElse("<main>")));
+        } finally {
+            if (pids.length != 0) {
+                killProcess(pids[0]);
+            }
+        }
+    }
+
+    private static long[] findAppLauncherPIDs(JPackageCommand cmd, String launcherName) {
+        // Get the list of PIDs and PPIDs of app launcher processes.
+        // wmic process where (name = "foo.exe") get ProcessID,ParentProcessID
+        List<String> output = Executor.of("wmic", "process", "where", "(name",
+                "=",
+                "\"" + cmd.appLauncherPath(launcherName).getFileName().toString() + "\"",
+                ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).
+                saveOutput().executeAndGetOutput();
+
+        if ("No Instance(s) Available.".equals(output.getFirst().trim())) {
+            return new long[0];
+        }
+
+        String[] headers = Stream.of(output.getFirst().split("\\s+", 2)).map(
+                String::trim).map(String::toLowerCase).toArray(String[]::new);
+        Pattern pattern;
+        if (headers[0].equals("parentprocessid") && headers[1].equals(
+                "processid")) {
+            pattern = Pattern.compile("^(?<ppid>\\d+)\\s+(?<pid>\\d+)\\s+$");
+        } else if (headers[1].equals("parentprocessid") && headers[0].equals(
+                "processid")) {
+            pattern = Pattern.compile("^(?<pid>\\d+)\\s+(?<ppid>\\d+)\\s+$");
+        } else {
+            throw new RuntimeException(
+                    "Unrecognizable output of \'wmic process\' command");
+        }
+
+        List<long[]> processes = output.stream().skip(1).map(line -> {
+            Matcher m = pattern.matcher(line);
+            long[] pids = null;
+            if (m.matches()) {
+                pids = new long[]{Long.parseLong(m.group("pid")), Long.
+                    parseLong(m.group("ppid"))};
+            }
+            return pids;
+        }).filter(Objects::nonNull).toList();
+
+        switch (processes.size()) {
+            case 2 -> {
+                final long parentPID;
+                final long childPID;
+                if (processes.get(0)[0] == processes.get(1)[1]) {
+                    parentPID = processes.get(0)[0];
+                    childPID = processes.get(1)[0];
+                } else if (processes.get(1)[0] == processes.get(0)[1]) {
+                    parentPID = processes.get(1)[0];
+                    childPID = processes.get(0)[0];
+                } else {
+                    TKit.assertUnexpected("App launcher processes unrelated");
+                    return null; // Unreachable
+                }
+                return new long[]{parentPID, childPID};
+            }
+            case 1 -> {
+                return new long[]{processes.get(0)[0]};
+            }
+            default -> {
+                TKit.assertUnexpected(String.format(
+                        "Unexpected number of running processes [%d]",
+                        processes.size()));
+                return null; // Unreachable
+            }
+        }
     }
 
     private static boolean isUserLocalInstall(JPackageCommand cmd) {
@@ -458,15 +545,15 @@ public class WindowsHelper {
             "bin\\server\\jvm.dll"));
 
     // jtreg resets %ProgramFiles% environment variable by some reason.
-    private final static Path PROGRAM_FILES = Path.of(Optional.ofNullable(
+    private static final Path PROGRAM_FILES = Path.of(Optional.ofNullable(
             System.getenv("ProgramFiles")).orElse("C:\\Program Files"));
 
-    private final static Path USER_LOCAL = Path.of(System.getProperty(
+    private static final Path USER_LOCAL = Path.of(System.getProperty(
             "user.home"),
             "AppData", "Local");
 
-    private final static String SYSTEM_SHELL_FOLDERS_REGKEY = "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
-    private final static String USER_SHELL_FOLDERS_REGKEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
+    private static final String SYSTEM_SHELL_FOLDERS_REGKEY = "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
+    private static final String USER_SHELL_FOLDERS_REGKEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
 
     private static final Map<String, String> REGISTRY_VALUES = new HashMap<>();
 }

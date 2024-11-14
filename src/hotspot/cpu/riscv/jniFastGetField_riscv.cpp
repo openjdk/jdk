@@ -73,14 +73,10 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   MacroAssembler* masm = new MacroAssembler(&cbuf);
   address fast_entry = __ pc();
 
-  Address target(SafepointSynchronize::safepoint_counter_addr());
-  __ relocate(target.rspec(), [&] {
-    __ la(rcounter_addr, target.target());
-  });
-
   Label slow;
-  Address safepoint_counter_addr(rcounter_addr, 0);
-  __ lwu(rcounter, safepoint_counter_addr);
+  ExternalAddress counter(SafepointSynchronize::safepoint_counter_addr());
+  __ la(rcounter_addr, counter);
+  __ lwu(rcounter, Address(rcounter_addr));
   // An even value means there are no ongoing safepoint operations
   __ test_bit(t0, rcounter, 0);
   __ bnez(t0, slow);
@@ -91,12 +87,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
     // Check to see if a field access watch has been set before we
     // take the fast path.
-    ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(result, target.target(), offset);
-      __ lwu(result, Address(result, offset));
-    });
+    __ lwu(result, ExternalAddress(JvmtiExport::get_field_access_count_addr()));
     __ bnez(result, slow);
 
     __ mv(robj, c_rarg1);
@@ -143,7 +134,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   // (LoadStore for volatile field).
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
-  __ lw(t0, safepoint_counter_addr);
+  __ lw(t0, Address(rcounter_addr));
   __ bne(rcounter, t0, slow);
 
   switch (type) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tests <int> element
- * @run main/othervm -Djava.security.manager=allow TestInt
+ * @run main/othervm TestInt
  * @author Sergey Malenkov
  */
 
@@ -43,7 +43,7 @@ public final class TestInt extends AbstractTest {
             + "</java>";
 
     public static void main(String[] args) {
-        new TestInt().test(true);
+        new TestInt().test();
     }
 
     @Override

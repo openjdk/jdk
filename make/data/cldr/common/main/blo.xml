@@ -21,7 +21,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bn">baŋglaa kagɩja</language>
 			<language type="de">gɩjaamaja</language>
 			<language type="en">gɛɛshɩ</language>
-			<language type="en_GB" alt="short">gɛɛshɩ (GT)</language>
 			<language type="en_US">gɛɛshɩ (Ganɔ gaɖɔŋkɔnɔ kabʊtǝna Amalɩka nɩ)</language>
 			<language type="en_US" alt="short">gɛɛshɩ (GKA)</language>
 			<language type="es">gɩspaŋja</language>
@@ -50,6 +49,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<scripts>
 			<script type="Arab">laaribu kʊja</script>
 			<script type="Cyrl">Siril kʊja</script>
+			<script type="Deva">defanagari kʊja</script>
 			<script type="Hans">aburoka</script>
 			<script type="Hans" alt="stand-alone">Han (aburoka)</script>
 			<script type="Hant">tututu</script>
@@ -373,6 +373,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 		<keys>
 			<key type="calendar">ɩshilé n’ɩŋɔrɔ ɩtʊrka</key>
+			<key type="currency">gɩtanɩ</key>
+			<key type="ms">ʊfaŋʊ kayaashɩ</key>
+			<key type="numbers">ɩnɔmba</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Buɖa kǝbaja bɩshilé na bɩŋɔrɔ ɩtʊrka</type>
@@ -394,6 +397,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="persian">Pɛrs kǝbaja bɩshilé na kɩŋɔrɔ ɩtʊrka</type>
 			<type key="calendar" type="roc">miŋguwo kɩshilé na kɩŋɔrɔ ɩtʊrka</type>
 			<type key="collation" type="standard">ɩbii kʊnyaʊ ɖeiɖei</type>
+			<type key="ms" type="metric">mɛta kʊfaŋʊ kayaashɩ</type>
+			<type key="ms" type="uksystem">Gɛɛshɩ kʊfaŋʊ kayaashɩ</type>
+			<type key="ms" type="ussystem">Amalɩka kʊfaŋʊ kayaashɩ</type>
 			<type key="numbers" type="latn">latɛŋ</type>
 		</types>
 		<measurementSystemNames>
@@ -1013,6 +1019,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="quarter">
 				<displayName>ɩŋɔrɩriu</displayName>
+				<relative type="-1">ɩŋɔrɩriu ɩboŋoka</relative>
+				<relative type="0">ɩŋɔrɩriu nnɖe</relative>
+				<relative type="1">ɩŋɔrɩriu ɩfɔlɩ</relative>
 			</field>
 			<field type="quarter-short">
 				<displayName>ɩŋɔ.</displayName>
@@ -1057,6 +1066,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">bk ɖe</relative>
 				<relative type="1">bk fɔlɩ</relative>
 			</field>
+			<field type="weekOfMonth">
+				<displayName>aŋɔrɔ kabɔkɔɩ</displayName>
+			</field>
 			<field type="day">
 				<displayName>ʊshilé</displayName>
 				<relative type="-1">galaɩ</relative>
@@ -1068,6 +1080,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-narrow">
 				<displayName>ʊsh</displayName>
+			</field>
+			<field type="dayOfYear">
+				<displayName>gaja kʊshilé</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>bɔkɔɩ kʊshilé</displayName>
@@ -1930,9 +1945,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulanbatɔɔr</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Koibalsaan</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Makawoo</exemplarCity>
 			</zone>
@@ -2661,13 +2673,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Caɩna kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Koibalsaan kaakɔŋkɔŋɔ̀</generic>
-					<standard>Koibalsaan kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
-					<daylight>Koibalsaan kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Nowɛl kaAtukǝltǝna kaakɔŋkɔŋɔ̀</standard>
@@ -2912,6 +2917,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Japaŋ kaakɔŋkɔŋɔ̀</generic>
 					<standard>Japaŋ kaakɔŋkɔŋɔ̀ ɖeiɖei</standard>
 					<daylight>Japaŋ kaakɔŋkɔŋɔ̀ gafʊbaka</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Kasastan kaakɔŋkɔŋɔ̀</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3365,8 +3375,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern>¤ #,##0.00;¤ -#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="zero">{0} {1}</unitPattern>
-			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="zero">{1} {0}</unitPattern>
+			<unitPattern count="one">{1} {0}</unitPattern>
 			<unitPattern count="other">{1} {0}</unitPattern>
 		</currencyFormats>
 		<currencies>
@@ -4328,9 +4338,942 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ɖesi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>sɛnti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>mili{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>mikroo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>nanoo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>pikoo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>fɛmtoo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>atoo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>sɛptoo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>yɔktoo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-27">
+				<unitPrefixPattern>rɔntoo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-30">
+				<unitPrefixPattern>kwɛktoo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ɖeka{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>hɛktoo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>kiloo{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>megaa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>jigaa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tɛraa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>petaa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ɛsaa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>sɛtaa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>yɔta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern>rɔnaa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern>kwɛtaa{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>jibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>ɛsbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>sebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} {1} nɩ</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="zero">{0} bʊye bʊye</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} bʊye bʊye</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} bʊye bʊye</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="zero">{0} bʊye bʊriu</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} bʊye bʊriu</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} bʊye bʊriu</compoundUnitPattern1>
+			</compoundUnit>
+			<unit type="acceleration-g-force">
+				<displayName>gatǝna kɩkashɩ bʊkɔ laŋ</displayName>
+				<unitPattern count="zero">baa gatǝna kɩkashɩ bʊkɔ laŋ {0}</unitPattern>
+				<unitPattern count="one">gatǝna kɩkashɩ bʊkɔ laŋ {0}</unitPattern>
+				<unitPattern count="other">gatǝna kɩkashɩ bʊkɔ laŋ {0}</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>ɩmɛta gɩpi bʊyɛ bʊyɛ nɩ</displayName>
+				<unitPattern count="zero">baa mɛta gɩpi bʊyɛ bʊyɛ nɩ {0}</unitPattern>
+				<unitPattern count="one">mɛta gɩpi bʊyɛ bʊyɛ nɩ {0}</unitPattern>
+				<unitPattern count="other">ɩmɛta gɩpi bʊyɛ bʊyɛ nɩ {0}</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>ɩcǝpǝrʊ</displayName>
+				<unitPattern count="zero">baa ʊcǝpǝrʊ {0}</unitPattern>
+				<unitPattern count="one">ʊcǝpǝrʊ {0}</unitPattern>
+				<unitPattern count="other">ɩcǝpǝrʊ {0}</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>ɩɖegre</displayName>
+				<unitPattern count="zero">baa ɖegre {0}</unitPattern>
+				<unitPattern count="one">ɖegre {0}</unitPattern>
+				<unitPattern count="other">ɩɖegre {0}</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>gʊta-kɩminti</displayName>
+				<unitPattern count="zero">baa gʊta-kaminti {0}</unitPattern>
+				<unitPattern count="one">gʊta-kaminti {0}</unitPattern>
+				<unitPattern count="other">gʊta-kɩminti {0}</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>gʊta-kɩsǝmpi</displayName>
+				<unitPattern count="zero">baa gʊta-kagɩsǝmpi {0}</unitPattern>
+				<unitPattern count="one">gʊta-kagɩsǝmpi {0}</unitPattern>
+				<unitPattern count="other">gʊta-kɩsǝmpi {0}</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<displayName>ɩkiloomɛta bʊyɛ bʊyɛ</displayName>
+				<unitPattern count="zero">baa kiloomɛta bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="one">kiloomɛta bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="other">ɩkiloomɛta bʊyɛ bʊyɛ {0}</unitPattern>
+				<perUnitPattern>{0} kiloomɛta bʊyɛ bʊyɛ nɩ</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>ɩlɔ</displayName>
+				<unitPattern count="zero">baa ʊlɔ {0}</unitPattern>
+				<unitPattern count="one">ʊlɔ {0}</unitPattern>
+				<unitPattern count="other">ɩlɔ {0}</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>ɩmɛta bʊyɛ bʊyɛ</displayName>
+				<unitPattern count="zero">baa mɛta bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="one">mɛta bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="other">ɩmɛta bʊyɛ bʊyɛ {0}</unitPattern>
+				<perUnitPattern>{0} mɛta bʊyɛ bʊyɛ nɩ</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>ɩsɛntimɛta bʊyɛ bʊyɛ</displayName>
+				<unitPattern count="zero">baa sɛntimɛta bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="one">sɛntimɛta bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="other">ɩsɛntimɛta bʊyɛ bʊyɛ {0}</unitPattern>
+				<perUnitPattern>{0} sɛntimɛta bʊyɛ bʊyɛ nɩ</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>ɩmayɩl bʊyɛ bʊyɛ</displayName>
+				<unitPattern count="zero">baa mayɩl bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="one">mayɩl bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="other">ɩmayɩl bʊyɛ bʊyɛ {0}</unitPattern>
+				<perUnitPattern>{0} mayɩl bʊyɛ bʊyɛ nɩ</perUnitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>anaŋcǝna bʊyɛ bʊyɛ</displayName>
+				<unitPattern count="zero">baa gʊnaŋcǝna bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="one">gʊnaŋcǝna bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="other">anaŋcǝna bʊyɛ bʊyɛ {0}</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>asǝkǝmǝ bʊyɛ bʊyɛ</displayName>
+				<unitPattern count="zero">baa nsǝkǝmǝ bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="one">nsǝkǝmǝ bʊyɛ bʊyɛ {0}</unitPattern>
+				<unitPattern count="other">asǝkǝmǝ bʊyɛ bʊyɛ {0}</unitPattern>
+				<perUnitPattern>{0} nsǝkǝmǝ bʊyɛ bʊyɛ nɩ</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>ɩɖunam</displayName>
+				<unitPattern count="zero">baa ɖunam {0}</unitPattern>
+				<unitPattern count="one">ɖunam {0}</unitPattern>
+				<unitPattern count="other">ɩɖunam {0}</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>ɩkaraatɩ</displayName>
+				<unitPattern count="zero">baa karaatɩ {0}</unitPattern>
+				<unitPattern count="one">karaatɩ {0}</unitPattern>
+				<unitPattern count="other">ɩkaraatɩ {0}</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>ɩmiligram ɖesilitri nɩ</displayName>
+				<unitPattern count="zero">baa miligram ɖesilitri nɩ {0}</unitPattern>
+				<unitPattern count="one">miligram ɖesilitri nɩ {0}</unitPattern>
+				<unitPattern count="other">ɩmiligram ɖesilitri nɩ {0}</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>ɩmilimol litri nɩ</displayName>
+				<unitPattern count="zero">baa milimol litri nɩ {0}</unitPattern>
+				<unitPattern count="one">milimol litri nɩ {0}</unitPattern>
+				<unitPattern count="other">ɩmilimol litri nɩ {0}</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>ayɔkɔ</displayName>
+				<unitPattern count="zero">baa bʊkɔ {0}</unitPattern>
+				<unitPattern count="one">bʊkɔ {0}</unitPattern>
+				<unitPattern count="other">ayɔkɔ {0}</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>ɩshɩnʊn nɩ</displayName>
+				<unitPattern count="zero">ɩshɩnʊn nɩ {0}</unitPattern>
+				<unitPattern count="one">ɩshɩnʊn nɩ {0}</unitPattern>
+				<unitPattern count="other">ɩshɩnʊn nɩ {0}</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>miili nɩ</displayName>
+				<unitPattern count="zero">miili nɩ {0}</unitPattern>
+				<unitPattern count="one">miili nɩ {0}</unitPattern>
+				<unitPattern count="other">miili nɩ {0}</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>ɩmol</displayName>
+				<unitPattern count="zero">baa mol {0}</unitPattern>
+				<unitPattern count="one">mol {0}</unitPattern>
+				<unitPattern count="other">ɩmol {0}</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>ɩlitri kiloomɛta nɩ</displayName>
+				<unitPattern count="zero">baa litri kiloomɛta nɩ {0}</unitPattern>
+				<unitPattern count="one">litri kiloomɛta nɩ {0}</unitPattern>
+				<unitPattern count="other">litri kiloomɛta nɩ {0}</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<displayName>ɩlitri ɩkiloomɛta 100 nɩ</displayName>
+				<unitPattern count="zero">baa litri ɩkiloomɛta 100 nɩ {0}</unitPattern>
+				<unitPattern count="one">litri ɩkiloomɛta 100 nɩ {0}</unitPattern>
+				<unitPattern count="other">ɩlitri ɩkiloomɛta 100 nɩ {0}</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>ɩmayɩl gaalɔŋ nɩ</displayName>
+				<unitPattern count="zero">baa mayɩl gaalɔŋ nɩ {0}</unitPattern>
+				<unitPattern count="one">mayɩl gaalɔŋ nɩ {0}</unitPattern>
+				<unitPattern count="other">ɩmayɩl gaalɔŋ nɩ {0}</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>ɩmayɩl gaalɔŋ Gɛɛshɩ kaja nɩ</displayName>
+				<unitPattern count="zero">baa mayɩl gaalɔŋ Gɛɛshɩ kaja nɩ {0}</unitPattern>
+				<unitPattern count="one">mayɩl gaalɔŋ Gɛɛshɩ kaja nɩ {0}</unitPattern>
+				<unitPattern count="other">ɩmayɩl gaalɔŋ Gɛɛshɩ kaja nɩ {0}</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>bʊja-ɩshɩnʊn mána</displayName>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>bʊja-tǝb mána</displayName>
+			</unit>
+			<unit type="duration-year">
+				<displayName>bʊja</displayName>
+				<perUnitPattern>{0} gaja nɩ</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>ɩŋɔrɩriu mána</displayName>
+				<perUnitPattern>{0} ɩŋɔrɩriu nɩ</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>ɩŋɔrɔ</displayName>
+				<perUnitPattern>{0} aŋɔrɔ nɩ</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>ɩbɔkɔɩ</displayName>
+				<perUnitPattern>{0} bɔkɔɩ nɩ</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>ɩshilé</displayName>
+				<perUnitPattern>{0} ʊshilé nɩ</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>bʊkɔŋkɔŋɔ̀</displayName>
+				<perUnitPattern>{0} gakɔŋkɔŋɔ̀ nɩ</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>anaŋa</displayName>
+				<perUnitPattern>{0} gʊnaŋa nɩ</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>ɩpi</displayName>
+				<perUnitPattern>{0} gɩpi nɩ</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>ɩsǝmpi</displayName>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>ɩmikroosǝmpi</displayName>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>ɩnanoosǝmpi</displayName>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>Ampɛɛr mána</displayName>
+				<unitPattern count="zero">baa Ampɛɛr {0}</unitPattern>
+				<unitPattern count="one">Ampɛɛr {0}</unitPattern>
+				<unitPattern count="other">Ampɛɛr mána {0}</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>mili-Ampɛɛr mána</displayName>
+				<unitPattern count="zero">baa mili-Ampɛɛr {0}</unitPattern>
+				<unitPattern count="one">mili-Ampɛɛr {0}</unitPattern>
+				<unitPattern count="other">mili-Ampɛɛr {0} mána</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>Om mána</displayName>
+				<unitPattern count="zero">baa Om {0}</unitPattern>
+				<unitPattern count="one">Om {0}</unitPattern>
+				<unitPattern count="other">Om mána {0}</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>ɩFɔltɩ</displayName>
+				<unitPattern count="zero">baa Fɔltɩ {0}</unitPattern>
+				<unitPattern count="one">Fɔltɩ {0}</unitPattern>
+				<unitPattern count="other">ɩFɔltɩ {0}</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>ɩkilookalorii</displayName>
+				<unitPattern count="zero">baa kilookalorii {0}</unitPattern>
+				<unitPattern count="one">kilookalorii {0}</unitPattern>
+				<unitPattern count="other">ɩkilookalorii {0}</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>ɩkalorii</displayName>
+				<unitPattern count="zero">baa kalorii {0}</unitPattern>
+				<unitPattern count="one">kalorii {0}</unitPattern>
+				<unitPattern count="other">ɩkalorii {0}</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>ɩkiloojul</displayName>
+				<unitPattern count="zero">baa kiloojul {0}</unitPattern>
+				<unitPattern count="one">kiloojul {0}</unitPattern>
+				<unitPattern count="other">ɩkiloojul {0}</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>ɩjul</displayName>
+				<unitPattern count="zero">baa jul {0}</unitPattern>
+				<unitPattern count="one">jul {0}</unitPattern>
+				<unitPattern count="other">ɩjul {0}</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>kiloo-Waatɩ-bʊkɔŋkɔŋɔ̀</displayName>
+				<unitPattern count="zero">baa kiloo-Waatɩ-gakɔŋkɔŋɔ̀ {0}</unitPattern>
+				<unitPattern count="one">kiloo-Waatɩ-gakɔŋkɔŋɔ̀ {0}</unitPattern>
+				<unitPattern count="other">kiloo-Waatɩ-bʊkɔŋkɔŋɔ̀ {0}</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>elɛtrɔŋ-Fɔltɩ mána</displayName>
+				<unitPattern count="zero">baa elɛtrɔŋ-Fɔltɩ {0}</unitPattern>
+				<unitPattern count="one">elɛtrɔŋ-Fɔltɩ {0}</unitPattern>
+				<unitPattern count="other">elɛtrɔŋ-Fɔltɩ mána {0}</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>ɩNiutɔn</displayName>
+				<unitPattern count="zero">baa Niutɔn {0}</unitPattern>
+				<unitPattern count="one">Niutɔn {0}</unitPattern>
+				<unitPattern count="other">ɩNiutɔn {0}</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kiloo-Waatɩ-bʊkɔŋkɔŋɔ̀ ɩkilomɛta 100 nɩ</displayName>
+				<unitPattern count="zero">baa kiloo-Waatɩ-gakɔŋkɔŋɔ̀ ɩkilomɛta 100 nɩ {0}</unitPattern>
+				<unitPattern count="one">kiloo-Waatɩ-gakɔŋkɔŋɔ̀ ɩkilomɛta 100 nɩ {0}</unitPattern>
+				<unitPattern count="other">kiloo-Waatɩ-bʊkɔŋkɔŋɔ̀ ɩkilomɛta 100 nɩ {0}</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>ɩjigaa-Hɛrtɩ</displayName>
+				<unitPattern count="zero">baa jigaa-Hɛrtɩ {0}</unitPattern>
+				<unitPattern count="one">jigaa-Hɛrtɩ {0}</unitPattern>
+				<unitPattern count="other">ɩjigaa-Hɛrtɩ {0}</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>ɩmegaa-Hɛrtɩ</displayName>
+				<unitPattern count="zero">baa megaa-Hɛrtɩ {0}</unitPattern>
+				<unitPattern count="one">megaa-Hɛrtɩ {0}</unitPattern>
+				<unitPattern count="other">ɩmegaa-Hɛrtɩ {0}</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>ɩkiloo-Hɛrtɩ</displayName>
+				<unitPattern count="zero">baa kiloo-Hɛrtɩ {0}</unitPattern>
+				<unitPattern count="one">kiloo-Hɛrtɩ {0}</unitPattern>
+				<unitPattern count="other">ɩkiloo-Hɛrtɩ {0}</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>ɩHɛrtɩ</displayName>
+				<unitPattern count="zero">baa Hɛrtɩ {0}</unitPattern>
+				<unitPattern count="one">Hɛrtɩ {0}</unitPattern>
+				<unitPattern count="other">ɩHɛrtɩ {0}</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>ɩfɔɔ ɛm</displayName>
+				<unitPattern count="zero">baa ʊfɔɔ ɛm</unitPattern>
+				<unitPattern count="one">ʊfɔɔ ɛm {0}</unitPattern>
+				<unitPattern count="other">ɩfɔɔ ɛm {0}</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>ɩpisɛl</displayName>
+				<unitPattern count="zero">baa pisɛl</unitPattern>
+				<unitPattern count="one">pisɛl {0}</unitPattern>
+				<unitPattern count="other">ɩpisɛl {0}</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>ɩmegapisɛl</displayName>
+				<unitPattern count="zero">baa megapisɛl</unitPattern>
+				<unitPattern count="one">megapisɛl {0}</unitPattern>
+				<unitPattern count="other">ɩmegapisɛl {0}</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ɩpisɛl sɛntimɛta bʊye bʊye nɩ</displayName>
+				<unitPattern count="zero">baa pisɛl sɛntimɛta bʊye bʊye nɩ</unitPattern>
+				<unitPattern count="one">pisɛl {0} sɛntimɛta bʊye bʊye nɩ</unitPattern>
+				<unitPattern count="other">ɩpisɛl {0} sɛntimɛta bʊye bʊye nɩ</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ɩpisɛl nsǝkǝmǝ bʊye bʊye nɩ</displayName>
+				<unitPattern count="zero">baa pisɛl nsǝkǝmǝ bʊye bʊye nɩ</unitPattern>
+				<unitPattern count="one">pisɛl {0} nsǝkǝmǝ bʊye bʊye nɩ</unitPattern>
+				<unitPattern count="other">ɩpisɛl {0} nsǝkǝmǝ bʊye bʊye nɩ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>gatǝna gawalaka kʊfana</displayName>
+				<unitPattern count="zero">baa gatǝna gawalaka kʊfana {0}</unitPattern>
+				<unitPattern count="one">gatǝna gawalaka kʊfana {0}</unitPattern>
+				<unitPattern count="other">gatǝna gawalaka kɩfana {0}</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>ɩkiloomɛta</displayName>
+				<unitPattern count="zero">baa kiloomɛta {0}</unitPattern>
+				<unitPattern count="one">kiloomɛta {0}</unitPattern>
+				<unitPattern count="other">ɩkiloomɛta {0}</unitPattern>
+				<perUnitPattern>{0} kiloomɛta nɩ</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>ɩmɛta</displayName>
+				<unitPattern count="zero">baa mɛta {0}</unitPattern>
+				<unitPattern count="one">mɛta {0}</unitPattern>
+				<unitPattern count="other">ɩmɛta {0}</unitPattern>
+				<perUnitPattern>{0} mɛta nɩ</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>ɩɖesimɛta</displayName>
+				<unitPattern count="zero">baa ɖesimɛta {0}</unitPattern>
+				<unitPattern count="one">ɖesimɛta {0}</unitPattern>
+				<unitPattern count="other">ɩɖesimɛta {0}</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>ɩsɛntimɛta</displayName>
+				<unitPattern count="zero">baa sɛntimɛta {0}</unitPattern>
+				<unitPattern count="one">sɛntimɛta {0}</unitPattern>
+				<unitPattern count="other">ɩsɛntimɛta {0}</unitPattern>
+				<perUnitPattern>{0} sɛntimɛta nɩ</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>ɩmilimɛta</displayName>
+				<unitPattern count="zero">baa milimɛta {0}</unitPattern>
+				<unitPattern count="one">milimɛta {0}</unitPattern>
+				<unitPattern count="other">ɩmilimɛta {0}</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>ɩmikroomɛta</displayName>
+				<unitPattern count="zero">baa mikroomɛta {0}</unitPattern>
+				<unitPattern count="one">mikroomɛta {0}</unitPattern>
+				<unitPattern count="other">ɩmikroomɛta {0}</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>ɩnanoomɛta</displayName>
+				<unitPattern count="zero">baa nanoomɛta {0}</unitPattern>
+				<unitPattern count="one">nanoomɛta {0}</unitPattern>
+				<unitPattern count="other">ɩnanoomɛta {0}</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>ɩpikoomɛta</displayName>
+				<unitPattern count="zero">baa pikoomɛta {0}</unitPattern>
+				<unitPattern count="one">pikoomɛta {0}</unitPattern>
+				<unitPattern count="other">ɩpikoomɛta {0}</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>ɩmayɩl</displayName>
+				<unitPattern count="zero">baa mayɩl {0}</unitPattern>
+				<unitPattern count="one">mayɩl {0}</unitPattern>
+				<unitPattern count="other">ɩmayɩl {0}</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName>anaŋcǝna</displayName>
+				<unitPattern count="zero">baa gʊnaŋcǝna {0}</unitPattern>
+				<unitPattern count="one">gʊnaŋcǝna {0}</unitPattern>
+				<unitPattern count="other">anaŋcǝna {0}</unitPattern>
+				<perUnitPattern>{0}/gʊnaŋcǝna nɩ</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName>asǝkǝmǝ</displayName>
+				<unitPattern count="zero">baa nsǝkǝmǝ {0}</unitPattern>
+				<unitPattern count="one">nsǝkǝmǝ {0}</unitPattern>
+				<unitPattern count="other">asǝkǝmǝ {0}</unitPattern>
+				<perUnitPattern>{0} nsǝkǝmǝ nɩ</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>ɩparsɛɛkɩ</displayName>
+				<unitPattern count="zero">baa parsɛɛkɩ {0}</unitPattern>
+				<unitPattern count="one">parsɛɛkɩ {0}</unitPattern>
+				<unitPattern count="other">ɩparsɛɛkɩ {0}</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>pɔɩɩ-bʊja</displayName>
+				<unitPattern count="zero">baa pɔɩɩ-gaja {0}</unitPattern>
+				<unitPattern count="one">pɔɩɩ-gaja {0}</unitPattern>
+				<unitPattern count="other">pɔɩɩ-bʊja {0}</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>atǝn-n’ʊshilè mána</displayName>
+				<unitPattern count="zero">baa atǝn-n’ʊshilè {0}</unitPattern>
+				<unitPattern count="one">atǝn-n’ʊshilè {0}</unitPattern>
+				<unitPattern count="other">atǝn-n’ʊshilè mána {0}</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>ɩfɛɛlɔŋ</displayName>
+				<unitPattern count="zero">baa fɛɛlɔŋ {0}</unitPattern>
+				<unitPattern count="one">fɛɛlɔŋ {0}</unitPattern>
+				<unitPattern count="other">ɩfɛɛlɔŋ {0}</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ɩfɛɛɖǝm</displayName>
+				<unitPattern count="zero">baa fɛɛɖǝm {0}</unitPattern>
+				<unitPattern count="one">fɛɛɖǝm {0}</unitPattern>
+				<unitPattern count="other">ɩfɛɛɖǝm {0}</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>teŋku kɩmayɩl</displayName>
+				<unitPattern count="zero">baa teŋku kamayɩl {0}</unitPattern>
+				<unitPattern count="one">teŋku kamayɩl {0}</unitPattern>
+				<unitPattern count="other">teŋku kɩmayɩl {0}</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>sǝkanɖɩnaf kɩmayɩl</displayName>
+				<unitPattern count="zero">baa sǝkanɖɩnaf kamayɩl {0}</unitPattern>
+				<unitPattern count="one">sǝkanɖɩnaf kamayɩl {0}</unitPattern>
+				<unitPattern count="other">sǝkanɖɩnaf kɩmayɩl {0}</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>ɩpipi</displayName>
+				<unitPattern count="zero">baa gɩpipi {0}</unitPattern>
+				<unitPattern count="one">gɩpipi {0}</unitPattern>
+				<unitPattern count="other">ɩpipi {0}</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>ʊshilè kɩfana</displayName>
+				<unitPattern count="zero">baa ʊshilè kʊfana</unitPattern>
+				<unitPattern count="one">ʊshilè kʊfana {0}</unitPattern>
+				<unitPattern count="other">ʊshilè kɩfana {0}</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>ɩlus</displayName>
+				<unitPattern count="zero">baa lus {0}</unitPattern>
+				<unitPattern count="one">lus {0}</unitPattern>
+				<unitPattern count="other">ɩlus {0}</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>ɩkanɖalaa</displayName>
+				<unitPattern count="zero">baa kanɖalaa {0}</unitPattern>
+				<unitPattern count="one">kanɖalaa {0}</unitPattern>
+				<unitPattern count="other">ɩkanɖalaa {0}</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>ɩlumɛn</displayName>
+				<unitPattern count="zero">baa lumɛn {0}</unitPattern>
+				<unitPattern count="one">lumɛn {0}</unitPattern>
+				<unitPattern count="other">ɩlumɛn {0}</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>ɩtɔn mɛta kʊfaŋʊ kɩja</displayName>
+				<unitPattern count="zero">baa tɔn {0}</unitPattern>
+				<unitPattern count="one">tɔn {0}</unitPattern>
+				<unitPattern count="other">ɩtɔn {0}</unitPattern>
+			</unit>
+			<unit type="mass-kilogram">
+				<displayName>ɩkiloogram</displayName>
+				<unitPattern count="zero">baa kiloogram {0}</unitPattern>
+				<unitPattern count="one">kiloogram {0}</unitPattern>
+				<unitPattern count="other">ɩkiloogram {0}</unitPattern>
+				<perUnitPattern>{0} kiloogram nɩ</perUnitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>ɩgram</displayName>
+				<unitPattern count="zero">baa gram {0}</unitPattern>
+				<unitPattern count="one">gram {0}</unitPattern>
+				<unitPattern count="other">ɩgram {0}</unitPattern>
+				<perUnitPattern>{0} gram nɩ</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>ɩmiligram</displayName>
+				<unitPattern count="zero">baa miligram {0}</unitPattern>
+				<unitPattern count="one">miligram {0}</unitPattern>
+				<unitPattern count="other">ɩmiligram {0}</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>ɩmikroogram</displayName>
+				<unitPattern count="zero">baa mikroogram {0}</unitPattern>
+				<unitPattern count="one">mikroogram {0}</unitPattern>
+				<unitPattern count="other">ɩmikroogram {0}</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>ɩtɔn Gɛɛshɩ kɩja</displayName>
+				<unitPattern count="zero">baa tɔn Gɛɛshɩ kaja {0}</unitPattern>
+				<unitPattern count="one">tɔn Gɛɛshɩ kaja {0}</unitPattern>
+				<unitPattern count="other">tɔn Gɛɛshɩ kɩja {0}</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>atala</displayName>
+				<unitPattern count="zero">baa ntala {0}</unitPattern>
+				<unitPattern count="one">ntala {0}</unitPattern>
+				<unitPattern count="other">atala {0}</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<displayName>ɩpɔŋ</displayName>
+				<unitPattern count="zero">baa pɔŋ {0}</unitPattern>
+				<unitPattern count="one">pɔŋ {0}</unitPattern>
+				<unitPattern count="other">ɩpɔŋ {0}</unitPattern>
+				<perUnitPattern>{0} pɔŋ nɩ</perUnitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>wʊra karaatɩ mána</displayName>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>ɩjigaa-Waatɩ</displayName>
+				<unitPattern count="zero">baa jigaa-Waatɩ {0}</unitPattern>
+				<unitPattern count="one">jigaa-Waatɩ {0}</unitPattern>
+				<unitPattern count="other">ɩjigaa-Waatɩ {0}</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>ɩmegaa-Waatɩ</displayName>
+				<unitPattern count="zero">baa megaa-Waatɩ {0}</unitPattern>
+				<unitPattern count="one">megaa-Waatɩ {0}</unitPattern>
+				<unitPattern count="other">ɩmegaa-Waatɩ {0}</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName>kiloo-Waatɩ</displayName>
+				<unitPattern count="zero">baa kiloo-Waatɩ {0}</unitPattern>
+				<unitPattern count="one">kiloo-Waatɩ {0}</unitPattern>
+				<unitPattern count="other">ɩkiloo-Waatɩ {0}</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName>Waatɩ</displayName>
+				<unitPattern count="zero">baa Waatɩ {0}</unitPattern>
+				<unitPattern count="one">Waatɩ {0}</unitPattern>
+				<unitPattern count="other">ɩWaatɩ {0}</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>ɩmili-Waatɩ</displayName>
+				<unitPattern count="zero">baa mili-Waatɩ {0}</unitPattern>
+				<unitPattern count="one">mili-Waatɩ {0}</unitPattern>
+				<unitPattern count="other">ɩmili-Waatɩ {0}</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>asuko-‘ɩkaŋkɩrɩ</displayName>
+				<unitPattern count="zero">baa asuko-‘ɩkaŋkɩrɩ</unitPattern>
+				<unitPattern count="one">asuko-‘ɩkaŋkɩrɩ {0}</unitPattern>
+				<unitPattern count="other">asuko-‘ɩkaŋkɩrɩ {0}</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>mɛrkiir kɩmilimɛta</displayName>
+				<unitPattern count="zero">baa mɛrkiir kamilimɛta {0}</unitPattern>
+				<unitPattern count="one">mɛrkiir kamilimɛta {0}</unitPattern>
+				<unitPattern count="other">mɛrkiir kɩmilimɛta {0}</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<displayName>mɛrkiir kasǝkǝmǝ</displayName>
+				<unitPattern count="zero">baa mɛrkiir kansǝkǝmǝ {0}</unitPattern>
+				<unitPattern count="one">mɛrkiir kansǝkǝmǝ {0}</unitPattern>
+				<unitPattern count="other">mɛrkiir kasǝkǝmǝ {0}</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>ɩbaar</displayName>
+				<unitPattern count="zero">baa baar {0}</unitPattern>
+				<unitPattern count="one">baar {0}</unitPattern>
+				<unitPattern count="other">ɩbaar {0}</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<displayName>ɩmilibaar</displayName>
+				<unitPattern count="zero">baa milibaar {0}</unitPattern>
+				<unitPattern count="one">milibaar {0}</unitPattern>
+				<unitPattern count="other">ɩmilibaar {0}</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atǝmɔsfɛɛr mána</displayName>
+				<unitPattern count="zero">baa atǝmɔsfɛɛr {0}</unitPattern>
+				<unitPattern count="one">atǝmɔsfɛɛr {0}</unitPattern>
+				<unitPattern count="other">atǝmɔsfɛɛr mána {0}</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>ɩPaskal</displayName>
+				<unitPattern count="zero">baa Paskal {0}</unitPattern>
+				<unitPattern count="one">Paskal {0}</unitPattern>
+				<unitPattern count="other">ɩPaskal {0}</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>ɩhɛktoo-Paskal</displayName>
+				<unitPattern count="zero">baa hɛktoo-Paskal {0}</unitPattern>
+				<unitPattern count="one">hɛktoo-Paskal {0}</unitPattern>
+				<unitPattern count="other">ɩhɛktoo-Paskal {0}</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>ɩkiloo-Paskal</displayName>
+				<unitPattern count="zero">baa kiloo-Paskal {0}</unitPattern>
+				<unitPattern count="one">kiloo-Paskal {0}</unitPattern>
+				<unitPattern count="other">ɩkiloo-Paskal {0}</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>ɩmegaa-Paskal</displayName>
+				<unitPattern count="zero">baa megaa-Paskal {0}</unitPattern>
+				<unitPattern count="one">megaa-Paskal {0}</unitPattern>
+				<unitPattern count="other">ɩmegaa-Paskal {0}</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName>ɩkiloomɛta gakɔŋkɔŋɔ̀ nɩ</displayName>
+				<unitPattern count="zero">baa kiloomɛta gakɔŋkɔŋɔ̀ nɩ {0}</unitPattern>
+				<unitPattern count="one">kiloomɛta gakɔŋkɔŋɔ̀ nɩ {0}</unitPattern>
+				<unitPattern count="other">ɩkiloomɛta gakɔŋkɔŋɔ̀ nɩ {0}</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<displayName>ɩmɛta gɩpi nɩ</displayName>
+				<unitPattern count="zero">baa mɛta gɩpi nɩ {0}</unitPattern>
+				<unitPattern count="one">mɛta gɩpi nɩ {0}</unitPattern>
+				<unitPattern count="other">ɩmɛta gɩpi nɩ {0}</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>ɩmayɩl gakɔŋkɔŋɔ̀ nɩ</displayName>
+				<unitPattern count="zero">baa mayɩl gakɔŋkɔŋɔ̀ nɩ {0}</unitPattern>
+				<unitPattern count="one">mayɩl gakɔŋkɔŋɔ̀ nɩ {0}</unitPattern>
+				<unitPattern count="other">ɩmayɩl gakɔŋkɔŋɔ̀ nɩ {0}</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>akʊra</displayName>
+				<unitPattern count="zero">baa ŋkʊra {0}</unitPattern>
+				<unitPattern count="one">ŋkʊra {0}</unitPattern>
+				<unitPattern count="other">akʊra {0}</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>kpaʊ-na-sarasara kɩɖegre</displayName>
+				<unitPattern count="zero">baa kpaʊ-na-sarasara kaɖegre {0}</unitPattern>
+				<unitPattern count="one">kpaʊ-na-sarasara kaɖegre {0}</unitPattern>
+				<unitPattern count="other">kpaʊ-na-sarasara kɩɖegre {0}</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<displayName>ɩɖegre Sɛlsus</displayName>
+				<unitPattern count="zero">baa ɖegre Sɛlsus {0}</unitPattern>
+				<unitPattern count="one">ɖegre Sɛlsus {0}</unitPattern>
+				<unitPattern count="other">ɩɖegre Sɛlsus {0}</unitPattern>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<displayName>ɩɖegre Faranhaɩt</displayName>
+				<unitPattern count="zero">baa ɖegre Faranhaɩt {0}</unitPattern>
+				<unitPattern count="one">ɖegre Faranhaɩt {0}</unitPattern>
+				<unitPattern count="other">ɩɖegre Faranhaɩt {0}</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>ɩKɛlwin</displayName>
+				<unitPattern count="zero">baa Kɛlwin {0}</unitPattern>
+				<unitPattern count="one">Kɛlwin {0}</unitPattern>
+				<unitPattern count="other">ɩKɛlwin {0}</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>ɩNiutɔn-mɛta</displayName>
+				<unitPattern count="zero">baa Niutɔn-mɛta {0}</unitPattern>
+				<unitPattern count="one">Niutɔn-mɛta {0}</unitPattern>
+				<unitPattern count="other">ɩNiutɔn-mɛta {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>ɩkiloomɛta bʊyɛ bʊriu</displayName>
+				<unitPattern count="zero">baa kiloomɛta bʊye bʊriu {0}</unitPattern>
+				<unitPattern count="one">kiloomɛta bʊye bʊriu {0}</unitPattern>
+				<unitPattern count="other">ɩkiloomɛta bʊye bʊriu {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>ɩmɛta bʊyɛ bʊriu</displayName>
+				<unitPattern count="zero">baa mɛta bʊyɛ bʊriu {0}</unitPattern>
+				<unitPattern count="one">mɛta bʊyɛ bʊriu {0}</unitPattern>
+				<unitPattern count="other">ɩmɛta bʊyɛ bʊriu {0}</unitPattern>
+				<perUnitPattern>{0} ɩmɛta bʊyɛ bʊriu nɩ</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>ɩsɛntimɛta bʊye bʊriu</displayName>
+				<unitPattern count="zero">baa sɛntimɛta bʊye bʊriu {0}</unitPattern>
+				<unitPattern count="one">sɛntimɛta bʊye bʊriu {0}</unitPattern>
+				<unitPattern count="other">ɩsɛntimɛta bʊye bʊriu {0}</unitPattern>
+				<perUnitPattern>{0} ɩsɛntimɛta bʊye bʊriu nɩ</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>ɩmayɩl bʊyɛ bʊriu</displayName>
+				<unitPattern count="zero">baa mayɩl bʊyɛ bʊriu {0}</unitPattern>
+				<unitPattern count="one">mayɩl bʊyɛ bʊriu {0}</unitPattern>
+				<unitPattern count="other">ɩmayɩl bʊyɛ bʊriu {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>anaŋcǝna bʊyɛ bʊriu</displayName>
+				<unitPattern count="zero">baa gʊnaŋcǝna bʊyɛ bʊriu {0}</unitPattern>
+				<unitPattern count="one">gʊnaŋcǝna bʊyɛ bʊriu {0}</unitPattern>
+				<unitPattern count="other">anaŋcǝna bʊyɛ bʊriu {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>asǝkǝmǝ bʊyɛ bʊriu</displayName>
+				<unitPattern count="zero">baa nsǝkǝmǝ bʊyɛ bʊriu {0}</unitPattern>
+				<unitPattern count="one">nsǝkǝmǝ bʊyɛ bʊriu {0}</unitPattern>
+				<unitPattern count="other">asǝkǝmǝ bʊyɛ bʊriu {0}</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>ɩmegaalitri</displayName>
+				<unitPattern count="zero">baa megaalitri {0}</unitPattern>
+				<unitPattern count="one">megaalitri {0}</unitPattern>
+				<unitPattern count="other">ɩmegaalitri {0}</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>ɩhɛktoolitri</displayName>
+				<unitPattern count="zero">baa hɛktoolitri {0}</unitPattern>
+				<unitPattern count="one">hɛktoolitri {0}</unitPattern>
+				<unitPattern count="other">ɩhɛktoolitri {0}</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>ɩlitri</displayName>
+				<unitPattern count="zero">baa litri {0}</unitPattern>
+				<unitPattern count="one">litri {0}</unitPattern>
+				<unitPattern count="other">ɩlitri {0}</unitPattern>
+				<perUnitPattern>{0} ɩlitri nɩ</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>ɩɖesilitri</displayName>
+				<unitPattern count="zero">baa ɖesilitri {0}</unitPattern>
+				<unitPattern count="one">ɖesilitri {0}</unitPattern>
+				<unitPattern count="other">ɩɖesilitri {0}</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>ɩsɛntilitri</displayName>
+				<unitPattern count="zero">baa sɛntilitri {0}</unitPattern>
+				<unitPattern count="one">sɛntilitri {0}</unitPattern>
+				<unitPattern count="other">ɩsɛntilitri {0}</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>ɩmililitri</displayName>
+				<unitPattern count="zero">baa mililitri {0}</unitPattern>
+				<unitPattern count="one">mililitri {0}</unitPattern>
+				<unitPattern count="other">ɩmililitri {0}</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>litri kasaʊ</displayName>
+				<unitPattern count="zero">baa litri kansaʊ {0}</unitPattern>
+				<unitPattern count="one">litri kansaʊ {0}</unitPattern>
+				<unitPattern count="other">litri kasaʊ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>ɩkɔɔpʊ mɛta kʊfaŋʊ kɩja</displayName>
+				<unitPattern count="zero">baa kɔɔpʊ mɛta kʊfaŋʊ kɩja {0}</unitPattern>
+				<unitPattern count="one">kɔɔpʊ mɛta kʊfaŋʊ kɩja {0}</unitPattern>
+				<unitPattern count="other">ɩkɔɔpʊ mɛta kʊfaŋʊ kɩja {0}</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>ɩgaalɔŋ Amalɩka kʊfaŋʊ kɩja</displayName>
+				<unitPattern count="zero">baa gaalɔŋ Amalɩka kʊfaŋʊ kaja {0}</unitPattern>
+				<unitPattern count="one">gaalɔŋ Amalɩka kʊfaŋʊ kaja {0}</unitPattern>
+				<unitPattern count="other">ɩgaalɔŋ Amalɩka kʊfaŋʊ kɩja {0}</unitPattern>
+				<perUnitPattern>{0} gaalɔŋ nɩ</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>ɩgaalɔŋ gɛɛshɩ kɩja</displayName>
+				<unitPattern count="zero">baa gaalɔŋ gɛɛshɩ kaja {0}</unitPattern>
+				<unitPattern count="one">gaalɔŋ gɛɛshɩ kaja {0}</unitPattern>
+				<unitPattern count="other">ɩgaalɔŋ gɛɛshɩ kɩja {0}</unitPattern>
+				<perUnitPattern>{0} gaalɔŋ gɛɛshɩ kaja nɩ</perUnitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>ɩkɔɔpʊ</displayName>
+				<unitPattern count="zero">baa kɔɔpʊ {0}</unitPattern>
+				<unitPattern count="one">kɔɔpʊ {0}</unitPattern>
+				<unitPattern count="other">ɩkɔɔpʊ {0}</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>ɩtɩrɩɩ ʊnyɩʊ kɩja</displayName>
+				<unitPattern count="zero">baa tɩrɩɩ ʊnyɩʊ kaja {0}</unitPattern>
+				<unitPattern count="one">tɩrɩɩ ʊnyɩʊ kaja {0}</unitPattern>
+				<unitPattern count="other">ɩtɩrɩɩ ʊnyɩʊ kɩja {0}</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>ɩtɩrɩɩ kafee kɩja</displayName>
+				<unitPattern count="zero">baa tɩrɩɩ kafee kaja {0}</unitPattern>
+				<unitPattern count="one">tɩrɩɩ kafee kaja {0}</unitPattern>
+				<unitPattern count="other">ɩtɩrɩɩ kafee kɩja {0}</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>ɩsɔr</displayName>
+				<unitPattern count="zero">baa ʊsɔr {0}</unitPattern>
+				<unitPattern count="one">ʊsɔr {0}</unitPattern>
+				<unitPattern count="other">ɩsɔr {0}</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ɩɖraam</displayName>
+				<unitPattern count="zero">baa ɖraam {0}</unitPattern>
+				<unitPattern count="one">ɖraam {0}</unitPattern>
+				<unitPattern count="other">ɩɖraam {0}</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ɩjɩga</displayName>
+				<unitPattern count="zero">baa jɩga {0}</unitPattern>
+				<unitPattern count="one">jɩga {0}</unitPattern>
+				<unitPattern count="other">ɩjɩga {0}</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>ɩkɩtɩʊ</displayName>
+				<unitPattern count="zero">baa ʊkɩtɩʊ {0}</unitPattern>
+				<unitPattern count="one">ʊkɩtɩʊ {0}</unitPattern>
+				<unitPattern count="other">ɩkɩtɩʊ {0}</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>pɔɩɩ</displayName>
+				<unitPattern count="zero">pɔɩɩ {0}</unitPattern>
+				<unitPattern count="one">pɔɩɩ {0}</unitPattern>
+				<unitPattern count="other">pɔɩɩ {0}</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<perUnitPattern>{0} gɩjibɔŋɔ nɩ</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0} gajakalaŋ</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} gʊnyɩpɛnɛlaŋ</coordinateUnitPattern>
@@ -4339,6 +5282,752 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="acceleration-g-force">
+				<unitPattern count="zero">G {0}</unitPattern>
+				<unitPattern count="one">G {0}</unitPattern>
+				<unitPattern count="other">G {0}</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<unitPattern count="zero">m/s² {0}</unitPattern>
+				<unitPattern count="one">m/s² {0}</unitPattern>
+				<unitPattern count="other">m/s² {0}</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<unitPattern count="zero">rev {0}</unitPattern>
+				<unitPattern count="one">rev {0}</unitPattern>
+				<unitPattern count="other">rev {0}</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<unitPattern count="zero">rad {0}</unitPattern>
+				<unitPattern count="one">rad {0}</unitPattern>
+				<unitPattern count="other">rad {0}</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<unitPattern count="zero">°{0}</unitPattern>
+				<unitPattern count="one">°{0}</unitPattern>
+				<unitPattern count="other">°{0}</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<unitPattern count="zero">′{0}</unitPattern>
+				<unitPattern count="one">′{0}</unitPattern>
+				<unitPattern count="other">′{0}</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<unitPattern count="zero">″{0}</unitPattern>
+				<unitPattern count="one">″{0}</unitPattern>
+				<unitPattern count="other">″{0}</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<unitPattern count="zero">km² {0}</unitPattern>
+				<unitPattern count="one">km² {0}</unitPattern>
+				<unitPattern count="other">km² {0}</unitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>ɩlɔ</displayName>
+				<unitPattern count="zero">ha {0}</unitPattern>
+				<unitPattern count="one">ha {0}</unitPattern>
+				<unitPattern count="other">ha {0}</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>ɩmɛta²</displayName>
+				<unitPattern count="zero">m² {0}</unitPattern>
+				<unitPattern count="one">m² {0}</unitPattern>
+				<unitPattern count="other">m² {0}</unitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<unitPattern count="zero">cm² {0}</unitPattern>
+				<unitPattern count="one">cm² {0}</unitPattern>
+				<unitPattern count="other">cm² {0}</unitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<unitPattern count="zero">mi² {0}</unitPattern>
+				<unitPattern count="one">mi² {0}</unitPattern>
+				<unitPattern count="other">mi² {0}</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<unitPattern count="zero">yd² {0}</unitPattern>
+				<unitPattern count="one">yd² {0}</unitPattern>
+				<unitPattern count="other">yd² {0}</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<unitPattern count="zero">ft² {0}</unitPattern>
+				<unitPattern count="one">ft² {0}</unitPattern>
+				<unitPattern count="other">ft² {0}</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<unitPattern count="zero">in² {0}</unitPattern>
+				<unitPattern count="one">in² {0}</unitPattern>
+				<unitPattern count="other">in² {0}</unitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>ɩɖunam</displayName>
+				<unitPattern count="zero">baa ɖunam {0}</unitPattern>
+				<unitPattern count="one">ɖunam {0}</unitPattern>
+				<unitPattern count="other">ɩɖunam {0}</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<unitPattern count="zero">kt {0}</unitPattern>
+				<unitPattern count="one">kt {0}</unitPattern>
+				<unitPattern count="other">kt {0}</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<unitPattern count="zero">mg/dL {0}</unitPattern>
+				<unitPattern count="one">mg/dL {0}</unitPattern>
+				<unitPattern count="other">mg/dL {0}</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<unitPattern count="zero">mmol/L {0}</unitPattern>
+				<unitPattern count="one">mmol/L {0}</unitPattern>
+				<unitPattern count="other">mmol/L {0}</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<unitPattern count="zero">item {0}</unitPattern>
+				<unitPattern count="one">item {0}</unitPattern>
+				<unitPattern count="other">item {0}</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<unitPattern count="zero">ppm {0}</unitPattern>
+				<unitPattern count="one">ppm {0}</unitPattern>
+				<unitPattern count="other">ppm {0}</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<unitPattern count="zero">%{0}</unitPattern>
+				<unitPattern count="one">%{0}</unitPattern>
+				<unitPattern count="other">%{0}</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<unitPattern count="zero">‰{0}</unitPattern>
+				<unitPattern count="one">‰{0}</unitPattern>
+				<unitPattern count="other">‰{0}</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<unitPattern count="zero">‱{0}</unitPattern>
+				<unitPattern count="one">‱{0}</unitPattern>
+				<unitPattern count="other">‱{0}</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<unitPattern count="zero">mol {0}</unitPattern>
+				<unitPattern count="one">mol {0}</unitPattern>
+				<unitPattern count="other">mol {0}</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<unitPattern count="zero">L/km {0}</unitPattern>
+				<unitPattern count="one">L/km {0}</unitPattern>
+				<unitPattern count="other">L/km {0}</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<unitPattern count="zero">L/100km {0}</unitPattern>
+				<unitPattern count="one">L/100km {0}</unitPattern>
+				<unitPattern count="other">L/100km {0}</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<unitPattern count="zero">mpg {0}</unitPattern>
+				<unitPattern count="one">mpg {0}</unitPattern>
+				<unitPattern count="other">mpg {0}</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<unitPattern count="zero">mpg Imp. {0}</unitPattern>
+				<unitPattern count="one">mpg Imp. {0}</unitPattern>
+				<unitPattern count="other">mpg Imp. {0}</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<unitPattern count="zero">A {0}</unitPattern>
+				<unitPattern count="one">A {0}</unitPattern>
+				<unitPattern count="other">A {0}</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<unitPattern count="zero">mA {0}</unitPattern>
+				<unitPattern count="one">mA {0}</unitPattern>
+				<unitPattern count="other">mA {0}</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<unitPattern count="zero">Ω {0}</unitPattern>
+				<unitPattern count="one">Ω {0}</unitPattern>
+				<unitPattern count="other">Ω {0}</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<unitPattern count="zero">V {0}</unitPattern>
+				<unitPattern count="one">V {0}</unitPattern>
+				<unitPattern count="other">V {0}</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<unitPattern count="zero">kcal {0}</unitPattern>
+				<unitPattern count="one">kcal {0}</unitPattern>
+				<unitPattern count="other">kcal {0}</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<unitPattern count="zero">cal {0}</unitPattern>
+				<unitPattern count="one">cal {0}</unitPattern>
+				<unitPattern count="other">cal {0}</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<unitPattern count="zero">kJ {0}</unitPattern>
+				<unitPattern count="one">kJ {0}</unitPattern>
+				<unitPattern count="other">kJ {0}</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>ɩjul</displayName>
+				<unitPattern count="zero">J {0}</unitPattern>
+				<unitPattern count="one">J {0}</unitPattern>
+				<unitPattern count="other">J {0}</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<unitPattern count="zero">kWh {0}</unitPattern>
+				<unitPattern count="one">kWh {0}</unitPattern>
+				<unitPattern count="other">kWh {0}</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<unitPattern count="zero">eV {0}</unitPattern>
+				<unitPattern count="one">eV {0}</unitPattern>
+				<unitPattern count="other">eV {0}</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<unitPattern count="zero">Btu {0}</unitPattern>
+				<unitPattern count="one">Btu {0}</unitPattern>
+				<unitPattern count="other">Btu {0}</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<unitPattern count="zero">US therm {0}</unitPattern>
+				<unitPattern count="one">US therm {0}</unitPattern>
+				<unitPattern count="other">US therm {0}</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<unitPattern count="zero">N {0}</unitPattern>
+				<unitPattern count="one">N {0}</unitPattern>
+				<unitPattern count="other">N {0}</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<unitPattern count="zero">kWh/100km {0}</unitPattern>
+				<unitPattern count="one">kWh/100km {0}</unitPattern>
+				<unitPattern count="other">kWh/100km {0}</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<unitPattern count="zero">GHz {0}</unitPattern>
+				<unitPattern count="one">GHz {0}</unitPattern>
+				<unitPattern count="other">GHz {0}</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<unitPattern count="zero">MHz {0}</unitPattern>
+				<unitPattern count="one">MHz {0}</unitPattern>
+				<unitPattern count="other">MHz {0}</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<unitPattern count="zero">kHz {0}</unitPattern>
+				<unitPattern count="one">kHz {0}</unitPattern>
+				<unitPattern count="other">kHz {0}</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<unitPattern count="zero">Hz {0}</unitPattern>
+				<unitPattern count="one">Hz {0}</unitPattern>
+				<unitPattern count="other">Hz {0}</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="zero">baa ʊfɔɔ ɛm</unitPattern>
+				<unitPattern count="one">ʊfɔɔ ɛm {0}</unitPattern>
+				<unitPattern count="other">ɩfɔɔ ɛm {0}</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>ɩpisɛl</displayName>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>ɩmegapisɛl</displayName>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>gatǝna gawalaka kʊfana</displayName>
+				<unitPattern count="zero">R⊕ {0}</unitPattern>
+				<unitPattern count="one">R⊕ {0}</unitPattern>
+				<unitPattern count="other">R⊕ {0}</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<unitPattern count="zero">km {0}</unitPattern>
+				<unitPattern count="one">km {0}</unitPattern>
+				<unitPattern count="other">km {0}</unitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>m</displayName>
+				<unitPattern count="zero">m {0}</unitPattern>
+				<unitPattern count="one">m {0}</unitPattern>
+				<unitPattern count="other">m {0}</unitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<unitPattern count="zero">dm {0}</unitPattern>
+				<unitPattern count="one">dm {0}</unitPattern>
+				<unitPattern count="other">dm {0}</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<unitPattern count="zero">cm {0}</unitPattern>
+				<unitPattern count="one">cm {0}</unitPattern>
+				<unitPattern count="other">cm {0}</unitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<unitPattern count="zero">mm {0}</unitPattern>
+				<unitPattern count="one">mm {0}</unitPattern>
+				<unitPattern count="other">mm {0}</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<unitPattern count="zero">μm {0}</unitPattern>
+				<unitPattern count="one">μm {0}</unitPattern>
+				<unitPattern count="other">μm {0}</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<unitPattern count="zero">nm {0}</unitPattern>
+				<unitPattern count="one">nm {0}</unitPattern>
+				<unitPattern count="other">nm {0}</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<unitPattern count="zero">pm {0}</unitPattern>
+				<unitPattern count="one">pm {0}</unitPattern>
+				<unitPattern count="other">pm {0}</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>ɩmayɩl</displayName>
+				<unitPattern count="zero">mi {0}</unitPattern>
+				<unitPattern count="one">mi {0}</unitPattern>
+				<unitPattern count="other">mi {0}</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<unitPattern count="zero">yd {0}</unitPattern>
+				<unitPattern count="one">yd {0}</unitPattern>
+				<unitPattern count="other">yd {0}</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName>anaŋcǝna</displayName>
+				<unitPattern count="zero">ft {0}</unitPattern>
+				<unitPattern count="one">ft {0}</unitPattern>
+				<unitPattern count="other">ft {0}</unitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName>asǝkǝmǝ</displayName>
+				<unitPattern count="zero">in {0}</unitPattern>
+				<unitPattern count="one">in {0}</unitPattern>
+				<unitPattern count="other">in {0}</unitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>ɩparsɛɛkɩ</displayName>
+				<unitPattern count="zero">pc {0}</unitPattern>
+				<unitPattern count="one">pc {0}</unitPattern>
+				<unitPattern count="other">pc {0}</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<unitPattern count="zero">ly {0}</unitPattern>
+				<unitPattern count="one">ly {0}</unitPattern>
+				<unitPattern count="other">ly {0}</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<unitPattern count="zero">au {0}</unitPattern>
+				<unitPattern count="one">au {0}</unitPattern>
+				<unitPattern count="other">au {0}</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>ɩfɛɛlɔŋ</displayName>
+				<unitPattern count="zero">fur {0}</unitPattern>
+				<unitPattern count="one">fur {0}</unitPattern>
+				<unitPattern count="other">fur {0}</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ɩfɛɛɖǝm</displayName>
+				<unitPattern count="zero">fth {0}</unitPattern>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<unitPattern count="zero">nmi {0}</unitPattern>
+				<unitPattern count="one">nmi {0}</unitPattern>
+				<unitPattern count="other">nmi {0}</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<unitPattern count="zero">smi {0}</unitPattern>
+				<unitPattern count="one">smi {0}</unitPattern>
+				<unitPattern count="other">smi {0}</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>ɩpipi</displayName>
+				<unitPattern count="zero">pt {0}</unitPattern>
+				<unitPattern count="one">pt {0}</unitPattern>
+				<unitPattern count="other">pt {0}</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>ʊshilè kɩfana</displayName>
+				<unitPattern count="zero">R☉ {0}</unitPattern>
+				<unitPattern count="one">R☉ {0}</unitPattern>
+				<unitPattern count="other">R☉ {0}</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<unitPattern count="zero">lx {0}</unitPattern>
+				<unitPattern count="one">lx {0}</unitPattern>
+				<unitPattern count="other">lx {0}</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<unitPattern count="zero">cd {0}</unitPattern>
+				<unitPattern count="one">cd {0}</unitPattern>
+				<unitPattern count="other">cd {0}</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="zero">lm {0}</unitPattern>
+				<unitPattern count="one">lm {0}</unitPattern>
+				<unitPattern count="other">lm {0}</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<unitPattern count="zero">t {0}</unitPattern>
+				<unitPattern count="one">t {0}</unitPattern>
+				<unitPattern count="other">t {0}</unitPattern>
+			</unit>
+			<unit type="mass-kilogram">
+				<unitPattern count="zero">kg {0}</unitPattern>
+				<unitPattern count="one">kg {0}</unitPattern>
+				<unitPattern count="other">kg {0}</unitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>ɩgram</displayName>
+				<unitPattern count="zero">g {0}</unitPattern>
+				<unitPattern count="one">g {0}</unitPattern>
+				<unitPattern count="other">g {0}</unitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<unitPattern count="zero">mg {0}</unitPattern>
+				<unitPattern count="one">mg {0}</unitPattern>
+				<unitPattern count="other">mg {0}</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<unitPattern count="zero">μg {0}</unitPattern>
+				<unitPattern count="one">μg {0}</unitPattern>
+				<unitPattern count="other">μg {0}</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<unitPattern count="zero">tn {0}</unitPattern>
+				<unitPattern count="one">tn {0}</unitPattern>
+				<unitPattern count="other">tn {0}</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<unitPattern count="zero">st {0}</unitPattern>
+				<unitPattern count="one">st {0}</unitPattern>
+				<unitPattern count="other">st {0}</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<unitPattern count="zero">lb {0}</unitPattern>
+				<unitPattern count="one">lb {0}</unitPattern>
+				<unitPattern count="other">lb {0}</unitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<unitPattern count="zero">oz {0}</unitPattern>
+				<unitPattern count="one">oz {0}</unitPattern>
+				<unitPattern count="other">oz {0}</unitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<unitPattern count="zero">oz t {0}</unitPattern>
+				<unitPattern count="one">oz t {0}</unitPattern>
+				<unitPattern count="other">oz t {0}</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<unitPattern count="zero">CD {0}</unitPattern>
+				<unitPattern count="one">CD {0}</unitPattern>
+				<unitPattern count="other">CD {0}</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<unitPattern count="zero">GW {0}</unitPattern>
+				<unitPattern count="one">GW {0}</unitPattern>
+				<unitPattern count="other">GW {0}</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<unitPattern count="zero">MW {0}</unitPattern>
+				<unitPattern count="one">MW {0}</unitPattern>
+				<unitPattern count="other">MW {0}</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<unitPattern count="zero">kW {0}</unitPattern>
+				<unitPattern count="one">kW {0}</unitPattern>
+				<unitPattern count="other">kW {0}</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<unitPattern count="zero">W {0}</unitPattern>
+				<unitPattern count="one">W {0}</unitPattern>
+				<unitPattern count="other">W {0}</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<unitPattern count="zero">mW {0}</unitPattern>
+				<unitPattern count="one">mW {0}</unitPattern>
+				<unitPattern count="other">mW {0}</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<unitPattern count="zero">hp {0}</unitPattern>
+				<unitPattern count="one">hp {0}</unitPattern>
+				<unitPattern count="other">hp {0}</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<unitPattern count="zero">mmHg {0}</unitPattern>
+				<unitPattern count="one">mmHg {0}</unitPattern>
+				<unitPattern count="other">mmHg {0}</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<unitPattern count="zero">psi {0}</unitPattern>
+				<unitPattern count="one">psi {0}</unitPattern>
+				<unitPattern count="other">psi {0}</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<unitPattern count="zero">inHg {0}</unitPattern>
+				<unitPattern count="one">inHg {0}</unitPattern>
+				<unitPattern count="other">inHg {0}</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<unitPattern count="zero">bar {0}</unitPattern>
+				<unitPattern count="one">bar {0}</unitPattern>
+				<unitPattern count="other">bar {0}</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<unitPattern count="zero">mbar {0}</unitPattern>
+				<unitPattern count="one">mbar {0}</unitPattern>
+				<unitPattern count="other">mbar {0}</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<unitPattern count="zero">atm {0}</unitPattern>
+				<unitPattern count="one">atm {0}</unitPattern>
+				<unitPattern count="other">atm {0}</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<unitPattern count="zero">Pa {0}</unitPattern>
+				<unitPattern count="one">Pa {0}</unitPattern>
+				<unitPattern count="other">Pa {0}</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="zero">hPa {0}</unitPattern>
+				<unitPattern count="one">hPa {0}</unitPattern>
+				<unitPattern count="other">hPa {0}</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<unitPattern count="zero">kPa {0}</unitPattern>
+				<unitPattern count="one">kPa {0}</unitPattern>
+				<unitPattern count="other">kPa {0}</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<unitPattern count="zero">MPa {0}</unitPattern>
+				<unitPattern count="one">MPa {0}</unitPattern>
+				<unitPattern count="other">MPa {0}</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<unitPattern count="zero">km/h {0}</unitPattern>
+				<unitPattern count="one">km/h {0}</unitPattern>
+				<unitPattern count="other">km/h {0}</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<unitPattern count="zero">m/s {0}</unitPattern>
+				<unitPattern count="one">m/s {0}</unitPattern>
+				<unitPattern count="other">m/s {0}</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<unitPattern count="zero">mi/h {0}</unitPattern>
+				<unitPattern count="one">mi/h {0}</unitPattern>
+				<unitPattern count="other">mi/h {0}</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<unitPattern count="zero">kn {0}</unitPattern>
+				<unitPattern count="one">kn {0}</unitPattern>
+				<unitPattern count="other">kn {0}</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<unitPattern count="zero">°{0}</unitPattern>
+				<unitPattern count="one">°{0}</unitPattern>
+				<unitPattern count="other">°{0}</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<unitPattern count="zero">°C{0}</unitPattern>
+				<unitPattern count="one">°C{0}</unitPattern>
+				<unitPattern count="other">°C{0}</unitPattern>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<unitPattern count="zero">°F{0}</unitPattern>
+				<unitPattern count="one">°F{0}</unitPattern>
+				<unitPattern count="other">°F{0}</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<unitPattern count="zero">K {0}</unitPattern>
+				<unitPattern count="one">K {0}</unitPattern>
+				<unitPattern count="other">K {0}</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<unitPattern count="zero">N⋅m {0}</unitPattern>
+				<unitPattern count="one">N⋅m {0}</unitPattern>
+				<unitPattern count="other">N⋅m {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<unitPattern count="zero">km³ {0}</unitPattern>
+				<unitPattern count="one">km³ {0}</unitPattern>
+				<unitPattern count="other">km³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<unitPattern count="zero">m³ {0}</unitPattern>
+				<unitPattern count="one">m³ {0}</unitPattern>
+				<unitPattern count="other">m³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<unitPattern count="zero">cm³ {0}</unitPattern>
+				<unitPattern count="one">cm³ {0}</unitPattern>
+				<unitPattern count="other">cm³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<unitPattern count="zero">mi³ {0}</unitPattern>
+				<unitPattern count="one">mi³ {0}</unitPattern>
+				<unitPattern count="other">mi³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<unitPattern count="zero">yd³ {0}</unitPattern>
+				<unitPattern count="one">yd³ {0}</unitPattern>
+				<unitPattern count="other">yd³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<unitPattern count="zero">ft³ {0}</unitPattern>
+				<unitPattern count="one">ft³ {0}</unitPattern>
+				<unitPattern count="other">ft³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<unitPattern count="zero">in³ {0}</unitPattern>
+				<unitPattern count="one">in³ {0}</unitPattern>
+				<unitPattern count="other">in³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<unitPattern count="zero">ML {0}</unitPattern>
+				<unitPattern count="one">ML {0}</unitPattern>
+				<unitPattern count="other">ML {0}</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<unitPattern count="zero">hL {0}</unitPattern>
+				<unitPattern count="one">hL {0}</unitPattern>
+				<unitPattern count="other">hL {0}</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>ɩlitri</displayName>
+				<unitPattern count="zero">l {0}</unitPattern>
+				<unitPattern count="one">l {0}</unitPattern>
+				<unitPattern count="other">l {0}</unitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<unitPattern count="zero">dL {0}</unitPattern>
+				<unitPattern count="one">dL {0}</unitPattern>
+				<unitPattern count="other">dL {0}</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<unitPattern count="zero">cL {0}</unitPattern>
+				<unitPattern count="one">cL {0}</unitPattern>
+				<unitPattern count="other">cL {0}</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<unitPattern count="zero">mL {0}</unitPattern>
+				<unitPattern count="one">mL {0}</unitPattern>
+				<unitPattern count="other">mL {0}</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<unitPattern count="zero">mpt {0}</unitPattern>
+				<unitPattern count="one">mpt {0}</unitPattern>
+				<unitPattern count="other">mpt {0}</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<unitPattern count="zero">mc {0}</unitPattern>
+				<unitPattern count="one">mc {0}</unitPattern>
+				<unitPattern count="other">mc {0}</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<unitPattern count="zero">ac ft {0}</unitPattern>
+				<unitPattern count="one">ac ft {0}</unitPattern>
+				<unitPattern count="other">ac ft {0}</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<unitPattern count="zero">bu {0}</unitPattern>
+				<unitPattern count="one">bu {0}</unitPattern>
+				<unitPattern count="other">bu {0}</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<unitPattern count="zero">gal US {0}</unitPattern>
+				<unitPattern count="one">gal US {0}</unitPattern>
+				<unitPattern count="other">gal US {0}</unitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="zero">gal Imp. {0}</unitPattern>
+				<unitPattern count="one">gal Imp. {0}</unitPattern>
+				<unitPattern count="other">gal Imp. {0}</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>ɩkɔɔpʊ</displayName>
+				<unitPattern count="zero">c {0}</unitPattern>
+				<unitPattern count="one">c {0}</unitPattern>
+				<unitPattern count="other">c {0}</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<unitPattern count="zero">fl oz US {0}</unitPattern>
+				<unitPattern count="one">fl oz US {0}</unitPattern>
+				<unitPattern count="other">fl oz US {0}</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="zero">fl oz Imp. {0}</unitPattern>
+				<unitPattern count="one">fl oz Imp. {0}</unitPattern>
+				<unitPattern count="other">fl oz Imp. {0}</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<unitPattern count="zero">tbsp {0}</unitPattern>
+				<unitPattern count="one">tbsp {0}</unitPattern>
+				<unitPattern count="other">tbsp {0}</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<unitPattern count="zero">tsp {0}</unitPattern>
+				<unitPattern count="one">tsp {0}</unitPattern>
+				<unitPattern count="other">tsp {0}</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<unitPattern count="zero">bbl {0}</unitPattern>
+				<unitPattern count="one">bbl {0}</unitPattern>
+				<unitPattern count="other">bbl {0}</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<unitPattern count="zero">dstspn {0}</unitPattern>
+				<unitPattern count="one">dstspn {0}</unitPattern>
+				<unitPattern count="other">dstspn {0}</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="zero">dstspn Imp {0}</unitPattern>
+				<unitPattern count="one">dstspn Imp {0}</unitPattern>
+				<unitPattern count="other">dstspn Imp {0}</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>ɩsɔr</displayName>
+				<unitPattern count="zero">drop {0}</unitPattern>
+				<unitPattern count="one">drop {0}</unitPattern>
+				<unitPattern count="other">drop {0}</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ɩɖraam</displayName>
+				<unitPattern count="zero">dram {0}</unitPattern>
+				<unitPattern count="one">dram {0}</unitPattern>
+				<unitPattern count="other">dram {0}</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ɩjɩga</displayName>
+				<unitPattern count="zero">jigger {0}</unitPattern>
+				<unitPattern count="one">jigger {0}</unitPattern>
+				<unitPattern count="other">jigger {0}</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>ɩkɩtɩʊ</displayName>
+				<unitPattern count="zero">pn {0}</unitPattern>
+				<unitPattern count="one">pn {0}</unitPattern>
+				<unitPattern count="other">pn {0}</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<unitPattern count="zero">qt Imp. {0}</unitPattern>
+				<unitPattern count="one">qt Imp. {0}</unitPattern>
+				<unitPattern count="other">qt Imp. {0}</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>pɔɩɩ</displayName>
+				<unitPattern count="zero">light {0}</unitPattern>
+				<unitPattern count="one">light {0}</unitPattern>
+				<unitPattern count="other">light {0}</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="zero">ppb {0}</unitPattern>
+				<unitPattern count="one">ppb {0}</unitPattern>
+				<unitPattern count="other">ppb {0}</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>gɩjibɔŋɔ</displayName>
+			</unit>
 			<coordinateUnit>
 				<displayName>ʊtǝŋu</displayName>
 				<coordinateUnitPattern type="east">{0} gjl</coordinateUnitPattern>
@@ -4346,6 +6035,744 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<coordinateUnitPattern type="south">{0} gsl</coordinateUnitPattern>
 				<coordinateUnitPattern type="west">{0} gshl</coordinateUnitPattern>
 			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="acceleration-g-force">
+				<unitPattern count="zero">G{0}</unitPattern>
+				<unitPattern count="one">G{0}</unitPattern>
+				<unitPattern count="other">G{0}</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<unitPattern count="zero">m/s²{0}</unitPattern>
+				<unitPattern count="one">m/s²{0}</unitPattern>
+				<unitPattern count="other">m/s²{0}</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<unitPattern count="zero">rev{0}</unitPattern>
+				<unitPattern count="one">rev{0}</unitPattern>
+				<unitPattern count="other">rev{0}</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<unitPattern count="zero">rad{0}</unitPattern>
+				<unitPattern count="one">rad{0}</unitPattern>
+				<unitPattern count="other">rad{0}</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<unitPattern count="zero">°{0}</unitPattern>
+				<unitPattern count="one">°{0}</unitPattern>
+				<unitPattern count="other">°{0}</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<unitPattern count="zero">′{0}</unitPattern>
+				<unitPattern count="one">′{0}</unitPattern>
+				<unitPattern count="other">′{0}</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<unitPattern count="zero">″{0}</unitPattern>
+				<unitPattern count="one">″{0}</unitPattern>
+				<unitPattern count="other">″{0}</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<unitPattern count="zero">km²{0}</unitPattern>
+				<unitPattern count="one">km²{0}</unitPattern>
+				<unitPattern count="other">km²{0}</unitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>ʊlɔ</displayName>
+				<unitPattern count="zero">ha{0}</unitPattern>
+				<unitPattern count="one">ha{0}</unitPattern>
+				<unitPattern count="other">ha{0}</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>ɩmɛta²</displayName>
+				<unitPattern count="zero">m²{0}</unitPattern>
+				<unitPattern count="one">m²{0}</unitPattern>
+				<unitPattern count="other">m²{0}</unitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<unitPattern count="zero">cm²{0}</unitPattern>
+				<unitPattern count="one">cm²{0}</unitPattern>
+				<unitPattern count="other">cm²{0}</unitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<unitPattern count="zero">mi²{0}</unitPattern>
+				<unitPattern count="one">mi²{0}</unitPattern>
+				<unitPattern count="other">mi²{0}</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<unitPattern count="zero">yd²{0}</unitPattern>
+				<unitPattern count="one">yd²{0}</unitPattern>
+				<unitPattern count="other">yd²{0}</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<unitPattern count="zero">ft²{0}</unitPattern>
+				<unitPattern count="one">ft²{0}</unitPattern>
+				<unitPattern count="other">ft²{0}</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<unitPattern count="zero">in²{0}</unitPattern>
+				<unitPattern count="one">in²{0}</unitPattern>
+				<unitPattern count="other">in²{0}</unitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>ɖunam</displayName>
+				<unitPattern count="zero">baa ɖunam{0}</unitPattern>
+				<unitPattern count="one">ɖunam {0}</unitPattern>
+				<unitPattern count="other">ɩɖunam {0}</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<unitPattern count="zero">kt{0}</unitPattern>
+				<unitPattern count="one">kt{0}</unitPattern>
+				<unitPattern count="other">kt{0}</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<unitPattern count="zero">mg/dL{0}</unitPattern>
+				<unitPattern count="one">mg/dL{0}</unitPattern>
+				<unitPattern count="other">mg/dL{0}</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<unitPattern count="zero">mmol/L{0}</unitPattern>
+				<unitPattern count="one">mmol/L{0}</unitPattern>
+				<unitPattern count="other">mmol/L{0}</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<unitPattern count="zero">item{0}</unitPattern>
+				<unitPattern count="one">item{0}</unitPattern>
+				<unitPattern count="other">item{0}</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<unitPattern count="zero">ppm{0}</unitPattern>
+				<unitPattern count="one">ppm{0}</unitPattern>
+				<unitPattern count="other">ppm{0}</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<unitPattern count="zero">%{0}</unitPattern>
+				<unitPattern count="one">%{0}</unitPattern>
+				<unitPattern count="other">%{0}</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<unitPattern count="zero">‰{0}</unitPattern>
+				<unitPattern count="one">‰{0}</unitPattern>
+				<unitPattern count="other">‰{0}</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<unitPattern count="zero">‱{0}</unitPattern>
+				<unitPattern count="one">‱{0}</unitPattern>
+				<unitPattern count="other">‱{0}</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<unitPattern count="zero">mol{0}</unitPattern>
+				<unitPattern count="one">mol{0}</unitPattern>
+				<unitPattern count="other">mol{0}</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<unitPattern count="zero">L/km{0}</unitPattern>
+				<unitPattern count="one">L/km{0}</unitPattern>
+				<unitPattern count="other">L/km{0}</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<unitPattern count="zero">L/100km{0}</unitPattern>
+				<unitPattern count="one">L/100km{0}</unitPattern>
+				<unitPattern count="other">L/100km{0}</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<unitPattern count="zero">mpg{0}</unitPattern>
+				<unitPattern count="one">mpg{0}</unitPattern>
+				<unitPattern count="other">mpg{0}</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<unitPattern count="zero">mpg Imp.{0}</unitPattern>
+				<unitPattern count="one">mpg Imp.{0}</unitPattern>
+				<unitPattern count="other">mpg Imp.{0}</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<unitPattern count="zero">A{0}</unitPattern>
+				<unitPattern count="one">A{0}</unitPattern>
+				<unitPattern count="other">A{0}</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<unitPattern count="zero">mA{0}</unitPattern>
+				<unitPattern count="one">mA{0}</unitPattern>
+				<unitPattern count="other">mA{0}</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<unitPattern count="zero">Ω{0}</unitPattern>
+				<unitPattern count="one">Ω{0}</unitPattern>
+				<unitPattern count="other">Ω{0}</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<unitPattern count="zero">V{0}</unitPattern>
+				<unitPattern count="one">V{0}</unitPattern>
+				<unitPattern count="other">V{0}</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<unitPattern count="zero">kcal{0}</unitPattern>
+				<unitPattern count="one">kcal{0}</unitPattern>
+				<unitPattern count="other">kcal{0}</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<unitPattern count="zero">cal{0}</unitPattern>
+				<unitPattern count="one">cal{0}</unitPattern>
+				<unitPattern count="other">cal{0}</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<unitPattern count="zero">kJ{0}</unitPattern>
+				<unitPattern count="one">kJ{0}</unitPattern>
+				<unitPattern count="other">kJ{0}</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>jul</displayName>
+				<unitPattern count="zero">J{0}</unitPattern>
+				<unitPattern count="one">J{0}</unitPattern>
+				<unitPattern count="other">J{0}</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<unitPattern count="zero">kWh{0}</unitPattern>
+				<unitPattern count="one">kWh{0}</unitPattern>
+				<unitPattern count="other">kWh{0}</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<unitPattern count="zero">eV{0}</unitPattern>
+				<unitPattern count="one">eV{0}</unitPattern>
+				<unitPattern count="other">eV{0}</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<unitPattern count="zero">Btu{0}</unitPattern>
+				<unitPattern count="one">Btu{0}</unitPattern>
+				<unitPattern count="other">Btu{0}</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<unitPattern count="zero">US therm{0}</unitPattern>
+				<unitPattern count="one">US therm{0}</unitPattern>
+				<unitPattern count="other">US therm{0}</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<unitPattern count="zero">N{0}</unitPattern>
+				<unitPattern count="one">N{0}</unitPattern>
+				<unitPattern count="other">N{0}</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<unitPattern count="zero">kWh/100km{0}</unitPattern>
+				<unitPattern count="one">kWh/100km{0}</unitPattern>
+				<unitPattern count="other">kWh/100km{0}</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<unitPattern count="zero">GHz{0}</unitPattern>
+				<unitPattern count="one">GHz{0}</unitPattern>
+				<unitPattern count="other">GHz{0}</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<unitPattern count="zero">MHz{0}</unitPattern>
+				<unitPattern count="one">MHz{0}</unitPattern>
+				<unitPattern count="other">MHz{0}</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<unitPattern count="zero">kHz{0}</unitPattern>
+				<unitPattern count="one">kHz{0}</unitPattern>
+				<unitPattern count="other">kHz{0}</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<unitPattern count="zero">Hz{0}</unitPattern>
+				<unitPattern count="one">Hz{0}</unitPattern>
+				<unitPattern count="other">Hz{0}</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="zero">em {0}</unitPattern>
+				<unitPattern count="one">em {0}</unitPattern>
+				<unitPattern count="other">em {0}</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="zero">R⊕{0}</unitPattern>
+				<unitPattern count="one">R⊕{0}</unitPattern>
+				<unitPattern count="other">R⊕{0}</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<unitPattern count="zero">km{0}</unitPattern>
+				<unitPattern count="one">km{0}</unitPattern>
+				<unitPattern count="other">km{0}</unitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>m</displayName>
+				<unitPattern count="zero">m{0}</unitPattern>
+				<unitPattern count="one">m{0}</unitPattern>
+				<unitPattern count="other">m{0}</unitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<unitPattern count="zero">dm{0}</unitPattern>
+				<unitPattern count="one">dm{0}</unitPattern>
+				<unitPattern count="other">dm{0}</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<unitPattern count="zero">cm{0}</unitPattern>
+				<unitPattern count="one">cm{0}</unitPattern>
+				<unitPattern count="other">cm{0}</unitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<unitPattern count="zero">mm{0}</unitPattern>
+				<unitPattern count="one">mm{0}</unitPattern>
+				<unitPattern count="other">mm{0}</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<unitPattern count="zero">μm{0}</unitPattern>
+				<unitPattern count="one">μm{0}</unitPattern>
+				<unitPattern count="other">μm{0}</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<unitPattern count="zero">nm{0}</unitPattern>
+				<unitPattern count="one">nm{0}</unitPattern>
+				<unitPattern count="other">nm{0}</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<unitPattern count="zero">pm{0}</unitPattern>
+				<unitPattern count="one">pm{0}</unitPattern>
+				<unitPattern count="other">pm{0}</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>ɩmayɩl</displayName>
+				<unitPattern count="zero">mi{0}</unitPattern>
+				<unitPattern count="one">mi{0}</unitPattern>
+				<unitPattern count="other">mi{0}</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<unitPattern count="zero">yd{0}</unitPattern>
+				<unitPattern count="one">yd{0}</unitPattern>
+				<unitPattern count="other">yd{0}</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<unitPattern count="zero">′{0}</unitPattern>
+				<unitPattern count="one">′{0}</unitPattern>
+				<unitPattern count="other">′{0}</unitPattern>
+			</unit>
+			<unit type="length-inch">
+				<unitPattern count="zero">′′{0}</unitPattern>
+				<unitPattern count="one">′′{0}</unitPattern>
+				<unitPattern count="other">′′{0}</unitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>parsɛɛkɩ</displayName>
+				<unitPattern count="zero">pc{0}</unitPattern>
+				<unitPattern count="one">pc{0}</unitPattern>
+				<unitPattern count="other">pc{0}</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<unitPattern count="zero">ly{0}</unitPattern>
+				<unitPattern count="one">ly{0}</unitPattern>
+				<unitPattern count="other">ly{0}</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<unitPattern count="zero">au{0}</unitPattern>
+				<unitPattern count="one">au{0}</unitPattern>
+				<unitPattern count="other">au{0}</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>fɛɛlɔŋ</displayName>
+				<unitPattern count="zero">fur{0}</unitPattern>
+				<unitPattern count="one">fur{0}</unitPattern>
+				<unitPattern count="other">fur{0}</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fɛɛɖǝm</displayName>
+				<unitPattern count="zero">fth{0}</unitPattern>
+				<unitPattern count="one">fth{0}</unitPattern>
+				<unitPattern count="other">fth{0}</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<unitPattern count="zero">nmi{0}</unitPattern>
+				<unitPattern count="one">nmi{0}</unitPattern>
+				<unitPattern count="other">nmi{0}</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<unitPattern count="zero">smi{0}</unitPattern>
+				<unitPattern count="one">smi{0}</unitPattern>
+				<unitPattern count="other">smi{0}</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>ɩpipi</displayName>
+				<unitPattern count="zero">pt{0}</unitPattern>
+				<unitPattern count="one">pt{0}</unitPattern>
+				<unitPattern count="other">pt{0}</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>ʊshilè kɩfana</displayName>
+				<unitPattern count="zero">R☉{0}</unitPattern>
+				<unitPattern count="one">R☉{0}</unitPattern>
+				<unitPattern count="other">R☉{0}</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<unitPattern count="zero">lx{0}</unitPattern>
+				<unitPattern count="one">lx{0}</unitPattern>
+				<unitPattern count="other">lx{0}</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<unitPattern count="zero">cd{0}</unitPattern>
+				<unitPattern count="one">cd{0}</unitPattern>
+				<unitPattern count="other">cd{0}</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="zero">lm{0}</unitPattern>
+				<unitPattern count="one">lm{0}</unitPattern>
+				<unitPattern count="other">lm{0}</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<unitPattern count="zero">t{0}</unitPattern>
+				<unitPattern count="one">t{0}</unitPattern>
+				<unitPattern count="other">t{0}</unitPattern>
+			</unit>
+			<unit type="mass-kilogram">
+				<unitPattern count="zero">kg{0}</unitPattern>
+				<unitPattern count="one">kg{0}</unitPattern>
+				<unitPattern count="other">kg{0}</unitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>ɩgram</displayName>
+				<unitPattern count="zero">g{0}</unitPattern>
+				<unitPattern count="one">g{0}</unitPattern>
+				<unitPattern count="other">g{0}</unitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<unitPattern count="zero">mg{0}</unitPattern>
+				<unitPattern count="one">mg{0}</unitPattern>
+				<unitPattern count="other">mg{0}</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<unitPattern count="zero">μg{0}</unitPattern>
+				<unitPattern count="one">μg{0}</unitPattern>
+				<unitPattern count="other">μg{0}</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<unitPattern count="zero">tn{0}</unitPattern>
+				<unitPattern count="one">tn{0}</unitPattern>
+				<unitPattern count="other">tn{0}</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<unitPattern count="zero">st{0}</unitPattern>
+				<unitPattern count="one">st{0}</unitPattern>
+				<unitPattern count="other">st{0}</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<unitPattern count="zero">lb{0}</unitPattern>
+				<unitPattern count="one">lb{0}</unitPattern>
+				<unitPattern count="other">lb{0}</unitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<unitPattern count="zero">oz{0}</unitPattern>
+				<unitPattern count="one">oz{0}</unitPattern>
+				<unitPattern count="other">oz{0}</unitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<unitPattern count="zero">oz t{0}</unitPattern>
+				<unitPattern count="one">oz t{0}</unitPattern>
+				<unitPattern count="other">oz t{0}</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<unitPattern count="zero">CD{0}</unitPattern>
+				<unitPattern count="one">CD{0}</unitPattern>
+				<unitPattern count="other">CD{0}</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<unitPattern count="zero">GW{0}</unitPattern>
+				<unitPattern count="one">GW{0}</unitPattern>
+				<unitPattern count="other">GW{0}</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<unitPattern count="zero">MW{0}</unitPattern>
+				<unitPattern count="one">MW{0}</unitPattern>
+				<unitPattern count="other">MW{0}</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<unitPattern count="zero">kW{0}</unitPattern>
+				<unitPattern count="one">kW{0}</unitPattern>
+				<unitPattern count="other">kW{0}</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<unitPattern count="zero">W{0}</unitPattern>
+				<unitPattern count="one">W{0}</unitPattern>
+				<unitPattern count="other">W{0}</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<unitPattern count="zero">mW{0}</unitPattern>
+				<unitPattern count="one">mW{0}</unitPattern>
+				<unitPattern count="other">mW{0}</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<unitPattern count="zero">hp{0}</unitPattern>
+				<unitPattern count="one">hp{0}</unitPattern>
+				<unitPattern count="other">hp{0}</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<unitPattern count="zero">mmHg{0}</unitPattern>
+				<unitPattern count="one">mmHg{0}</unitPattern>
+				<unitPattern count="other">mmHg{0}</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<unitPattern count="zero">psi{0}</unitPattern>
+				<unitPattern count="one">psi{0}</unitPattern>
+				<unitPattern count="other">psi{0}</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<displayName>″ Hg</displayName>
+				<unitPattern count="zero">inHg{0}</unitPattern>
+				<unitPattern count="one">inHg{0}</unitPattern>
+				<unitPattern count="other">inHg{0}</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<unitPattern count="zero">bar{0}</unitPattern>
+				<unitPattern count="one">bar{0}</unitPattern>
+				<unitPattern count="other">bar{0}</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<unitPattern count="zero">mbar{0}</unitPattern>
+				<unitPattern count="one">mbar{0}</unitPattern>
+				<unitPattern count="other">mbar{0}</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<unitPattern count="zero">atm{0}</unitPattern>
+				<unitPattern count="one">atm{0}</unitPattern>
+				<unitPattern count="other">atm{0}</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<unitPattern count="zero">Pa{0}</unitPattern>
+				<unitPattern count="one">Pa{0}</unitPattern>
+				<unitPattern count="other">Pa{0}</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<unitPattern count="zero">hPa{0}</unitPattern>
+				<unitPattern count="one">hPa{0}</unitPattern>
+				<unitPattern count="other">hPa{0}</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<unitPattern count="zero">kPa{0}</unitPattern>
+				<unitPattern count="one">kPa{0}</unitPattern>
+				<unitPattern count="other">kPa{0}</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<unitPattern count="zero">MPa{0}</unitPattern>
+				<unitPattern count="one">MPa{0}</unitPattern>
+				<unitPattern count="other">MPa{0}</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<unitPattern count="zero">km/h{0}</unitPattern>
+				<unitPattern count="one">km/h{0}</unitPattern>
+				<unitPattern count="other">km/h{0}</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<unitPattern count="zero">m/s{0}</unitPattern>
+				<unitPattern count="one">m/s{0}</unitPattern>
+				<unitPattern count="other">m/s{0}</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<unitPattern count="zero">mi/h{0}</unitPattern>
+				<unitPattern count="one">mi/h{0}</unitPattern>
+				<unitPattern count="other">mi/h{0}</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<unitPattern count="zero">kn{0}</unitPattern>
+				<unitPattern count="one">kn{0}</unitPattern>
+				<unitPattern count="other">kn{0}</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<unitPattern count="zero">°{0}</unitPattern>
+				<unitPattern count="one">°{0}</unitPattern>
+				<unitPattern count="other">°{0}</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<unitPattern count="zero">°C{0}</unitPattern>
+				<unitPattern count="one">°C{0}</unitPattern>
+				<unitPattern count="other">°C{0}</unitPattern>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<unitPattern count="zero">°F{0}</unitPattern>
+				<unitPattern count="one">°F{0}</unitPattern>
+				<unitPattern count="other">°F{0}</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<unitPattern count="zero">K {0}</unitPattern>
+				<unitPattern count="one">K {0}</unitPattern>
+				<unitPattern count="other">K {0}</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<unitPattern count="zero">N⋅m{0}</unitPattern>
+				<unitPattern count="one">N⋅m{0}</unitPattern>
+				<unitPattern count="other">N⋅m{0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<unitPattern count="zero">km³{0}</unitPattern>
+				<unitPattern count="one">km³{0}</unitPattern>
+				<unitPattern count="other">km³{0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<unitPattern count="zero">m³{0}</unitPattern>
+				<unitPattern count="one">m³{0}</unitPattern>
+				<unitPattern count="other">m³{0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<unitPattern count="zero">cm³{0}</unitPattern>
+				<unitPattern count="one">cm³{0}</unitPattern>
+				<unitPattern count="other">cm³{0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<unitPattern count="zero">mi³{0}</unitPattern>
+				<unitPattern count="one">mi³{0}</unitPattern>
+				<unitPattern count="other">mi³{0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<unitPattern count="zero">yd³{0}</unitPattern>
+				<unitPattern count="one">yd³{0}</unitPattern>
+				<unitPattern count="other">yd³{0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<unitPattern count="zero">ft³{0}</unitPattern>
+				<unitPattern count="one">ft³{0}</unitPattern>
+				<unitPattern count="other">ft³{0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<unitPattern count="zero">in³{0}</unitPattern>
+				<unitPattern count="one">in³{0}</unitPattern>
+				<unitPattern count="other">in³{0}</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<unitPattern count="zero">ML{0}</unitPattern>
+				<unitPattern count="one">ML{0}</unitPattern>
+				<unitPattern count="other">ML{0}</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<unitPattern count="zero">hL{0}</unitPattern>
+				<unitPattern count="one">hL{0}</unitPattern>
+				<unitPattern count="other">hL{0}</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>litri</displayName>
+				<unitPattern count="zero">l{0}</unitPattern>
+				<unitPattern count="one">l{0}</unitPattern>
+				<unitPattern count="other">l{0}</unitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<unitPattern count="zero">dL{0}</unitPattern>
+				<unitPattern count="one">dL{0}</unitPattern>
+				<unitPattern count="other">dL{0}</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<unitPattern count="zero">cL{0}</unitPattern>
+				<unitPattern count="one">cL{0}</unitPattern>
+				<unitPattern count="other">cL{0}</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<unitPattern count="zero">mL{0}</unitPattern>
+				<unitPattern count="one">mL{0}</unitPattern>
+				<unitPattern count="other">mL{0}</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>pt</displayName>
+				<unitPattern count="zero">mpt{0}</unitPattern>
+				<unitPattern count="one">mpt{0}</unitPattern>
+				<unitPattern count="other">mpt{0}</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<unitPattern count="zero">mc{0}</unitPattern>
+				<unitPattern count="one">mc{0}</unitPattern>
+				<unitPattern count="other">mc{0}</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<unitPattern count="zero">ac ft{0}</unitPattern>
+				<unitPattern count="one">ac ft{0}</unitPattern>
+				<unitPattern count="other">ac ft{0}</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<unitPattern count="zero">bu{0}</unitPattern>
+				<unitPattern count="one">bu{0}</unitPattern>
+				<unitPattern count="other">bu{0}</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<unitPattern count="zero">gal{0}</unitPattern>
+				<unitPattern count="one">gal{0}</unitPattern>
+				<unitPattern count="other">gal{0}</unitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="zero">gal Imp.{0}</unitPattern>
+				<unitPattern count="one">gal Imp.{0}</unitPattern>
+				<unitPattern count="other">gal Imp.{0}</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>kɔɔpʊ</displayName>
+				<unitPattern count="zero">c{0}</unitPattern>
+				<unitPattern count="one">c{0}</unitPattern>
+				<unitPattern count="other">c{0}</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<unitPattern count="zero">fl oz{0}</unitPattern>
+				<unitPattern count="one">fl oz{0}</unitPattern>
+				<unitPattern count="other">fl oz{0}</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="zero">fl oz Imp.{0}</unitPattern>
+				<unitPattern count="one">fl oz Imp.{0}</unitPattern>
+				<unitPattern count="other">fl oz Imp.{0}</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<unitPattern count="zero">tbsp{0}</unitPattern>
+				<unitPattern count="one">tbsp{0}</unitPattern>
+				<unitPattern count="other">tbsp{0}</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<unitPattern count="zero">tsp{0}</unitPattern>
+				<unitPattern count="one">tsp{0}</unitPattern>
+				<unitPattern count="other">tsp{0}</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<unitPattern count="zero">bbl{0}</unitPattern>
+				<unitPattern count="one">bbl{0}</unitPattern>
+				<unitPattern count="other">bbl{0}</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<unitPattern count="zero">dstspn{0}</unitPattern>
+				<unitPattern count="one">dstspn{0}</unitPattern>
+				<unitPattern count="other">dstspn{0}</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="zero">dstspn Imp{0}</unitPattern>
+				<unitPattern count="one">dstspn Imp{0}</unitPattern>
+				<unitPattern count="other">dstspn Imp{0}</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>ɩsɔr</displayName>
+				<unitPattern count="zero">dr{0}</unitPattern>
+				<unitPattern count="one">dr{0}</unitPattern>
+				<unitPattern count="other">dr{0}</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>fl.dr.</displayName>
+				<unitPattern count="zero">fl.dr.{0}</unitPattern>
+				<unitPattern count="one">fl.dr.{0}</unitPattern>
+				<unitPattern count="other">fl.dr.{0}</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>jɩga</displayName>
+				<unitPattern count="zero">jigger{0}</unitPattern>
+				<unitPattern count="one">jigger{0}</unitPattern>
+				<unitPattern count="other">jigger{0}</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>ɩkɩtɩʊ</displayName>
+				<unitPattern count="zero">pn{0}</unitPattern>
+				<unitPattern count="one">pn{0}</unitPattern>
+				<unitPattern count="other">pn{0}</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<unitPattern count="zero">qt Imp.{0}</unitPattern>
+				<unitPattern count="one">qt Imp.{0}</unitPattern>
+				<unitPattern count="other">qt Imp.{0}</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>pɔɩɩ</displayName>
+				<unitPattern count="zero">light{0}</unitPattern>
+				<unitPattern count="one">light{0}</unitPattern>
+				<unitPattern count="other">light{0}</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="zero">ppb{0}</unitPattern>
+				<unitPattern count="one">ppb{0}</unitPattern>
+				<unitPattern count="other">ppb{0}</unitPattern>
+			</unit>
 		</unitLength>
 	</units>
 	<listPatterns>
@@ -4366,4 +6793,165 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und blo</nameOrderLocales>
+		<parameterDefault parameter="length">long</parameterDefault>
+		<initialPattern type="initialSequence">{0}{1}</initialPattern>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{title} {credentials} {given} {surname} {given2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {credentials} {given} {surname} {given2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{surname-monogram-allCaps} {given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{surname-monogram-allCaps} {given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {surname} {given2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {surname} {given2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given} {surname} {given2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{given} {surname} {given2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{title} {credentials} {surname} {surname2} {given2} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {credentials} {surname} {surname2} {given2} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given2-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given2-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {surname} {surname2} {given2} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {surname} {surname2} {given2} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {given2} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {given2} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {given2} {given}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given2} {given}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given2} {given}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given2} {given}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given2} {given}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given2} {given}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
+			<nameField type="given">Muniiru</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given">Fuseena</nameField>
+			<nameField type="surname">AKIME</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given">Abɖu-Tɔyib</nameField>
+			<nameField type="surname">GOMINA</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="title">ʊŋono</nameField>
+			<nameField type="given">Mustafa</nameField>
+			<nameField type="given-informal">Tafa</nameField>
+			<nameField type="surname-core">KALAM</nameField>
+			<nameField type="generation">ajala</nameField>
+			<nameField type="credentials">Alaaji</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">Eemil</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">Iiɖa</nameField>
+			<nameField type="surname">KANSULO</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Alfɔns</nameField>
+			<nameField type="surname">MANƉELA</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
+import java.util.Scanner;
+import java.io.File;
+import java.io.FileNotFoundException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -47,6 +50,7 @@ public class CheckLargePages {
     private final static long LP_1G = 1024 * 1024 * 1024;
     private final static boolean LARGE_PAGES_ENABLED;
     private final static long LARGE_PAGE_SIZE;
+    private final static String LARGE_PAGE_NUMBER_FILE_BASE = "/sys/kernel/mm/hugepages/hugepages-%skB/nr_hugepages";
 
     static {
         WhiteBox whiteBox = WhiteBox.getWhiteBox();
@@ -56,6 +60,16 @@ public class CheckLargePages {
 
     private static boolean isLargePageSizeEqual(long size) {
         return LARGE_PAGE_SIZE == size;
+    }
+
+    private static int numberOfLargePages(long size) {
+        String largePageNumberFile = String.format(LARGE_PAGE_NUMBER_FILE_BASE, size / 1024);
+        try (Scanner scanner = new Scanner(new File(largePageNumberFile))) {
+            if (scanner.hasNextInt()) {
+                return scanner.nextInt();
+            }
+        } catch (FileNotFoundException e) { };
+        return 0;
     }
 
     private static void testSegmented2GbCodeCacheWith1GbPage() throws Exception {
@@ -113,11 +127,17 @@ public class CheckLargePages {
         out.shouldContain("UseLargePages=1, UseTransparentHugePages=0");
         out.shouldMatch("CodeCache:  min=1[gG] max=1[gG] base=[^ ]+ size=1[gG] page_size=1[gG]");
     }
+
     public static void main(String[] args) throws Exception {
         if (isLargePageSizeEqual(LP_1G)) {
             testSegmented2GbCodeCacheWith1GbPage();
-            testDefaultCodeCacheWith1GbLargePages();
-            testNonSegmented1GbCodeCacheWith1GbLargePages();
+            if (numberOfLargePages(LP_1G) >= 1) {
+                testDefaultCodeCacheWith1GbLargePages();
+                testNonSegmented1GbCodeCacheWith1GbLargePages();
+            } else {
+                System.out.println("Skipping testDefaultCodeCacheWith1GbLargePages and " +
+                        "testNonSegmented1GbCodeCacheWith1GbLargePages, no 1Gb pages available");
+            }
         } else {
             System.out.println("1GB large pages not supported: UseLargePages=" + LARGE_PAGES_ENABLED +
                     (LARGE_PAGES_ENABLED ? ", largePageSize=" + LARGE_PAGE_SIZE : "") + ". Skipping");

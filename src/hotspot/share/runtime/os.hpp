@@ -882,10 +882,6 @@ class os: AllStatic {
   // Fills in path to jvm.dll/libjvm.so (used by the Disassembler)
   static void     jvm_path(char *buf, jint buflen);
 
-  // JNI names
-  static void     print_jni_name_prefix_on(outputStream* st, int args_size);
-  static void     print_jni_name_suffix_on(outputStream* st, int args_size);
-
   // Init os specific system properties values
   static void init_system_properties_values();
 
