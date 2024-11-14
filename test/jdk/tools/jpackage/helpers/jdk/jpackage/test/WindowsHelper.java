@@ -575,7 +575,7 @@ public class WindowsHelper {
         return value;
     }
 
-    private final static class ShortPathUtils {
+    private static final class ShortPathUtils {
         private ShortPathUtils() {
             try {
                 var shortPathUtilsClass = Class.forName("jdk.jpackage.internal.ShortPathUtils");
@@ -598,7 +598,7 @@ public class WindowsHelper {
 
         private final Method getShortPathWrapper;
 
-        private final static ShortPathUtils INSTANCE = new ShortPathUtils();
+        private static final ShortPathUtils INSTANCE = new ShortPathUtils();
     }
 
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
