@@ -122,18 +122,15 @@ import java.util.function.Supplier;
  * This property is crucial as evaluation of the lambda expression may have side effects,
  * e.g., the call above to {@code Logger.getLogger()} may result in storage resources
  * being prepared.
- * <p>
- * A {@linkplain StableValue} is mainly intended to be a member of a holding class (as
- * shown in the examples above) and is usually neither exposed directly via accessors nor
- * passed as a method parameter.
  *
  * <h2 id="stable-functions">Stable Functions</h2>
- * Stable functions are backed by one or more {@code StableValue} objects that cache
- * results computed as a result of initial invocations.
- * <p>
- * A <em>stable supplier</em> is backed by a single {@code StableValue} and allows clients
- * to specify how the holder value of the stable value is to be set, but without actually
- * setting its holder value upfront:
+ * Stable values provide the foundation for higher-level functional abstractions. A
+ * <em>stable supplier</em> is a supplier that computes a value and then caches it into
+ * a backing stable value storage for later use. A stable supplier is created -- via the
+ * {@linkplain StableValue#ofSupplier(Supplier) StableValue.ofSupplier()} factory --
+ * by providing an original {@linkplain Supplier} which is invoked when the
+ * stable supplier is first accessed:
+ *
  * {@snippet lang = java:
  *     class Component {
  *
@@ -150,15 +147,14 @@ import java.util.function.Supplier;
  * This also allows the stable supplier to be accessed directly, without going through
  * an accessor method like {@code getLogger()} in the previous example.
  * <p>
- * A <em>stable int function</em> is backed by an array of stable values where
- * the elements' holder value are computed the first time a particular input value
- * is provided.
- * When the stable int function is first created --
- * via the {@linkplain StableValue#ofIntFunction(int, IntFunction)
- * StableValue.ofIntFunction()} factory -- the input range (i.e. {@code [0, size)}) is
- * specified together with an original {@linkplain IntFunction} which is invoked
- * at most once per input value. In effect, the stable int function will act like a cache
- * for the original {@code IntFunction}:
+ * A <em>stable int function</em> is a function that takes an {@code int} parameter and
+ * uses it to compute a result that is then cached into the backing stable value storage
+ * for that parameter value. When the stable int function is first created -- via the
+ * {@linkplain StableValue#ofIntFunction(int, IntFunction) StableValue.ofIntFunction()}
+ * factory -- the input range (i.e. [0, size)) is specified together with an original
+ * {@linkplain IntFunction} which is invoked at most once per input value. In effect,
+ * the stable int function will act like a cache for the original {@linkplain IntFunction}:
+ *
  * {@snippet lang = java:
  *     class SqrtUtil {
  *
@@ -173,14 +169,14 @@ import java.util.function.Supplier;
  *     }
  *}
  * <p>
- * A <em>stable function</em> is backed by an array of stable values where
- * the elements' holder value are computed the first time a particular input value
- * is provided.
- * When the stable function is first created --
- * via the {@linkplain StableValue#ofFunction(Set, Function) StableValue.ofFunction()}
- * factory -- the input {@linkplain  Set} is specified together with an original
- * {@linkplain Function} which is invoked at most once per input value. In effect, the
- * stable function will act like a cache for the original {@code Function}:
+ * A <em>stable function</em> is a function that takes a parameter (of type {@code T}) and
+ * uses it to compute a result that is then cached into the backing stable value storage
+ * for that parameter value. When the stable function is first created -- via the
+ * {@linkplain StableValue#ofFunction(Set, Function) StableValue.ofFunction()} factory --
+ * the input {@linkplain Set} is specified together with an original {@linkplain Function}
+ * which is invoked at most once per input value. In effect, the stable function will act
+ * like a cache for the original {@linkplain Function}:
+ *
  * {@snippet lang = java:
  *     class SqrtUtil {
  *
@@ -196,14 +192,11 @@ import java.util.function.Supplier;
  *}
  *
  * <h2 id="stable-collections">Stable Collections</h2>
- * Stable collections are similar to {@linkplain ##stable-functions stable functions} but
- * provides additional support for the collection specific methods such as
- * {@linkplain Collection#size()}.
- * <p>
- * A <em>stable list</em> is similar to a stable int function but provides a full
- * implementation of an immutable {@linkplain List}. This is useful when interacting with
- * collection-based methods. Here is an example of how a stable list can be used to hold
- * a pool of {@code Component} objects:
+ * Stable values can also be used as backing storage for immutable collections.
+ * A <em>stable list</em> is an immutable list of fixed size, backed by an array of
+ * stable values. The stable list elements are computed when they are first accessed,
+ * using a provided {@linkplain IntFunction}:
+ *
  * {@snippet lang = java:
  *    class Application {
  *        static final int POOL_SIZE = 16;
@@ -222,10 +215,10 @@ import java.util.function.Supplier;
  * Note: In the example above, there is a constructor in the {@code Component}
  *       class that takes an {@code int} parameter.
  * <p>
- * A <em>stable map</em> is similar to a stable function but provides a full
- * implementation of an immutable {@linkplain Map}. This is useful when interacting with
- * collection-based methods. Here is how a stable map can be used as a cache for
- * square roots for certain input values given at creation:
+ * Similarly, a <em>stable map</em> is an immutable map whose keys are known at
+ * construction. The stable map values are computed when they are first accessed,
+ * using a provided {@linkplain Function}:
+ *
  * {@snippet lang = java:
  *     class SqrtUtil {
  *
@@ -240,18 +233,19 @@ import java.util.function.Supplier;
  *     }
  *}
  * <h2 id="thread-safety">Thread Safety</h2>
- * All stable value holders, functions, and collections are thread safe.
- * <p>
- * Updates to an object before it is set as a holder value is guaranteed to be seen by all
- * other threads discovering the holder value via a stable value.
- *
  * A holder value is guaranteed to only be settable at most once. If competing threads are
  * racing to set a holder value, only the first is accepted and the other threads are
  * blocked until the holder value is set.
- *
- * All the stable functions and collections guarantee the provided original function
- * is invoked successfully at most once per valid input even in a multithreaded
- * environment.
+ * <p>
+ * Updates to an object
+ * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+ * the object is observed via a stable value.
+ * <p>
+ * The method {@linkplain StableValue#computeIfUnset(Supplier) computeIfUnset()}
+ * guarantees that the provided {@linkplain Supplier} is invoked successfully at most
+ * once even under race. Since stable functions and stable collections are built on top
+ * of {@linkplain StableValue#computeIfUnset(Supplier) computeIfUnset()} they too are
+ * thread safe and guarantee at-most-once-per-input invocation.
  *
  * <h2 id="miscellaneous">Miscellaneous</h2>
  * Except for a StableValue's holder value itself, all method parameters must be
@@ -263,7 +257,10 @@ import java.util.function.Supplier;
  *           do this may lead to deadlock. Stable functions and collections on the
  *           other hand are guaranteed <em>not to synchronize</em> on {@code this}.
  *
- * @implNote Instance fields explicitly declared as {@code StableValue} or one-dimensional
+ * @implNote A {@linkplain StableValue} is mainly intended to be a non-public field in
+ *           a class and is usually neither exposed directly via accessors nor passed as
+ *           a method parameter.
+ *           Instance fields explicitly declared as {@code StableValue} or one-dimensional
  *           arrays thereof are eligible for certain JVM optimizations where normal
  *           instance fields are not. This comes with restrictions on reflective
  *           modifications. Although most ways of reflective modification of such fields
