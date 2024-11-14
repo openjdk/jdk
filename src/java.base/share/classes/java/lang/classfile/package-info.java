@@ -143,7 +143,7 @@
  * Attributes are converted between their classfile form and their corresponding
  * object form via an {@link java.lang.classfile.AttributeMapper}.  An {@code
  * AttributeMapper} provides the
- * {@link java.lang.classfile.AttributeMapper#readAttribute(AttributedElement,
+ * {@link java.lang.classfile.AttributeMapper#readAttribute(Utf8Entry, AttributedElement,
  * ClassReader, int)} method for mapping from the classfile format
  * to an attribute instance, and the
  * {@link java.lang.classfile.AttributeMapper#writeAttribute(java.lang.classfile.BufWriter,

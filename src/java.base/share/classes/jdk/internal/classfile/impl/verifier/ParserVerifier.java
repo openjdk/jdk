@@ -176,7 +176,7 @@ public record ParserVerifier(ClassModel classModel) {
         if (cfe instanceof AttributedElement ae) {
             var attrNames = new HashSet<String>();
             for (var a : ae.attributes()) {
-                if (!a.attributeMapper().allowMultiple() && !attrNames.add(a.attributeName())) {
+                if (!a.attributeMapper().allowMultiple() && !attrNames.add(a.attributeName().stringValue())) {
                     errors.add(new VerifyError("Multiple %s attributes in %s".formatted(a.attributeName(), toString(ae))));
                 }
                 verifyAttribute(ae, a, errors);

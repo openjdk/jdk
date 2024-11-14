@@ -44,11 +44,13 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         implements Attribute<T>, Util.Writable {
 
     static final int NAME_AND_LENGTH_PREFIX = 6;
+    private final Utf8Entry name;
     private final AttributeMapper<T> mapper;
     final ClassReaderImpl classReader;
     final int payloadStart;
 
-    BoundAttribute(ClassReader classReader, AttributeMapper<T> mapper, int payloadStart) {
+    BoundAttribute(Utf8Entry name, ClassReader classReader, AttributeMapper<T> mapper, int payloadStart) {
+        this.name = name;
         this.mapper = mapper;
         this.classReader = (ClassReaderImpl)classReader;
         this.payloadStart = payloadStart;
@@ -59,8 +61,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     }
 
     @Override
-    public String attributeName() {
-        return mapper.name();
+    public Utf8Entry attributeName() {
+        return name;
     }
 
     @Override
@@ -140,7 +142,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 mapper = customAttributes.apply(name);
             }
             if (mapper != null) {
-                filled.add(Objects.requireNonNull(mapper.readAttribute(enclosing, reader, p)));
+                filled.add(Objects.requireNonNull(mapper.readAttribute(name, enclosing, reader, p)));
             } else {
                 AttributeMapper<UnknownAttribute> fakeMapper = new AttributeMapper<>() {
                     @Override
@@ -149,7 +151,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                     }
 
                     @Override
-                    public UnknownAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
+                    public UnknownAttribute readAttribute(Utf8Entry name, AttributedElement enclosing, ClassReader cf, int pos) {
                         // Will never get called
                         throw new UnsupportedOperationException();
                     }
@@ -172,7 +174,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                         return AttributeStability.UNKNOWN;
                     }
                 };
-                filled.add(new BoundUnknownAttribute(reader, fakeMapper, p));
+                filled.add(new BoundUnknownAttribute(name, reader, fakeMapper, p));
             }
             p += len;
         }
@@ -181,8 +183,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     public static final class BoundUnknownAttribute extends BoundAttribute<UnknownAttribute>
             implements UnknownAttribute {
-        public BoundUnknownAttribute(ClassReader cf, AttributeMapper<UnknownAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundUnknownAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<UnknownAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
     }
 
@@ -193,8 +195,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         final LabelContext ctx;
         List<StackMapFrameInfo> entries = null;
 
-        public BoundStackMapTableAttribute(CodeImpl code, ClassReader cf, AttributeMapper<StackMapTableAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundStackMapTableAttribute(Utf8Entry name, CodeImpl code, ClassReader cf, AttributeMapper<StackMapTableAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
             method = code.parent().orElseThrow();
             ctx = code;
         }
@@ -210,8 +212,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     public static final class BoundSyntheticAttribute extends BoundAttribute<SyntheticAttribute>
             implements SyntheticAttribute {
-        public BoundSyntheticAttribute(ClassReader cf, AttributeMapper<SyntheticAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundSyntheticAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<SyntheticAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
     }
 
@@ -220,8 +222,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements LineNumberTableAttribute {
         private List<LineNumberInfo> lineNumbers = null;
 
-        public BoundLineNumberTableAttribute(ClassReader cf, AttributeMapper<LineNumberTableAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundLineNumberTableAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<LineNumberTableAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -245,8 +247,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     public static final class BoundCharacterRangeTableAttribute extends BoundAttribute<CharacterRangeTableAttribute> implements CharacterRangeTableAttribute {
         private List<CharacterRangeInfo> characterRangeTable = null;
 
-        public BoundCharacterRangeTableAttribute(ClassReader cf, AttributeMapper<CharacterRangeTableAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundCharacterRangeTableAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<CharacterRangeTableAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -276,8 +278,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         private final CodeImpl codeAttribute;
         private List<LocalVariableInfo> localVars = null;
 
-        public BoundLocalVariableTableAttribute(AttributedElement enclosing, ClassReader cf, AttributeMapper<LocalVariableTableAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundLocalVariableTableAttribute(Utf8Entry name, AttributedElement enclosing, ClassReader cf, AttributeMapper<LocalVariableTableAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
             if (enclosing instanceof CodeImpl ci) {
                 this.codeAttribute = ci;
             } else {
@@ -307,8 +309,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         private final CodeImpl codeAttribute;
         private List<LocalVariableTypeInfo> localVars = null;
 
-        public BoundLocalVariableTypeTableAttribute(AttributedElement enclosing, ClassReader cf, AttributeMapper<LocalVariableTypeTableAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundLocalVariableTypeTableAttribute(Utf8Entry name, AttributedElement enclosing, ClassReader cf, AttributeMapper<LocalVariableTypeTableAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
             if (enclosing instanceof CodeImpl ci) {
                 this.codeAttribute = ci;
             } else {
@@ -336,8 +338,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements MethodParametersAttribute {
         private List<MethodParameterInfo> parameters = null;
 
-        public BoundMethodParametersAttribute(ClassReader cf, AttributeMapper<MethodParametersAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundMethodParametersAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<MethodParametersAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -362,8 +364,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements ModuleHashesAttribute {
         private List<ModuleHashInfo> hashes = null;
 
-        public BoundModuleHashesAttribute(ClassReader cf, AttributeMapper<ModuleHashesAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundModuleHashesAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<ModuleHashesAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -396,8 +398,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements RecordAttribute {
         private List<RecordComponentInfo> components = null;
 
-        public BoundRecordAttribute(ClassReader cf, AttributeMapper<RecordAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundRecordAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<RecordAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -418,15 +420,15 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     public static final class BoundDeprecatedAttribute extends BoundAttribute<DeprecatedAttribute>
             implements DeprecatedAttribute {
-        public BoundDeprecatedAttribute(ClassReader cf, AttributeMapper<DeprecatedAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundDeprecatedAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<DeprecatedAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
     }
 
     public static final class BoundSignatureAttribute extends BoundAttribute<SignatureAttribute>
             implements SignatureAttribute {
-        public BoundSignatureAttribute(ClassReader cf, AttributeMapper<SignatureAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundSignatureAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<SignatureAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -437,8 +439,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     public static final class BoundSourceFileAttribute extends BoundAttribute<SourceFileAttribute>
             implements SourceFileAttribute {
-        public BoundSourceFileAttribute(ClassReader cf, AttributeMapper<SourceFileAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundSourceFileAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<SourceFileAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -449,8 +451,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     }
 
     public static final class BoundModuleMainClassAttribute extends BoundAttribute<ModuleMainClassAttribute> implements ModuleMainClassAttribute {
-        public BoundModuleMainClassAttribute(ClassReader cf, AttributeMapper<ModuleMainClassAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundModuleMainClassAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<ModuleMainClassAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -461,8 +463,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     public static final class BoundNestHostAttribute extends BoundAttribute<NestHostAttribute>
             implements NestHostAttribute {
-        public BoundNestHostAttribute(ClassReader cf, AttributeMapper<NestHostAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundNestHostAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<NestHostAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -473,15 +475,15 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     public static final class BoundSourceDebugExtensionAttribute extends BoundAttribute<SourceDebugExtensionAttribute>
             implements SourceDebugExtensionAttribute {
-        public BoundSourceDebugExtensionAttribute(ClassReader cf, AttributeMapper<SourceDebugExtensionAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundSourceDebugExtensionAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<SourceDebugExtensionAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
     }
 
     public static final class BoundConstantValueAttribute extends BoundAttribute<ConstantValueAttribute>
             implements ConstantValueAttribute {
-        public BoundConstantValueAttribute(ClassReader cf, AttributeMapper<ConstantValueAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundConstantValueAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<ConstantValueAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -493,8 +495,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     public static final class BoundModuleTargetAttribute extends BoundAttribute<ModuleTargetAttribute>
             implements ModuleTargetAttribute {
-        public BoundModuleTargetAttribute(ClassReader cf, AttributeMapper<ModuleTargetAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundModuleTargetAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<ModuleTargetAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -505,8 +507,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     public static final class BoundCompilationIDAttribute extends BoundAttribute<CompilationIDAttribute>
             implements CompilationIDAttribute {
-        public BoundCompilationIDAttribute(ClassReader cf, AttributeMapper<CompilationIDAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundCompilationIDAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<CompilationIDAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -517,8 +519,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     public static final class BoundSourceIDAttribute extends BoundAttribute<SourceIDAttribute>
             implements SourceIDAttribute {
-        public BoundSourceIDAttribute(ClassReader cf, AttributeMapper<SourceIDAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundSourceIDAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<SourceIDAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -529,8 +531,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     public static final class BoundModuleResolutionAttribute extends BoundAttribute<ModuleResolutionAttribute>
             implements ModuleResolutionAttribute {
-        public BoundModuleResolutionAttribute(ClassReader cf, AttributeMapper<ModuleResolutionAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundModuleResolutionAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<ModuleResolutionAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -543,8 +545,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements ExceptionsAttribute {
         private List<ClassEntry> exceptions = null;
 
-        public BoundExceptionsAttribute(ClassReader cf, AttributeMapper<ExceptionsAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundExceptionsAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<ExceptionsAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -564,8 +566,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         private List<ClassEntry> uses = null;
         private List<ModuleProvideInfo> provides = null;
 
-        public BoundModuleAttribute(ClassReader cf, AttributeMapper<ModuleAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundModuleAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<ModuleAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -691,8 +693,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements ModulePackagesAttribute {
         private List<PackageEntry> packages = null;
 
-        public BoundModulePackagesAttribute(ClassReader cf, AttributeMapper<ModulePackagesAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundModulePackagesAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<ModulePackagesAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -709,8 +711,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         private List<ClassEntry> members = null;
 
-        public BoundNestMembersAttribute(ClassReader cf, AttributeMapper<NestMembersAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundNestMembersAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<NestMembersAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -728,8 +730,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         private List<BootstrapMethodEntry> bootstraps = null;
         private final int size;
 
-        public BoundBootstrapMethodsAttribute(ClassReader reader, AttributeMapper<BootstrapMethodsAttribute> mapper, int pos) {
-            super(reader, mapper, pos);
+        public BoundBootstrapMethodsAttribute(Utf8Entry name, ClassReader reader, AttributeMapper<BootstrapMethodsAttribute> mapper, int pos) {
+            super(name, reader, mapper, pos);
             size = classReader.readU2(pos);
         }
 
@@ -760,8 +762,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements InnerClassesAttribute {
         private List<InnerClassInfo> classes;
 
-        public BoundInnerClassesAttribute(ClassReader cf, AttributeMapper<InnerClassesAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundInnerClassesAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<InnerClassesAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -786,8 +788,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     public static final class BoundEnclosingMethodAttribute extends BoundAttribute<EnclosingMethodAttribute>
             implements EnclosingMethodAttribute {
-        public BoundEnclosingMethodAttribute(ClassReader cf, AttributeMapper<EnclosingMethodAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundEnclosingMethodAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<EnclosingMethodAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -806,8 +808,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements AnnotationDefaultAttribute {
         private AnnotationValue annotationValue;
 
-        public BoundAnnotationDefaultAttr(ClassReader cf, AttributeMapper<AnnotationDefaultAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundAnnotationDefaultAttr(Utf8Entry name, ClassReader cf, AttributeMapper<AnnotationDefaultAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -823,8 +825,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         private final LabelContext labelContext;
 
-        public BoundRuntimeVisibleTypeAnnotationsAttribute(AttributedElement enclosing, ClassReader cf, AttributeMapper<RuntimeVisibleTypeAnnotationsAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundRuntimeVisibleTypeAnnotationsAttribute(Utf8Entry name, AttributedElement enclosing, ClassReader cf, AttributeMapper<RuntimeVisibleTypeAnnotationsAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
             this.labelContext = (enclosing instanceof LabelContext lc) ? lc : null;
         }
 
@@ -837,8 +839,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     public static final class BoundRuntimeInvisibleTypeAnnotationsAttribute
             extends BoundAttribute<RuntimeInvisibleTypeAnnotationsAttribute>
             implements RuntimeInvisibleTypeAnnotationsAttribute {
-        public BoundRuntimeInvisibleTypeAnnotationsAttribute(AttributedElement enclosing, ClassReader cf, AttributeMapper<RuntimeInvisibleTypeAnnotationsAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundRuntimeInvisibleTypeAnnotationsAttribute(Utf8Entry name, AttributedElement enclosing, ClassReader cf, AttributeMapper<RuntimeInvisibleTypeAnnotationsAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
             this.labelContext = (enclosing instanceof LabelContext lc) ? lc : null;
         }
 
@@ -854,8 +856,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             extends BoundAttribute<RuntimeVisibleParameterAnnotationsAttribute>
             implements RuntimeVisibleParameterAnnotationsAttribute {
 
-        public BoundRuntimeVisibleParameterAnnotationsAttribute(ClassReader cf, AttributeMapper<RuntimeVisibleParameterAnnotationsAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundRuntimeVisibleParameterAnnotationsAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<RuntimeVisibleParameterAnnotationsAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -868,8 +870,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             extends BoundAttribute<RuntimeInvisibleParameterAnnotationsAttribute>
             implements RuntimeInvisibleParameterAnnotationsAttribute {
 
-        public BoundRuntimeInvisibleParameterAnnotationsAttribute(ClassReader cf, AttributeMapper<RuntimeInvisibleParameterAnnotationsAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundRuntimeInvisibleParameterAnnotationsAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<RuntimeInvisibleParameterAnnotationsAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -883,9 +885,9 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements RuntimeInvisibleAnnotationsAttribute {
         private List<Annotation> inflated;
 
-        public BoundRuntimeInvisibleAnnotationsAttribute(ClassReader cf,
+        public BoundRuntimeInvisibleAnnotationsAttribute(Utf8Entry name, ClassReader cf,
                                                          int payloadStart) {
-            super(cf, Attributes.runtimeInvisibleAnnotations(), payloadStart);
+            super(name, cf, Attributes.runtimeInvisibleAnnotations(), payloadStart);
         }
 
         @Override
@@ -901,9 +903,9 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements RuntimeVisibleAnnotationsAttribute {
         private List<Annotation> inflated;
 
-        public BoundRuntimeVisibleAnnotationsAttribute(ClassReader cf,
+        public BoundRuntimeVisibleAnnotationsAttribute(Utf8Entry name, ClassReader cf,
                                                        int payloadStart) {
-            super(cf, Attributes.runtimeVisibleAnnotations(), payloadStart);
+            super(name, cf, Attributes.runtimeVisibleAnnotations(), payloadStart);
         }
 
         @Override
@@ -918,8 +920,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements PermittedSubclassesAttribute {
         private List<ClassEntry> permittedSubclasses = null;
 
-        public BoundPermittedSubclassesAttribute(ClassReader cf, AttributeMapper<PermittedSubclassesAttribute> mapper, int pos) {
-            super(cf, mapper, pos);
+        public BoundPermittedSubclassesAttribute(Utf8Entry name, ClassReader cf, AttributeMapper<PermittedSubclassesAttribute> mapper, int pos) {
+            super(name, cf, mapper, pos);
         }
 
         @Override
@@ -943,11 +945,12 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         protected final int exceptionHandlerCnt;
         protected final MethodModel enclosingMethod;
 
-        public BoundCodeAttribute(AttributedElement enclosing,
+        public BoundCodeAttribute(Utf8Entry name,
+                                  AttributedElement enclosing,
                                   ClassReader reader,
                                   AttributeMapper<CodeAttribute> mapper,
                                   int payloadStart) {
-            super(reader, mapper, payloadStart);
+            super(name, reader, mapper, payloadStart);
             this.codeLength = classReader.readInt(payloadStart + 4);
             this.enclosingMethod = (MethodModel) enclosing;
             this.codeStart = payloadStart + 8;
