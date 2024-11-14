@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,29 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.layout;
+package com.sun.hotspot.igv.view.actions;
 
-import java.awt.Dimension;
-import java.awt.Point;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public interface Vertex extends Comparable<Vertex> {
+public class EnableFreeLayoutAction extends EnableLayoutAction {
 
-    Dimension getSize();
+    public EnableFreeLayoutAction(EditorTopComponent etc) {
+        super(etc);
+    }
 
-    Point getPosition();
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/dynamic.png";
+    }
 
-    void setPosition(Point p);
+    @Override
+    protected String getDescription() {
+        return "Show dynamic free layout";
+    }
 
-    boolean isRoot();
-
-    Cluster getCluster();
-
-    int getPriority();
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowFreeInteractive(this.isSelected());
+    }
 }

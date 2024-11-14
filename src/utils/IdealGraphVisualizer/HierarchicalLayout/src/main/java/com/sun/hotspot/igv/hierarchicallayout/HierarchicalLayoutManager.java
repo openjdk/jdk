@@ -23,7 +23,6 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-import static com.sun.hotspot.igv.hierarchicallayout.LayoutEdge.LAYOUT_EDGE_LAYER_COMPARATOR;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.*;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
@@ -31,7 +30,10 @@ import java.awt.Point;
 import java.util.*;
 
 
-public class HierarchicalLayoutManager extends LayoutManager {
+public class HierarchicalLayoutManager extends LayoutManager implements LayoutMover {
+
+    int maxLayerLength;
+    private LayoutGraph graph;
 
     public HierarchicalLayoutManager() {
         setCutEdges(false);
@@ -43,9 +45,11 @@ public class HierarchicalLayoutManager extends LayoutManager {
     }
 
     @Override
-    public void setCutEdges(boolean enable) {
-        maxLayerLength = enable ? 10 : -1;
-    }
+    public void doLayout(LayoutGraph layoutGraph) {
+        layoutGraph.initializeLayout();
+
+        // STEP 1: Remove self edges and reverse edges
+        ReverseEdges.apply(layoutGraph);
 
         // STEP 2: Assign layers and create dummy nodes
         LayerManager.apply(layoutGraph, maxLayerLength);
@@ -58,9 +62,71 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
         // STEP 5: Write back to interface
         WriteResult.apply(layoutGraph);
+
+        graph = layoutGraph;
     }
 
-    static private class ReverseEdges {
+    @Override
+    public void moveLink(Point linkPos, int shiftX) {
+        int layerNr = graph.findLayer(linkPos.y);
+        for (LayoutNode node : graph.getLayer(layerNr)) {
+            if (node.isDummy() && linkPos.x == node.getX()) {
+                LayoutLayer layer = graph.getLayer(layerNr);
+                if (layer.contains(node)) {
+                    node.setX(linkPos.x + shiftX);
+                    layer.sortNodesByX();
+                    break;
+                }
+            }
+        }
+        writeBack();
+    }
+
+    @Override
+    public void moveVertices(Set<? extends Vertex> movedVertices) {
+        for (Vertex vertex : movedVertices) {
+            moveVertex(vertex);
+        }
+        writeBack();
+    }
+
+    private void writeBack() {
+        graph.optimizeBackEdgeCrossings();
+        graph.straightenEdges();
+        WriteResult.apply(graph);
+    }
+
+    @Override
+    public void moveVertex(Vertex movedVertex) {
+        Point newLoc = movedVertex.getPosition();
+        LayoutNode movedNode = graph.getLayoutNode(movedVertex);
+        assert !movedNode.isDummy();
+
+        int layerNr = graph.findLayer(newLoc.y + movedNode.getOuterHeight() / 2);
+        if (movedNode.getLayer() == layerNr) { // we move the node in the same layer
+            LayoutLayer layer = graph.getLayer(layerNr);
+            if (layer.contains(movedNode)) {
+                movedNode.setX(newLoc.x);
+                layer.sortNodesByX();
+            }
+        } else { // only remove edges if we moved the node to a new layer
+            if (maxLayerLength > 0) return; // TODO: not implemented
+            graph.removeNodeAndEdges(movedNode);
+            layerNr = graph.insertNewLayerIfNeeded(movedNode, layerNr);
+            graph.addNodeToLayer(movedNode, layerNr);
+            movedNode.setX(newLoc.x);
+            graph.getLayer(layerNr).sortNodesByX();
+            graph.removeEmptyLayers();
+            graph.addEdges(movedNode, maxLayerLength);
+        }
+    }
+
+    @Override
+    public boolean isFreeForm() {
+        return false;
+    }
+
+    public static class ReverseEdges {
 
         static public void apply(LayoutGraph graph) {
             removeSelfEdges(graph);
@@ -68,19 +134,24 @@ public class HierarchicalLayoutManager extends LayoutManager {
             depthFirstSearch(graph);
 
             for (LayoutNode node : graph.getLayoutNodes()) {
-                node.computeReversedLinkPoints();
+                node.computeReversedLinkPoints(false);
             }
         }
 
         private static void removeSelfEdges(LayoutGraph graph) {
             for (LayoutNode node : graph.getLayoutNodes()) {
-                Iterator<LayoutEdge> edgeIterator = node.getSuccs().iterator();
-                while (edgeIterator.hasNext()) {
-                    LayoutEdge edge = edgeIterator.next();
+                // Collect self-edges first to avoid concurrent modification
+                List<LayoutEdge> selfEdges = new ArrayList<>();
+                for (LayoutEdge edge : node.getSuccessors()) {
                     if (edge.getTo() == node) {
-                        edgeIterator.remove();
-                        node.getPreds().remove(edge);
+                        selfEdges.add(edge);
                     }
+                }
+
+                // Remove each self-edge
+                for (LayoutEdge edge : selfEdges) {
+                    node.removeSuccessor(edge);
+                    node.removePredecessor(edge);
                 }
             }
         }
@@ -88,7 +159,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         private static void reverseRootInputs(LayoutGraph graph) {
             for (LayoutNode node : graph.getLayoutNodes()) {
                 if (node.getVertex().isRoot()) {
-                    for (LayoutEdge predEdge : new ArrayList<>(node.getPreds())) {
+                    for (LayoutEdge predEdge : new ArrayList<>(node.getPredecessors())) {
                         reverseEdge(predEdge);
                     }
                 }
@@ -108,10 +179,10 @@ public class HierarchicalLayoutManager extends LayoutManager {
             edge.setRelativeFromX(relativeTo);
             edge.setRelativeToX(relativeFrom);
 
-            fromNode.getSuccs().remove(edge);
-            fromNode.getPreds().add(edge);
-            toNode.getPreds().remove(edge);
-            toNode.getSuccs().add(edge);
+            fromNode.removeSuccessor(edge);
+            fromNode.addPredecessor(edge);
+            toNode.removePredecessor(edge);
+            toNode.addSuccessor(edge);
         }
 
         private static void depthFirstSearch(LayoutGraph graph) {
@@ -134,7 +205,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     visited.add(node);
                     active.add(node);
 
-                    for (LayoutEdge edge : new ArrayList<>(node.getSuccs())) {
+                    for (LayoutEdge edge : new ArrayList<>(node.getSuccessors())) {
                         LayoutNode successor = edge.getTo();
                         if (active.contains(successor)) {
                             reverseEdge(edge);
@@ -147,15 +218,14 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
     }
 
-
-    static private class LayerManager {
+    public static class LayerManager {
 
         private static void assignLayerDownwards(LayoutGraph graph) {
             ArrayList<LayoutNode> workingList = new ArrayList<>();
 
             // add all root nodes to layer 0
             for (LayoutNode node : graph.getLayoutNodes()) {
-                if (!node.hasPreds()) {
+                if (!node.hasPredecessors()) {
                     workingList.add(node);
                     node.setLayer(0);
                 }
@@ -166,12 +236,12 @@ public class HierarchicalLayoutManager extends LayoutManager {
             while (!workingList.isEmpty()) {
                 ArrayList<LayoutNode> newWorkingList = new ArrayList<>();
                 for (LayoutNode node : workingList) {
-                    for (LayoutEdge succEdge : node.getSuccs()) {
+                    for (LayoutEdge succEdge : node.getSuccessors()) {
                         LayoutNode succNode = succEdge.getTo();
                         if (succNode.getLayer() == -1) {
                             // This node was not assigned before.
                             boolean assignedPred = true;
-                            for (LayoutEdge predEdge : succNode.getPreds()) {
+                            for (LayoutEdge predEdge : succNode.getPredecessors()) {
                                 LayoutNode predNode = predEdge.getFrom();
                                 if (predNode.getLayer() == -1 || predNode.getLayer() >= layer) {
                                     // This now has an unscheduled successor or a successor that was scheduled only in this round.
@@ -201,7 +271,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             ArrayList<LayoutNode> workingList = new ArrayList<>();
             // add all leaves to working list, reset layer of non-leave nodes
             for (LayoutNode node : graph.getLayoutNodes()) {
-                if (!node.hasSuccs()) {
+                if (!node.hasSuccessors()) {
                     workingList.add(node);
                 } else {
                     node.setLayer(-1);
@@ -215,12 +285,12 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 ArrayList<LayoutNode> newWorkingList = new ArrayList<>();
                 for (LayoutNode node : workingList) {
                     if (node.getLayer() < layer) {
-                        for (LayoutEdge predEdge : node.getPreds()) {
+                        for (LayoutEdge predEdge : node.getPredecessors()) {
                             LayoutNode predNode = predEdge.getFrom();
                             if (predNode.getLayer() == -1) {
                                 // This node was not assigned before.
                                 boolean assignedSucc = true;
-                                for (LayoutEdge succEdge : predNode.getSuccs()) {
+                                for (LayoutEdge succEdge : predNode.getSuccessors()) {
                                     LayoutNode succNode = succEdge.getTo();
                                     if (succNode.getLayer() == -1 || succNode.getLayer() >= layer) {
                                         // This now has an unscheduled successor or a successor that was scheduled only in this round.
@@ -269,19 +339,19 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 if (layoutNode.getLayer() == 0) {
                     graph.getLayer(0).add(layoutNode);
                     visited.add(layoutNode);
-                } else if (!layoutNode.hasPreds()) {
+                } else if (!layoutNode.hasPredecessors()) {
                     graph.getLayer(layoutNode.getLayer()).add(layoutNode);
                     visited.add(layoutNode);
                 }
             }
 
             for (LayoutNode layoutNode : layoutNodes) {
-                createDummiesForNodeSuccessor(graph, layoutNode, maxLayerLength);
+                graph.createDummiesForNodeSuccessor(layoutNode, maxLayerLength);
             }
 
             for (int i = 0; i < graph.getLayerCount() - 1; i++) {
                 for (LayoutNode n : graph.getLayer(i)) {
-                    for (LayoutEdge e : n.getSuccs()) {
+                    for (LayoutEdge e : n.getSuccessors()) {
                         if (e.getTo().isDummy()) continue;
                         if (!visited.contains(e.getTo())) {
                             visited.add(e.getTo());
@@ -293,325 +363,269 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
         }
 
-        static private void createDummiesForNodeSuccessor(LayoutGraph graph, LayoutNode layoutNode, int maxLayerLength) {
-            HashMap<Integer, List<LayoutEdge>> portsToUnprocessedEdges = new HashMap<>();
-            ArrayList<LayoutEdge> succs = new ArrayList<>(layoutNode.getSuccs());
-            HashMap<Integer, LayoutNode> portToTopNode = new HashMap<>();
-            HashMap<Integer, HashMap<Integer, LayoutNode>> portToBottomNodeMapping = new HashMap<>();
-            for (LayoutEdge succEdge : succs) {
-                int startPort = succEdge.getRelativeFromX();
-                LayoutNode fromNode = succEdge.getFrom();
-                LayoutNode toNode = succEdge.getTo();
-
-                // edge is longer than one layer => needs dummy nodes
-                if (fromNode.getLayer() != toNode.getLayer() - 1) {
-                    // the edge needs to be cut
-                    if (maxLayerLength != -1 && toNode.getLayer() - fromNode.getLayer() > maxLayerLength) {
-                        // remove the succEdge before replacing it
-                        toNode.getPreds().remove(succEdge);
-                        fromNode.getSuccs().remove(succEdge);
-
-                        LayoutNode topCutNode = portToTopNode.get(startPort);
-                        if (topCutNode == null) {
-                            topCutNode = new LayoutNode();
-                            topCutNode.setLayer(fromNode.getLayer() + 1);
-                            graph.addNodeToLayer(topCutNode, topCutNode.getLayer());
-                            portToTopNode.put(startPort, topCutNode);
-                            portToBottomNodeMapping.put(startPort, new HashMap<>());
-                        }
-                        LayoutEdge edgeToTopCut = new LayoutEdge(fromNode, topCutNode, succEdge.getRelativeFromX(), topCutNode.getWidth() / 2, succEdge.getLink());
-                        if (succEdge.isReversed()) edgeToTopCut.reverse();
-                        fromNode.getSuccs().add(edgeToTopCut);
-                        topCutNode.getPreds().add(edgeToTopCut);
-
-                        HashMap<Integer, LayoutNode> layerToBottomNode = portToBottomNodeMapping.get(startPort);
-                        LayoutNode bottomCutNode = layerToBottomNode.get(toNode.getLayer());
-                        if (bottomCutNode == null) {
-                            bottomCutNode = new LayoutNode();
-                            bottomCutNode.setLayer(toNode.getLayer() - 1);
-                            graph.addNodeToLayer(bottomCutNode, bottomCutNode.getLayer());
-                            layerToBottomNode.put(toNode.getLayer(), bottomCutNode);
-                        }
-                        LayoutEdge bottomEdge = new LayoutEdge(bottomCutNode, toNode, bottomCutNode.getWidth() / 2, succEdge.getRelativeToX(), succEdge.getLink());
-                        if (succEdge.isReversed()) bottomEdge.reverse();
-                        toNode.getPreds().add(bottomEdge);
-                        bottomCutNode.getSuccs().add(bottomEdge);
-
-                    } else { // the edge is not cut, but needs dummy nodes
-                        portsToUnprocessedEdges.putIfAbsent(startPort, new ArrayList<>());
-                        portsToUnprocessedEdges.get(startPort).add(succEdge);
-                    }
-                }
-            }
-
-            for (Map.Entry<Integer, List<LayoutEdge>> portToUnprocessedEdges : portsToUnprocessedEdges.entrySet()) {
-                Integer startPort = portToUnprocessedEdges.getKey();
-                List<LayoutEdge> unprocessedEdges = portToUnprocessedEdges.getValue();
-                unprocessedEdges.sort(LAYOUT_EDGE_LAYER_COMPARATOR);
-
-                if (unprocessedEdges.size() == 1) {
-                    // process a single edge
-                    LayoutEdge singleEdge = unprocessedEdges.get(0);
-                    LayoutNode fromNode = singleEdge.getFrom();
-                    if (singleEdge.getTo().getLayer() > fromNode.getLayer() + 1) {
-                        LayoutEdge previousEdge = singleEdge;
-                        for (int i = fromNode.getLayer() + 1; i < previousEdge.getTo().getLayer(); i++) {
-                            LayoutNode dummyNode = new LayoutNode();
-                            dummyNode.setLayer(i);
-                            dummyNode.getPreds().add(previousEdge);
-                            graph.addNodeToLayer(dummyNode, dummyNode.getLayer());
-                            LayoutEdge dummyEdge = new LayoutEdge(dummyNode, previousEdge.getTo(), dummyNode.getWidth() / 2, previousEdge.getRelativeToX(), singleEdge.getLink());
-                            if (previousEdge.isReversed()) dummyEdge.reverse();
-                            dummyNode.getSuccs().add(dummyEdge);
-                            previousEdge.setRelativeToX(dummyNode.getWidth() / 2);
-                            previousEdge.getTo().getPreds().remove(previousEdge);
-                            previousEdge.getTo().getPreds().add(dummyEdge);
-                            previousEdge.setTo(dummyNode);
-                            previousEdge = dummyEdge;
-                        }
-                    }
-                } else {
-                    int lastLayer = unprocessedEdges.get(unprocessedEdges.size() - 1).getTo().getLayer();
-                    int dummyCnt = lastLayer - layoutNode.getLayer() - 1;
-                    LayoutEdge[] newDummyEdges = new LayoutEdge[dummyCnt];
-                    LayoutNode[] newDummyNodes = new LayoutNode[dummyCnt];
-
-                    newDummyNodes[0] = new LayoutNode();
-                    newDummyNodes[0].setLayer(layoutNode.getLayer() + 1);
-                    newDummyEdges[0] = new LayoutEdge(layoutNode, newDummyNodes[0], startPort, newDummyNodes[0].getWidth() / 2, null);
-                    newDummyNodes[0].getPreds().add(newDummyEdges[0]);
-                    layoutNode.getSuccs().add(newDummyEdges[0]);
-                    for (int j = 1; j < dummyCnt; j++) {
-                        newDummyNodes[j] = new LayoutNode();
-                        newDummyNodes[j].setLayer(layoutNode.getLayer() + j + 1);
-                        newDummyEdges[j] = new LayoutEdge(newDummyNodes[j - 1], newDummyNodes[j], null);
-                        newDummyNodes[j].getPreds().add(newDummyEdges[j]);
-                        newDummyNodes[j - 1].getSuccs().add(newDummyEdges[j]);
-                    }
-                    for (LayoutEdge unprocessedEdge : unprocessedEdges) {
-                        LayoutNode anchorNode = newDummyNodes[unprocessedEdge.getTo().getLayer() - layoutNode.getLayer() - 2];
-                        anchorNode.getSuccs().add(unprocessedEdge);
-                        unprocessedEdge.setFrom(anchorNode);
-                        unprocessedEdge.setRelativeFromX(anchorNode.getWidth() / 2);
-                        layoutNode.getSuccs().remove(unprocessedEdge);
-                    }
-                    for (LayoutNode dummyNode : newDummyNodes) {
-                        graph.addNodeToLayer(dummyNode, dummyNode.getLayer());
-                    }
-                }
-            }
-        }
-
         static public void apply(LayoutGraph graph, int maxLayerLength) {
+            int cntUnassigned = 0;
+            for (LayoutNode node : graph.getLayoutNodes()) {
+                if (node.getLayer() < 0) {
+                    cntUnassigned++;
+                }
+            }
             assignLayers(graph);
+
+            cntUnassigned = 0;
+            int maxLayer = 0;
+            for (LayoutNode node : graph.getLayoutNodes()) {
+                maxLayer = Math.max(maxLayer, node.getLayer());
+                if (node.getLayer() < 0) {
+                    cntUnassigned++;
+                }
+            }
+
+            graph.initLayers(maxLayer + 1);
+
+            Set<LayoutEdge> toReverse = new HashSet<>();
+            Set<LayoutEdge> sameLayerEdges = new HashSet<>();
+
+            for (LayoutNode node : graph.getLayoutNodes()) {
+                int currentLayer = node.getLayer();
+                for (LayoutEdge e : node.getSuccessors()) {
+                    int layerBelow = e.getTo().getLayer();
+                    if (layerBelow < currentLayer) {
+                        toReverse.add(e);
+                    } else if (layerBelow == currentLayer) {
+                        sameLayerEdges.add(e);
+                    }
+                }
+
+                for (LayoutEdge e : node.getPredecessors()) {
+                    int layerAbove = e.getFrom().getLayer();
+                    if (layerAbove > currentLayer) {
+                        toReverse.add(e);
+                    } else if (layerAbove == currentLayer) {
+                        sameLayerEdges.add(e);
+                    }
+                }
+            }
+
+            for (LayoutEdge e : toReverse) {
+                ReverseEdges.reverseEdge(e);
+            }
+
+            for (LayoutEdge e : sameLayerEdges) {
+                assert e.getLink() != null;
+                graph.removeEdge(e.getLink());
+            }
+
+            for (LayoutNode node : graph.getLayoutNodes()) {
+                int currentLayer = node.getLayer();
+                for (LayoutEdge e : node.getSuccessors()) {
+                    int layerBelow = e.getTo().getLayer();
+                    assert layerBelow != currentLayer;  // TODO: fails
+                    assert layerBelow > currentLayer;  // TODO: fails
+                }
+
+                for (LayoutEdge e : node.getPredecessors()) {
+                    int layerAbove = e.getFrom().getLayer();
+                    assert layerAbove != currentLayer;
+                    assert layerAbove < currentLayer;
+                }
+            }
+
+
             createDummyNodes(graph, maxLayerLength);
             graph.updatePositions();
         }
     }
 
-    private static class CrossingReduction {
 
-        public static void apply(LayoutGraph graph) {
+    public static class CrossingReduction {
+
+        /**
+         * Applies the crossing reduction algorithm to the given graph.
+         *
+         * @param hierarchicalGraph the layout graph to optimize
+         */
+        public static void apply(LayoutGraph hierarchicalGraph) {
+            hierarchicalGraph.updateSpacings(true);
+
             for (int i = 0; i < CROSSING_ITERATIONS; i++) {
-                downSweep(graph);
-                upSweep(graph);
+                sweep(hierarchicalGraph, true);  // Downwards sweep
+                sweep(hierarchicalGraph, false); // Upwards sweep
             }
-            downSweep(graph);
-            graph.updatePositions();
-        }
 
-        private static void doAveragePositions(LayoutLayer layer) {
-            for (LayoutNode node : layer) {
-                node.setWeightedPosition(node.averagePosition());
-            }
-            layer.sort(CROSSING_NODE_COMPARATOR);
-            int x = 0;
-            for (LayoutNode n : layer) {
-                n.setWeightedPosition(x);
-                x += n.getOuterWidth() + NODE_OFFSET;
+            for (LayoutLayer layer : hierarchicalGraph.getLayers()) {
+                layer.sort(NODE_X_COMPARATOR);
+                layer.updateMinXSpacing(true);
+                layer.updateNodeIndices();
             }
         }
 
-        private static void doMedianPositions(LayoutLayer layer, boolean usePred) {
-            for (LayoutNode node : layer) {
-                int size = usePred ? node.getPreds().size() : node.getSuccs().size();
-                if (size == 0) continue;
-                float[] values = new float[size];
-                for (int j = 0; j < size; j++) {
-                    LayoutNode predNode = usePred ? node.getPreds().get(j).getFrom() : node.getSuccs().get(j).getTo();
-                    values[j] = predNode.getWeightedPosition();
+        /**
+         * Performs a sweep over the layers to reorder nodes and reduce crossings.
+         *
+         * @param hierarchicalGraph the layout graph
+         * @param downwards         direction of the sweep
+         */
+        private static void sweep(LayoutGraph hierarchicalGraph, boolean downwards) {
+            List<LayoutLayer> layers = hierarchicalGraph.getLayers();
+
+            if (downwards) {
+                // Process layers from top to bottom
+                for (int i = 1; i < layers.size(); i++) {
+                    LayoutLayer layer = layers.get(i);
+                    layer.orderByBarycenters(NeighborType.PREDECESSORS);
+                    layer.reduceCrossings(NeighborType.PREDECESSORS);
                 }
-                Arrays.sort(values);
-                if (values.length % 2 == 0) {
-                    node.setWeightedPosition((values[size / 2 - 1] + values[size / 2]) / 2);
-                } else {
-                    node.setWeightedPosition(values[size / 2]);
-                }
-            }
-            layer.sort(CROSSING_NODE_COMPARATOR);
-            int x = 0;
-            for (LayoutNode n : layer) {
-                n.setWeightedPosition(x);
-                x += n.getOuterWidth() + NODE_OFFSET;
-            }
-        }
-
-        private static void placeLeavesAndRoots(LayoutLayer layer, boolean usePred) {
-            // Nodes that have no adjacent nodes on the neighboring layer:
-            // leave fixed in their current positions with non-fixed nodes sorted into the remaining positions
-            for (int j = 0; j < layer.size(); j++) {
-                LayoutNode node = layer.get(j);
-                if (usePred ? !node.hasPreds() : !node.hasSuccs()) {
-                    float prevWeight = (j > 0) ? layer.get(j - 1).getWeightedPosition() : 0;
-                    float nextWeight = (j < layer.size() - 1) ? layer.get(j + 1).getWeightedPosition() : 0;
-                    node.setWeightedPosition((prevWeight + nextWeight) / 2);
+            } else {
+                // Process layers from bottom to top
+                for (int i = layers.size() - 2; i >= 0; i--) {
+                    LayoutLayer layer = layers.get(i);
+                    layer.orderByBarycenters(NeighborType.SUCCESSORS);
+                    layer.reduceCrossings(NeighborType.SUCCESSORS);
                 }
             }
-            layer.sort(CROSSING_NODE_COMPARATOR);
-            int x = 0;
-            for (LayoutNode n : layer) {
-                n.setWeightedPosition(x);
-                x += n.getOuterWidth() + NODE_OFFSET;
-            }
-        }
-
-        private static void downSweep(LayoutGraph graph) {
-            for (int i = 0; i < graph.getLayerCount(); i++) {
-                doAveragePositions(graph.getLayer(i));
-            }
-            for (int i = 1; i < graph.getLayerCount(); i++) {
-                doMedianPositions(graph.getLayer(i), true);
-                placeLeavesAndRoots(graph.getLayer(i), true);
-            }
-        }
-
-        private static void upSweep(LayoutGraph graph) {
-            for (int i = graph.getLayerCount() - 1; i >= 0; i--) {
-                doAveragePositions(graph.getLayer(i));
-            }
-            for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
-                doMedianPositions(graph.getLayer(i), false);
-                placeLeavesAndRoots(graph.getLayer(i), false);
+            for (LayoutLayer layer : layers) {
+                layer.updateMinXSpacing(false);
             }
         }
     }
 
-    private static class AssignXCoordinates {
+    public static class AssignXCoordinates {
 
-        static int[][] space;
-        static LayoutNode[][] downProcessingOrder;
-        static LayoutNode[][] upProcessingOrder;
+        static public void apply(LayoutGraph graph) {
 
-        static private void createArrays(LayoutGraph graph) {
-            space = new int[graph.getLayerCount()][];
-            downProcessingOrder = new LayoutNode[graph.getLayerCount()][];
-            upProcessingOrder = new LayoutNode[graph.getLayerCount()][];
-            for (int i = 0; i < graph.getLayerCount(); i++) {
-                LayoutLayer layer = graph.getLayer(i);
-                space[i] = new int[layer.size()];
-                downProcessingOrder[i] = new LayoutNode[layer.size()];
-                upProcessingOrder[i] = new LayoutNode[layer.size()];
-                int curX = 0;
-                for (int j = 0; j < layer.size(); j++) {
-                    space[i][j] = curX;
-                    LayoutNode node = layer.get(j);
-                    curX += node.getOuterWidth() + NODE_OFFSET;
-                    downProcessingOrder[i][j] = node;
-                    upProcessingOrder[i][j] = node;
+            for (LayoutLayer layer : graph.getLayers()) {
+                layer.initXPositions();
+            }
+            for (int k = 0; k < SWEEP_ITERATIONS; k++) {
+
+                for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
+                    LayoutLayer layer = graph.getLayer(i);
+                    processLayerUp(layer);
                 }
-                Arrays.sort(downProcessingOrder[i], NODE_PROCESSING_DOWN_COMPARATOR);
-                Arrays.sort(upProcessingOrder[i], NODE_PROCESSING_UP_COMPARATOR);
-            }
-        }
+                shiftToZero(graph);
 
-        static private void initialPositions(LayoutGraph graph) {
-            for (LayoutNode layoutNode : graph.getLayoutNodes()) {
-                layoutNode.setX(space[layoutNode.getLayer()][layoutNode.getPos()]);
-            }
-            for (LayoutNode dummyNode : graph.getDummyNodes()) {
-                dummyNode.setX(space[dummyNode.getLayer()][dummyNode.getPos()]);
-            }
-        }
+                for (int i = 0; i < graph.getLayerCount(); i++) {
+                    LayoutLayer layer = graph.getLayer(i);
+                    processLayerDown(layer);
+                }
+                shiftToZero(graph);
 
-        static private void apply(LayoutGraph graph) {
-            createArrays(graph);
-            initialPositions(graph);
-            for (int i = 0; i < SWEEP_ITERATIONS; i++) {
-                sweepDown(graph);
-                sweepUp(graph);
+                optimizeByNeighborhood(graph);
+                shiftToZero(graph);
+
+
             }
+            for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
+                LayoutLayer layer = graph.getLayer(i);
+                processLayerUp(layer);
+            }
+            shiftToZero(graph);
             graph.optimizeBackEdgeCrossings();
             graph.straightenEdges();
         }
 
-        static private void processRow(int[] space, LayoutNode[] processingOrder) {
-            Arrays.sort(processingOrder, DUMMY_NODES_THEN_OPTIMAL_X);
-            TreeSet<LayoutNode> treeSet = new TreeSet<>(NODE_POS_COMPARATOR);
-            for (LayoutNode node : processingOrder) {
-                int minX = Integer.MIN_VALUE;
-                SortedSet<LayoutNode> headSet = treeSet.headSet(node, false);
-                if (!headSet.isEmpty()) {
-                    LayoutNode leftNeighbor = headSet.last();
-                    minX = leftNeighbor.getOuterLeft() + space[node.getPos()] - space[leftNeighbor.getPos()];
-                }
-
-                int maxX = Integer.MAX_VALUE;
-                SortedSet<LayoutNode> tailSet = treeSet.tailSet(node, false);
-                if (!tailSet.isEmpty()) {
-                    LayoutNode rightNeighbor = tailSet.first();
-                    maxX = rightNeighbor.getOuterLeft() + space[node.getPos()] - space[rightNeighbor.getPos()];
-                }
-
-                node.setX(Math.min(Math.max(node.getOptimalX(), minX), maxX));
-                treeSet.add(node);
+        static private void optimizeByNeighborhood(LayoutGraph graph) {
+            List<LayoutNode> processNodes = new ArrayList<>(graph.getLayoutNodes());
+            for (LayoutNode layoutNode : processNodes) {
+                layoutNode.setOptimalX(layoutNode.calculateOptimalXFromNeighbors());
+            }
+            processNodes.sort(NODES_OPTIMAL_DIFFERENCE);
+            for (LayoutNode layoutNode : processNodes) {
+                layoutNode.setX(layoutNode.calculateOptimalXFromNeighbors());
+                graph.getLayer(layoutNode.getLayer()).updateMinXSpacing(false);
             }
         }
 
-        static private void sweepUp(LayoutGraph graph) {
-            for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
-                for (LayoutNode node : upProcessingOrder[i]) {
-                    node.setOptimalX(node.calculateOptimalPositionUp());
+        static private void shiftToZero(LayoutGraph graph) {
+            int minX = Integer.MAX_VALUE;
+            List<LayoutNode> allNodes = graph.getAllNodes();
+            Set<LayoutNode> uniqueNodes = new LinkedHashSet<>(allNodes);
+            assert uniqueNodes.size() == allNodes.size();
+            for (LayoutNode node : allNodes) {
+                minX = Math.min(node.getX(), minX);
+            }
+            if (0 < minX && minX < Integer.MAX_VALUE) {
+                for (LayoutNode node : allNodes) {
+                    node.shiftX(-minX);
                 }
-                processRow(space[i], upProcessingOrder[i]);
             }
         }
 
-        static private void sweepDown(LayoutGraph graph) {
-            for (int i = 1; i < graph.getLayerCount(); i++) {
-                for (LayoutNode node : downProcessingOrder[i]) {
-                    node.setOptimalX(node.calculateOptimalPositionDown());
+        static private void processLayerUp(LayoutLayer layer) {
+            layer.sort(NODE_PRIORITY.thenComparing(DUMMY_NODES_FIRST).thenComparingInt(LayoutNode::getInDegree));
+            ArrayList<LayoutNode> leaves = new ArrayList<>();
+            for (LayoutNode node : layer) {
+                int optimalX = Integer.MAX_VALUE;
+                if (node.hasSuccessors()) {
+                    optimalX = node.calculateOptimalXFromSuccessors(true);
+                } else {
+                    leaves.add(node);
                 }
-                processRow(space[i], downProcessingOrder[i]);
+                node.setX(optimalX);
+            }
+            layer.sort(NODE_X_COMPARATOR);
+            layer.updateMinXSpacing(false);
+            for (LayoutNode leaf : leaves) {
+                int leafWidth = leaf.getOuterWidth() + 2 * NODE_OFFSET;
+                int prevRight = 0;
+                for (LayoutNode node : layer) {
+                    int currLeft = node.getOuterLeft();
+                    if (prevRight + leafWidth <= currLeft) {
+                        int x = prevRight + NODE_OFFSET;
+                        leaf.setX(x);
+                        break;
+                    }
+                    prevRight = node.getOuterRight();
+                }
+                layer.sort(NODE_X_COMPARATOR);
             }
         }
+
+        static private void processLayerDown(LayoutLayer layer) {
+            for (LayoutNode node : layer) {
+                if (node.isDummy()) {
+                    node.setX(node.calculateOptimalXFromPredecessors(true));
+                } else if (!node.hasSuccessors()) {
+                    node.setX(node.calculateOptimalXFromPredecessors(false));
+                } else if (!node.hasPredecessors()) {
+                    node.setX(node.calculateOptimalXFromSuccessors(false));
+                } else {
+                    node.setX(node.calculateOptimalXFromNeighbors());
+                }
+            }
+            layer.sort(NODE_X_COMPARATOR);
+            layer.updateMinXSpacing(false);
+        }
+
     }
 
-    private static class WriteResult {
+    public static class WriteResult {
 
         private static HashMap<Link, List<Point>> computeLinkPositions(LayoutGraph graph) {
             HashMap<Link, List<Point>> linkToSplitEndPoints = new HashMap<>();
             HashMap<Link, List<Point>> linkPositions = new HashMap<>();
 
             for (LayoutNode layoutNode : graph.getLayoutNodes()) {
-                for (LayoutEdge predEdge : layoutNode.getPreds()) {
+                for (LayoutEdge predEdge : layoutNode.getPredecessors()) {
                     LayoutNode fromNode = predEdge.getFrom();
                     LayoutNode toNode = predEdge.getTo();
 
                     ArrayList<Point> linkPoints = new ArrayList<>();
                     // input edge stub
-                    linkPoints.add(new Point(predEdge.getEndX(), toNode.getTop()));
+                    linkPoints.add(new Point(predEdge.getEndX(), predEdge.getEndY()));
                     linkPoints.add(new Point(predEdge.getEndX(), graph.getLayer(toNode.getLayer()).getTop() - LAYER_OFFSET));
 
                     LayoutEdge curEdge = predEdge;
-                    while (fromNode.isDummy() && fromNode.hasPreds()) {
+                    while (fromNode.isDummy() && fromNode.hasPredecessors()) {
                         linkPoints.add(new Point(fromNode.getCenterX(), graph.getLayer(fromNode.getLayer()).getBottom() + LAYER_OFFSET));
                         linkPoints.add(new Point(fromNode.getCenterX(), graph.getLayer(fromNode.getLayer()).getTop() - LAYER_OFFSET));
-                        curEdge = fromNode.getPreds().get(0);
+                        curEdge = fromNode.getPredecessors().get(0);
                         fromNode = curEdge.getFrom();
                     }
                     linkPoints.add(new Point(curEdge.getStartX(), graph.getLayer(fromNode.getLayer()).getBottom() + LAYER_OFFSET));
                     // output edge stub
-                    linkPoints.add(new Point(curEdge.getStartX(), fromNode.getBottom()));
+                    linkPoints.add(new Point(curEdge.getStartX(), curEdge.getStartY()));
 
                     if (predEdge.isReversed()) {
                         for (Point relativeEnd : toNode.getReversedLinkEndPoints().get(predEdge.getLink())) {
@@ -644,7 +658,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
 
             for (LayoutNode layoutNode : graph.getLayoutNodes()) {
-                for (LayoutEdge succEdge : layoutNode.getSuccs()) {
+                for (LayoutEdge succEdge : layoutNode.getSuccessors()) {
                     if (succEdge.getLink() == null) continue;
 
                     LayoutNode fromNode = succEdge.getFrom();
@@ -655,10 +669,10 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     linkPoints.add(new Point(succEdge.getStartX(), graph.getLayer(fromNode.getLayer()).getBottom() + LAYER_OFFSET));
 
                     LayoutEdge curEdge = succEdge;
-                    while (toNode.isDummy() && toNode.hasSuccs()) {
+                    while (toNode.isDummy() && toNode.hasSuccessors()) {
                         linkPoints.add(new Point(toNode.getCenterX(), graph.getLayer(toNode.getLayer()).getTop() - LAYER_OFFSET));
                         linkPoints.add(new Point(toNode.getCenterX(), graph.getLayer(toNode.getLayer()).getBottom() + LAYER_OFFSET));
-                        curEdge = toNode.getSuccs().get(0);
+                        curEdge = toNode.getSuccessors().get(0);
                         toNode = curEdge.getTo();
                     }
                     linkPoints.add(new Point(curEdge.getEndX(), graph.getLayer(toNode.getLayer()).getTop() - LAYER_OFFSET));
@@ -743,7 +757,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
 
             for (LayoutLayer layer : graph.getLayers()) {
-                layer.shiftTop(-minY);
+                layer.moveLayerVertically(-minY);
             }
 
             // Shift vertices by minX/minY

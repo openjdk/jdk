@@ -33,22 +33,21 @@ import java.awt.Rectangle;
 import java.util.*;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public class ClusterNode implements Vertex {
 
     public static final int PADDING = 8;
-    private Cluster cluster;
-    private Port inputSlot;
     private final Set<Vertex> subNodes;
-    private Dimension size;
-    private Point position;
     private final Set<Link> subEdges;
-    private boolean root;
     private final String name;
     private final int headerVerticalSpace;
     private final Dimension emptySize;
+    private Cluster cluster;
+    private Port inputSlot;
+    private Dimension size;
+    private Point position;
+    private boolean root;
 
     public ClusterNode(Cluster cluster, String name, int headerVerticalSpace, Dimension emptySize) {
         this.subNodes = new HashSet<>();
@@ -61,6 +60,11 @@ public class ClusterNode implements Vertex {
         if (emptySize.width > 0 || emptySize.height > 0) {
             updateSize();
         }
+    }
+
+    @Override
+    public int getPriority() {
+        return 1;
     }
 
     public void updateClusterBounds() {
@@ -142,7 +146,7 @@ public class ClusterNode implements Vertex {
         // Normalize coordinates
         for (Vertex n : subNodes) {
             n.setPosition(new Point(n.getPosition().x - minX,
-                                    n.getPosition().y - minY + headerVerticalSpace));
+                    n.getPosition().y - minY + headerVerticalSpace));
         }
 
         for (Link l : subEdges) {
@@ -206,12 +210,12 @@ public class ClusterNode implements Vertex {
         cluster = c;
     }
 
-    public void setRoot(boolean b) {
-        root = b;
-    }
-
     public boolean isRoot() {
         return root;
+    }
+
+    public void setRoot(boolean b) {
+        root = b;
     }
 
     public int compareTo(Vertex o) {

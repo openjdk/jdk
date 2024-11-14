@@ -375,19 +375,6 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Figure)) {
-            return false;
-        }
-        return getInputNode().equals(((Figure) o).getInputNode());
-    }
-
-    @Override
-    public int hashCode() {
-        return getInputNode().hashCode();
-    }
-
-    @Override
     public String toString() {
         return idString;
     }
@@ -408,5 +395,31 @@ public class Figure extends Properties.Entity implements Vertex {
     @Override
     public int compareTo(Vertex f) {
         return toString().compareTo(f.toString());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Figure other)) {
+            return false;
+        }
+        return Objects.equals(this.getInputNode(), other.getInputNode());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getInputNode());
+    }
+
+    @Override
+    public int getPriority() {
+        String category = getInputNode().getProperties().get("category");
+        if (category.equals("control")) {
+            return 2;
+        } else if (category.equals("mixed")) {
+            return 2;
+        } else {
+            return 1;
+        }
     }
 }

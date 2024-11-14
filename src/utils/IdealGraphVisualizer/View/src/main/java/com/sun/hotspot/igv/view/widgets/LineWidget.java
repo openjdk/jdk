@@ -32,10 +32,8 @@ import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
 import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Line2D;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
@@ -69,6 +67,8 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private boolean popupVisible;
     private final boolean isBold;
     private final boolean isDashed;
+    private int fromControlYOffset;
+    private int toControlYOffset;
 
     public LineWidget(DiagramScene scene, OutputSlot s, List<? extends Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
         super(scene);
@@ -118,13 +118,13 @@ public class LineWidget extends Widget implements PopupMenuProvider {
                 maxY = Math.max(maxY, to.y + toControlYOffset);
             } else { // reversed edges
                 if (from.x - to.x > 0) {
-                    minX = Math.min(minX, from.x - 150);
-                    maxX = Math.max(maxX, to.x + 150);
+                    minX = Math.min(minX, from.x);
+                    maxX = Math.max(maxX, to.x);
                     minY = Math.min(minY, from.y + fromControlYOffset);
                     maxY = Math.max(maxY, to.y + toControlYOffset);
                 } else {
-                    minX = Math.min(minX, from.x + 150);
-                    maxX = Math.max(maxX, to.x - 150);
+                    minX = Math.min(minX, from.x);
+                    maxX = Math.max(maxX, to.x);
                     minY = Math.min(minY, from.y + fromControlYOffset);
                     maxY = Math.max(maxY, to.y + toControlYOffset);
                 }
@@ -169,9 +169,6 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         computeClientArea();
     }
 
-    private int fromControlYOffset;
-    private int toControlYOffset;
-
     public void setFromControlYOffset(int fromControlYOffset) {
         this.fromControlYOffset = fromControlYOffset;
         computeClientArea();
@@ -188,6 +185,14 @@ public class LineWidget extends Widget implements PopupMenuProvider {
 
     public Point getTo() {
         return to;
+    }
+
+    public LineWidget getPredecessor() {
+        return predecessor;
+    }
+
+    public List<LineWidget> getSuccessors() {
+        return Collections.unmodifiableList(successors);
     }
 
     private void addSuccessor(LineWidget widget) {
@@ -319,14 +324,6 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             recursiveHighlightSuccessors(enableHighlighting);
             highlightVertices(enableHighlighting);
         }
-    }
-
-    public LineWidget getPredecessor() {
-        return predecessor;
-    }
-
-    public List<LineWidget> getSuccessors() {
-        return successors;
     }
 
     private void highlightPredecessors(boolean enable) {
