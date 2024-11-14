@@ -197,7 +197,10 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     heap->concurrent_prepare_for_update_refs();
 
     // Perform update-refs phase.
-    vmop_entry_init_updaterefs();
+    if (ShenandoahVerify || ShenandoahPacing) {
+      vmop_entry_init_updaterefs();
+    }
+
     entry_updaterefs();
     if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_updaterefs)) {
       return false;
