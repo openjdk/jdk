@@ -75,7 +75,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
         DerValue val = new DerValue(DerValue.tag_OctetString, rawBytes);
         try {
-            this.privKeyMaterial = val.toByteArray();
+            this.key = val.toByteArray();
         } finally {
             val.clear();
         }
@@ -90,7 +90,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
             if (algid.getEncodedParams() != null) {
                 throw new InvalidKeyException("algorithm identifier has params");
             }
-            rawBytes = new DerInputStream(privKeyMaterial).getOctetString();
+            rawBytes = new DerInputStream(key).getOctetString();
         } catch (IOException e) {
             throw new InvalidKeyException("Cannot parse input", e);
         }
@@ -129,7 +129,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
     @Override
     public void destroy() throws DestroyFailedException {
         Arrays.fill(rawBytes, (byte)0);
-        Arrays.fill(privKeyMaterial, (byte)0);
+        Arrays.fill(key, (byte)0);
         if (encodedKey != null) {
             Arrays.fill(encodedKey, (byte)0);
         }

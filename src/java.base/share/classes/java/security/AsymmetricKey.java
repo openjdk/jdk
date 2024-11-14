@@ -34,7 +34,7 @@ import java.security.spec.AlgorithmParameterSpec;
  *
  * @since 22
  */
-public non-sealed interface AsymmetricKey extends Key, DEREncodable {
+public interface AsymmetricKey extends Key {
     /**
      * Returns the parameters associated with this key.
      * The parameters are optional and may be either

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         out.putOctetString(privBytes);
         Arrays.fill(privBytes, (byte) 0);
         DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-        privKeyMaterial = val.toByteArray();
+        key = val.toByteArray();
         val.clear();
     }
 
@@ -133,7 +133,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         out.putOctetString(sOctets);
         Arrays.fill(sOctets, (byte) 0);
         DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-        privKeyMaterial = val.toByteArray();
+        key = val.toByteArray();
         val.clear();
     }
 
@@ -153,11 +153,15 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         return s;
     }
 
-    public byte[] getArrayS() {
+    private byte[] getArrayS0() {
         if (arrayS == null) {
             arrayS = ECUtil.sArray(getS(), params);
         }
-        return arrayS.clone();
+        return arrayS;
+    }
+
+    public byte[] getArrayS() {
+        return getArrayS0().clone();
     }
 
     // see JCA doc
@@ -166,9 +170,8 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     }
 
     private void parseKeyBits() throws InvalidKeyException {
-        // Parse private key material from PKCS8Key.decode()
         try {
-            DerInputStream in = new DerInputStream(privKeyMaterial);
+            DerInputStream in = new DerInputStream(key);
             DerValue derValue = in.getDerValue();
             if (derValue.tag != DerValue.tag_Sequence) {
                 throw new IOException("Not a SEQUENCE");
@@ -191,8 +194,6 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
                     throw new InvalidKeyException("Unexpected value: " + value);
                 }
             }
-
-            // Validate parameters stored from PKCS8Key.decode()
             AlgorithmParameters algParams = this.algid.getParameters();
             if (algParams == null) {
                 throw new InvalidKeyException("EC domain parameters must be "
@@ -204,11 +205,12 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         }
     }
 
+    @Override
     public PublicKey calculatePublicKey() {
         ECParameterSpec ecParams = getParams();
         ECOperations ops = ECOperations.forParameters(ecParams)
                 .orElseThrow(ProviderException::new);
-        MutablePoint pub = ops.multiply(ecParams.getGenerator(), getArrayS());
+        MutablePoint pub = ops.multiply(ecParams.getGenerator(), getArrayS0());
         AffinePoint affPub = pub.asAffine();
         ECPoint w = new ECPoint(affPub.getX().asBigInteger(),
                 affPub.getY().asBigInteger());
