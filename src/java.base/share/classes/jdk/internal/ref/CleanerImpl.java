@@ -50,7 +50,7 @@ public final class CleanerImpl implements Runnable {
     /**
      * Currently active PhantomCleanable-s.
      */
-    final PhantomCleanableList activeList;
+    final CleanableList activeList;
 
     // The ReferenceQueue of pending cleaning actions
     final ReferenceQueue<Object> queue;
@@ -82,7 +82,7 @@ public final class CleanerImpl implements Runnable {
      */
     public CleanerImpl() {
         queue = new ReferenceQueue<>();
-        activeList = new PhantomCleanableList();
+        activeList = new CleanableList();
     }
 
     /**
@@ -227,7 +227,7 @@ public final class CleanerImpl implements Runnable {
     /**
      * A specialized implementation that tracks phantom cleanables.
      */
-    static final class PhantomCleanableList {
+    static final class CleanableList {
         /**
          * Capacity for a single node in the list.
          * This balances memory overheads vs locality vs GC walking costs.
@@ -240,7 +240,14 @@ public final class CleanerImpl implements Runnable {
          */
         private Node head;
 
-        public PhantomCleanableList() {
+        public CleanableList() {
+            reset();
+        }
+
+        /**
+         * Testing support: reset list to initial state.
+         */
+        synchronized void reset() {
             this.head = new Node();
         }
 
@@ -250,7 +257,8 @@ public final class CleanerImpl implements Runnable {
          * @return true if the list is empty
          */
         public synchronized boolean isEmpty() {
-            return (head.next == null && head.size == 0);
+            // Head node size is zero only when the entire list is empty.
+            return head.size == 0;
         }
 
         /**
@@ -300,11 +308,13 @@ public final class CleanerImpl implements Runnable {
             // Now we can unlink the removed element.
             phc.node = null;
 
-            // Remove the last element from the head.
-            // If head node becomes empty after this, yank it.
+            // Remove the last element from the head node.
+            // If head node becomes empty after this, and there are
+            // nodes that follow it, replace the head node with another
+            // full one.
             head.arr[head.size - 1] = null;
             head.size--;
-            if (head.size == 0) {
+            if (head.size == 0 && head.next != null) {
                Node newHead = head.next;
                newHead.prev = null;
                head = newHead;

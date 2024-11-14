@@ -46,13 +46,13 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
     /**
      * The list of PhantomCleanable; synchronizes insert and remove.
      */
-    private final CleanerImpl.PhantomCleanableList list;
+    private final CleanerImpl.CleanableList list;
 
     /**
      * Node for this PhantomCleanable in the list.
      * Synchronized by the same lock as the list itself.
      */
-    CleanerImpl.PhantomCleanableList.Node node;
+    CleanerImpl.CleanableList.Node node;
 
     /**
      * Index of this PhantomCleanable in the list node.
