@@ -221,7 +221,7 @@ public class TestPosix {
             return System.getProperty("user.name");
         } catch (IOException e) {
             System.out.println("Caught " + e.getClass().getName() + "(" + e.getMessage() +
-                    ") when running a privileged operation to get the default owner.");
+                    ") when getting the default owner.");
             return null;
         }
     }
@@ -236,7 +236,7 @@ public class TestPosix {
         } catch (UnsupportedOperationException | NoSuchFileException e) {
             return defaultOwner;
         } catch (IOException e) {
-            System.out.println("Caught an exception when running a privileged operation to get the default group.");
+            System.out.println("Caught an exception when getting the default group.");
             e.printStackTrace();
             return null;
         }
