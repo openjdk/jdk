@@ -1625,6 +1625,10 @@ private:
 
   void leaq(Register dst, Address src);
 
+#ifdef _LP64
+  void lea(Register dst, Label& L);
+#endif
+
   void lfence();
 
   void lock();
