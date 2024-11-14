@@ -2951,7 +2951,6 @@ JVM_END
 
 
 JVM_LEAF(void, JVM_Yield(JNIEnv *env, jclass threadClass))
-  if (os::dont_yield()) return;
   HOTSPOT_THREAD_YIELD();
   os::naked_yield();
 JVM_END
