@@ -200,9 +200,9 @@ public class WindowsHelper {
 
     public static WixType getWixTypeFromVerboseJPackageOutput(Executor.Result result) {
         return result.getOutput().stream().map(str -> {
-            if (str.contains("Detected [light.exe]")) {
+            if (str.contains("[light.exe]")) {
                 return WixType.WIX3;
-            } else if (str.contains("Detected [wix.exe]")) {
+            } else if (str.contains("[wix.exe]")) {
                 return WixType.WIX4;
             } else {
                 return null;
