@@ -361,7 +361,7 @@ public final class ML_KEM {
 
     private final int mlKem_du;
     private final int mlKem_dv;
-    public final int encapsulationSize;
+    final int encapsulationSize;
 
     public ML_KEM(int size) {
         switch (size) {
@@ -548,6 +548,11 @@ public final class ML_KEM {
         var kAndCoins = mlKemG.digest();
         var realResult = Arrays.copyOfRange(kAndCoins, 0, 32);
         var coins = Arrays.copyOfRange(kAndCoins, 32, 64);
+
+        // Zero out unused byte arrays containing sensitive data
+        Arrays.fill(kPkePrivateKeyBytes, (byte) 0);
+        Arrays.fill(kAndCoins, (byte) 0);
+
         mlKemJ.update(decapsKeyBytes, decapsKeyBytes.length - 32, 32);
         mlKemJ.update(cipherText.encryptedBytes);
         var fakeResult = mlKemJ.digest();

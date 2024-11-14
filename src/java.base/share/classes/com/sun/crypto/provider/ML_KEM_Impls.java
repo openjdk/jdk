@@ -35,7 +35,7 @@ import java.util.Arrays;
 
 import javax.crypto.DecapsulateException;
 
-public final class ML_KEM_Provider {
+public final class ML_KEM_Impls {
 
     static int name2int(String name) {
         if (name.endsWith("512")) {
@@ -50,7 +50,7 @@ public final class ML_KEM_Provider {
         }
     }
 
-    public static class KPG extends NamedKeyPairGenerator {
+    public sealed static class KPG extends NamedKeyPairGenerator {
         public KPG() {
             // ML-KEM-768 is the default
             super("ML-KEM", "ML-KEM-768", "ML-KEM-512", "ML-KEM-1024");
@@ -61,7 +61,7 @@ public final class ML_KEM_Provider {
         }
 
         @Override
-        public byte[][] implGenerateKeyPair(String name, SecureRandom random) {
+        protected byte[][] implGenerateKeyPair(String name, SecureRandom random) {
             byte[] seed = new byte[32];
             var r = random != null ? random : JCAUtil.getDefSecureRandom();
             r.nextBytes(seed);
@@ -85,25 +85,25 @@ public final class ML_KEM_Provider {
         }
     }
 
-    public static class KPG2 extends KPG {
+    public final static class KPG2 extends KPG {
         public KPG2() {
             super("ML-KEM-512");
         }
     }
 
-    public static class KPG3 extends KPG {
+    public final static class KPG3 extends KPG {
         public KPG3() {
             super("ML-KEM-768");
         }
     }
 
-    public static class KPG5 extends KPG {
+    public final static class KPG5 extends KPG {
         public KPG5() {
             super("ML-KEM-1024");
         }
     }
 
-    public static class KF extends NamedKeyFactory {
+    public sealed static class KF extends NamedKeyFactory {
         public KF() {
             super("ML-KEM", "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024");
         }
@@ -112,29 +112,29 @@ public final class ML_KEM_Provider {
         }
     }
 
-    public static class KF2 extends KF {
+    public final static class KF2 extends KF {
         public KF2() {
             super("ML-KEM-512");
         }
     }
 
-    public static class KF3 extends KF {
+    public final static class KF3 extends KF {
         public KF3() {
             super("ML-KEM-768");
         }
     }
 
-    public static class KF5 extends KF {
+    public final static class KF5 extends KF {
         public KF5() {
             super("ML-KEM-1024");
         }
     }
 
-    public static class K extends NamedKEM {
+    public sealed static class K extends NamedKEM permits K2, K3, K5 {
         private static final int SEED_SIZE = 32;
 
         @Override
-        public byte[][] implEncapsulate(String name, byte[] encapsulationKey, Object ek, SecureRandom secureRandom) {
+        protected byte[][] implEncapsulate(String name, byte[] encapsulationKey, Object ek, SecureRandom secureRandom) {
             byte[] randomBytes = new byte[SEED_SIZE];
             var r = secureRandom != null ? secureRandom : JCAUtil.getDefSecureRandom();
             r.nextBytes(randomBytes);
@@ -145,7 +145,7 @@ public final class ML_KEM_Provider {
                 mlKemEncapsulateResult = mlKem.encapsulate(
                         new ML_KEM.ML_KEM_EncapsulationKey(encapsulationKey), randomBytes);
             } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-                throw new ProviderException("provider error", e); // should not happen
+                throw new ProviderException("Provider error", e); // should not happen
             } finally {
                 Arrays.fill(randomBytes, (byte) 0);
             }
@@ -157,7 +157,8 @@ public final class ML_KEM_Provider {
         }
 
         @Override
-        public byte[] implDecapsulate(String name, byte[] decapsulationKey, Object dk, byte[] cipherText) {
+        protected byte[] implDecapsulate(String name, byte[] decapsulationKey, Object dk, byte[] cipherText)
+                throws DecapsulateException {
             ML_KEM mlKem = new ML_KEM(name2int(name));
             var kpkeCipherText = new ML_KEM.K_PKE_CipherText(cipherText);
 
@@ -165,32 +166,34 @@ public final class ML_KEM_Provider {
             try {
                 decapsulateResult = mlKem.decapsulate(
                         new ML_KEM.ML_KEM_DecapsulationKey(decapsulationKey), kpkeCipherText);
-            } catch (NoSuchAlgorithmException | InvalidKeyException | DecapsulateException e) {
-                throw new ProviderException("provider error", e); // should not happen
+            } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+                throw new ProviderException("Provider error", e); // should not happen
+            } catch (DecapsulateException e) {
+                throw new DecapsulateException("Decapsulate error", e) ;
             }
 
             return decapsulateResult;
         }
 
         @Override
-        public int implSecretSize(String name) {
+        protected int implSecretSize(String name) {
             return ML_KEM.SECRET_SIZE;
         }
 
         @Override
-        public int implEncapsulationSize(String name) {
+        protected int implEncapsulationSize(String name) {
             ML_KEM mlKem = new ML_KEM(name2int(name));
             return mlKem.encapsulationSize;
         }
 
         @Override
-        public Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
+        protected Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
             ML_KEM mlKem = new ML_KEM(name2int(name));
             return mlKem.checkPublicKey(pk);
         }
 
         @Override
-        public Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+        protected Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
             ML_KEM mlKem = new ML_KEM(name2int(name));
             return mlKem.checkPrivateKey(sk);
         }
@@ -204,19 +207,19 @@ public final class ML_KEM_Provider {
         }
     }
 
-    public static class K2 extends K {
+    public final static class K2 extends K {
         public K2() {
             super("ML-KEM-512");
         }
     }
 
-    public static class K3 extends K {
+    public final static class K3 extends K {
         public K3() {
             super("ML-KEM-768");
         }
     }
 
-    public static class K5 extends K {
+    public final static class K5 extends K {
         public K5() {
             super("ML-KEM-1024");
         }

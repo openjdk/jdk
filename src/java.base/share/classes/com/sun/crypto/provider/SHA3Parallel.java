@@ -91,10 +91,4 @@ public class SHA3Parallel {
             super(buf, 168);
         }
     }
-
-    public static final class Shake256Parallel extends SHA3Parallel {
-        public Shake256Parallel(byte[][] buf) throws InvalidAlgorithmParameterException {
-            super(buf, 136);
-        }
-    }
 }

@@ -770,20 +770,20 @@ public final class SunJCE extends Provider {
 
         attrs.clear();
         attrs.put("ImplementedIn", "Software");
-        ps("KEM", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Provider$K", null, attrs);
-        psA("KEM", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Provider$K2", attrs);
-        psA("KEM", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Provider$K3", attrs);
-        psA("KEM", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Provider$K5",attrs);
+        ps("KEM", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Impls$K", null, attrs);
+        psA("KEM", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Impls$K2", attrs);
+        psA("KEM", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Impls$K3", attrs);
+        psA("KEM", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Impls$K5",attrs);
 
-        ps("KeyPairGenerator", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Provider$KPG", null, attrs);
-        psA("KeyPairGenerator", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Provider$KPG2", attrs);
-        psA("KeyPairGenerator", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Provider$KPG3", attrs);
-        psA("KeyPairGenerator", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Provider$KPG5", attrs);
+        ps("KeyPairGenerator", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Impls$KPG", null, attrs);
+        psA("KeyPairGenerator", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Impls$KPG2", attrs);
+        psA("KeyPairGenerator", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Impls$KPG3", attrs);
+        psA("KeyPairGenerator", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Impls$KPG5", attrs);
 
-        ps("KeyFactory", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Provider$KF", null, attrs);
-        psA("KeyFactory", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Provider$KF2", attrs);
-        psA("KeyFactory", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Provider$KF3", attrs);
-        psA("KeyFactory", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Provider$KF5", attrs);
+        ps("KeyFactory", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Impls$KF", null, attrs);
+        psA("KeyFactory", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Impls$KF2", attrs);
+        psA("KeyFactory", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Impls$KF3", attrs);
+        psA("KeyFactory", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Impls$KF5", attrs);
 
         /*
          * SSL/TLS mechanisms
