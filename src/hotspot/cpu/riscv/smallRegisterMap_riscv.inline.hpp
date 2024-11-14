@@ -51,13 +51,13 @@ public:
   RegisterMap* copy_to_RegisterMap(RegisterMap* map, intptr_t* sp) const {
     map->clear();
     map->set_include_argument_oops(this->include_argument_oops());
-    frame::update_map_with_saved_link(map, (intptr_t**)sp - 2);
+    frame::update_map_with_saved_link(map, (intptr_t**)sp - frame::metadata_words);
     return map;
   }
 
   inline address location(VMReg reg, intptr_t* sp) const {
     assert_is_fp(reg);
-    return (address)(sp - 2);
+    return (address)(sp - frame::metadata_words);
   }
 
   inline void set_location(VMReg reg, address loc) { assert_is_fp(reg); }

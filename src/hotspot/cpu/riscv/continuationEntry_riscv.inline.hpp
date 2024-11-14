@@ -40,11 +40,11 @@ inline frame ContinuationEntry::to_frame() const {
 }
 
 inline intptr_t* ContinuationEntry::entry_fp() const {
-  return (intptr_t*)((address)this + size()) + 2;
+  return (intptr_t*)((address)this + size()) + frame::metadata_words;
 }
 
 inline void ContinuationEntry::update_register_map(RegisterMap* map) const {
-  intptr_t** fp = (intptr_t**)(bottom_sender_sp() - 2);
+  intptr_t** fp = (intptr_t**)(bottom_sender_sp() - frame::metadata_words);
   frame::update_map_with_saved_link(map, fp);
 }
 

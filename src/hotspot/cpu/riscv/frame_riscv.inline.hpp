@@ -147,7 +147,10 @@ inline frame::frame(intptr_t* ptr_sp, intptr_t* unextended_sp, intptr_t* ptr_fp,
   setup(pc);
 }
 
-inline frame::frame(intptr_t* ptr_sp) : frame(ptr_sp, ptr_sp, *(intptr_t**)(ptr_sp - 2), *(address*)(ptr_sp - 1)) {}
+inline frame::frame(intptr_t* ptr_sp)
+  : frame(ptr_sp, ptr_sp,
+          *(intptr_t**)(ptr_sp - frame::metadata_words),
+          *(address*)(ptr_sp - 1)) {}
 
 inline frame::frame(intptr_t* ptr_sp, intptr_t* ptr_fp) {
   intptr_t a = intptr_t(ptr_sp);

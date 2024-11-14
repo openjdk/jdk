@@ -37,7 +37,7 @@ static inline intptr_t** link_address(const frame& f) {
   assert(FKind::is_instance(f), "");
   return FKind::interpreted
             ? (intptr_t**)(f.fp() + frame::link_offset)
-            : (intptr_t**)(f.unextended_sp() + f.cb()->frame_size() - 2);
+            : (intptr_t**)(f.unextended_sp() + f.cb()->frame_size() - frame::metadata_words);
 }
 
 static inline void patch_return_pc_with_preempt_stub(frame& f) {
@@ -81,7 +81,7 @@ inline void ContinuationHelper::update_register_map_with_callee(const frame& f, 
 }
 
 inline void ContinuationHelper::push_pd(const frame& f) {
-  *(intptr_t**)(f.sp() - 2) = f.fp();
+  *(intptr_t**)(f.sp() - frame::metadata_words) = f.fp();
 }
 
 inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* entry) {
@@ -89,7 +89,7 @@ inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, 
 }
 
 inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp) {
-  intptr_t* fp = *(intptr_t**)(sp - 2);
+  intptr_t* fp = *(intptr_t**)(sp - frame::metadata_words);
   anchor->set_last_Java_fp(fp);
 }
 
@@ -97,7 +97,7 @@ inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t*
 inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
   intptr_t* sp = f.sp();
   address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());
-  intptr_t* fp = *(intptr_t**)(sp - 2);
+  intptr_t* fp = *(intptr_t**)(sp - frame::metadata_words);
   assert(f.raw_pc() == pc, "f.ra_pc: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.raw_pc()), p2i(pc));
   assert(f.fp() == fp, "f.fp: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.fp()), p2i(fp));
   return f.raw_pc() == pc && f.fp() == fp;
@@ -105,7 +105,7 @@ inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
 #endif
 
 inline intptr_t** ContinuationHelper::Frame::callee_link_address(const frame& f) {
-  return (intptr_t**)(f.sp() - 2);
+  return (intptr_t**)(f.sp() - frame::metadata_words);
 }
 
 inline address* ContinuationHelper::Frame::return_pc_address(const frame& f) {

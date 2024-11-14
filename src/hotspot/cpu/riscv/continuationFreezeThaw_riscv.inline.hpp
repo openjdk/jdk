@@ -48,7 +48,7 @@ inline void patch_callee_link_relative(const frame& f, intptr_t* fp) {
 
 inline void FreezeBase::patch_stack_pd(intptr_t* frame_sp, intptr_t* heap_sp) {
   // copy the spilled fp from the heap to the stack
-  *(frame_sp - 2) = *(heap_sp - 2);
+  *(frame_sp - frame::metadata_words) = *(heap_sp - frame::metadata_words);
 }
 
 // Slow path
@@ -61,7 +61,7 @@ inline frame FreezeBase::sender(const frame& f) {
   }
 
   intptr_t** link_addr = link_address<FKind>(f);
-  intptr_t* sender_sp = (intptr_t*)(link_addr + 2); //  f.unextended_sp() + (fsize/wordSize); //
+  intptr_t* sender_sp = (intptr_t*)(link_addr + frame::metadata_words); //  f.unextended_sp() + (fsize/wordSize); //
   address sender_pc = (address) *(sender_sp - 1);
   assert(sender_sp != f.sp(), "must have changed");
 
@@ -101,7 +101,7 @@ template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& calle
   } else {
     // We need to re-read fp out of the frame because it may be an oop and we might have
     // had a safepoint in finalize_freeze, after constructing f.
-    fp = *(intptr_t**)(f.sp() - 2);
+    fp = *(intptr_t**)(f.sp() - frame::metadata_words);
 
     int fsize = FKind::size(f);
     sp = caller.unextended_sp() - fsize;
@@ -173,11 +173,11 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
 inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
   stackChunkOop chunk = _cont.tail();
   assert(chunk->is_in_chunk(hf.sp() - 1), "");
-  assert(chunk->is_in_chunk(hf.sp() - 2), "");
+  assert(chunk->is_in_chunk(hf.sp() - frame::metadata_words), "");
 
   *(hf.sp() - 1) = (intptr_t)hf.pc();
 
-  intptr_t* fp_addr = hf.sp() - 2;
+  intptr_t* fp_addr = hf.sp() - frame::metadata_words;
   *fp_addr = hf.is_interpreted_frame() ? (intptr_t)(hf.fp() - fp_addr)
                                        : (intptr_t)hf.fp();
 }
@@ -269,7 +269,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
         // fp always points to the address above the pushed return pc. We need correct address.
         ? frame_sp + fsize - frame::sender_sp_offset
         // we need to re-read fp because it may be an oop and we might have fixed the frame.
-        : *(intptr_t**)(hf.sp() - 2);
+        : *(intptr_t**)(hf.sp() - frame::metadata_words);
     }
     // TODO PERF : this computes deopt state; is it necessary?
     return frame(frame_sp, frame_sp, fp, hf.pc(), hf.cb(), hf.oop_map(), false);

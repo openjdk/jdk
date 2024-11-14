@@ -36,7 +36,7 @@ inline bool StackChunkFrameStream<frame_kind>::is_in_frame(void* p0) const {
   intptr_t* p = (intptr_t*)p0;
   int argsize = is_compiled() ? (_cb->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord : 0;
   int frame_size = _cb->frame_size() + argsize;
-  return p == sp() - 2 || ((p - unextended_sp()) >= 0 && (p - unextended_sp()) < frame_size);
+  return p == sp() - frame::metadata_words || ((p - unextended_sp()) >= 0 && (p - unextended_sp()) < frame_size);
 }
 #endif
 
@@ -57,7 +57,7 @@ inline address StackChunkFrameStream<frame_kind>::get_pc() const {
 
 template <ChunkFrames frame_kind>
 inline intptr_t* StackChunkFrameStream<frame_kind>::fp() const {
-  intptr_t* fp_addr = _sp - 2;
+  intptr_t* fp_addr = _sp - frame::metadata_words;
   return (frame_kind == ChunkFrames::Mixed && is_interpreted())
     ? fp_addr + *fp_addr // derelativize
     : *(intptr_t**)fp_addr;
@@ -123,7 +123,8 @@ template<>
 template<>
 inline void StackChunkFrameStream<ChunkFrames::Mixed>::update_reg_map_pd(RegisterMap* map) {
   if (map->update_map()) {
-    frame::update_map_with_saved_link(map, map->in_cont() ? (intptr_t**)2 : (intptr_t**)(_sp - 2));
+    frame::update_map_with_saved_link(map, map->in_cont() ? (intptr_t**)(intptr_t)frame::metadata_words
+                                                          : (intptr_t**)(_sp - frame::metadata_words));
   }
 }
 
@@ -131,7 +132,8 @@ template<>
 template<>
 inline void StackChunkFrameStream<ChunkFrames::CompiledOnly>::update_reg_map_pd(RegisterMap* map) {
   if (map->update_map()) {
-    frame::update_map_with_saved_link(map, map->in_cont() ? (intptr_t**)2 : (intptr_t**)(_sp - 2));
+    frame::update_map_with_saved_link(map, map->in_cont() ? (intptr_t**)(intptr_t)frame::metadata_words
+                                                          : (intptr_t**)(_sp - frame::metadata_words));
   }
 }
 

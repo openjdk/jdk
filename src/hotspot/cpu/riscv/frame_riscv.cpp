@@ -154,7 +154,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
       sender_unextended_sp = sender_sp;
       sender_pc = (address) *(sender_sp - 1);
-      saved_fp = (intptr_t*) *(sender_sp - 2);
+      saved_fp = (intptr_t*) *(sender_sp - frame::metadata_words);
     }
 
     if (Continuation::is_return_barrier_entry(sender_pc)) {
@@ -635,7 +635,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
       fp_loc = fp();
     } else {
       ret_pc_loc = real_fp() - 1;
-      fp_loc = real_fp() - 2;
+      fp_loc = real_fp() - frame::metadata_words;
     }
     address ret_pc = *(address*)ret_pc_loc;
     values.describe(frame_no, ret_pc_loc,
