@@ -45,7 +45,7 @@ import java.util.stream.Gatherer.Integrator;
  * The performance-critical code below contains some more complicated encodings:
  * therefore, make sure to run benchmarks to verify changes to prevent regressions.
  *
- * @since 22
+ * @since 24
  */
 final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     @SuppressWarnings("unchecked")

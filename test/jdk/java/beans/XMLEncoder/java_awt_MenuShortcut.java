@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4818598
  * @summary Tests MenuShortcut value encoding
- * @run main/othervm -Djava.security.manager=allow java_awt_MenuShortcut
+ * @run main/othervm java_awt_MenuShortcut
  * @author Sergey Malenkov
  */
 
@@ -34,7 +34,7 @@ import java.awt.event.KeyEvent;
 
 public final class java_awt_MenuShortcut extends AbstractTest<MenuShortcut> {
     public static void main(String[] args) {
-        new java_awt_MenuShortcut().test(true);
+        new java_awt_MenuShortcut().test();
     }
 
     protected MenuShortcut getObject() {
