@@ -6699,7 +6699,7 @@ instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory4 mem)
   ins_cost(4 * INSN_COST);
   format %{
     "ldrw  $dst, $mem\t# compressed class ptr, shifted"
-    "lsrw  $dst, markWord::klass_shift_at_offset"
+    "lsrw  $dst, $dst, markWord::klass_shift_at_offset"
   %}
   ins_encode %{
     // inlined aarch64_enc_ldrw
