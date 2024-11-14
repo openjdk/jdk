@@ -222,7 +222,8 @@ public class ObjectOutputStream
      * value of "sun.io.serialization.extendedDebugInfo" property,
      * as true or false for extended information about exception's place
      */
-    private static final boolean extendedDebugInfo = Boolean.getBoolean("sun.io.serialization.extendedDebugInfo");
+    private static final boolean extendedDebugInfo =
+            Boolean.getBoolean("sun.io.serialization.extendedDebugInfo");
 
     /**
      * Creates an ObjectOutputStream that writes to the specified OutputStream.
@@ -606,8 +607,8 @@ public class ObjectOutputStream
      * stream.  Subclasses of ObjectOutputStream may override this method to
      * customize the way in which class descriptors are written to the
      * serialization stream.  The corresponding method in ObjectInputStream,
-     * {@link ObjectInputStream#readClassDescriptor readClassDescriptor}, should then be overridden to
-     * reconstitute the class descriptor from its custom stream representation.
+     * {@link ObjectInputStream#readClassDescriptor readClassDescriptor}, should then be
+     * overridden to reconstitute the class descriptor from its custom stream representation.
      * By default, this method writes class descriptors according to the format
      * defined in the <a href="{@docRoot}/../specs/serialization/index.html">
      * <cite>Java Object Serialization Specification</cite></a>.
