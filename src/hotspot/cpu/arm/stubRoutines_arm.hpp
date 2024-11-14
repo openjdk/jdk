@@ -40,14 +40,14 @@ enum platform_dependent_constants {
 
 #undef DEFINE_BLOB_SIZE
 
-class Arm {
- friend class StubGenerator;
- friend class VMStructs;
-
 public:
   static bool returns_to_call_stub(address return_pc) {
     return return_pc == _call_stub_return_address;
   }
+
+class Arm {
+ friend class StubGenerator;
+ friend class VMStructs;
 
 #define DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
   static address STUB_FIELD_NAME(field_name) ;
