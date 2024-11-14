@@ -2097,6 +2097,7 @@ void PrintBFS::print_options_help(bool print_examples) {
   _output->print_cr("      @: print old nodes - before matching (if available)");
   _output->print_cr("      B: print scheduling blocks (if available)");
   _output->print_cr("      $: dump only, no header, no other columns");
+  _output->print_cr("      !: show nodes on IGV (sent over network stream)");
   _output->print_cr("");
   _output->print_cr("recursively follow edges to nodes with permitted visit types,");
   _output->print_cr("on the boundary additionally display nodes allowed in boundary types");
