@@ -50,7 +50,7 @@ public final class ML_KEM_Impls {
         }
     }
 
-    public sealed static class KPG extends NamedKeyPairGenerator {
+    public sealed static class KPG extends NamedKeyPairGenerator permits KPG2, KPG3, KPG5 {
         public KPG() {
             // ML-KEM-768 is the default
             super("ML-KEM", "ML-KEM-768", "ML-KEM-512", "ML-KEM-1024");
@@ -103,7 +103,7 @@ public final class ML_KEM_Impls {
         }
     }
 
-    public sealed static class KF extends NamedKeyFactory {
+    public sealed static class KF extends NamedKeyFactory permits KF2, KF3, KF5 {
         public KF() {
             super("ML-KEM", "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024");
         }
