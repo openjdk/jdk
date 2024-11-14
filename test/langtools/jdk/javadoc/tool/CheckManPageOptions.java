@@ -138,7 +138,7 @@ public class CheckManPageOptions {
     }
 
     Path findDefaultFile() {
-        return findRootDir().resolve("src/jdk.javadoc/share/man/javadoc.1");
+        return findRootDir().resolve("src/jdk.javadoc/share/man/javadoc.md");
     }
 
     Path findRootDir() {
