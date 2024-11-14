@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8021148
- * @summary test that JAXPSAXParser works even if referenced directly
- * @run main/othervm JAXPSAXParserTest
- */
 import java.io.StringReader;
 import java.io.StringWriter;
 import javax.xml.transform.Result;
@@ -34,31 +28,24 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import org.testng.annotations.Test;
 
 /**
- * test that JAXPSAXParser works even if referenced directly as
+ * @test
+ * @bug 8021148
+ * @run testng/othervm JAXPSAXParserTest
+ * @summary test that JAXPSAXParser works even if referenced directly as
  * NetBeans did. **Note that JAXPSAXParser is an internal implementation, this
  * may therefore change.
- *
- * @author huizhe.wang@oracle.com
  */
-public class JAXPSAXParserTest extends TestBase {
-
-    public JAXPSAXParserTest(String name) {
-        super(name);
-    }
+public class JAXPSAXParserTest {
 
     /**
-     * @param args the command line arguments
+     * Verifies that JAXPSAXParser can be directly instantiated.
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
-        JAXPSAXParserTest test = new JAXPSAXParserTest("JAXP 1.5 regression");
-        test.setUp();
-        test.testTransform();
-        test.tearDown();
-    }
-
-    public final void testTransform() {
+    @Test
+    public final void testTransform() throws Exception {
         String data =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<r>\n"
@@ -85,14 +72,13 @@ public class JAXPSAXParserTest extends TestBase {
             Transformer t = tf.newTransformer(new StreamSource(new StringReader(IDENTITY_XSLT_WITH_INDENT)));
             Result result = new StreamResult(sw);
             t.transform(new StreamSource(new StringReader(data)), result);
-            success("JAXPSAXParserTest passed");
         } catch (Exception e) {
             /**
              * JAXPSAXParser throws NullPointerException since the jaxp 1.5 security
              * manager is not initialized when JAXPSAXParser is instantiated using
              * the default constructor.
             */
-            fail(e.toString());
+            throw e;
         } finally {
             System.clearProperty("org.xml.sax.driver");
         }
