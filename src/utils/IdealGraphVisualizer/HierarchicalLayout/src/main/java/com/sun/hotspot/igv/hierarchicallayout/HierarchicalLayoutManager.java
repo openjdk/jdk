@@ -136,6 +136,11 @@ public class HierarchicalLayoutManager implements LayoutManager {
         this.layerOffset = layerOffset;
     }
 
+    @Override
+    public void setCutEdges(boolean enable) {
+        setMaxLayerLength(enable ? 10 : -1);
+    }
+
     public void setMaxLayerLength(int v) {
         maxLayerLength = v;
     }

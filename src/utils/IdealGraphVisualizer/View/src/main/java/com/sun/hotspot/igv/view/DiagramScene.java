@@ -700,12 +700,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void doStableSeaLayout(HashSet<Figure> visibleFigures, HashSet<Connection> visibleConnections) {
+        hierarchicalStableLayoutManager.setCutEdges(model.getCutEdges());
         hierarchicalStableLayoutManager.updateLayout(visibleFigures, visibleConnections);
     }
 
     private void doSeaLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
         HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
         manager.setMaxLayerLength(10);
+        manager.setCutEdges(model.getCutEdges());
         manager.doLayout(new LayoutGraph(edges, figures));
         hierarchicalStableLayoutManager.setShouldRedrawLayout(true);
     }
@@ -714,6 +716,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         HierarchicalClusterLayoutManager m = new HierarchicalClusterLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
         HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
         manager.setMaxLayerLength(9);
+        manager.setCutEdges(model.getCutEdges());
         manager.setMinLayerDifference(3);
         m.setManager(manager);
         m.setSubManager(new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS));
@@ -725,6 +728,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         HierarchicalCFGLayoutManager m = new HierarchicalCFGLayoutManager();
         HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
         manager.setMaxLayerLength(9);
+        manager.setCutEdges(model.getCutEdges());
         manager.setMinLayerDifference(1);
         manager.setLayoutSelfEdges(true);
         manager.setXOffset(25);

@@ -90,6 +90,10 @@ public class HierarchicalStableLayoutManager {
         nodes = new ArrayList<>();
     }
 
+    public void setCutEdges(boolean enable) {
+        manager.setCutEdges(enable);
+    }
+
     private int calculateOptimalBoth(LayoutNode n) {
         if (n.preds.isEmpty() && n.succs.isEmpty()) {
             return n.x;
