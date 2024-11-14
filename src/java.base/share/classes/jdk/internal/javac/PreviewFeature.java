@@ -68,7 +68,7 @@ public @interface PreviewFeature {
         // keeping the constant of a feature that has been integrated or dropped, serves the purpose of muting such warnings.
 
         //---
-        @JEP(number=477, title="Implicitly Declared Classes and Instance Main Methods", status="Third Preview")
+        @JEP(number=495, title="Simple Source Files and Instance Main Methods", status="Fourth Preview")
         IMPLICIT_CLASSES,
         @JEP(number=487, title="Scoped Values", status="Fourth Preview")
         SCOPED_VALUES,
