@@ -25,7 +25,9 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
 import java.util.List;
@@ -35,10 +37,27 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an entry in the bootstrap method table.  The bootstrap method table
- * is stored in the {@code BootstrapMethods} attribute, but is modeled by
- * the {@link ConstantPool}, since the bootstrap method table is logically
- * part of the constant pool.
+ * is stored in the {@link BootstrapMethodsAttribute BootstrapMethods}
+ * attribute, but is modeled by the {@link ConstantPool}, since the bootstrap
+ * method table is logically part of the constant pool.
+ * <p>
+ * Conceptually, a bootstrap method entry is a record:
+ * {@snippet lang=text :
+ * // @link region=1 substring="BootstrapMethodEntry" target="ConstantPoolBuilder#bsmEntry(DirectMethodHandleDesc, List)"
+ * // @link substring="DirectMethodHandleDesc" target="#bootstrapMethod" :
+ * BootstrapMethodEntry(DirectMethodHandleDesc, List<ConstantDesc>) // @link substring="List<ConstantDesc>" target="#arguments()"
+ * // @end region=1
+ * }
+ * <p>
+ * Physically, a bootstrap method entry is a record:
+ * {@snippet lang=text :
+ * // @link region=1 substring="BootstrapMethodEntry" target="ConstantPoolBuilder#bsmEntry(MethodHandleEntry, List)"
+ * // @link substring="MethodHandleEntry" target="#bootstrapMethod" :
+ * BootstrapMethodEntry(MethodHandleEntry, List<LoadableConstantEntry>) // @link substring="List<LoadableConstantEntry>" target="#arguments()"
+ * // @end region=1
+ * }
  *
+ * @see ConstantPoolBuilder#bsmEntry ConstantPoolBuilder::bsmEntry
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -47,21 +66,38 @@ public sealed interface BootstrapMethodEntry
 
     /**
      * {@return the constant pool associated with this entry}
+     *
+     * @apiNote
+     * Given a {@link ConstantPoolBuilder} {@code builder} and a {@code
+     * BootstrapMethodEntry} {@code entry}, use {@link
+     * ConstantPoolBuilder#canWriteDirect
+     * builder.canWriteDirect(entry.constantPool())} instead of object equality
+     * of the constant pool to determine if an entry is compatible.
      */
     ConstantPool constantPool();
 
     /**
-     * {@return the index into the bootstrap method table corresponding to this entry}
+     * {@return the index into the bootstrap method table corresponding to this
+     * entry}
      */
     int bsmIndex();
 
     /**
      * {@return the bootstrap method}
+     *
+     * @apiNote
+     * A symbolic descriptor for the bootstrap method is available through
+     * {@link MethodHandleEntry#asSymbol() bootstrapMethod().asSymbol()}.
      */
     MethodHandleEntry bootstrapMethod();
 
     /**
      * {@return the bootstrap arguments}
+     *
+     * @apiNote
+     * A symbolic descriptor for each entry in the returned list is available
+     * via {@link LoadableConstantEntry#constantValue
+     * LoadableConstantEntry::constantValue}.
      */
     List<LoadableConstantEntry> arguments();
 }

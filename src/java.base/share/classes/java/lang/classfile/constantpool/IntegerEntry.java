@@ -30,10 +30,20 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code CONSTANT_Integer_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures
+ * Models a {@code CONSTANT_Integer_info} structure, or an {@code int} constant,
+ * in the constant pool of a {@code class} file.
+ * <p>
+ * Conceptually, an integer entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="IntegerEntry" target="ConstantPoolBuilder#intEntry(int)" :
+ * IntegerEntry(int) // @link substring="int" target="#intValue()"
+ * }
+ * <p>
+ * Physically, an integer entry stores an arbitrary 4-byte value.
  *
+ * @see ConstantPoolBuilder#intEntry ConstantPoolBuilder::intEntry
+ * @jvms 4.4.4 The {@code CONSTANT_Integer_info} and {@code CONSTANT_Float_info}
+ *             Structures
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -42,13 +52,12 @@ public sealed interface IntegerEntry
         permits AbstractPoolEntry.IntegerEntryImpl {
 
     /**
-     * {@return the integer value}
+     * {@return the {@code int} value}
+     *
+     * @see ConstantPoolBuilder#intEntry(int) ConstantPoolBuilder::intEntry(int)
      */
     int intValue();
 
-    /**
-     * {@return the type of the constant}
-     */
     @Override
     default TypeKind typeKind() {
         return TypeKind.INT;

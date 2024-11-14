@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,22 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code CONSTANT_String_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.3 The CONSTANT_String_info Structure
+ * Models a {@code CONSTANT_String_info} structure, or a string constant, in the
+ * constant pool of a {@code class} file.
+ * <p>
+ * Conceptually, a string entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="StringEntry" target="ConstantPoolBuilder#stringEntry(String)" :
+ * StringEntry(String) // @link regex="String(?=[)])" target="#stringValue()"
+ * }
+ * <p>
+ * Physically, a string entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="StringEntry" target="ConstantPoolBuilder#stringEntry(Utf8Entry)" :
+ * StringEntry(Utf8Entry) // @link substring="Utf8Entry" target="#utf8()"
+ * }
  *
+ * @jvms 4.4.3 The {@code CONSTANT_String_info} Structure
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -40,11 +52,17 @@ public sealed interface StringEntry
         permits AbstractPoolEntry.StringEntryImpl {
     /**
      * {@return the UTF constant pool entry describing the string contents}
+     *
+     * @see ConstantPoolBuilder#stringEntry(Utf8Entry)
+     *      ConstantPoolBuilder::stringEntry(Utf8Entry)
      */
     Utf8Entry utf8();
 
     /**
      * {@return the string value for this entry}
+     *
+     * @see ConstantPoolBuilder#stringEntry(String)
+     *      ConstantPoolBuilder::stringEntry(String)
      */
     String stringValue();
 }

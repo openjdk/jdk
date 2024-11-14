@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,35 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code CONSTANT_Module_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.11 The CONSTANT_Module_info Structure
+ * Models a {@code CONSTANT_Module_info} structure, denoting a module, in the
+ * constant pool of a {@code class} file.
+ * <p>
+ * Conceptually, a module entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="ModuleEntry" target="ConstantPoolBuilder#moduleEntry(ModuleDesc)" :
+ * ModuleEntry(ModuleDesc) // @link substring="ModuleDesc" target="#asSymbol()"
+ * }
+ * <p>
+ * Physically, a module entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="ModuleEntry" target="ConstantPoolBuilder#moduleEntry(Utf8Entry)" :
+ * ModuleEntry(Utf8Entry) // @link substring="Utf8Entry" target="#name()"
+ * }
+ * where the {@code Utf8Entry} is a {@linkplain #asSymbol() module name}.
  *
+ * @jvms 4.4.11 The {@code CONSTANT_Module_info} Structure
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModuleEntry extends PoolEntry
         permits AbstractPoolEntry.ModuleEntryImpl {
     /**
-     * {@return the name of the module}
+     * {@return the name of the {@linkplain #asSymbol() module}}
      */
     Utf8Entry name();
 
     /**
-     * {@return a symbolic descriptor for the module}
+     * {@return a symbolic descriptor for the {@linkplain #name() module name}}
      */
     ModuleDesc asSymbol();
 }

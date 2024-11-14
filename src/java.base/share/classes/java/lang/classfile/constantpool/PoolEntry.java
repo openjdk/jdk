@@ -24,11 +24,26 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassFileBuilder;
+
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models an entry in the constant pool of a classfile.
+ * Models an entry in the constant pool of a {@code class} file.
  *
+ * @implNote
+ * <h2 id="unbound">Unbound constant pool entries</h2>
+ * Implementations may create unbound constant pool entries not belonging to
+ * an actual constant pool.  They are convenient to represent constant pool
+ * entries referred by unbound {@linkplain Attribute attributes}.  Their
+ * {@link #constantPool() constantPool()} returns a dummy constant pool that
+ * throws {@link UnsupportedOperationException} upon queries, their {@link
+ * #index() index()} return a non-positive invalid value, and they will always
+ * be converted by the {@linkplain ClassFileBuilder#constantPool() contextual
+ * constant pool} when they are written to {@code class} files.
+ *
+ * @see ConstantPoolBuilder##adoption Non-directly-writable constant pool entries
  * @sealedGraph
  * @since 22
  */
@@ -91,6 +106,14 @@ public sealed interface PoolEntry
 
     /**
      * {@return the constant pool this entry is from}
+     *
+     * @apiNote
+     * Given a {@link ConstantPoolBuilder} {@code builder} and a {@code
+     * PoolEntry} {@code entry}, use {@link ConstantPoolBuilder#canWriteDirect
+     * builder.canWriteDirect(entry.constantPool())} instead of object equality
+     * of the constant pool to determine if an entry is compatible.
+     *
+     * @see ##unbound Unbound constant pool entries
      */
     ConstantPool constantPool();
 
@@ -105,11 +128,22 @@ public sealed interface PoolEntry
 
     /**
      * {@return the index within the constant pool corresponding to this entry}
+     * A valid index is always positive; if the index is non-positive, this
+     * entry is {@linkplain ##unbound unbound}.
+     *
+     * @see ##unbound Unbound constant pool entries
      */
     int index();
 
     /**
      * {@return the number of constant pool slots this entry consumes}
+     * <p>
+     * All pool entries except {@link LongEntry CONSTANT_Long} and {@link
+     * DoubleEntry CONSTANT_Double} have width {@code 1}. These two exceptions
+     * have width {@code 2}, and their subsequent indices at {@link #index()
+     * index() + 1} are considered unusable.
+     *
+     * @see ConstantPool##index Index in the Constant Pool
      */
     int width();
 }

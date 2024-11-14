@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,36 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code CONSTANT_InterfaceMethodRef_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures
+ * Models a {@code CONSTANT_InterfaceMethodRef_info} structure, or a symbolic
+ * reference to an interface method, in the constant pool of a {@code class}
+ * file.
+ * <p>
+ * Conceptually, an interface method reference entry is a record:
+ * {@snippet lang=text :
+ * // @link region=1 substring="InterfaceMethodRefEntry" target="ConstantPoolBuilder#interfaceMethodRefEntry(ClassDesc, String, MethodTypeDesc)"
+ * // @link region=2 substring="ClassDesc owner" target="#owner()"
+ * // @link substring="String name" target="#name()" :
+ * InterfaceMethodRefEntry(ClassDesc owner, String name, MethodTypeDesc type) // @link substring="MethodTypeDesc type" target="#typeSymbol()"
+ * // @end region=1
+ * // @end region=2
+ * }
+ * where the {@code ClassDesc owner} represents an interface.
+ * <p>
+ * Physically, an interface method reference entry is a record:
+ * {@snippet lang=text :
+ * // @link region=1 substring="InterfaceMethodRefEntry" target="ConstantPoolBuilder#interfaceMethodRefEntry(ClassEntry, NameAndTypeEntry)"
+ * // @link substring="ClassEntry owner" target="#owner()" :
+ * InterfaceMethodRefEntry(ClassEntry owner, NameAndTypeEntry) // @link substring="NameAndTypeEntry" target="#nameAndType()"
+ * // @end region=1
+ * }
+ * where the type in the {@code NameAndTypeEntry} is a {@linkplain #typeSymbol()
+ * method descriptor} string.
  *
+ * @see ConstantPoolBuilder#interfaceMethodRefEntry
+ *      ConstantPoolBuilder::interfaceMethodRefEntry
+ * @jvms 4.4.2 The {@code CONSTANT_Fieldref_info}, {@code
+ *             CONSTANT_Methodref_info}, and {@code
+ *             CONSTANT_InterfaceMethodref_info} Structures
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -43,7 +69,7 @@ public sealed interface InterfaceMethodRefEntry
         permits AbstractPoolEntry.InterfaceMethodRefEntryImpl {
 
     /**
-     * {@return a symbolic descriptor for the interface method's type}
+     * {@return a symbolic descriptor for the {@linkplain #type() method type}}
      */
     default MethodTypeDesc typeSymbol() {
         return Util.methodTypeSymbol(type());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,35 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a constant pool entry for a dynamic call site.
- * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
+ * Models a {@code CONSTANT_InvokeDynamic_info} structure, or the symbolic
+ * reference to a <dfn>{@index "dynamically-computed call site"}</dfn>, in the
+ * constant pool of a {@code class} file.
+ * <p>
+ * Conceptually, an invoke dynamic entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="InvokeDynamicEntry" target="ConstantPoolBuilder#constantDynamicEntry(DynamicConstantDesc)" :
+ * InvokeDynamicEntry(DynamicCallSiteDesc) // @link substring="DynamicCallSiteDesc" target="#asSymbol()"
+ * }
+ * <p>
+ * Physically, an invoke dynamic entry is a record:
+ * {@snippet lang=text :
+ * // @link region substring="InvokeDynamicEntry" target="ConstantPoolBuilder#constantDynamicEntry(BootstrapMethodEntry, NameAndTypeEntry)"
+ * // @link substring="BootstrapMethodEntry" target="#bootstrap()"
+ * InvokeDynamicEntry(BootstrapMethodEntry, NameAndTypeEntry) // @link substring="NameAndTypeEntry" target="#nameAndType()"
+ * // @end
+ * }
+ * where the type in the {@code NameAndTypeEntry} is a {@linkplain #typeSymbol()
+ * method descriptor} string.
  *
+ * @apiNote
+ * A dynamically-computed call site is frequently called a <dfn>{@index "dynamic
+ * call site"}</dfn>, or an <dfn>{@index "indy"}</dfn>, from the abbreviation of
+ * "invoke dynamic".
+ *
+ * @see ConstantPoolBuilder#invokeDynamicEntry
+ *      ConstantPoolBuilder::invokeDynamicEntry
+ * @jvms 4.4.10 The {@code CONSTANT_Dynamic_info} and {@code
+ *              CONSTANT_InvokeDynamic_info} Structures
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -44,14 +70,18 @@ public sealed interface InvokeDynamicEntry
         permits AbstractPoolEntry.InvokeDynamicEntryImpl {
 
     /**
-     * {@return a symbolic descriptor for the call site's invocation type}
+     * {@return a symbolic descriptor for the {@linkplain #type() invocation
+     * type} of this dynamic call site}
      */
     default MethodTypeDesc typeSymbol() {
         return Util.methodTypeSymbol(type());
     }
 
     /**
-     * {@return a symbolic descriptor for the dynamic call site}
+     * {@return a symbolic descriptor for this dynamic call site}
+     *
+     * @see ConstantPoolBuilder#invokeDynamicEntry(DynamicCallSiteDesc)
+     *      ConstantPoolBuilder::invokeDynamicEntry(DynamicCallSiteDesc)
      */
     default DynamicCallSiteDesc asSymbol() {
         return DynamicCallSiteDesc.of(bootstrap().bootstrapMethod().asSymbol(),

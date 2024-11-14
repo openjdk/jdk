@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,39 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.invoke.TypeDescriptor;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code CONSTANT_NameAndType_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
+ * Models a {@code CONSTANT_NameAndType_info} structure, representing a field or
+ * method, in the constant pool of a {@code class} file.
+ * <p>
+ * Conceptually, a name and type entry may be one of the following records:
+ * {@snippet lang=text :
+ * // @link region substring="NameAndTypeEntry" target="ConstantPoolBuilder#nameAndTypeEntry(String, ClassDesc)"
+ * // @link substring="String" target="#name()" :
+ * NameAndTypeEntry(String, ClassDesc) // @link substring="ClassDesc" target="#type()"
+ * // @end
+ * // @link region substring="NameAndTypeEntry" target="ConstantPoolBuilder#nameAndTypeEntry(String, MethodTypeDesc)"
+ * // @link substring="String" target="#name()" :
+ * NameAndTypeEntry(String, MethodTypeDesc) // @link substring="MethodTypeDesc" target="#type()"
+ * // @end
+ * }
+ * where {@code String} is an unqualified name.
+ * <p>
+ * Physically, a name and type entry is a record:
+ * {@snippet lang=text :
+ * // @link region substring="NameAndTypeEntry" target="ConstantPoolBuilder#nameAndTypeEntry(Utf8Entry, Utf8Entry)"
+ * // @link substring="Utf8Entry name" target="#name()" :
+ * NameAndTypeEntry(Utf8Entry name, Utf8Entry type) // @link substring="Utf8Entry type" target="#type()"
+ * // @end
+ * }
+ * where {@code Utf8Entry name} is an unqualified name, and {@code Utf8Entry
+ * type} is a field or method descriptor string.
  *
+ * @jvms 4.4.6 The {@code CONSTANT_NameAndType_info} Structure
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -40,11 +65,18 @@ public sealed interface NameAndTypeEntry extends PoolEntry
 
     /**
      * {@return the field or method name}
+     *
+     * @apiNote
+     * A string value for the name is available through {@link
+     * Utf8Entry#stringValue() name().stringValue()}.
      */
     Utf8Entry name();
 
     /**
-     * {@return the field or method descriptor}
+     * {@return the field or method {@linkplain TypeDescriptor descriptor}
+     * string}  It is a method descriptor strings if it starts with {@code (}.
+     * Otherwise, it is a field descriptor string, and must start with one of
+     * the {@code BCDFIJSZL[} characters.
      */
     Utf8Entry type();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,38 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code CONSTANT_Package_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.12 The CONSTANT_Package_info Structure
+ * Models a {@code CONSTANT_Package_info}, representing a package, in the
+ * constant pool of a {@code class} file.
+ * <p>
+ * Conceptually, a package entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="PackageEntry" target="ConstantPoolBuilder#packageEntry(PackageDesc)" :
+ * PackageEntry(PackageDesc) // @link substring="PackageDesc" target="#asSymbol()"
+ * }
+ * where the {@code PackageDesc} must not be the unnamed package.
+ * <p>
+ * Physically, a package entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="PackageEntry" target="ConstantPoolBuilder#packageEntry(Utf8Entry)" :
+ * PackageEntry(Utf8Entry) // @link substring="Utf8Entry" target="#name()"
+ * }
+ * where the {@code Utf8Entry} is the {@linkplain ClassEntry##internal-name
+ * internal form} of a binary package name and is not empty.
  *
+ * @jvms 4.4.12 The {@code CONSTANT_Package_info} Structure
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface PackageEntry extends PoolEntry
         permits AbstractPoolEntry.PackageEntryImpl {
     /**
-     * {@return the package name}
+     * {@return the {@linkplain ClassEntry##internal-name internal form} of the
+     * {@linkplain #asSymbol() package} name}
      */
     Utf8Entry name();
 
     /**
-     * {@return a symbolic descriptor for the package name}
+     * {@return a symbolic descriptor for the {@linkplain #name() package name}}
      */
     PackageDesc asSymbol();
 }

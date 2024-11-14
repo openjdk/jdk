@@ -30,10 +30,23 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code CONSTANT_Long_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.5 The CONSTANT_Long_info and CONSTANT_Double_info Structures
+ * Models a {@code CONSTANT_Long_info} structure, or a {@code long} constant, in
+ * the constant pool of a {@code class} file.
+ * <p>
+ * Conceptually, a long entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="LongEntry" target="ConstantPoolBuilder#longEntry(long)" :
+ * LongEntry(long) // @link substring="long" target="#longValue()"
+ * }
+ * <p>
+ * Physically, a long entry stores an arbitrary 8-byte value.
+ * <p>
+ * This constant has a {@linkplain #width() width} of {@code 2}, making its
+ * subsequent constant pool index valid and unusable.
  *
+ * @see ConstantPoolBuilder#longEntry ConstantPoolBuilder::longEntry
+ * @jvms 4.4.5 The {@code CONSTANT_Long_info} and {@code CONSTANT_Double_info}
+ *             Structures
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -42,7 +55,10 @@ public sealed interface LongEntry
         permits AbstractPoolEntry.LongEntryImpl {
 
     /**
-     * {@return the long value}
+     * {@return the {@code long} value}
+     *
+     * @see ConstantPoolBuilder#longEntry(long)
+     *      ConstantPoolBuilder::longEntry(long)
      */
     long longValue();
 

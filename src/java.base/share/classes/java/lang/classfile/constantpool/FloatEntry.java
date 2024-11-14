@@ -30,10 +30,22 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code CONSTANT_Float_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures
+ * Models a {@code CONSTANT_Float_info} structure, or a {@code float} constant,
+ * in the constant pool of a {@code class} file.
+ * <p>
+ * Conceptually, a float entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="FloatEntry" target="ConstantPoolBuilder#floatEntry(float)" :
+ * FloatEntry(float) // @link substring="float" target="#floatValue()"
+ * }
+ * where all NaN values of the {@code float} may be collapsed into a single
+ * "canonical" NaN value.
+ * <p>
+ * Physically, a float entry stores an arbitrary 4-byte value.
  *
+ * @see ConstantPoolBuilder#floatEntry ConstantPoolBuilder::floatEntry
+ * @jvms 4.4.4 The {@code CONSTANT_Integer_info} and {@code CONSTANT_Float_info}
+ *             Structures
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -42,14 +54,13 @@ public sealed interface FloatEntry
         permits AbstractPoolEntry.FloatEntryImpl {
 
     /**
-     * {@return the float value}
+     * {@return the {@code float} value}
+     *
+     * @see ConstantPoolBuilder#floatEntry(float)
+     *      ConstantPoolBuilder::floatEntry(float)
      */
-
     float floatValue();
 
-    /**
-     * {@return the type of the constant}
-     */
     @Override
     default TypeKind typeKind() {
         return TypeKind.FLOAT;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,24 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code CONSTANT_MethodType_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.9 The CONSTANT_MethodType_info Structure
+ * Models a {@code CONSTANT_MethodType_info} structure, or a symbolic reference
+ * to a method type, in the constant pool of a {@code class} file.
+ * <p>
+ * Conceptually, a method type entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="MethodTypeEntry" target="ConstantPoolBuilder#methodTypeEntry(MethodTypeDesc)" :
+ * MethodTypeEntry(MethodTypeDesc) // @link substring="MethodTypeDesc" target="#asSymbol()"
+ * }
+ * <p>
+ * Physically, a method type entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="MethodTypeEntry" target="ConstantPoolBuilder#methodTypeEntry(Utf8Entry)" :
+ * MethodTypeEntry(Utf8Entry) // @link substring="Utf8Entry" target="#descriptor()"
+ * }
+ * where the {@code Utf8Entry} is a {@linkplain #asSymbol() method descriptor}
+ * string.
  *
+ * @jvms 4.4.9 The {@code CONSTANT_MethodType_info} Structure
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -42,18 +56,24 @@ public sealed interface MethodTypeEntry
         extends LoadableConstantEntry
         permits AbstractPoolEntry.MethodTypeEntryImpl {
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This is equivalent to {@link #asSymbol() asSymbol()}.
+     */
     @Override
     default ConstantDesc constantValue() {
         return asSymbol();
     }
 
     /**
-     * {@return the constant pool entry describing the method type}
+     * {@return the {@linkplain #asSymbol() method descriptor} string}
      */
     Utf8Entry descriptor();
 
     /**
-     * {@return a symbolic descriptor for the method type}
+     * {@return a symbolic descriptor for the {@linkplain #descriptor() method
+     * type}}
      */
     MethodTypeDesc asSymbol();
 }

@@ -24,15 +24,23 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
+import java.lang.classfile.instruction.ConstantInstruction;
 import java.lang.constant.ConstantDesc;
 
 import jdk.internal.javac.PreviewFeature;
 
 /**
  * Marker interface for constant pool entries suitable for loading via the
- * {@code LDC} instructions.
+ * {@link ConstantInstruction.LoadConstantInstruction ldc} instructions.
  *
+ * @see CodeBuilder#ldc(LoadableConstantEntry)
+ *      CodeBuilder::ldc(LoadableConstantEntry)
+ * @see ConstantPoolBuilder#loadableConstantEntry
+ *      ConstantPoolBuilder::loadableConstantEntry
+ * @jvms 4.4 The Constant Pool
  * @sealedGraph
  * @since 22
  */
@@ -41,14 +49,36 @@ public sealed interface LoadableConstantEntry extends PoolEntry
         permits ClassEntry, ConstantDynamicEntry, ConstantValueEntry, MethodHandleEntry, MethodTypeEntry {
 
     /**
-     * {@return the constant described by this entry}
+     * {@return a symbolic descriptor of this constant}
+     *
+     * @see ConstantPoolBuilder#loadableConstantEntry(ConstantDesc)
+     *      ConstantPoolBuilder::loadableConstantEntry(ConstantDesc)
      */
     ConstantDesc constantValue();
 
     /**
-     * {@return the type of the constant}
+     * {@return the data type of this constant}
+     * <p>
+     * If the data type is of {@linkplain TypeKind#slotSize() category} 2, this
+     * constant must be loaded with {@link Opcode#LDC2_W ldc2_w}; otherwise, the
+     * data type is of category 1, and this constant must be loaded with {@link
+     * Opcode#LDC ldc} or {@link Opcode#LDC_W ldc_w}.
      */
     default TypeKind typeKind() {
         return TypeKind.REFERENCE;
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @apiNote
+     * The width of this entry does not decide if this entry should be loaded
+     * with {@link Opcode#LDC ldc} or {@link Opcode#LDC2_W ldc2_w}.
+     * For example, {@link ConstantDynamicEntry} always has width {@code 1}, but
+     * it must be loaded with {@code ldc2_w} if its {@linkplain #typeKind()
+     * type} is {@link TypeKind#LONG long} or {@link TypeKind#DOUBLE double}.
+     * Use {@link #typeKind() typeKind().slotSize()} for this purpose instead.
+     */
+    @Override
+    int width();
 }
