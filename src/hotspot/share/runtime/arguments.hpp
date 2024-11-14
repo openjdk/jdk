@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,6 @@ class Arguments : AllStatic {
   // GC ergonomics
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
-  static void set_use_compressed_klass_ptrs();
   static jint set_ergonomics_flags();
   // Limits the given heap size by the maximum amount of virtual
   // memory this process is currently allowed to use. It also takes

@@ -228,14 +228,11 @@ ifeq ($(call isTargetOsType, unix)+$(MAKEFILE_PREFIX), true+Launcher)
     endif
   else
     # No markdown man pages present
-    ifeq ($(BUILD_MANPAGES), true)
-      # BUILD_MANPAGES is a mis-nomer. It really means "copy the pre-generated man pages".
-      $(eval $(call SetupCopyFiles, COPY_MAN_PAGES, \
-          DEST := $(SUPPORT_OUTPUTDIR)/modules_man/$(MODULE)/man1, \
-          FILES := $(MAN_FILES_TROFF), \
-      ))
+    $(eval $(call SetupCopyFiles, COPY_MAN_PAGES, \
+        DEST := $(SUPPORT_OUTPUTDIR)/modules_man/$(MODULE)/man1, \
+        FILES := $(MAN_FILES_TROFF), \
+    ))
 
-      TARGETS += $(COPY_MAN_PAGES)
-    endif
+    TARGETS += $(COPY_MAN_PAGES)
   endif
 endif

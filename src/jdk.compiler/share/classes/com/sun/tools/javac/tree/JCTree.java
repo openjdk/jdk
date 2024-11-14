@@ -538,6 +538,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public NamedImportScope namedImportScope;
         /** A scope for all import-on-demands. */
         public StarImportScope starImportScope;
+        /** A scope for all single module imports. */
+        public StarImportScope moduleImportScope;
         /** Line starting positions, defined only if option -g is set. */
         public Position.LineMap lineMap = null;
         /** A table that stores all documentation comments indexed by the tree
@@ -2272,6 +2274,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /**{@code true} if this instanceof test should have
          * value {@code true} when the {@code expr} is {@code null}.*/
         public boolean allowNull;
+        public Type erasedExprOriginalType;
+
         protected JCInstanceOf(JCExpression expr, JCTree pattern) {
             this.expr = expr;
             this.pattern = pattern;
