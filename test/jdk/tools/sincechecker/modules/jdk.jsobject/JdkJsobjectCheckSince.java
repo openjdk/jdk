@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8343780
- * @summary Test for @since in jdk.jsobject module
+ * @summary Test for `@since` in jdk.jsobject module
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker jdk.jsobject
  */

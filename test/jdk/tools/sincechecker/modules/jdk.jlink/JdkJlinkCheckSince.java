@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8343780
- * @summary Test for @since in jdk.jlink module
+ * @summary Test for `@since` in jdk.jlink module
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker jdk.jlink
- */
