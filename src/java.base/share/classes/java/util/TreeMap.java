@@ -510,8 +510,6 @@ public class TreeMap<K,V>
                     }
                     return parent;
                 }
-            } else {
-                return p;
             }
         }
         return null;
