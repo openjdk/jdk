@@ -29,7 +29,6 @@ import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ClassFileDumper;
 import sun.invoke.util.VerifyAccess;
-import sun.security.action.GetBooleanAction;
 
 import java.io.Serializable;
 import java.lang.classfile.ClassBuilder;
@@ -83,7 +82,7 @@ import sun.invoke.util.Wrapper;
         lambdaProxyClassFileDumper = ClassFileDumper.getInstance(dumpProxyClassesKey, "DUMP_LAMBDA_PROXY_CLASS_FILES");
 
         final String disableEagerInitializationKey = "jdk.internal.lambda.disableEagerInitialization";
-        disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
+        disableEagerInitialization = Boolean.getBoolean(disableEagerInitializationKey);
     }
 
     // See context values in AbstractValidatingLambdaMetafactory
@@ -134,9 +133,6 @@ import sun.invoke.util.Wrapper;
      *                   implemented by invoking the implementation method
      * @throws LambdaConversionException If any of the meta-factory protocol
      *         invariants are violated
-     * @throws SecurityException If a security manager is present, and it
-     *         <a href="MethodHandles.Lookup.html#secmgr">denies access</a>
-     *         from {@code caller} to the package of {@code implementation}.
      */
     public InnerClassLambdaMetafactory(MethodHandles.Lookup caller,
                                        MethodType factoryType,

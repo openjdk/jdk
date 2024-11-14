@@ -48,63 +48,44 @@ ifeq ($(call isTargetOs, windows), true)
   TARGETS += $(BUILD_JABSWITCH)
 
   ##############################################################################
-  # Setup rules to create 32/64 bit version of jaccessinspector
-  #
-  # Parameter 1 File name suffix
-  # Parameter 2 ACCESSBRIDGE_ARCH_ -D suffix
+  # Build jaccessinspector
   ##############################################################################
-  define SetupInspector
-    $$(eval $$(call SetupJdkExecutable, BUILD_JACCESSINSPECTOR$1, \
-        NAME := jaccessinspector$1, \
-        SRC := jaccessinspector, \
-        EXTRA_SRC := \
-            bridge \
-            common \
-            toolscommon, \
-        EXTRA_HEADER_DIRS := include/bridge, \
-        CFLAGS := -DACCESSBRIDGE_ARCH_$2 -EHsc, \
-        CXXFLAGS := -DACCESSBRIDGE_ARCH_$2 -EHsc, \
-        LDFLAGS_windows := -stack:655360, \
-        LIBS_windows := advapi32.lib user32.lib, \
-        VERSIONINFO_RESOURCE := \
-            $(ACCESSIBILITY_SRCDIR)/jaccessinspector/jaccessinspectorWindow.rc, \
-    ))
 
-    TARGETS += $$(BUILD_JACCESSINSPECTOR$1)
-  endef
+  $(eval $(call SetupJdkExecutable, BUILD_JACCESSINSPECTOR, \
+      NAME := jaccessinspector, \
+      EXTRA_SRC := \
+          bridge \
+          common \
+          toolscommon, \
+      EXTRA_HEADER_DIRS := include/bridge, \
+      CFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      CXXFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      LDFLAGS_windows := -stack:655360, \
+      LIBS_windows := advapi32.lib user32.lib, \
+      VERSIONINFO_RESOURCE := \
+          $(ACCESSIBILITY_SRCDIR)/jaccessinspector/jaccessinspectorWindow.rc, \
+  ))
+
+  TARGETS += $(BUILD_JACCESSINSPECTOR)
 
   ##############################################################################
-  # Setup rules to create 32/64 bit version of jaccesswalker
-  # Parameter 1 File name suffix
-  # Parameter 2 ACCESSBRIDGE_ARCH_ -D suffix
+  # Build jaccesswalker
   ##############################################################################
-  define SetupWalker
-    $$(eval $$(call SetupJdkExecutable, BUILD_JACCESSWALKER$1, \
-        NAME := jaccesswalker$1, \
-        SRC := jaccesswalker, \
-        EXTRA_SRC := \
-            bridge \
-            common \
-            toolscommon, \
-        EXTRA_HEADER_DIRS := include/bridge, \
-        CFLAGS := -DACCESSBRIDGE_ARCH_$2 -EHsc, \
-        CXXFLAGS := -DACCESSBRIDGE_ARCH_$2 -EHsc, \
-        LDFLAGS_windows := -stack:655360, \
-        LIBS_windows := advapi32.lib comctl32.lib gdi32.lib user32.lib, \
-        VERSIONINFO_RESOURCE := \
-            $(ACCESSIBILITY_SRCDIR)/jaccesswalker/jaccesswalkerWindow.rc, \
-    ))
 
-    TARGETS += $$(BUILD_JACCESSWALKER$1)
-  endef
+  $(eval $(call SetupJdkExecutable, BUILD_JACCESSWALKER, \
+      NAME := jaccesswalker, \
+      EXTRA_SRC := \
+          bridge \
+          common \
+          toolscommon, \
+      EXTRA_HEADER_DIRS := include/bridge, \
+      CFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      CXXFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      LDFLAGS_windows := -stack:655360, \
+      LIBS_windows := advapi32.lib comctl32.lib gdi32.lib user32.lib, \
+      VERSIONINFO_RESOURCE := \
+          $(ACCESSIBILITY_SRCDIR)/jaccesswalker/jaccesswalkerWindow.rc, \
+  ))
 
-  ifeq ($(call isTargetCpuBits, 32), true)
-    $(eval $(call SetupInspector,-32,32))
-    $(eval $(call SetupWalker,-32,32))
-    $(eval $(call SetupInspector,,LEGACY))
-    $(eval $(call SetupWalker,,LEGACY))
-  else
-    $(eval $(call SetupInspector,,64))
-    $(eval $(call SetupWalker,,64))
-  endif
+  TARGETS += $(BUILD_JACCESSWALKER)
 endif

@@ -72,8 +72,6 @@ public final class Constructor<T> extends Executable {
     private final int                 modifiers;
     // Generics and annotations support
     private final transient String    signature;
-    // generic info repository; lazily initialized
-    private transient volatile ConstructorRepository genericInfo;
     private final byte[]              annotations;
     private final byte[]              parameterAnnotations;
 
@@ -88,26 +86,27 @@ public final class Constructor<T> extends Executable {
     @Override
     ConstructorRepository getGenericInfo() {
         var genericInfo = this.genericInfo;
-        // lazily initialize repository if necessary
         if (genericInfo == null) {
-            // create and cache generic info repository
-            genericInfo =
-                ConstructorRepository.make(getSignature(),
-                                           getFactory());
+            var root = this.root;
+            if (root != null) {
+                genericInfo = root.getGenericInfo();
+            } else {
+                genericInfo = ConstructorRepository.make(getSignature(), getFactory());
+            }
             this.genericInfo = genericInfo;
         }
-        return genericInfo; //return cached repository
+        return genericInfo;
     }
 
-    @Stable
-    private ConstructorAccessor constructorAccessor;
-    // For sharing of ConstructorAccessors. This branching structure
-    // is currently only two levels deep (i.e., one root Constructor
-    // and potentially many Constructor objects pointing to it.)
-    //
-    // If this branching structure would ever contain cycles, deadlocks can
-    // occur in annotation code.
-    private Constructor<T>      root;
+    /**
+     * Constructors are mutable due to {@link AccessibleObject#setAccessible(boolean)}.
+     * Thus, we return a new copy of a root each time a constructor is returned.
+     * Some lazily initialized immutable states can be stored on root and shared to the copies.
+     */
+    private Constructor<T> root;
+    private transient volatile ConstructorRepository genericInfo;
+    private @Stable ConstructorAccessor constructorAccessor;
+    // End shared states
 
     @Override
     Constructor<T> getRoot() {
@@ -143,13 +142,6 @@ public final class Constructor<T> extends Executable {
      * "root" field points to this Constructor.
      */
     Constructor<T> copy() {
-        // This routine enables sharing of ConstructorAccessor objects
-        // among Constructor objects which refer to the same underlying
-        // method in the VM. (All of this contortion is only necessary
-        // because of the "accessibility" bit in AccessibleObject,
-        // which implicitly requires that new java.lang.reflect
-        // objects be fabricated for each reflective call on Class
-        // objects.)
         if (this.root != null)
             throw new IllegalArgumentException("Can not copy a non-root Constructor");
 
@@ -162,6 +154,7 @@ public final class Constructor<T> extends Executable {
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.constructorAccessor = constructorAccessor;
+        res.genericInfo = genericInfo;
         return res;
     }
 
@@ -176,21 +169,18 @@ public final class Constructor<T> extends Executable {
     /**
      * {@inheritDoc}
      *
-     * <p> A {@code SecurityException} is also thrown if this object is a
+     * <p> A {@code SecurityException} is thrown if this object is a
      * {@code Constructor} object for the class {@code Class} and {@code flag}
      * is true. </p>
      *
      * @param flag {@inheritDoc}
      *
      * @throws InaccessibleObjectException {@inheritDoc}
-     * @throws SecurityException if the request is denied by the security manager
-     *         or this is a constructor for {@code java.lang.Class}
-     *
+     * @throws SecurityException if this is a constructor for {@code java.lang.Class}
      */
     @Override
     @CallerSensitive
     public void setAccessible(boolean flag) {
-        AccessibleObject.checkPermission();
         if (flag) {
             checkCanSetAccessible(Reflection.getCallerClass());
         }

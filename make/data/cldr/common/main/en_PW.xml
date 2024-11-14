@@ -13,10 +13,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<units>
 		<unitLength type="narrow">
-			<unit type="temperature-celsius">
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
-			</unit>
 			<unit type="temperature-fahrenheit">
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>

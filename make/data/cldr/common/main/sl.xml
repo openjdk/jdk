@@ -66,6 +66,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bik">bikolski jezik</language>
 			<language type="bin">edo</language>
 			<language type="bla">siksika</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambarščina</language>
 			<language type="bn">bengalščina</language>
 			<language type="bo">tibetanščina</language>
@@ -286,6 +287,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komijščina</language>
 			<language type="kw">kornijščina</language>
 			<language type="kwk">kvakvala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirgiščina</language>
 			<language type="la">latinščina</language>
 			<language type="lad">ladinščina</language>
@@ -296,8 +298,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">lezginščina</language>
 			<language type="lg">ganda</language>
 			<language type="li">limburščina</language>
+			<language type="lij">ligurščina</language>
 			<language type="lil">lilovetščina</language>
 			<language type="lkt">lakotščina</language>
+			<language type="lmo">lombardščina</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laoščina</language>
 			<language type="lol">mongo</language>
@@ -310,7 +314,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lua">luba-lulua</language>
 			<language type="lui">luisenščina</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">mizojščina</language>
 			<language type="luy">luhijščina</language>
 			<language type="lv">latvijščina</language>
@@ -485,6 +488,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">šikomor</language>
 			<language type="syc">klasična sirščina</language>
 			<language type="syr">sirščina</language>
+			<language type="szl">šlezijščina</language>
 			<language type="ta">tamilščina</language>
 			<language type="tce">južna tučonščina</language>
 			<language type="te">telugijščina</language>
@@ -532,7 +536,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">uzbeščina</language>
 			<language type="vai">vajščina</language>
 			<language type="ve">venda</language>
+			<language type="vec">beneščina</language>
 			<language type="vi">vietnamščina</language>
+			<language type="vmw">makuva</language>
 			<language type="vo">volapik</language>
 			<language type="vot">votjaščina</language>
 			<language type="vun">vunjo</language>
@@ -546,6 +552,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">wu-kitajščina</language>
 			<language type="xal">kalmiščina</language>
 			<language type="xh">koščina</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">sogščina</language>
 			<language type="yao">jaojščina</language>
 			<language type="yap">japščina</language>
@@ -556,6 +563,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">nheengatu</language>
 			<language type="yue">kantonščina</language>
 			<language type="yue" alt="menu">kitajščina (kantonščina)</language>
+			<language type="za">džuangščina</language>
 			<language type="zap">zapoteščina</language>
 			<language type="zbl">znakovni jezik Bliss</language>
 			<language type="zen">zenaščina</language>
@@ -1088,8 +1096,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="indian">indijanski koledar</type>
 			<type key="calendar" type="islamic">islamski koledar</type>
 			<type key="calendar" type="islamic-civil">islamski civilni koledar</type>
-			<type key="calendar" type="islamic-rgsa" draft="provisional">islamski koledar ( Saudova Arabija, opazovalni)</type>
-			<type key="calendar" type="islamic-tbla" draft="provisional">islamski koledar (tabelarni, astronomska epoha)</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">islamski koledar ( Saudova Arabija, opazovalni)</type>
+			<type key="calendar" type="islamic-tbla" draft="contributed">islamski koledar (tabelarni, astronomska epoha)</type>
 			<type key="calendar" type="islamic-umalqura">islamski koledar Umm al-Qura</type>
 			<type key="calendar" type="iso8601">koledar ISO-8601</type>
 			<type key="calendar" type="japanese">japonski koledar</type>
@@ -1246,8 +1254,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
-			<parseLenient sample="₹">[₹ ₨ {Rs}]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ {Rs}₨]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2541,6 +2549,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} čas</regionFormat>
 			<regionFormat type="daylight">{0} poletni čas</regionFormat>
 			<regionFormat type="standard">{0} standardni čas</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>univerzalni koordinirani čas</standard>
@@ -2621,9 +2632,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Zelenortski otoki</exemplarCity>
 			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
-			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Božični otok</exemplarCity>
 			</zone>
@@ -2668,7 +2676,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/London">
 				<long>
-					<daylight>britanski poletni čas</daylight>
+					<daylight>Britanski poletni čas</daylight>
 				</long>
 			</zone>
 			<zone type="Africa/Accra">
@@ -2700,7 +2708,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
-					<daylight>irski standardni čas</daylight>
+					<daylight>Irski standardni čas</daylight>
 				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -2799,9 +2807,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulan Bator</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Čojbalsan</exemplarCity>
-			</zone>
 			<zone type="America/Martinique">
 				<exemplarCity>Martinik</exemplarCity>
 			</zone>
@@ -2840,9 +2845,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lizbona</exemplarCity>
-			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
 			</zone>
 			<zone type="Asia/Qatar">
 				<exemplarCity>Katar</exemplarCity>
@@ -2904,9 +2906,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Mogadishu">
 				<exemplarCity>Mogadišu</exemplarCity>
 			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
-			</zone>
 			<zone type="America/El_Salvador">
 				<exemplarCity>Salvador</exemplarCity>
 			</zone>
@@ -2924,9 +2923,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kijev</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beulah, Severna Dakota</exemplarCity>
@@ -3174,13 +3170,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Kitajski poletni čas</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Čojbalsanski čas</generic>
-					<standard>Čojbalsanski standardni čas</standard>
-					<daylight>Čojbalsanski poletni čas</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Božičnootoški čas</standard>
@@ -3424,6 +3413,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">Petropavlovsk-Kamčatski čas</generic>
 					<standard draft="contributed">Petropavlovsk-Kamčatski standardni čas</standard>
 					<daylight draft="contributed">Petropavlovsk-Kamčatski poletni čas</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Kazahstanski čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3850,6 +3844,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<minimumGroupingDigits>2</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
@@ -3952,7 +3947,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤;(#,##0.00 ¤)</pattern>
-					<pattern alt="noCurrency" draft="contributed">#,##0.00;(#,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4007,10 +4002,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 bil'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="two">{0} {1}</unitPattern>
-			<unitPattern count="few">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -4159,11 +4150,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">bolgarskih levov</displayName>
 			</currency>
 			<currency type="BHD">
-				<displayName>bahranski dinar</displayName>
-				<displayName count="one">bahranski dinar</displayName>
-				<displayName count="two">bahranska dinarja</displayName>
-				<displayName count="few">bahranski dinarji</displayName>
-				<displayName count="other">bahranskih dinarjev</displayName>
+				<displayName>bahrajnski dinar</displayName>
+				<displayName count="one">bahrajnski dinar</displayName>
+				<displayName count="two">bahrajnska dinarja</displayName>
+				<displayName count="few">bahrajnski dinarji</displayName>
+				<displayName count="other">bahrajnskih dinarjev</displayName>
 			</currency>
 			<currency type="BIF">
 				<displayName>burundski frank</displayName>
@@ -4496,7 +4487,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>gruzijski lari</displayName>
 				<displayName count="one">gruzijski lari</displayName>
 				<displayName count="two">gruzijska larija</displayName>
-				<displayName count="few">gruzijski lari</displayName>
+				<displayName count="few">gruzijski lariji</displayName>
 				<displayName count="other">gruzijskih larijev</displayName>
 			</currency>
 			<currency type="GHC">
@@ -4584,11 +4575,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">hrvaških kun</displayName>
 			</currency>
 			<currency type="HTG">
-				<displayName>haitski gurd</displayName>
-				<displayName count="one">haitski gurd</displayName>
-				<displayName count="two">haitska gurda</displayName>
-				<displayName count="few">haitski gurdi</displayName>
-				<displayName count="other">haitskih gurdov</displayName>
+				<displayName>haitijski gurd</displayName>
+				<displayName count="one">haitijski gurd</displayName>
+				<displayName count="two">haitijska gurda</displayName>
+				<displayName count="few">haitijski gurdi</displayName>
+				<displayName count="other">haitijskih gurdov</displayName>
 			</currency>
 			<currency type="HUF">
 				<displayName>madžarski forint</displayName>
@@ -4763,7 +4754,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="LSL">
 				<displayName>lesotski loti</displayName>
-				<displayName count="one">lesotski lot</displayName>
+				<displayName count="one">lesotski loti</displayName>
 				<displayName count="two">lesotska lota</displayName>
 				<displayName count="few">lesotski loti</displayName>
 				<displayName count="other">lesotskih lotov</displayName>
@@ -4807,18 +4798,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>maroški frank</displayName>
 			</currency>
 			<currency type="MDL">
-				<displayName>moldavijski leu</displayName>
-				<displayName count="one">moldavijski leu</displayName>
-				<displayName count="two">moldavijska leua</displayName>
-				<displayName count="few">moldavijski leu</displayName>
-				<displayName count="other">moldavijskih leuov</displayName>
+				<displayName>moldavski lev</displayName>
+				<displayName count="one">moldavski lev</displayName>
+				<displayName count="two">moldavska leva</displayName>
+				<displayName count="few">moldavski levi</displayName>
+				<displayName count="other">moldavskih levov</displayName>
 			</currency>
 			<currency type="MGA">
-				<displayName>malgaški ariarij</displayName>
-				<displayName count="one">malgaški ariarij</displayName>
-				<displayName count="two">malgaška ariarija</displayName>
-				<displayName count="few">malgaški ariariji</displayName>
-				<displayName count="other">malgaških ariarijev</displayName>
+				<displayName>madagaskarski ariari</displayName>
+				<displayName count="one">madagaskarski ariari</displayName>
+				<displayName count="two">madagaskarska ariarija</displayName>
+				<displayName count="few">madagaskarski ariariji</displayName>
+				<displayName count="other">madagaskarskih ariarijev</displayName>
 			</currency>
 			<currency type="MGF">
 				<displayName>malgaški frank</displayName>
@@ -4848,11 +4839,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">mongolskih tugrikov</displayName>
 			</currency>
 			<currency type="MOP">
-				<displayName>makavska pataka</displayName>
-				<displayName count="one">makavska pataka</displayName>
-				<displayName count="two">makavski pataki</displayName>
-				<displayName count="few">makavske patake</displayName>
-				<displayName count="other">makavskih patak</displayName>
+				<displayName>macajska pataka</displayName>
+				<displayName count="one">macajska pataka</displayName>
+				<displayName count="two">macajski pataki</displayName>
+				<displayName count="few">macajske patake</displayName>
+				<displayName count="other">macajskih patak</displayName>
 			</currency>
 			<currency type="MRO">
 				<displayName>mavretanska uguija (1973–2017)</displayName>
@@ -4947,11 +4938,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>nikaraška kordova</displayName>
 			</currency>
 			<currency type="NIO">
-				<displayName>nikaraška zlata kordova</displayName>
-				<displayName count="one">nikaraška zlata kordova</displayName>
-				<displayName count="two">nikaraški zlati kordovi</displayName>
-				<displayName count="few">nikaraške zlate kordove</displayName>
-				<displayName count="other">nikaraških zlatih kordov</displayName>
+				<displayName>nikaragovska kordova</displayName>
+				<displayName count="one">nikaragovska kordova</displayName>
+				<displayName count="two">nikaragovski kordovi</displayName>
+				<displayName count="few">nikaragovske kordove</displayName>
+				<displayName count="other">nikaragovskih kordov</displayName>
 			</currency>
 			<currency type="NLG">
 				<displayName>nizozemski gulden</displayName>
@@ -5032,11 +5023,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">pakistanskih rupij</displayName>
 			</currency>
 			<currency type="PLN">
-				<displayName>poljski novi zlot</displayName>
-				<displayName count="one">poljski novi zlot</displayName>
-				<displayName count="two">poljska nova zlota</displayName>
-				<displayName count="few">poljski novi zloti</displayName>
-				<displayName count="other">poljskih novih zlotov</displayName>
+				<displayName>poljski zlot</displayName>
+				<displayName count="one">poljski zlot</displayName>
+				<displayName count="two">poljska zlota</displayName>
+				<displayName count="few">poljski zloti</displayName>
+				<displayName count="other">poljskih zlotov</displayName>
 			</currency>
 			<currency type="PLZ">
 				<displayName>stari poljski zlot (1950–1995)</displayName>
@@ -5065,11 +5056,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>stari romunski leu</displayName>
 			</currency>
 			<currency type="RON">
-				<displayName>romunski leu</displayName>
-				<displayName count="one">romunski leu</displayName>
-				<displayName count="two">romunska leua</displayName>
-				<displayName count="few">romunski leu</displayName>
-				<displayName count="other">romunskih leuov</displayName>
+				<displayName>romunski lev</displayName>
+				<displayName count="one">romunski lev</displayName>
+				<displayName count="two">romunska leva</displayName>
+				<displayName count="few">romunski levi</displayName>
+				<displayName count="other">romunskih levov</displayName>
 			</currency>
 			<currency type="RSD">
 				<displayName>srbski dinar</displayName>
@@ -5165,18 +5156,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="provisional">slovaških kron</displayName>
 			</currency>
 			<currency type="SLE">
-				<displayName>sieraleonski leone</displayName>
-				<displayName count="one">sieraleonski leone</displayName>
-				<displayName count="two">sieraleonska leona</displayName>
-				<displayName count="few">sieraleonski leoni</displayName>
-				<displayName count="other">sieraleonskih leonov</displayName>
+				<displayName>sierraleonski leone</displayName>
+				<displayName count="one">sierraleonski leone</displayName>
+				<displayName count="two">sierraleonska leona</displayName>
+				<displayName count="few">sierraleonski leoni</displayName>
+				<displayName count="other">sierraleonskih leonov</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>sieraleonski leone (1964—2022)</displayName>
-				<displayName count="one">sieraleonski leone (1964—2022)</displayName>
-				<displayName count="two">sieraleonska leona (1964—2022)</displayName>
-				<displayName count="few">sieraleonski leoni (1964—2022)</displayName>
-				<displayName count="other">sieraleonskih leonov (1964—2022)</displayName>
+				<displayName>sierraleonski leone (1964—2022)</displayName>
+				<displayName count="one">sierraleonski leone (1964—2022)</displayName>
+				<displayName count="two">sierraleonska leona (1964—2022)</displayName>
+				<displayName count="few">sierraleonski leoni (1964—2022)</displayName>
+				<displayName count="other">sierraleonskih leonov (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>somalski šiling</displayName>
@@ -5210,11 +5201,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">saotomejskih dober (1977–2017)</displayName>
 			</currency>
 			<currency type="STN">
-				<displayName>saotomejska dobra</displayName>
-				<displayName count="one">saotomejska dobra</displayName>
-				<displayName count="two">saotomejski dobri</displayName>
-				<displayName count="few">saotomejske dobre</displayName>
-				<displayName count="other">saotomejskih dober</displayName>
+				<displayName>dobra Svetega Tomaža in Princa</displayName>
+				<displayName count="one">dobra Svetega Tomaža in Princa</displayName>
+				<displayName count="two">dobri Svetega Tomaža in Princa</displayName>
+				<displayName count="few">dobre Svetega Tomaža in Princa</displayName>
+				<displayName count="other">dober Svetega Tomaža in Princa</displayName>
 			</currency>
 			<currency type="SUR">
 				<displayName>sovjetski rubelj</displayName>
@@ -5230,11 +5221,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">sirijskih funtov</displayName>
 			</currency>
 			<currency type="SZL">
-				<displayName>svazijski lilangeni</displayName>
-				<displayName count="one">svazijski lilangeni</displayName>
-				<displayName count="two">svazijska lilangenija</displayName>
-				<displayName count="few">svazijski lilangeni</displayName>
-				<displayName count="other">svazijskih lilangenijev</displayName>
+				<displayName>esvatinski lilangeni</displayName>
+				<displayName count="one">esvatinski lilangeni</displayName>
+				<displayName count="two">esvatinska lilangenija</displayName>
+				<displayName count="few">esvatinski lilangeni</displayName>
+				<displayName count="other">esvatinskih lilangenijev</displayName>
 			</currency>
 			<currency type="THB">
 				<displayName>tajski baht</displayName>
@@ -5257,11 +5248,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>turkmenski manat</displayName>
 			</currency>
 			<currency type="TMT">
-				<displayName>turkmenistanski novi manat</displayName>
-				<displayName count="one">turkmenistanski novi manat</displayName>
-				<displayName count="two">turkmenistanska nova manata</displayName>
-				<displayName count="few">turkmenistanski novi manati</displayName>
-				<displayName count="other">turkmenistanskih novih manatov</displayName>
+				<displayName>turkmenistanski manat</displayName>
+				<displayName count="one">turkmenistanski manat</displayName>
+				<displayName count="two">turkmenistanska manata</displayName>
+				<displayName count="few">turkmenistanski manati</displayName>
+				<displayName count="other">turkmenistanskih manatov</displayName>
 			</currency>
 			<currency type="TND">
 				<displayName>tunizijski dinar</displayName>
@@ -5284,11 +5275,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>stara turška lira</displayName>
 			</currency>
 			<currency type="TRY">
-				<displayName>nova turška lira</displayName>
-				<displayName count="one">nova turška lira</displayName>
-				<displayName count="two">novi turški liri</displayName>
-				<displayName count="few">nove turške lire</displayName>
-				<displayName count="other">novih turških lir</displayName>
+				<displayName>turška lira</displayName>
+				<displayName count="one">turška lira</displayName>
+				<displayName count="two">turški liri</displayName>
+				<displayName count="few">turške lire</displayName>
+				<displayName count="other">turških lir</displayName>
 			</currency>
 			<currency type="TTD">
 				<displayName>dolar Trinidada in Tobaga</displayName>
@@ -6173,11 +6164,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} karatih</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>masculine</gender>
 				<displayName>miligrami na deciliter</displayName>
 				<unitPattern count="one">{0} miligram na deciliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} miligram na deciliter</unitPattern>
+				<unitPattern count="one" case="dative">{0} miligramu na deciliter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miligrama na deciliter</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} miligramom na deciliter</unitPattern>
+				<unitPattern count="one" case="locative">{0} miligramu na deciliter</unitPattern>
 				<unitPattern count="two">{0} miligrama na deciliter</unitPattern>
+				<unitPattern count="two" case="accusative">{0} miligrama na deciliter</unitPattern>
+				<unitPattern count="two" case="dative">{0} miligramoma na deciliter</unitPattern>
+				<unitPattern count="two" case="genitive">{0} miligramov na deciliter</unitPattern>
+				<unitPattern count="two" case="instrumental">{0} miligramoma na deciliter</unitPattern>
+				<unitPattern count="two" case="locative">{0} miligramih na deciliter</unitPattern>
 				<unitPattern count="few">{0} miligrami na deciliter</unitPattern>
+				<unitPattern count="few" case="accusative">{0} miligrami na deciliter</unitPattern>
+				<unitPattern count="few" case="dative">{0} miligramom na deciliter</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miligramov na deciliter</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} miligrami na deciliter</unitPattern>
+				<unitPattern count="few" case="locative">{0} miligramih na deciliter</unitPattern>
 				<unitPattern count="other">{0} miligramov na deciliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} miligramov na deciliter</unitPattern>
+				<unitPattern count="other" case="dative">{0} miligramom na deciliter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} miligramov na deciliter</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} miligrami na deciliter</unitPattern>
+				<unitPattern count="other" case="locative">{0} miligramih na deciliter</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>masculine</gender>
@@ -6833,33 +6845,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} na leto</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
-				<gender draft="contributed">neuter</gender>
-				<displayName draft="contributed">četrtletje</displayName>
-				<unitPattern count="one" draft="contributed">{0} četrtletje</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} četrtletje</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} četrtletju</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} četrtletja</unitPattern>
-				<unitPattern count="one" case="instrumental" draft="contributed">{0} četrtletjem</unitPattern>
-				<unitPattern count="one" case="locative" draft="contributed">{0} četrtletju</unitPattern>
-				<unitPattern count="two" draft="contributed">{0} četrtletji</unitPattern>
-				<unitPattern count="two" case="accusative" draft="contributed">{0} četrtletji</unitPattern>
-				<unitPattern count="two" case="dative" draft="contributed">{0} četrtletjem</unitPattern>
-				<unitPattern count="two" case="genitive" draft="contributed">{0} četrtletij</unitPattern>
-				<unitPattern count="two" case="instrumental" draft="contributed">{0} četrtletjema</unitPattern>
-				<unitPattern count="two" case="locative" draft="contributed">{0} četrtletjih</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} četrtletja</unitPattern>
-				<unitPattern count="few" case="accusative" draft="contributed">{0} četrtletja</unitPattern>
-				<unitPattern count="few" case="dative" draft="contributed">{0} četrtletjem</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} četrtletij</unitPattern>
-				<unitPattern count="few" case="instrumental" draft="contributed">{0} četrtletji</unitPattern>
-				<unitPattern count="few" case="locative" draft="contributed">{0} četrtletjih</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} četrtletij</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} četrtletij</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} četrtletjem</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} četrtletij</unitPattern>
-				<unitPattern count="other" case="instrumental" draft="contributed">{0} četrtletji</unitPattern>
-				<unitPattern count="other" case="locative" draft="contributed">{0} četrtletjih</unitPattern>
-				<perUnitPattern draft="contributed">{0}/četrtletje</perUnitPattern>
+				<gender>neuter</gender>
+				<displayName>četrtletje</displayName>
+				<unitPattern count="one">{0} četrtletje</unitPattern>
+				<unitPattern count="one" case="accusative">{0} četrtletje</unitPattern>
+				<unitPattern count="one" case="dative">{0} četrtletju</unitPattern>
+				<unitPattern count="one" case="genitive">{0} četrtletja</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} četrtletjem</unitPattern>
+				<unitPattern count="one" case="locative">{0} četrtletju</unitPattern>
+				<unitPattern count="two">{0} četrtletji</unitPattern>
+				<unitPattern count="two" case="accusative">{0} četrtletji</unitPattern>
+				<unitPattern count="two" case="dative">{0} četrtletjem</unitPattern>
+				<unitPattern count="two" case="genitive">{0} četrtletij</unitPattern>
+				<unitPattern count="two" case="instrumental">{0} četrtletjema</unitPattern>
+				<unitPattern count="two" case="locative">{0} četrtletjih</unitPattern>
+				<unitPattern count="few">{0} četrtletja</unitPattern>
+				<unitPattern count="few" case="accusative">{0} četrtletja</unitPattern>
+				<unitPattern count="few" case="dative">{0} četrtletjem</unitPattern>
+				<unitPattern count="few" case="genitive">{0} četrtletij</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} četrtletji</unitPattern>
+				<unitPattern count="few" case="locative">{0} četrtletjih</unitPattern>
+				<unitPattern count="other">{0} četrtletij</unitPattern>
+				<unitPattern count="other" case="accusative">{0} četrtletij</unitPattern>
+				<unitPattern count="other" case="dative">{0} četrtletjem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} četrtletij</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} četrtletji</unitPattern>
+				<unitPattern count="other" case="locative">{0} četrtletjih</unitPattern>
+				<perUnitPattern>{0}/četrtletje</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<gender>masculine</gender>
@@ -7227,11 +7239,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} voltih</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
+				<gender>feminine</gender>
 				<displayName>kilokalorije</displayName>
 				<unitPattern count="one">{0} kilokalorija</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilokalorijo</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilokaloriji</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilokalorije</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilokalorijo</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilokaloriji</unitPattern>
 				<unitPattern count="two">{0} kilokaloriji</unitPattern>
+				<unitPattern count="two" case="accusative">{0} kilokaloriji</unitPattern>
+				<unitPattern count="two" case="dative">{0} kilokalorijama</unitPattern>
+				<unitPattern count="two" case="genitive">{0} kilokalorij</unitPattern>
+				<unitPattern count="two" case="instrumental">{0} kilokalorijama</unitPattern>
+				<unitPattern count="two" case="locative">{0} kilokalorijah</unitPattern>
 				<unitPattern count="few">{0} kilokalorije</unitPattern>
+				<unitPattern count="few" case="accusative">{0} kilokalorije</unitPattern>
+				<unitPattern count="few" case="dative">{0} kilokalorijam</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilokalorij</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} kilokalorijami</unitPattern>
+				<unitPattern count="few" case="locative">{0} kilokalorijah</unitPattern>
 				<unitPattern count="other">{0} kilokalorij</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilokalorij</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilokalorijam</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilokalorij</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilokalorijami</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilokalorijah</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<gender>feminine</gender>
@@ -7543,8 +7576,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<gender>masculine</gender>
-				<unitPattern count="one">{0} em</unitPattern>
-				<unitPattern count="one" case="accusative">{0} em</unitPattern>
+				<unitPattern count="one">{0} emov</unitPattern>
+				<unitPattern count="one" case="accusative">{0} emov</unitPattern>
 				<unitPattern count="one" case="dative">{0} emu</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ema</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} emom</unitPattern>
@@ -7662,8 +7695,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="graphics-dot-per-inch">
 				<displayName>pik na palec</displayName>
 				<unitPattern count="one">{0} pika na palec</unitPattern>
-				<unitPattern count="two">{0} dpi</unitPattern>
-				<unitPattern count="few">{0} dpi</unitPattern>
+				<unitPattern count="two">{0} piki na palec</unitPattern>
+				<unitPattern count="few">{0} pike na palec</unitPattern>
 				<unitPattern count="other">{0} pik na palec</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
@@ -7999,11 +8032,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} skandinavskih miljah</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<gender>feminine</gender>
 				<displayName>točke</displayName>
 				<unitPattern count="one">{0} točka</unitPattern>
+				<unitPattern count="one" case="accusative">{0} točko</unitPattern>
+				<unitPattern count="one" case="dative">{0} točki</unitPattern>
+				<unitPattern count="one" case="genitive">{0} točke</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} točko</unitPattern>
+				<unitPattern count="one" case="locative">{0} točki</unitPattern>
 				<unitPattern count="two">{0} točki</unitPattern>
+				<unitPattern count="two" case="accusative">{0} točki</unitPattern>
+				<unitPattern count="two" case="dative">{0} točkama</unitPattern>
+				<unitPattern count="two" case="genitive">{0} točk</unitPattern>
+				<unitPattern count="two" case="instrumental">{0} točkama</unitPattern>
+				<unitPattern count="two" case="locative">{0} točkah</unitPattern>
 				<unitPattern count="few">{0} točke</unitPattern>
+				<unitPattern count="few" case="accusative">{0} točke</unitPattern>
+				<unitPattern count="few" case="dative">{0} točkam</unitPattern>
+				<unitPattern count="few" case="genitive">{0} točk</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} točkami</unitPattern>
+				<unitPattern count="few" case="locative">{0} točkah</unitPattern>
 				<unitPattern count="other">{0} točk</unitPattern>
+				<unitPattern count="other" case="accusative">{0} točk</unitPattern>
+				<unitPattern count="other" case="dative">{0} točkam</unitPattern>
+				<unitPattern count="other" case="genitive">{0} točk</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} točkami</unitPattern>
+				<unitPattern count="other" case="locative">{0} točkah</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>polmeri sonca</displayName>
@@ -8478,11 +8532,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} konjskih moči</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>masculine</gender>
 				<displayName>milimetri živega srebra</displayName>
 				<unitPattern count="one">{0} milimeter živega srebra</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milimeter živega srebra</unitPattern>
+				<unitPattern count="one" case="dative">{0} milimetru živega srebra</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milimetra živega srebra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milimetrom živega srebra</unitPattern>
+				<unitPattern count="one" case="locative">{0} milimetru živega srebra</unitPattern>
 				<unitPattern count="two">{0} milimetra živega srebra</unitPattern>
+				<unitPattern count="two" case="accusative">{0} milimetra živega srebra</unitPattern>
+				<unitPattern count="two" case="dative">{0} milimetroma živega srebra</unitPattern>
+				<unitPattern count="two" case="genitive">{0} milimetrov živega srebra</unitPattern>
+				<unitPattern count="two" case="instrumental">{0} milimetroma živega srebra</unitPattern>
+				<unitPattern count="two" case="locative">{0} milimetrih živega srebra</unitPattern>
 				<unitPattern count="few">{0} milimetri živega srebra</unitPattern>
+				<unitPattern count="few" case="accusative">{0} milimetre živega srebra</unitPattern>
+				<unitPattern count="few" case="dative">{0} milimetrom živega srebra</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milimetrov živega srebra</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} milimetri živega srebra</unitPattern>
+				<unitPattern count="few" case="locative">{0} milimetrih živega srebra</unitPattern>
 				<unitPattern count="other">{0} milimetrov živega srebra</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milimetrov živega srebra</unitPattern>
+				<unitPattern count="other" case="dative">{0} milimetrom živega srebra</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milimetrov živega srebra</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milimetri živega srebra</unitPattern>
+				<unitPattern count="other" case="locative">{0} milimetrih živega srebra</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>funti na kvadratni palec</displayName>
@@ -9011,7 +9086,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kubičnih palcev</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>megalitri</displayName>
 				<unitPattern count="one">{0} megaliter</unitPattern>
 				<unitPattern count="one" case="accusative">{0} megaliter</unitPattern>
@@ -9334,6 +9409,91 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} imp. kvarti</unitPattern>
 				<unitPattern count="other">{0} imp. kvartov</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<gender>feminine</gender>
+				<displayName>svetloba</displayName>
+				<unitPattern count="one">{0} svetloba</unitPattern>
+				<unitPattern count="one" case="accusative">{0} svetlobo</unitPattern>
+				<unitPattern count="one" case="dative">{0} svetlobi</unitPattern>
+				<unitPattern count="one" case="genitive">{0} svetlobe</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} svetlobo</unitPattern>
+				<unitPattern count="one" case="locative">{0} svetlobi</unitPattern>
+				<unitPattern count="two">{0} svetlobi</unitPattern>
+				<unitPattern count="two" case="accusative">{0} svetlobi</unitPattern>
+				<unitPattern count="two" case="dative">{0} svetlobama</unitPattern>
+				<unitPattern count="two" case="genitive">{0} svetlob</unitPattern>
+				<unitPattern count="two" case="instrumental">{0} svetlobama</unitPattern>
+				<unitPattern count="two" case="locative">{0} svetlobah</unitPattern>
+				<unitPattern count="few">{0} svetlobe</unitPattern>
+				<unitPattern count="few" case="accusative">{0} svetlobe</unitPattern>
+				<unitPattern count="few" case="dative">{0} svetlobam</unitPattern>
+				<unitPattern count="few" case="genitive">{0} svetlob</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} svetlobami</unitPattern>
+				<unitPattern count="few" case="locative">{0} svetlobah</unitPattern>
+				<unitPattern count="other">{0} svetlob</unitPattern>
+				<unitPattern count="other" case="accusative">{0} svetlob</unitPattern>
+				<unitPattern count="other" case="dative">{0} svetlobam</unitPattern>
+				<unitPattern count="other" case="genitive">{0} svetlob</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} svetlobami</unitPattern>
+				<unitPattern count="other" case="locative">{0} svetlobah</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>masculine</gender>
+				<displayName>delci na milijardo</displayName>
+				<unitPattern count="one">{0} delec na milijardo</unitPattern>
+				<unitPattern count="one" case="accusative">{0} delec na milijardo</unitPattern>
+				<unitPattern count="one" case="dative">{0} delcu na milijardo</unitPattern>
+				<unitPattern count="one" case="genitive">{0} delca na milijardo</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} delcem na milijardo</unitPattern>
+				<unitPattern count="one" case="locative">{0} delcu na milijardo</unitPattern>
+				<unitPattern count="two">{0} delca na milijardo</unitPattern>
+				<unitPattern count="two" case="accusative">{0} delca na milijardo</unitPattern>
+				<unitPattern count="two" case="dative">{0} delcema na milijardo</unitPattern>
+				<unitPattern count="two" case="genitive">{0} delcev na milijardo</unitPattern>
+				<unitPattern count="two" case="instrumental">{0} delcema na milijardo</unitPattern>
+				<unitPattern count="two" case="locative">{0} delcih na milijardo</unitPattern>
+				<unitPattern count="few">{0} delci na milijardo</unitPattern>
+				<unitPattern count="few" case="accusative">{0} delce na milijardo</unitPattern>
+				<unitPattern count="few" case="dative">{0} delcem na milijardo</unitPattern>
+				<unitPattern count="few" case="genitive">{0} delcev na milijardo</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} delci na milijardo</unitPattern>
+				<unitPattern count="few" case="locative">{0} delcih na milijardo</unitPattern>
+				<unitPattern count="other">{0} delcev na milijardo</unitPattern>
+				<unitPattern count="other" case="accusative">{0} delcev na milijardo</unitPattern>
+				<unitPattern count="other" case="dative">{0} delcem na milijardo</unitPattern>
+				<unitPattern count="other" case="genitive">{0} delcev na milijardo</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} delci na milijardo</unitPattern>
+				<unitPattern count="other" case="locative">{0} delcih na milijardo</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>feminine</gender>
+				<displayName>noči</displayName>
+				<unitPattern count="one">{0} noč</unitPattern>
+				<unitPattern count="one" case="accusative">{0} noč</unitPattern>
+				<unitPattern count="one" case="dative">{0} noči</unitPattern>
+				<unitPattern count="one" case="genitive">{0} noči</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nočjo</unitPattern>
+				<unitPattern count="one" case="locative">{0} noči</unitPattern>
+				<unitPattern count="two">{0} noči</unitPattern>
+				<unitPattern count="two" case="accusative">{0} noči</unitPattern>
+				<unitPattern count="two" case="dative">{0} nočema</unitPattern>
+				<unitPattern count="two" case="genitive">{0} noči</unitPattern>
+				<unitPattern count="two" case="instrumental">{0} nočema</unitPattern>
+				<unitPattern count="two" case="locative">{0} nočeh</unitPattern>
+				<unitPattern count="few">{0} noči</unitPattern>
+				<unitPattern count="few" case="accusative">{0} noči</unitPattern>
+				<unitPattern count="few" case="dative">{0} nočem</unitPattern>
+				<unitPattern count="few" case="genitive">{0} noči</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} nočmi</unitPattern>
+				<unitPattern count="few" case="locative">{0} nočeh</unitPattern>
+				<unitPattern count="other">{0} noči</unitPattern>
+				<unitPattern count="other" case="accusative">{0} noči</unitPattern>
+				<unitPattern count="other" case="dative">{0} nočem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} noči</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} nočmi</unitPattern>
+				<unitPattern count="other" case="locative">{0} nočeh</unitPattern>
+				<perUnitPattern>{0} na noč</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>stran neba</displayName>
 				<coordinateUnitPattern type="east">{0} vzhodno</coordinateUnitPattern>
@@ -9477,12 +9637,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/l</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
-				<displayName draft="contributed">četrt</displayName>
-				<unitPattern count="one" draft="contributed">{0} četrtl.</unitPattern>
-				<unitPattern count="two" draft="contributed">{0} četrtl.</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} četrtl.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} četrtl.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/četrt</perUnitPattern>
+				<displayName>četrt</displayName>
+				<unitPattern count="one">{0} četrtl.</unitPattern>
+				<unitPattern count="two">{0} četrtl.</unitPattern>
+				<unitPattern count="few">{0} četrtl.</unitPattern>
+				<unitPattern count="other">{0} četrtl.</unitPattern>
+				<perUnitPattern>{0}/četrt</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>meseci</displayName>
@@ -9524,6 +9684,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-joule">
 				<displayName>J</displayName>
+			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0} emov</unitPattern>
+				<unitPattern count="two">{0} ema</unitPattern>
+				<unitPattern count="few">{0} emi</unitPattern>
+				<unitPattern count="other">{0} emov</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>dpcm</displayName>
@@ -9568,6 +9734,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-fathom">
 				<displayName>sežnji</displayName>
+			</unit>
+			<unit type="length-point">
+				<displayName>točke</displayName>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>g</displayName>
@@ -9769,6 +9938,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} imp. qt</unitPattern>
 				<unitPattern count="other">{0} imp. qt</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>svetloba</displayName>
+				<unitPattern count="one">{0} svetloba</unitPattern>
+				<unitPattern count="two">{0} svetlobi</unitPattern>
+				<unitPattern count="few">{0} svetlobe</unitPattern>
+				<unitPattern count="other">{0} svetlob</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noči</displayName>
+				<unitPattern count="one">{0} noč</unitPattern>
+				<unitPattern count="two">{0} noči</unitPattern>
+				<unitPattern count="few">{0} noči</unitPattern>
+				<unitPattern count="other">{0} noči</unitPattern>
+				<perUnitPattern>{0}/noč</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>smer</displayName>
 				<coordinateUnitPattern type="east">{0} V</coordinateUnitPattern>
@@ -9792,31 +9976,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-century">
 				<displayName>st.</displayName>
-				<unitPattern count="one" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="two" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} st</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} st</unitPattern>
+				<unitPattern count="one">{0} st</unitPattern>
+				<unitPattern count="two">{0} st</unitPattern>
+				<unitPattern count="few">{0} st</unitPattern>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>let</displayName>
 			</unit>
 			<unit type="duration-quarter">
-				<unitPattern count="one" draft="contributed">{0} čl.</unitPattern>
-				<unitPattern count="two" draft="contributed">{0} čl.</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} čl.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} čl.</unitPattern>
+				<unitPattern count="one">{0} čl.</unitPattern>
+				<unitPattern count="two">{0} čl.</unitPattern>
+				<unitPattern count="few">{0} čl.</unitPattern>
+				<unitPattern count="other">{0} čl.</unitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName>mesecev</displayName>
+				<displayName>mesec</displayName>
 			</unit>
 			<unit type="duration-week">
-				<displayName>tednov</displayName>
+				<displayName>t</displayName>
 			</unit>
 			<unit type="duration-day">
-				<perUnitPattern draft="contributed">{0}/dan.</perUnitPattern>
+				<perUnitPattern>{0}/dan.</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>ur</displayName>
+				<displayName>ura</displayName>
 			</unit>
 			<unit type="duration-second">
 				<displayName>s</displayName>
@@ -9824,6 +10008,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} s</unitPattern>
 				<unitPattern count="few">{0} s</unitPattern>
 				<unitPattern count="other">{0} s</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0} emov</unitPattern>
+				<unitPattern count="two">{0} ema</unitPattern>
+				<unitPattern count="few">{0} emi</unitPattern>
+				<unitPattern count="other">{0} emov</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>pika</displayName>
@@ -9863,16 +10053,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} imp. des. žl.</unitPattern>
 				<unitPattern count="other">{0} imp. des. žl.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>svetloba</displayName>
+				<unitPattern count="one">{0} svetloba</unitPattern>
+				<unitPattern count="two">{0} svetlobi</unitPattern>
+				<unitPattern count="few">{0} svetlobe</unitPattern>
+				<unitPattern count="other">{0} svetlob</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noči</displayName>
+				<unitPattern count="one">{0} n</unitPattern>
+				<unitPattern count="two">{0} n</unitPattern>
+				<unitPattern count="few">{0} n</unitPattern>
+				<unitPattern count="other">{0} n</unitPattern>
+				<perUnitPattern>{0}/noč</perUnitPattern>
+			</unit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern>h.mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h.mm.ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m.ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
