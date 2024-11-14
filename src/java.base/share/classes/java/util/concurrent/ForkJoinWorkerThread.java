@@ -35,10 +35,6 @@
 
 package java.util.concurrent;
 
-import java.security.AccessController;
-import java.security.AccessControlContext;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 
@@ -245,8 +241,7 @@ public class ForkJoinWorkerThread extends Thread {
 
         @Override // paranoically
         public void setContextClassLoader(ClassLoader cl) {
-            if (cl != null && ClassLoader.getSystemClassLoader() != cl)
-                throw new SecurityException("setContextClassLoader");
+            // No-op, do not change the context class loader
         }
 
         static ThreadGroup createGroup() {
