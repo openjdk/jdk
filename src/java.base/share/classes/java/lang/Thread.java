@@ -27,9 +27,6 @@ package java.lang;
 
 import java.lang.ref.Reference;
 import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.AccessControlContext;
-import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.util.Map;
 import java.util.HashMap;
@@ -41,8 +38,6 @@ import jdk.internal.event.ThreadSleepEvent;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ScopedValueContainer;
 import jdk.internal.vm.StackableScope;
@@ -52,7 +47,6 @@ import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.Interruptible;
-import sun.security.util.SecurityConstants;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -653,21 +647,6 @@ public class Thread implements Runnable {
     }
 
     /**
-     * Returns the context class loader to inherit from the parent thread.
-     * See Thread initialization.
-     */
-    private static ClassLoader contextClassLoader(Thread parent) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null || isCCLOverridden(parent.getClass())) {
-            return parent.getContextClassLoader();
-        } else {
-            // skip call to getContextClassLoader
-            return parent.contextClassLoader;
-        }
-    }
-
-    /**
      * Initializes a platform Thread.
      *
      * @param g the Thread group, can be null
@@ -676,11 +655,8 @@ public class Thread implements Runnable {
      * @param task the object whose run() method gets called
      * @param stackSize the desired stack size for the new thread, or
      *        zero to indicate that this parameter is to be ignored.
-     * @param acc ignored
      */
-    @SuppressWarnings("removal")
-    Thread(ThreadGroup g, String name, int characteristics, Runnable task,
-           long stackSize, AccessControlContext acc) {
+    Thread(ThreadGroup g, String name, int characteristics, Runnable task, long stackSize) {
 
         Thread parent = currentThread();
         boolean attached = (parent == this);   // primordial or JNI attached
@@ -691,27 +667,10 @@ public class Thread implements Runnable {
             }
             this.holder = new FieldHolder(g, task, stackSize, NORM_PRIORITY, false);
         } else {
-            SecurityManager sm = System.getSecurityManager();
             if (g == null) {
-                // the security manager can choose the thread group
-                if (sm != null) {
-                    g = sm.getThreadGroup();
-                }
-
                 // default to current thread's group
-                if (g == null) {
-                    g = parent.getThreadGroup();
-                }
+                g = parent.getThreadGroup();
             }
-
-            // permission checks when creating a child Thread
-            if (sm != null) {
-                sm.checkAccess(g);
-                if (isCCLOverridden(getClass())) {
-                    sm.checkPermission(SecurityConstants.SUBCLASS_IMPLEMENTATION_PERMISSION);
-                }
-            }
-
             int priority = Math.min(parent.getPriority(), g.getMaxPriority());
             this.holder = new FieldHolder(g, task, stackSize, priority, parent.isDaemon());
         }
@@ -732,7 +691,7 @@ public class Thread implements Runnable {
                     this.inheritableThreadLocals = ThreadLocal.createInheritedMap(parentMap);
                 }
                 if (VM.isBooted()) {
-                    this.contextClassLoader = contextClassLoader(parent);
+                    this.contextClassLoader = parent.getContextClassLoader();
                 }
             } else if (VM.isBooted()) {
                 // default CCL to the system class loader when not inheriting
@@ -763,7 +722,7 @@ public class Thread implements Runnable {
             if (parentMap != null && parentMap.size() > 0) {
                 this.inheritableThreadLocals = ThreadLocal.createInheritedMap(parentMap);
             }
-            this.contextClassLoader = contextClassLoader(parent);
+            this.contextClassLoader = parent.getContextClassLoader();
         } else {
             // default CCL to the system class loader when not inheriting
             this.contextClassLoader = ClassLoader.getSystemClassLoader();
@@ -1105,7 +1064,7 @@ public class Thread implements Runnable {
      * @see <a href="#inheritance">Inheritance when creating threads</a>
      */
     public Thread() {
-        this(null, null, 0, null, 0, null);
+        this(null, null, 0, null, 0);
     }
 
     /**
@@ -1126,16 +1085,7 @@ public class Thread implements Runnable {
      * @see <a href="#inheritance">Inheritance when creating threads</a>
      */
     public Thread(Runnable task) {
-        this(null, null, 0, task, 0, null);
-    }
-
-    /**
-     * Creates a new Thread that inherits the given AccessControlContext
-     * but thread-local variables are not inherited.
-     * This is not a public constructor.
-     */
-    Thread(Runnable task, @SuppressWarnings("removal") AccessControlContext acc) {
-        this(null, null, 0, task, 0, acc);
+        this(null, null, 0, task, 0);
     }
 
     /**
@@ -1160,7 +1110,7 @@ public class Thread implements Runnable {
      * @see <a href="#inheritance">Inheritance when creating threads</a>
      */
     public Thread(ThreadGroup group, Runnable task) {
-        this(group, null, 0, task, 0, null);
+        this(group, null, 0, task, 0);
     }
 
     /**
@@ -1177,7 +1127,7 @@ public class Thread implements Runnable {
      * @see <a href="#inheritance">Inheritance when creating threads</a>
      */
     public Thread(String name) {
-        this(null, checkName(name), 0, null, 0, null);
+        this(null, checkName(name), 0, null, 0);
     }
 
     /**
@@ -1198,7 +1148,7 @@ public class Thread implements Runnable {
      * @see <a href="#inheritance">Inheritance when creating threads</a>
      */
     public Thread(ThreadGroup group, String name) {
-        this(group, checkName(name), 0, null, 0, null);
+        this(group, checkName(name), 0, null, 0);
     }
 
     /**
@@ -1220,7 +1170,7 @@ public class Thread implements Runnable {
      * @see <a href="#inheritance">Inheritance when creating threads</a>
      */
     public Thread(Runnable task, String name) {
-        this(null, checkName(name), 0, task, 0, null);
+        this(null, checkName(name), 0, task, 0);
     }
 
     /**
@@ -1256,7 +1206,7 @@ public class Thread implements Runnable {
      * @see <a href="#inheritance">Inheritance when creating threads</a>
      */
     public Thread(ThreadGroup group, Runnable task, String name) {
-        this(group, checkName(name), 0, task, 0, null);
+        this(group, checkName(name), 0, task, 0);
     }
 
     /**
@@ -1330,7 +1280,7 @@ public class Thread implements Runnable {
      * @see <a href="#inheritance">Inheritance when creating threads</a>
      */
     public Thread(ThreadGroup group, Runnable task, String name, long stackSize) {
-        this(group, checkName(name), 0, task, stackSize, null);
+        this(group, checkName(name), 0, task, stackSize);
     }
 
     /**
@@ -1390,7 +1340,7 @@ public class Thread implements Runnable {
                   long stackSize, boolean inheritInheritableThreadLocals) {
         this(group, checkName(name),
                 (inheritInheritableThreadLocals ? 0 : NO_INHERIT_THREAD_LOCALS),
-                task, stackSize, null);
+                task, stackSize);
     }
 
     /**
@@ -2140,18 +2090,8 @@ public class Thread implements Runnable {
      *
      * @since 1.2
      */
-    @CallerSensitive
     public ClassLoader getContextClassLoader() {
-        ClassLoader cl = this.contextClassLoader;
-        if (cl == null)
-            return null;
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            Class<?> caller = Reflection.getCallerClass();
-            ClassLoader.checkClassLoaderPermission(cl, caller);
-        }
-        return cl;
+        return contextClassLoader;
     }
 
     /**
@@ -2167,11 +2107,6 @@ public class Thread implements Runnable {
      * @since 1.2
      */
     public void setContextClassLoader(ClassLoader cl) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("setContextClassLoader"));
-        }
         contextClassLoader = cl;
     }
 
@@ -2220,12 +2155,6 @@ public class Thread implements Runnable {
      */
     public StackTraceElement[] getStackTrace() {
         if (this != Thread.currentThread()) {
-            // check for getStackTrace permission
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkPermission(SecurityConstants.GET_STACK_TRACE_PERMISSION);
-            }
             // optimization so we do not call into the vm for threads that
             // have not yet started or have terminated
             if (!isAlive()) {
@@ -2285,14 +2214,6 @@ public class Thread implements Runnable {
      * @since 1.5
      */
     public static Map<Thread, StackTraceElement[]> getAllStackTraces() {
-        // check for getStackTrace permission
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(SecurityConstants.GET_STACK_TRACE_PERMISSION);
-            security.checkPermission(SecurityConstants.MODIFY_THREADGROUP_PERMISSION);
-        }
-
         // Get a snapshot of the list of all threads
         Thread[] threads = getThreads();
         StackTraceElement[][] traces = dumpThreads(threads);
@@ -2305,64 +2226,6 @@ public class Thread implements Runnable {
             // else terminated so we don't put it in the map
         }
         return m;
-    }
-
-    /** cache of subclass security audit results */
-    private static class Caches {
-        /** cache of subclass security audit results */
-        static final ClassValue<Boolean> subclassAudits =
-            new ClassValue<>() {
-                @Override
-                protected Boolean computeValue(Class<?> type) {
-                    return auditSubclass(type);
-                }
-            };
-    }
-
-    /**
-     * Verifies that this (possibly subclass) instance can be constructed
-     * without violating security constraints: the subclass must not override
-     * security-sensitive non-final methods, or else the
-     * "enableContextClassLoaderOverride" RuntimePermission is checked.
-     */
-    private static boolean isCCLOverridden(Class<?> cl) {
-        if (cl == Thread.class)
-            return false;
-
-        return Caches.subclassAudits.get(cl);
-    }
-
-    /**
-     * Performs reflective checks on given subclass to verify that it doesn't
-     * override security-sensitive non-final methods.  Returns true if the
-     * subclass overrides any of the methods, false otherwise.
-     */
-    private static boolean auditSubclass(final Class<?> subcl) {
-        @SuppressWarnings("removal")
-        Boolean result = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public Boolean run() {
-                    for (Class<?> cl = subcl;
-                         cl != Thread.class;
-                         cl = cl.getSuperclass())
-                    {
-                        try {
-                            cl.getDeclaredMethod("getContextClassLoader", new Class<?>[0]);
-                            return Boolean.TRUE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                        try {
-                            Class<?>[] params = {ClassLoader.class};
-                            cl.getDeclaredMethod("setContextClassLoader", params);
-                            return Boolean.TRUE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                    }
-                    return Boolean.FALSE;
-                }
-            }
-        );
-        return result.booleanValue();
     }
 
     /**
@@ -2603,12 +2466,6 @@ public class Thread implements Runnable {
      * @since 1.5
      */
     public static void setDefaultUncaughtExceptionHandler(UncaughtExceptionHandler ueh) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(
-                new RuntimePermission("setDefaultUncaughtExceptionHandler"));
-        }
         defaultUncaughtExceptionHandler = ueh;
     }
 
@@ -2675,7 +2532,6 @@ public class Thread implements Runnable {
     /**
      * Holder class for constants.
      */
-    @SuppressWarnings("removal")
     private static class Constants {
         // Thread group for virtual threads.
         static final ThreadGroup VTHREAD_GROUP;

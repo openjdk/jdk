@@ -39,6 +39,16 @@ elapsedTimer Phase::_t_stubCompilation;
 // The counters to use for LogCompilation
 elapsedTimer Phase::timers[max_phase_timers];
 
+const char* Phase::get_phase_trace_id_text(PhaseTraceId id) {
+  static const char* const texts[] = {
+  #define DEF_TEXT(name, text) text,
+      ALL_PHASE_TRACE_IDS(DEF_TEXT)
+  #undef DEF_TEXT
+      nullptr
+  };
+  return texts[(int)id];
+}
+
 //------------------------------Phase------------------------------------------
 Phase::Phase( PhaseNumber pnum ) : _pnum(pnum), C( pnum == Compiler ? nullptr : Compile::current()) {
   // Poll for requests from shutdown mechanism to quiesce compiler (4448539, 4448544).
