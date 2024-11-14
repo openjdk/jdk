@@ -288,12 +288,24 @@ int VectorNode::scalar_opcode(int sopc, BasicType bt) {
     case Op_AddReductionVL:
     case Op_AddVL:
       return Op_AddL;
+    case Op_AddReductionVF:
+    case Op_AddVF:
+      return Op_AddF;
+    case Op_AddReductionVD:
+    case Op_AddVD:
+      return Op_AddD;
     case Op_MulReductionVI:
     case Op_MulVI:
       return Op_MulI;
     case Op_MulReductionVL:
     case Op_MulVL:
       return Op_MulL;
+    case Op_MulReductionVF:
+    case Op_MulVF:
+      return Op_MulF;
+    case Op_MulReductionVD:
+    case Op_MulVD:
+      return Op_MulD;
     case Op_AndReductionV:
     case Op_AndV:
       switch (bt) {

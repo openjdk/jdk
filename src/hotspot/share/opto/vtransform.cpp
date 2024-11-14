@@ -288,7 +288,15 @@ VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& 
   Node* init = find_transformed_input(1, vnode_idx_to_transformed_node);
   Node* vec  = find_transformed_input(2, vnode_idx_to_transformed_node);
 
-  ReductionNode* vn = ReductionNode::make(opc, nullptr, init, vec, bt);
+  // TODO maybe put in a special method
+  bool requires_strict_order = false;
+  switch (opc) {
+  case Op_AddF: case Op_MulF: case Op_AddD: case Op_MulD:
+    requires_strict_order = true;
+    break;
+  }
+
+  ReductionNode* vn = ReductionNode::make(opc, nullptr, init, vec, bt, requires_strict_order);
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
