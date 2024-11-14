@@ -41,7 +41,6 @@ import jdk.internal.javac.PreviewFeature;
 public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
         implements Attribute<T>, CodeElement, ClassElement, MethodElement, FieldElement {
 
-    private final Utf8Entry name;
     private final AttributeMapper<T> mapper;
 
     /**
@@ -49,16 +48,6 @@ public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
      * @param mapper the attribute mapper
      */
     protected CustomAttribute(AttributeMapper<T> mapper) {
-        this(TemporaryConstantPool.INSTANCE.utf8Entry(mapper.name()), mapper);
-    }
-
-    /**
-     * Construct a {@linkplain CustomAttribute}.
-     * @param name the attribute name
-     * @param mapper the attribute mapper
-     */
-    protected CustomAttribute(Utf8Entry name, AttributeMapper<T> mapper) {
-        this.name = name;
         this.mapper = mapper;
     }
 
@@ -68,8 +57,8 @@ public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
     }
 
     @Override
-    public final Utf8Entry attributeName() {
-        return name;
+    public Utf8Entry attributeName() {
+        return TemporaryConstantPool.INSTANCE.utf8Entry(mapper.name());
     }
 
     @Override

@@ -24,7 +24,6 @@
  */
 package java.lang.classfile;
 
-import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -89,14 +88,13 @@ public interface AttributeMapper<A extends Attribute<A>> {
     /**
      * Create an {@link Attribute} instance from a classfile.
      *
-     * @param name Attribute name
      * @param enclosing The class, method, field, or code attribute in which
      *                  this attribute appears
      * @param cf The {@link ClassReader} describing the classfile to read from
      * @param pos The offset into the classfile at which the attribute starts
      * @return the new attribute
      */
-    A readAttribute(Utf8Entry name, AttributedElement enclosing, ClassReader cf, int pos);
+    A readAttribute(AttributedElement enclosing, ClassReader cf, int pos);
 
     /**
      * Write an {@link Attribute} instance to a classfile.

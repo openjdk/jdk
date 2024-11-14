@@ -30,7 +30,6 @@ import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.classfile.instruction.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,12 +76,11 @@ public final class CodeImpl
     int[] lineNumbers;
     boolean inflated;
 
-    public CodeImpl(Utf8Entry name,
-                    AttributedElement enclosing,
+    public CodeImpl(AttributedElement enclosing,
                     ClassReader reader,
                     AttributeMapper<CodeAttribute> mapper,
                     int payloadStart) {
-        super(name, enclosing, reader, mapper, payloadStart);
+        super(enclosing, reader, mapper, payloadStart);
     }
 
     // LabelContext

@@ -31,7 +31,6 @@ import java.lang.classfile.AttributedElement;
 import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassReader;
 import java.lang.classfile.attribute.*;
-import java.lang.classfile.constantpool.Utf8Entry;
 import java.util.List;
 
 import static java.lang.classfile.Attributes.*;
@@ -96,8 +95,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public AnnotationDefaultAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundAnnotationDefaultAttr(name, cf, this, p);
+        public AnnotationDefaultAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundAnnotationDefaultAttr(cf, this, p);
         }
 
         @Override
@@ -114,8 +113,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public BootstrapMethodsAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundBootstrapMethodsAttribute(name, cf, this, p);
+        public BootstrapMethodsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundBootstrapMethodsAttribute(cf, this, p);
         }
 
         @Override
@@ -136,8 +135,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public CharacterRangeTableAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundCharacterRangeTableAttribute(name, cf, this, p);
+        public CharacterRangeTableAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundCharacterRangeTableAttribute(cf, this, p);
         }
 
         @Override
@@ -161,8 +160,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public CodeAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new CodeImpl(name, e, cf, this, p);
+        public CodeAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new CodeImpl(e, cf, this, p);
         }
 
         @Override
@@ -179,8 +178,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public CompilationIDAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundCompilationIDAttribute(name, cf, this, p);
+        public CompilationIDAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundCompilationIDAttribute(cf, this, p);
         }
 
         @Override
@@ -197,8 +196,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public ConstantValueAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundConstantValueAttribute(name, cf, this, p);
+        public ConstantValueAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundConstantValueAttribute(cf, this, p);
         }
 
         @Override
@@ -215,8 +214,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public DeprecatedAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundDeprecatedAttribute(name, cf, this, p);
+        public DeprecatedAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundDeprecatedAttribute(cf, this, p);
         }
 
         @Override
@@ -233,8 +232,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public EnclosingMethodAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundEnclosingMethodAttribute(name, cf, this, p);
+        public EnclosingMethodAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundEnclosingMethodAttribute(cf, this, p);
         }
 
         @Override
@@ -253,8 +252,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public ExceptionsAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundExceptionsAttribute(name, cf, this, p);
+        public ExceptionsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundExceptionsAttribute(cf, this, p);
         }
 
         @Override
@@ -271,8 +270,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public InnerClassesAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundInnerClassesAttribute(name, cf, this, p);
+        public InnerClassesAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundInnerClassesAttribute(cf, this, p);
         }
 
         @Override
@@ -297,8 +296,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public LineNumberTableAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundLineNumberTableAttribute(name, cf, this, p);
+        public LineNumberTableAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundLineNumberTableAttribute(cf, this, p);
         }
 
         @Override
@@ -320,8 +319,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public LocalVariableTableAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundLocalVariableTableAttribute(name, e, cf, this, p);
+        public LocalVariableTableAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundLocalVariableTableAttribute(e, cf, this, p);
         }
 
         @Override
@@ -344,8 +343,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public LocalVariableTypeTableAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundLocalVariableTypeTableAttribute(name, e, cf, this, p);
+        public LocalVariableTypeTableAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundLocalVariableTypeTableAttribute(e, cf, this, p);
         }
 
         @Override
@@ -368,8 +367,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public MethodParametersAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundMethodParametersAttribute(name, cf, this, p);
+        public MethodParametersAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundMethodParametersAttribute(cf, this, p);
         }
 
         @Override
@@ -392,8 +391,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public ModuleAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundModuleAttribute(name, cf, this, p);
+        public ModuleAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundModuleAttribute(cf, this, p);
         }
 
         @Override
@@ -437,8 +436,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public ModuleHashesAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundModuleHashesAttribute(name, cf, this, p);
+        public ModuleHashesAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundModuleHashesAttribute(cf, this, p);
         }
 
         @Override
@@ -462,8 +461,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public ModuleMainClassAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundModuleMainClassAttribute(name, cf, this, p);
+        public ModuleMainClassAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundModuleMainClassAttribute(cf, this, p);
         }
 
         @Override
@@ -480,8 +479,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public ModulePackagesAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundModulePackagesAttribute(name, cf, this, p);
+        public ModulePackagesAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundModulePackagesAttribute(cf, this, p);
         }
 
         @Override
@@ -498,8 +497,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public ModuleResolutionAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundModuleResolutionAttribute(name, cf, this, p);
+        public ModuleResolutionAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundModuleResolutionAttribute(cf, this, p);
         }
 
         @Override
@@ -516,8 +515,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public ModuleTargetAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundModuleTargetAttribute(name, cf, this, p);
+        public ModuleTargetAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundModuleTargetAttribute(cf, this, p);
         }
 
         @Override
@@ -534,8 +533,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public NestHostAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundNestHostAttribute(name, cf, this, p);
+        public NestHostAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundNestHostAttribute(cf, this, p);
         }
 
         @Override
@@ -552,8 +551,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public NestMembersAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundNestMembersAttribute(name, cf, this, p);
+        public NestMembersAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundNestMembersAttribute(cf, this, p);
         }
 
         @Override
@@ -570,8 +569,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public PermittedSubclassesAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundPermittedSubclassesAttribute(name, cf, this, p);
+        public PermittedSubclassesAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundPermittedSubclassesAttribute(cf, this, p);
         }
 
         @Override
@@ -588,8 +587,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public RecordAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundRecordAttribute(name, cf, this, p);
+        public RecordAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundRecordAttribute(cf, this, p);
         }
 
         @Override
@@ -613,8 +612,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public RuntimeInvisibleAnnotationsAttribute readAttribute(Utf8Entry name, AttributedElement enclosing, ClassReader cf, int pos) {
-            return new BoundAttribute.BoundRuntimeInvisibleAnnotationsAttribute(name, cf, pos);
+        public RuntimeInvisibleAnnotationsAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
+            return new BoundAttribute.BoundRuntimeInvisibleAnnotationsAttribute(cf, pos);
         }
 
         @Override
@@ -631,8 +630,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public RuntimeInvisibleParameterAnnotationsAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundRuntimeInvisibleParameterAnnotationsAttribute(name, cf, this, p);
+        public RuntimeInvisibleParameterAnnotationsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundRuntimeInvisibleParameterAnnotationsAttribute(cf, this, p);
         }
 
         @Override
@@ -652,8 +651,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public RuntimeInvisibleTypeAnnotationsAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundRuntimeInvisibleTypeAnnotationsAttribute(name, e, cf, this, p);
+        public RuntimeInvisibleTypeAnnotationsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundRuntimeInvisibleTypeAnnotationsAttribute(e, cf, this, p);
         }
 
         @Override
@@ -670,8 +669,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public RuntimeVisibleAnnotationsAttribute readAttribute(Utf8Entry name, AttributedElement enclosing, ClassReader cf, int pos) {
-            return new BoundAttribute.BoundRuntimeVisibleAnnotationsAttribute(name, cf, pos);
+        public RuntimeVisibleAnnotationsAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
+            return new BoundAttribute.BoundRuntimeVisibleAnnotationsAttribute(cf, pos);
         }
 
         @Override
@@ -688,8 +687,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public RuntimeVisibleParameterAnnotationsAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundRuntimeVisibleParameterAnnotationsAttribute(name, cf, this, p);
+        public RuntimeVisibleParameterAnnotationsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundRuntimeVisibleParameterAnnotationsAttribute(cf, this, p);
         }
 
         @Override
@@ -709,8 +708,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public RuntimeVisibleTypeAnnotationsAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundRuntimeVisibleTypeAnnotationsAttribute(name, e, cf, this, p);
+        public RuntimeVisibleTypeAnnotationsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundRuntimeVisibleTypeAnnotationsAttribute(e, cf, this, p);
         }
 
         @Override
@@ -727,8 +726,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public SignatureAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundSignatureAttribute(name, cf, this, p);
+        public SignatureAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundSignatureAttribute(cf, this, p);
         }
 
         @Override
@@ -745,8 +744,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public SourceDebugExtensionAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundSourceDebugExtensionAttribute(name, cf, this, p);
+        public SourceDebugExtensionAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundSourceDebugExtensionAttribute(cf, this, p);
         }
 
         @Override
@@ -763,8 +762,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public SourceFileAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundSourceFileAttribute(name, cf, this, p);
+        public SourceFileAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundSourceFileAttribute(cf, this, p);
         }
 
         @Override
@@ -781,8 +780,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public SourceIDAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundSourceIDAttribute(name, cf, this, p);
+        public SourceIDAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundSourceIDAttribute(cf, this, p);
         }
 
         @Override
@@ -799,8 +798,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public StackMapTableAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundStackMapTableAttribute(name, (CodeImpl)e, cf, this, p);
+        public StackMapTableAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundStackMapTableAttribute((CodeImpl)e, cf, this, p);
         }
 
         @Override
@@ -817,8 +816,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        public SyntheticAttribute readAttribute(Utf8Entry name, AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundSyntheticAttribute(name, cf, this, p);
+        public SyntheticAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundSyntheticAttribute(cf, this, p);
         }
 
         @Override

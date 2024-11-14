@@ -31,8 +31,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-
 import static org.junit.jupiter.api.Assertions.*;
+
 
 import java.io.IOException;
 import java.lang.constant.ClassDesc;
@@ -43,7 +43,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.lang.classfile.*;
-import java.lang.classfile.constantpool.Utf8Entry;
 
 /**
  * OptionsTest
@@ -82,7 +81,7 @@ class OptionsTest {
         }
 
         @Override
-        public StrangeAttribute readAttribute(Utf8Entry name, AttributedElement enclosing, ClassReader cf, int pos) {
+        public StrangeAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
             return new StrangeAttribute();
         }
 

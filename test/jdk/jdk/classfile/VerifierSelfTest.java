@@ -379,7 +379,7 @@ class VerifierSelfTest {
                 }
 
                 @Override
-                public CloneAttribute readAttribute(Utf8Entry name, AttributedElement enclosing, ClassReader cf, int pos) {
+                public CloneAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
                     throw new UnsupportedOperationException();
                 }
 

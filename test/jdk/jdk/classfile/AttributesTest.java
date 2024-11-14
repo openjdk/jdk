@@ -70,7 +70,7 @@ class AttributesTest {
         }
 
         @Override
-        public TestAttribute readAttribute(Utf8Entry name, AttributedElement enclosing, ClassReader cf, int pos) {
+        public TestAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
             int cpPos = pos - 6; // Attribute Name Utf8
             // Test valid pos/index - NPE
             assertThrows(NullPointerException.class, () -> cf.readEntry(cpPos, null));
