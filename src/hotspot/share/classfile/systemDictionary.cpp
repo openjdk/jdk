@@ -825,7 +825,6 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
   loader_data = register_loader(class_loader, create_mirror_cld);
 
   assert(st != nullptr, "invariant");
-  assert(st->need_verify(), "invariant");
 
   // Parse stream and create a klass.
   InstanceKlass* k = KlassFactory::create_from_stream(st,
