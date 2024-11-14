@@ -32,7 +32,6 @@ import java.lang.reflect.Array;
 /**
  * @test
  * @bug 8341137
- * @key randomness
  * @summary Optimize long vector multiplication using x86 VPMUL[U]DQ instruction.
  * @modules jdk.incubator.vector
  * @library /test/lib /
@@ -48,7 +47,7 @@ public class VectorMultiplyOpt {
     public static long[] res;
 
     public static final int SIZE = 1024;
-    public static final Random r = new Random(1024);
+    public static final Random r = jdk.test.lib.Utils.getRandomInstance();
     public static final VectorSpecies<Long> LSP = LongVector.SPECIES_PREFERRED;
     public static final VectorSpecies<Integer> ISP = IntVector.SPECIES_PREFERRED;
 
@@ -101,18 +100,18 @@ public class VectorMultiplyOpt {
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
             LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
-            vsrc1.lanewise(VectorOperators.AND, 0xFFFFFFFFL)
-                 .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, 0xFFFFFFFFL))
+            vsrc1.lanewise(VectorOperators.AND, 0xFFFFFL)
+                 .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, 0xFFFFFL))
                  .intoArray(res, i);
         }
         for (; i < res.length; i++) {
-            res[i] = (lsrc1[i] & 0xFFFFFFFFL) * (lsrc2[i] & 0xFFFFFFFFL);
+            res[i] = (lsrc1[i] & 0xFFFFFL) * (lsrc2[i] & 0xFFFFFL);
         }
     }
 
     @Check(test = "test_pattern1")
     public void test_pattern1_validate() {
-        validate("pattern1 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 & 0xFFFFFFFFL) * (l2 & 0xFFFFFFFFL));
+        validate("pattern1 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 & 0xFFFFFL) * (l2 & 0xFFFFFL));
     }
 
     @Test
@@ -123,18 +122,18 @@ public class VectorMultiplyOpt {
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
             LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
-            vsrc1.lanewise(VectorOperators.AND, 0xFFFFFFFFL)
-                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.LSHR, 32))
+            vsrc1.lanewise(VectorOperators.AND, 0xFFFFFFL)
+                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.LSHR, 31))
                 .intoArray(res, i);
         }
         for (; i < res.length; i++) {
-            res[i] = (lsrc1[i] & 0xFFFFFFFFL) * (lsrc2[i] >>> 32);
+            res[i] = (lsrc1[i] & 0xFFFFFFL) * (lsrc2[i] >>> 31);
         }
     }
 
     @Check(test = "test_pattern2")
     public void test_pattern2_validate() {
-        validate("pattern2 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 & 0xFFFFFFFFL) * (l2 >>> 32));
+        validate("pattern2 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 & 0xFFFFFFL) * (l2 >>> 31));
     }
 
     @Test
@@ -167,18 +166,18 @@ public class VectorMultiplyOpt {
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
             LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
-            vsrc1.lanewise(VectorOperators.LSHR, 32)
-                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, 0xFFFFFFFFL))
+            vsrc1.lanewise(VectorOperators.LSHR, 30)
+                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, 0xFFFFFFFL))
                 .intoArray(res, i);
         }
         for (; i < res.length; i++) {
-            res[i] = (lsrc1[i] >>> 32) * (lsrc2[i] & 0xFFFFFFFFL);
+            res[i] = (lsrc1[i] >>> 30) * (lsrc2[i] & 0xFFFFFFFL);
         }
     }
 
     @Check(test = "test_pattern4")
     public void test_pattern4_validate() {
-        validate("pattern4 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >>> 32) * (l2 & 0xFFFFFFFFL));
+        validate("pattern4 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >>> 30) * (l2 & 0xFFFFFFFL));
     }
 
     @Test
@@ -214,18 +213,18 @@ public class VectorMultiplyOpt {
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
             LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
-            vsrc1.lanewise(VectorOperators.ASHR, 32)
-                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.ASHR, 32))
+            vsrc1.lanewise(VectorOperators.ASHR, 22)
+                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.ASHR, 22))
                 .intoArray(res, i);
         }
         for (; i < res.length; i++) {
-            res[i] = (lsrc1[i] >> 32) * (lsrc2[i] >> 32);
+            res[i] = (lsrc1[i] >> 22) * (lsrc2[i] >> 22);
         }
     }
 
     @Check(test = "test_pattern6")
     public void test_pattern6_validate() {
-        validate("pattern6 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >> 32) * (l2 >> 32));
+        validate("pattern6 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >> 22) * (l2 >> 22));
     }
 
 }
