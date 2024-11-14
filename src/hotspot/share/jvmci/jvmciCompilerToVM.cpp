@@ -2578,9 +2578,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
       stringStream st;
       char* pure_name = NativeLookup::pure_jni_name(method);
       guarantee(pure_name != nullptr, "Illegal native method name encountered");
-      os::print_jni_name_prefix_on(&st, args_size);
       st.print_raw(pure_name);
-      os::print_jni_name_suffix_on(&st, args_size);
       char* jni_name = st.as_string();
 
       address entry = (address) os::dll_lookup(sl_handle, jni_name);
@@ -2589,10 +2587,8 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
         st.reset();
         char* long_name = NativeLookup::long_jni_name(method);
         guarantee(long_name != nullptr, "Illegal native method name encountered");
-        os::print_jni_name_prefix_on(&st, args_size);
         st.print_raw(pure_name);
         st.print_raw(long_name);
-        os::print_jni_name_suffix_on(&st, args_size);
         char* jni_long_name = st.as_string();
         entry = (address) os::dll_lookup(sl_handle, jni_long_name);
         if (entry == nullptr) {
