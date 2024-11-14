@@ -45,17 +45,19 @@ import java.util.function.Supplier;
  * <p>
  * A {@linkplain StableValue {@code StableValue<T>}} is created using the factory method
  * {@linkplain StableValue#empty() {@code StableValue.empty()}}. When created, the
- * stable value is <em>unset</em>, which means it holds no value. It's holder value of
- * type {@code T} can be <em>set</em> by passing a value via
+ * stable value is <em>unset</em>, which means it holds no value. Its holder value, of
+ * type {@code T}, can be <em>set</em> by calling
  * {@linkplain #trySet(Object) trySet()}, {@linkplain #setOrThrow(Object) setOrThrow()},
- * or {@linkplain #computeIfUnset(Supplier) computeIfUnset()}. Once set, the value held
- * by a {@code StableValue} can never change and can be retrieved by calling
+ * or {@linkplain #computeIfUnset(Supplier) computeIfUnset()}. Once set, the holder value
+ * can never change and can be retrieved by calling
  * {@linkplain #orElseThrow() orElseThrow()}, {@linkplain #orElse(Object) orElse()}, or
  * {@linkplain #computeIfUnset(Supplier) computeIfUnset()}.
  * <p>
- * A stable value that is <em>set</em> is treated as a constant by the JVM, enabling
- * the same performance optimizations that are possible by marking a field {@code final}.
- * Yet, stable values offer greater flexibility as to the timing of initialization
+ * A stable value that is <em>set</em> is treated as a constant by the JVM, enabling the
+ * same performance optimizations that are available for {@code final} fields.
+ * As such, stable values can be used to replace {@code final} fields in cases where
+ * <em>at-most-once</em> update semantics is crucial, but where the eager initialization semantics
+ * associated with {@code final} fields is too restrictive.
  * <p>
  * Consider the following example where a stable value field "{@code logger}" is an
  * immutable holder of a value of type {@code  Logger} and that is initially created
@@ -86,10 +88,9 @@ import java.util.function.Supplier;
  * <p>
  * Note that the holder value can only be set at most once.
  * <p>
- * To guarantee that only one instance of {@code Logger} instance is ever created, the
- * {@linkplain #computeIfUnset(Supplier) computeIfUnset()} method can be used instead as
- * shown in this improved example, where the holder is atomically and lazily computed via
- * a lambda expression:
+ * To guarantee that, even under races, only one instance of {@code Logger} is ever created, the
+ * {@linkplain #computeIfUnset(Supplier) computeIfUnset()} method can be used instead,
+ * where the holder is atomically and lazily computed via a lambda expression:
  *
  * {@snippet lang = java:
  * class Component {
@@ -115,8 +116,6 @@ import java.util.function.Supplier;
  * returned to the client. In other words, {@code computeIfUnset()} guarantees that a
  * stable value's holder value is <em>set</em> before it is used.
  * <p>
- * Even though the stable value, once <em>set</em>, is immutable, its holder value is not
- * required to be <em>set</em> upfront. Rather, it can be <em>set</em> on demand.
  * Furthermore, {@code computeIfUnset()} guarantees that the lambda expression provided is
  * evaluated only once, even when {@code logger.computeIfUnset()} is invoked concurrently.
  * This property is crucial as evaluation of the lambda expression may have side effects,
@@ -126,8 +125,8 @@ import java.util.function.Supplier;
  * <h2 id="stable-functions">Stable Functions</h2>
  * Stable values provide the foundation for higher-level functional abstractions. A
  * <em>stable supplier</em> is a supplier that computes a value and then caches it into
- * a backing stable value storage for later use. A stable supplier is created -- via the
- * {@linkplain StableValue#ofSupplier(Supplier) StableValue.ofSupplier()} factory --
+ * a backing stable value storage for later use. A stable supplier is created via the
+ * {@linkplain StableValue#ofSupplier(Supplier) StableValue.ofSupplier()} factory,
  * by providing an original {@linkplain Supplier} which is invoked when the
  * stable supplier is first accessed:
  *
@@ -144,14 +143,15 @@ import java.util.function.Supplier;
  *         }
  *     }
  *}
- * This also allows the stable supplier to be accessed directly, without going through
- * an accessor method like {@code getLogger()} in the previous example.
+ * A stable supplier encapsulates access to its backing stable value storage. This means that
+ * code inside {@code Component} can obtain the logger object directly from the stable supplier,
+ * without having to go through an accessor method like {@code getLogger()}.
  * <p>
  * A <em>stable int function</em> is a function that takes an {@code int} parameter and
  * uses it to compute a result that is then cached into the backing stable value storage
- * for that parameter value. When the stable int function is first created -- via the
+ * for that parameter value. A stable int function is created via the
  * {@linkplain StableValue#ofIntFunction(int, IntFunction) StableValue.ofIntFunction()}
- * factory -- the input range (i.e. [0, size)) is specified together with an original
+ * factory. Upon creation, the input range (i.e. [0, size)) is specified together with an original
  * {@linkplain IntFunction} which is invoked at most once per input value. In effect,
  * the stable int function will act like a cache for the original {@linkplain IntFunction}:
  *
@@ -171,9 +171,9 @@ import java.util.function.Supplier;
  * <p>
  * A <em>stable function</em> is a function that takes a parameter (of type {@code T}) and
  * uses it to compute a result that is then cached into the backing stable value storage
- * for that parameter value. When the stable function is first created -- via the
- * {@linkplain StableValue#ofFunction(Set, Function) StableValue.ofFunction()} factory --
- * the input {@linkplain Set} is specified together with an original {@linkplain Function}
+ * for that parameter value. A stable function is created via the
+ * {@linkplain StableValue#ofFunction(Set, Function) StableValue.ofFunction()} factory.
+ * Upon creation, the input {@linkplain Set} is specified together with an original {@linkplain Function}
  * which is invoked at most once per input value. In effect, the stable function will act
  * like a cache for the original {@linkplain Function}:
  *
@@ -193,7 +193,7 @@ import java.util.function.Supplier;
  *
  * <h2 id="stable-collections">Stable Collections</h2>
  * Stable values can also be used as backing storage for immutable collections.
- * A <em>stable list</em> is an immutable list of fixed size, backed by an array of
+ * A <em>stable list</em> is an immutable list, backed by an array of
  * stable values. The stable list elements are computed when they are first accessed,
  * using a provided {@linkplain IntFunction}:
  *
@@ -232,9 +232,9 @@ import java.util.function.Supplier;
  *     }
  *}
  * <h2 id="thread-safety">Thread Safety</h2>
- * A holder value is guaranteed to only be settable at most once. If competing threads are
- * racing to set a holder value, only the first is accepted and the other threads are
- * blocked until the holder value is set.
+ * A holder value is guaranteed to be set at most once. If competing threads are
+ * racing to set a stable value, only one update succeeds, while other updates are
+ * blocked until the stable value becomes set.
  * <p>
  * Updates to an object
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
