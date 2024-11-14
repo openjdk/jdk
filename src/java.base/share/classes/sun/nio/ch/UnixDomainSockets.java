@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,22 +59,8 @@ class UnixDomainSockets {
         return supported;
     }
 
-    static void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(accessUnixDomainSocket);
-    }
-
     static UnixDomainSocketAddress getRevealedLocalAddress(SocketAddress sa) {
         UnixDomainSocketAddress addr = (UnixDomainSocketAddress) sa;
-        try {
-            checkPermission();
-            // Security check passed
-        } catch (SecurityException e) {
-            // Return unnamed address only if security check fails
-            addr = unnamed();
-        }
         return addr;
     }
 
@@ -85,9 +71,8 @@ class UnixDomainSockets {
 
     private static native byte[] localAddress0(FileDescriptor fd) throws IOException;
 
-    @SuppressWarnings("removal")
     static String getRevealedLocalAddressAsString(SocketAddress sa) {
-        return (System.getSecurityManager() != null) ? sa.toString() : "";
+        return sa.toString();
     }
 
     static UnixDomainSocketAddress checkAddress(SocketAddress sa) {

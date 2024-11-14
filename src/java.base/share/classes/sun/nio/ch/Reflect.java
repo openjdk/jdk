@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.nio.ch;
 
 import java.io.*;
 import java.lang.reflect.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 
 class Reflect {                                 // package-private
@@ -43,13 +41,8 @@ class Reflect {                                 // package-private
         }
     }
 
-    @SuppressWarnings("removal")
     private static void setAccessible(final AccessibleObject ao) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    ao.setAccessible(true);
-                    return null;
-                }});
+        ao.setAccessible(true);
     }
 
     static Constructor<?> lookupConstructor(String className,

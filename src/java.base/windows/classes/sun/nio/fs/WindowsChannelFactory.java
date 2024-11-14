@@ -291,20 +291,6 @@ class WindowsChannelFactory {
             dwFlagsAndAttributes |= FILE_FLAG_OPEN_REPARSE_POINT;
         }
 
-        // permission check
-        if (pathToCheck != null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                if (flags.read)
-                    sm.checkRead(pathToCheck);
-                if (flags.write)
-                    sm.checkWrite(pathToCheck);
-                if (flags.deleteOnClose)
-                    sm.checkDelete(pathToCheck);
-            }
-        }
-
         // open file
         long handle = CreateFile(pathForWindows,
                                  dwDesiredAccess,

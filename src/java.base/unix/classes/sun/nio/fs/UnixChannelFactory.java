@@ -25,9 +25,9 @@
 
 package sun.nio.fs;
 
+import java.io.FileDescriptor;
 import java.nio.file.*;
 import java.nio.channels.*;
-import java.io.FileDescriptor;
 import java.util.Set;
 
 import jdk.internal.access.SharedSecrets;
@@ -235,20 +235,6 @@ class UnixChannelFactory {
             oflags |= O_SYNC;
         if (flags.direct)
             oflags |= O_DIRECT;
-
-        // permission check before we open the file
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            if (pathForPermissionCheck == null)
-                pathForPermissionCheck = path.getPathForPermissionCheck();
-            if (flags.read)
-                sm.checkRead(pathForPermissionCheck);
-            if (flags.write)
-                sm.checkWrite(pathForPermissionCheck);
-            if (flags.deleteOnClose)
-                sm.checkDelete(pathForPermissionCheck);
-        }
 
         int fd;
         try {
