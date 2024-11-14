@@ -179,7 +179,8 @@ public class JarFile extends ZipFile {
                     : Math.max(jarVer, BASE_VERSION_FEATURE);
         }
         RUNTIME_VERSION = Runtime.Version.parse(Integer.toString(runtimeVersion));
-        String enableMultiRelease = System.getProperty("jdk.util.jar.enableMultiRelease", "true");
+        String enableMultiRelease = System.
+                getProperty("jdk.util.jar.enableMultiRelease", "true");
         switch (enableMultiRelease) {
             case "false" -> {
                 MULTI_RELEASE_ENABLED = false;

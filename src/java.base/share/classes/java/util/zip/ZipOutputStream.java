@@ -56,7 +56,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * total entry count fields, such as the ones in jdk6, and even
      * some in jdk7.
      */
-    private static final boolean inhibitZip64 = Boolean.getBoolean("jdk.util.zip.inhibitZip64");
+    private static final boolean inhibitZip64 =
+        Boolean.getBoolean("jdk.util.zip.inhibitZip64");
 
     private static class XEntry {
         final ZipEntry entry;
