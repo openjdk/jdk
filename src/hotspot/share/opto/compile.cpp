@@ -5202,6 +5202,15 @@ bool Compile::should_print_phase(CompilerPhaseType cpt) {
   return false;
 }
 
+#ifndef PRODUCT
+void Compile::init_igv() {
+  if (_igv_printer == nullptr) {
+    _igv_printer = IdealGraphPrinter::printer();
+    _igv_printer->set_compile(this);
+  }
+}
+#endif
+
 bool Compile::should_print_igv(const int level) {
 #ifndef PRODUCT
   if (PrintIdealGraphLevel < 0) { // disabled by the user
@@ -5209,9 +5218,8 @@ bool Compile::should_print_igv(const int level) {
   }
 
   bool need = directive()->IGVPrintLevelOption >= level;
-  if (need && !_igv_printer) {
-    _igv_printer = IdealGraphPrinter::printer();
-    _igv_printer->set_compile(this);
+  if (need) {
+    Compile::init_igv();
   }
   return need;
 #else
