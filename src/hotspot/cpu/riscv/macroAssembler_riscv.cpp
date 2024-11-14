@@ -967,26 +967,6 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
   }
 }
 
-void MacroAssembler::load_link_jump(const address source, Register temp) {
-  assert(temp != noreg && temp != x0, "expecting a register");
-  assert(temp != x5, "temp register must not be x5.");
-  assert_cond(source != nullptr);
-  int64_t distance = source - pc();
-  assert(is_simm32(distance), "Must be");
-  auipc(temp, (int32_t)distance + 0x800);
-  ld(temp, Address(temp, ((int32_t)distance << 20) >> 20));
-  jalr(temp);
-}
-
-void MacroAssembler::jump_link(const address dest, Register temp) {
-  assert(UseTrampolines, "Must be");
-  assert_cond(dest != nullptr);
-  int64_t distance = dest - pc();
-  assert(is_simm21(distance), "Must be");
-  assert((distance % 2) == 0, "Must be");
-  jal(x1, distance);
-}
-
 void MacroAssembler::j(const address dest, Register temp) {
   assert(CodeCache::contains(dest), "Must be");
   assert_cond(dest != nullptr);
@@ -4282,46 +4262,7 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   zero_extend(dst, dst, 32);
 }
 
-// Maybe emit a call via a trampoline. If the code cache is small
-// trampolines won't be emitted.
-address MacroAssembler::trampoline_call(Address entry) {
-  assert(entry.rspec().type() == relocInfo::runtime_call_type ||
-         entry.rspec().type() == relocInfo::opt_virtual_call_type ||
-         entry.rspec().type() == relocInfo::static_call_type ||
-         entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
-
-  address target = entry.target();
-
-  // We need a trampoline if branches are far.
-  if (!in_scratch_emit_size()) {
-    if (entry.rspec().type() == relocInfo::runtime_call_type) {
-      assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
-      code()->share_trampoline_for(entry.target(), offset());
-    } else {
-      address stub = emit_trampoline_stub(offset(), target);
-      if (stub == nullptr) {
-        postcond(pc() == badAddress);
-        return nullptr; // CodeCache is full
-      }
-    }
-  }
-  target = pc();
-
-  address call_pc = pc();
-#ifdef ASSERT
-  if (entry.rspec().type() != relocInfo::runtime_call_type) {
-    assert_alignment(call_pc);
-  }
-#endif
-  relocate(entry.rspec(), [&] {
-    jump_link(target, t0);
-  });
-
-  postcond(pc() != badAddress);
-  return call_pc;
-}
-
-address MacroAssembler::load_and_call(Address entry) {
+address MacroAssembler::reloc_call(Address entry, Register tmp) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type ||
          entry.rspec().type() == relocInfo::opt_virtual_call_type ||
          entry.rspec().type() == relocInfo::static_call_type ||
@@ -4330,7 +4271,7 @@ address MacroAssembler::load_and_call(Address entry) {
   address target = entry.target();
 
   if (!in_scratch_emit_size()) {
-    address stub = emit_address_stub(offset(), target);
+    address stub = emit_reloc_call_address_stub(offset(), target);
     if (stub == nullptr) {
       postcond(pc() == badAddress);
       return nullptr; // CodeCache is full
@@ -4343,8 +4284,13 @@ address MacroAssembler::load_and_call(Address entry) {
     assert_alignment(call_pc);
   }
 #endif
+
+  // The relocation created while emitting the stub will ensure this
+  // call instruction is subsequently patched to call the stub.
   relocate(entry.rspec(), [&] {
-    load_link_jump(target, t1);
+    auipc(tmp, 0);
+    ld(tmp, Address(tmp, 0));
+    jalr(tmp);
   });
 
   postcond(pc() != badAddress);
@@ -4404,8 +4350,21 @@ int MacroAssembler::ic_check(int end_alignment) {
   return uep_offset;
 }
 
-address MacroAssembler::emit_address_stub(int insts_call_instruction_offset, address dest) {
-  address stub = start_a_stub(max_reloc_call_stub_size());
+// Emit an address stub for a call to a target which is too far away.
+// Note that we only put the target address of the call in the stub.
+//
+// code sequences:
+//
+// call-site:
+//   load target address from stub
+//   jump-and-link target address
+//
+// Related address stub for this call site in the stub section:
+//   alignment nop
+//   target address
+
+address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_offset, address dest) {
+  address stub = start_a_stub(max_reloc_call_address_stub_size());
   if (stub == nullptr) {
     return nullptr;  // CodeBuffer::expand failed
   }
@@ -4432,67 +4391,9 @@ address MacroAssembler::emit_address_stub(int insts_call_instruction_offset, add
   return stub_start_addr;
 }
 
-// Emit a trampoline stub for a call to a target which is too far away.
-//
-// code sequences:
-//
-// call-site:
-//   branch-and-link to <destination> or <trampoline stub>
-//
-// Related trampoline stub for this call site in the stub section:
-//   load the call target from the constant pool
-//   branch (RA still points to the call site above)
-
-address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
-                                             address dest) {
-  // Max stub size: alignment nop, TrampolineStub.
-  address stub = start_a_stub(max_reloc_call_stub_size());
-  if (stub == nullptr) {
-    return nullptr;  // CodeBuffer::expand failed
-  }
-
-  assert(UseTrampolines, "Must be using trampos.");
-
-  // We are always 4-byte aligned here.
-  assert_alignment(pc());
-
-  // Create a trampoline stub relocation which relates this trampoline stub
-  // with the call instruction at insts_call_instruction_offset in the
-  // instructions code-section.
-
-  // Make sure the address of destination 8-byte aligned after 3 instructions.
-  align(wordSize, MacroAssembler::NativeShortCall::trampoline_data_offset);
-
-  RelocationHolder rh = trampoline_stub_Relocation::spec(code()->insts()->start() +
-                                                         insts_call_instruction_offset);
-  const int stub_start_offset = offset();
-  relocate(rh, [&] {
-    // Now, create the trampoline stub's code:
-    // - load the call
-    // - call
-    Label target;
-    ld(t1, target);  // auipc + ld
-    jr(t1);          // jalr
-    bind(target);
-    assert(offset() - stub_start_offset == MacroAssembler::NativeShortCall::trampoline_data_offset,
-           "should be");
-    assert(offset() % wordSize == 0, "bad alignment");
-    emit_int64((int64_t)dest);
-  });
-
-  const address stub_start_addr = addr_at(stub_start_offset);
-
-  end_a_stub();
-
-  return stub_start_addr;
-}
-
-int MacroAssembler::max_reloc_call_stub_size() {
-  // Max stub size: alignment nop, TrampolineStub.
-  if (UseTrampolines) {
-    return instruction_size + MacroAssembler::NativeShortCall::trampoline_size;
-  }
-  return instruction_size + wordSize;
+int MacroAssembler::max_reloc_call_address_stub_size() {
+  // Max stub size: alignment nop, target address.
+  return 1 * instruction_size + wordSize;
 }
 
 int MacroAssembler::static_call_stub_size() {

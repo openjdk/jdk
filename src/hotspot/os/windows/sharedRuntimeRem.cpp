@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "runtime/sharedRuntime.hpp"
 
-#ifdef _WIN64
 // These are copied defines originally from fdlibm.h.
 
 #define __HI(x) *(1+(int*)&x)
@@ -158,5 +157,3 @@ double SharedRuntime::fmod_winx64(double x, double y)
   }
   return x;               /* exact output */
 }
-
-#endif
