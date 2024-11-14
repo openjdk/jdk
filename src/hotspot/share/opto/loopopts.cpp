@@ -4477,7 +4477,8 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
 }
 
 // TODO desc
-void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt) {
+// TODO maybe refactor to policy ?
+void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new) {
   tty->print_cr("###### about to PreMainPost");
   CountedLoopNode* cl = lpt->_head->as_CountedLoop();
   LoopNode* outer_loop = cl->skip_strip_mined();
@@ -4493,18 +4494,7 @@ void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(Id
   // TODO check for no control flow - only then are we reasonably sure SuperWord will work.
   // TODO node budget
 
-#ifndef PRODUCT
-  if (TraceLoopOpts) {
-    tty->print("MultiVersionForAutoVectorization ");
-    lpt->dump_head();
-  }
-#endif
-  C->set_major_progress();
-
-
-
-  // TODO model a bit after insert_pre_post_loops and unswitching?
-  //C->print_method(PHASE_BEFORE_PRE_MAIN_POST, 4, main_head);
+  do_multiversioning(lpt, old_new);
 }
 
 // Returns true if the Reduction node is unordered.

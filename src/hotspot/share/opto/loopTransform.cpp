@@ -3477,7 +3477,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       // We are going to add pre-loop and post-loop.
       // But should we also multi-version for auto-vectorization speculative
       // checks, i.e. fast and slow-paths?
-      phase->maybe_multiversion_for_auto_vectorization_runtime_checks(this);
+      phase->maybe_multiversion_for_auto_vectorization_runtime_checks(this, old_new);
 
       phase->insert_pre_post_loops(this, old_new, peel_only);
     }

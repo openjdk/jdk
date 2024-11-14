@@ -384,8 +384,16 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree* loop, Node_List& old_new) {
   C->set_major_progress();
 }
 
-//void PhaseIdealLoop::do_multiversioning(IdealLoopTree* loop, Node_List& old_new) {
-//}
+void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) {
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print("Multiversion ");
+    lpt->dump_head();
+  }
+#endif
+
+  // TODO
+}
 
 bool PhaseIdealLoop::has_control_dependencies_from_predicates(LoopNode* head) {
   Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
