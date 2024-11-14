@@ -41,15 +41,19 @@ template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class RBTree {
   friend class RBTreeTest;
   friend class NMTVMATreeTest;
-  friend class VMATree;
+
+private:
   enum Color { BLACK, RED };
 
   ALLOCATOR _allocator;
   size_t _num_nodes;
   bool _num_outdated;
 
+public:
   class RBNode {
     friend RBTree;
+
+  private:
     RBNode* _parent;
     RBNode* _left;
     RBNode* _right;
@@ -60,12 +64,13 @@ class RBTree {
     V _value;
 
   public:
+    const K& key() const { return _key; }
+    V& val() { return _value; }
+
+  private:
     RBNode(const K& k, const V& v)
         : _parent(nullptr), _left(nullptr), _right(nullptr), _color(Color::RED), _black_height(0),
           _key(k), _value(v) {}
-
-    const K& key() const { return _key; }
-    V& val() { return _value; }
 
     bool is_right_child() {
       return _parent != nullptr && _parent->_right == this;
@@ -255,8 +260,13 @@ class RBTree {
     }
 
 #ifdef ASSERT
-    bool is_correct(int num_blacks) const {
+    bool is_correct(int num_blacks, RBNode* min, RBNode* max) const {
       if (_black_height != num_blacks) {
+        return false;
+      }
+
+      if ((min != nullptr && min != this && (COMPARATOR::cmp(min->key(), _key) >= 0)) || // min >= key
+          (max != nullptr && max != this && (COMPARATOR::cmp(max->key(), _key) <= 0))) { // max <= key
         return false;
       }
 
@@ -268,25 +278,25 @@ class RBTree {
       bool right_is_correct = num_blacks == 0;
       if (_left != nullptr) {
         if (COMPARATOR::cmp(_left->key(), _key) >= 0 || // left >= root, or
-            (_color == RED && _left->_color == RED) || // 2 red nodes, or
-            (_left->_parent != this)) {                // Pointer mismatch,
+            (_color == RED && _left->_color == RED) ||  // 2 red nodes, or
+            (_left->_parent != this)) {                 // Pointer mismatch,
             if (COMPARATOR::cmp(_left->key(), _key) >= 0) printf("left >= root\n");
             if (_color == RED && _left->_color == RED) printf("2 red nodes left\n");
             if (_left->_parent != this) printf("Pointer mismatch left\n");
           return false;                                 // incorrect.
         }
-        left_is_correct = _left->is_correct(num_blacks);
+        left_is_correct = _left->is_correct(num_blacks, min, max);
       }
       if (_right != nullptr) {
         if (COMPARATOR::cmp(_right->key(), _key) <= 0 || // right <= root, or
-            (_color == RED && _left->_color == RED)  || // 2 red nodes, or
-            (_right->_parent != this)) {                // Pointer mismatch,
+            (_color == RED && _left->_color == RED)   || // 2 red nodes, or
+            (_right->_parent != this)) {                 // Pointer mismatch,
             if (COMPARATOR::cmp(_right->key(), _key) <= 0) printf("right <= root\n");
             if (_color == RED && _right->_color == RED) printf("2 red nodes right\n");
             if (_right->_parent != this) printf("Pointer mismatch right\n");
           return false;                                  // incorrect.
         }
-        right_is_correct = _right->is_correct(num_blacks);
+        right_is_correct = _right->is_correct(num_blacks, min, max);
       }
       return left_is_correct && right_is_correct;
     }
@@ -297,9 +307,9 @@ class RBTree {
       return 1 + left_nodes + right_nodes;
     }
 #endif // ASSERT
-
   };
 
+private:
   RBNode* _root;
   RBNode* _min;
   RBNode* _max;
@@ -546,6 +556,13 @@ class RBTree {
     if (left != nullptr) { // node has a left only-child
       // node must be black, and child red, otherwise a black-violation would exist
       // Remove node and color the child black.
+      if (_min == node) {
+        _min = node->_left;
+      }
+      if (_max == node) {
+        _max = node->_left;
+      }
+
       node->_left->_color = BLACK;
       node->_left->_black_height++;
       node->_left->_parent = node->_parent;
@@ -555,6 +572,13 @@ class RBTree {
         node->_parent->replace_child(node, left);
       }
     } else if (right != nullptr) { // node has a right only-child
+      if (_min == node) {
+        _min = node->_right;
+      }
+      if (_max == node) {
+        _max = node->_right;
+      }
+
       node->_right->_color = BLACK;
       node->_right->_black_height++;
       node->_right->_parent = node->_parent;
@@ -564,6 +588,13 @@ class RBTree {
         node->_parent->replace_child(node, right);
       }
     } else { // node has no children
+      if (_min == node) {
+        _min = node->_parent;
+      }
+      if (_max == node) {
+        _max = node->_parent;
+      }
+
       if (node == _root) { // Tree empty
         _root = nullptr;
       } else { // node is black, creating a black imbalance
@@ -585,6 +616,9 @@ class RBTree {
   }
 
   RBNode* leftmost_node() {
+    if (_min != nullptr) {
+      return _min;
+    }
     if (_root == nullptr) {
       return nullptr;
     }
@@ -592,10 +626,14 @@ class RBTree {
     while (node->_left != nullptr) {
       node = node->_left;
     }
+    _min = node;
     return node;
   }
 
   RBNode* rightmost_node() {
+    if (_max != nullptr) {
+      return _max;
+    }
     if (_root == nullptr) {
       return nullptr;
     }
@@ -603,6 +641,7 @@ class RBTree {
     while (node->_right != nullptr) {
       node = node->_right;
     }
+    _max = node;
     return node;
   }
 
@@ -634,19 +673,22 @@ public:
   void upsert(const K& k, const V& v) {
     RBNode* node = insert_node(k, v, true);
     fix_violations(node);
+    if (_min == nullptr || COMPARATOR::cmp(k, _min->key()) < 0) {
+      _min = node;
+    }
+    if (_max == nullptr || COMPARATOR::cmp(k, _max->key()) > 0) {
+      _max = node;
+    }
   }
 
   bool remove(const K& k) {
     RBNode* node = find(_root, k);
+    return remove(node);
+  }
+
+  bool remove(RBNode* node) {
     if (node == nullptr) {
       return false;
-    }
-
-    if (_min == node) {
-      _min = node->_parent;
-    }
-    if (_max == node) {
-      _max = node->_parent;
     }
 
     if (node->_left != nullptr && node->_right != nullptr) { // node has two children
@@ -662,6 +704,14 @@ public:
     }
 
     remove_from_tree(node);
+
+    if (_min == node) {
+      _min = node->_parent;
+    }
+    if (_max == node) {
+      _max = node->_parent;
+    }
+    
     free_node(node);
     return true;
   }
@@ -843,7 +893,7 @@ public:
 
     assert(expected_num_nodes == actual_num_nodes, "unexpected number of nodes in rbtree. expected: " SIZE_FORMAT ", actual: " SIZE_FORMAT, expected_num_nodes, actual_num_nodes);
     assert(2 * black_nodes <= maximum_depth, "rbtree is too deep for its number of nodes. can be at most: " INT32_FORMAT ", but is: " INT32_FORMAT, maximum_depth, 2 * black_nodes);
-    assert(_root->is_correct(black_nodes), "rbtree does not hold rb-properties");
+    assert(_root->is_correct(black_nodes, _min, _max), "rbtree does not hold rb-properties");
   }
 #endif // ASSERT
 
