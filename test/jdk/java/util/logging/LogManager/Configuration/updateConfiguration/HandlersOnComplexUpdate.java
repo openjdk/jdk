@@ -22,22 +22,14 @@
  */
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
@@ -48,7 +40,6 @@ import java.util.function.Function;
 import java.util.logging.FileHandler;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.logging.LoggingPermission;
 
 /**
  * @test
@@ -58,26 +49,15 @@ import java.util.logging.LoggingPermission;
  *          Test a complex reconfiguration where a logger with handlers
  *          suddenly appears in the hierarchy between a child logger and the
  *          root logger.
- * @run main/othervm HandlersOnComplexUpdate UNSECURE
- * @run main/othervm -Djava.security.manager=allow HandlersOnComplexUpdate SECURE
+ * @run main/othervm HandlersOnComplexUpdate
  * @author danielfuchs
  */
 public class HandlersOnComplexUpdate {
 
-    /**
-     * We will test the handling of abstract logger nodes with file handlers in
-     * two configurations:
-     * UNSECURE: No security manager.
-     * SECURE: With the security manager present - and the required
-     *         permissions granted.
-     */
-    public static enum TestCase {
-        UNSECURE, SECURE;
-        public void run(List<Properties> properties) throws Exception {
-            System.out.println("Running test case: " + name());
-            Configure.setUp(this, properties.get(0));
-            test(this.name(), properties);
-        }
+    // We will test the handling of abstract logger nodes with file handlers
+    public static void run(List<Properties> properties) throws Exception {
+        Configure.setUp(properties.get(0));
+        test(properties);
     }
 
     public static final double TIMEOUT_FACTOR;
@@ -191,14 +171,12 @@ public class HandlersOnComplexUpdate {
      * Finally releases the child logger after all configurations have been
      * applied.
      *
-     * @param name
      * @param properties
      * @throws Exception
      */
-    static void test(String name, List<Properties> properties)
+    static void test(List<Properties> properties)
             throws Exception {
 
-        System.out.println("\nTesting: " + name);
         if (!userDirWritable) {
             throw new RuntimeException("Not writable: "+userDir);
         }
@@ -352,19 +330,8 @@ public class HandlersOnComplexUpdate {
 
     public static void main(String... args) throws Exception {
 
-
-        if (args == null || args.length == 0) {
-            args = new String[] {
-                TestCase.UNSECURE.name(),
-                TestCase.SECURE.name(),
-            };
-        }
-
         try {
-            for (String testName : args) {
-                TestCase test = TestCase.valueOf(testName);
-                test.run(properties);
-            }
+            run(properties);
         } finally {
             if (userDirWritable) {
                 Configure.doPrivileged(() -> {
@@ -390,38 +357,7 @@ public class HandlersOnComplexUpdate {
     }
 
     static class Configure {
-        static Policy policy = null;
-        static final ThreadLocal<AtomicBoolean> allowAll = new ThreadLocal<AtomicBoolean>() {
-            @Override
-            protected AtomicBoolean initialValue() {
-                return  new AtomicBoolean(false);
-            }
-        };
-        static void setUp(TestCase test, Properties propertyFile) {
-            switch (test) {
-                case SECURE:
-                    if (policy == null && System.getSecurityManager() != null) {
-                        throw new IllegalStateException("SecurityManager already set");
-                    } else if (policy == null) {
-                        policy = new SimplePolicy(TestCase.SECURE, allowAll);
-                        Policy.setPolicy(policy);
-                        System.setSecurityManager(new SecurityManager());
-                    }
-                    if (System.getSecurityManager() == null) {
-                        throw new IllegalStateException("No SecurityManager.");
-                    }
-                    if (policy == null) {
-                        throw new IllegalStateException("policy not configured");
-                    }
-                    break;
-                case UNSECURE:
-                    if (System.getSecurityManager() != null) {
-                        throw new IllegalStateException("SecurityManager already set");
-                    }
-                    break;
-                default:
-                    new InternalError("No such testcase: " + test);
-            }
+        static void setUp(Properties propertyFile) {
             doPrivileged(() -> {
                 configureWith(propertyFile);
             });
@@ -453,20 +389,10 @@ public class HandlersOnComplexUpdate {
         }
 
         static void doPrivileged(Runnable run) {
-            final boolean old = allowAll.get().getAndSet(true);
-            try {
-                run.run();
-            } finally {
-                allowAll.get().set(old);
-            }
+            run.run();
         }
         static <T> T callPrivileged(Callable<T> call) throws Exception {
-            final boolean old = allowAll.get().getAndSet(true);
-            try {
-                return call.call();
-            } finally {
-                allowAll.get().set(old);
-            }
+            return call.call();
         }
     }
 
@@ -490,71 +416,4 @@ public class HandlersOnComplexUpdate {
             System.out.println("Got expected " + msg + ": " + received);
         }
     }
-
-    final static class PermissionsBuilder {
-        final Permissions perms;
-        public PermissionsBuilder() {
-            this(new Permissions());
-        }
-        public PermissionsBuilder(Permissions perms) {
-            this.perms = perms;
-        }
-        public PermissionsBuilder add(Permission p) {
-            perms.add(p);
-            return this;
-        }
-        public PermissionsBuilder addAll(PermissionCollection col) {
-            if (col != null) {
-                for (Enumeration<Permission> e = col.elements(); e.hasMoreElements(); ) {
-                    perms.add(e.nextElement());
-                }
-            }
-            return this;
-        }
-        public Permissions toPermissions() {
-            final PermissionsBuilder builder = new PermissionsBuilder();
-            builder.addAll(perms);
-            return builder.perms;
-        }
-    }
-
-    public static class SimplePolicy extends Policy {
-
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-
-        final Permissions permissions;
-        final Permissions allPermissions;
-        final ThreadLocal<AtomicBoolean> allowAll; // actually: this should be in a thread locale
-        public SimplePolicy(TestCase test, ThreadLocal<AtomicBoolean> allowAll) {
-            this.allowAll = allowAll;
-            permissions = new Permissions();
-            permissions.add(new LoggingPermission("control", null));
-            permissions.add(new FilePermission(PREFIX+".lck", "read,write,delete"));
-            permissions.add(new FilePermission(PREFIX, "read,write"));
-
-            // these are used for configuring the test itself...
-            allPermissions = new Permissions();
-            allPermissions.add(new java.security.AllPermission());
-
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            if (allowAll.get().get()) return allPermissions.implies(permission);
-            return permissions.implies(permission) || DEFAULT_POLICY.implies(domain, permission);
-        }
-
-        @Override
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return new PermissionsBuilder().addAll(allowAll.get().get()
-                    ? allPermissions : permissions).toPermissions();
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return new PermissionsBuilder().addAll(allowAll.get().get()
-                    ? allPermissions : permissions).toPermissions();
-        }
-    }
-
 }

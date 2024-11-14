@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,10 +175,6 @@ public final class RemoteRecordingStream implements EventStream {
      * @throws IOException       if a stream can't be opened, an I/O error occurs
      *                           when trying to access the repository or the
      *                           {@code FlightRecorderMXBean}
-     *
-     * @throws SecurityException if a security manager exists and its
-     *                           {@code checkRead} method denies read access to the
-     *                           directory, or files in the directory.
      */
     public RemoteRecordingStream(MBeanServerConnection connection) throws IOException {
         this(connection, makeTempDirectory(), true);
@@ -200,10 +196,6 @@ public final class RemoteRecordingStream implements EventStream {
      * @throws IOException       if a stream can't be opened, an I/O error occurs
      *                           when trying to access the repository or the
      *                           {@code FlightRecorderMXBean}
-     *
-     * @throws SecurityException if a security manager exists and its
-     *                           {@code checkRead} method denies read access to the
-     *                           directory, or files in the directory.
      */
     public RemoteRecordingStream(MBeanServerConnection connection, Path directory) throws IOException {
         this(connection, directory, false);
@@ -645,9 +637,6 @@ public final class RemoteRecordingStream implements EventStream {
      *
      * @throws IOException if the recording data can't be copied to the specified
      *         location, or if the stream is closed, or not started.
-     *
-     * @throws SecurityException if a security manager exists and the caller doesn't
-     *         have {@code FilePermission} to write to the destination path
      *
      * @see RemoteRecordingStream#setMaxAge(Duration)
      * @see RemoteRecordingStream#setMaxSize(long)

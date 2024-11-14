@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import static org.openjdk.bench.java.util.stream.ops.ref.BenchmarkGathererImpls.
 @BenchmarkMode(Mode.Throughput)
 @Warmup(iterations = 4, time = 5, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 7, time = 5, timeUnit = TimeUnit.SECONDS)
-@Fork(jvmArgs = "--enable-preview", value = 1)
+@Fork(value = 1)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
 public class GatherMapSeq {
