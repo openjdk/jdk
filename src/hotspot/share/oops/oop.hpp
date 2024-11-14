@@ -325,7 +325,7 @@ class oopDesc {
   inline bool mark_must_be_preserved() const;
   inline bool mark_must_be_preserved(markWord m) const;
 
-  static bool has_klass_gap();
+  inline static bool has_klass_gap();
 
   // for code generation
   static int mark_offset_in_bytes()      { return (int)offset_of(oopDesc, _mark); }
