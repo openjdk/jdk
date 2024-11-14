@@ -417,4 +417,27 @@ public class LayoutNode {
         computeReversedStartPoints();
         computeReversedEndPoints();
     }
+
+    public int calculateOptimalBoth() {
+        if (preds.isEmpty() && succs.isEmpty()) {
+            return x;
+        }
+
+        int[] values = new int[preds.size() + succs.size()];
+        int i = 0;
+
+        for (LayoutEdge edge : preds) {
+            values[i] = edge.getFromX() - edge.getRelativeToX();
+            i++;
+        }
+
+        for (LayoutEdge edge : succs) {
+            values[i] = edge.getToX() - edge.getRelativeFromX();
+            i++;
+        }
+
+        Arrays.sort(values);
+        int middle = values.length / 2;
+        return (values.length % 2 == 0) ? (values[middle - 1] + values[middle]) / 2 : values[middle];
+    }
 }

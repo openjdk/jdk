@@ -60,7 +60,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         WriteResult.apply(layoutGraph);
     }
 
-    static private class ReverseEdges {
+    public static class ReverseEdges {
 
         static public void apply(LayoutGraph graph) {
             removeSelfEdges(graph);
@@ -147,8 +147,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
     }
 
-
-    static private class LayerManager {
+    public static class LayerManager {
 
         private static void assignLayerDownwards(LayoutGraph graph) {
             ArrayList<LayoutNode> workingList = new ArrayList<>();
@@ -409,7 +408,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
     }
 
-    private static class CrossingReduction {
+    public static class CrossingReduction {
 
         public static void apply(LayoutGraph graph) {
             for (int i = 0; i < CROSSING_ITERATIONS; i++) {
@@ -496,7 +495,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
     }
 
-    private static class AssignXCoordinates {
+    public static class AssignXCoordinates {
 
         static int[][] space;
         static LayoutNode[][] downProcessingOrder;
@@ -533,7 +532,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
         }
 
-        static private void apply(LayoutGraph graph) {
+        static public void apply(LayoutGraph graph) {
             createArrays(graph);
             initialPositions(graph);
             for (int i = 0; i < SWEEP_ITERATIONS; i++) {
@@ -586,7 +585,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
     }
 
-    private static class WriteResult {
+    public static class WriteResult {
 
         private static HashMap<Link, List<Point>> computeLinkPositions(LayoutGraph graph) {
             HashMap<Link, List<Point>> linkToSplitEndPoints = new HashMap<>();
