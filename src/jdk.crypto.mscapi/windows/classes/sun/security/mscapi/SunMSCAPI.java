@@ -48,9 +48,14 @@ public final class SunMSCAPI extends Provider {
     private static final String INFO = "Sun's Microsoft Crypto API provider";
 
     static {
-        @SuppressWarnings("restricted")
+        loadLibrary();
+    }
+
+    @SuppressWarnings("restricted")
+    private static void loadLibrary() {
         System.loadLibrary("sunmscapi");
     }
+
     private static class ProviderServiceA extends ProviderService {
         ProviderServiceA(Provider p, String type, String algo, String cn,
                 HashMap<String, String> attrs) {
