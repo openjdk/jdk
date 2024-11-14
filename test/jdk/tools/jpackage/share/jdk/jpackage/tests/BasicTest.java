@@ -362,7 +362,7 @@ public final class BasicTest {
         if (TestTempType.TEMPDIR_NOT_EMPTY.equals(type)) {
             pkgTest.setExpectedExitCode(1).addBundleVerifier(cmd -> {
                 // Check jpackage didn't use the supplied directory.
-                Path tempDir = getTempDirectory(cmd, tempRoot);
+                Path tempDir = Path.of(cmd.getArgumentValue("--temp"));
                 String[] tempDirContents = tempDir.toFile().list();
                 TKit.assertStringListEquals(List.of("foo.txt"), List.of(
                         tempDirContents), String.format(
@@ -375,7 +375,7 @@ public final class BasicTest {
         } else {
             pkgTest.addBundleVerifier(cmd -> {
                 // Check jpackage used the supplied directory.
-                Path tempDir = getTempDirectory(cmd, tempRoot);
+                Path tempDir = Path.of(cmd.getArgumentValue("--temp"));
                 TKit.assertDirectoryNotEmpty(tempDir);
             });
         }

@@ -61,21 +61,16 @@ final class WixPipeline {
             final var absWorkDir = workDir.normalize().toAbsolutePath();
 
             final UnaryOperator<Path> normalizePath = path -> {
-                path = path.normalize().toAbsolutePath();
-                var newPath = absWorkDir.relativize(path);
-                if (newPath.getNameCount() > path.getNameCount()) {
-                    throw new IllegalArgumentException("invalid dir config");
-                }
-                return newPath;
+                return path.normalize().toAbsolutePath();
             };
 
-            final var relObjWorkDir = normalizePath.apply(wixObjDir);
+            final var absObjWorkDir = normalizePath.apply(wixObjDir);
 
             var relSources = sources.stream().map(source -> {
                 return source.overridePath(normalizePath.apply(source.path));
             }).toList();
 
-            return new WixPipeline(toolset, adjustPath(absWorkDir), relObjWorkDir,
+            return new WixPipeline(toolset, adjustPath(absWorkDir), absObjWorkDir,
                     wixVariables, mapLightOptions(normalizePath), relSources);
         }
 
@@ -251,7 +246,7 @@ final class WixPipeline {
 
     private Path compileWix3(WixSource wixSource) throws IOException {
         Path wixObj = wixObjDir.resolve(IOUtils.replaceSuffix(
-                IOUtils.getFileName(wixSource.path), ".wixobj"));
+                wixSource.path.getFileName(), ".wixobj"));
 
         List<String> cmdline = new ArrayList<>(List.of(
                 toolset.getToolPath(WixTool.Candle3).toString(),

@@ -193,6 +193,25 @@ public class WindowsHelper {
         }
     }
 
+    public enum WixType {
+        WIX3,
+        WIX4
+    }
+
+    public static WixType getWixTypeFromVerboseJPackageOutput(Executor.Result result) {
+        return result.getOutput().stream().map(str -> {
+            if (str.contains("Detected [light.exe]")) {
+                return WixType.WIX3;
+            } else if (str.contains("Detected [wix.exe]")) {
+                return WixType.WIX4;
+            } else {
+                return null;
+            }
+        }).filter(Objects::nonNull).reduce((a, b) -> {
+            throw new IllegalArgumentException("Invalid input: multiple invocations of WiX tools");
+        }).orElseThrow(() -> new IllegalArgumentException("Invalid input: no invocations of WiX tools"));
+    }
+
     static Optional<Path> toShortPath(Path path) {
         if (isPathTooLong(path)) {
             return Optional.of(ShortPathUtils.toShortPath(path));
