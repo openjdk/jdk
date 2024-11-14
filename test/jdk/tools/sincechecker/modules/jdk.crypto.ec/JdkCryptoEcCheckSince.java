@@ -1,4 +1,4 @@
-/*
+;/*
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8343775
- * @summary Test for @since in jdk.crypto.ec module
+ * @summary Test for `@since` in jdk.crypto.ec module
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker jdk.crypto.ec
  */

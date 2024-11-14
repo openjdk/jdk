@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8343775
- * @summary Test for @since in java.smartcardio module
+ * @summary Test for `@since` in java.smartcardio module
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker java.smartcardio
  */
