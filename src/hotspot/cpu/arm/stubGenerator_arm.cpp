@@ -1999,23 +1999,22 @@ class StubGenerator: public StubCodeGenerator {
     return start_pc;
   }
 
-#ifdef TEST_C2_GENERIC_ARRAYCOPY /* Internal development flag */
-    // With this flag, the C2 stubs are tested by generating calls to
-    // generic_arraycopy instead of Runtime1::arraycopy
+  /* Internal development flag                     */
+  /* enabled by defining TEST_C2_GENERIC_ARRAYCOPY */
 
-    // Runtime1::arraycopy return a status in R0 (0 if OK, else ~copied)
-    // and the result is tested to see whether the arraycopy stub should
-    // be called.
+  // With this flag, the C2 stubs are tested by generating calls to
+  // generic_arraycopy instead of Runtime1::arraycopy
 
-    // When we test arraycopy this way, we must generate extra code in the
-    // arraycopy methods callable from C2 generic_arraycopy to set the
-    // status to 0 for those who always succeed (calling the slow path stub might
-    // lead to errors since the copy has already been performed).
+  // Runtime1::arraycopy return a status in R0 (0 if OK, else ~copied)
+  // and the result is tested to see whether the arraycopy stub should
+  // be called.
 
-  static bool set_status = true; // generate a status compatible with C1 calls
-#else
-  static bool set_status = false; // non failing C2 stubs need not return a status in R0
-#endif
+  // When we test arraycopy this way, we must generate extra code in the
+  // arraycopy methods callable from C2 generic_arraycopy to set the
+  // status to 0 for those who always succeed (calling the slow path stub might
+  // lead to errors since the copy has already been performed).
+
+  static const bool set_status;
 
   //
   //  Generate stub for primitive array copy.  If "aligned" is true, the
@@ -2120,7 +2119,7 @@ class StubGenerator: public StubCodeGenerator {
       bytes_per_count = 2;
       disjoint = false;
       break;
-    case arrayof_jint_disjoint_arraycopy_id:
+    case arrayof_jint_arraycopy_id:
       aligned = true;
       status = set_status;
       bytes_per_count = 4;
@@ -2758,7 +2757,7 @@ class StubGenerator: public StubCodeGenerator {
   //    R0 ==  0  -  success
   //    R0 <   0  -  need to call System.arraycopy
   //
-  address generate_generic_copy(const char *name) {
+  address generate_generic_copy() {
     Label L_failed, L_objArray;
 
     // Input registers
@@ -3205,27 +3204,36 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
-    switch(kind) {
-    case Initial_stubs:
+  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code) {
+    switch(blob_id) {
+    case initial_id:
       generate_initial_stubs();
       break;
-     case Continuation_stubs:
+     case continuation_id:
       generate_continuation_stubs();
       break;
-    case Compiler_stubs:
+    case compiler_id:
       generate_compiler_stubs();
       break;
-    case Final_stubs:
+    case final_id:
       generate_final_stubs();
       break;
     default:
-      fatal("unexpected stubs kind: %d", kind);
+      fatal("unexpected blob id: %d", blob_id);
       break;
     };
   }
 }; // end class declaration
 
-void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
-  StubGenerator g(code, kind);
+void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id) {
+  StubGenerator g(code, blob_id);
 }
+
+// implementation of internal development flag
+
+#ifdef TEST_C2_GENERIC_ARRAYCOPY
+const bool StubGenerator::set_status = true; // generate a status compatible with C1 calls
+#else
+const bool StubGenerator::set_status = false; // non failing C2 stubs need not return a status in R0
+#endif
+
