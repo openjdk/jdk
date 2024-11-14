@@ -4490,6 +4490,9 @@ void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(Id
   const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
   if (predicate_block->has_parse_predicate()) { return; }
 
+  // TODO check for no control flow - only then are we reasonably sure SuperWord will work.
+  // TODO node budget
+
 #ifndef PRODUCT
   if (TraceLoopOpts) {
     tty->print("MultiVersionForAutoVectorization ");
@@ -4497,6 +4500,8 @@ void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(Id
   }
 #endif
   C->set_major_progress();
+
+
 
   // TODO model a bit after insert_pre_post_loops and unswitching?
   //C->print_method(PHASE_BEFORE_PRE_MAIN_POST, 4, main_head);
