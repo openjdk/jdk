@@ -270,7 +270,8 @@ public class ObjectInputStream
          * have been read.
          * See {@link #setObjectInputFilter(ObjectInputFilter)}
          */
-        static final boolean SET_FILTER_AFTER_READ = Boolean.getBoolean("jdk.serialSetFilterAfterRead");
+        static final boolean SET_FILTER_AFTER_READ =
+                Boolean.getBoolean("jdk.serialSetFilterAfterRead");
 
         /**
          * Property to control {@link GetField#get(String, Object)} conversion of
@@ -278,7 +279,8 @@ public class ObjectInputStream
          * {@link GetField#get(String, Object)} returns null otherwise
          * throwing {@link ClassNotFoundException}.
          */
-        private static final boolean GETFIELD_CNFE_RETURNS_NULL = Boolean.getBoolean("jdk.serialGetFieldCnfeReturnsNull");
+        private static final boolean GETFIELD_CNFE_RETURNS_NULL =
+                Boolean.getBoolean("jdk.serialGetFieldCnfeReturnsNull");
 
         /**
          * Property to override the implementation limit on the number
