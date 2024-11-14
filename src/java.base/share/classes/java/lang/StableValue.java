@@ -198,18 +198,17 @@ import java.util.function.Supplier;
  * using a provided {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
- *    class Application {
- *        static final int POOL_SIZE = 16;
+ *     class SqrtUtil {
  *
- *        static final List<Component> COMPONENTS =
- *                // @link substring="ofList" target="#ofList(int,IntFunction)" :
- *                StableValue.ofList(POOL_SIZE, Component::new);
+ *         private static final List<Double> SQRT =
+ *                 // @link substring="ofList" target="#ofList(int,IntFunction)" :
+ *                 StableValue.ofList(10, Math::sqrt);
  *
- *        public static Component component() {
- *            long index = Thread.currentThread().threadId() % POOL_SIZE;
- *            return COMPONENTS.get((int) index);
- *        }
- *    }
+ *         double sqrt9() {
+ *             return SQRT.apply(9); // Constant folds to 3.0
+ *         }
+ *
+ *     }
  *}
  * <p>
  * Note: In the example above, there is a constructor in the {@code Component}
