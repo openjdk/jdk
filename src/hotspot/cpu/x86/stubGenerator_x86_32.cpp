@@ -3919,7 +3919,7 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libm_reduce_pi04l() {
-   StubGenStubId stub_id = StubGenStubId::libm_reduce_pi04l_id;
+   StubGenStubId stub_id = StubGenStubId::dlibm_reduce_pi04l_id;
    StubCodeMark mark(this, stub_id);
 
    address start = __ pc();
@@ -3932,7 +3932,7 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libm_sin_cos_huge() {
-   StubGenStubId stub_id = StubGenStubId::libm_sin_cos_huge_id;
+   StubGenStubId stub_id = StubGenStubId::dlibm_sin_cos_huge_id;
    StubCodeMark mark(this, stub_id);
 
    address start = __ pc();
@@ -3979,7 +3979,7 @@ class StubGenerator: public StubCodeGenerator {
  }
 
  address generate_libm_tan_cot_huge() {
-   StubGenStubId stub_id = StubGenStubId::libm_tan_cot_huge_id;
+   StubGenStubId stub_id = StubGenStubId::dlibm_tan_cot_huge_id;
    StubCodeMark mark(this, stub_id);
 
    address start = __ pc();
