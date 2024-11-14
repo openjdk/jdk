@@ -356,7 +356,7 @@ void IdealGraphPrinter::set_traverse_outs(bool b) {
   _traverse_outs = b;
 }
 
-void IdealGraphPrinter::visit_node(Node *n, bool edges) {
+void IdealGraphPrinter::visit_node(Node* n, bool edges) {
 
   if (edges) {
 
