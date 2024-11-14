@@ -35,7 +35,7 @@
  * @run main RedefineClassHelper
  * @run main/othervm/timeout=180
  *         -javaagent:redefineagent.jar
- *         -Xlog:class+init
+ *         -Xlog:class+init,exceptions
  *         RedefineVerifyError
  */
 
@@ -105,6 +105,7 @@ public class RedefineVerifyError implements Opcodes {
             methodVisitor.visitFrame(Opcodes.F_FULL, 2, new Object[] {"MyError", "java/lang/String"}, 1, new Object[] {"java/lang/Exception"});
             methodVisitor.visitVarInsn(ASTORE, 2);
             methodVisitor.visitLabel(label3);
+            // Missing stackmap frame makes rededefine classes throw VerifyError
             // methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
             methodVisitor.visitInsn(RETURN);
             methodVisitor.visitMaxs(2, 3);
@@ -120,8 +121,8 @@ public class RedefineVerifyError implements Opcodes {
         Class<?> verifyErrorMirror = java.lang.VerifyError.class;
 
         try {
+            // The Verifier is called for the redefinition, which will fail because of the broken <init> method above.
             RedefineClassHelper.redefineClass(verifyErrorMirror, dump());
-            VerifyError err = new VerifyError("verify me now");
             throw new RuntimeException("This should throw VerifyError");
         } catch (VerifyError e) {
             System.out.println("Passed");
