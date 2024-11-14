@@ -146,7 +146,7 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(
 template <bool CONCURRENT, bool STABLE_THREAD>
 template <class T>
 void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_work(T* p) {
-  assert(_heap->is_concurrent_weak_root_in_progress() ||
+  assert(ShenandoahThreadLocalData::is_gc_state(ShenandoahHeap::WEAK_ROOTS) ||
          _heap->is_concurrent_strong_root_in_progress(),
          "Only do this in root processing phase");
 
@@ -154,7 +154,8 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
     if (_heap->in_collection_set(obj)) {
-      assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
+      assert(ShenandoahThreadLocalData::is_gc_state(ShenandoahHeap::EVACUATION),
+             "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (resolved == obj) {
