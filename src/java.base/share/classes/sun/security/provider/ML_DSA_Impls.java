@@ -30,7 +30,7 @@ import java.security.*;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-public class ML_DSA_Provider {
+public class ML_DSA_Impls {
 
     public enum Version {
         DRAFT, FINAL
