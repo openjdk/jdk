@@ -1364,6 +1364,7 @@ bool Method::is_ignored_by_security_stack_walk() const {
     // This is Method.invoke() -- ignore it
     return true;
   }
+  // This also looks obsolete
   if (method_holder()->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass())) {
     // This is an auxiliary frame -- ignore it
     return true;

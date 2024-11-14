@@ -162,6 +162,7 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
     vframeStream vfst(jthread);
 
     // scan up the stack skipping ClassLoader, AccessController and PrivilegedAction frames
+    // It was this thing - is this no longer needed also?  We won't have these frames anymore, right (except class loader)?
     TempNewSymbol access_controller = SymbolTable::new_symbol("java/security/AccessController");
     Klass* access_controller_klass = SystemDictionary::resolve_or_fail(access_controller, false, CHECK);
     TempNewSymbol privileged_action = SymbolTable::new_symbol("java/security/PrivilegedAction");
@@ -3063,6 +3064,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassContext(JNIEnv *env))
 
   if (vmClasses::reflect_CallerSensitive_klass() != nullptr) {
     // This must only be called from SecurityManager.getClassContext
+    // Also this?
     Method* m = vfst.method();
     if (!(m->method_holder() == vmClasses::SecurityManager_klass() &&
           m->name()          == vmSymbols::getClassContext_name() &&
