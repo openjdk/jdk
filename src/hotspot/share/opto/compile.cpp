@@ -5288,7 +5288,7 @@ void Compile::igv_print_method_to_network(const char* phase_name) {
   igv_print_graph_to_network(phase_name, (Node *) C->root(), empty_list);
 }
 
-void Compile::igv_print_graph_to_network(const char *name, Node *node, GrowableArray<const Node*>  &visible_nodes) {
+void Compile::igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*> & visible_nodes) {
   if (_debug_network_printer == nullptr) {
     _debug_network_printer = new IdealGraphPrinter(C);
   } else {
