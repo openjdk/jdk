@@ -131,6 +131,10 @@ final class FingerPrint {
         return attrs.name;
     }
 
+    public int classReleaseVersion() {
+        return attrs.majorVersion - 44; // 53 -> 9, 54 -> 10, ...
+    }
+
     public int mrversion() {
         return mrversion;
     }

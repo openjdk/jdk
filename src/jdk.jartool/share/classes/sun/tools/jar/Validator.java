@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,12 @@ final class Validator {
     public void validateVersioned(Map<String, FingerPrint> fps) {
 
         fps.values().forEach( fp -> {
-
+            // all versioned entries must be compatible with their release target number
+            if (fp.mrversion() < fp.classReleaseVersion()) {
+                errorAndInvalid(formatMsg2("error.release.unexpected.versioned.entry",
+                        fp.entryName(), String.valueOf(fp.classReleaseVersion())));
+                return;
+            }
             // validate the versioned module-info
             if (MODULE_INFO.equals(fp.basename())) {
                 checkModuleDescriptor(fp.entryName());
