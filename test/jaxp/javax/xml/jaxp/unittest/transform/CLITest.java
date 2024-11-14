@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,22 @@
  * questions.
  */
 
+package transform;
+
+import org.testng.annotations.Test;
+
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.CLITest
  * @run testng/othervm transform.CLITest
  * @summary Test internal transform CLI.
  */
-
-package transform;
-
-import java.util.PropertyPermission;
-
-import jaxp.library.JAXPTestUtilities;
-
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
-
-@Listeners({ jaxp.library.FilePolicy.class })
 public class CLITest {
 
     @Test
     public void testCLI() throws Exception {
-        JAXPTestUtilities.tryRunWithTmpPermission(() -> {
-            String[] args = new String[] { "-XSLTC", "-XSL", getClass().getResource("tigertest.xsl").toString(),
-                "-IN", getClass().getResource("tigertest-in.xml").toString(), };
-            ProcessXSLT.main(args);
-        }, new PropertyPermission("*", "read,write"));
+        String[] args = new String[] { "-XSLTC", "-XSL", getClass().getResource("tigertest.xsl").toString(),
+            "-IN", getClass().getResource("tigertest-in.xml").toString(), };
+        ProcessXSLT.main(args);
     }
 }

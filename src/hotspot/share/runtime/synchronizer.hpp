@@ -137,7 +137,7 @@ public:
 
 private:
   // Shared implementation between the different LockingMode.
-  static ObjectMonitor* inflate_impl(oop obj, const InflateCause cause);
+  static ObjectMonitor* inflate_impl(JavaThread* locking_thread, oop obj, const InflateCause cause);
 
 public:
   // This version is only for internal use
@@ -168,9 +168,12 @@ public:
   template <typename OwnerFilter>
   static void owned_monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter);
 
-  // Iterate ObjectMonitors where the owner == thread; this does NOT include
-  // ObjectMonitors where owner is set to a stack lock address in thread.
+  // Iterate ObjectMonitors where the owner is thread; this does NOT include
+  // ObjectMonitors where the owner is anonymous.
   static void owned_monitors_iterate(MonitorClosure* m, JavaThread* thread);
+
+  // Iterate ObjectMonitors where the owner is vthread.
+  static void owned_monitors_iterate(MonitorClosure* m, oop vthread);
 
   // Iterate ObjectMonitors owned by any thread.
   static void owned_monitors_iterate(MonitorClosure* closure);
@@ -229,11 +232,15 @@ public:
 // have to pass through, and we must also be able to deal with
 // asynchronous exceptions. The caller is responsible for checking
 // the thread's pending exception if needed.
+// When using ObjectLocker the top native frames in the stack will
+// not be seen in case we attempt preemption, since we start walking
+// from the last Java anchor, so we disable it with NoPreemptMark.
 class ObjectLocker : public StackObj {
  private:
   JavaThread* _thread;
   Handle      _obj;
   BasicLock   _lock;
+  NoPreemptMark _npm;
  public:
   ObjectLocker(Handle obj, JavaThread* current);
   ~ObjectLocker();

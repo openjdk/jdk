@@ -37,7 +37,6 @@ import static org.junit.jupiter.api.Assumptions.*;
 /**
  * @test
  * @summary Testing the Gatherer contract
- * @enablePreview
  * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.stream.DefaultMethodStreams
  * @run junit GathererTest
