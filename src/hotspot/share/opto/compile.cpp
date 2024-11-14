@@ -5285,7 +5285,7 @@ void Compile::igv_print_method_to_file(const char* phase_name, bool append) {
 void Compile::igv_print_method_to_network(const char* phase_name) {
   ResourceMark rm;
   GrowableArray<const Node*> empty_list;
-  igv_print_graph_to_network(phase_name, (Node *) C->root(), empty_list);
+  igv_print_graph_to_network(phase_name, (Node*) C->root(), empty_list);
 }
 
 void Compile::igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*> & visible_nodes) {
