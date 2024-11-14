@@ -91,6 +91,15 @@ public:
   IfNode* if_node() const;
 };
 
+// TODO
+class OpaqueAutoVectorizationMultiversioningNode : public Opaque1Node {
+  public:
+  OpaqueAutoVectorizationMultiversioningNode(Compile* C, Node* n) : Opaque1Node(C, n) {
+    init_class_id(Class_OpaqueAutoVectorizationMultiversioning);
+  }
+  virtual int Opcode() const;
+};
+
 // This node is used in the context of intrinsics. We sometimes implicitly know that an object is non-null even though
 // the compiler cannot prove it. We therefore add a corresponding cast to propagate this implicit knowledge. However,
 // this cast could become top during optimizations (input to cast becomes null) and the data path is folded. To ensure

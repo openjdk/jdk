@@ -397,11 +397,12 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
   //NOT_PRODUCT(trace_loop_unswitching_count(loop, original_head);)
   //C->print_method(PHASE_BEFORE_LOOP_UNSWITCHING, 4, original_head);
 
-  // TODO Opaque?
   Node* one = _igvn.intcon(1);
   set_ctrl(one, C->root());
+  Node* opaque = new OpaqueAutoVectorizationMultiversioningNode(C, one);
+  set_ctrl(opaque, C->root());
 
-  const LoopSelector loop_selector(lpt, one, PROB_FAIR, COUNT_UNKNOWN);
+  const LoopSelector loop_selector(lpt, opaque, PROB_FAIR, COUNT_UNKNOWN);
   OriginalLoop original_loop(lpt, old_new);
   original_loop.multiversion(loop_selector);
 
