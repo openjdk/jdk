@@ -208,7 +208,7 @@ bool ShenandoahPacer::claim_for_alloc(size_t words) {
     }
     new_val = cur - tax;
   } while (Atomic::cmpxchg(&_budget, cur, new_val, memory_order_relaxed) != cur);
-  return true;
+  return new_val >= 0;
 }
 
 template bool ShenandoahPacer::claim_for_alloc<true>(size_t words);
@@ -239,6 +239,8 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     return;
   }
 
+  claimed = claim_for_alloc<true>(words);
+
   // Threads that are attaching should not block at all: they are not
   // fully initialized yet. Blocking them would be awkward.
   // This is probably the path that allocates the thread oop itself.
@@ -249,34 +251,31 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   JavaThread* current = JavaThread::current();
   if (current->is_attaching_via_jni() ||
       !current->is_active_Java_thread()) {
-    claim_for_alloc<true>(words);
     return;
   }
 
-  jlong const max_delay = ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC;
-  jlong const start_time = os::elapsed_counter();
-  while (!claimed && (os::elapsed_counter() - start_time) < max_delay) {
-    // We could instead assist GC, but this would suffice for now.
-    wait(1);
-    claimed = claim_for_alloc<false>(words);
-  }
   if (!claimed) {
-    // Spent local time budget to wait for enough GC progress.
-    // Force allocating anyway, which may mean we outpace GC,
-    // and start Degenerated GC cycle.
-    claimed = claim_for_alloc<true>(words);
-    assert(claimed, "Should always succeed");
+    jlong const start_time = os::elapsed_counter();
+    jlong const deadline = start_time + (ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC);
+    jlong now = start_time;
+    while (Atomic::load(&_budget) < 0 && (now = os::elapsed_counter()) < deadline) {
+      // We could instead assist GC, but this would suffice for now.
+      wait(1, now + NANOSECS_PER_MILLISEC);
+    }
+    ShenandoahThreadLocalData::add_paced_time(current, (double)(os::elapsed_counter() - start_time) / NANOSECS_PER_SEC);
   }
-  ShenandoahThreadLocalData::add_paced_time(current, (double)(os::elapsed_counter() - start_time) / NANOSECS_PER_SEC);
 }
 
-void ShenandoahPacer::wait(size_t time_ms) {
+void ShenandoahPacer::wait(size_t time_ms, jlong wait_deadline) {
   // Perform timed wait. It works like like sleep(), except without modifying
   // the thread interruptible status. MonitorLocker also checks for safepoints.
   assert(time_ms > 0, "Should not call this with zero argument, as it would stall until notify");
   assert(time_ms <= LONG_MAX, "Sanity");
   MonitorLocker locker(_wait_monitor);
-  _wait_monitor->wait((long)time_ms);
+  if (os::elapsed_counter() < wait_deadline) {
+    //Avoid non-needed sys call if possible
+    _wait_monitor->wait((long)time_ms);
+  }
 }
 
 void ShenandoahPacer::notify_waiters() {
