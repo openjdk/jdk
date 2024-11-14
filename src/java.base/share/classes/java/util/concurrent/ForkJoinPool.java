@@ -809,7 +809,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      *
      * As a more appropriate default in managed environments, unless
      * overridden by system properties, we use workers of subclass
-     * InnocuousForkJoinWorkerThread. These workers have no permissions set, do not belong
+     * InnocuousForkJoinWorkerThread. These workers do not belong
      * to any user-defined ThreadGroup, and clear all ThreadLocals
      * after executing any top-level task.  The associated mechanics
      * may be JVM-dependent and must access particular Thread class
@@ -1542,12 +1542,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Sequence number for creating worker names
      */
     private static volatile int poolIds;
-
-    /**
-     * Permission required for callers of methods that may start or
-     * kill threads. Lazily constructed.
-     */
-    static volatile RuntimePermission modifyThreadPermission;
 
     // fields declared in order of their likely layout on most VMs
     volatile CountDownLatch termination; // lazily constructed

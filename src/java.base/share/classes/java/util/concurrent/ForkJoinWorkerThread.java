@@ -224,7 +224,7 @@ public class ForkJoinWorkerThread extends Thread {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
-     * A worker thread that has no permissions, is not a member of any
+     * A worker thread that is not a member of any
      * user-defined ThreadGroup, uses the system class loader as
      * thread context class loader, and clears all ThreadLocals after
      * running each top-level task.
