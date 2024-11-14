@@ -144,8 +144,8 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void print_inlining();
   void begin_method();
   void end_method();
-  void print_graph(const char *name);
-  void print(const char *name, Node *root, GrowableArray<const Node *> &hidden_nodes);
+  void print_graph(const char* name);
+  void print(const char* name, Node* root, GrowableArray<const Node*>& hidden_nodes);
   void set_compile(Compile* compile) {C = compile; }
   void update_compiled_method(ciMethod* current_method);
 };
