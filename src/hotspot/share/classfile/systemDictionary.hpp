@@ -236,7 +236,7 @@ public:
 
   // compute java_mirror (java.lang.Class instance) for a type ("I", "[[B", "LFoo;", etc.)
   // Either the accessing_klass or the CL can be non-null, but not both.
-  // callee will fill in CL from AK, if they are needed
+  // Callee will fill in CL from the accessing klass, if they are needed.
   static Handle    find_java_mirror_for_type(Symbol* signature,
                                              Klass* accessing_klass,
                                              SignatureStream::FailureMode failure_mode,
