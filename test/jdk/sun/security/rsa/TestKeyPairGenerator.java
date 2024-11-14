@@ -86,9 +86,10 @@ public class TestKeyPairGenerator {
     }
 
     // regression test for 4865198
-    private static void testInvalidSignature(KeyPair kp1, KeyPair kp2) throws Exception {
+    private static void testInvalidSignature(KeyPair kp1, KeyPair kp2, String signAlgo)
+            throws Exception {
         System.out.println("Testing signature with incorrect key...");
-        Signature sig = Signature.getInstance("MD5withRSA", provider);
+        Signature sig = Signature.getInstance(signAlgo, provider);
         sig.initSign(kp1.getPrivate());
         byte[] data = new byte[100];
         sig.update(data);
@@ -153,9 +154,14 @@ public class TestKeyPairGenerator {
             }
             test(privateKey, publicKey);
         }
-        testInvalidSignature(keyPairs[0], keyPairs[1]);
-        testInvalidSignature(keyPairs[0], keyPairs[2]);
-        testInvalidSignature(keyPairs[2], keyPairs[0]);
+        String md5Algo = "MD5withRSA";
+        String sha256Algo = "Sha256withRSA";
+        testInvalidSignature(keyPairs[0], keyPairs[1], md5Algo);
+        testInvalidSignature(keyPairs[0], keyPairs[2], md5Algo);
+        testInvalidSignature(keyPairs[2], keyPairs[0], md5Algo);
+        testInvalidSignature(keyPairs[0], keyPairs[1], sha256Algo);
+        testInvalidSignature(keyPairs[0], keyPairs[2], sha256Algo);
+        testInvalidSignature(keyPairs[2], keyPairs[0], sha256Algo);
         long stop = System.currentTimeMillis();
         System.out.println("All tests passed (" + (stop - start) + " ms).");
     }

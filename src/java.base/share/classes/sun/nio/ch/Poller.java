@@ -145,6 +145,20 @@ public abstract class Poller {
     }
 
     /**
+     * Parks the current thread until a Selector's file descriptor is ready.
+     * @param fdVal the Selector's file descriptor
+     * @param nanos the waiting time or 0 to wait indefinitely
+     */
+    static void pollSelector(int fdVal, long nanos) throws IOException {
+        assert nanos >= 0L;
+        Poller poller = POLLERS.masterPoller();
+        if (poller == null) {
+            poller = POLLERS.readPoller(fdVal);
+        }
+        poller.poll(fdVal, nanos, () -> true);
+    }
+
+    /**
      * If there is a thread polling the given file descriptor for the given event then
      * the thread is unparked.
      */
@@ -263,6 +277,13 @@ public abstract class Poller {
     @Override
     public String toString() {
         return Objects.toIdentityString(this) + " [registered = " + map.size() + "]";
+    }
+
+    /**
+     * Returns the number I/O operations currently registered with this poller.
+     */
+    public int registered() {
+        return map.size();
     }
 
     /**

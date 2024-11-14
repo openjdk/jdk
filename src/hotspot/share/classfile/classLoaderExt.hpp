@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,6 @@ class ClassListParser;
 
 class ClassLoaderExt: public ClassLoader { // AllStatic
 public:
-  static bool should_verify(int classpath_index) {
-    CDS_ONLY(return (classpath_index >= _app_class_paths_start_index);)
-    NOT_CDS(return false;)
-  }
-
 #if INCLUDE_CDS
 private:
   enum SomeConstants {
@@ -72,7 +67,7 @@ public:
   static void setup_search_paths(JavaThread* current);
   static void setup_module_paths(JavaThread* current);
   static void extract_jar_files_from_path(const char* path, GrowableArray<const char*>* module_paths);
-  static int compare_module_path_by_name(const char** p1, const char** p2);
+  static int compare_module_names(const char** p1, const char** p2);
 
   static char* read_manifest(JavaThread* current, ClassPathEntry* entry, jint *manifest_size) {
     // Remove all the new-line continuations (which wrap long lines at 72 characters, see

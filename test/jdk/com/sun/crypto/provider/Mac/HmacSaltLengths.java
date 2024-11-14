@@ -41,6 +41,10 @@ public class HmacSaltLengths {
 
     private static final String[] ALGOS = {
         "HmacPBESHA1",
+        "HmacPBESHA224",
+        "HmacPBESHA256",
+        "HmacPBESHA384",
+        "HmacPBESHA512",
         "PBEWithHmacSHA1",
         "PBEWithHmacSHA224",
         "PBEWithHmacSHA256",

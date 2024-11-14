@@ -41,6 +41,7 @@ import javax.lang.model.util.ElementFilter;
 
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
+import java.util.stream.Collectors;
 
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -52,9 +53,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlStyle;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.RawHtml;
 import jdk.javadoc.internal.html.Text;
 
 /**
@@ -582,10 +584,55 @@ public class ModuleWriter extends HtmlDocletWriter {
             TableHeader indirectPackagesHeader =
                     new TableHeader(contents.fromLabel, contents.packagesLabel);
             if (display(indirectPackages)) {
-                String aepText = resources.getText("doclet.Indirect_Exports_Summary");
-                var aepTable = getTable2(Text.of(aepText), indirectPackagesHeader);
-                addIndirectPackages(aepTable, indirectPackages);
-                section.add(aepTable);
+                ModuleElement javaBase = this.utils.elementUtils.getModuleElement("java.base");
+                boolean hasRequiresTransitiveJavaBase =
+                        ElementFilter.requiresIn(mdle.getDirectives())
+                                     .stream()
+                                     .anyMatch(rd -> rd.isTransitive() &&
+                                                     javaBase.equals(rd.getDependency()));
+                if (hasRequiresTransitiveJavaBase) {
+                    Map<ModuleElement, SortedSet<PackageElement>> filteredIndirectPackages =
+                            indirectPackages.entrySet()
+                                            .stream()
+                                            .filter(e -> !e.getKey().equals(javaBase))
+                                            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+                    String aepText = resources.getText("doclet.Indirect_Exports_Summary");
+                    var aepTable = getTable2(Text.of(aepText), indirectPackagesHeader);
+                    addIndirectPackages(aepTable, filteredIndirectPackages);
+                    section.add(aepTable);
+                    //add the preview box:
+                    section.add(HtmlTree.BR());
+                    section.add(HtmlTree.BR());
+                    HtmlId previewRequiresTransitiveId = HtmlId.of("preview-requires-transitive-java.base");
+                    var previewDiv = HtmlTree.DIV(HtmlStyles.previewBlock);
+                    previewDiv.setId(previewRequiresTransitiveId);
+
+                    Content note =
+                            RawHtml.of(resources.getText("doclet.PreviewJavaSERequiresTransitiveJavaBase"));
+
+                    previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment, note));
+                    section.add(previewDiv);
+
+                    //add the Indirect Exports
+                    filteredIndirectPackages =
+                            indirectPackages.entrySet()
+                                            .stream()
+                                            .filter(e -> e.getKey().equals(javaBase))
+                                            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+                    String aepPreviewText = resources.getText("doclet.Indirect_Exports_Summary");
+                    ContentBuilder tableCaption = new ContentBuilder(
+                            Text.of(aepPreviewText),
+                            HtmlTree.SUP(links.createLink(previewRequiresTransitiveId,
+                                         contents.previewMark)));
+                    var aepPreviewTable = getTable2(tableCaption, indirectPackagesHeader);
+                    addIndirectPackages(aepPreviewTable, filteredIndirectPackages);
+                    section.add(aepPreviewTable);
+                } else {
+                    String aepText = resources.getText("doclet.Indirect_Exports_Summary");
+                    var aepTable = getTable2(Text.of(aepText), indirectPackagesHeader);
+                    addIndirectPackages(aepTable, indirectPackages);
+                    section.add(aepTable);
+                }
             }
             if (display(indirectOpenPackages)) {
                 String aopText = resources.getText("doclet.Indirect_Opens_Summary");

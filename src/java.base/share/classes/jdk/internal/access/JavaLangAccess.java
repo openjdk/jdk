@@ -146,12 +146,6 @@ public interface JavaLangAccess {
     void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook);
 
     /**
-     * Returns a new Thread with the given Runnable and an
-     * inherited AccessControlContext.
-     */
-    Thread newThreadWithAcc(Runnable target, @SuppressWarnings("removal") AccessControlContext acc);
-
-    /**
      * Invokes the finalize method of the given object.
      */
     void invokeFinalize(Object o) throws Throwable;
@@ -184,16 +178,6 @@ public interface JavaLangAccess {
      * Define a Package of the given name and module by the given class loader.
      */
     Package definePackage(ClassLoader cl, String name, Module module);
-
-    /**
-     * Record the non-exported packages of the modules in the given layer
-     */
-    void addNonExportedPackages(ModuleLayer layer);
-
-    /**
-     * Invalidate package access cache
-     */
-    void invalidatePackageAccessCache();
 
     /**
      * Defines a new module to the Java virtual machine. The module
@@ -639,10 +623,4 @@ public interface JavaLangAccess {
      * Are the string bytes compatible with the given charset?
      */
     boolean bytesCompatible(String string, Charset charset);
-
-    /**
-     * Is a security manager already set or allowed to be set
-     * (using -Djava.security.manager=allow)?
-     */
-    boolean allowSecurityManager();
 }

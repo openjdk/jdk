@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,6 @@ JfrThreadLocal::JfrThreadLocal() :
   _wallclock_time(os::javaTimeNanos()),
   _stackdepth(0),
   _entering_suspend_flag(0),
-  _critical_section(0),
   _vthread_epoch(0),
   _vthread_excluded(false),
   _jvm_thread_excluded(false),
@@ -98,6 +97,14 @@ void JfrThreadLocal::set_thread_blob(const JfrBlobHandle& ref) {
 
 const JfrBlobHandle& JfrThreadLocal::thread_blob() const {
   return _thread;
+}
+
+void JfrThreadLocal::initialize_main_thread(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  assert(Thread::is_starting_thread(jt), "invariant");
+  assert(jt->threadObj() == nullptr, "invariant");
+  assert(jt->jfr_thread_local()->_jvm_thread_id == 0, "invariant");
+  jt->jfr_thread_local()->_jvm_thread_id = ThreadIdentifier::initial();
 }
 
 static void send_java_thread_start_event(JavaThread* jt) {
@@ -394,13 +401,13 @@ traceid JfrThreadLocal::thread_id(const Thread* t) {
   if (is_impersonating(t)) {
     return t->jfr_thread_local()->_thread_id_alias;
   }
-  JfrThreadLocal* const tl = t->jfr_thread_local();
+  const JfrThreadLocal* const tl = t->jfr_thread_local();
   if (!t->is_Java_thread()) {
-    return jvm_thread_id(t, tl);
+    return jvm_thread_id(tl);
   }
   const JavaThread* jt = JavaThread::cast(t);
   if (!is_vthread(jt)) {
-    return jvm_thread_id(t, tl);
+    return jvm_thread_id(tl);
   }
   // virtual thread
   const traceid tid = vthread_id(jt);
@@ -421,19 +428,30 @@ traceid JfrThreadLocal::external_thread_id(const Thread* t) {
   return JfrRecorder::is_recording() ? thread_id(t) : jvm_thread_id(t);
 }
 
-inline traceid load_java_thread_id(const Thread* t) {
+static inline traceid load_java_thread_id(const Thread* t) {
   assert(t != nullptr, "invariant");
   assert(t->is_Java_thread(), "invariant");
   oop threadObj = JavaThread::cast(t)->threadObj();
   return threadObj != nullptr ? AccessThreadTraceId::id(threadObj) : 0;
 }
 
+#ifdef ASSERT
+static bool can_assign(const Thread* t) {
+  assert(t != nullptr, "invariant");
+  if (!t->is_Java_thread()) {
+    return true;
+  }
+  const JavaThread* jt = JavaThread::cast(t);
+  return jt->thread_state() == _thread_new || jt->is_attaching_via_jni();
+}
+#endif
+
 traceid JfrThreadLocal::assign_thread_id(const Thread* t, JfrThreadLocal* tl) {
   assert(t != nullptr, "invariant");
   assert(tl != nullptr, "invariant");
-  JfrSpinlockHelper spinlock(&tl->_critical_section);
   traceid tid = tl->_jvm_thread_id;
   if (tid == 0) {
+    assert(can_assign(t), "invariant");
     if (t->is_Java_thread()) {
       tid = load_java_thread_id(t);
       tl->_jvm_thread_id = tid;
@@ -446,15 +464,14 @@ traceid JfrThreadLocal::assign_thread_id(const Thread* t, JfrThreadLocal* tl) {
   return tid;
 }
 
-traceid JfrThreadLocal::jvm_thread_id(const Thread* t, JfrThreadLocal* tl) {
-  assert(t != nullptr, "invariant");
+traceid JfrThreadLocal::jvm_thread_id(const JfrThreadLocal* tl) {
   assert(tl != nullptr, "invariant");
-  return tl->_jvm_thread_id != 0 ? tl->_jvm_thread_id : JfrThreadLocal::assign_thread_id(t, tl);
+  return tl->_jvm_thread_id;
 }
 
 traceid JfrThreadLocal::jvm_thread_id(const Thread* t) {
   assert(t != nullptr, "invariant");
-  return jvm_thread_id(t, t->jfr_thread_local());
+  return jvm_thread_id(t->jfr_thread_local());
 }
 
 bool JfrThreadLocal::is_vthread(const JavaThread* jt) {
