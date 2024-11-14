@@ -984,46 +984,26 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   Node* const _init;
   Node* const _stride;
   Node* const _old_target_loop_entry;
-  Node* _new_control;
+  Node* _current_predicate_chain_head;
   PhaseIdealLoop* const _phase;
   bool _has_hoisted_check_parse_predicates;
   const NodeInLoopBody& _node_in_loop_body;
   const bool _clone_template;
 
   IfTrueNode* clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate);
-  IfTrueNode* initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate) const;
+  IfTrueNode* initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate,
+                                       Node* new_control) const;
+  void rewire_to_old_predicate_chain_head(Node* initialized_assertion_predicate_success_proj) const;
 
  public:
-  CreateAssertionPredicatesVisitor(Node* init, Node* stride, Node* new_control, PhaseIdealLoop* phase,
-                                   const NodeInLoopBody& node_in_loop_body, const bool clone_template)
-      : _init(init),
-        _stride(stride),
-        _old_target_loop_entry(new_control),
-        _new_control(new_control),
-        _phase(phase),
-        _has_hoisted_check_parse_predicates(false),
-        _node_in_loop_body(node_in_loop_body),
-        _clone_template(clone_template) {}
+  CreateAssertionPredicatesVisitor(CountedLoopNode* target_loop_head, PhaseIdealLoop* phase,
+                                   const NodeInLoopBody& node_in_loop_body, bool clone_template);
   NONCOPYABLE(CreateAssertionPredicatesVisitor);
 
   using PredicateVisitor::visit;
 
   void visit(const ParsePredicate& parse_predicate) override;
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
-
-  // Did we create any new Initialized Assertion Predicates?
-  bool has_created_predicates() const {
-    return _new_control != _old_target_loop_entry;
-  }
-
-  // Return the last created node by this visitor or the originally provided 'new_control' to the visitor if there was
-  // no new node created (i.e. no Template Assertion Predicates found).
-  IfTrueNode* last_created_success_proj() const {
-    assert(has_created_predicates(), "should only be queried if new nodes have been created");
-    assert(_new_control->unique_ctrl_out_or_null() == nullptr, "no control outputs, yet");
-    assert(_new_control->is_IfTrue(), "Assertion Predicates only have IfTrue on success proj");
-    return _new_control->as_IfTrue();
-  }
 };
 
 // This visitor collects all Template Assertion Predicates If nodes or the corresponding Opaque nodes, depending on the
