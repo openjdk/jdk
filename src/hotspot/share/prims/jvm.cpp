@@ -151,30 +151,22 @@
   and thus can only support use of handles passed in.
 */
 
-static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
+extern void trace_class_resolution(Klass* to_class) {
   ResourceMark rm;
   int line_number = -1;
   const char * source_file = nullptr;
   const char * trace = "explicit";
   InstanceKlass* caller = nullptr;
-  JavaThread* jthread = THREAD;
+  JavaThread* jthread = JavaThread::current();
   if (jthread->has_last_Java_frame()) {
     vframeStream vfst(jthread);
 
-    // scan up the stack skipping ClassLoader, AccessController and PrivilegedAction frames
-    // It was this thing - is this no longer needed also?  We won't have these frames anymore, right (except class loader)?
-    TempNewSymbol access_controller = SymbolTable::new_symbol("java/security/AccessController");
-    Klass* access_controller_klass = SystemDictionary::resolve_or_fail(access_controller, false, CHECK);
-    TempNewSymbol privileged_action = SymbolTable::new_symbol("java/security/PrivilegedAction");
-    Klass* privileged_action_klass = SystemDictionary::resolve_or_fail(privileged_action, false, CHECK);
-
+    // Scan up the stack skipping ClassLoader frames.
     Method* last_caller = nullptr;
 
     while (!vfst.at_end()) {
       Method* m = vfst.method();
-      if (!vfst.method()->method_holder()->is_subclass_of(vmClasses::ClassLoader_klass())&&
-          !vfst.method()->method_holder()->is_subclass_of(access_controller_klass) &&
-          !vfst.method()->method_holder()->is_subclass_of(privileged_action_klass)) {
+      if (!vfst.method()->method_holder()->is_subclass_of(vmClasses::ClassLoader_klass())) {
         break;
       }
       last_caller = m;
@@ -230,14 +222,6 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
         log_debug(class, resolve)("%s %s (%s)", from, to, trace);
       }
     }
-  }
-}
-
-void trace_class_resolution(Klass* to_class) {
-  EXCEPTION_MARK;
-  trace_class_resolution_impl(to_class, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    CLEAR_PENDING_EXCEPTION;
   }
 }
 
