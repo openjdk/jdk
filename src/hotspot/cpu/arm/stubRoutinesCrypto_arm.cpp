@@ -119,7 +119,8 @@ void  aes_init() {
 
 address generate_aescrypt_encryptBlock() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "aesencryptBlock");
+  StubGenStubId stub_id = StubGenStubId::aescrypt_encryptBlock_id;
+  StubCodeMark mark(this, stub_id);
 
   address start = __ pc();
 
@@ -316,7 +317,8 @@ address generate_aescrypt_encryptBlock() {
 
 address generate_aescrypt_decryptBlock() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "aesdecryptBlock");
+  StubGenStubId stub_id = StubGenStubId::aescrypt_decryptBlock_id;
+  StubCodeMark mark(this, stub_id);
 
   address start = __ pc();
 
@@ -536,7 +538,8 @@ address generate_cipherBlockChaining_encryptAESCrypt() {
   // [sp+4] Transposition Box reference
 
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_encryptAESCrypt");
+  StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_encryptAESCrypt_id;
+  StubCodeMark mark(this, stub_id);
 
   address start = __ pc();
 
@@ -601,7 +604,8 @@ address generate_cipherBlockChaining_encryptAESCrypt() {
 
 address generate_cipherBlockChaining_decryptAESCrypt() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_decryptAESCrypt");
+  StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
+  StubCodeMark mark(this, stub_id);
 
   address start = __ pc();
 
