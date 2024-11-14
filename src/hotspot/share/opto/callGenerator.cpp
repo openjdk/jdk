@@ -354,15 +354,6 @@ class LateInlineCallGenerator : public DirectCallGenerator {
     return DirectCallGenerator::generate(jvms);
   }
 
-  virtual void print_inlining_late(InliningResult result, const char* msg) {
-    CallNode* call = call_node();
-    Compile* C = Compile::current();
-    C->print_inlining_assert_ready();
-    C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), result, msg);
-    C->print_inlining_move_to(this);
-    C->print_inlining_update_delayed(this);
-  }
-
   virtual void set_unique_id(jlong id) {
     _unique_id = id;
   }
@@ -498,15 +489,6 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
       call_node()->set_generator(this);
     }
     return new_jvms;
-  }
-
-  virtual void print_inlining_late(InliningResult result, const char* msg) {
-    CallNode* call = call_node();
-    Compile* C = Compile::current();
-    C->print_inlining_assert_ready();
-    C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), result, msg);
-    C->print_inlining_move_to(this);
-    C->print_inlining_update_delayed(this);
   }
 
   virtual void set_unique_id(jlong id) {
@@ -714,17 +696,16 @@ void CallGenerator::do_late_inline_helper() {
 
     bool do_print_inlining = C->print_inlining() || C->print_intrinsics();
     if (do_print_inlining) {
-      C->print_inlining_reset();
       if (is_mh_late_inline()) {
-        print_inlining_late(InliningResult::SUCCESS, "late inline (method handle)");
+        C->print_inlining_append_late(this, InliningResult::SUCCESS, "late inline succeeded (method handle)");
       } else if (is_string_late_inline()) {
-        print_inlining_late(InliningResult::SUCCESS, "late inline (string method)");
+        C->print_inlining_append_late(this, InliningResult::SUCCESS, "late inline succeeded (string method)");
       } else if (is_boxing_late_inline()) {
-        print_inlining_late(InliningResult::SUCCESS, "late inline (boxing method)");
+        C->print_inlining_append_late(this, InliningResult::SUCCESS, "late inline succeeded (boxing method)");
       } else if (is_vector_reboxing_late_inline()) {
-        print_inlining_late(InliningResult::SUCCESS, "late inline (vector reboxing method)");
+        C->print_inlining_append_late(this, InliningResult::SUCCESS, "late inline succeeded (vector reboxing method)");
       } else {
-        print_inlining_late(InliningResult::SUCCESS, "late inline");
+        C->print_inlining_append_late(this, InliningResult::SUCCESS, "late inline succeeded");
       }
     }
 

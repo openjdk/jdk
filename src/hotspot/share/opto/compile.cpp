@@ -2109,7 +2109,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
             CallGenerator* cg = _late_inlines.at(i);
             const char* msg = "live nodes > LiveNodeCountInliningCutoff";
             if (do_print_inlining) {
-              cg->print_inlining_late(InliningResult::FAILURE, msg);
+              print_inlining_append_late(cg, InliningResult::FAILURE, msg);
             }
             log_late_inline_failure(cg, msg);
           }
@@ -4451,6 +4451,44 @@ void Compile::print_inlining_commit() {
   // _print_inlining_list buffer and clear _print_inlining_stream.
   _print_inlining_list->at(_print_inlining_idx)->ss()->write(_print_inlining_stream->base(), _print_inlining_stream->size());
   print_inlining_reset();
+}
+
+void Compile::print_inlining_append_late(CallGenerator* cg, InliningResult result, const char* msg) {
+  assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
+  C->print_inlining_assert_ready();
+  C->print_inlining_move_to(cg);
+
+  stringStream* old = _print_inlining_list->at(_print_inlining_idx)->ss();
+
+  auto old_size = old->size(); // size(): Documentation says it is without terminating 0
+  bool found_line_break = false;
+  while (!found_line_break && old_size > 0) {
+    if (old->base()[old_size - 1] == '\n') {
+      found_line_break = true;
+    }
+    old_size--;
+  }
+
+  if (old_size == 0) {
+    CallNode* call = cg->call_node();
+    print_inlining(cg->method(), call->jvms()->depth() - 1, call->jvms()->bci(), result, msg);
+    print_inlining_update_delayed(cg);
+  } else {
+    // This is very similar to the previous branch with print_inlining_update_delayed with the difference that
+    // we are copying the old contents without the line break.
+
+    auto buffer = new PrintInliningBuffer();
+    buffer->ss()->write(old->base(), old_size);
+
+    const char* sep = "; ";
+    buffer->ss()->write(sep, strlen(sep));
+
+    // Note that print_inlining_inner_message already added a line break
+    CompileTask::print_inlining_inner_message(buffer->ss(), result, msg);
+
+    _print_inlining_list->at_put(_print_inlining_idx, buffer);
+    print_inlining_reset();
+  }
 }
 
 void Compile::print_inlining_push() {

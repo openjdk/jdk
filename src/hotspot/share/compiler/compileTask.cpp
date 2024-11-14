@@ -444,6 +444,10 @@ void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int i
   else
     st->print(" (not loaded)");
 
+  print_inlining_inner_message(st, result, msg);
+}
+
+void CompileTask::print_inlining_inner_message(outputStream* st, InliningResult result, const char* msg) {
   if (msg != nullptr) {
     st->print("   %s%s", result == InliningResult::SUCCESS ? "" : "failed to inline: ", msg);
   } else if (result == InliningResult::FAILURE) {

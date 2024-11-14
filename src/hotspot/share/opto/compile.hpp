@@ -525,6 +525,7 @@ private:
     return _print_inlining_stream;
   }
 
+  void print_inlining_append_late(CallGenerator* cg, InliningResult result, const char* msg);
   void print_inlining_update(CallGenerator* cg);
   void print_inlining_update_delayed(CallGenerator* cg);
   void print_inlining_move_to(CallGenerator* cg);

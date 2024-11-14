@@ -173,8 +173,6 @@ class CallGenerator : public ArenaObj {
                                                  CallGenerator* cg);
   virtual Node* generate_predicate(JVMState* jvms, int predicate) { return nullptr; };
 
-  virtual void print_inlining_late(InliningResult result, const char* msg) { ShouldNotReachHere(); }
-
   static void print_inlining(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
     print_inlining_impl(C, callee, inline_level, bci, InliningResult::SUCCESS, msg);
   }

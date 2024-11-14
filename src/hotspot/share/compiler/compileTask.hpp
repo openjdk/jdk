@@ -236,6 +236,7 @@ public:
   bool         check_break_at_flags();
 
   static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
+  static void print_inlining_inner_message(outputStream* st, InliningResult result, const char* msg);
   static void print_inlining_tty(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
     print_inlining_inner(tty, method, inline_level, bci, result, msg);
   }
