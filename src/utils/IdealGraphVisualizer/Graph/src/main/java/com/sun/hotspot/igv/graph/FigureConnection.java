@@ -41,7 +41,7 @@ public class FigureConnection implements Connection {
     private Color color;
     private ConnectionStyle style;
     private List<Point> controlPoints;
-    private String label;
+    private final String label;
 
     protected FigureConnection(InputSlot inputSlot, OutputSlot outputSlot, String label) {
         this.inputSlot = inputSlot;
@@ -121,6 +121,14 @@ public class FigureConnection implements Connection {
         return outputSlot;
     }
 
+    public Figure getFromFigure() {
+        return outputSlot.getFigure();
+    }
+
+    public Figure getToFigure() {
+        return inputSlot.getFigure();
+    }
+
     @Override
     public Cluster getFromCluster() {
         return getFrom().getVertex().getCluster();
@@ -134,11 +142,6 @@ public class FigureConnection implements Connection {
     @Override
     public Cluster getToCluster() {
         return getTo().getVertex().getCluster();
-    }
-
-    @Override
-    public boolean isVIP() {
-        return style == ConnectionStyle.BOLD;
     }
 
     @Override

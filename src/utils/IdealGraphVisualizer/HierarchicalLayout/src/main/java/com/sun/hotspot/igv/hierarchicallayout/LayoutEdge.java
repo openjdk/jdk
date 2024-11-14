@@ -25,20 +25,99 @@
 package com.sun.hotspot.igv.hierarchicallayout;
 
 import com.sun.hotspot.igv.layout.Link;
+import java.util.Comparator;
 
 public class LayoutEdge {
 
-        public LayoutNode from;
-        public LayoutNode to;
-        // Horizontal distance relative to start of 'from'.
-        public int relativeFrom;
-        // Horizontal distance relative to start of 'to'.
-        public int relativeTo;
-        public Link link;
-        public boolean vip;
+    public static final Comparator<LayoutEdge> LAYOUT_EDGE_LAYER_COMPARATOR = Comparator.comparingInt(e -> e.getTo().getLayer());
 
-        @Override
-        public String toString() {
-            return "Edge " + from + ", " + to;
-        }
+    private LayoutNode from;
+    private LayoutNode to;
+    // Horizontal distance relative to start of 'from'.
+    private int relativeFromX;
+    // Horizontal distance relative to start of 'to'.
+    private int relativeToX;
+    private Link link;
+    private boolean isReversed;
+
+    public int getStartX() {
+        return relativeFromX + from.getLeft();
     }
+
+    public int getEndX() {
+        return relativeToX + to.getLeft();
+    }
+
+    public LayoutEdge(LayoutNode from, LayoutNode to, Link link) {
+        this.from = from;
+        this.to = to;
+        this.link = link;
+        this.isReversed = false;
+    }
+
+    public LayoutEdge(LayoutNode from, LayoutNode to, int relativeFromX, int relativeToX, Link link) {
+        this(from, to, link);
+        this.relativeFromX = relativeFromX;
+        this.relativeToX = relativeToX;
+    }
+
+    public void reverse() {
+        isReversed = !isReversed;
+    }
+
+    public boolean isReversed() {
+        return isReversed;
+    }
+
+    @Override
+    public String toString() {
+        return "Edge " + from + ", " + to;
+    }
+
+    public LayoutNode getFrom() {
+        return from;
+    }
+
+    public void setFrom(LayoutNode from) {
+        this.from = from;
+    }
+
+    public LayoutNode getTo() {
+        return to;
+    }
+
+    public void setTo(LayoutNode to) {
+        this.to = to;
+    }
+
+    public int getFromX() {
+        return from.getX() + getRelativeFromX();
+    }
+
+    public int getToX() {
+        return to.getX() + getRelativeToX();
+    }
+
+    public int getRelativeFromX() {
+        return relativeFromX;
+    }
+    public void setRelativeFromX(int relativeFromX) {
+        this.relativeFromX = relativeFromX;
+    }
+
+    public int getRelativeToX() {
+        return relativeToX;
+    }
+
+    public void setRelativeToX(int relativeToX) {
+        this.relativeToX = relativeToX;
+    }
+
+    public Link getLink() {
+        return link;
+    }
+
+    public void setLink(Link link) {
+        this.link = link;
+    }
+}

@@ -27,11 +27,10 @@ import com.sun.hotspot.igv.graph.Block;
 import com.sun.hotspot.igv.graph.Connection;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.OutputSlot;
-import com.sun.hotspot.igv.layout.Vertex;
 import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.DiagramScene;
-import com.sun.hotspot.igv.view.actions.CustomSelectAction;
 import java.awt.*;
+import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -42,7 +41,6 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import org.netbeans.api.visual.action.ActionFactory;
 import org.netbeans.api.visual.action.PopupMenuProvider;
-import org.netbeans.api.visual.action.SelectProvider;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
 
@@ -61,10 +59,10 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private static final double ZOOM_FACTOR = 0.1;
     private final OutputSlot outputSlot;
     private final DiagramScene scene;
-    private final List<Connection> connections;
-    private final Point from;
-    private final Point to;
-    private final Rectangle clientArea;
+    private final List<? extends Connection> connections;
+    private Point from;
+    private Point to;
+    private Rectangle clientArea;
     private final LineWidget predecessor;
     private final List<LineWidget> successors;
     private boolean highlighted;
@@ -72,7 +70,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private final boolean isBold;
     private final boolean isDashed;
 
-    public LineWidget(DiagramScene scene, OutputSlot s, List<Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
+    public LineWidget(DiagramScene scene, OutputSlot s, List<? extends Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
         super(scene);
         this.scene = scene;
         this.outputSlot = s;
@@ -88,10 +86,52 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         this.isBold = isBold;
         this.isDashed = isDashed;
 
+        computeClientArea();
+
+        Color color = Color.BLACK;
+        if (!connections.isEmpty()) {
+            color = connections.get(0).getColor();
+        }
+        setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
+
+        setCheckClipping(false);
+
+        getActions().addAction(ActionFactory.createPopupMenuAction(this));
+        setBackground(color);
+    }
+
+
+    public Point getClientAreaLocation() {
+        return clientArea.getLocation();
+    }
+
+    private void computeClientArea() {
         int minX = from.x;
         int minY = from.y;
         int maxX = to.x;
         int maxY = to.y;
+
+        if (fromControlYOffset != 0 && toControlYOffset != 0) {
+            // Adjust the bounding box to accommodate control points for curves
+            if (from.y < to.y) { // non-reversed edges
+                minY = Math.min(minY, from.y + fromControlYOffset);
+                maxY = Math.max(maxY, to.y + toControlYOffset);
+            } else { // reversed edges
+                if (from.x - to.x > 0) {
+                    minX = Math.min(minX, from.x - 150);
+                    maxX = Math.max(maxX, to.x + 150);
+                    minY = Math.min(minY, from.y + fromControlYOffset);
+                    maxY = Math.max(maxY, to.y + toControlYOffset);
+                } else {
+                    minX = Math.min(minX, from.x + 150);
+                    maxX = Math.max(maxX, to.x - 150);
+                    minY = Math.min(minY, from.y + fromControlYOffset);
+                    maxY = Math.max(maxY, to.y + toControlYOffset);
+                }
+            }
+        }
+
+        // Ensure min and max values are correct
         if (minX > maxX) {
             int tmp = minX;
             minX = maxX;
@@ -104,53 +144,42 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             maxY = tmp;
         }
 
+        // Set client area to include the curve and add a BORDER for extra space
         clientArea = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         clientArea.grow(BORDER, BORDER);
-
-        Color color = Color.BLACK;
-        if (connections.size() > 0) {
-            color = connections.get(0).getColor();
-        }
-        setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
-
-        setCheckClipping(true);
-
-        getActions().addAction(ActionFactory.createPopupMenuAction(this));
-        setBackground(color);
-
-        getActions().addAction(new CustomSelectAction(new SelectProvider() {
-
-            @Override
-            public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
-                return true;
-            }
-
-            @Override
-            public boolean isSelectionAllowed(Widget widget, Point localLocation, boolean invertSelection) {
-                return true;
-            }
-
-            @Override
-            public void select(Widget widget, Point localLocation, boolean invertSelection) {
-                Set<Vertex> vertexSet = new HashSet<>();
-                for (Connection connection : connections) {
-                    if (connection.hasSlots()) {
-                        vertexSet.add(connection.getTo().getVertex());
-                        vertexSet.add(connection.getFrom().getVertex());
-                    }
-                }
-                scene.userSelectionSuggested(vertexSet, invertSelection);
-            }
-        }));
     }
 
-    private String generateToolTipText(List<Connection> conn) {
+    private String generateToolTipText(List<? extends Connection> conn) {
         StringBuilder sb = new StringBuilder();
         for (Connection c : conn) {
             sb.append(StringUtils.escapeHTML(c.getToolTipText()));
             sb.append("<br>");
         }
         return sb.toString();
+    }
+
+
+    public void setFrom(Point from) {
+        this.from = from;
+        computeClientArea();
+    }
+
+    public void setTo(Point to) {
+        this.to= to;
+        computeClientArea();
+    }
+
+    private int fromControlYOffset;
+    private int toControlYOffset;
+
+    public void setFromControlYOffset(int fromControlYOffset) {
+        this.fromControlYOffset = fromControlYOffset;
+        computeClientArea();
+    }
+
+    public void setToControlYOffset(int toControlYOffset) {
+        this.toControlYOffset = toControlYOffset;
+        computeClientArea();
     }
 
     public Point getFrom() {
@@ -176,7 +205,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             return;
         }
 
-        Graphics2D g = getScene().getGraphics();
+        Graphics2D g = this.getGraphics();
         g.setPaint(this.getBackground());
         float width = 1.0f;
 
@@ -195,10 +224,44 @@ public class LineWidget extends Widget implements PopupMenuProvider {
                     BasicStroke.JOIN_MITER, 10,
                     dashPattern, 0));
         } else {
-            g.setStroke(new BasicStroke(width));
+            g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
         }
 
-        g.drawLine(from.x, from.y, to.x, to.y);
+        // Define S-shaped curve with control points
+        if (fromControlYOffset != 0 && toControlYOffset != 0) {
+            if (from.y < to.y) { // non-reversed edges
+                if (Math.abs(from.x - to.x) > 10) {
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x, from.y + fromControlYOffset,
+                            to.x, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                } else {
+                    g.drawLine(from.x, from.y, to.x, to.y);
+                }
+            } else {  // reverse edges
+                if (from.x - to.x > 0) {
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x - 150, from.y + fromControlYOffset,
+                            to.x + 150, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                } else {
+                    // add x offset
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x + 150, from.y + fromControlYOffset,
+                            to.x - 150, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                }
+            }
+        } else {
+            // Fallback to straight line if control points are not set
+            g.drawLine(from.x, from.y, to.x, to.y);
+        }
 
         boolean sameFrom = false;
         boolean sameTo = successors.isEmpty();
@@ -234,6 +297,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
                     3);
         }
         g.setStroke(oldStroke);
+        super.paintWidget();
     }
 
     private void setPopupVisible(boolean b) {
@@ -255,6 +319,14 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             recursiveHighlightSuccessors(enableHighlighting);
             highlightVertices(enableHighlighting);
         }
+    }
+
+    public LineWidget getPredecessor() {
+        return predecessor;
+    }
+
+    public List<LineWidget> getSuccessors() {
+        return successors;
     }
 
     private void highlightPredecessors(boolean enable) {
@@ -314,6 +386,13 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         }
     }
 
+    public Figure getFromFigure() {
+        if (outputSlot != null) {
+            return outputSlot.getFigure();
+        }
+        return null;
+    }
+
     @Override
     public JPopupMenu getPopupMenu(Widget widget, Point localLocation) {
         JPopupMenu menu = new JPopupMenu();
@@ -350,4 +429,5 @@ public class LineWidget extends Widget implements PopupMenuProvider {
 
         return menu;
     }
+
 }

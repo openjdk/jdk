@@ -64,11 +64,6 @@ public class InputNode extends Properties.Entity {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id, getProperties());
-    }
-
-    @Override
     public String toString() {
         return "Node " + id + " " + getProperties().toString();
     }

@@ -23,15 +23,13 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-import com.sun.hotspot.igv.layout.LayoutGraph;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
-import com.sun.hotspot.igv.util.Statistics;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.*;
 
-public class HierarchicalStableLayoutManager {
+public class HierarchicalStableLayoutManager extends LayoutManager{
 
     public static final int DUMMY_HEIGHT = 1;
     public static final int DUMMY_WIDTH = 1;
@@ -64,6 +62,14 @@ public class HierarchicalStableLayoutManager {
         setShouldRedrawLayout(oldShouldRedrawLayout);
     }
 
+
+    public void setCutEdges(boolean cutEdges) {
+    }
+
+    @Override
+    public void doLayout(LayoutGraph graph) {
+
+    }
 
     enum Action {
         ADD,

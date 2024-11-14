@@ -24,11 +24,12 @@
 package com.sun.hotspot.igv.graph;
 
 import com.sun.hotspot.igv.data.InputBlock;
+import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.layout.Cluster;
-import java.awt.Dimension;
+import com.sun.hotspot.igv.layout.Vertex;
+import java.awt.Point;
 import java.awt.Rectangle;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  *
@@ -36,9 +37,9 @@ import java.util.Set;
  */
 public class Block implements Cluster {
 
-    private InputBlock inputBlock;
+    protected final InputBlock inputBlock;
     private Rectangle bounds;
-    private Diagram diagram;
+    private final Diagram diagram;
 
     public Block(InputBlock inputBlock, Diagram diagram) {
         this.inputBlock = inputBlock;
@@ -59,14 +60,31 @@ public class Block implements Cluster {
         return succs;
     }
 
-    public Dimension getNodeOffset() {
-        return new Dimension(0, -Figure.getVerticalOffset());
+    public List<? extends Vertex> getVertices() {
+        List<Vertex> vertices = new ArrayList<>();
+        for (InputNode inputNode : inputBlock.getNodes()) {
+            vertices.add(diagram.getFigure(inputNode));
+        }
+        return vertices;
     }
 
     public void setBounds(Rectangle r) {
         this.bounds = r;
     }
 
+    @Override
+    public void setPosition(Point p) {
+        if (bounds != null) {
+            bounds.setLocation(p);
+        }
+    }
+
+    @Override
+    public Point getPosition() {
+        return bounds.getLocation();
+    }
+
+    @Override
     public Rectangle getBounds() {
         return bounds;
     }
@@ -78,6 +96,18 @@ public class Block implements Cluster {
     @Override
     public String toString() {
         return inputBlock.getName();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) return false;
+        Block other = (Block) obj;
+        return inputBlock.equals(other.inputBlock);
+    }
+
+    @Override
+    public int hashCode() {
+        return inputBlock.hashCode();
     }
 }
 

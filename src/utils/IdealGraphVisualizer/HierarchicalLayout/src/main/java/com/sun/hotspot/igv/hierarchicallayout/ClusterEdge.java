@@ -70,10 +70,6 @@ public class ClusterEdge implements Link {
         return points;
     }
 
-    public boolean isVIP() {
-        return false;
-    }
-
     @Override
     public String toString() {
         return from + "->" + to;
