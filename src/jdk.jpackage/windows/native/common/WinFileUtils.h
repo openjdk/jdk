@@ -315,6 +315,8 @@ namespace FileUtils {
         std::ofstream tmp;
         tstring dstPath;
     };
+
+    tstring toShortPath(const tstring& path);
 } // FileUtils
 
 #endif // WINFILEUTILS_H

@@ -36,7 +36,6 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -67,7 +66,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -527,9 +525,10 @@ public class WinMsiBundler  extends AbstractBundler {
                 "message.preparing-msi-config"), msiOut.toAbsolutePath()
                         .toString()));
 
-        WixPipeline wixPipeline = new WixPipeline()
-                .setToolset(wixToolset)
-                .setWixObjDir(TEMP_ROOT.fetchFrom(params).resolve("wixobj"))
+        var wixObjDir = TEMP_ROOT.fetchFrom(params).resolve("wixobj");
+
+        var wixPipeline = WixPipeline.build()
+                .setWixObjDir(wixObjDir)
                 .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
                 .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"),
                         wixVars);
@@ -639,7 +638,8 @@ public class WinMsiBundler  extends AbstractBundler {
             }
         }
 
-        wixPipeline.buildMsi(msiOut.toAbsolutePath());
+        Files.createDirectories(wixObjDir);
+        wixPipeline.create(wixToolset).buildMsi(msiOut.toAbsolutePath());
 
         return msiOut;
     }

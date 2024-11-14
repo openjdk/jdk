@@ -25,6 +25,8 @@
 
 #include "ResourceEditor.h"
 #include "ErrorHandling.h"
+#include "FileUtils.h"
+#include "WinFileUtils.h"
 #include "IconSwap.h"
 #include "VersionInfo.h"
 #include "JniUtils.h"
@@ -160,6 +162,27 @@ extern "C" {
         JP_CATCH_ALL;
 
         return 1;
+    }
+
+    /*
+     * Class:     jdk_jpackage_internal_ShortPathUtils
+     * Method:    getShortPath
+     * Signature: (Ljava/lang/String;)Ljava/lang/String;
+     */
+    JNIEXPORT jstring JNICALL
+        Java_jdk_jpackage_internal_ShortPathUtils_getShortPath(
+            JNIEnv *pEnv, jclass c, jstring jLongPath) {
+
+        JP_TRY;
+
+        const std::wstring longPath = jni::toUnicodeString(pEnv, jLongPath);
+        std::wstring shortPath = FileUtils::toShortPath(longPath);
+
+        return jni::toJString(pEnv, shortPath);
+
+        JP_CATCH_ALL;
+
+        return NULL;
     }
 
 } // extern "C"

@@ -668,4 +668,23 @@ tstring stripExeSuffix(const tstring& path) {
     return path.substr(0, pos);
 }
 
+tstring toShortPath(const tstring& path) {
+    const DWORD len = GetShortPathName(path.c_str(), nullptr, 0);
+    if (0 == len) {
+        JP_THROW(SysError(tstrings::any() << "GetShortPathName("
+                << path << ") failed", GetShortPathName));
+    }
+
+    std::vector<TCHAR> buf;
+    buf.resize(len);
+    const DWORD copied = GetShortPathName(path.c_str(), buf.data(),
+                                            static_cast<DWORD>(buf.size()));
+    if (copied != buf.size() - 1) {
+        JP_THROW(SysError(tstrings::any() << "GetShortPathName("
+                << path << ") failed", GetShortPathName));
+    }
+
+    return tstring(buf.data(), buf.size() - 1);
+}
+
 } //  namespace FileUtils
