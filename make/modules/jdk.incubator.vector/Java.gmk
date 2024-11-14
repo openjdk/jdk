@@ -26,3 +26,5 @@
 DISABLED_WARNINGS_java += dangling-doc-comments
 
 DOCLINT += -Xdoclint:all/protected
+
+JAVAC_FLAGS += --add-exports=java.base/jdk.internal=jdk.incubator.vector

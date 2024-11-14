@@ -28,6 +28,7 @@ package jdk.incubator.vector;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import jdk.internal.ValueBased;
 
 // import jdk.internal.math.*;
 
@@ -95,8 +96,7 @@ import static java.lang.Math.multiplyHigh;
 // Currently Float16 is a value-based class and in future it is
 // expected to be aligned with Value Classes and Object as described in
 // JEP-401 (https://openjdk.org/jeps/401).
-// @jdk.internal.MigratedValueClass
-// @jdk.internal.ValueBased
+@ValueBased
 public final class Float16
     extends Number
     implements Comparable<Float16> {
