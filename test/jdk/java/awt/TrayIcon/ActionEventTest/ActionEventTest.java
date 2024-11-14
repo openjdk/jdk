@@ -27,8 +27,8 @@
  * @key headful
  * @summary Verify that ActionEvent is received with correct modifiers set.
  * @modules java.desktop/java.awt:open java.desktop/java.awt.peer
- * @library /lib/client ../ /java/awt/patchlib
- * @build java.desktop/java.awt.Helper SystemTrayIconHelper
+ * @library ../ /java/awt/patchlib /test/lib
+ * @build java.desktop/java.awt.Helper SystemTrayIconHelper jtreg.SkippedException
  * @run main ActionEventTest
  */
 
@@ -50,21 +50,9 @@ public class ActionEventTest {
 
     public static void main(String[] args) throws Exception {
         if (!SystemTray.isSupported()) {
-            System.out.println("SystemTray not supported on the platform." +
+            throw new jtreg.SkippedException("SystemTray not supported on the platform." +
                     " Marking the test passed.");
-        } else {
-            if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
-                System.err.println(
-                        "Test can fail on Windows platform\n" +
-                                "On Windows 7, by default icon hides behind icon pool\n" +
-                                "Due to which test might fail\n" +
-                                "Set \"Right mouse click\" -> " +
-                                "\"Customize notification icons\" -> \"Always show " +
-                                "all icons and notifications on the taskbar\" true " +
-                                "to avoid this problem.\nOR change behavior only for " +
-                                "Java SE tray icon and rerun test.");
-            }
-
+        }
             ActionEventTest test = new ActionEventTest();
             test.doTest();
             test.clear();

@@ -28,7 +28,6 @@
  * @requires (os.family == "windows")
  * @summary Checks that JInternalFrame's system menu
  *          can be localized during run-time
- * @library /lib/client/
  * @modules java.desktop/com.sun.java.swing.plaf.windows
  * @run main bug6725409
  */
@@ -51,21 +50,16 @@ public class bug6725409 {
     private static final Robot robot = createRobot();
 
     public static void main(String[] args) throws Exception {
-        try {
-            UIManager.setLookAndFeel(
-                    new com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel());
-        } catch (UnsupportedLookAndFeelException e) {
-            System.out.println("The test is for Windows LaF only");
-            return;
-        }
+        UIManager.setLookAndFeel(
+                new com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel());
 
         final bug6725409 bug6725409 = new bug6725409();
         try {
-            SwingUtilities.invokeAndWait(() -> bug6725409.setupUIStep1());
+            SwingUtilities.invokeAndWait(bug6725409::setupUIStep1);
             sync();
-            SwingUtilities.invokeAndWait(() -> bug6725409.setupUIStep2());
+            SwingUtilities.invokeAndWait(bug6725409::setupUIStep2);
             sync();
-            SwingUtilities.invokeAndWait(() -> bug6725409.test());
+            SwingUtilities.invokeAndWait(bug6725409::test);
             sync();
             bug6725409.checkResult();
         } finally {
@@ -82,8 +76,7 @@ public class bug6725409 {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JDesktopPane desktop = new JDesktopPane();
-        iFrame = new JInternalFrame("Internal Frame",
-                true, true, true, true);
+        iFrame = new JInternalFrame("Internal Frame", true, true, true, true);
         iFrame.setSize(200, 100);
         desktop.add(iFrame);
         frame.add(desktop);
@@ -147,10 +140,9 @@ public class bug6725409 {
 
     private static Robot createRobot() {
         try {
-            Robot robot = new Robot();
-            return robot;
+            return new Robot();
         } catch (Exception ex) {
-            // pass exception
+            throw new Error("Can't create Robot", ex);
         }
     }
 
