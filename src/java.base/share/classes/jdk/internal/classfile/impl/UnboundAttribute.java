@@ -1006,7 +1006,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
     public static final class UnboundModuleAttribute extends UnboundAttribute<ModuleAttribute> implements ModuleAttribute {
 
-        private static final Utf8Entry NAME = TemporaryConstantPool.INSTANCE.utf8Entry(Attributes.NAME_CONSTANT_VALUE);
+        private static final Utf8Entry NAME = TemporaryConstantPool.INSTANCE.utf8Entry(Attributes.NAME_MODULE);
 
         private final ModuleEntry moduleName;
         private final int moduleFlags;
