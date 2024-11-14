@@ -39,13 +39,6 @@ import java.util.Objects;
  * @since 9
  */
 public class SecureLookupSupplier {
-    /**
-     * The name of a runtime permission required to successfully invoke the
-     * {@link #getLookup()} method.
-     */
-    public static final String GET_LOOKUP_PERMISSION_NAME = "dynalink.getLookup";
-
-    private static final RuntimePermission GET_LOOKUP_PERMISSION = new RuntimePermission(SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
 
     private final MethodHandles.Lookup lookup;
 
@@ -63,11 +56,6 @@ public class SecureLookupSupplier {
      * @return the lookup secured by this {@code SecureLookupSupplier}.
      */
     public final Lookup getLookup() {
-        @SuppressWarnings("removal")
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null && lookup != MethodHandles.publicLookup()) {
-            sm.checkPermission(GET_LOOKUP_PERMISSION);
-        }
         return lookup;
     }
 

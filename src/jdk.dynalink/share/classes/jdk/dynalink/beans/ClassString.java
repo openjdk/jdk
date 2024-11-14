@@ -61,13 +61,10 @@
 package jdk.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import jdk.dynalink.internal.AccessControlContextFactory;
+
 import jdk.dynalink.internal.InternalTypeUtilities;
 import jdk.dynalink.linker.LinkerServices;
 import jdk.dynalink.linker.support.TypeUtilities;
@@ -78,10 +75,6 @@ import jdk.dynalink.linker.support.TypeUtilities;
  * JLS.
  */
 final class ClassString {
-    @SuppressWarnings("removal")
-    private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
-            AccessControlContextFactory.createAccessControlContext("getClassLoader");
-
     /**
      * An anonymous inner class used solely to represent the "type" of null values for method applicability checking.
      */
@@ -128,16 +121,13 @@ final class ClassString {
         return "ClassString[" + Arrays.toString(classes) + "]";
     }
 
-    @SuppressWarnings("removal")
     boolean isVisibleFrom(final ClassLoader classLoader) {
-        return AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {
-            for(final Class<?> clazz: classes) {
-                if(!InternalTypeUtilities.canReferenceDirectly(classLoader, clazz.getClassLoader())) {
-                    return false;
-                }
+        for(final Class<?> clazz: classes) {
+            if(!InternalTypeUtilities.canReferenceDirectly(classLoader, clazz.getClassLoader())) {
+                return false;
             }
-            return true;
-        }, GET_CLASS_LOADER_CONTEXT);
+        }
+        return true;
     }
 
     List<MethodHandle> getMaximallySpecifics(final List<MethodHandle> methods, final LinkerServices linkerServices, final boolean varArg) {

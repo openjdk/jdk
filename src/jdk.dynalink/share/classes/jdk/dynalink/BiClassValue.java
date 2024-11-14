@@ -27,14 +27,10 @@ package jdk.dynalink;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import jdk.dynalink.internal.AccessControlContextFactory;
 
 import static jdk.dynalink.internal.InternalTypeUtilities.canReferenceDirectly;
 
@@ -201,21 +197,14 @@ final class BiClassValue<T> {
         }
     }
 
-    @SuppressWarnings("removal")
-    private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
-        AccessControlContextFactory.createAccessControlContext("getClassLoader");
-
-    @SuppressWarnings("removal")
     private static RetentionDirection getRetentionDirection(Class<?> from, Class<?> to) {
-        return AccessController.doPrivileged((PrivilegedAction<RetentionDirection>) () -> {
-            final ClassLoader cl1 = from.getClassLoader();
-            final ClassLoader cl2 = to.getClassLoader();
-            if (canReferenceDirectly(cl1, cl2)) {
-                return RetentionDirection.FORWARD;
-            } else if (canReferenceDirectly(cl2, cl1)) {
-                return RetentionDirection.REVERSE;
-            }
-            return RetentionDirection.NEITHER;
-        }, GET_CLASS_LOADER_CONTEXT);
+        final ClassLoader cl1 = from.getClassLoader();
+        final ClassLoader cl2 = to.getClassLoader();
+        if (canReferenceDirectly(cl1, cl2)) {
+            return RetentionDirection.FORWARD;
+        } else if (canReferenceDirectly(cl2, cl1)) {
+            return RetentionDirection.REVERSE;
+        }
+        return RetentionDirection.NEITHER;
     }
 }

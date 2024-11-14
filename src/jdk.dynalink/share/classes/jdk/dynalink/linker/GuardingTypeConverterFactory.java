@@ -118,8 +118,7 @@ public interface GuardingTypeConverterFactory {
      * interface for interoperability). Invoking the {@link Supplier#get()}
      * method on the passed supplier will be subject to the same security checks
      * as {@link SecureLookupSupplier#getLookup()}. An implementation should avoid
-     * retrieving the lookup if it is not needed so as to avoid the expense of
-     * {@code AccessController.doPrivileged} call.
+     * retrieving the lookup if it is not needed.
      * @return a guarded invocation that can take an object (if it passes guard)
      * and return another object that is its representation coerced into the
      * target type. In case the factory is certain it is unable to handle a
