@@ -1077,7 +1077,10 @@ bool CallStaticJavaNode::cmp( const Node &n ) const {
 
 Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   CallGenerator* cg = generator();
-  if (can_reshape && cg != nullptr) {
+  CallGenerator* fcg = failed_generator();
+  if (fcg != nullptr) {
+    phase->C->add_late_inline(fcg);
+  } else if (can_reshape && cg != nullptr) {
     assert(IncrementalInlineMH, "required");
     assert(cg->call_node() == this, "mismatch");
     assert(cg->is_mh_late_inline(), "not virtual");

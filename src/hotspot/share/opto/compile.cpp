@@ -665,6 +665,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _types(nullptr),
                   _node_hash(nullptr),
                   _late_inlines(comp_arena(), 2, 0, nullptr),
+                  _failed_late_inlines(comp_arena(), 2, 0, nullptr),
                   _string_late_inlines(comp_arena(), 2, 0, nullptr),
                   _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, nullptr),
@@ -2045,6 +2046,9 @@ bool Compile::inline_incrementally_one() {
         _late_inlines_pos = i+1; // restore the position in case new elements were inserted
         print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
         break; // process one call site at a time
+      } else {
+        cg->call_node()->set_failed_generator(cg);
+        add_failed_late_inline(cg);
       }
     } else {
       // Ignore late inline direct calls when inlining is not allowed.
@@ -2076,6 +2080,12 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
     TracePhase tp("incrementalInline_igvn", &timers[_t_incrInline_igvn]);
     igvn.reset_from_gvn(initial_gvn());
     igvn.optimize();
+    // Reset failed generator in call node
+    for (int i = 0; i < _failed_late_inlines.length(); i++) {
+          CallGenerator* cg = _failed_late_inlines.at(i);
+          cg->call_node()->set_failed_generator(nullptr);
+    }
+    _failed_late_inlines.clear();
     if (failing()) return;
   }
   print_method(PHASE_INCREMENTAL_INLINE_CLEANUP, 3);
