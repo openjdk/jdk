@@ -5295,7 +5295,7 @@ void Compile::igv_print_graph_to_network(const char* name, Node* node, GrowableA
     _debug_network_printer->update_compiled_method(C->method());
   }
   tty->print_cr("Method printed over network stream to IGV");
-  _debug_network_printer->print(name, (Node *) Compile::current()->root(), visible_nodes);
+  _debug_network_printer->print(name, (Node*) Compile::current()->root(), visible_nodes);
 }
 #endif
 
