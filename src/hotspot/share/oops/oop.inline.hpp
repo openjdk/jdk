@@ -163,10 +163,6 @@ void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
   }
 }
 
-inline bool oopDesc::has_klass_gap() {
-  return ObjLayout::oop_has_klass_gap();
-}
-
 void oopDesc::set_klass_gap(HeapWord* mem, int v) {
   assert(has_klass_gap(), "precondition");
   *(int*)(((char*)mem) + klass_gap_offset_in_bytes()) = v;
