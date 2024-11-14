@@ -133,10 +133,6 @@ static void doCleanup() {
         screenSpace.screenCount = 0;
     }
 
-    if (!sessionClosed) {
-        fp_pw_deinit();
-    }
-
     gtk->g_string_set_size(activeSessionToken, 0);
     sessionClosed = TRUE;
 }
@@ -583,6 +579,13 @@ static gboolean doLoop(GdkRectangle requestedArea) {
         pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
 
         if (!pw.loop) {
+            // in case someone called the pw_deinit before
+            DEBUG_SCREENCAST("pw_init\n", NULL);
+            fp_pw_init(NULL, NULL);
+            pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
+        }
+
+        if (!pw.loop) {
             DEBUG_SCREENCAST("!!! Could not create a loop\n", NULL);
             doCleanup();
             return FALSE;
@@ -712,7 +715,6 @@ static gboolean loadSymbols() {
     LOAD_SYMBOL(fp_pw_stream_disconnect, "pw_stream_disconnect");
     LOAD_SYMBOL(fp_pw_stream_destroy, "pw_stream_destroy");
     LOAD_SYMBOL(fp_pw_init, "pw_init");
-    LOAD_SYMBOL(fp_pw_deinit, "pw_deinit");
     LOAD_SYMBOL(fp_pw_context_connect_fd, "pw_context_connect_fd");
     LOAD_SYMBOL(fp_pw_core_disconnect, "pw_core_disconnect");
     LOAD_SYMBOL(fp_pw_context_new, "pw_context_new");
