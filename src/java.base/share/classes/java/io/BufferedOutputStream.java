@@ -86,7 +86,7 @@ public class BufferedOutputStream extends FilterOutputStream {
         }
 
         if (getClass() == BufferedOutputStream.class) {
-            // resizable if initialSize < maxSize
+            // resizable when not sub-classed
             this.buf = new byte[initialSize];
         } else {
             this.buf = new byte[maxSize];
