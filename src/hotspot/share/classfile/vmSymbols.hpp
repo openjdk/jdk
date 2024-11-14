@@ -117,7 +117,6 @@ class SerializeClosure;
   template(java_lang_reflect_RecordComponent,         "java/lang/reflect/RecordComponent")        \
   template(java_lang_StringBuffer,                    "java/lang/StringBuffer")                   \
   template(java_lang_StringBuilder,                   "java/lang/StringBuilder")                  \
-  template(java_lang_SecurityManager,                 "java/lang/SecurityManager")                \
   template(java_lang_ScopedValue,                     "java/lang/ScopedValue")                    \
   template(java_lang_ScopedValue_Carrier,             "java/lang/ScopedValue$Carrier")            \
   template(java_security_CodeSource,                  "java/security/CodeSource")                 \
