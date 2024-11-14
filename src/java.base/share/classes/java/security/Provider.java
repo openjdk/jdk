@@ -1082,8 +1082,7 @@ public abstract class Provider extends Properties {
     }
 
     // used as key in the serviceMap and legacyMap HashMaps
-    private static class ServiceKey implements Serializable {
-        private static final long serialVersionUID = -4298000515446427739L;
+    private static class ServiceKey {
         private final String type;
         private final String algorithm;
         private final String originalAlgorithm;
@@ -1282,7 +1281,7 @@ public abstract class Provider extends Properties {
         checkInitialized();
         // avoid allocating a new ServiceKey object if possible
         ServiceKey key = previousKey;
-        if (!key.matches(type, algorithm)) {
+        if (key == null || !key.matches(type, algorithm)) {
             key = new ServiceKey(type, algorithm, false);
             previousKey = key;
         }
@@ -1312,7 +1311,7 @@ public abstract class Provider extends Properties {
     // re-use will occur e.g. as the framework traverses the provider
     // list and queries each provider with the same values until it finds
     // a matching service
-    private ServiceKey previousKey = new ServiceKey("", "", false);
+    private transient ServiceKey previousKey;
 
     /**
      * Get an unmodifiable Set of all services supported by
