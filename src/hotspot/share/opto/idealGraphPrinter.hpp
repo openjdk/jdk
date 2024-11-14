@@ -114,7 +114,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   ciField* get_field(const Node* node);
   ciField* find_source_field_of_array_access(const Node* node, uint& depth);
   static Node* get_load_node(const Node* node);
-  void walk_nodes(Node *start, bool edges);
+  void walk_nodes(Node* start, bool edges);
   void begin_elem(const char *s);
   void end_elem();
   void begin_head(const char *s);
