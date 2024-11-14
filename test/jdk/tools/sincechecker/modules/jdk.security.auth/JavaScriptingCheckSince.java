@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8343775
- * @summary Test for `@since` in java.scripting module
+ * @summary Test for `@since` in jdk.security.auth module
  * @library /test/lib /test/jdk/tools/sincechecker
- * @run main SinceChecker java.scripting
+ * @run main SinceChecker jdk.security.auth
  */
