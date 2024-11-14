@@ -1872,7 +1872,7 @@ public class FloatingDecimal{
                 }
             }  // look for and process decimal floating-point string
 
-            byte[] digits = new byte[ len ];
+            byte[] digits = new byte[len];
             boolean decSeen = false;
             int nDigits = 0;
             int decPt = 0;
