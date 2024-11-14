@@ -750,7 +750,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             Path dst = file.getValue();
 
             componentIds.add(addComponent(xml, dst, Component.File, unused -> {
-                xml.writeAttribute("Source", "\\\\?\\" + src.normalize().toString());
+                xml.writeAttribute("Source", src.normalize().toString());
                 Path name = dst.getFileName();
                 if (!name.equals(src.getFileName())) {
                     xml.writeAttribute("Name", name.toString());
