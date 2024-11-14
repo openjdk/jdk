@@ -75,7 +75,7 @@ public @interface PreviewFeature {
         @JEP(number=480, title="Structured Concurrency", status="Third Preview")
         STRUCTURED_CONCURRENCY,
         STREAM_GATHERERS,
-        @JEP(number=476, title="Module Import Declarations", status="Preview")
+        @JEP(number=494, title="Module Import Declarations", status="Second Preview")
         MODULE_IMPORTS,
         @JEP(number=478, title="Key Derivation Function API", status="Preview")
         KEY_DERIVATION,

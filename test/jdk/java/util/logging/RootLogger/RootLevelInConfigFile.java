@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,10 @@
  */
 
 import java.io.File;
-import java.io.FilePermission;
 import java.io.IOException;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
-import java.util.PropertyPermission;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.logging.LoggingPermission;
-import jdk.internal.access.JavaAWTAccess;
-import jdk.internal.access.SharedSecrets;
 
 /**
  * @test
@@ -44,7 +34,7 @@ import jdk.internal.access.SharedSecrets;
  *      configuration file does work.
  * @modules java.base/jdk.internal.access
  *          java.logging
- * @run main/othervm -Djava.security.manager=allow RootLevelInConfigFile
+ * @run main/othervm RootLevelInConfigFile
  *
  * @author danielfuchs
  */
@@ -66,29 +56,6 @@ public class RootLevelInConfigFile {
         final String configFile = System.getProperty(CONFIG_FILE_KEY);
 
         test("no security");
-
-        LogManager.getLogManager().readConfiguration();
-
-        Policy.setPolicy(new SimplePolicy(configFile));
-        System.setSecurityManager(new SecurityManager());
-
-        test("security");
-
-        LogManager.getLogManager().readConfiguration();
-
-        final JavaAWTAccessStub access = new JavaAWTAccessStub();
-        SharedSecrets.setJavaAWTAccess(access);
-
-        test("security and no context");
-
-        for (Context ctx : Context.values()) {
-
-            LogManager.getLogManager().readConfiguration();
-
-            access.setContext(ctx);
-
-            test("security and context " + ctx);
-        }
     }
 
     public static void test(String conf) throws IOException {
@@ -173,39 +140,4 @@ public class RootLevelInConfigFile {
         }
 
     }
-
-    static final class SimplePolicy extends Policy {
-
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-
-        final PermissionCollection perms = new Permissions();
-        public SimplePolicy(String configFile) {
-            perms.add(new LoggingPermission("control", null));
-            perms.add(new PropertyPermission("java.util.logging.config.class","read"));
-            perms.add(new PropertyPermission("java.util.logging.config.file","read"));
-            perms.add(new FilePermission(configFile, "read"));
-            perms.add(new RuntimePermission("accessClassInPackage.jdk.internal.access"));
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            return perms.implies(permission) || DEFAULT_POLICY.implies(domain, permission);
-        }
-    }
-
-    static enum Context { ONE, TWO };
-
-    static final class JavaAWTAccessStub implements JavaAWTAccess {
-        private Context context;
-
-        public void setContext(Context context) {
-            this.context = context;
-        }
-
-        @Override
-        public Object getAppletContext() {
-            return context;
-        }
-    }
-
 }
