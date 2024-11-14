@@ -60,13 +60,13 @@ public:
   typedef struct StringWrapperInternal StringWrapper;
 
   // Unnamed int needed to fit CompactHashtable's equals type signature
-  static bool wrapped_string_equals(oop java_string, StringWrapper& wrapped_str, int = 0);
+  static bool wrapped_string_equals(oop java_string, const StringWrapper& wrapped_str, int = 0);
 
 private:
-  static const char* get_symbol_utf8(StringWrapper& symbol_str);
-  static unsigned int hash_wrapped_string(StringWrapper& wrapped_str);
-  static const jchar* to_unicode(StringWrapper& wrapped_str, int &len, TRAPS);
-  static Handle handle_from_wrapped_string(StringWrapper& wrapped_str, TRAPS);
+  static const char* get_symbol_utf8(const StringWrapper& symbol_str);
+  static unsigned int hash_wrapped_string(const StringWrapper& wrapped_str);
+  static const jchar* to_unicode(const StringWrapper& wrapped_str, int &len, TRAPS);
+  static Handle handle_from_wrapped_string(const StringWrapper& wrapped_str, TRAPS);
 
   // GC support
 
@@ -77,9 +77,9 @@ private:
   static void item_added();
   static void item_removed();
 
-  static oop intern(StringWrapper& name, TRAPS);
-  static oop do_intern(StringWrapper& name, uintx hash, TRAPS);
-  static oop do_lookup(StringWrapper& name, uintx hash);
+  static oop intern(const StringWrapper& name, TRAPS);
+  static oop do_intern(const StringWrapper& name, uintx hash, TRAPS);
+  static oop do_lookup(const StringWrapper& name, uintx hash);
 
   static void print_table_statistics(outputStream* st);
 
@@ -143,7 +143,7 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  private:
-  static oop lookup_shared(StringWrapper& name, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static oop lookup_shared(const StringWrapper& name, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
  public:
   static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);
