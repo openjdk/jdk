@@ -77,21 +77,22 @@ public class Socket_getInputStream_read extends AsyncCloseTest implements Runnab
     public AsyncCloseTest go() {
         try {
             InetAddress lh = InetAddress.getLocalHost();
-            ServerSocket ss = new ServerSocket(0, 0, lh);
-            s.connect( new InetSocketAddress(lh, ss.getLocalPort()) );
-            try (Socket s2 = ss.accept()) {
-                Thread thr = new Thread(this);
-                thr.start();
-                latch.await();
-                Thread.sleep(5000); //sleep, so Socket.getInputStream().read() can block
-                s.close();
-                thr.join();
-            }
+            try (ServerSocket ss = new ServerSocket(0, 0, lh)) {
+                s.connect(new InetSocketAddress(lh, ss.getLocalPort()));
+                try (Socket s2 = ss.accept()) {
+                    Thread thr = new Thread(this);
+                    thr.start();
+                    latch.await();
+                    Thread.sleep(5000); //sleep, so Socket.getInputStream().read() can block
+                    s.close();
+                    thr.join();
+                }
 
-            if (isClosed()) {
-                return passed();
-            } else {
-                return failed("Socket.getInputStream().read() wasn't preempted");
+                if (isClosed()) {
+                    return passed();
+                } else {
+                    return failed("Socket.getInputStream().read() wasn't preempted");
+                }
             }
         } catch (Exception x) {
             failed(x.getMessage());
