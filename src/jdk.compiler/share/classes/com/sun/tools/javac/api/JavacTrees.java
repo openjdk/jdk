@@ -1402,6 +1402,7 @@ public class JavacTrees extends DocTrees {
         jcCompilationUnit.namedImportScope = new NamedImportScope(psym);
         jcCompilationUnit.packge = psym;
         jcCompilationUnit.starImportScope = new StarImportScope(psym);
+        jcCompilationUnit.moduleImportScope = new StarImportScope(psym);
         jcCompilationUnit.toplevelScope = WriteableScope.create(psym);
         return new TreePath(jcCompilationUnit);
     }

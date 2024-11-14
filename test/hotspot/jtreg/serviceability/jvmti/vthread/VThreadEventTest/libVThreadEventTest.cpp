@@ -28,6 +28,7 @@
 
 extern "C" {
 
+const int MAX_COUNT = 50;
 static jvmtiEnv *jvmti = nullptr;
 static std::atomic<int> thread_end_cnt(0);
 static std::atomic<int> thread_unmount_cnt(0);
@@ -38,10 +39,70 @@ void JNICALL VirtualThreadEnd(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread) {
 }
 
 void JNICALL VirtualThreadMount(jvmtiEnv* jvmti, ...) {
+  jvmtiError err;
+  jint count = 0;
+  jvmtiFrameInfo frameInfo[MAX_COUNT];
+
+  va_list ap;
+  JNIEnv* jni = nullptr;
+  jthread thread = nullptr;
+
+  va_start(ap, jvmti);
+  jni = va_arg(ap, JNIEnv*);
+  thread = va_arg(ap, jthread);
+  va_end(ap);
+
+  err = jvmti->GetStackTrace(thread, 0, MAX_COUNT, frameInfo, &count);
+  check_jvmti_status(jni, err, "event handler: error in JVMTI GetStackTrace call");
+
+  // Verify top 3 methods to filter events from Continuation::try_preempt().
+  const int verification_count = 3;
+  const char* expected_methods[verification_count] = {"yieldContinuation", "park", "parkVirtualThread"};
+
+  if (count < verification_count) return;
+
+  for (int idx = 0; idx < verification_count; idx++) {
+    char* methodName = get_method_name(jvmti, jni, frameInfo[idx].method);
+    if (strcmp(methodName, expected_methods[idx]) != 0) {
+      deallocate(jvmti, jni, methodName);
+      return;
+    }
+    deallocate(jvmti, jni, methodName);
+  }
   thread_mount_cnt++;
 }
 
 void JNICALL VirtualThreadUnmount(jvmtiEnv* jvmti, ...) {
+  jvmtiError err;
+  jint count = 0;
+  jvmtiFrameInfo frameInfo[MAX_COUNT];
+
+  va_list ap;
+  JNIEnv* jni = nullptr;
+  jthread thread = nullptr;
+
+  va_start(ap, jvmti);
+  jni = va_arg(ap, JNIEnv*);
+  thread = va_arg(ap, jthread);
+  va_end(ap);
+
+  err = jvmti->GetStackTrace(thread, 0, MAX_COUNT, frameInfo, &count);
+  check_jvmti_status(jni, err, "event handler: error in JVMTI GetStackTrace call");
+
+  // Verify top 3 methods to filter events from Continuation::try_preempt().
+  const int verification_count = 3;
+  const char* expected_methods[verification_count] = {"run", "enter0", "enter"};
+
+  if (count < verification_count) return;
+
+  for (int idx = 0; idx < verification_count; idx++) {
+    char* methodName = get_method_name(jvmti, jni, frameInfo[idx].method);
+    if (strcmp(methodName, expected_methods[idx]) != 0) {
+      deallocate(jvmti, jni, methodName);
+      return;
+    }
+    deallocate(jvmti, jni, methodName);
+  }
   thread_unmount_cnt++;
 }
 

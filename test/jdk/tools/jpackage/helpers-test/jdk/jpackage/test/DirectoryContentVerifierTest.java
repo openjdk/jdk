@@ -39,15 +39,6 @@ import static jdk.jpackage.test.DirectoryContentVerifierTest.AssertType.MATCH;
 import jdk.jpackage.test.TKit.DirectoryContentVerifier;
 import static jdk.jpackage.test.TKit.assertAssert;
 
-/*
- * @test
- * @summary Test TKit.DirectoryContentVerifier from jpackage test library
- * @library /test/jdk/tools/jpackage/helpers
- * @build jdk.jpackage.test.*
- * @compile DirectoryContentVerifierTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.test.DirectoryContentVerifierTest
- */
 public class DirectoryContentVerifierTest {
 
     enum AssertType {
