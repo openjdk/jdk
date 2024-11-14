@@ -41,7 +41,6 @@
 InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer) :
     NativeSignatureIterator(method) {
   _masm = new MacroAssembler(buffer);
-#ifdef AMD64
 #ifdef _WIN64
   _num_args = (method->is_static() ? 1 : 0);
   _stack_offset = (Argument::n_int_register_parameters_c+1)* wordSize; // don't overwrite return address
@@ -50,7 +49,6 @@ InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(const m
   _num_fp_args = 0;
   _stack_offset = wordSize; // don't overwrite return address
 #endif // _WIN64
-#endif // AMD64
 }
 
 Register InterpreterRuntime::SignatureHandlerGenerator::from() { return r14; }

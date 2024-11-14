@@ -27,7 +27,10 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.jvm.PoolConstant;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCLiteral;
@@ -43,19 +46,21 @@ import java.util.Objects;
 public class TreeHasher extends TreeScanner {
 
     private final Map<Symbol, Integer> symbolHashes;
+    private final Types types;
     private int result = 17;
 
-    public TreeHasher(Map<Symbol, Integer> symbolHashes) {
+    public TreeHasher(Types types, Map<Symbol, Integer> symbolHashes) {
         this.symbolHashes = Objects.requireNonNull(symbolHashes);
+        this.types = types;
     }
 
-    public static int hash(JCTree tree, Collection<? extends Symbol> symbols) {
+    public static int hash(Types types, JCTree tree, Collection<? extends Symbol> symbols) {
         if (tree == null) {
             return 0;
         }
         Map<Symbol, Integer> symbolHashes = new HashMap<>();
         symbols.forEach(s -> symbolHashes.put(s, symbolHashes.size()));
-        TreeHasher hasher = new TreeHasher(symbolHashes);
+        TreeHasher hasher = new TreeHasher(types, symbolHashes);
         tree.accept(hasher);
         return hasher.result;
     }
@@ -88,6 +93,11 @@ public class TreeHasher extends TreeScanner {
     }
 
     @Override
+    public void visitClassDef(JCClassDecl tree) {
+        hash(tree.sym);
+    }
+
+    @Override
     public void visitIdent(JCIdent tree) {
         Symbol sym = tree.sym;
         if (sym != null) {
@@ -97,13 +107,21 @@ public class TreeHasher extends TreeScanner {
                 return;
             }
         }
-        hash(sym);
+        hashSymbol(sym);
     }
 
     @Override
     public void visitSelect(JCFieldAccess tree) {
-        hash(tree.sym);
+        hashSymbol(tree.sym);
         super.visitSelect(tree);
+    }
+
+    private void hashSymbol(Symbol sym) {
+        if (sym instanceof PoolConstant.Dynamic dynamic) {
+            hash(dynamic.bsmKey(types));
+        } else {
+            hash(sym);
+        }
     }
 
     @Override

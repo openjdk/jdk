@@ -61,9 +61,6 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         if (config.avoidUnalignedAccesses) {
             flags.add(RISCV64.Flag.AvoidUnalignedAccesses);
         }
-        if (config.nearCpool) {
-            flags.add(RISCV64.Flag.NearCpool);
-        }
         if (config.traceTraps) {
             flags.add(RISCV64.Flag.TraceTraps);
         }
