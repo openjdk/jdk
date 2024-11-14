@@ -941,12 +941,7 @@ private:
 #ifdef ASSERT
   static void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
- public:
-  IfTrueNode* create_initialized_assertion_predicate(IfNode* template_assertion_predicate, Node* new_init,
-                                                     Node* new_stride, Node* control);
-  DEBUG_ONLY(static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);)
  private:
-  DEBUG_ONLY(static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);)
   static void get_template_assertion_predicates(ParsePredicateSuccessProj* parse_predicate_proj, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(CountedLoopNode* main_loop_head);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
