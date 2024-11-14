@@ -216,7 +216,7 @@ public class TestPosix {
     private static String expectedDefaultOwner(Path zf) {
         try {
             return Files.getOwner(zf).getName();
-        } catch (UnsupportedOperationException | NoSuchFileException e) {
+        } catch (UnsupportedOperationException e) {
             // if we can't get the owner of the file, we fall back to system property user.name
             return System.getProperty("user.name");
         } catch (IOException e) {
@@ -233,7 +233,7 @@ public class TestPosix {
                 return defaultOwner;
             }
             return zfpv.readAttributes().group().getName();
-        } catch (UnsupportedOperationException | NoSuchFileException e) {
+        } catch (UnsupportedOperationException e) {
             return defaultOwner;
         } catch (IOException e) {
             System.out.println("Caught an exception when getting the default group.");
