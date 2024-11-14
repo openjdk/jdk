@@ -46,6 +46,68 @@
 /* maximum number of mapping records returned */
 static const int MAX_REGIONS_RETURNED = 1000000;
 
+
+class DllEntry {
+  public:
+  static DllEntry* _dll_list;
+  static DllEntry* _dll_cursor;
+
+  const char* _address;
+  const char* _dll_name;
+  DllEntry* _next;
+
+  void free() {
+    if (_next != nullptr) {
+      _next->free();
+      ::free(_next);
+      _next = nullptr;
+    }
+    ::free((void*)_dll_name);
+    _dll_name = nullptr;
+  }
+
+  static DllEntry* build(const char* addr, const char* dll_name) {
+    DllEntry* e = (DllEntry*)::malloc(sizeof(DllEntry));
+    assert(e != nullptr, "malloc failure");
+    e->_address = addr;
+    e->_dll_name = ::strdup(dll_name);
+    e->_next = nullptr;
+    return e;
+  }
+
+  /* append to list in sorted order, return first element of list */
+  DllEntry* append(DllEntry* entry) {
+    DllEntry* first = this;
+    if (entry->_address < _address) {
+      entry->_next = this;
+      first = entry;
+    } else if (_next == nullptr) {
+      _next = entry;
+    } else {
+      _next = _next->append(entry);
+    }
+    return first;
+  }
+
+  static int dll_cb(const char *dll_name, address low, address high, void* param) {
+    DllEntry* entry = build((const char*)low, dll_name);
+    if (_dll_list == nullptr) {
+      _dll_list = entry;
+    } else {
+      _dll_list = _dll_list->append(entry);
+    }
+    return 0;
+  };
+
+  static void add_all_dlls() {
+    os::get_loaded_modules_info(dll_cb, nullptr);
+    _dll_cursor = _dll_list;
+  }
+};
+
+DllEntry* DllEntry::_dll_list = nullptr;
+DllEntry* DllEntry::_dll_cursor = nullptr;
+
 class MappingInfo {
 public:
   const char* _address;
@@ -58,12 +120,16 @@ public:
 
   MappingInfo() {}
 
-  void process(const proc_regionwithpathinfo& mem_info) {
+  void reset() {
     _share_buffer.reset();
     _protect_buffer.reset();
     _type_buffer.reset();
     _file_name.reset();
     _tag_text = "";
+  }
+
+  void process(const proc_regionwithpathinfo& mem_info) {
+    reset();
 
     const proc_regioninfo& rinfo = mem_info.prp_prinfo;
 
@@ -116,54 +182,55 @@ public:
     }
   }
 
-#define X1(TAG) case VM_MEMORY_ ## TAG: return # TAG;
+#define X1(TAG, DESCR) X2(TAG, DESCR)
+//#define X1(TAG) case VM_MEMORY_ ## TAG: return # TAG;
 #define X2(TAG, DESCRIPTION) case VM_MEMORY_ ## TAG: return # DESCRIPTION;
   static const char* tagToStr(uint32_t user_tag) {
     switch (user_tag) {
       case 0:
         return 0;
-      X1(MALLOC);
-      X1(MALLOC_SMALL);
-      X1(MALLOC_LARGE);
-      X1(MALLOC_HUGE);
-      X1(SBRK);
-      X1(REALLOC);
-      X1(MALLOC_TINY);
-      X1(MALLOC_LARGE_REUSABLE);
-      X1(MALLOC_LARGE_REUSED);
-      X1(ANALYSIS_TOOL);
-      X1(MALLOC_NANO);
-      X1(MALLOC_MEDIUM);
-      X1(MALLOC_PROB_GUARD);
-      X1(MACH_MSG);
-      X1(IOKIT);
-      X1(STACK);
-      X1(GUARD);
-      X1(SHARED_PMAP);
-      X1(DYLIB);
-      X1(UNSHARED_PMAP);
+      X1(MALLOC, malloc);
+      X1(MALLOC_SMALL, malloc_small);
+      X1(MALLOC_LARGE, malloc_large);
+      X1(MALLOC_HUGE, malloc_huge);
+      X1(SBRK, sbrk);
+      X1(REALLOC, realloc);
+      X1(MALLOC_TINY, malloc_tiny);
+      X1(MALLOC_LARGE_REUSABLE, malloc_large_reusable);
+      X1(MALLOC_LARGE_REUSED, malloc_lage_reused);
+      X1(ANALYSIS_TOOL, analysis_tool);
+      X1(MALLOC_NANO, malloc_nano);
+      X1(MALLOC_MEDIUM, malloc_medium);
+      X1(MALLOC_PROB_GUARD, malloc_prob_guard);
+      X1(MACH_MSG, malloc_msg);
+      X1(IOKIT, IOKit);
+      X1(STACK, stack);
+      X1(GUARD, guard);
+      X1(SHARED_PMAP, shared_pmap);
+      X1(DYLIB, dylib);
+      X1(UNSHARED_PMAP, unshared_pmap);
       X2(APPKIT, AppKit);
       X2(FOUNDATION, Foundation);
       X2(COREGRAPHICS, CoreGraphics);
       X2(CORESERVICES, CoreServices); /* is also VM_MEMORY_CARBON */
       X2(JAVA, Java);
       X2(COREDATA, CoreData);
-      X1(COREDATA_OBJECTIDS);
-      X1(ATS);
-      X1(DYLD);
-      X1(DYLD_MALLOC);
-      X1(SQLITE);
-      X1(JAVASCRIPT_CORE);
-      X1(JAVASCRIPT_JIT_EXECUTABLE_ALLOCATOR);
-      X1(JAVASCRIPT_JIT_REGISTER_FILE);
-      X1(OPENCL);
+      X1(COREDATA_OBJECTIDS, CodeData_objectids);
+      X1(ATS, ats);
+      X1(DYLD, dyld);
+      X1(DYLD_MALLOC, dyld_malloc);
+      X1(SQLITE, sqlite);
+      X1(JAVASCRIPT_CORE, javascript_core);
+      X1(JAVASCRIPT_JIT_EXECUTABLE_ALLOCATOR, javascript_jit_executable_allocator);
+      X1(JAVASCRIPT_JIT_REGISTER_FILE, javascript_jit_register_file);
+      X1(OPENCL, OpenCL);
       X2(COREIMAGE, CoreImage);
       X2(IMAGEIO, ImageIO);
       X2(COREPROFILE, CoreProfile);
-      X1(APPLICATION_SPECIFIC_1);
-      X1(APPLICATION_SPECIFIC_16);
-      X1(OS_ALLOC_ONCE);
-      X1(GENEALOGY);
+      X1(APPLICATION_SPECIFIC_1, application_specific_1);
+      X1(APPLICATION_SPECIFIC_16, application_specific_16);
+      X1(OS_ALLOC_ONCE, os_alloc_once);
+      X1(GENEALOGY, genealogy);
       default:
         static char buffer[30];
         snprintf(buffer, sizeof(buffer), "user_tag=0x%x(%d)", user_tag, user_tag);
@@ -258,8 +325,41 @@ public:
       }
     }
     st->print_raw(mapping_info._file_name.base());
-  #undef INDENT_BY
+/*
+    st->print(" bh=%d ", region_info.pri_behavior);
+    st->print("fl=%d ", region_info.pri_flags);
+    st->print("uwc=%d ", region_info.pri_user_wired_count);
+    st->print("ut=%d ", region_info.pri_user_tag);
+    st->print("pr=%d ", region_info.pri_pages_resident);
+    st->print("snp=%d ", region_info.pri_pages_shared_now_private);
+    st->print("inh=%d ", region_info.pri_inheritance);
+    st->print("swo=%d ", region_info.pri_pages_swapped_out);
+    st->print("pd=%d ", region_info.pri_pages_dirtied);
+    st->print("rc=%d ", region_info.pri_ref_count);
+    st->print("sd=%d ", region_info.pri_shadow_depth);
+    st->print("sm=%d ", region_info.pri_share_mode);
+    st->print("ppr=%d ", region_info.pri_private_pages_resident);
+    st->print("spr=%d ", region_info.pri_shared_pages_resident);
+    st->print("dep=%d ", region_info.pri_depth);
+    //*/
     st->cr();
+
+    if (mapping_info._file_name.count() == 0) {
+      for (; DllEntry::_dll_cursor != nullptr; DllEntry::_dll_cursor = DllEntry::_dll_cursor->_next) {
+        DllEntry* e = DllEntry::_dll_cursor;
+        if ((uint64_t)(e->_address) < region_info.pri_address) {
+          continue;
+        }
+        if ((uint64_t)(e->_address) >= (region_info.pri_address + region_info.pri_size)) {
+          break;
+        }
+        INDENT_BY(5);
+        st->print(PTR_FORMAT, (size_t)(e->_address));
+        INDENT_BY(73);
+        st->print_cr("%s", e->_dll_name);
+      }
+    }
+#undef INDENT_BY
   }
 
   void print_legend() const {
@@ -306,6 +406,8 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
   st->cr();
   printer.print_header();
 
+  DllEntry::add_all_dlls();
+
   proc_regionwithpathinfo region_info;
   MappingInfo mapping_info;
   uint64_t address = 0;
@@ -322,7 +424,7 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
       st->print_cr("proc_pidinfo() returned %d", retval);
       assert(false, "proc_pidinfo() returned %d", retval);
     }
-    if (region_info.prp_prinfo.pri_share_mode != SM_EMPTY) {
+    if (region_info.prp_prinfo.pri_share_mode != SM_EMPTY || region_info.prp_prinfo.pri_user_tag != 0) {
       mapping_info.process(region_info);
       printer.print_single_mapping(region_info.prp_prinfo, mapping_info);
       summary.add_mapping(region_info.prp_prinfo, mapping_info);
@@ -333,5 +435,9 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
   st->cr();
   summary.print_on(session);
   st->cr();
+
+  /* free any held resources */
+  DllEntry::_dll_list->free();
+  ::free(DllEntry::_dll_list);
 }
 #endif // __APPLE__
