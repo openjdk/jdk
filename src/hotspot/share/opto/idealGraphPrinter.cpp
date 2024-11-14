@@ -819,10 +819,10 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges) {
   }
 }
 
-void IdealGraphPrinter::print_graph(const char *name) {
-    ResourceMark rm;
-    GrowableArray<const Node*> empty_list;
-    print(name, (Node *) C->root(), empty_list);
+void IdealGraphPrinter::print_graph(const char* name) {
+  ResourceMark rm;
+  GrowableArray<const Node*> empty_list;
+  print(name, (Node*) C->root(), empty_list);
 }
 
 // Print current ideal graph
