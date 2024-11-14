@@ -25,15 +25,10 @@
 
 package javax.management;
 
-
-import com.sun.jmx.mbeanserver.GetPropertyAction;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
-
-import java.security.AccessController;
 
 /**
  * This class represents numbers that are arguments to relational constraints.

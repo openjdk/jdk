@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.Map;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
-import java.security.AccessController;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
@@ -145,9 +144,7 @@ public class MXBeanLookup {
     throws InstanceAlreadyExistsException {
         ObjectName existing = mxbeanToObjectName.get(mxbean);
         if (existing != null) {
-            @SuppressWarnings("removal")
-            String multiname = AccessController.doPrivileged(
-                    new GetPropertyAction("jmx.mxbean.multiname"));
+            String multiname = System.getProperty("jmx.mxbean.multiname");
             if (!"true".equalsIgnoreCase(multiname)) {
                 throw new InstanceAlreadyExistsException(
                         "MXBean already registered with name " + existing);

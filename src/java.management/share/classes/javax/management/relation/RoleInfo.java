@@ -25,15 +25,11 @@
 
 package javax.management.relation;
 
-
-import com.sun.jmx.mbeanserver.GetPropertyAction;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
-import java.security.AccessController;
 
 import javax.management.MBeanServer;
 

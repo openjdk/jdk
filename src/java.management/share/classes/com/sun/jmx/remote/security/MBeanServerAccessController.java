@@ -25,9 +25,7 @@
 
 package com.sun.jmx.remote.security;
 
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 import java.io.ObjectInputStream;
-import java.security.AccessController;
 import java.util.Set;
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -74,13 +72,9 @@ import javax.management.remote.MBeanServerForwarder;
  * be overridden, for instance if the default checking behavior is
  * inappropriate.</p>
  *
- * <p>If there is no SecurityManager, then the access controller will refuse
- * to create an MBean that is a ClassLoader.  This prevents
- * people from opening security holes unintentionally. Otherwise, it
- * would not be obvious that granting write access grants the ability to
- * download and execute arbitrary code in the target MBean server. Advanced
- * users who do want an MBean which is a ClassLoader are presumably advanced enough
- * to handle policy files and security managers.</p>
+ * <p>An MBean could possibly be a CassLoader.
+ * Users who do want an MBean which could be a ClassLoader should not permit
+ * MBean creation.</p>
  */
 public abstract class MBeanServerAccessController
         implements MBeanServerForwarder {
@@ -174,15 +168,8 @@ public abstract class MBeanServerAccessController
         MBeanException,
         NotCompliantMBeanException {
         checkCreate(className);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            Object object = getMBeanServer().instantiate(className);
-            checkClassLoader(object);
-            return getMBeanServer().registerMBean(object, name);
-        } else {
-            return getMBeanServer().createMBean(className, name);
-        }
+        Object object = getMBeanServer().instantiate(className);
+        return getMBeanServer().registerMBean(object, name);
     }
 
     /**
@@ -198,18 +185,10 @@ public abstract class MBeanServerAccessController
         MBeanException,
         NotCompliantMBeanException {
         checkCreate(className);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            Object object = getMBeanServer().instantiate(className,
-                                                         params,
-                                                         signature);
-            checkClassLoader(object);
-            return getMBeanServer().registerMBean(object, name);
-        } else {
-            return getMBeanServer().createMBean(className, name,
-                                                params, signature);
-        }
+        Object object = getMBeanServer().instantiate(className,
+                                                      params,
+                                                     signature);
+        return getMBeanServer().registerMBean(object, name);
     }
 
     /**
@@ -227,16 +206,9 @@ public abstract class MBeanServerAccessController
         NotCompliantMBeanException,
         InstanceNotFoundException {
         checkCreate(className);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            Object object = getMBeanServer().instantiate(className,
-                                                         loaderName);
-            checkClassLoader(object);
-            return getMBeanServer().registerMBean(object, name);
-        } else {
-            return getMBeanServer().createMBean(className, name, loaderName);
-        }
+        Object object = getMBeanServer().instantiate(className,
+                                                     loaderName);
+        return getMBeanServer().registerMBean(object, name);
     }
 
     /**
@@ -256,19 +228,11 @@ public abstract class MBeanServerAccessController
         NotCompliantMBeanException,
         InstanceNotFoundException {
         checkCreate(className);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            Object object = getMBeanServer().instantiate(className,
-                                                         loaderName,
-                                                         params,
-                                                         signature);
-            checkClassLoader(object);
-            return getMBeanServer().registerMBean(object, name);
-        } else {
-            return getMBeanServer().createMBean(className, name, loaderName,
-                                                params, signature);
-        }
+        Object object = getMBeanServer().instantiate(className,
+                                                     loaderName,
+                                                     params,
+                                                     signature);
+        return getMBeanServer().registerMBean(object, name);
     }
 
     /**
@@ -604,18 +568,6 @@ public abstract class MBeanServerAccessController
         throws InstanceNotFoundException, MBeanRegistrationException {
         checkUnregister(name);
         getMBeanServer().unregisterMBean(name);
-    }
-
-    //----------------
-    // PRIVATE METHODS
-    //----------------
-
-    private void checkClassLoader(Object object) {
-        if (object instanceof ClassLoader)
-            throw new SecurityException("Access denied! Creating an " +
-                                        "MBean that is a ClassLoader " +
-                                        "is forbidden unless a security " +
-                                        "manager is installed.");
     }
 
     //------------------
