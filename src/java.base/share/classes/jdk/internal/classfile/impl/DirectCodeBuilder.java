@@ -395,9 +395,6 @@ public final class DirectCodeBuilder
     }
 
     private static class DedupLineNumberTableAttribute extends UnboundAttribute.AdHocAttribute<LineNumberTableAttribute> {
-
-        private static final Utf8Entry NAME = TemporaryConstantPool.INSTANCE.utf8Entry(Attributes.NAME_LINE_NUMBER_TABLE);
-
         private final BufWriterImpl buf;
         private int lastPc, lastLine, writtenLine;
 
@@ -442,7 +439,7 @@ public final class DirectCodeBuilder
 
         @Override
         public Utf8Entry attributeName() {
-            return NAME;
+            return buf.constantPool().utf8Entry(Attributes.NAME_LINE_NUMBER_TABLE);
         }
     }
 
