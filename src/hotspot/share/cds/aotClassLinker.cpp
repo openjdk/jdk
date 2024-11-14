@@ -146,9 +146,11 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     if (!CDSConfig::is_dumping_invokedynamic()) {
       return false;
     }
+#if 0 // FIXME
     if (!SystemDictionaryShared::should_hidden_class_be_archived(ik)) {
       return false;
     }
+#endif
     if (HeapShared::is_lambda_proxy_klass(ik)) {
       InstanceKlass* nest_host = ik->nest_host_not_null();
       if (!try_add_candidate(nest_host)) {

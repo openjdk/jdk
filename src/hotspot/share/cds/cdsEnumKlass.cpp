@@ -37,7 +37,6 @@
 
 bool CDSEnumKlass::is_enum_obj(oop orig_obj) {
   Klass* k = orig_obj->klass();
-  Klass* buffered_k = ArchiveBuilder::get_buffered_klass(k);
   return k->is_instance_klass() &&
          InstanceKlass::cast(k)->is_enum_subclass();
 }
@@ -73,7 +72,6 @@ void CDSEnumKlass::handle_enum_obj(int level,
   }
 
   ik->set_has_archived_enum_objs();
-  ArchiveBuilder::get_buffered_klass(ik)->set_has_archived_enum_objs();
 
   oop mirror = ik->java_mirror();
   for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {

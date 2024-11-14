@@ -103,14 +103,6 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     return false;
   }
 
-  if (ik->is_hidden()) {
-    return HeapShared::is_archivable_hidden_klass(ik);
-  }
-
-  if (ik->is_enum_subclass()) {
-    return true;
-  }
-
   // About "static field that may hold a different value" errors:
   //
   // Automatic selection for aot-inited classes

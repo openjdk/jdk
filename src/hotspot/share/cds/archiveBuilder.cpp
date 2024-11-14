@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -195,6 +196,8 @@ ArchiveBuilder::~ArchiveBuilder() {
   if (_shared_rs.is_reserved()) {
     _shared_rs.release();
   }
+
+  AOTArtifactFinder::dispose();
 }
 
 // Returns a deterministic sequence of pseudo random numbers. The main purpose is NOT
@@ -232,7 +235,6 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
       _klasses->append(klass);
       if (klass->is_hidden()) {
         assert(klass->is_instance_klass(), "must be");
-        assert(SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass::cast(klass)), "must be");
       }
     }
     // See RunTimeClassInfo::get_for(): make sure we have enough space for both maximum
@@ -254,6 +256,10 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
 
 void ArchiveBuilder::gather_klasses_and_symbols() {
   ResourceMark rm;
+
+  AOTArtifactFinder::initialize();
+  AOTArtifactFinder::find_artifacts();
+
   log_info(cds)("Gathering classes and symbols ... ");
   GatherKlassesAndSymbols doit(this);
   iterate_roots(&doit);

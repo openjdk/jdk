@@ -326,6 +326,7 @@ class java_lang_Class : AllStatic {
   static void set_class_data(oop java_class, oop classData);
   static void set_reflection_data(oop java_class, oop reflection_data);
 
+  static int reflection_data_offset() { return _reflectionData_offset; }
   static int component_mirror_offset() { return _component_mirror_offset; }
 
   static oop class_loader(oop java_class);

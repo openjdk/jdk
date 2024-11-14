@@ -600,7 +600,7 @@ void CDSConfig::set_has_aot_linked_classes(bool has_aot_linked_classes) {
 }
 
 bool CDSConfig::is_initing_classes_at_dump_time() {
-  return is_dumping_heap() && is_dumping_aot_linked_classes();
+  return is_dumping_heap() && is_dumping_aot_linked_classes(); // FIXME -- shouldn't this be is_dumping_invokedynamic() ??
 }
 
 bool CDSConfig::is_dumping_invokedynamic() {
