@@ -4369,7 +4369,7 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   effect(KILL cr);
   ins_cost(125); // XXX
   format %{
-    "movl    $dst, $mem\t# compressed klass ptr, shifted"
+    "movl    $dst, $mem\t# compressed klass ptr, shifted\n\t"
     "shrl    $dst, markWord::klass_shift_at_offset"
   %}
   ins_encode %{
