@@ -49,6 +49,7 @@ static GString *activeSessionToken;
 
 struct ScreenSpace screenSpace = {0};
 static struct PwLoopData pw = {0};
+volatile bool isGtkMainThread = FALSE;
 
 jclass tokenStorageClass = NULL;
 jmethodID storeTokenMethodID = NULL;
@@ -945,9 +946,10 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
                          ? (*env)->GetStringUTFChars(env, jtoken, NULL)
                          : NULL;
 
+    isGtkMainThread = gtk->g_main_context_is_owner(gtk->g_main_context_default());
     DEBUG_SCREENCAST(
-            "taking screenshot at \n\tx: %5i y %5i w %5i h %5i with token |%s|\n",
-            jx, jy, jwidth, jheight, token
+            "taking screenshot at \n\tx: %5i y %5i w %5i h %5i\n\twith token |%s| isGtkMainThread %d\n",
+            jx, jy, jwidth, jheight, token, isGtkMainThread
     );
 
     int attemptResult = makeScreencast(
