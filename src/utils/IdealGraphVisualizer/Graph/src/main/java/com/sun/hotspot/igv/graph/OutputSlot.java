@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.graph;
 
 import java.awt.Point;
+import java.util.Objects;
 
 /**
  *
@@ -60,5 +61,17 @@ public class OutputSlot extends Slot {
     @Override
     public String toString() {
         return "OutputSlot[figure=" + this.getFigure().toString() + ", position=" + getPosition() + "]";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode());
     }
 }

@@ -23,49 +23,73 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-import com.sun.hotspot.igv.layout.*;
+import com.sun.hotspot.igv.layout.Cluster;
+import com.sun.hotspot.igv.layout.Link;
+import com.sun.hotspot.igv.layout.Port;
+import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.*;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public class HierarchicalClusterLayoutManager extends LayoutManager {
 
-    private final LayoutManager subManager;
     private final LayoutManager manager;
+    private final HashMap<Cluster, LayoutMover> layoutMovers;
+    private final HashMap<Cluster, ClusterNode> clusterNodes;
+
 
     public HierarchicalClusterLayoutManager() {
-        this.manager =  new HierarchicalLayoutManager();
-        this.subManager =  new HierarchicalLayoutManager();
+        this.manager = new HierarchicalLayoutManager();
+        this.layoutMovers = new HashMap<>();
+        this.clusterNodes = new HashMap<>();
     }
 
     @Override
     public void setCutEdges(boolean enable) {
-        subManager.setCutEdges(enable);
         manager.setCutEdges(enable);
     }
 
-    public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks) {
-        doLayout(graph);
-    }
+    public LayoutMover getLayoutMover() {
+        return new LayoutMover() {
+            @Override
+            public void moveLink(Point linkPos, int shiftX) {
 
-    public void setSubManager(LayoutManager manager) {
-        this.subManager = manager;
-    }
+            }
 
-    public void setManager(LayoutManager manager) {
-        this.manager = manager;
+            @Override
+            public void moveVertices(Set<? extends Vertex> movedVertices) {
+
+            }
+
+            @Override
+            public void moveVertex(Vertex movedVertex) {
+                Cluster cluster = movedVertex.getCluster();
+                LayoutMover layoutMover = layoutMovers.get(cluster);
+                if (layoutMover != null) {
+                    layoutMover.moveVertex(movedVertex);
+                    ClusterNode n = clusterNodes.get(cluster);
+                    n.updateSize();
+                    cluster.setBounds(new Rectangle(n.getPosition(), n.getSize()));
+                }
+            }
+
+            @Override
+            public boolean isFreeForm() {
+                return false;
+            }
+        };
     }
 
     public void doLayout(LayoutGraph graph) {
+        layoutMovers.clear();
+        clusterNodes.clear();
         HashMap<Cluster, List<Link>> listsConnection = new HashMap<>();
         HashMap<Cluster, HashMap<Port, ClusterInputSlotNode>> clusterInputSlotHash = new HashMap<>();
         HashMap<Cluster, HashMap<Port, ClusterOutputSlotNode>> clusterOutputSlotHash = new HashMap<>();
 
-        HashMap<Cluster, ClusterNode> clusterNodes = new HashMap<>();
         HashMap<Cluster, Set<ClusterInputSlotNode>> clusterInputSlotSet = new HashMap<>();
         HashMap<Cluster, Set<ClusterOutputSlotNode>> clusterOutputSlotSet = new HashMap<>();
         Set<Link> clusterEdges = new HashSet<>();
@@ -102,21 +126,6 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
             z++;
         }
 
-        // Add cluster edges
-        for (Cluster c : clusters) {
-
-            ClusterNode start = clusterNodes.get(c);
-
-            for (Cluster succ : c.getSuccessors()) {
-                ClusterNode end = clusterNodes.get(succ);
-                if (end != null && start != end) {
-                    ClusterEdge e = new ClusterEdge(start, end);
-                    clusterEdges.add(e);
-                    interClusterEdges.add(e);
-                }
-            }
-        }
-
         for (Vertex v : graph.getVertices()) {
             Cluster c = v.getCluster();
             assert c != null : "Cluster of vertex " + v + " is null!";
@@ -143,7 +152,7 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
                 ClusterOutputSlotNode outputSlotNode;
 
                 outputSlotNode = clusterOutputSlotHash.get(fromCluster).get(fromPort);
-                inputSlotNode = clusterInputSlotHash.get(toCluster).get(fromPort);
+                inputSlotNode = clusterInputSlotHash.get(toCluster).get(toPort); // TODO: fix?
 
                 if (outputSlotNode == null) {
                     outputSlotNode = new ClusterOutputSlotNode(clusterNodes.get(fromCluster), "Out " + fromCluster.toString() + " " + fromPort);
@@ -159,7 +168,10 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
                 }
 
                 if (inputSlotNode == null) {
-                    inputSlotNode = new ClusterInputSlotNode(clusterNodes.get(toCluster), "In " + toCluster.toString() + " " + fromPort);
+                    inputSlotNode = new ClusterInputSlotNode(
+                            clusterNodes.get(toCluster),
+                            "In " + toCluster.toString() + " " + toPort // Use toPort here
+                    );
                     clusterInputSlotSet.get(toCluster).add(inputSlotNode);
                 }
 
@@ -178,11 +190,13 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
 
         for (Cluster c : clusters) {
             ClusterNode n = clusterNodes.get(c);
+            HierarchicalLayoutManager subManager = new HierarchicalLayoutManager();
             subManager.doLayout(new LayoutGraph(n.getSubEdges(), n.getSubNodes()));
             n.updateSize();
+            layoutMovers.put(c, subManager);
         }
 
-        Set<Vertex> roots = new LayoutGraph(interClusterEdges).findRootVertices();
+        Set<Vertex> roots = new LayoutGraph(interClusterEdges, new HashSet<>()).findRootVertices();
         for (Vertex v : roots) {
             assert v instanceof ClusterNode;
             ((ClusterNode) v).setRoot(true);

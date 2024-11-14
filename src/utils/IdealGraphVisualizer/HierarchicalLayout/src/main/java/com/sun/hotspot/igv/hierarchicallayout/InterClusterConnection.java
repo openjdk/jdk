@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public class InterClusterConnection implements Link {
@@ -62,12 +61,12 @@ public class InterClusterConnection implements Link {
         return null;
     }
 
-    public void setControlPoints(List<Point> p) {
-        this.intermediatePoints = p;
-    }
-
     public List<Point> getControlPoints() {
         return intermediatePoints;
+    }
+
+    public void setControlPoints(List<Point> p) {
+        this.intermediatePoints = p;
     }
 
     @Override

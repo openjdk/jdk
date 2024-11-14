@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,29 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.hierarchicallayout;
+package com.sun.hotspot.igv.view.actions;
 
-import java.awt.Font;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
 
-/**
- * @author Thomas Wuerthinger
- */
-public abstract class LayoutManager {
+public class EnableFreeLayoutAction extends EnableLayoutAction {
 
-    public static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
-    public static final int SWEEP_ITERATIONS = 1;
-    public static final int CROSSING_ITERATIONS = 2;
-    public static final int NODE_OFFSET = 8;
-    public static final int LAYER_OFFSET = 8;
-    public static final double SCALE_LAYER_PADDING = 1.5;
+    public EnableFreeLayoutAction(EditorTopComponent etc) {
+        super(etc);
+    }
 
-    public abstract void setCutEdges(boolean enable);
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/dynamic.png";
+    }
 
-    public abstract void doLayout(LayoutGraph graph);
+    @Override
+    protected String getDescription() {
+        return "Show dynamic free layout";
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowFreeInteractive(this.isSelected());
+    }
 }

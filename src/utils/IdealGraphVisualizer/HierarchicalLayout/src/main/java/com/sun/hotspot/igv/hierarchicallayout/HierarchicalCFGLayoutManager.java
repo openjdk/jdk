@@ -23,7 +23,9 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-import com.sun.hotspot.igv.layout.*;
+import com.sun.hotspot.igv.layout.Cluster;
+import com.sun.hotspot.igv.layout.Link;
+import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.*;
 import java.util.*;
 
@@ -33,6 +35,8 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
     private final HierarchicalLayoutManager manager;
     private final Set<? extends Cluster> clusters;
     private final Set<? extends Link> clusterLinks;
+    Map<Cluster, ClusterNode> clusterNodesMap;
+    Map<Link, ClusterEdge> clusterEdgesMap;
 
     public HierarchicalCFGLayoutManager(Set<? extends Link> clusterLinks, Set<? extends Cluster> clusters) {
         this.clusterLinks = clusterLinks;
@@ -41,29 +45,8 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         Canvas canvas = new Canvas();
         Font font = new Font("Arial", Font.BOLD, 14);
         fontMetrics = canvas.getFontMetrics(font);
+        manager = new HierarchicalLayoutManager();
     }
-
-    @Override
-    public void setCutEdges(boolean enable) {
-        subManager.setCutEdges(enable);
-        manager.setCutEdges(enable);
-    }
-
-    public void setSubManager(LayoutManager manager) {
-        this.subManager = manager;
-    }
-
-    public void setManager(LayoutManager manager) {
-        this.manager = manager;
-    }
-
-    @Override
-    public void setCutEdges(boolean enable) {
-        manager.setCutEdges(enable);
-    }
-
-    Map<Cluster, ClusterNode> clusterNodesMap;
-    Map<Link, ClusterEdge> clusterEdgesMap;
 
     private static void doLinearLayout(ClusterNode clusterNode) {
         Cluster cluster = clusterNode.getCluster();
@@ -76,6 +59,11 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
             }
         }
         clusterNode.updateSize();
+    }
+
+    @Override
+    public void setCutEdges(boolean enable) {
+        manager.setCutEdges(enable);
     }
 
     public void doLayout(LayoutGraph graph) {
@@ -110,7 +98,7 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         for (Cluster cluster : clusters) {
             String blockLabel = "B" + cluster;
             Dimension emptySize = new Dimension(fontMetrics.stringWidth(blockLabel) + ClusterNode.PADDING,
-                                                fontMetrics.getHeight() + ClusterNode.PADDING);
+                    fontMetrics.getHeight() + ClusterNode.PADDING);
             ClusterNode clusterNode = new ClusterNode(cluster, cluster.toString(), fontMetrics.getHeight(), emptySize);
             clusterNodes.put(cluster, clusterNode);
         }

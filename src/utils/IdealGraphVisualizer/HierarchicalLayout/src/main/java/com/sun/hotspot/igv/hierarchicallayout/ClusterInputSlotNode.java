@@ -30,22 +30,15 @@ import java.awt.Dimension;
 import java.awt.Point;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public class ClusterInputSlotNode implements Vertex {
 
-    private Point position;
     private final Port inputSlot;
     private final Port outputSlot;
     private final ClusterNode blockNode;
-
     private final String id;
-
-    @Override
-    public String toString() {
-        return id;
-    }
+    private Point position;
 
     public ClusterInputSlotNode(ClusterNode n, String id) {
         this.blockNode = n;
@@ -91,6 +84,11 @@ public class ClusterInputSlotNode implements Vertex {
         };
     }
 
+    @Override
+    public String toString() {
+        return id;
+    }
+
     public Port getInputSlot() {
         return inputSlot;
     }
@@ -103,12 +101,12 @@ public class ClusterInputSlotNode implements Vertex {
         return new Dimension(0, 0);
     }
 
-    public void setPosition(Point p) {
-        this.position = p;
-    }
-
     public Point getPosition() {
         return position;
+    }
+
+    public void setPosition(Point p) {
+        this.position = p;
     }
 
     public Cluster getCluster() {

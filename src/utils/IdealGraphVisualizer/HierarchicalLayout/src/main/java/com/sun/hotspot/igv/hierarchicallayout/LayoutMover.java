@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,33 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-import java.awt.Font;
+import com.sun.hotspot.igv.layout.Vertex;
+import java.awt.Point;
+import java.util.Set;
 
-/**
- * @author Thomas Wuerthinger
- */
-public abstract class LayoutManager {
+public interface LayoutMover {
+    /**
+     * Moves a link by shifting its position along the X-axis.
+     *
+     * @param linkPos The current position of the link.
+     * @param shiftX  The amount to shift the link along the X-axis.
+     */
+    void moveLink(Point linkPos, int shiftX);
 
-    public static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
-    public static final int SWEEP_ITERATIONS = 1;
-    public static final int CROSSING_ITERATIONS = 2;
-    public static final int NODE_OFFSET = 8;
-    public static final int LAYER_OFFSET = 8;
-    public static final double SCALE_LAYER_PADDING = 1.5;
+    /**
+     * Moves a set of vertices.
+     *
+     * @param movedVertices A set of vertices to be moved.
+     */
+    void moveVertices(Set<? extends Vertex> movedVertices);
 
-    public abstract void setCutEdges(boolean enable);
+    /**
+     * Moves a single vertex.
+     *
+     * @param movedVertex The vertex to be moved.
+     */
+    void moveVertex(Vertex movedVertex);
 
-    public abstract void doLayout(LayoutGraph graph);
+    boolean isFreeForm();
 }
+
