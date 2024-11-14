@@ -4460,7 +4460,7 @@ void Compile::print_inlining_append_late(CallGenerator* cg, InliningResult resul
 
   stringStream* old = _print_inlining_list->at(_print_inlining_idx)->ss();
 
-  auto old_size = old->size(); // size(): Documentation says it is without terminating 0
+  auto old_size = old->size();
   bool found_line_break = false;
   while (!found_line_break && old_size > 0) {
     if (old->base()[old_size - 1] == '\n') {
