@@ -138,11 +138,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
 
     @Override
     public void setCutEdges(boolean enable) {
-        setMaxLayerLength(enable ? 10 : -1);
-    }
-
-    public void setMaxLayerLength(int v) {
-        maxLayerLength = v;
+        maxLayerLength = enable ? 10 : -1;
     }
 
     public void setMinLayerDifference(int v) {
