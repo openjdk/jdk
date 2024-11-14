@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @modules jdk.zipfs
  *          jdk.jartool
  * @run junit TestPosix
- * @run junit/othervm/java.security.policy=test.policy.posix TestPosix
+ * @run junit/othervm TestPosix
  */
 public class TestPosix {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")

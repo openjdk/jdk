@@ -27,6 +27,7 @@
  * @summary Test Thread API with virtual threads
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
+ * @build LockingMode
  * @run junit/othervm --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
@@ -35,6 +36,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
+ * @build LockingMode
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *     --enable-native-access=ALL-UNNAMED ThreadAPI
  */
@@ -68,6 +70,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -1082,7 +1085,7 @@ class ThreadAPI {
      * Test Thread.yield releases carrier thread.
      */
     @Test
-    void testYield1() throws Exception {
+    void testYieldReleasesCarrier() throws Exception {
         assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
@@ -1106,10 +1109,41 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.yield when thread is pinned by native frame.
+     * Test Thread.yield releases carrier thread when virtual thread holds a monitor.
      */
     @Test
-    void testYield2() throws Exception {
+    @DisabledIf("LockingMode#isLegacy")
+    void testYieldReleasesCarrierWhenHoldingMonitor() throws Exception {
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
+        var list = new CopyOnWriteArrayList<String>();
+        try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+            var lock = new Object();
+            var thread = factory.newThread(() -> {
+                list.add("A");
+                var child = factory.newThread(() -> {
+                    list.add("B");
+                    synchronized (lock) {
+                        Thread.yield();
+                    }
+                    list.add("B");
+                });
+                child.start();
+                Thread.yield();
+                list.add("A");
+                try { child.join(); } catch (InterruptedException e) { }
+            });
+            thread.start();
+            thread.join();
+        }
+        assertEquals(List.of("A", "B", "A", "B"), list);
+    }
+
+    /**
+     * Test Thread.yield when thread is pinned.
+     */
+    @Test
+    void testYieldWhenPinned() throws Exception {
         assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
@@ -1136,7 +1170,7 @@ class ThreadAPI {
      * Test Thread.yield does not consume the thread's parking permit.
      */
     @Test
-    void testYield3() throws Exception {
+    void testYieldDoesNotConsumParkingPermit() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             LockSupport.unpark(Thread.currentThread());
             Thread.yield();
@@ -1149,7 +1183,7 @@ class ThreadAPI {
      * Test Thread.yield does not make available the thread's parking permit.
      */
     @Test
-    void testYield4() throws Exception {
+    void testYieldDoesNotOfferParkingPermit() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             Thread.yield();
             LockSupport.park();  // should park
@@ -1969,6 +2003,38 @@ class ThreadAPI {
                 assertTrue(Thread.holdsLock(lock));
             }
         });
+    }
+
+    /**
+     * Test Thread.holdsLock when lock held by carrier thread.
+     */
+    @Disabled
+    @Test
+    void testHoldsLock3() throws Exception {
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
+
+        Object lock = new Object();
+
+        // carrier thread runs all tasks while holding the lock
+        ThreadFactory carrierThreadFactory = task -> Thread.ofPlatform().unstarted(() -> {
+            synchronized (lock) {
+                task.run();
+            }
+        });
+        try (ExecutorService pool = Executors.newSingleThreadExecutor(carrierThreadFactory)) {
+            Executor scheduler = task -> pool.submit(task::run);
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+
+            // start virtual that tests if it holds the lock
+            var result = new AtomicReference<Boolean>();
+            Thread vthread = factory.newThread(() -> {
+                result.set(Thread.holdsLock(lock));
+            });
+            vthread.start();
+            vthread.join();
+            boolean holdsLock = result.get();
+            assertFalse(holdsLock, "Thread.holdsLock should return false");
+        }
     }
 
     /**

@@ -35,6 +35,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -528,7 +529,6 @@ void MacroAssembler::call_VM_leaf_base(address entry_point, int num_args) {
   // restore stack pointer
   addq(rsp, frame::arg_reg_save_area_bytes);
 #endif
-
 }
 
 void MacroAssembler::cmp64(Register src1, AddressLiteral src2, Register rscratch) {
@@ -1350,7 +1350,8 @@ void MacroAssembler::ic_call(address entry, jint method_index) {
 }
 
 int MacroAssembler::ic_check_size() {
-  return LP64_ONLY(14) NOT_LP64(12);
+  return
+      LP64_ONLY(UseCompactObjectHeaders ? 17 : 14) NOT_LP64(12);
 }
 
 int MacroAssembler::ic_check(int end_alignment) {
@@ -1366,6 +1367,12 @@ int MacroAssembler::ic_check(int end_alignment) {
 
   int uep_offset = offset();
 
+#ifdef _LP64
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(temp, receiver);
+    cmpl(temp, Address(data, CompiledICData::speculated_klass_offset()));
+  } else
+#endif
   if (UseCompressedClassPointers) {
     movl(temp, Address(receiver, oopDesc::klass_offset_in_bytes()));
     cmpl(temp, Address(data, CompiledICData::speculated_klass_offset()));
@@ -1376,7 +1383,7 @@ int MacroAssembler::ic_check(int end_alignment) {
 
   // if inline cache check fails, then jump to runtime routine
   jump_cc(Assembler::notEqual, RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-  assert((offset() % end_alignment) == 0, "Misaligned verified entry point");
+  assert((offset() % end_alignment) == 0, "Misaligned verified entry point (%d, %d, %d)", uep_offset, offset(), end_alignment);
 
   return uep_offset;
 }
@@ -3033,25 +3040,13 @@ void MacroAssembler::pop_cont_fastpath() {
 }
 
 void MacroAssembler::inc_held_monitor_count() {
-#ifndef _LP64
-  Register thread = rax;
-  push(thread);
-  get_thread(thread);
-  incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-  pop(thread);
-#else // LP64
+#ifdef _LP64
   incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
 
 void MacroAssembler::dec_held_monitor_count() {
-#ifndef _LP64
-  Register thread = rax;
-  push(thread);
-  get_thread(thread);
-  decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-  pop(thread);
-#else // LP64
+#ifdef _LP64
   decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
@@ -3147,6 +3142,17 @@ void MacroAssembler::set_last_Java_frame(Register java_thread,
   }
   movptr(Address(java_thread, JavaThread::last_Java_sp_offset()), last_java_sp);
 }
+
+#ifdef _LP64
+void MacroAssembler::set_last_Java_frame(Register last_java_sp,
+                                         Register last_java_fp,
+                                         Label &L,
+                                         Register scratch) {
+  lea(scratch, L);
+  movptr(Address(r15_thread, JavaThread::last_Java_pc_offset()), scratch);
+  set_last_Java_frame(r15_thread, last_java_sp, last_java_fp, nullptr, scratch);
+}
+#endif
 
 void MacroAssembler::shlptr(Register dst, int imm8) {
   LP64_ONLY(shlq(dst, imm8)) NOT_LP64(shll(dst, imm8));
@@ -4109,7 +4115,7 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 
 XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
   int num_xmm_registers = XMMRegister::available_xmm_registers();
-#if defined(_WINDOWS) && defined(_LP64)
+#if defined(_WINDOWS)
   XMMRegSet result = XMMRegSet::range(xmm0, xmm5);
   if (num_xmm_registers > 16) {
      result += XMMRegSet::range(xmm16, as_XMMRegister(num_xmm_registers - 1));
@@ -5948,19 +5954,33 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   movptr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
+#ifdef _LP64
+void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
+  assert(UseCompactObjectHeaders, "expect compact object headers");
+  movq(dst, Address(src, oopDesc::mark_offset_in_bytes()));
+  shrq(dst, markWord::klass_shift);
+}
+#endif
+
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);
 #ifdef _LP64
-  if (UseCompressedClassPointers) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+    decode_klass_not_null(dst, tmp);
+  } else if (UseCompressedClassPointers) {
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_klass_not_null(dst, tmp);
   } else
 #endif
+  {
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
+  assert(!UseCompactObjectHeaders, "not with compact headers");
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);
 #ifdef _LP64
@@ -5970,6 +5990,41 @@ void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   } else
 #endif
     movptr(Address(dst, oopDesc::klass_offset_in_bytes()), src);
+}
+
+void MacroAssembler::cmp_klass(Register klass, Register obj, Register tmp) {
+#ifdef _LP64
+  if (UseCompactObjectHeaders) {
+    assert(tmp != noreg, "need tmp");
+    assert_different_registers(klass, obj, tmp);
+    load_narrow_klass_compact(tmp, obj);
+    cmpl(klass, tmp);
+  } else if (UseCompressedClassPointers) {
+    cmpl(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
+  } else
+#endif
+  {
+    cmpptr(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
+  }
+}
+
+void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2) {
+#ifdef _LP64
+  if (UseCompactObjectHeaders) {
+    assert(tmp2 != noreg, "need tmp2");
+    assert_different_registers(obj1, obj2, tmp1, tmp2);
+    load_narrow_klass_compact(tmp1, obj1);
+    load_narrow_klass_compact(tmp2, obj2);
+    cmpl(tmp1, tmp2);
+  } else if (UseCompressedClassPointers) {
+    movl(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
+    cmpl(tmp1, Address(obj2, oopDesc::klass_offset_in_bytes()));
+  } else
+#endif
+  {
+    movptr(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
+    cmpptr(tmp1, Address(obj2, oopDesc::klass_offset_in_bytes()));
+  }
 }
 
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
@@ -6019,6 +6074,7 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
 
 #ifdef _LP64
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
+  assert(!UseCompactObjectHeaders, "Don't use with compact headers");
   if (UseCompressedClassPointers) {
     // Store to klass gap in destination
     movl(Address(dst, oopDesc::klass_gap_offset_in_bytes()), src);
@@ -6183,8 +6239,7 @@ void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
     subq(r, tmp);
   }
   if (CompressedKlassPointers::shift() != 0) {
-    assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shrq(r, LogKlassAlignmentInBytes);
+    shrq(r, CompressedKlassPointers::shift());
   }
 }
 
@@ -6197,8 +6252,7 @@ void MacroAssembler::encode_and_move_klass_not_null(Register dst, Register src) 
     movptr(dst, src);
   }
   if (CompressedKlassPointers::shift() != 0) {
-    assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shrq(dst, LogKlassAlignmentInBytes);
+    shrq(dst, CompressedKlassPointers::shift());
   }
 }
 
@@ -6210,8 +6264,7 @@ void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
   if (CompressedKlassPointers::shift() != 0) {
-    assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shlq(r, LogKlassAlignmentInBytes);
+    shlq(r, CompressedKlassPointers::shift());
   }
   if (CompressedKlassPointers::base() != nullptr) {
     mov64(tmp, (int64_t)CompressedKlassPointers::base());
@@ -6233,17 +6286,28 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
     // a pointer that needs nothing but a register rename.
     movl(dst, src);
   } else {
-    if (CompressedKlassPointers::base() != nullptr) {
-      mov64(dst, (int64_t)CompressedKlassPointers::base());
+    if (CompressedKlassPointers::shift() <= Address::times_8) {
+      if (CompressedKlassPointers::base() != nullptr) {
+        mov64(dst, (int64_t)CompressedKlassPointers::base());
+      } else {
+        xorq(dst, dst);
+      }
+      if (CompressedKlassPointers::shift() != 0) {
+        assert(CompressedKlassPointers::shift() == Address::times_8, "klass not aligned on 64bits?");
+        leaq(dst, Address(dst, src, Address::times_8, 0));
+      } else {
+        addq(dst, src);
+      }
     } else {
-      xorq(dst, dst);
-    }
-    if (CompressedKlassPointers::shift() != 0) {
-      assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-      assert(LogKlassAlignmentInBytes == Address::times_8, "klass not aligned on 64bits?");
-      leaq(dst, Address(dst, src, Address::times_8, 0));
-    } else {
+      if (CompressedKlassPointers::base() != nullptr) {
+        const uint64_t base_right_shifted =
+            (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
+        mov64(dst, base_right_shifted);
+      } else {
+        xorq(dst, dst);
+      }
       addq(dst, src);
+      shlq(dst, CompressedKlassPointers::shift());
     }
   }
 }
@@ -10560,10 +10624,6 @@ Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond)
   ShouldNotReachHere(); return Assembler::overflow;
 }
 
-// 32-bit Windows has its own fast-path implementation
-// of get_thread
-#if !defined(WIN32) || defined(_LP64)
-
 // This is simply a call to Thread::current()
 void MacroAssembler::get_thread(Register thread) {
   if (thread != rax) {
@@ -10597,9 +10657,6 @@ void MacroAssembler::get_thread(Register thread) {
     pop(rax);
   }
 }
-
-
-#endif // !WIN32 || _LP64
 
 void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigned bias, Register tmp) {
   Label L_stack_ok;
