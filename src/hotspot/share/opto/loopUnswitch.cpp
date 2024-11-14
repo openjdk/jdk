@@ -193,7 +193,6 @@ class LoopSelector : public StackObj {
   }
   NONCOPYABLE(LoopSelector);
 
-  // TODO PROB_FAIR, COUNT_UNKNOWN
   IfNode* create_multiversioning_if(Node* bol, float prob, float fcnt) {
     _phase->igvn().rehash_node_delayed(_original_loop_entry);
     IfNode* selector_if = new IfNode(_original_loop_entry, bol, prob, fcnt);
@@ -391,8 +390,31 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
     lpt->dump_head();
   }
 #endif
+  // TODO assert Multiversion
 
-  // TODO
+  // TODO fix all code here
+
+  //NOT_PRODUCT(trace_loop_unswitching_count(loop, original_head);)
+  //C->print_method(PHASE_BEFORE_LOOP_UNSWITCHING, 4, original_head);
+
+  // TODO Opaque?
+  Node* one = _igvn.intcon(1);
+  set_ctrl(one, C->root());
+
+  const LoopSelector loop_selector(lpt, one, PROB_FAIR, COUNT_UNKNOWN);
+  OriginalLoop original_loop(lpt, old_new);
+  original_loop.multiversion(loop_selector);
+
+  add_unswitched_loop_version_bodies_to_igvn(lpt, old_new);
+
+  LoopNode* original_head = lpt->_head->as_Loop();
+  LoopNode* new_head = old_new[original_head->_idx]->as_Loop();
+  //increment_unswitch_counts(original_head, new_head);
+  // TODO new_head as stalled?
+
+  //NOT_PRODUCT(trace_loop_unswitching_result(unswitched_loop_selector, original_head, new_head);)
+  //C->print_method(PHASE_AFTER_LOOP_UNSWITCHING, 4, new_head);
+  C->set_major_progress();
 }
 
 bool PhaseIdealLoop::has_control_dependencies_from_predicates(LoopNode* head) {
