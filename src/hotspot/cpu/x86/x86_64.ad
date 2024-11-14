@@ -6206,12 +6206,26 @@ instruct cmovI_imm_01(rRegI dst, immI_1 src, rFlagsReg cr, cmpOp cop)
 
 instruct cmovI_reg(rRegI dst, rRegI src, rFlagsReg cr, cmpOp cop)
 %{
+  predicate(!UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
   format %{ "cmovl$cop $dst, $src\t# signed, int" %}
   ins_encode %{
     __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
+instruct cmovI_reg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr, cmpOp cop)
+%{
+  predicate(UseAPX);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovl$cop $dst, $src1, $src2\t# signed, int ndd" %}
+  ins_encode %{
+    __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6231,12 +6245,25 @@ instruct cmovI_imm_01U(rRegI dst, immI_1 src, rFlagsRegU cr, cmpOpU cop)
 %}
 
 instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
+  predicate(!UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
   format %{ "cmovl$cop $dst, $src\t# unsigned, int" %}
   ins_encode %{
     __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
+instruct cmovI_regU_ndd(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src1, rRegI src2) %{
+  predicate(UseAPX);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovl$cop $dst, $src1, $src2\t# unsigned, int ndd" %}
+  ins_encode %{
+    __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6329,6 +6356,7 @@ instruct cmovI_memUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegI dst, memory src) %{
 // Conditional move
 instruct cmovN_reg(rRegN dst, rRegN src, rFlagsReg cr, cmpOp cop)
 %{
+  predicate(!UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6339,9 +6367,24 @@ instruct cmovN_reg(rRegN dst, rRegN src, rFlagsReg cr, cmpOp cop)
   ins_pipe(pipe_cmov_reg);
 %}
 
+// Conditional move ndd
+instruct cmovN_reg_ndd(rRegN dst, rRegN src1, rRegN src2, rFlagsReg cr, cmpOp cop)
+%{
+  predicate(UseAPX);
+  match(Set dst (CMoveN (Binary cop cr) (Binary src1 src2)));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovl$cop $dst, $src1, $src2\t# signed, compressed ptr ndd" %}
+  ins_encode %{
+    __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
 // Conditional move
 instruct cmovN_regU(cmpOpU cop, rFlagsRegU cr, rRegN dst, rRegN src)
 %{
+  predicate(!UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6353,10 +6396,35 @@ instruct cmovN_regU(cmpOpU cop, rFlagsRegU cr, rRegN dst, rRegN src)
 %}
 
 instruct cmovN_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
+  predicate(!UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
   ins_cost(200);
   expand %{
     cmovN_regU(cop, cr, dst, src);
+  %}
+%}
+
+// Conditional move ndd
+instruct cmovN_regU_ndd(rRegN dst, cmpOpU cop, rFlagsRegU cr, rRegN src1, rRegN src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (CMoveN (Binary cop cr) (Binary src1 src2)));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovl$cop $dst, $src1, $src2\t# unsigned, compressed ptr ndd" %}
+  ins_encode %{
+    __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
+/* ndd compiler error */
+instruct cmovN_regUCF_ndd(rRegN dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegN src1, rRegN src2) %{
+  predicate(UseAPX);
+  match(Set dst (CMoveN (Binary cop cr) (Binary src1 src2)));
+  ins_cost(200);
+  expand %{
+    cmovN_regU_ndd(dst, cop, cr, src1, src2);
   %}
 %}
 
@@ -6393,12 +6461,27 @@ instruct cmovN_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegN dst, rRegN src) 
 // Conditional move
 instruct cmovP_reg(rRegP dst, rRegP src, rFlagsReg cr, cmpOp cop)
 %{
+  predicate(!UseAPX);
   match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
   format %{ "cmovq$cop $dst, $src\t# signed, ptr" %}
   ins_encode %{
     __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);  // XXX
+%}
+
+// Conditional move ndd
+instruct cmovP_reg_ndd(rRegP dst, rRegP src1, rRegP src2, rFlagsReg cr, cmpOp cop)
+%{
+  predicate(UseAPX);
+  match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovq$cop $dst, $src1, $src2\t# signed, ptr ndd" %}
+  ins_encode %{
+    __ ecmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);  // XXX
 %}
