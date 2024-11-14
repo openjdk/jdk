@@ -42,13 +42,6 @@ import javax.net.ssl.TrustManagerFactory;
 /**
  * Creates a simple usable SSLContext for SSLSocketFactory
  * or a HttpsServer using a default keystore in the test tree.
- * <p>
- * Using this class with a security manager requires the following
- * permissions to be granted:
- * <p>
- * permission "java.util.PropertyPermission" "test.src.path", "read";
- * permission java.io.FilePermission "/path/to/test/lib/jdk/test/lib/testkeys", "read";
- * The exact path above depends on the location of the test.
  */
 public class SimpleSSLContext {
 
