@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8343777
- * @summary Test for @since in jdk.charsets module
+ * @summary Test for `@since` declaration in the module-info.java file of jdk.charsets
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker jdk.charsets
  */

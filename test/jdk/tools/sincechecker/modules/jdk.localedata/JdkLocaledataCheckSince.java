@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8343777
- * @summary Test for @since in jdk.localedata module
+ * @summary Test for `@since` declaration in the module-info.java file of jdk.localedata
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker jdk.localedata
  */
