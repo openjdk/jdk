@@ -146,7 +146,7 @@ final class WixPipeline {
     void buildMsi(Path msi) throws IOException {
         Objects.requireNonNull(workDir);
 
-        // Use short path of the output msi to workaround
+        // Use short path to the output msi to workaround
         // WiX limitations of handling long paths.
         var transientMsi = wixObjDir.resolve("a.msi");
 
