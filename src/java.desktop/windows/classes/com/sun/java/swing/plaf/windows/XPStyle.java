@@ -78,7 +78,6 @@ import javax.swing.text.JTextComponent;
 
 import sun.awt.image.SunWritableRaster;
 import sun.awt.windows.ThemeReader;
-import sun.security.action.GetPropertyAction;
 import sun.swing.CachedPainter;
 
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
@@ -132,8 +131,7 @@ class XPStyle {
                 themeActive = Boolean.FALSE;
             }
             if (themeActive.booleanValue()) {
-                GetPropertyAction propertyAction =
-                    new GetPropertyAction("swing.noxp");
+                String propertyAction = System.getProperty("swing.noxp");
                 if (propertyAction == null &&
                     ThemeReader.isThemed() &&
                     !(UIManager.getLookAndFeel()
