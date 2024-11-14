@@ -1558,6 +1558,8 @@ void MethodData::print_value_on(outputStream* st) const {
 }
 
 void MethodData::print_data_on(outputStream* st) const {
+  ConditionalMutexLocker ml(extra_data_lock(), !extra_data_lock()->owned_by_self(),
+                            Mutex::_no_safepoint_check_flag);
   ResourceMark rm;
   ProfileData* data = first_data();
   if (_parameters_type_data_di != no_parameters) {
@@ -1568,6 +1570,7 @@ void MethodData::print_data_on(outputStream* st) const {
     st->fill_to(6);
     data->print_data_on(st, this);
   }
+
   st->print_cr("--- Extra data:");
   DataLayout* dp    = extra_data_base();
   DataLayout* end   = args_data_limit();
