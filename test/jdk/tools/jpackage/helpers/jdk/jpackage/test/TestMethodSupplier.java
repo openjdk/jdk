@@ -164,7 +164,7 @@ final class TestMethodSupplier {
 
     private Stream<Object[]> toCtorArgs(Method method) throws
             IllegalAccessException, InvocationTargetException {
-        
+
         if ((method.getModifiers() & Modifier.STATIC) != 0) {
             // Static method, no instance
             return Stream.ofNullable(DEFAULT_CTOR_ARGS);
@@ -477,7 +477,7 @@ final class TestMethodSupplier {
     private final Map<Class<?>, TypeStatus> processedTypes = new HashMap<>();
 
     private static final Object[] DEFAULT_CTOR_ARGS = new Object[0];
-    
+
     private static final Map<Class, Function<String, Object>> FROM_STRING;
 
     static {

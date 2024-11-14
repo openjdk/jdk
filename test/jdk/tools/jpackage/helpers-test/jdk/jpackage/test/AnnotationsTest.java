@@ -47,7 +47,6 @@ import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
  * @summary Test jpackage test library's annotation processor
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile AnnotationsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.AnnotationsTest
  */
 public class AnnotationsTest {
