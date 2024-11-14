@@ -592,6 +592,8 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_returnBarrier();
   address generate_cont_returnBarrier_exception();
 
+  address generate_cont_preempt_stub();
+
   // TODO -- delete this as it is not implemented?
   //
   // Continuation point for throwing of implicit exceptions that are
