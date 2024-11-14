@@ -2052,7 +2052,7 @@ void PrintBFS::print() {
     if (_print_igv) {
       Compile* C = Compile::current();
       if (C->should_print_igv(0)) {
-        C->igv_print_graph_to_network("PrintBFS", (Node *) Compile::current()->root(), _print_list);
+        C->igv_print_graph_to_network("PrintBFS", (Node*) Compile::current()->root(), _print_list);
       }
     }
   } else {
