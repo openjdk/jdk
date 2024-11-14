@@ -59,6 +59,11 @@ class CipherBlockChaining extends FeedbackCipher  {
     // variables for save/restore calls
     private byte[] rSave = null;
 
+    // chunkSize is multiple of block size, but otherwise fairly arbitrary
+    // Should be large enough to provide intrinsic with optimization
+    // opportunities
+    private final int chunkSize = 1024*100;
+
     CipherBlockChaining(SymmetricCipher embeddedCipher) {
         super(embeddedCipher);
         k = new byte[blockSize];
@@ -148,20 +153,14 @@ class CipherBlockChaining extends FeedbackCipher  {
         ArrayUtil.blockSizeCheck(plainLen, blockSize);
         ArrayUtil.nullAndBoundsCheck(plain, plainOffset, plainLen);
         ArrayUtil.nullAndBoundsCheck(cipher, cipherOffset, plainLen);
-        // chunkSize is multiple of block size, but otherwise fairly arbitrary
-        // Should be large enough to provide intrinsic with optimization
-        // oportunities
         int processed = 0;
-        final int chunkSize = 1024*100;
         for (;  plainLen > chunkSize; cipherOffset += chunkSize,
             plainOffset += chunkSize, plainLen -= chunkSize) {
             processed +=
                implEncrypt(plain, plainOffset, chunkSize, cipher, cipherOffset);
         }
-        if (plainLen > 0) {
-            processed +=
-               implEncrypt(plain, plainOffset, plainLen, cipher, cipherOffset);
-        }
+        processed +=
+            implEncrypt(plain, plainOffset, plainLen, cipher, cipherOffset);
         return processed;
     }
 
@@ -213,16 +212,13 @@ class CipherBlockChaining extends FeedbackCipher  {
         ArrayUtil.nullAndBoundsCheck(cipher, cipherOffset, cipherLen);
         ArrayUtil.nullAndBoundsCheck(plain, plainOffset, cipherLen);
         int processed = 0;
-        final int chunkSize = 1024*100;
         for (;  cipherLen > chunkSize; cipherOffset += chunkSize,
             plainOffset += chunkSize, cipherLen -= chunkSize) {
             processed +=
                implDecrypt(cipher, cipherOffset, chunkSize, plain, plainOffset);
         }
-        if (cipherLen > 0) {
-            processed +=
-               implDecrypt(cipher, cipherOffset, cipherLen, plain, plainOffset);
-        }
+        processed +=
+            implDecrypt(cipher, cipherOffset, cipherLen, plain, plainOffset);
         return processed;
     }
 
