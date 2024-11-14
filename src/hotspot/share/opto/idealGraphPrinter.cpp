@@ -826,7 +826,7 @@ void IdealGraphPrinter::print_graph(const char *name) {
 }
 
 // Print current ideal graph
-void IdealGraphPrinter::print(const char *name, Node *node, GrowableArray<const Node*>  &visible_nodes) {
+void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes) {
 
   if (!_current_method || !_should_send_method || node == nullptr) return;
 
