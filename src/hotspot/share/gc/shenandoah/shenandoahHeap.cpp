@@ -548,15 +548,13 @@ public:
     WorkerTask("Shenandoah Reset Bitmap") {}
 
   void work(uint worker_id) {
-    ShenandoahHeapRegion* region = _regions.next();
     ShenandoahHeap* heap = ShenandoahHeap::heap();
+    assert(!heap->is_uncommit_in_progress(), "Cannot uncommit bitmaps while resetting them.");
+    ShenandoahHeapRegion* region = _regions.next();
     ShenandoahMarkingContext* const ctx = heap->marking_context();
     while (region != nullptr) {
-      {
-        ShenandoahHeapLocker locker(heap->lock());
-        if (heap->is_bitmap_slice_committed(region)) {
-          ctx->clear_bitmap(region);
-        }
+      if (heap->is_bitmap_slice_committed(region)) {
+        ctx->clear_bitmap(region);
       }
       region = _regions.next();
     }
@@ -2343,7 +2341,7 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
 
   if (is_bitmap_slice_committed(r, true)) {
     // Some other region from the group is still committed, meaning the bitmap
-    // slice is should stay committed, exit right away.
+    // slice should stay committed, exit right away.
     return true;
   }
 
@@ -2356,6 +2354,27 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
   }
   return true;
 }
+
+void ShenandoahHeap::forbid_uncommit() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->forbid_uncommit();
+  }
+}
+
+void ShenandoahHeap::allow_uncommit() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->allow_uncommit();
+  }
+}
+
+#ifdef ASSERT
+bool ShenandoahHeap::is_uncommit_in_progress() {
+  if (_uncommit_thread != nullptr) {
+    return _uncommit_thread->is_uncommit_in_progress();
+  }
+  return false;
+}
+#endif
 
 void ShenandoahHeap::safepoint_synchronize_begin() {
   StackWatermarkSet::safepoint_synchronize_begin();

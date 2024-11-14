@@ -125,6 +125,8 @@ void ShenandoahControlThread::run_service() {
     assert (!gc_requested || cause != GCCause::_last_gc_cause, "GC cause should be set");
 
     if (gc_requested) {
+      heap->forbid_uncommit();
+
       // GC is starting, bump the internal ID
       update_gc_id();
 
@@ -247,6 +249,8 @@ void ShenandoahControlThread::run_service() {
       sleep = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
       last_sleep_adjust_time = current;
     }
+
+    heap->allow_uncommit();
     os::naked_short_sleep(sleep);
   }
 

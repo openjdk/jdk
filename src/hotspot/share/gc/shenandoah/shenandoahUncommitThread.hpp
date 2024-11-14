@@ -34,10 +34,16 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   ShenandoahSharedFlag _soft_max_changed;
   ShenandoahSharedFlag _explicit_gc_requested;
   ShenandoahSharedFlag _stop_requested;
-  Monitor _lock;
+  ShenandoahSharedFlag _uncommit_allowed;
+  ShenandoahSharedFlag _uncommit_in_progress;
+  Monitor _stop_lock;
+  Monitor _uncommit_lock;
 
+  bool should_uncommit(double shrink_before, size_t shrink_until) const;
   bool has_work(double shrink_before, size_t shrink_until) const;
   void uncommit(double shrink_before, size_t shrink_until);
+
+  bool is_uncommit_allowed();
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
 
@@ -50,6 +56,16 @@ public:
   // Wake up this thread and try to uncommit for min heap size
   void notify_explicit_gc_requested();
 
+  // Wait for uncommit operations to stop, returns immediately if uncommit thread is idle
+  void forbid_uncommit();
+
+  // Allows uncommit operations to happen, does not block.
+  void allow_uncommit();
+
+  // True if uncommit is in progress.
+  bool is_uncommit_in_progress() {
+    return _uncommit_in_progress.is_set();
+  }
 protected:
   void stop_service() override;
 };

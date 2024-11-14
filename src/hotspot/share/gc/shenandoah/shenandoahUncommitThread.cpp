@@ -32,7 +32,9 @@
 #include "utilities/events.hpp"
 
 ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
-  : _heap(heap), _lock(Mutex::safepoint - 2, "ShenandoahUncommit_lock", true) {
+  : _heap(heap),
+    _stop_lock(Mutex::safepoint - 2, "ShenandoahUncommitStop_lock", true),
+    _uncommit_lock(Mutex::safepoint - 2, "ShenandoahUncommitCancel_lock", true) {
   set_name("Shenandoah Uncommit Thread");
   create_and_start();
 }
@@ -60,18 +62,23 @@ void ShenandoahUncommitThread::run_service() {
       // Explicit GC tries to uncommit everything down to min capacity.
       // Soft max change tries to uncommit everything down to target capacity.
       // Periodic uncommit tries to uncommit suitable regions down to min capacity.
-      if (has_work(shrink_before, shrink_until)) {
+      if (should_uncommit(shrink_before, shrink_until)) {
         uncommit(shrink_before, shrink_until);
         last_shrink_time = current;
       }
     }
     {
-      MonitorLocker locker(&_lock, Mutex::_no_safepoint_check_flag);
+      MonitorLocker locker(&_stop_lock, Mutex::_no_safepoint_check_flag);
       if (!_stop_requested.is_set()) {
         locker.wait((int64_t)shrink_period);
       }
     }
   }
+}
+
+bool ShenandoahUncommitThread::should_uncommit(double shrink_before, size_t shrink_until) const {
+  // Only start uncommit if the GC is idle, is not trying to run and there is work to do.
+  return _heap->is_idle() && _uncommit_allowed.is_set() && has_work(shrink_before, shrink_until);
 }
 
 bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_until) const {
@@ -95,30 +102,45 @@ bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_unti
 
 void ShenandoahUncommitThread::notify_soft_max_changed() {
   if (_soft_max_changed.try_set()) {
-    MonitorLocker locker(&_lock, Mutex::_no_safepoint_check_flag);
+    MonitorLocker locker(&_stop_lock, Mutex::_no_safepoint_check_flag);
     locker.notify_all();
   }
 }
 
 void ShenandoahUncommitThread::notify_explicit_gc_requested() {
   if (_explicit_gc_requested.try_set()) {
-    MonitorLocker locker(&_lock, Mutex::_no_safepoint_check_flag);
+    MonitorLocker locker(&_stop_lock, Mutex::_no_safepoint_check_flag);
     locker.notify_all();
   }
 }
 
+bool ShenandoahUncommitThread::is_uncommit_allowed() {
+  return _uncommit_allowed.is_set();
+}
+
 void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_until) {
-  assert (ShenandoahUncommit, "should be enabled");
+  assert(ShenandoahUncommit, "should be enabled");
+  assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
 
   EventMark em("Concurrent uncommit");
   double start = os::elapsedTime();
+
+  if (!is_uncommit_allowed()) {
+    return;
+  }
+
+  _uncommit_in_progress.set();
 
   // Application allocates from the beginning of the heap, and GC allocates at
   // the end of it. It is more efficient to uncommit from the end, so that applications
   // could enjoy the near committed regions. GC allocations are much less frequent,
   // and therefore can accept the committing costs.
   size_t count = 0;
-  for (size_t i = _heap->num_regions(); i > 0; i--) { // care about size_t underflow
+  for (size_t i = _heap->num_regions(); i > 0; i--) {
+    if (!is_uncommit_allowed()) {
+      break;
+    }
+
     ShenandoahHeapRegion* r = _heap->get_region(i - 1);
     if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
       SuspendibleThreadSetJoiner sts_joiner;
@@ -135,6 +157,12 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
     SpinPause(); // allow allocators to take the lock
   }
 
+  {
+    MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+    _uncommit_in_progress.unset();
+    locker.notify_all();
+  }
+
   if (count > 0) {
     _heap->notify_heap_changed();
     double elapsed = os::elapsedTime() - start;
@@ -143,7 +171,19 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
 }
 
 void ShenandoahUncommitThread::stop_service() {
-  MonitorLocker locker(&_lock, Mutex::_safepoint_check_flag);
+  MonitorLocker locker(&_stop_lock, Mutex::_safepoint_check_flag);
   _stop_requested.set();
   locker.notify_all();
+}
+
+void ShenandoahUncommitThread::forbid_uncommit() {
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+  _uncommit_allowed.unset();
+  while (_uncommit_in_progress.is_set()) {
+    locker.wait();
+  }
+}
+
+void ShenandoahUncommitThread::allow_uncommit() {
+  _uncommit_allowed.set();
 }

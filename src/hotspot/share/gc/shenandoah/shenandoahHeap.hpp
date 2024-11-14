@@ -620,6 +620,12 @@ public:
   bool uncommit_bitmap_slice(ShenandoahHeapRegion *r);
   bool is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self = false);
 
+  void forbid_uncommit();
+  void allow_uncommit();
+#ifdef ASSERT
+  bool is_uncommit_in_progress();
+#endif
+
   // Liveness caching support
   ShenandoahLiveData* get_liveness_cache(uint worker_id);
   void flush_liveness_cache(uint worker_id);
