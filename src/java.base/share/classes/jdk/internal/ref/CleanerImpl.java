@@ -30,13 +30,11 @@ import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.ReferenceQueue;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import jdk.internal.misc.InnocuousThread;
-import jdk.internal.util.ArraysSupport;
 
 /**
  * CleanerImpl manages a set of object references and corresponding cleaning actions.
@@ -228,18 +226,22 @@ public final class CleanerImpl implements Runnable {
 
     /**
      * A specialized implementation that tracks phantom cleanables.
-     * Backing storage is expanded and trimmed automatically.
-     * Insert/remove run in amortized constant time.
      */
     static final class PhantomCleanableList {
-        private static final int MIN_CAPACITY = 16;
-        private final Object lock = new Object();
-        private PhantomCleanable<?>[] arr;
-        private int size;
+        /**
+         * Capacity for a single node in the list.
+         * This balances memory overheads vs locality vs GC walking costs.
+         */
+        static final int NODE_CAPACITY = 4096;
+
+        /**
+         * Head node. This is the only node with variable size.
+         * All nodes linked from the head are always at full capacity.
+         */
+        private Node head;
 
         public PhantomCleanableList() {
-            this.arr = new PhantomCleanable<?>[MIN_CAPACITY];
-            this.size = 0;
+            this.head = new Node();
         }
 
         /**
@@ -247,28 +249,28 @@ public final class CleanerImpl implements Runnable {
          *
          * @return true if the list is empty
          */
-        public boolean isEmpty() {
-            synchronized (lock) {
-                return size == 0;
-            }
+        public synchronized boolean isEmpty() {
+            return (head.next == null && head.size == 0);
         }
 
         /**
          * Insert this PhantomCleanable in the list.
          */
-        public void insert(PhantomCleanable<?> phc) {
-            synchronized (lock) {
-                // Resize if needed.
-                int oldLen = arr.length;
-                if (oldLen <= size) {
-                    int newLen = ArraysSupport.newLength(oldLen, 1, oldLen);
-                    arr = Arrays.copyOf(arr, newLen);
-                }
-                // Inserting at the end, record the indexes.
-                phc.index = size;
-                arr[size] = phc;
-                size++;
+        public synchronized void insert(PhantomCleanable<?> phc) {
+            if (head.size == NODE_CAPACITY) {
+                // Head is full, insert new one.
+                Node newHead = new Node();
+                newHead.next = head;
+                head.prev = newHead;
+                head = newHead;
             }
+            assert head.size < NODE_CAPACITY;
+
+            // Put the incoming object in head node and record indexes.
+            phc.node = head;
+            phc.index = head.size;
+            head.arr[head.size] = phc;
+            head.size++;
         }
 
         /**
@@ -277,43 +279,51 @@ public final class CleanerImpl implements Runnable {
          * @return true if Cleanable was removed or false if not because
          * it had already been removed before
          */
-        public boolean remove(PhantomCleanable<?> phc) {
-            synchronized (lock) {
-                int thisIdx = phc.index;
-                if (thisIdx == -1) {
-                    // Not in the list.
-                    return false;
-                }
-
-                // Unlink PhantomCleanable.
-                assert arr[phc.index] == phc;
-                phc.index = -1;
-
-                int lastIdx = size - 1;
-                if (lastIdx != thisIdx) {
-                    // Move the last, still alive element at current index,
-                    // overwriting the removed one. Update its index to a new location.
-                    PhantomCleanable<?> last = arr[lastIdx];
-                    last.index = thisIdx;
-                    arr[thisIdx] = last;
-                }
-
-                // Cut the tail.
-                arr[lastIdx] = null;
-                size--;
-
-                // Capacity control: trim the backing storage if it looks like
-                // we have a lot of wasted space there. Resizing on insertion would
-                // double the array size, so this is our best case. Therefore, we want
-                // to check if less than a quarter of the array is busy. We also do not
-                // want to cause an immediate resize on next insertion.
-                if ((size < arr.length / 4) && (size > MIN_CAPACITY)) {
-                    int newLen = ArraysSupport.newLength(size, 1, size);
-                    arr = Arrays.copyOf(arr, newLen);
-                }
-
-                return true;
+        public synchronized boolean remove(PhantomCleanable<?> phc) {
+            if (phc.node == null) {
+                // Not in the list.
+                return false;
             }
+            assert phc.node.arr[phc.index] == phc;
+            assert head.size > 0;
+
+            // Replace with another element from the head node, as long
+            // as it is not the same element. This keeps all non-head
+            // nodes at full capacity.
+            if (head != phc.node || (phc.index != head.size - 1)) {
+                PhantomCleanable<?> mover = head.arr[head.size - 1];
+                mover.node = phc.node;
+                mover.index = phc.index;
+                phc.node.arr[phc.index] = mover;
+            }
+
+            // Now we can unlink the removed element.
+            phc.node = null;
+
+            // Remove the last element from the head.
+            // If head node becomes empty after this, yank it.
+            head.arr[head.size - 1] = null;
+            head.size--;
+            if (head.size == 0) {
+               Node newHead = head.next;
+               newHead.prev = null;
+               head = newHead;
+            }
+
+            return true;
+        }
+
+        /**
+         * Segment node.
+         */
+        static class Node {
+            // Array of tracked cleanables, and the amount of elements in it.
+            final PhantomCleanable<?>[] arr = new PhantomCleanable<?>[NODE_CAPACITY];
+            int size;
+
+            // Linked list structure.
+            Node prev;
+            Node next;
         }
     }
 }

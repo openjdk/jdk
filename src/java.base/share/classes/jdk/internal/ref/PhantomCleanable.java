@@ -49,7 +49,13 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
     private final CleanerImpl.PhantomCleanableList list;
 
     /**
-     * Index of this PhantomCleanable in the list.
+     * Node for this PhantomCleanable in the list.
+     * Synchronized by the same lock as the list itself.
+     */
+    CleanerImpl.PhantomCleanableList.Node node;
+
+    /**
+     * Index of this PhantomCleanable in the list node.
      * Synchronized by the same lock as the list itself.
      */
     int index;
@@ -70,7 +76,8 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
         list = CleanerImpl.getCleanerImpl(cleaner).activeList;
         list.insert(this);
 
-        // Check that list insertion populated the index.
+        // Check that list insertion populated the backlinks.
+        assert node != null;
         assert index >= 0;
 
         // Ensure referent and cleaner remain accessible
