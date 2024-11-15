@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,19 +193,8 @@ interface LiveStackFrame extends StackFrame {
      *
      * @param options stack walk {@link StackWalker.Option options}
      * @param contScope the continuation scope up to which (inclusive) to walk the stack
-     *
-     * @throws SecurityException if the security manager is present and
-     * it denies access to {@code RuntimePermission("liveStackFrames")}; or
-     * or if the given {@code options} contains
-     * {@link StackWalker.Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE}
-     * and it denies access to {@code RuntimePermission("getStackWalkerWithClassReference")}.
      */
     public static StackWalker getStackWalker(Set<StackWalker.Option> options, ContinuationScope contScope) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("liveStackFrames"));
-        }
         return StackWalker.newInstance(options, LOCALS_AND_OPERANDS, contScope);
     }
 
@@ -242,11 +231,6 @@ interface LiveStackFrame extends StackFrame {
     public static StackWalker getStackWalker(Set<StackWalker.Option> options,
                                              ContinuationScope contScope,
                                              Continuation continuation) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("liveStackFrames"));
-        }
         return StackWalker.newInstance(options, LOCALS_AND_OPERANDS, contScope, continuation);
     }
 }
