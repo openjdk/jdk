@@ -277,7 +277,7 @@ public class CheckManPageOptions {
         //      `OPTION` or `OPTION`
         // where OPTION is the shortest string not containing whitespace or colon,
         // and in which all '-' characters are escaped with a single backslash.
-        Pattern inner = Pattern.compile("[> ]`(-[^ :]+?)(:|`)");
+        Pattern inner = Pattern.compile("[>\\s]`(-[^ :]+?)(:|`)");
 
         while (outerMatcher.find()) {
             String lines = outerMatcher.group();
