@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @bug 8343377
  * @summary Test MethodHandle::invokeExact and MethodHandle::invoke throws
  *          UnsupportedOperationException when called via Method::invoke
  * @run testng test.java.lang.invoke.MethodHandleInvokeUOE
@@ -29,7 +31,6 @@
 
 package test.java.lang.invoke;
 
-import org.testng.*;
 import org.testng.annotations.*;
 
 import java.lang.invoke.MethodHandle;

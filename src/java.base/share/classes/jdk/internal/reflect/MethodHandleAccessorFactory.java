@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.internal.reflect;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -347,36 +348,34 @@ final class MethodHandleAccessorFactory {
      * Native accessor, i.e. VM reflection implementation, is used if one of
      * the following conditions is met:
      * 1. during VM early startup before method handle support is fully initialized
-     * 2. a Java native method
-     * 3. -Djdk.reflect.useNativeAccessorOnly=true is set
+     * 2. -Djdk.reflect.useNativeAccessorOnly=true is set
+     * 3. a signature polymorphic method
      * 4. the member takes a variable number of arguments and the last parameter
      *    is not an array (see details below)
      * 5. the member's method type has an arity >= 255
      *
+     * Conditions 3-5 are due to the restrictions of method handles.
      * Otherwise, direct invocation of method handles is used.
      */
     private static boolean useNativeAccessor(Executable member) {
         if (!VM.isJavaLangInvokeInited())
             return true;
 
-        if (Modifier.isNative(member.getModifiers()))
-            return true;
-
         if (ReflectionFactory.useNativeAccessorOnly())  // for testing only
             return true;
 
-        // MethodHandle::withVarargs on a member with varargs modifier bit set
-        // verifies that the last parameter of the member must be an array type.
-        // The JVMS does not require the last parameter descriptor of the method descriptor
-        // is an array type if the ACC_VARARGS flag is set in the access_flags item.
-        // Hence the reflection implementation does not check the last parameter type
-        // if ACC_VARARGS flag is set.  Workaround this by invoking through
-        // the native accessor.
-        int paramCount = member.getParameterCount();
-        if (member.isVarArgs() &&
-                (paramCount == 0 || !(member.getParameterTypes()[paramCount-1].isArray()))) {
+        // java.lang.invoke cannot find the underlying native stubs of signature
+        // polymorphic methods that core reflection must invoke.
+        // Fall back to use the native implementation instead.
+        if (member instanceof Method method && isSignaturePolymorphicMethod(method))
             return true;
-        }
+
+        // java.lang.invoke fails to create MH for bad ACC_VARARGS methods with no
+        // trailing array,  but core reflection ignores ACC_VARARGS flag like the JVM does.
+        // Fall back to use the native implementation instead.
+        if (isInvalidVarArgs(member))
+            return true;
+
         // A method handle cannot be created if its type has an arity >= 255
         // as the method handle's invoke method consumes an extra argument
         // of the method handle itself. Fall back to use the native implementation.
@@ -406,6 +405,48 @@ final class MethodHandleAccessorFactory {
                 (Modifier.isStatic(member.getModifiers()) ? 0 : 1);
     }
 
+    /**
+     * Signature-polymorphic methods.  Lookup has special rules for these methods,
+     * but core reflection must observe them as they are declared, and reflective
+     * invocation must invoke the native method stubs that throw UOE.
+     *
+     * @param method the method to check
+     * @return {@code true} if this method is signature polymorphic
+     * @jls 15.12 Method Invocation Expressions
+     */
+    public static boolean isSignaturePolymorphicMethod(Method method) {
+        // Native; has variable arity parameter
+        if (!method.isVarArgs() || !Modifier.isNative(method.getModifiers())) {
+            return false;
+        }
+        // Declared in MethodHandle or VarHandle
+        var declaringClass = method.getDeclaringClass();
+        if (declaringClass != MethodHandle.class && declaringClass != VarHandle.class) {
+            return false;
+        }
+        // Single parameter of declared type Object[]
+        Class<?>[] parameters = reflectionFactory.getExecutableSharedParameterTypes(method);
+        return parameters.length == 1 && parameters[0] == Object[].class;
+    }
+
+    /**
+     * Lookup always calls MethodHandle::setVarargs on a member with varargs modifier
+     * bit set, which verifies that the last parameter of the member must be an array type.
+     * Thus, Lookup cannot create MethodHandle for such methods or constructors.
+     * The JVMS does not require that the last parameter descriptor of the method descriptor
+     * is an array type if the ACC_VARARGS flag is set in the access_flags item.
+     * Core reflection also has no variable arity support and ignores the ACC_VARARGS flag,
+     * treating them as regular arguments.
+     */
+    private static boolean isInvalidVarArgs(Executable member) {
+        if (!member.isVarArgs())
+            return false;
+
+        Class<?>[] parameters = reflectionFactory.getExecutableSharedParameterTypes(member);
+        var count = parameters.length;
+        return count == 0 || !parameters[count - 1].isArray();
+    }
+
     /*
      * Delay initializing these static fields until java.lang.invoke is fully initialized.
      */
@@ -414,4 +455,5 @@ final class MethodHandleAccessorFactory {
     }
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final ReflectionFactory reflectionFactory = ReflectionFactory.getReflectionFactory();
 }
