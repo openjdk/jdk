@@ -84,8 +84,13 @@ private:
   PhiNode* _iv;
   CountedLoopEndNode* _pre_loop_end; // cache access to pre-loop for main loops only
 
-  // We can only add speculative runtime-checks if we have access to this parse predicate.
+  // We can add speculative runtime-checks if we have one of these:
+  //  - Auto Vectorization Parse Predicate:
+  //      pass all checks or trap -> recompile without this predicate.
+  //  - Multiversioning fast-loop projection:
+  //      pass all checks or go to slow-path-loop, where we have no speculative assumptions.
   ParsePredicateSuccessProj* _auto_vectorization_parse_predicate_proj;
+  IfTrueNode* _multiversioning_fast_proj;
 
   NOT_PRODUCT(VTrace _vtrace;)
 
@@ -106,7 +111,8 @@ public:
     _cl_exit   (nullptr),
     _iv        (nullptr),
     _pre_loop_end (nullptr),
-    _auto_vectorization_parse_predicate_proj (nullptr) {}
+    _auto_vectorization_parse_predicate_proj(nullptr),
+    _multiversioning_fast_proj(nullptr) {}
   NONCOPYABLE(VLoop);
 
   IdealLoopTree* lpt()        const { return _lpt; };
@@ -133,8 +139,13 @@ public:
     return _auto_vectorization_parse_predicate_proj;
   }
 
+  IfTrueNode* multiversioning_fast_proj() const {
+    return _multiversioning_fast_proj;
+  }
+
   bool are_speculative_checks_possible() const {
-    return _auto_vectorization_parse_predicate_proj != nullptr;
+    return _auto_vectorization_parse_predicate_proj != nullptr ||
+           _multiversioning_fast_proj != nullptr;
   }
 
   // Estimate maximum size for data structures, to avoid repeated reallocation

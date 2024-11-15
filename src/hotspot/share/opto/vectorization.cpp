@@ -120,23 +120,40 @@ VStatus VLoop::check_preconditions_helper() {
     }
     _pre_loop_end = pre_end;
 
-    // To add runtime checks, we must have access to the parse predicate.
+    // See if we find the infrastructure for speculative runtime-checks.
+    //  (1) Auto Vectorization Parse Predicate
     Node* pre_ctrl = pre_loop_head()->in(LoopNode::EntryControl);
     const Predicates predicates(pre_ctrl);
     const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
     if (predicate_block->has_parse_predicate()) {
       _auto_vectorization_parse_predicate_proj = predicate_block->parse_predicate_success_proj();
     }
+
+    //  (2) Multiversioning fast-loop projection
+    IfTrueNode* before_predicates = predicates.entry()->isa_IfTrue();
+    if (before_predicates != nullptr &&
+        before_predicates->in(0)->is_If() &&
+        before_predicates->in(0)->in(1)->is_OpaqueAutoVectorizationMultiversioning()) {
+      _multiversioning_fast_proj = before_predicates;
+    }
 #ifndef PRODUCT
     if (is_trace_preconditions()) {
-      if (predicate_block->has_parse_predicate()) {
-        tty->print_cr("  auto_vectorization_parse_predicate_proj:");
-        _auto_vectorization_parse_predicate_proj->dump();
+      tty->print_cr(" Infrastructure for speculative runtime-checks:");
+      if (_auto_vectorization_parse_predicate_proj != nullptr) {
+        tty->print_cr("  auto_vectorization_parse_predicate_proj: speculate and trap");
+        _auto_vectorization_parse_predicate_proj->dump_bfs(5,0,"");
+      } else if (_multiversioning_fast_proj != nullptr) {
+        tty->print_cr("  multiversioning_fast_proj: speculate and multiversion");
+        _multiversioning_fast_proj->dump_bfs(5,0,"");
       } else {
-        tty->print_cr("  auto_vectorization_parse_predicate_proj: not found - no speculation possible.");
+        tty->print_cr("  Not found.");
       }
     }
 #endif
+    assert(_auto_vectorization_parse_predicate_proj == nullptr ||
+           _multiversioning_fast_proj == nullptr, "we should only have at most one of these");
+    assert(_cl->is_multiversion_fast_loop() == (_multiversioning_fast_proj != nullptr),
+           "must find the multiversion selector IFF loop is a multiversion fast loop");
   }
 
   return VStatus::make_success();
