@@ -91,14 +91,21 @@ public:
   IfNode* if_node() const;
 };
 
-// TODO
+// TODO where to find more info, how stalling works etc
 class OpaqueAutoVectorizationMultiversioningNode : public Opaque1Node {
-  public:
-  OpaqueAutoVectorizationMultiversioningNode(Compile* C, Node* n) : Opaque1Node(C, n) {
+private:
+  bool _is_stall_slow_loop;
+
+public:
+  OpaqueAutoVectorizationMultiversioningNode(Compile* C, Node* n) :
+      Opaque1Node(C, n), _is_stall_slow_loop(true)
+  {
     init_class_id(Class_OpaqueAutoVectorizationMultiversioning);
   }
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+  bool is_stall_slow_loop() const { return _is_stall_slow_loop; }
+  void unstall_slow_loop() { _is_stall_slow_loop = false; }
 };
 
 // This node is used in the context of intrinsics. We sometimes implicitly know that an object is non-null even though

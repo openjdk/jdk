@@ -426,6 +426,10 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
   IfNode* multiversion_if = multiversioning_fast_proj->in(0)->as_If();
   OpaqueAutoVectorizationMultiversioningNode* opaque = multiversion_if->in(1)->as_OpaqueAutoVectorizationMultiversioning();
 
+  // Now that we have at least one condition for the multiversioning,
+  // we should unstall the slow loop.
+  opaque->unstall_slow_loop();
+
   // Create new_if with its projections.
   Node* entry = multiversion_if->in(0);
   IfNode* new_if = IfNode::make_with_same_profile(multiversion_if, entry, opaque);
@@ -490,9 +494,24 @@ bool PhaseIdealLoop::try_unstall_multiversion_stalled_slow_loop(IdealLoopTree* l
     opaque = find_multiversion_opaque_from_multiversion_if_false(slow_path);
   }
   assert(opaque != nullptr, "must have found multiversion opaque node");
+  if (opaque == nullptr) { return false; }
 
-  // TODO
-  return false;
+  // We may still be stalled, if there were not yet any runtime-checks added
+  // for the multiversioning. We may never add any, and then this loop would
+  // fold away. So we wait until some runtime-checks are added, then we know
+  // that this loop will be reachable and it is worth optimizing further.
+  if (opaque->is_stall_slow_loop()) { return false; }
+
+  // Clear away the stalling.
+  cl->set_no_multiversion();
+  cl->set_multiversion_slow_loop();
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print("Unstall ");
+    lpt->dump_head();
+  }
+#endif
+  return true;
 }
 
 bool PhaseIdealLoop::has_control_dependencies_from_predicates(LoopNode* head) {
