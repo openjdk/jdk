@@ -190,6 +190,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 
     if (x->is_Con()) {
       assert(get_ctrl(x) == C->root(), "constant control is not root");
+      continue;
     }
     // The occasional new node
     if (x->_idx >= old_unique) {     // Found a new, unplaced node?
