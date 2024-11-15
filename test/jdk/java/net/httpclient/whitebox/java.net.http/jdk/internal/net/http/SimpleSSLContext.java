@@ -53,26 +53,16 @@ public class SimpleSSLContext {
     public SimpleSSLContext() throws IOException {
         String paths = System.getProperty("test.src.path");
         StringTokenizer st = new StringTokenizer(paths, File.pathSeparator);
-        boolean securityExceptions = false;
         SSLContext sslContext = null;
         while (st.hasMoreTokens()) {
             String path = st.nextToken();
-            try {
-                File f = new File(path, "../../../../../lib/jdk/test/lib/net/testkeys");
-                if (f.exists()) {
-                    try (FileInputStream fis = new FileInputStream(f)) {
-                        sslContext = init(fis);
-                        break;
-                    }
+            File f = new File(path, "../../../../../lib/jdk/test/lib/net/testkeys");
+            if (f.exists()) {
+                try (FileInputStream fis = new FileInputStream(f)) {
+                    sslContext = init(fis);
+                    break;
                 }
-            } catch (SecurityException e) {
-                // catch and ignore because permission only required
-                // for one entry on path (at most)
-                securityExceptions = true;
             }
-        }
-        if (securityExceptions) {
-            System.out.println("SecurityExceptions thrown on loading testkeys");
         }
         ssl = sslContext;
     }

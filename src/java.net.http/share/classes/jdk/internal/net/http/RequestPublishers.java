@@ -230,7 +230,7 @@ public final class RequestPublishers {
         private final long length;
         private final Function<Path, InputStream> inputStreamSupplier;
 
-        private static String pathForDefaultFSCheck(Path path) {
+        private static String checkPathForDefaultFS(Path path) {
             return path.toFile().getPath();
         }
 
@@ -242,7 +242,7 @@ public final class RequestPublishers {
             boolean defaultFS = true;
 
             try {
-                pathForDefaultFSCheck(path);
+                checkPathForDefaultFS(path);
             } catch (UnsupportedOperationException uoe) {
                 defaultFS = false;
             }
