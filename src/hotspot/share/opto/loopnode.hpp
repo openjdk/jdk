@@ -320,7 +320,19 @@ public:
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
 
-  // TODO Multiversion desc
+  // Multiversioning allows us to duplicate a CountedLoop, and have two versions:
+  // (1) fast_loop: we make speculative assumptions and add the corresponding
+  //                runtime-checks above the multiversion_if which is guarded
+  //                by a OpaqueAutoVectorizationMultiversioning.
+  // (2) slow_loop: we make no assumptions. This loop is taken if any of the
+  //                runtime-checks fails. We keep this loop stalled as long
+  //                as there are no runtime-checks added. As long as it is stalled,
+  //                we do not perform any loop-opts on the slow_loop. If no
+  //                runtime-checks are everadded, this slow_loop is folded away
+  //                after loop-opts. The stalling means we do not waste and cycles
+  //                on a loop that may eventually be folded away. Once a runtime-check
+  //                is added, the slow_loop is unstalled, and more loop-opts can
+  //                be performed on it (but still without any speculative assumptions).
   bool is_multiversion()                   const { return (_loop_flags & MultiversionFlagsMask) != Normal; }
   bool is_multiversion_fast_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionFastLoop; }
   bool is_multiversion_slow_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionSlowLoop; }

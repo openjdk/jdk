@@ -148,11 +148,6 @@ IfNode* PhaseIdealLoop::find_unswitch_candidate(const IdealLoopTree* loop) const
   return unswitch_candidate;
 }
 
-// LoopSelectorTemplate
-//
-// - bol (prob, cnt) -> multiversion
-// - if              -> unswitch
-
 // LoopSelector is used for loop multiversioning and unswitching. This class creates an If node (i.e. loop selector)
 // that selects if the true-path-loop or the false-path-loop should be executed at runtime.
 class LoopSelector : public StackObj {
@@ -170,7 +165,7 @@ class LoopSelector : public StackObj {
   enum PathToLoop { TRUE_PATH, FALSE_PATH };
 
  public:
-  // For multiversioning: TODO
+  // For multiversioning: create a new selector (multiversion_if) from a bol condition.
   LoopSelector(IdealLoopTree* loop, Node* bol, float prob, float fcnt)
       : _phase(loop->_phase),
         _outer_loop(loop->skip_strip_mined()->_parent),
@@ -181,7 +176,8 @@ class LoopSelector : public StackObj {
         _false_path_loop_proj(create_proj_to_loop(FALSE_PATH)->as_IfFalse()) {
   }
 
-  // For unswitching: TODO
+  // For unswitching: create an unswitching if before the loop, from a pre-existing
+  //                  unswitching_candidate inside the loop.
   LoopSelector(IdealLoopTree* loop, IfNode* unswitch_candidate)
       : _phase(loop->_phase),
         _outer_loop(loop->skip_strip_mined()->_parent),
@@ -390,7 +386,7 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
     lpt->dump_head();
   }
 #endif
-  // TODO assert Multiversion, assert cl
+  // TODO assert Multiversion
 
   // TODO fix all code here
 
@@ -413,8 +409,6 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
   CountedLoopNode* new_head = old_new[original_head->_idx]->as_CountedLoop();
   original_head->set_multiversion_fast_loop();
   new_head->set_multiversion_stalled_slow_loop();
-  //increment_unswitch_counts(original_head, new_head);
-  // TODO new_head as stalled?
 
   //NOT_PRODUCT(trace_loop_unswitching_result(unswitched_loop_selector, original_head, new_head);)
   //C->print_method(PHASE_AFTER_LOOP_UNSWITCHING, 4, new_head);

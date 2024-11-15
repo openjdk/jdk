@@ -3414,9 +3414,13 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // Do nothing special to pre- and post- loops
   if (cl->is_pre_loop() || cl->is_post_loop()) return true;
 
-  // TODO check if still to be stalled.
+  // If we are stalled, check if we can get unstalled.
   if (cl->is_multiversion_stalled_slow_loop() &&
       !phase->try_unstall_multiversion_stalled_slow_loop(this)) {
+    // We are still stalled, waiting for the fast_loop to add runtime-checks
+    // to the multiversion_if. We do not want to optimize, because we do not
+    // know if such a runtime-check will ever be added. If not, this loop is
+    // eventually folded away after loop-opts.
     return true;
   }
 
