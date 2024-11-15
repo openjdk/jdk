@@ -122,7 +122,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 
     if (singleton) {
       wins++;
-      x = ((PhaseGVN&)_igvn).makecon(t);
+      x = makecon(t);
     } else {
       // We now call Identity to try to simplify the cloned node.
       // Note that some Identity methods call phase->type(this).
@@ -189,9 +189,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     IdealLoopTree *old_loop;
 
     if (x->is_Con()) {
-      // Constant's control is always root.
-      set_root_as_ctrl(x);
-      continue;
+      assert(get_ctrl(x) == C->root(), "constant control is not root");
     }
     // The occasional new node
     if (x->_idx >= old_unique) {     // Found a new, unplaced node?
