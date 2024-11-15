@@ -28,7 +28,6 @@ package java.net;
 import java.io.IOException;
 import java.util.Map;
 import java.util.List;
-import sun.security.util.SecurityConstants;
 
 /**
  * Represents implementations of URLConnection caches. An instance of
@@ -84,11 +83,6 @@ public abstract class ResponseCache {
      * @since 1.5
      */
     public static synchronized ResponseCache getDefault() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SecurityConstants.GET_RESPONSECACHE_PERMISSION);
-        }
         return theResponseCache;
     }
 
@@ -104,11 +98,6 @@ public abstract class ResponseCache {
      * @since 1.5
      */
     public static synchronized void setDefault(ResponseCache responseCache) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SecurityConstants.SET_RESPONSECACHE_PERMISSION);
-        }
         theResponseCache = responseCache;
     }
 
