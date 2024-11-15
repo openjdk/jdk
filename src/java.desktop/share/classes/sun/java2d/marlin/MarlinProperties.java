@@ -326,7 +326,6 @@ public final class MarlinProperties {
                                    final double min, final double max)
     {
         double value = def;
-        @SuppressWarnings("removal")
         final String property = System.getProperty(key);
 
         if (property != null) {

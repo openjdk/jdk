@@ -633,7 +633,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                                            paperWidth + " "+ paperHeight+"]");
 
             final PrintService pservice = getPrintService();
-            Boolean isPS = true;
+            Boolean isPS = Boolean.TRUE;
             try {
                 Class<?> psClass = Class.forName("sun.print.IPPPrintService");
                 if (psClass.isInstance(pservice)) {
@@ -836,7 +836,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                             paperWidth + " " + paperHeight + "]");
 
             final PrintService pservice = getPrintService();
-            Boolean isPS = true;
+            Boolean isPS = Boolean.TRUE;
             try {
                 Class<?> psClass = Class.forName("sun.print.IPPPrintService");
                 if (psClass.isInstance(pservice)) {
