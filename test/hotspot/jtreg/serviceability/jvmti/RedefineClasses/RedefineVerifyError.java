@@ -55,6 +55,7 @@ import jdk.internal.org.objectweb.asm.TypePath;
 
 public class RedefineVerifyError implements Opcodes {
 
+    // This is a redefinition of java.lang.VerifyError with two broken init methods (no bytecodes)
     public static byte[] dump () throws Exception {
 
         ClassWriter classWriter = new ClassWriter(0);
@@ -71,45 +72,12 @@ public class RedefineVerifyError implements Opcodes {
         {
             methodVisitor = classWriter.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
             methodVisitor.visitCode();
-            Label label0 = new Label();
-            methodVisitor.visitLabel(label0);
-            methodVisitor.visitLineNumber(43, label0);
-            methodVisitor.visitVarInsn(ALOAD, 0);
-            methodVisitor.visitMethodInsn(INVOKESPECIAL, "java/lang/LinkageError", "<init>", "()V", false);
-            Label label1 = new Label();
-            methodVisitor.visitLabel(label1);
-            methodVisitor.visitLineNumber(44, label1);
-            methodVisitor.visitInsn(RETURN);
-            Label label2 = new Label();
-            methodVisitor.visitLabel(label2);
-            methodVisitor.visitLocalVariable("this", "Ljava/lang/VerifyError;", null, label0, label2, 0);
-            methodVisitor.visitMaxs(1, 1);
             methodVisitor.visitEnd();
         }
 
-        {   // broken method
+        {
             methodVisitor = classWriter.visitMethod(ACC_PUBLIC, "<init>", "(Ljava/lang/String;)V", null, null);
             methodVisitor.visitCode();
-            Label label0 = new Label();
-            Label label1 = new Label();
-            Label label2 = new Label();
-            methodVisitor.visitTryCatchBlock(label0, label1, label2, "java/lang/Exception");
-            methodVisitor.visitLabel(label0);
-            methodVisitor.visitVarInsn(ALOAD, 0);
-            methodVisitor.visitVarInsn(ALOAD, 1);
-            methodVisitor.visitMethodInsn(INVOKESPECIAL, "java/lang/LinkageError", "<init>", "(Ljava/lang/String;)V", false);
-            methodVisitor.visitLabel(label1);
-            Label label3 = new Label();
-            methodVisitor.visitJumpInsn(GOTO, label3);
-            methodVisitor.visitLabel(label2);
-            methodVisitor.visitFrame(Opcodes.F_FULL, 2, new Object[] {"MyError", "java/lang/String"}, 1, new Object[] {"java/lang/Exception"});
-            methodVisitor.visitVarInsn(ASTORE, 2);
-            methodVisitor.visitLabel(label3);
-            // Missing stackmap frame makes rededefine classes throw VerifyError
-            // methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-            methodVisitor.visitInsn(RETURN);
-            methodVisitor.visitMaxs(2, 3);
-            methodVisitor.visitEnd();
             classWriter.visitEnd();
         }
 
@@ -125,6 +93,7 @@ public class RedefineVerifyError implements Opcodes {
             RedefineClassHelper.redefineClass(verifyErrorMirror, dump());
             throw new RuntimeException("This should throw VerifyError");
         } catch (VerifyError e) {
+            // JVMTI recreates the VerifyError so the verification message is lost.
             System.out.println("Passed");
         }
     }
