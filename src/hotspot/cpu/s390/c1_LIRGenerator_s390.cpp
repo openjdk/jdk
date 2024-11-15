@@ -497,7 +497,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
       bool use_tmp = false;
       if (right_arg->is_constant()) {
         int iconst = right_arg->get_jint_constant();
-        if (iconst > 0 && iconst < max_jint && is_power_of_2(iconst - 1) || is_power_of_2(iconst + 1)) {
+        if (iconst > 0 && iconst < max_jint && (is_power_of_2(iconst - 1) || is_power_of_2(iconst + 1))) {
           use_tmp = true;
         }
       }
