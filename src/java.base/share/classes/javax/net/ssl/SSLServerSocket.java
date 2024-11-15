@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,20 +78,12 @@ public abstract class SSLServerSocket extends ServerSocket {
      * reject new connection requests.
      * <P>
      * A port number of <code>0</code> creates a socket on any free port.
-     * <P>
-     * If there is a security manager, its <code>checkListen</code>
-     * method is called with the <code>port</code> argument as its
-     * argument to ensure the operation is allowed. This could result
-     * in a SecurityException.
      *
      * @param port the port on which to listen
      * @throws IOException if an I/O error occurs when creating the socket
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkListen</code> method doesn't allow the operation.
      * @throws IllegalArgumentException if the port parameter is outside the
      *         specified range of valid port values, which is between 0 and
      *         65535, inclusive.
-     * @see    SecurityManager#checkListen
      */
     protected SSLServerSocket(int port)
     throws IOException
@@ -112,22 +104,14 @@ public abstract class SSLServerSocket extends ServerSocket {
      * or may choose to ignore the parameter altogether. The value provided
      * should be greater than <code>0</code>. If it is less than or equal to
      * <code>0</code>, then an implementation specific default will be used.
-     * <P>
-     * If there is a security manager, its <code>checkListen</code>
-     * method is called with the <code>port</code> argument as its
-     * argument to ensure the operation is allowed. This could result
-     * in a SecurityException.
      *
      * @param port the port on which to listen
      * @param backlog  requested maximum length of the queue of incoming
      *                  connections.
      * @throws IOException if an I/O error occurs when creating the socket
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkListen</code> method doesn't allow the operation.
      * @throws IllegalArgumentException if the port parameter is outside the
      *         specified range of valid port values, which is between 0 and
      *         65535, inclusive.
-     * @see    SecurityManager#checkListen
      */
     protected SSLServerSocket(int port, int backlog)
     throws IOException
@@ -143,11 +127,6 @@ public abstract class SSLServerSocket extends ServerSocket {
      * constructor is used on multihomed hosts, such as those used
      * for firewalls or as routers, to control through which interface
      * a network service is provided.
-     * <P>
-     * If there is a security manager, its <code>checkListen</code>
-     * method is called with the <code>port</code> argument as its
-     * argument to ensure the operation is allowed. This could result
-     * in a SecurityException.
      * <P>
      * A port number of <code>0</code> creates a socket on any free port.
      * <P>
@@ -167,12 +146,9 @@ public abstract class SSLServerSocket extends ServerSocket {
      * @param address the address of the network interface through
      *          which connections will be accepted
      * @throws IOException if an I/O error occurs when creating the socket
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkListen</code> method doesn't allow the operation.
      * @throws IllegalArgumentException if the port parameter is outside the
      *         specified range of valid port values, which is between 0 and
      *         65535, inclusive.
-     * @see    SecurityManager#checkListen
      */
     protected SSLServerSocket(int port, int backlog, InetAddress address)
     throws IOException

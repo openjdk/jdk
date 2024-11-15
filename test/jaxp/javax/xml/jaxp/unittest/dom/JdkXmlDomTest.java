@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,22 @@
  */
 package dom;
 
-import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
-
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8078139
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.JdkXmlDomTest
  * @run testng/othervm dom.JdkXmlDomTest
  * @summary Verifies that jdk.xml.dom classes are loaded by the ext class loader.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class JdkXmlDomTest {
     @Test
     public void test() throws ClassNotFoundException {
-        ClassLoader cl = runWithAllPerm(() -> ClassLoader.getSystemClassLoader().getParent());
+        ClassLoader cl = ClassLoader.getSystemClassLoader().getParent();
         Class<?> cls = Class.forName("org.w3c.dom.xpath.XPathEvaluator", false, cl);
 
-        Assert.assertTrue(runWithAllPerm(() -> cls.getClassLoader()) != null);
+        Assert.assertTrue(cls.getClassLoader() != null);
     }
 }

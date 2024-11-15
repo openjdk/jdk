@@ -46,7 +46,7 @@
 #include "gc/shenandoah/vmStructs_shenandoah.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/z/shared/vmStructs_z_shared.hpp"
+#include "gc/z/vmStructs_z.hpp"
 #endif
 
 #define VM_STRUCTS_GC(nonstatic_field,                                                                                               \
@@ -69,7 +69,7 @@
   SHENANDOAHGC_ONLY(VM_STRUCTS_SHENANDOAH(nonstatic_field,                                                                           \
                                volatile_nonstatic_field,                                                                             \
                                static_field))                                                                                        \
-  ZGC_ONLY(VM_STRUCTS_Z_SHARED(nonstatic_field,                                                                                      \
+  ZGC_ONLY(VM_STRUCTS_Z(nonstatic_field,                                                                                             \
                                volatile_nonstatic_field,                                                                             \
                                static_field))                                                                                        \
                                                                                                                                      \
@@ -121,7 +121,7 @@
   SHENANDOAHGC_ONLY(VM_TYPES_SHENANDOAH(declare_type,                     \
                              declare_toplevel_type,                       \
                              declare_integer_type))                       \
-  ZGC_ONLY(VM_TYPES_Z_SHARED(declare_type,                                \
+  ZGC_ONLY(VM_TYPES_Z(declare_type,                                       \
                              declare_toplevel_type,                       \
                              declare_integer_type))                       \
                                                                           \
@@ -175,7 +175,7 @@
                                           declare_constant_with_value))     \
   SHENANDOAHGC_ONLY(VM_INT_CONSTANTS_SHENANDOAH(declare_constant,           \
                                      declare_constant_with_value))          \
-  ZGC_ONLY(VM_INT_CONSTANTS_Z_SHARED(declare_constant,                      \
+  ZGC_ONLY(VM_INT_CONSTANTS_Z(declare_constant,                             \
                                      declare_constant_with_value))          \
                                                                             \
   /********************************************/                            \
@@ -199,6 +199,6 @@
   declare_constant(CollectedHeap::G1)                                       \
 
 #define VM_LONG_CONSTANTS_GC(declare_constant)                              \
-  ZGC_ONLY(VM_LONG_CONSTANTS_Z_SHARED(declare_constant))
+  ZGC_ONLY(VM_LONG_CONSTANTS_Z(declare_constant))
 
 #endif // SHARE_GC_SHARED_VMSTRUCTS_GC_HPP

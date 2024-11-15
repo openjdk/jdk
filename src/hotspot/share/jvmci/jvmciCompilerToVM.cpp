@@ -184,7 +184,8 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   JVMCI_VM_ENTRY_MARK;                                     \
   ResourceMark rm;                                         \
   bool __is_hotspot = env == thread->jni_environment();    \
-  CompilerThreadCanCallJava ccj(thread, __is_hotspot);     \
+  bool __block_can_call_java = __is_hotspot || !thread->is_Compiler_thread() || CompilerThread::cast(thread)->can_call_java(); \
+  CompilerThreadCanCallJava ccj(thread, __block_can_call_java); \
   JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env); \
 
 // Entry to native method implementation that transitions
@@ -400,6 +401,11 @@ C2V_VMENTRY_NULL(jobject, asResolvedJavaMethod, (JNIEnv* env, jobject, jobject e
   JVMCIObject result = JVMCIENV->get_jvmci_method(method, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
 }
+
+C2V_VMENTRY_PREFIX(jboolean, updateCompilerThreadCanCallJava, (JNIEnv* env, jobject, jboolean newState))
+  return CompilerThreadCanCallJava::update(thread, newState) != nullptr;
+C2V_END
+
 
 C2V_VMENTRY_NULL(jobject, getResolvedJavaMethod, (JNIEnv* env, jobject, jobject base, jlong offset))
   Method* method = nullptr;
@@ -1376,7 +1382,8 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   if (method_data == nullptr) {
     method_data = get_profiling_method_data(method, CHECK);
   } else {
-    method_data->initialize();
+    CompilerThreadCanCallJava canCallJava(THREAD, true);
+    method_data->reinitialize();
   }
 C2V_END
 
@@ -2571,9 +2578,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
       stringStream st;
       char* pure_name = NativeLookup::pure_jni_name(method);
       guarantee(pure_name != nullptr, "Illegal native method name encountered");
-      os::print_jni_name_prefix_on(&st, args_size);
       st.print_raw(pure_name);
-      os::print_jni_name_suffix_on(&st, args_size);
       char* jni_name = st.as_string();
 
       address entry = (address) os::dll_lookup(sl_handle, jni_name);
@@ -2582,10 +2587,8 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
         st.reset();
         char* long_name = NativeLookup::long_jni_name(method);
         guarantee(long_name != nullptr, "Illegal native method name encountered");
-        os::print_jni_name_prefix_on(&st, args_size);
         st.print_raw(pure_name);
         st.print_raw(long_name);
-        os::print_jni_name_suffix_on(&st, args_size);
         char* jni_long_name = st.as_string();
         entry = (address) os::dll_lookup(sl_handle, jni_long_name);
         if (entry == nullptr) {
@@ -3386,6 +3389,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "notifyCompilerPhaseEvent",                     CC "(JIII)V",                                                                         FN_PTR(notifyCompilerPhaseEvent)},
   {CC "notifyCompilerInliningEvent",                  CC "(I" HS_METHOD2 HS_METHOD2 "ZLjava/lang/String;I)V",                               FN_PTR(notifyCompilerInliningEvent)},
   {CC "getOopMapAt",                                  CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getOopMapAt)},
+  {CC "updateCompilerThreadCanCallJava",              CC "(Z)Z",                                                                            FN_PTR(updateCompilerThreadCanCallJava)},
 };
 
 int CompilerToVM::methods_count() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,11 +98,6 @@ public abstract class AuthProvider extends Provider {
      * @throws IllegalStateException if the provider requires configuration
      * and {@link #configure} has not been called
      * @throws LoginException if the login operation fails
-     * @throws SecurityException if the caller does not pass a
-     *  security check for
-     *  {@code SecurityPermission("authProvider.name")},
-     *  where {@code name} is the value returned by
-     *  this provider's {@code getName} method
      */
     public abstract void login(Subject subject, CallbackHandler handler)
         throws LoginException;
@@ -113,11 +108,6 @@ public abstract class AuthProvider extends Provider {
      * @throws IllegalStateException if the provider requires configuration
      * and {@link #configure} has not been called
      * @throws LoginException if the logout operation fails
-     * @throws SecurityException if the caller does not pass a
-     *  security check for
-     *  {@code SecurityPermission("authProvider.name")},
-     *  where {@code name} is the value returned by
-     *  this provider's {@code getName} method
      */
     public abstract void logout() throws LoginException;
 
@@ -140,11 +130,6 @@ public abstract class AuthProvider extends Provider {
      *
      * @throws IllegalStateException if the provider requires configuration
      * and {@link #configure} has not been called
-     * @throws SecurityException if the caller does not pass a
-     *  security check for
-     *  {@code SecurityPermission("authProvider.name")},
-     *  where {@code name} is the value returned by
-     *  this provider's {@code getName} method
      */
     public abstract void setCallbackHandler(CallbackHandler handler);
 }
