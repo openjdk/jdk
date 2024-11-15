@@ -79,7 +79,12 @@ protected:
          SubwordLoop           = 1<<13,
          ProfileTripFailed     = 1<<14,
          LoopNestInnerLoop     = 1<<15,
-         LoopNestLongOuterLoop = 1<<16 };
+         LoopNestLongOuterLoop = 1<<16,
+         MultiversionFastLoop         = 1<<17,
+         MultiversionSlowLoop         = 2<<17,
+         MultiversionStalledSlowLoop  = 3<<17,
+         MultiversionFlagsMask        = 3<<17,
+         };
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
@@ -314,6 +319,16 @@ public:
   int  node_count_before_unroll()            { return _node_count_before_unroll; }
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
+
+  // TODO Multiversion desc
+  bool is_multiversion()                   const { return (_loop_flags & MultiversionFlagsMask) != Normal; }
+  bool is_multiversion_fast_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionFastLoop; }
+  bool is_multiversion_slow_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionSlowLoop; }
+  bool is_multiversion_stalled_slow_loop() const { return (_loop_flags & MultiversionFlagsMask) == MultiversionStalledSlowLoop; }
+  void set_multiversion_fast_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionFastLoop; }
+  void set_multiversion_slow_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionSlowLoop; }
+  void set_multiversion_stalled_slow_loop() { assert(!is_multiversion(), ""); _loop_flags |= MultiversionStalledSlowLoop; }
+  void set_no_multiversion()                { assert( is_multiversion(), ""); _loop_flags &= ~MultiversionFlagsMask; }
 
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;

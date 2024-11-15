@@ -4484,6 +4484,9 @@ void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(Id
   LoopNode* outer_loop = cl->skip_strip_mined();
   Node* entry = outer_loop->in(LoopNode::EntryControl);
 
+  // Check we are not already multiversioned.
+  if (cl->is_multiversion()) { return; }
+
   // Check that we do not have a parse-predicate where we can add the runtime checks
   // during auto-vectorization.
   const Predicates predicates(entry);

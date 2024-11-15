@@ -390,7 +390,7 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
     lpt->dump_head();
   }
 #endif
-  // TODO assert Multiversion
+  // TODO assert Multiversion, assert cl
 
   // TODO fix all code here
 
@@ -409,8 +409,10 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
 
   add_unswitched_loop_version_bodies_to_igvn(lpt, old_new);
 
-  LoopNode* original_head = lpt->_head->as_Loop();
-  LoopNode* new_head = old_new[original_head->_idx]->as_Loop();
+  CountedLoopNode* original_head = lpt->_head->as_CountedLoop();
+  CountedLoopNode* new_head = old_new[original_head->_idx]->as_CountedLoop();
+  original_head->set_multiversion_fast_loop();
+  new_head->set_multiversion_stalled_slow_loop();
   //increment_unswitch_counts(original_head, new_head);
   // TODO new_head as stalled?
 
