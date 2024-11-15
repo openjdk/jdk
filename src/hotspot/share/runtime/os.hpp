@@ -885,10 +885,6 @@ class os: AllStatic {
   // Fills in path to jvm.dll/libjvm.so (used by the Disassembler)
   static void     jvm_path(char *buf, jint buflen);
 
-  // JNI names
-  static void     print_jni_name_prefix_on(outputStream* st, int args_size);
-  static void     print_jni_name_suffix_on(outputStream* st, int args_size);
-
   // Init os specific system properties values
   static void init_system_properties_values();
 
@@ -1048,8 +1044,6 @@ class os: AllStatic {
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
-
-  static bool dont_yield();                     // when true, JVM_Yield() is nop
 
   // Thread priority helpers (implemented in OS-specific part)
   static OSReturn set_native_priority(Thread* thread, int native_prio);
