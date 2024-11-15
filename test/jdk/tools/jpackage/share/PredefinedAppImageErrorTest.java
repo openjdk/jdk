@@ -21,7 +21,6 @@
  * questions.
  */
 
-package jdk.jpackage.tests;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -42,11 +41,11 @@ import jdk.jpackage.test.TKit;
  * @compile PredefinedAppImageErrorTest.java
  *
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.PredefinedAppImageErrorTest
+ *  --jpt-run=PredefinedAppImageErrorTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useExecutableByDefault
  *
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.PredefinedAppImageErrorTest
+ *  --jpt-run=PredefinedAppImageErrorTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault
  */
 

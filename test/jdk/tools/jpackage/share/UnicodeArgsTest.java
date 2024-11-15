@@ -21,7 +21,6 @@
  * questions.
  */
 
-package jdk.jpackage.tests;
 
 import java.util.stream.Collectors;
 import jdk.jpackage.test.TKit;
@@ -38,7 +37,7 @@ import jdk.jpackage.test.JPackageCommand;
  * @compile UnicodeArgsTest.java
  * @requires (os.family == "windows")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.UnicodeArgsTest
+ *  --jpt-run=UnicodeArgsTest
  */
 
 public final class UnicodeArgsTest {

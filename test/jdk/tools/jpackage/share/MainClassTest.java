@@ -21,7 +21,6 @@
  * questions.
  */
 
-package jdk.jpackage.tests;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,7 +45,7 @@ import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CfgFile;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
-import static jdk.jpackage.tests.MainClassTest.Script.MainClassType.*;
+
 
 
 /*
@@ -56,7 +55,7 @@ import static jdk.jpackage.tests.MainClassTest.Script.MainClassType.*;
  * @build jdk.jpackage.test.*
  * @compile MainClassTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.MainClassTest
+ *  --jpt-run=MainClassTest
  */
 
 public final class MainClassTest {
@@ -82,7 +81,7 @@ public final class MainClassTest {
         }
 
         Script withJarMainClass(MainClassType v) {
-            appDesc.setWithMainClass(v != NotSet);
+            appDesc.setWithMainClass(v != MainClassType.NotSet);
             jarMainClass = v;
             return this;
         }
@@ -172,7 +171,8 @@ public final class MainClassTest {
 
     @Parameters
     public static Collection scripts() {
-        final var withMainClass = Set.of(SetWrong, SetRight);
+        final var withMainClass = Set.of(Script.MainClassType.SetWrong,
+                Script.MainClassType.SetRight);
 
         List<Script[]> scripts = new ArrayList<>();
         for (var withJLink : List.of(true, false)) {
@@ -205,7 +205,7 @@ public final class MainClassTest {
 
     @Test
     public void test() throws IOException {
-        if (script.jarMainClass == SetWrong) {
+        if (script.jarMainClass == Script.MainClassType.SetWrong) {
             initJarWithWrongMainClass();
         }
 
@@ -224,11 +224,11 @@ public final class MainClassTest {
         boolean appShouldSucceed = false;
 
         // Should succeed if valid main class is set on the command line.
-        appShouldSucceed |= (script.mainClass == SetRight);
+        appShouldSucceed |= (script.mainClass == Script.MainClassType.SetRight);
 
         // Should succeed if main class is not set on the command line but set
         // to valid value in the jar.
-        appShouldSucceed |= (script.mainClass == NotSet && script.jarMainClass == SetRight);
+        appShouldSucceed |= (script.mainClass == Script.MainClassType.NotSet && script.jarMainClass == Script.MainClassType.SetRight);
 
         if (appShouldSucceed) {
             cmd.executeAndAssertHelloAppImageCreated();

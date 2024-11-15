@@ -21,103 +21,101 @@
  * questions.
  */
 
-package jdk.jpackage.tests;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.AppImageFile;
-import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.JavaAppDesc;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
+import java.util.stream.Stream;
+import java.nio.file.Path;
 import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.JavaTool;
-import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
-import org.w3c.dom.Document;
 
 
 /*
  * @test
- * @summary jpackage for app's module linked in external runtime
+ * @summary test '--runtime-image' option of jpackage
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile ModulePathTest3.java
+ * @compile CookedRuntimeTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.ModulePathTest3
+ *  --jpt-run=CookedRuntimeTest
  */
 
-public final class ModulePathTest3 {
+public final class CookedRuntimeTest {
 
-    public ModulePathTest3(String jlinkOutputSubdir, String runtimeSubdir) {
+    public CookedRuntimeTest(String javaAppDesc, String jlinkOutputSubdir,
+            String runtimeSubdir) {
+        this.javaAppDesc = javaAppDesc;
         this.jlinkOutputSubdir = Path.of(jlinkOutputSubdir);
         this.runtimeSubdir = Path.of(runtimeSubdir);
     }
 
-    /**
-     * Test case for JDK-8248254.
-     * App's module in runtime directory.
-     */
     @Test
-    public void test8248254() throws XPathExpressionException, IOException {
-        testIt("me.mymodule/me.mymodule.Main");
-    }
+    public void test() throws IOException {
+        JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
 
-    private void testIt(String mainAppDesc) throws XPathExpressionException,
-            IOException {
-        final JavaAppDesc appDesc = JavaAppDesc.parse(mainAppDesc);
-        final Path moduleOutputDir = TKit.createTempDirectory("modules");
-        HelloApp.createBundle(appDesc, moduleOutputDir);
+        JPackageCommand cmd = JPackageCommand.helloAppImage(appDesc);
+
+        final String moduleName = appDesc.moduleName();
+
+        if (moduleName != null) {
+            // Build module jar.
+            cmd.executePrerequisiteActions();
+        }
 
         final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
         final Path jlinkOutputDir = workDir.resolve(jlinkOutputSubdir);
         Files.createDirectories(jlinkOutputDir.getParent());
 
-        new Executor()
+        // List of modules required for test app.
+        final var modules = new String[] {
+            "java.base",
+            "java.desktop"
+        };
+
+        Executor jlink = new Executor()
         .setToolProvider(JavaTool.JLINK)
         .dumpOutput()
         .addArguments(
-                "--add-modules", appDesc.moduleName(),
+                "--add-modules", String.join(",", modules),
                 "--output", jlinkOutputDir.toString(),
-                "--module-path", moduleOutputDir.resolve(appDesc.jarFileName()).toString(),
                 "--strip-debug",
                 "--no-header-files",
-                "--no-man-pages",
-                "--strip-native-commands")
-        .execute();
+                "--no-man-pages");
 
-        JPackageCommand cmd = new JPackageCommand()
-        .setDefaultAppName()
-        .setPackageType(PackageType.IMAGE)
-        .setDefaultInputOutput()
-        .removeArgumentWithValue("--input")
-        .addArguments("--module", appDesc.moduleName() + "/" + appDesc.className())
-        .setArgumentValue("--runtime-image", workDir.resolve(runtimeSubdir));
-
-        cmd.executeAndAssertHelloAppImageCreated();
-
-        if (appDesc.moduleVersion() != null) {
-            Document xml = AppImageFile.readXml(cmd.outputBundle());
-            String actualVersion = XPathFactory.newInstance().newXPath().evaluate(
-                    "/jpackage-state/app-version/text()", xml,
-                    XPathConstants.STRING).toString();
-
-            TKit.assertEquals(appDesc.moduleVersion(), actualVersion,
-                    "Check application version");
+        if (moduleName != null) {
+            jlink.addArguments("--add-modules", moduleName, "--module-path",
+                    Path.of(cmd.getArgumentValue("--module-path")).resolve(
+                            "hello.jar").toString());
         }
+
+        jlink.execute();
+
+        TKit.trace("jlink output BEGIN");
+        try (Stream<Path> paths = Files.walk(jlinkOutputDir)) {
+            paths.filter(Files::isRegularFile)
+                    .map(jlinkOutputDir::relativize)
+                    .map(Path::toString)
+                    .forEach(TKit::trace);
+        }
+        TKit.trace("jlink output END");
+
+        cmd.setArgumentValue("--runtime-image", workDir.resolve(runtimeSubdir));
+        cmd.executeAndAssertHelloAppImageCreated();
     }
 
     @Parameters
     public static Collection data() {
+        final List<String> javaAppDescs = List.of("Hello",
+                "com.foo/com.foo.main.Aloha");
+
         final List<String[]> paths = new ArrayList<>();
         paths.add(new String[] { "", "" });
         if (TKit.isOSX()) {
@@ -127,13 +125,16 @@ public final class ModulePathTest3 {
         }
 
         List<Object[]> data = new ArrayList<>();
-        for (var pathCfg : paths) {
-            data.add(new Object[] { pathCfg[0], pathCfg[1] });
+        for (var javaAppDesc : javaAppDescs) {
+            for (var pathCfg : paths) {
+                data.add(new Object[] { javaAppDesc, pathCfg[0], pathCfg[1] });
+            }
         }
 
         return data;
     }
 
+    private final String javaAppDesc;
     private final Path jlinkOutputSubdir;
     private final Path runtimeSubdir;
 }

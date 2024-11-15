@@ -21,7 +21,6 @@
  * questions.
  */
 
-package jdk.jpackage.tests;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -46,7 +45,7 @@ import org.w3c.dom.Document;
  * @build jdk.jpackage.test.*
  * @compile AppVersionTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.AppVersionTest
+ *  --jpt-run=AppVersionTest
  */
 
 public final class AppVersionTest {
