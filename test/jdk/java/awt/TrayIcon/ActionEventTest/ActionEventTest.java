@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,16 @@
  * @bug 6191390 8154328
  * @key headful
  * @summary Verify that ActionEvent is received with correct modifiers set.
- * @modules java.desktop/java.awt:open java.desktop/java.awt.peer
- * @library ../ /lib/client /java/awt/patchlib /test/lib
- * @build java.desktop/java.awt.Helper ExtendedRobot
- *        SystemTrayIconHelper jtreg.SkippedException
+ * @modules java.desktop/java.awt:open
+ * @modules java.desktop/java.awt.peer
+ * @library /lib/client ../
+ * @library /java/awt/patchlib
+ * @build java.desktop/java.awt.Helper
+ * @build ExtendedRobot SystemTrayIconHelper
  * @run main ActionEventTest
  */
 
+import java.awt.Image;
 import java.awt.TrayIcon;
 import java.awt.SystemTray;
 import java.awt.Robot;
@@ -45,18 +48,33 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
 public class ActionEventTest {
+
+    Image image;
     TrayIcon icon;
     Robot robot;
     boolean actionPerformed;
 
     public static void main(String[] args) throws Exception {
         if (!SystemTray.isSupported()) {
-            throw new jtreg.SkippedException("SystemTray not supported on the platform." +
+            System.out.println("SystemTray not supported on the platform." +
                     " Marking the test passed.");
+        } else {
+            if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
+                System.err.println(
+                        "Test can fail on Windows platform\n"+
+                                "On Windows 7, by default icon hides behind icon pool\n" +
+                                "Due to which test might fail\n" +
+                                "Set \"Right mouse click\" -> " +
+                                "\"Customize notification icons\" -> \"Always show " +
+                                "all icons and notifications on the taskbar\" true " +
+                                "to avoid this problem.\nOR change behavior only for " +
+                                "Java SE tray icon and rerun test.");
+            }
+
+            ActionEventTest test = new ActionEventTest();
+            test.doTest();
+            test.clear();
         }
-        ActionEventTest test = new ActionEventTest();
-        test.doTest();
-        test.clear();
     }
 
     public ActionEventTest() throws Exception {
