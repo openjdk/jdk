@@ -671,8 +671,6 @@ public final class URL implements java.io.Serializable {
         boolean aRef=false;
         boolean isRelative = false;
 
-        // Check for permission to specify a handler
-
         try {
             limit = spec.length();
             while ((limit > 0) && (spec.charAt(limit - 1) <= ' ')) {
@@ -930,7 +928,7 @@ public final class URL implements java.io.Serializable {
 
     /**
      * Returns the address of the host represented by this URL.
-     * A {@link SecurityException} or an {@link UnknownHostException}
+     * An {@link UnknownHostException}
      * while getting the host address will result in this method returning
      * {@code null}
      *
@@ -946,7 +944,7 @@ public final class URL implements java.io.Serializable {
         }
         try {
             hostAddress = InetAddress.getByName(host);
-        } catch (UnknownHostException | SecurityException ex) {
+        } catch (UnknownHostException e) {
             return null;
         }
         return hostAddress;
