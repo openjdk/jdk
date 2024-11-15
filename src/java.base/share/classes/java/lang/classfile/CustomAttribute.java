@@ -24,6 +24,9 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.Utf8Entry;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
+
 /**
  * Models a non-standard attribute of a classfile.  Clients should extend
  * this class to provide an implementation class for non-standard attributes,
@@ -52,8 +55,8 @@ public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
     }
 
     @Override
-    public final String attributeName() {
-        return mapper.name();
+    public Utf8Entry attributeName() {
+        return TemporaryConstantPool.INSTANCE.utf8Entry(mapper.name());
     }
 
     @Override
