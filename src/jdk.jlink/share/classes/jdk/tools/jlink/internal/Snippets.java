@@ -169,10 +169,10 @@ public class Snippets {
     @FunctionalInterface
     public interface CollectionElementBuilder<T> {
         /**
-         * Build a snippet to load the element onto the operand stack.
-         * @param element  The element to be load.
-         * @param index  The index of the element in the containing collection.
-         * @return A snippet of bytecodes to load the element onto the operand stack.
+         * Build a snippet for the element at the index.
+         * @param element  The element
+         * @param index  The index of the element in the containing collection
+         * @return A snippet of bytecodes to process the element
          */
         Snippet build(T element, int index);
     }

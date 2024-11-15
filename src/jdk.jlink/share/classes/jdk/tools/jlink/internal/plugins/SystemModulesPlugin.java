@@ -1252,8 +1252,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                  * to be later accessed by the SetReference::emit
                  */
                 Snippet build(int index) {
+                    this.index = index;
                     return cob -> {
-                        this.index = index;
                         loadableSet.emit(cob);
                     };
                 }

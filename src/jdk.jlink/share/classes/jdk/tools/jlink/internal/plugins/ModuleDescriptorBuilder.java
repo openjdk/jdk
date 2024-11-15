@@ -114,7 +114,6 @@ class ModuleDescriptorBuilder {
         static final MethodTypeDesc MTD_List_ObjectArray = MethodTypeDesc.of(CD_List, CD_Object.arrayType());
 
         final ModuleDescriptor md;
-        final Set<String> packages;
         final int index;
         final Snippet requiresArray;
         final Snippet exportsArray;
@@ -128,13 +127,12 @@ class ModuleDescriptorBuilder {
             }
 
             this.md = md;
-            this.packages = packages;
             this.index = index;
             requiresArray = buildRequiresArray();
             exportsArray = buildExportsArray();
             opensArray = buildOpensArray();
             providesArray = buildProvidesArray();
-            packagesSet = buildPackagesSet();
+            packagesSet = buildPackagesSet(packages);
         }
 
         /*
@@ -297,7 +295,7 @@ class ModuleDescriptorBuilder {
                     2000);
         }
 
-        private LoadableSet buildPackagesSet() {
+        private LoadableSet buildPackagesSet(Collection<String> packages) {
             return LoadableSet.of(
                     sorted(packages),
                     STRING_LOADER,
