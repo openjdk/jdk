@@ -34,13 +34,13 @@ import java.awt.TextArea;
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual HoveringAndDraggingTest
-*/
+ */
 
 public class HoveringAndDraggingTest {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
                     1. Notice components in test window: main-panel, box-for-text,
-                       2 scroll-sliders, and 4 scroll-buttons.
+                       2 scroll-sliders, and 4 scroll-buttons(Not applicable for macosx).
                     2. Hover mouse over box-for-text.
                        Make sure, that mouse cursor is TextCursor (a.k.a. \"beam\").
                     3. Hover mouse over each of components (see item 1), except for box-for-text.
