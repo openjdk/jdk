@@ -109,8 +109,7 @@ protected:
   int      _relocation_size;       // size of relocation (could be bigger than 64Kb)
   int      _content_offset;        // offset to where content region begins (this includes consts, insts, stubs)
   int      _code_offset;           // offset to where instructions region begins (this includes insts, stubs)
-
-  int      _data_offset;           // offset to where data region begins
+  int      _code_end_offset;       // offset to where code region ends
   int      _frame_size;            // size of stack frame in words (NOT slots. On x64 these are 64bit words)
 
   S390_ONLY(int _ctable_offset;)
@@ -146,7 +145,7 @@ protected:
 
   CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
            int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
-           bool external_mutable_data = false);
+           int mutable_data_size = 0);
 
   // Simple CodeBlob used for simple BufferBlob.
   CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size);
@@ -160,7 +159,7 @@ public:
   }
 
   // Returns the space needed for CodeBlob
-  static unsigned int allocation_size(CodeBuffer* cb, int header_size, bool external_mutable_data = false);
+  static unsigned int allocation_size(CodeBuffer* cb, int header_size);
   static unsigned int align_code_offset(int offset);
 
   // Deletion
@@ -194,33 +193,25 @@ public:
   address mutable_data_begin() const          { return _mutable_data; }
   address mutable_data_end() const            { return _mutable_data + _mutable_data_size; }
   int mutable_data_size() const               { return _mutable_data_size; }
-  bool relocInfo_in_mutable_data() const      { return _mutable_data != nullptr; }
 
   // Boundaries
   address    header_begin() const             { return (address)    this; }
   address    header_end() const               { return ((address)   this) + _header_size; }
-  relocInfo* relocation_begin() const         { return relocInfo_in_mutable_data() ?
-                                                       (relocInfo*)_mutable_data : (relocInfo*) header_end(); }
+  relocInfo* relocation_begin() const         { return (relocInfo*)_mutable_data; }
   relocInfo* relocation_end() const           { return (relocInfo*)((address)relocation_begin() + _relocation_size); }
   address    content_begin() const            { return (address)    header_begin() + _content_offset; }
-  address    content_end() const              { return (address)    header_begin() + _data_offset; }
+  address    content_end() const              { return (address)    header_begin() + _code_end_offset; }
   address    code_begin() const               { return (address)    header_begin() + _code_offset; }
   // code_end == content_end is true for all types of blobs for now, it is also checked in the constructor
-  address    code_end() const                 { return (address)    header_begin() + _data_offset; }
-  address    data_begin() const               { return (address) header_begin() + _data_offset; }
-  address    data_end() const                 { return (address) header_begin() + _size; }
-  address    blob_end() const                 { return data_end(); }
+  address    code_end() const                 { return (address)    header_begin() + _code_end_offset; }
+  address    blob_end() const                 { return (address) header_begin() + _size; }
 
-  // [relocations, oops, metatada, jvmci_data] stays in _mutable_data or in nmethod with _data_offset
-  address    mdata_begin() const              { return (_mutable_data != nullptr) ? _mutable_data :
-                                                                                   (address) header_begin() + _data_offset; }
-  address    mdata_end() const                { return (_mutable_data != nullptr) ? _mutable_data + _mutable_data_size:
-                                                                                   (address) header_begin() + _size; }
-
+  // [relocations, oops, metatada, jvmci_data] stays in _mutable_data
+  address    mdata_begin() const              { return mutable_data_begin(); }
+  address    mdata_end() const                { return mutable_data_end(); }
   // Offsets
   int content_offset() const                  { return _content_offset; }
   int code_offset() const                     { return _code_offset; }
-  int data_offset() const                     { return _data_offset; }
 
   // This field holds the beginning of the const section in the old code buffer.
   // It is needed to fix relocations of pc-relative loads when resizing the
@@ -238,7 +229,7 @@ public:
   // Only used from CodeCache::free_unused_tail() after the Interpreter blob was trimmed
   void adjust_size(size_t used) {
     _size = (int)used;
-    _data_offset = (int)used;
+    _code_end_offset = (int)used;
   }
 
   // Containment

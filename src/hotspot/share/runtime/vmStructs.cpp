@@ -515,7 +515,7 @@
   nonstatic_field(CodeBlob,                    _content_offset,                               int)                                   \
   nonstatic_field(CodeBlob,                    _code_offset,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int16_t)                               \
-  nonstatic_field(CodeBlob,                    _data_offset,                                  int)                                   \
+  nonstatic_field(CodeBlob,                    _code_end_offset,                              int)                                   \
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
   nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
   nonstatic_field(CodeBlob,                    _caller_must_gc_arguments,                     bool)                                  \

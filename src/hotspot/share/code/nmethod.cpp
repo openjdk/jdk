@@ -1077,6 +1077,14 @@ static void assert_no_oops_or_metadata(nmethod* nm) {
 }
 #endif
 
+static int required_mutable_data_space(CodeBuffer* code_buffer,
+                                       int jvmci_data_size = 0) {
+  return align_up(code_buffer->total_relocation_size(), oopSize) +
+         align_up(code_buffer->total_oop_size(), oopSize) +
+         align_up(jvmci_data_size, oopSize) +
+         align_up(code_buffer->total_metadata_size(), oopSize);
+}
+
 nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   int compile_id,
   CodeBuffer *code_buffer,
@@ -1101,6 +1109,8 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
       offsets.set_value(CodeOffsets::Exceptions, exception_handler);
     }
 
+    int mutable_data_size = required_mutable_data_space(code_buffer);
+
     // MH intrinsics are dispatch stubs which are compatible with NonNMethod space.
     // IsUnloadingBehaviour::is_unloading needs to handle them separately.
     bool allow_NonNMethod_space = method->can_be_allocated_in_NonNMethod_space();
@@ -1110,7 +1120,7 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
             code_buffer, frame_size,
             basic_lock_owner_sp_offset,
             basic_lock_sp_offset,
-            oop_maps);
+            oop_maps, mutable_data_size);
     DEBUG_ONLY( if (allow_NonNMethod_space) assert_no_oops_or_metadata(nm); )
     NOT_PRODUCT(if (nm != nullptr) native_nmethod_stats.note_native_nmethod(nm));
   }
@@ -1148,7 +1158,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = nullptr;
-  int nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod), true);
+  int nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));
 
   int immutable_data_size =
       adjust_pcs_size(debug_info->pcs_size())
@@ -1170,27 +1180,15 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     }
   }
 
-  int mutable_data_size = align_up(code_buffer->total_relocation_size(), oopSize) +
-                        + align_up(code_buffer->total_oop_size(), oopSize) +
-                        + align_up(code_buffer->total_metadata_size(), oopSize);
-#if INCLUDE_JVMCI
-  mutable_data_size += align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize);
-#endif
-  address mutable_data = nullptr;
-  if (mutable_data_size > 0) {
-    mutable_data = (address)os::malloc(mutable_data_size, mtCode);
-    if (mutable_data == nullptr) {
-      vm_exit_out_of_memory(mutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for mutable data");
-      return nullptr;
-    }
-  }
+  int mutable_data_size = required_mutable_data_space(code_buffer
+    JVMCI_ONLY(COMMA (compiler->is_jvmci() ? jvmci_data->size() : 0)));
 
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     nm = new (nmethod_size, comp_level)
     nmethod(method(), compiler->type(), nmethod_size, immutable_data_size, mutable_data_size,
-            compile_id, entry_bci, immutable_data, mutable_data, offsets, orig_pc_offset,
+            compile_id, entry_bci, immutable_data, offsets, orig_pc_offset,
             debug_info, dependencies, code_buffer, frame_size, oop_maps,
             handler_table, nul_chk_table, compiler, comp_level
 #if INCLUDE_JVMCI
@@ -1292,9 +1290,10 @@ nmethod::nmethod(
   int frame_size,
   ByteSize basic_lock_owner_sp_offset,
   ByteSize basic_lock_sp_offset,
-  OopMapSet* oop_maps )
+  OopMapSet* oop_maps,
+  int mutable_data_size)
   : CodeBlob("native nmethod", CodeBlobKind::Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
-             offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
+             offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, mutable_data_size),
   _deoptimization_generation(0),
   _gc_epoch(CodeCache::gc_epoch()),
   _method(method),
@@ -1328,14 +1327,17 @@ nmethod::nmethod(
     _deopt_mh_handler_offset = 0;
     _unwind_handler_offset   = 0;
 
-    CHECKED_CAST(_metadata_offset, uint16_t, (align_up(code_buffer->total_oop_size(), oopSize)));
-    int data_end_offset = _metadata_offset + align_up(code_buffer->total_metadata_size(), wordSize);
+    int reloc_size = align_up(code_buffer->total_relocation_size(), oopSize);
+    int oop_size = align_up(code_buffer->total_oop_size(), oopSize);
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
+    CHECKED_CAST(_metadata_offset, uint16_t, reloc_size + oop_size);
+    int data_end_offset = _metadata_offset + metadata_size;
 #if INCLUDE_JVMCI
     // jvmci_data_size is 0 in native wrapper but we need to set offset
     // to correctly calculate metadata_end address
     CHECKED_CAST(_jvmci_data_offset, uint16_t, data_end_offset);
 #endif
-    assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d < %d", nmethod_size, (data_offset() + data_end_offset));
+    assert(data_end_offset <= mutable_data_size, "wrong nmutable_data_size: %d < %d", data_end_offset, mutable_data_size);
 
     // native wrapper does not have read-only data but we need unique not null address
     _immutable_data          = blob_end();
@@ -1419,7 +1421,6 @@ nmethod::nmethod(
   int compile_id,
   int entry_bci,
   address immutable_data,
-  address mutable_data,
   CodeOffsets* offsets,
   int orig_pc_offset,
   DebugInformationRecorder* debug_info,
@@ -1438,7 +1439,7 @@ nmethod::nmethod(
 #endif
   )
   : CodeBlob("nmethod", CodeBlobKind::Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
-             offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
+             offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, mutable_data_size),
   _deoptimization_generation(0),
   _gc_epoch(CodeCache::gc_epoch()),
   _method(method),
@@ -1514,9 +1515,9 @@ nmethod::nmethod(
     CHECKED_CAST(_jvmci_data_offset, uint16_t, _metadata_offset + metadata_size);
     jvmci_data_size = align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize);
 #endif
-    assert(mutable_data_size == reloc_size + oop_size + metadata_size + jvmci_data_size,
+    assert(_mutable_data_size == reloc_size + oop_size + metadata_size + jvmci_data_size,
            "wrong mutable data size: %d != %d + %d + %d + %d",
-           mutable_data_size, reloc_size, oop_size, metadata_size, jvmci_data_size);
+           _mutable_data_size, reloc_size, oop_size, metadata_size, jvmci_data_size);
     assert(nmethod_size == code_end() - header_begin(), "wrong nmethod size: %d != %d",
            nmethod_size, (int)(code_end() - header_begin()));
 
@@ -1527,14 +1528,6 @@ nmethod::nmethod(
     } else {
       // We need unique not null address
       _immutable_data     = blob_end();
-    }
-    _mutable_data_size  = mutable_data_size;
-    if (mutable_data_size > 0) {
-      assert(mutable_data != nullptr, "required");
-      _mutable_data     = mutable_data;
-    } else {
-      // We need unique not null address
-      _mutable_data     = blob_end();
     }
     CHECKED_CAST(_nul_chk_table_offset, uint16_t, (align_up((int)dependencies->size_in_bytes(), oopSize)));
     CHECKED_CAST(_handler_table_offset, uint16_t, (_nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize)));
