@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
  * @test
  * @bug 4750141 4895631 8217579 8163326 8279164
  * @summary Check enabled and supported ciphersuites are correct
+ * @library /test/lib
  * @run main/othervm CheckCipherSuites default
  * @run main/othervm CheckCipherSuites limited
  */
+
+import jdk.test.lib.security.SecurityUtils;
 
 import java.util.*;
 import java.security.Security;
@@ -235,6 +238,7 @@ public class CheckCipherSuites {
     }
 
     public static void main(String[] args) throws Exception {
+        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         long start = System.currentTimeMillis();
 
         if (args.length != 1) {

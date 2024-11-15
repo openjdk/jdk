@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,23 @@
  * @run main/othervm Basics
  */
 
-import java.security.*;
-import java.io.*;
-import java.nio.*;
-import java.util.Arrays;
-import javax.net.ssl.*;
-import javax.net.ssl.SSLEngineResult.*;
-
 import jdk.test.lib.security.SecurityUtils;
+
+import java.io.FileInputStream;
+import java.nio.ByteBuffer;
+import java.nio.ReadOnlyBufferException;
+import java.security.KeyStore;
+import java.util.Arrays;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import javax.net.ssl.SSLEngineResult.Status;
+import javax.net.ssl.SSLProtocolException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManagerFactory;
 
 public class Basics {
 
@@ -58,6 +67,7 @@ public class Basics {
 
     public static void main(String[] args) throws Exception {
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
+        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
 
         runTest("TLSv1.3", "TLS_AES_256_GCM_SHA384");
         runTest("TLSv1.2", "TLS_RSA_WITH_AES_256_GCM_SHA384");

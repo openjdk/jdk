@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,15 @@
  * @author Xuelei Fan
  */
 
+import jdk.test.lib.security.SecurityUtils;
+
 import java.io.InputStream;
 import java.io.OutputStream;
+
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-
-import jdk.test.lib.security.SecurityUtils;
 
 public class GenericBlockCipher {
 
@@ -174,6 +175,7 @@ public class GenericBlockCipher {
     public static void main(String[] args) throws Exception {
         // Re-enable TLSv1.1 since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
+        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
 
         String keyFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores +

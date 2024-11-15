@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,32 @@
  * @bug 8133632
  * @summary javax.net.ssl.SSLEngine does not properly handle received
  *      SSL fatal alerts
- * @run main EngineCloseOnAlert
+ * @library /test/lib
+ * @run main/othervm EngineCloseOnAlert
  */
+
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_TASK;
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_UNWRAP;
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_WRAP;
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
+
+import jdk.test.lib.security.SecurityUtils;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import javax.net.ssl.*;
 import java.nio.ByteBuffer;
-import java.util.*;
-import java.security.*;
-import static javax.net.ssl.SSLEngineResult.HandshakeStatus.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.util.LinkedList;
+import java.util.List;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLProtocolException;
+import javax.net.ssl.TrustManagerFactory;
 
 public class EngineCloseOnAlert {
 
@@ -61,6 +77,7 @@ public class EngineCloseOnAlert {
     }
 
     public static void main(String[] args) throws Exception {
+        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         int failed = 0;
         List<TestCase> testMatrix = new LinkedList<TestCase>() {{
             add(clientReceivesAlert);

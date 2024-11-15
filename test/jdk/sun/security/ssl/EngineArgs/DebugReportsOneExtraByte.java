@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 7126889
  * @summary Incorrect SSLEngine debug output
  * @library /test/lib /javax/net/ssl/templates
- * @run main DebugReportsOneExtraByte
+ * @run main/othervm DebugReportsOneExtraByte
  */
 /*
  * Debug output was reporting n+1 bytes of data was written when it was
@@ -91,6 +91,7 @@ public class DebugReportsOneExtraByte extends SSLEngineTemplate {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
+        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
 
         if (args.length == 0) {
             OutputAnalyzer output = ProcessTools.executeTestJava(

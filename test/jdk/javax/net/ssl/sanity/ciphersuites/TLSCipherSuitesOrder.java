@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.util.Arrays;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLSocket;
 
 import jdk.test.lib.security.SecurityUtils;
+
+import java.util.Arrays;
+
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 
 /*
  * @test
@@ -58,6 +60,7 @@ public class TLSCipherSuitesOrder extends SSLSocketTemplate {
     private final String[] clientcipherSuites;
 
     public static void main(String[] args) {
+        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         PROTOCOL protocol = PROTOCOL.valueOf(args[0]);
         try {
             new TLSCipherSuitesOrder(protocol.getProtocol(),
