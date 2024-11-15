@@ -236,7 +236,7 @@ import java.util.function.Supplier;
  * racing to set a stable value, only one update succeeds, while other updates are
  * blocked until the stable value becomes set.
  * <p>
- * The one-and-only write operation on a stable value (e.g. {@linkplain #trySet(Object)})
+ * The at-most-once write operation on a stable value (e.g. {@linkplain #trySet(Object)})
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * any subsequent read operation (e.g. {@linkplain #orElseThrow()}).
  * <p>
