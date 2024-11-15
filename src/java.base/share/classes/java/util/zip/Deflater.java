@@ -271,6 +271,7 @@ public class Deflater implements AutoCloseable {
      * @param dictionary the dictionary data bytes
      * @param off the start offset of the data
      * @param len the length of the data
+     * @throws IllegalStateException if the Deflater is closed
      * @see Inflater#inflate
      * @see Inflater#getAdler()
      */
@@ -307,6 +308,7 @@ public class Deflater implements AutoCloseable {
      * return, its position will equal its limit.
      *
      * @param dictionary the dictionary data bytes
+     * @throws IllegalStateException if the Deflater is closed
      * @see Inflater#inflate
      * @see Inflater#getAdler()
      *
@@ -533,6 +535,7 @@ public class Deflater implements AutoCloseable {
      *         the output buffer
      *
      * @throws IllegalArgumentException if the flush mode is invalid
+     * @throws IllegalStateException if the Deflater is closed
      * @since 1.7
      */
     public int deflate(byte[] output, int off, int len, int flush) {
@@ -659,6 +662,7 @@ public class Deflater implements AutoCloseable {
      *
      * @throws IllegalArgumentException if the flush mode is invalid
      * @throws ReadOnlyBufferException if the given output buffer is read-only
+     * @throws IllegalStateException if the Deflater is closed
      * @since 11
      */
     public int deflate(ByteBuffer output, int flush) {
@@ -785,6 +789,7 @@ public class Deflater implements AutoCloseable {
 
     /**
      * {@return the ADLER-32 value of the uncompressed data}
+     * @throws IllegalStateException if the Deflater is closed
      */
     public int getAdler() {
         synchronized (zsRef) {
@@ -814,6 +819,7 @@ public class Deflater implements AutoCloseable {
      * Returns the total number of uncompressed bytes input so far.
      *
      * @return the total (non-negative) number of uncompressed bytes input so far
+     * @throws IllegalStateException if the Deflater is closed
      * @since 1.5
      */
     public long getBytesRead() {
@@ -844,6 +850,7 @@ public class Deflater implements AutoCloseable {
      * Returns the total number of compressed bytes output so far.
      *
      * @return the total (non-negative) number of compressed bytes output so far
+     * @throws IllegalStateException if the Deflater is closed
      * @since 1.5
      */
     public long getBytesWritten() {
@@ -856,6 +863,7 @@ public class Deflater implements AutoCloseable {
     /**
      * Resets deflater so that a new set of input data can be processed.
      * Keeps current compression level and strategy settings.
+     * @throws IllegalStateException if the Deflater is closed
      */
     public void reset() {
         synchronized (zsRef) {

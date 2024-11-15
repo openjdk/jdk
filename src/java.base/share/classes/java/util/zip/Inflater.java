@@ -194,6 +194,7 @@ public class Inflater implements AutoCloseable {
      * @param dictionary the dictionary data bytes
      * @param off the start offset of the data
      * @param len the length of the data
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsDictionary
      * @see Inflater#getAdler
      */
@@ -229,6 +230,7 @@ public class Inflater implements AutoCloseable {
      * return, its position will equal its limit.
      *
      * @param dictionary the dictionary data bytes
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsDictionary
      * @see Inflater#getAdler
      * @since 11
@@ -333,6 +335,7 @@ public class Inflater implements AutoCloseable {
      * @param len the maximum number of uncompressed bytes
      * @return the actual number of uncompressed bytes
      * @throws DataFormatException if the compressed data format is invalid
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsInput
      * @see Inflater#needsDictionary
      */
@@ -476,6 +479,7 @@ public class Inflater implements AutoCloseable {
      * @return the actual number of uncompressed bytes
      * @throws DataFormatException if the compressed data format is invalid
      * @throws ReadOnlyBufferException if the given output buffer is read-only
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsInput
      * @see Inflater#needsDictionary
      * @since 11
@@ -602,6 +606,7 @@ public class Inflater implements AutoCloseable {
 
     /**
      * {@return the ADLER-32 value of the uncompressed data}
+     * @throws IllegalStateException if the Inflater is closed
      */
     public int getAdler() {
         synchronized (zsRef) {
@@ -631,6 +636,7 @@ public class Inflater implements AutoCloseable {
      * Returns the total number of compressed bytes input so far.
      *
      * @return the total (non-negative) number of compressed bytes input so far
+     * @throws IllegalStateException if the Inflater is closed
      * @since 1.5
      */
     public long getBytesRead() {
@@ -661,6 +667,7 @@ public class Inflater implements AutoCloseable {
      * Returns the total number of uncompressed bytes output so far.
      *
      * @return the total (non-negative) number of uncompressed bytes output so far
+     * @throws IllegalStateException if the Inflater is closed
      * @since 1.5
      */
     public long getBytesWritten() {
@@ -672,6 +679,7 @@ public class Inflater implements AutoCloseable {
 
     /**
      * Resets inflater so that a new set of input data can be processed.
+     * @throws IllegalStateException if the Inflater is closed
      */
     public void reset() {
         synchronized (zsRef) {
