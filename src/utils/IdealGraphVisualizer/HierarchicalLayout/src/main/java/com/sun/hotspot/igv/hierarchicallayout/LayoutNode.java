@@ -31,8 +31,14 @@ import java.util.*;
 
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutManager.NODE_OFFSET;
 
+/**
+ * Represents a node in a hierarchical graph layout.
+ * A LayoutNode can be either an actual vertex from the graph or a dummy node inserted during the layout process.
+ * It stores layout-related properties such as position, size, margins, and connections to predecessor and successor nodes.
+ */
 public class LayoutNode {
 
+    // Comparator constants for sorting LayoutNodes in various ways
     public static final Comparator<LayoutNode> LAYOUT_NODE_DEGREE_COMPARATOR = Comparator.comparingInt(LayoutNode::getDegree);
     public static final Comparator<LayoutNode> NODE_POS_COMPARATOR = Comparator.comparingInt(LayoutNode::getPos);
     public static final Comparator<LayoutNode> NODE_X_COMPARATOR = Comparator.comparingInt(LayoutNode::getX);
@@ -42,9 +48,11 @@ public class LayoutNode {
     public static final Comparator<LayoutNode> NODE_PROCESSING_UP_COMPARATOR = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getInDegree);
     public static final Comparator<LayoutNode> DUMMY_NODES_THEN_OPTIMAL_X = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOptimalX);
 
+    // Default dimensions for dummy nodes
     public static final int DUMMY_HEIGHT = 1;
     public static final int DUMMY_WIDTH = 1;
 
+    // Layout properties
     private int layer = -1;
     private int optimal_x;
     private int x;
@@ -56,21 +64,39 @@ public class LayoutNode {
     private int rightMargin;
     private int leftMargin;
 
-    private final Vertex vertex; // Only used for non-dummy nodes, otherwise null
+    private final Vertex vertex; // Associated graph vertex; null for dummy nodes
 
-    private final List<LayoutEdge> preds = new ArrayList<>();
-    private final List<LayoutEdge> succs = new ArrayList<>();
-    private final HashMap<Link, List<Point>> reversedLinkStartPoints = new HashMap<>();
-    private final HashMap<Link, List<Point>> reversedLinkEndPoints = new HashMap<>();
-    private int pos = -1; // Position within layer
+    private final List<LayoutEdge> preds = new ArrayList<>(); // Incoming edges
+    private final List<LayoutEdge> succs = new ArrayList<>(); // Outgoing edges
+    private final HashMap<Link, List<Point>> reversedLinkStartPoints = new HashMap<>(); // Start points of reversed edges
+    private final HashMap<Link, List<Point>> reversedLinkEndPoints = new HashMap<>();   // End points of reversed edges
+    private int pos = -1; // Position within its layer
 
-    private float weightedPosition = 0;
+    private float weightedPosition = 0; // Used for positioning to minimize crossings
 
+    /**
+     * Constructs a LayoutNode associated with the given Vertex.
+     * Initializes the node's size based on the vertex's dimensions.
+     *
+     * @param v The Vertex associated with this LayoutNode. If null, the node is a dummy node.
+     */
     public LayoutNode(Vertex v) {
         vertex = v;
         initSize();
     }
 
+    /**
+     * Constructs a dummy LayoutNode
+     */
+    public LayoutNode() {
+        this(null);
+    }
+
+    /**
+     * Initializes the size and margins of the node.
+     * If the node represents a real vertex, it uses the vertex's size.
+     * Dummy nodes use default dimensions.
+     */
     public void initSize() {
         if (vertex == null) {
             height = DUMMY_HEIGHT;
@@ -86,7 +112,13 @@ public class LayoutNode {
         setRightMargin(0);
     }
 
-    public int calculateOptimalPositionDown() {
+    /**
+     * Calculates the optimal x-coordinate based on the positions of predecessor nodes.
+     * Useful when layering nodes from top to bottom.
+     *
+     * @return The calculated optimal x-coordinate.
+     */
+    public int calculateOptimalXFromPredecessors() {
         int numPreds = preds.size();
         if (numPreds == 0) {
             return getX();
@@ -104,7 +136,13 @@ public class LayoutNode {
                 : positions.get(midIndex);
     }
 
-    public int calculateOptimalPositionUp() {
+    /**
+     * Calculates the optimal x-coordinate based on the positions of successor nodes.
+     * Useful when layering nodes from bottom to top.
+     *
+     * @return The calculated optimal x-coordinate.
+     */
+    public int calculateOptimalXFromSuccessors() {
         int numSuccs = succs.size();
         if (numSuccs == 0) {
             return getX();
@@ -122,23 +160,40 @@ public class LayoutNode {
                 : positions.get(midIndex);
     }
 
-    public LayoutNode() {
-        this(null);
-    }
-
+    /**
+     * Calculates the node's out-degree (number of outgoing edges).
+     *
+     * @return The out-degree of the node.
+     */
     public int getOutDegree() {
         return succs.size();
     }
 
+    /**
+     * Calculates the node's in-degree (number of incoming edges).
+     *
+     * @return The in-degree of the node.
+     */
     public int getInDegree() {
         return preds.size();
     }
 
+    /**
+     * Calculates the total degree of the node (sum of in-degree and out-degree).
+     *
+     * @return The total degree of the node.
+     */
     public int getDegree() {
         return preds.size() + succs.size();
     }
 
-    public float averagePosition() {
+    /**
+     * Computes the barycenter (weighted average x-coordinate) of the node based on its neighbors.
+     * Each neighbor's x-position is weighted by its degree.
+     *
+     * @return The barycenter x-coordinate.
+     */
+    public float getBarycenterX() {
         float totalWeightedPosition = 0;
         float totalWeight = 0;
 
@@ -159,45 +214,96 @@ public class LayoutNode {
         return totalWeight > 0 ? totalWeightedPosition / totalWeight : 0;
     }
 
+    /**
+     * Gets the left boundary (excluding left margin) of the node.
+     *
+     * @return The x-coordinate of the left boundary.
+     */
     public int getLeft() {
         return x + leftMargin;
     }
 
+    /**
+     * Gets the outer left boundary (including left margin) of the node.
+     *
+     * @return The x-coordinate of the outer left boundary.
+     */
     public int getOuterLeft() {
         return x;
     }
 
+    /**
+     * Gets the total width of the node, including left and right margins.
+     *
+     * @return The total outer width.
+     */
     public int getOuterWidth() {
         return leftMargin + width + rightMargin;
     }
 
+    /**
+     * Gets the total height of the node, including top and bottom margins.
+     *
+     * @return The total outer height.
+     */
     public int getOuterHeight() {
         return topMargin + height + bottomMargin;
     }
 
+    /**
+     * Gets the right boundary (excluding right margin) of the node.
+     *
+     * @return The x-coordinate of the right boundary.
+     */
     public int getRight() {
         return x + leftMargin + width;
     }
 
+    /**
+     * Gets the outer right boundary (including right margin) of the node.
+     *
+     * @return The x-coordinate of the outer right boundary.
+     */
     public int getOuterRight() {
         return x + leftMargin + width + rightMargin;
     }
 
+    /**
+     * Gets the horizontal center point of the node.
+     *
+     * @return The x-coordinate of the center.
+     */
     public int getCenterX() {
         return x + leftMargin + (width / 2);
     }
 
+    /**
+     * Gets the top boundary (excluding top margin) of the node.
+     *
+     * @return The y-coordinate of the top boundary.
+     */
     public int getTop() {
         return y + topMargin;
     }
 
+    /**
+     * Gets the bottom boundary (excluding bottom margin) of the node.
+     *
+     * @return The y-coordinate of the bottom boundary.
+     */
     public int getBottom() {
         return y + topMargin + height;
     }
 
+    /**
+     * Checks if the node is a dummy node.
+     *
+     * @return True if the node is a dummy node; false otherwise.
+     */
     public boolean isDummy() {
         return vertex == null;
     }
+
     @Override
     public String toString() {
         if (vertex != null) {
@@ -291,28 +397,20 @@ public class LayoutNode {
         return vertex;
     }
 
-    public List<LayoutEdge> getPreds() {
+    public List<LayoutEdge> getPredecessors() {
         return preds;
     }
 
-    public boolean hasPreds() {
+    public boolean hasPredecessors() {
         return !preds.isEmpty();
     }
 
-    public boolean hasSuccs() {
+    public boolean hasSuccessors() {
         return !succs.isEmpty();
     }
 
-    public List<LayoutEdge> getSuccs() {
+    public List<LayoutEdge> getSuccessors() {
         return succs;
-    }
-
-    public Map<Integer, List<LayoutEdge>> groupSuccessorsByX() {
-        Map<Integer, List<LayoutEdge>> result = new HashMap<>();
-        for (LayoutEdge succEdge : succs) {
-            result.computeIfAbsent(succEdge.getRelativeFromX(), k -> new ArrayList<>()).add(succEdge);
-        }
-        return result;
     }
 
     public HashMap<Link, List<Point>> getReversedLinkStartPoints() {
@@ -339,9 +437,26 @@ public class LayoutNode {
         this.weightedPosition = weightedPosition;
     }
 
-    private void computeReversedStartPoints() {
+    /**
+     * Groups the successor edges by their relative x-coordinate from the current node.
+     *
+     * @return A map of relative x-coordinate to list of successor edges.
+     */
+    public Map<Integer, List<LayoutEdge>> groupSuccessorsByX() {
+        Map<Integer, List<LayoutEdge>> result = new HashMap<>();
+        for (LayoutEdge succEdge : succs) {
+            result.computeIfAbsent(succEdge.getRelativeFromX(), k -> new ArrayList<>()).add(succEdge);
+        }
+        return result;
+    }
+
+    /**
+     * Computes the start points for reversed outgoing edges.
+     * Adjusts the node's margins and records the necessary points for edge routing.
+     */
+    private void computeReversedEdgeStartPoints() {
         TreeMap<Integer, ArrayList<LayoutEdge>> sortedDownMap = new TreeMap<>(Collections.reverseOrder());
-        for (LayoutEdge succEdge : getSuccs()) {
+        for (LayoutEdge succEdge : getSuccessors()) {
             if (succEdge.isReversed()) {
                 succEdge.setRelativeFromX(succEdge.getLink().getTo().getRelativePosition().x);
                 sortedDownMap.putIfAbsent(succEdge.getRelativeFromX(), new ArrayList<>());
@@ -374,9 +489,13 @@ public class LayoutNode {
         setRightMargin(getRightMargin() + (sortedDownMap.size() * offset));
     }
 
-    private void computeReversedEndPoints() {
+    /**
+     * Computes the end points for reversed incoming edges.
+     * Adjusts the node's margins and records the necessary points for edge routing.
+     */
+    private void computeReversedEdgeEndPoints() {
         TreeMap<Integer, ArrayList<LayoutEdge>> sortedUpMap = new TreeMap<>(Collections.reverseOrder());
-        for (LayoutEdge predEdge : getPreds()) {
+        for (LayoutEdge predEdge : getPredecessors()) {
             if (predEdge.isReversed()) {
                 predEdge.setRelativeToX(predEdge.getLink().getFrom().getRelativePosition().x);
                 sortedUpMap.putIfAbsent(predEdge.getRelativeToX(), new ArrayList<>());
@@ -409,16 +528,26 @@ public class LayoutNode {
         setRightMargin(getRightMargin() + (sortedUpMap.size() * offset));
     }
 
+    /**
+     * Computes the reversed link points for both incoming and outgoing reversed edges.
+     * Adjusts node margins to accommodate the routing of reversed edges.
+     */
     public void computeReversedLinkPoints() {
         initSize();
         getReversedLinkStartPoints().clear();
         getReversedLinkEndPoints().clear();
 
-        computeReversedStartPoints();
-        computeReversedEndPoints();
+        computeReversedEdgeStartPoints();
+        computeReversedEdgeEndPoints();
     }
 
-    public int calculateOptimalBoth() {
+    /**
+     * Calculates the optimal x-coordinate based on both predecessors and successors.
+     * Useful when balancing the node's position in the layer to minimize edge crossings.
+     *
+     * @return The calculated optimal x-coordinate.
+     */
+    public int calculateOptimalXFromNeighbors() {
         if (preds.isEmpty() && succs.isEmpty()) {
             return x;
         }

@@ -37,7 +37,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
     private List<LinkAction> linkActions;
     private boolean shouldRedrawLayout = true;
 
-    private LayoutGraph currGraph;
+    private LayoutGraph graph;
     private LayoutGraph prevGraph;
 
     public void setCutEdges(boolean cutEdges) {
@@ -93,15 +93,15 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
     };
 
     private void generateActions() {
-        HashSet<Vertex> addedVertices = new HashSet<>(currGraph.getVertices());
+        HashSet<Vertex> addedVertices = new HashSet<>(graph.getVertices());
         addedVertices.removeAll(prevGraph.getVertices());
 
         HashSet<Vertex> removedVertices = new HashSet<>(prevGraph.getVertices());
-        removedVertices.removeAll(currGraph.getVertices());
+        removedVertices.removeAll(graph.getVertices());
 
-        HashSet<Link> addedLinks = new HashSet<>(currGraph.getLinks());
+        HashSet<Link> addedLinks = new HashSet<>(graph.getLinks());
         HashSet<Link> removedLinks = new HashSet<>(prevGraph.getLinks());
-        for (Link currLink : currGraph.getLinks()) {
+        for (Link currLink : graph.getLinks()) {
             for (Link prevLink : prevGraph.getLinks()) {
                 if (currLink.equals(prevLink)) {
                     addedLinks.remove(currLink);
@@ -159,19 +159,19 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
     }
 
     public void updateLayout(Set<? extends Vertex> vertices, Set<? extends Link> links) {
-        currGraph = new LayoutGraph(links, vertices);
+        graph = new LayoutGraph(links, vertices);
         vertexActions = new LinkedList<>();
         linkActions = new LinkedList<>();
         vertexToAction = new HashMap<>();
 
         if (shouldRedrawLayout) {
-            manager.doLayout(currGraph);
+            manager.doLayout(graph);
             shouldRedrawLayout = false;
         } else {
             generateActions();
 
             // Reverse edges, handle back-edges
-            HierarchicalLayoutManager.ReverseEdges.apply(currGraph);
+            HierarchicalLayoutManager.ReverseEdges.apply(graph);
 
             // Only apply updates if there are any
             if (!linkActions.isEmpty() || !vertexActions.isEmpty()) {
@@ -185,13 +185,28 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             // HierarchicalLayoutManager.AssignXCoordinates.apply(currGraph);
 
             //  Assign Y-Coordinates, Write back to interface
-            HierarchicalLayoutManager.WriteResult.apply(currGraph)
+            HierarchicalLayoutManager.WriteResult.apply(graph);
         }
 
-        prevGraph = currGraph;
+        prevGraph = graph;
     }
 
     private class ApplyActionUpdates {
+        public void moveVertex(LayoutGraph graph, Vertex movedVertex) {
+            Point newLoc = movedVertex.getPosition();
+            LayoutNode movedNode = graph.getLayoutNode(movedVertex);
+            graph.removeNodeAndEdges(movedNode);
+            graph.removeEmptyLayers();
+
+            int layerNr = 42;
+            layerNr = graph.insertNewLayerIfNeeded(movedNode, layerNr);
+            graph.addNodeToLayer(movedNode, layerNr);
+            movedNode.setX(newLoc.x);
+            graph.getLayer(layerNr).sortNodesByX();
+            graph.removeEmptyLayers();
+            graph.addEdges(movedNode, maxLayerLength);
+        }
+
         /**
          * Adjust the X-coordinates of the nodes in the given layer, as a new node has
          * been inserted at that layer
@@ -213,7 +228,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             nodeProcessingOrder.sort(HierarchicalLayoutManager.nodeProcessingUpComparator);
             HierarchicalLayoutManager.NodeRow r = new HierarchicalLayoutManager.NodeRow(space);
             for (LayoutNode n : nodeProcessingOrder) {
-                int optimal = n.calculateOptimalBoth();
+                int optimal = n.calculateOptimalXFromNeighbors();
                 r.insert(n, optimal);
             }
         }
@@ -906,6 +921,12 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
         }
 
         private void applyRemoveLinkAction(Link l) {
+
+
+            Point newLoc = movedVertex.getPosition();
+            LayoutNode movedNode = graph.getLayoutNode(movedVertex);
+            graph.removeEdges(movedNode);
+
             Vertex from = l.getFrom().getVertex();
             Vertex to = l.getTo().getVertex();
             LayoutNode toNode = vertexToLayoutNode.get(to);
@@ -980,36 +1001,26 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
 
         private void removeNode(LayoutNode node, boolean removeEmptyLayers) {
             if (removeEmptyLayers) {
-                currGraph.removeEmptyLayers();
+                graph.removeEmptyLayers();
             }
 
             // Remove node from graph layout
-            currGraph.removeNode(node);
+            graph.removeNode(node);
         }
 
-        private void applyRemoveVertexAction(VertexAction action) {
-            LayoutNode node = currGraph.getLayoutNode(action.vertex);
 
-            // Remove associated edges
-            for (LinkAction a : action.linkActions) {
-                if (a.action == Action.REMOVE) {
-                    applyRemoveLinkAction(a.link);
+        void run() {
+            for (VertexAction action : vertexActions) {
+                if (action.action == Action.REMOVE) {
+                    LayoutNode node = graph.getLayoutNode(action.vertex);
+                    graph.removeNodeAndEdges(node);
+                    graph.removeEmptyLayers();
                 }
             }
 
-            removeNode(node, true);
-        }
-
-        void run() {
             for (LinkAction action : linkActions) {
                 if (action.action == Action.REMOVE) {
                     applyRemoveLinkAction(action.link);
-                }
-            }
-
-            for (VertexAction action : vertexActions) {
-                if (action.action == Action.REMOVE) {
-                    applyRemoveVertexAction(action);
                 }
             }
 

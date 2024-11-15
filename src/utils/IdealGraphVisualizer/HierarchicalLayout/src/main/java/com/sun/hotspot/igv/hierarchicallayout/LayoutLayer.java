@@ -28,27 +28,58 @@ import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_X_COMPARATO
 import java.util.ArrayList;
 import java.util.Collection;
 
+/**
+ * Represents a layer in a hierarchical graph layout.
+ * Each LayoutLayer contains a collection of LayoutNodes positioned at the same vertical level.
+ * Provides methods to manage the nodes within the layer, including positioning, sorting,
+ * and adjusting the layout to minimize overlaps and improve visual clarity.
+ */
 public class LayoutLayer extends ArrayList<LayoutNode> {
 
     private int height = 0;
     private int y = 0;
 
+    /**
+     * Adds all LayoutNodes from the specified collection to this layer.
+     * Updates the layer's height based on the nodes added.
+     *
+     * @param c The collection of LayoutNodes to be added.
+     * @return true if this layer changed as a result of the call.
+     */
     @Override
     public boolean addAll(Collection<? extends LayoutNode> c) {
-        c.forEach(this::updateHeight);
+        c.forEach(this::updateLayerHeight);
         return super.addAll(c);
     }
 
-    private void updateHeight(LayoutNode n) {
-        height = Math.max(height, n.getOuterHeight());
-    }
-
+    /**
+     * Adds a single LayoutNode to this layer.
+     * Updates the layer's height based on the node added.
+     *
+     * @param n The LayoutNode to be added.
+     * @return true if the node was added successfully.
+     */
     @Override
     public boolean add(LayoutNode n) {
-        updateHeight(n);
+        updateLayerHeight(n);
         return super.add(n);
     }
 
+    /**
+     * Updates the layer's height if the outer height of the given node exceeds the current height.
+     *
+     * @param n The LayoutNode whose height is to be considered.
+     */
+    private void updateLayerHeight(LayoutNode n) {
+        height = Math.max(height, n.getOuterHeight());
+    }
+
+    /**
+     * Calculates and returns the maximum height among the nodes in this layer, including their margins.
+     * Adjusts the top and bottom margins of non-dummy nodes to be equal, effectively centering them vertically.
+     *
+     * @return The maximum outer height of nodes in this layer.
+     */
     public int calculateMaxLayerHeight() {
         int maxLayerHeight = 0;
         for (LayoutNode layoutNode : this) {
@@ -63,11 +94,18 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         return maxLayerHeight;
     }
 
-    public int calculateScalePaddedBottom() {
+    /**
+     * Calculates and returns the total height of this layer, including additional padding
+     * based on the maximum horizontal offset among the edges of its nodes.
+     * This padding helps in scaling the layer vertically to accommodate edge bends and crossings.
+     *
+     * @return The total padded height of the layer.
+     */
+    public int calculatePaddedHeight() {
         int maxXOffset = 0;
 
         for (LayoutNode layoutNode : this) {
-            for (LayoutEdge succEdge : layoutNode.getSuccs()) {
+            for (LayoutEdge succEdge : layoutNode.getSuccessors()) {
                 maxXOffset = Math.max(Math.abs(succEdge.getStartX() - succEdge.getEndX()), maxXOffset);
             }
         }
@@ -77,6 +115,10 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         return scalePaddedBottom;
     }
 
+    /**
+     * Centers all nodes in this layer vertically within the layer's assigned space.
+     * Adjusts each node's Y-coordinate so that it is centered based on the layer's top and height.
+     */
     public void centerNodesVertically() {
         for (LayoutNode layoutNode : this) {
             int centeredY = getTop() + (getHeight() - layoutNode.getOuterHeight()) / 2;
@@ -84,36 +126,67 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         }
     }
 
+    /**
+     * Sets the top Y-coordinate of this layer.
+     *
+     * @param top The Y-coordinate representing the top of the layer.
+     */
     public void setTop(int top) {
         y = top;
     }
 
-    public void shiftTop(int shift) {
+    /**
+     * Shifts the top Y-coordinate of this layer by the specified amount.
+     * Useful for moving the entire layer up or down.
+     *
+     * @param shift The amount to shift the layer's top position. Positive values move it down.
+     */
+    public void moveLayerVertically(int shift) {
         y += shift;
     }
 
+    /**
+     * Gets the top Y-coordinate of this layer.
+     *
+     * @return The Y-coordinate representing the top of the layer.
+     */
     public int getTop() {
         return y;
     }
 
-    public int getCenter() {
-        return y + height / 2;
-    }
-
+    /**
+     * Gets the bottom Y-coordinate of this layer.
+     *
+     * @return The Y-coordinate representing the bottom of the layer.
+     */
     public int getBottom() {
         return y + height;
     }
 
+    /**
+     * Gets the height of this layer.
+     *
+     * @return The height of the layer.
+     */
     public int getHeight() {
         return height;
     }
 
+    /**
+     * Sets the height of this layer.
+     *
+     * @param height The height to set for the layer.
+     */
     public void setHeight(int height) {
         this.height = height;
     }
 
-    // Layer contains no non-dummy nodes
-    public boolean isDummyLayer() {
+    /**
+     * Checks if this layer contains only dummy nodes.
+     *
+     * @return true if all nodes in the layer are dummy nodes; false otherwise.
+     */
+    public boolean containsOnlyDummyNodes() {
         for (LayoutNode node : this) {
             if (!node.isDummy()) {
                 return false;
@@ -122,7 +195,12 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         return true;
     }
 
-    public void sortNodesByXAndSetPositions() {
+    /**
+     * Sorts the nodes in this layer by their X-coordinate in increasing order.
+     * Assigns position indices to nodes based on the sorted order.
+     * Adjusts the X-coordinates of nodes to ensure minimum spacing between them.
+     */
+    public void sortNodesByX() {
         if (this.isEmpty()) return;
 
         // Sort nodes in the layer increasingly by x
@@ -144,7 +222,11 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         }
     }
 
-    public void updateLayerPositions() {
+    /**
+     * Updates the position indices of the nodes in this layer based on their order in the list.
+     * Useful after nodes have been added or removed to ensure position indices are consistent.
+     */
+    public void updateNodeIndices() {
         int pos = 0;
         for (LayoutNode layoutNode : this) {
             layoutNode.setPos(pos);
@@ -152,7 +234,15 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         }
     }
 
-    public void attemptMoveRight(LayoutNode layoutNode, int newX) {
+    /**
+     * Attempts to move the specified node to the right within the layer to the given X-coordinate.
+     * Ensures that the node does not overlap with its right neighbor by checking required spacing.
+     * If movement is possible without causing overlap, the node's X-coordinate is updated.
+     *
+     * @param layoutNode The node to move.
+     * @param newX       The desired new X-coordinate for the node.
+     */
+    public void tryShiftNodeRight(LayoutNode layoutNode, int newX) {
         int currentX = layoutNode.getX();
         int shiftAmount = newX - currentX;
         int rightPos = layoutNode.getPos() + 1;
@@ -172,7 +262,15 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         }
     }
 
-    public void attemptMoveLeft(LayoutNode layoutNode, int newX) {
+    /**
+     * Attempts to move the specified node to the left within the layer to the given X-coordinate.
+     * Ensures that the node does not overlap with its left neighbor by checking required spacing.
+     * If movement is possible without causing overlap, the node's X-coordinate is updated.
+     *
+     * @param layoutNode The node to move.
+     * @param newX       The desired new X-coordinate for the node.
+     */
+    public void tryShiftNodeLeft(LayoutNode layoutNode, int newX) {
         int currentX = layoutNode.getX();
         int shiftAmount = currentX - newX;
         int leftPos = layoutNode.getPos() - 1;
