@@ -60,11 +60,9 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   assert(num_regions > 0, "Sanity");
 
   _region_data = NEW_C_HEAP_ARRAY(RegionData, num_regions, mtGC);
-#ifdef ASSERT
   for (size_t i = 0; i < num_regions; i++) {
     _region_data[i].clear();
   }
-#endif
 }
 
 ShenandoahHeuristics::~ShenandoahHeuristics() {

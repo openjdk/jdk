@@ -90,11 +90,13 @@ protected:
 #endif
     public:
 
-#ifdef ASSERT
     inline void clear() {
+      _region = nullptr;
+      _region_union._garbage = 0;
+#ifdef ASSERT
       _union_tag = is_uninitialized;
-    }
 #endif
+    }
 
     inline void set_region_and_garbage(ShenandoahHeapRegion* region, size_t garbage) {
       _region = region;
