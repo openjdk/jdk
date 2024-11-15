@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shared/workerUtils.hpp"
@@ -42,8 +43,8 @@ void PreservedMarks::restore() {
 
 void PreservedMarks::adjust_preserved_mark(PreservedMark* elem) {
   oop obj = elem->get_oop();
-  if (obj->is_forwarded()) {
-    elem->set_oop(obj->forwardee());
+  if (FullGCForwarding::is_forwarded(obj)) {
+    elem->set_oop(FullGCForwarding::forwardee(obj));
   }
 }
 
@@ -140,10 +141,6 @@ void PreservedMarksSet::restore(WorkerThreads* workers) {
   }
 
   assert_empty();
-}
-
-WorkerTask* PreservedMarksSet::create_task() {
-  return new RestorePreservedMarksTask(this);
 }
 
 void PreservedMarksSet::reclaim() {

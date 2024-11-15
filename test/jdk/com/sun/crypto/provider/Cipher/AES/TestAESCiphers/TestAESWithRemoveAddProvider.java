@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,12 @@ import java.security.Provider;
  * @bug 8044193
  * @summary Test AES ciphers with different modes and padding schemes after
  *  remove default provider then add it back.
- * @run main/othervm/policy=testAES.policy TestAESWithRemoveAddProvider
  */
 
 public class TestAESWithRemoveAddProvider extends Dynamic {
     public static void main(String argv[]) throws Exception {
-        Provider pJCE = Security.getProvider(SUNJCE);
-        Security.removeProvider(SUNJCE);
+        Provider pJCE = Security.getProvider(PROVIDER);
+        Security.removeProvider(PROVIDER);
         Security.addProvider(pJCE);
         new TestAESWithRemoveAddProvider().run(argv);
     }

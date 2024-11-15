@@ -32,10 +32,9 @@ import jdk.jpackage.test.Executor;
 /*
  * @test
  * @summary jpackage with --runtime-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimeImageTest.java
  * @run main/othervm/timeout=1400 jdk.jpackage.test.Main
  *  --jpt-run=RuntimeImageTest

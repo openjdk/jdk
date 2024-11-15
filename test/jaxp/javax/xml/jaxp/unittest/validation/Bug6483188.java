@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXParseException;
 
@@ -39,12 +38,10 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 6483188
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6483188
  * @run testng/othervm validation.Bug6483188
  * @summary Test Schema Validator can handle element with having large maxOccurs, but doesn't accept sequence with having large maxOccurs in FEATURE_SECURE_PROCESSING mode.
  */
 @Test(singleThreaded = true)
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6483188 {
     SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 
