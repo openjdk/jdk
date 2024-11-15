@@ -27,7 +27,6 @@ package java.lang.classfile.constantpool;
 import java.io.DataInput;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_UTF8_info} constant, representing strings, in the
@@ -48,9 +47,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @jvms 4.4.7 The {@code CONSTANT_Utf8_info} Structure
  * @see DataInput##modified-utf-8 Modified UTF-8
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Utf8Entry
         extends CharSequence, AnnotationConstantValueEntry
         permits AbstractPoolEntry.Utf8EntryImpl {

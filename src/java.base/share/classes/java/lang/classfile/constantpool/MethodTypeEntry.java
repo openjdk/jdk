@@ -28,7 +28,6 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_MethodType_info} structure, or a symbolic reference
@@ -49,9 +48,8 @@ import jdk.internal.javac.PreviewFeature;
  * string.
  *
  * @jvms 4.4.9 The {@code CONSTANT_MethodType_info} Structure
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodTypeEntry
         extends LoadableConstantEntry
         permits AbstractPoolEntry.MethodTypeEntryImpl {

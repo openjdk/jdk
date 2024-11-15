@@ -30,8 +30,6 @@ import java.lang.classfile.TypeKind;
 import java.lang.classfile.instruction.ConstantInstruction;
 import java.lang.constant.ConstantDesc;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Marker interface for constant pool entries suitable for loading via the
  * {@link ConstantInstruction.LoadConstantInstruction ldc} instructions.
@@ -42,9 +40,8 @@ import jdk.internal.javac.PreviewFeature;
  *      ConstantPoolBuilder::loadableConstantEntry
  * @jvms 4.4 The Constant Pool
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LoadableConstantEntry extends PoolEntry
         permits ClassEntry, ConstantDynamicEntry, ConstantValueEntry, MethodHandleEntry, MethodTypeEntry {
 

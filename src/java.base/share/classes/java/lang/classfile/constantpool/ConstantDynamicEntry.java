@@ -31,7 +31,6 @@ import java.lang.constant.DynamicConstantDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_Dynamic_info} structure, representing a <dfn>{@index
@@ -65,9 +64,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see java.lang.invoke##condycon Dynamically-computed constants
  * @jvms 4.4.10 The {@code CONSTANT_Dynamic_info} and {@code
  *              CONSTANT_InvokeDynamic_info} Structures
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantDynamicEntry
         extends DynamicConstantPoolEntry, LoadableConstantEntry
         permits AbstractPoolEntry.ConstantDynamicEntryImpl {

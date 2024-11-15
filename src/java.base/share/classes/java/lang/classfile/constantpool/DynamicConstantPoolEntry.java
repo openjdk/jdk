@@ -26,8 +26,6 @@ package java.lang.classfile.constantpool;
 
 import java.lang.classfile.BootstrapMethodEntry;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Superinterface modeling dynamically-computed constant pool entries, which
  * include {@link ConstantDynamicEntry} and {@link InvokeDynamicEntry}, in the
@@ -50,9 +48,8 @@ import jdk.internal.javac.PreviewFeature;
  *              CONSTANT_InvokeDynamic_info} Structures
  * @jvms 5.4.3.6 Dynamically-Computed Constant and Call Site Resolution
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface DynamicConstantPoolEntry extends PoolEntry
         permits ConstantDynamicEntry, InvokeDynamicEntry {
 

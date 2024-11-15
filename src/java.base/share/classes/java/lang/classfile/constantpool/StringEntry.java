@@ -25,7 +25,6 @@
 package java.lang.classfile.constantpool;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_String_info} structure, or a string constant, in the
@@ -44,9 +43,8 @@ import jdk.internal.javac.PreviewFeature;
  * }
  *
  * @jvms 4.4.3 The {@code CONSTANT_String_info} Structure
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface StringEntry
         extends ConstantValueEntry
         permits AbstractPoolEntry.StringEntryImpl {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,15 @@ import java.io.IOException;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
 import static sun.nio.fs.BsdNativeDispatcher.*;
-import static sun.nio.fs.UnixNativeDispatcher.lutimes;
+import static sun.nio.fs.UnixConstants.ELOOP;
+import static sun.nio.fs.UnixConstants.ENXIO;
+import static sun.nio.fs.UnixNativeDispatcher.futimens;
+import static sun.nio.fs.UnixNativeDispatcher.utimensat;
 
 class BsdFileAttributeViews {
     //
-    // Use setattrlist(2) system call which can set creation, modification,
-    // and access times.
+    // Use the futimens(2)/utimensat(2) system calls to set the access and
+    // modification times, and setattrlist(2) to set the creation time.
     //
     private static void setTimes(UnixPath path, FileTime lastModifiedTime,
                                  FileTime lastAccessTime, FileTime createTime,
@@ -50,31 +53,29 @@ class BsdFileAttributeViews {
         // permission check
         path.checkWrite();
 
-        boolean useLutimes = false;
-        try {
-            useLutimes = !followLinks &&
-                UnixFileAttributes.get(path, false).isSymbolicLink();
-        } catch (UnixException x) {
-            x.rethrowAsIOException(path);
-        }
-
+        // use a file descriptor if possible to avoid a race due to accessing
+        // a path more than once as the file at that path could change.
+        // if path is a symlink, then the open should fail with ELOOP and
+        // the path will be used instead of the file descriptor.
         int fd = -1;
-        if (!useLutimes) {
-            try {
-                fd = path.openForAttributeAccess(followLinks);
-            } catch (UnixException x) {
+        try {
+            fd = path.openForAttributeAccess(followLinks);
+        } catch (UnixException x) {
+            if (!(x.errno() == ENXIO || (x.errno() == ELOOP))) {
                 x.rethrowAsIOException(path);
             }
         }
 
         try {
             // not all volumes support setattrlist(2), so set the last
-            // modified and last access times using futimens(2)/lutimes(3)
+            // modified and last access times use futimens(2)/utimensat(2)
             if (lastModifiedTime != null || lastAccessTime != null) {
                 // if not changing both attributes then need existing attributes
                 if (lastModifiedTime == null || lastAccessTime == null) {
                     try {
-                        UnixFileAttributes attrs = UnixFileAttributes.get(fd);
+                        UnixFileAttributes attrs = fd >= 0 ?
+                            UnixFileAttributes.get(fd) :
+                            UnixFileAttributes.get(path, followLinks);
                         if (lastModifiedTime == null)
                             lastModifiedTime = attrs.lastModifiedTime();
                         if (lastAccessTime == null)
@@ -85,20 +86,21 @@ class BsdFileAttributeViews {
                 }
 
                 // update times
-                TimeUnit timeUnit = useLutimes ?
-                    TimeUnit.MICROSECONDS : TimeUnit.NANOSECONDS;
-                long modValue = lastModifiedTime.to(timeUnit);
-                long accessValue= lastAccessTime.to(timeUnit);
+                long modValue = lastModifiedTime.to(TimeUnit.NANOSECONDS);
+                long accessValue= lastAccessTime.to(TimeUnit.NANOSECONDS);
 
                 boolean retry = false;
+                int flags = followLinks ? 0 : UnixConstants.AT_SYMLINK_NOFOLLOW;
                 try {
-                    if (useLutimes)
-                        lutimes(path, accessValue, modValue);
-                    else
+                    if (fd >= 0)
                         futimens(fd, accessValue, modValue);
+                    else
+                        utimensat(UnixConstants.AT_FDCWD, path, accessValue,
+                                  modValue, flags);
                 } catch (UnixException x) {
-                    // if futimens fails with EINVAL and one/both of the times is
-                    // negative then we adjust the value to the epoch and retry.
+                    // if futimens/utimensat fails with EINVAL and one/both of
+                    // the times is negative, then we adjust the value to the
+                    // epoch and retry.
                     if (x.errno() == UnixConstants.EINVAL &&
                         (modValue < 0L || accessValue < 0L)) {
                         retry = true;
@@ -110,34 +112,34 @@ class BsdFileAttributeViews {
                     if (modValue < 0L) modValue = 0L;
                     if (accessValue < 0L) accessValue= 0L;
                     try {
-                        if (useLutimes)
-                            lutimes(path, accessValue, modValue);
-                        else
+                        if (fd >= 0)
                             futimens(fd, accessValue, modValue);
+                        else
+                            utimensat(UnixConstants.AT_FDCWD, path, accessValue,
+                                      modValue, flags);
                     } catch (UnixException x) {
                         x.rethrowAsIOException(path);
                     }
                 }
             }
 
-            // set the creation time using setattrlist
+            // set the creation time using setattrlist(2)
             if (createTime != null) {
                 long createValue = createTime.to(TimeUnit.NANOSECONDS);
                 int commonattr = UnixConstants.ATTR_CMN_CRTIME;
                 try {
-                    if (useLutimes)
-                        setattrlist(path, commonattr, 0L, 0L, createValue,
-                            followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
-                    else
+                    if (fd >= 0)
                         fsetattrlist(fd, commonattr, 0L, 0L, createValue,
-                            followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
+                                     followLinks ? 0 : UnixConstants.FSOPT_NOFOLLOW);
+                    else
+                        setattrlist(path, commonattr, 0L, 0L, createValue,
+                                    followLinks ? 0 : UnixConstants.FSOPT_NOFOLLOW);
                 } catch (UnixException x) {
                     x.rethrowAsIOException(path);
                 }
             }
         } finally {
-            if (!useLutimes)
-                close(fd, e -> null);
+            close(fd, e -> null);
         }
     }
 

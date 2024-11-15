@@ -28,7 +28,6 @@ import java.lang.constant.MethodTypeDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_InterfaceMethodRef_info} structure, or a symbolic
@@ -61,9 +60,8 @@ import jdk.internal.javac.PreviewFeature;
  * @jvms 4.4.2 The {@code CONSTANT_Fieldref_info}, {@code
  *             CONSTANT_Methodref_info}, and {@code
  *             CONSTANT_InterfaceMethodref_info} Structures
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface InterfaceMethodRefEntry
         extends MemberRefEntry
         permits AbstractPoolEntry.InterfaceMethodRefEntryImpl {

@@ -30,7 +30,6 @@ import java.lang.constant.MethodTypeDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_InvokeDynamic_info} structure, or the symbolic
@@ -62,9 +61,8 @@ import jdk.internal.javac.PreviewFeature;
  *      ConstantPoolBuilder::invokeDynamicEntry
  * @jvms 4.4.10 The {@code CONSTANT_Dynamic_info} and {@code
  *              CONSTANT_InvokeDynamic_info} Structures
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface InvokeDynamicEntry
         extends DynamicConstantPoolEntry
         permits AbstractPoolEntry.InvokeDynamicEntryImpl {

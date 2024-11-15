@@ -27,7 +27,6 @@ package java.lang.classfile.constantpool;
 import java.lang.constant.PackageDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_Package_info}, representing a package, in the
@@ -49,9 +48,8 @@ import jdk.internal.javac.PreviewFeature;
  * internal form} of a binary package name and is not empty.
  *
  * @jvms 4.4.12 The {@code CONSTANT_Package_info} Structure
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface PackageEntry extends PoolEntry
         permits AbstractPoolEntry.PackageEntryImpl {
     /**

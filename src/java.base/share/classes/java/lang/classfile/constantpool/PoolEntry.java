@@ -27,8 +27,6 @@ package java.lang.classfile.constantpool;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassFileBuilder;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Models an entry in the constant pool of a {@code class} file.
  *
@@ -45,9 +43,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see ConstantPoolBuilder##adoption Non-directly-writable constant pool entries
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface PoolEntry
         permits AnnotationConstantValueEntry, DynamicConstantPoolEntry,
                 LoadableConstantEntry, MemberRefEntry, ModuleEntry, NameAndTypeEntry,

@@ -28,7 +28,6 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_Class_info} structure, representing a reference
@@ -60,9 +59,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see ConstantPoolBuilder#classEntry ConstantPoolBuilder::classEntry
  * @see ClassDesc
  * @jvms 4.4.1 The {@code CONSTANT_Class_info} Structure
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassEntry
         extends LoadableConstantEntry
         permits AbstractPoolEntry.ClassEntryImpl {

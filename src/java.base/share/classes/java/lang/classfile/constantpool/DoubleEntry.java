@@ -27,7 +27,6 @@ package java.lang.classfile.constantpool;
 import java.lang.classfile.TypeKind;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_Double_info} structure, representing a {@code
@@ -49,9 +48,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see ConstantPoolBuilder#doubleEntry ConstantPoolBuilder::doubleEntry
  * @jvms 4.4.5 The {@code CONSTANT_Long_info} and {@code CONSTANT_Double_info}
  *             Structures
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface DoubleEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
         permits AbstractPoolEntry.DoubleEntryImpl {

@@ -31,8 +31,6 @@ import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Provides read access to the constant pool and the bootstrap method table of a
  * {@code class} file.
@@ -46,9 +44,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see BootstrapMethodsAttribute
  * @jvms 4.4 The Constant Pool
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantPool extends Iterable<PoolEntry>
         permits ClassReader, ConstantPoolBuilder {
 
@@ -83,7 +80,6 @@ public sealed interface ConstantPool extends Iterable<PoolEntry>
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool or considered unusable, or the entry is not
      *         of the given type
-     * @since 23
      */
     <T extends PoolEntry> T entryByIndex(int index, Class<T> cls);
 

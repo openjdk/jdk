@@ -65,14 +65,11 @@
  * references can be copied in batch, speeding up class building.  This is especially applicable to class transformations,
  * and {@link ClassFile.ConstantPoolSharingOption ConstantPoolSharingOption} exists to control this behavior.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 package java.lang.classfile.constantpool;
 
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassFileBuilder;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.MethodModel;
-
-import jdk.internal.javac.PreviewFeature;

@@ -101,7 +101,7 @@ jboolean JNICALL jfr_is_available(JNIEnv* env, jclass jvm);
 
 jdouble JNICALL jfr_time_conv_factor(JNIEnv* env, jclass jvm);
 
-jlong JNICALL jfr_type_id(JNIEnv* env, jobject jvm, jclass jc);
+jlong JNICALL jfr_type_id(JNIEnv* env, jclass jvm, jclass jc);
 
 void JNICALL jfr_set_repository_location(JNIEnv* env, jclass jvm, jstring location);
 
@@ -129,7 +129,7 @@ jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jclass jvm);
 
 jboolean JNICALL jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms);
 
-void JNICALL jfr_set_miscellaneous(JNIEnv* env, jobject jvm, jlong id, jlong value);
+void JNICALL jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong id, jlong value);
 
 void JNICALL jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean, jboolean);
 

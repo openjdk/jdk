@@ -25,7 +25,6 @@
 package java.lang.classfile.constantpool;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Superinterface modeling symbolic references to a member of a class or interface
@@ -47,9 +46,8 @@ import jdk.internal.javac.PreviewFeature;
  *             CONSTANT_Methodref_info}, and {@code
  *             CONSTANT_InterfaceMethodref_info} Structures
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MemberRefEntry extends PoolEntry
         permits FieldRefEntry, InterfaceMethodRefEntry, MethodRefEntry, AbstractPoolEntry.AbstractMemberRefEntry {
     /**

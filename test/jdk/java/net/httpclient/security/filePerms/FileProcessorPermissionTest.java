@@ -29,7 +29,6 @@
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -43,11 +42,14 @@ public class FileProcessorPermissionTest {
     static final Path fromFilePath = Paths.get(testSrc, "FileProcessorPermissionTest.java");
     static final Path asFilePath = Paths.get(testSrc, "asFile.txt");
     static final Path CWD = Paths.get(".");
-    static final Class<SecurityException> SE = SecurityException.class;
+
+    interface ExceptionAction<T> {
+        T run() throws Exception;
+    }
 
     @Test
     public void test() throws Exception {
-        List<PrivilegedExceptionAction<?>> list = List.of(
+        List<ExceptionAction<?>> list = List.of(
                 () -> HttpRequest.BodyPublishers.ofFile(fromFilePath),
 
                 () -> BodyHandlers.ofFile(asFilePath),
@@ -59,7 +61,7 @@ public class FileProcessorPermissionTest {
                 () -> BodyHandlers.ofFileDownload(CWD, CREATE, WRITE)
         );
 
-        for (PrivilegedExceptionAction pa : list) {
+        for (ExceptionAction<?> pa : list) {
             pa.run();
         }
 

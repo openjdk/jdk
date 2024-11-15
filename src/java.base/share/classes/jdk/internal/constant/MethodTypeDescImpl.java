@@ -32,8 +32,6 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -320,15 +318,8 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
     public MethodType resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException {
         MethodType mtype;
         try {
-            @SuppressWarnings("removal")
-            MethodType mt = AccessController.doPrivileged(new PrivilegedAction<>() {
-                @Override
-                public MethodType run() {
-                    return MethodType.fromMethodDescriptorString(descriptorString(),
-                        lookup.lookupClass().getClassLoader());
-                }
-            });
-            mtype = mt;
+            mtype = MethodType.fromMethodDescriptorString(descriptorString(),
+                    lookup.lookupClass().getClassLoader());
         } catch (TypeNotPresentException ex) {
             throw (ClassNotFoundException) ex.getCause();
         }

@@ -27,7 +27,6 @@ package java.lang.classfile.constantpool;
 import java.lang.invoke.TypeDescriptor;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_NameAndType_info} structure, representing a field or
@@ -57,9 +56,8 @@ import jdk.internal.javac.PreviewFeature;
  * type} is a field or method descriptor string.
  *
  * @jvms 4.4.6 The {@code CONSTANT_NameAndType_info} Structure
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface NameAndTypeEntry extends PoolEntry
         permits AbstractPoolEntry.NameAndTypeEntryImpl {
 

@@ -27,7 +27,6 @@ package java.lang.classfile.constantpool;
 import java.lang.constant.ModuleDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_Module_info} structure, denoting a module, in the
@@ -47,9 +46,8 @@ import jdk.internal.javac.PreviewFeature;
  * where the {@code Utf8Entry} is a {@linkplain #asSymbol() module name}.
  *
  * @jvms 4.4.11 The {@code CONSTANT_Module_info} Structure
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModuleEntry extends PoolEntry
         permits AbstractPoolEntry.ModuleEntryImpl {
     /**

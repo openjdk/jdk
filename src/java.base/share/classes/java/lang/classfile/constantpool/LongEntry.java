@@ -27,7 +27,6 @@ package java.lang.classfile.constantpool;
 import java.lang.classfile.TypeKind;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_Long_info} structure, or a {@code long} constant, in
@@ -47,9 +46,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see ConstantPoolBuilder#longEntry ConstantPoolBuilder::longEntry
  * @jvms 4.4.5 The {@code CONSTANT_Long_info} and {@code CONSTANT_Double_info}
  *             Structures
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LongEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
         permits AbstractPoolEntry.LongEntryImpl {

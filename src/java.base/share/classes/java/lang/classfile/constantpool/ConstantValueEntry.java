@@ -27,8 +27,6 @@ package java.lang.classfile.constantpool;
 import java.lang.classfile.Attributes;
 import java.lang.constant.ConstantDesc;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Marker interface for constant pool entries that can represent constant values
  * in the {@link Attributes#constantValue() ConstantValue} attribute.
@@ -36,9 +34,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see ConstantPoolBuilder#constantValueEntry
  *      ConstantPoolBuilder::constantValueEntry
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantValueEntry extends LoadableConstantEntry
         permits DoubleEntry, FloatEntry, IntegerEntry, LongEntry, StringEntry {
 

@@ -30,7 +30,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleInfo;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_MethodHandle_info} structure, or a symbolic
@@ -56,9 +55,8 @@ import jdk.internal.javac.PreviewFeature;
  *      ConstantPoolBuilder::methodHandleEntry
  * @jvms 4.4.8 The {@code CONSTANT_MethodHandle_info} Structure
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodHandleEntry
         extends LoadableConstantEntry
         permits AbstractPoolEntry.MethodHandleEntryImpl {
