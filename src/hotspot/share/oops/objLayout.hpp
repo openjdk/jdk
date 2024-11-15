@@ -53,10 +53,10 @@
 class ObjLayout {
 public:
   enum Mode {
-    // +UseCompressedClassPointers (-UseCompactObjectHeaders)
-    Compressed,
     // +UseCompactObjectHeaders (implies +UseCompressedClassPointers)
     Compact,
+    // +UseCompressedClassPointers (-UseCompactObjectHeaders)
+    Compressed,
     // -UseCompressedClassPointers (-UseCompactObjectHeaders)
     Uncompressed,
     // Not yet initialized

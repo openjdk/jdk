@@ -97,10 +97,10 @@ void oopDesc::init_mark() {
 
 Klass* oopDesc::klass() const {
   switch (ObjLayout::klass_mode()) {
-    case ObjLayout::Compressed:
-      return CompressedKlassPointers::decode_not_null(_metadata._compressed_klass);
     case ObjLayout::Compact:
       return mark().klass();
+    case ObjLayout::Compressed:
+      return CompressedKlassPointers::decode_not_null(_metadata._compressed_klass);
     default:
       return _metadata._klass;
   }
@@ -108,10 +108,10 @@ Klass* oopDesc::klass() const {
 
 Klass* oopDesc::klass_or_null() const {
   switch (ObjLayout::klass_mode()) {
-    case ObjLayout::Compressed:
-      return CompressedKlassPointers::decode(_metadata._compressed_klass);
     case ObjLayout::Compact:
       return mark().klass_or_null();
+    case ObjLayout::Compressed:
+      return CompressedKlassPointers::decode(_metadata._compressed_klass);
     default:
       return _metadata._klass;
   }
@@ -119,12 +119,12 @@ Klass* oopDesc::klass_or_null() const {
 
 Klass* oopDesc::klass_or_null_acquire() const {
   switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
+      return mark_acquire().klass();
     case ObjLayout::Compressed: {
       narrowKlass narrow_klass = Atomic::load_acquire(&_metadata._compressed_klass);
       return CompressedKlassPointers::decode(narrow_klass);
     }
-    case ObjLayout::Compact:
-      return mark_acquire().klass();
     default:
       return Atomic::load_acquire(&_metadata._klass);
   }
@@ -132,10 +132,10 @@ Klass* oopDesc::klass_or_null_acquire() const {
 
 Klass* oopDesc::klass_without_asserts() const {
   switch (ObjLayout::klass_mode()) {
-    case ObjLayout::Compressed:
-      return CompressedKlassPointers::decode_without_asserts(_metadata._compressed_klass);
     case ObjLayout::Compact:
       return mark().klass_without_asserts();
+    case ObjLayout::Compressed:
+      return CompressedKlassPointers::decode_without_asserts(_metadata._compressed_klass);
     default:
       return _metadata._klass;
   }
