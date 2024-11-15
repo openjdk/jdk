@@ -31,7 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
-import sun.nio.cs.CharsetMapping;
+import sun.nio.cs.*;
 
 /*
  *  5 types of entry in SJIS_X_0213/Unicode mapping table
