@@ -213,6 +213,7 @@ public class Inflater implements AutoCloseable {
      * indicating that a preset dictionary is required. The method getAdler()
      * can be used to get the Adler-32 value of the dictionary needed.
      * @param dictionary the dictionary data bytes
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsDictionary
      * @see Inflater#getAdler
      */
@@ -442,6 +443,7 @@ public class Inflater implements AutoCloseable {
      * @param output the buffer for the uncompressed data
      * @return the actual number of uncompressed bytes
      * @throws DataFormatException if the compressed data format is invalid
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsInput
      * @see Inflater#needsDictionary
      */
@@ -623,6 +625,8 @@ public class Inflater implements AutoCloseable {
      * and therefore cannot return the correct value when it is greater
      * than {@link Integer#MAX_VALUE}.
      *
+     * @throws IllegalStateException if the Inflater is closed
+     *
      * @deprecated Use {@link #getBytesRead()} instead
      *
      * @return the total number of compressed bytes input so far
@@ -653,6 +657,8 @@ public class Inflater implements AutoCloseable {
      * This method returns the equivalent of {@code (int) getBytesWritten()}
      * and therefore cannot return the correct value when it is greater
      * than {@link Integer#MAX_VALUE}.
+     *
+     * @throws IllegalStateException if the Inflater is closed
      *
      * @deprecated Use {@link #getBytesWritten()} instead
      *

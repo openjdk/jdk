@@ -290,6 +290,7 @@ public class Deflater implements AutoCloseable {
      * in order to get the Adler-32 value of the dictionary required for
      * decompression.
      * @param dictionary the dictionary data bytes
+     * @throws IllegalStateException if the Deflater is closed
      * @see Inflater#inflate
      * @see Inflater#getAdler()
      */
@@ -439,6 +440,7 @@ public class Deflater implements AutoCloseable {
      * @param output the buffer for the compressed data
      * @param off the start offset of the data
      * @param len the maximum number of bytes of compressed data
+     * @throws IllegalStateException if the Deflater is closed
      * @return the actual number of bytes of compressed data written to the
      *         output buffer
      */
@@ -458,6 +460,7 @@ public class Deflater implements AutoCloseable {
      * {@code deflater.deflate(b, 0, b.length, Deflater.NO_FLUSH)}.
      *
      * @param output the buffer for the compressed data
+     * @throws IllegalStateException if the Deflater is closed
      * @return the actual number of bytes of compressed data written to the
      *         output buffer
      */
@@ -480,6 +483,7 @@ public class Deflater implements AutoCloseable {
      * @return the actual number of bytes of compressed data written to the
      *         output buffer
      * @throws ReadOnlyBufferException if the given output buffer is read-only
+     * @throws IllegalStateException if the Deflater is closed
      * @since 11
      */
     public int deflate(ByteBuffer output) {
@@ -806,6 +810,8 @@ public class Deflater implements AutoCloseable {
      * and therefore cannot return the correct value when it is greater
      * than {@link Integer#MAX_VALUE}.
      *
+     * @throws IllegalStateException if the Deflater is closed
+     *
      * @deprecated Use {@link #getBytesRead()} instead
      *
      * @return the total number of uncompressed bytes input so far
@@ -836,6 +842,8 @@ public class Deflater implements AutoCloseable {
      * This method returns the equivalent of {@code (int) getBytesWritten()}
      * and therefore cannot return the correct value when it is greater
      * than {@link Integer#MAX_VALUE}.
+     *
+     * @throws IllegalStateException if the Deflater is closed
      *
      * @deprecated Use {@link #getBytesWritten()} instead
      *
