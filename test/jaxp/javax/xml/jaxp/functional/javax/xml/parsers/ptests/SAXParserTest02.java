@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotSupportedException;
@@ -45,10 +44,8 @@ import org.xml.sax.ext.LexicalHandler;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.parsers.ptests.SAXParserTest02
  * @run testng/othervm javax.xml.parsers.ptests.SAXParserTest02
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class SAXParserTest02 {
     private static final String DOM_NODE = "http://xml.org/sax/properties/dom-node";
     private static final String XML_STRING = "http://xml.org/sax/properties/xml-string";

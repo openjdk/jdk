@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,21 @@
  * questions.
  */
 
-import java.net.URLPermission;
 /*
  * @test
  * @bug 8010464
  * @modules jdk.httpserver
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run main/othervm -Djava.security.manager=allow URLTest
- * @run main/othervm -Djava.security.manager=allow -Djava.net.preferIPv6Addresses=true URLTest
+ * @run main/othervm URLTest
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true URLTest
  * @summary check URLPermission with Http(s)URLConnection
  */
 
 import java.net.*;
 import java.io.*;
 import java.security.*;
+import java.util.List;
 import java.util.concurrent.*;
 import com.sun.net.httpserver.*;
 import javax.net.ssl.*;
@@ -49,16 +49,6 @@ public class URLTest {
         createServers();
 
         try {
-            // Verify without a Security Manager
-            test1();
-            test2();
-            test3();
-
-            // Set the security manager. Each test will set its own policy.
-            Policy.setPolicy(new CustomPolicy());
-            System.setSecurityManager(new SecurityManager());
-            System.out.println("\n Security Manager has been set.");
-
             test1();
             test2();
             test3();
@@ -73,14 +63,9 @@ public class URLTest {
     static void test1() throws IOException {
         System.out.println("\n--- Test 1 ---");
 
-        boolean expectException = false;
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            expectException = true;
-            Policy.setPolicy(new CustomPolicy(
+        List<URLPermission> perms = List.of(
                 new URLPermission("http://" + httpAuth + "/foo.html", "GET:X-Foo,Z-Bar"),
-                new URLPermission("https://" + httpsAuth + "/foo.html", "POST:X-Fob,T-Bar")));
-        }
+                new URLPermission("https://" + httpsAuth + "/foo.html", "POST:X-Fob,T-Bar"));
 
         String url1 = "http://" + httpAuth + "/foo.html";
         String url2 = "https://" + httpsAuth + "/foo.html";
@@ -88,30 +73,27 @@ public class URLTest {
         String url4 = "https://" + httpsAuth + "/bar.html";
 
         // simple positive test. Should succeed
-        test(url1, "GET", "X-Foo");
-        test(url1, "GET", "Z-Bar", "X-Foo");
-        test(url1, "GET", "X-Foo", "Z-Bar");
-        test(url1, "GET", "Z-Bar");
-        test(url2, "POST", "X-Fob");
+        test(url1, "GET", "X-Foo", perms);
+        test(url1, "GET", "Z-Bar", "X-Foo", perms);
+        test(url1, "GET", "X-Foo", "Z-Bar", perms);
+        test(url1, "GET", "Z-Bar", perms);
+        test(url2, "POST", "X-Fob", perms);
 
         // reverse the methods, should fail
-        test(url1, "POST", "X-Foo", expectException);
-        test(url2, "GET", "X-Fob", expectException);
+        test(url1, "POST", "X-Foo", perms, true);
+        test(url2, "GET", "X-Fob", perms, true);
 
         // different URLs, should fail
-        test(url3, "GET", "X-Foo", expectException);
-        test(url4, "POST", "X-Fob", expectException);
+        test(url3, "GET", "X-Foo", perms, true);
+        test(url4, "POST", "X-Fob", perms, true);
     }
 
     static void test2() throws IOException {
         System.out.println("\n--- Test 2 ---");
 
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            Policy.setPolicy(new CustomPolicy(
+        List<URLPermission> perms = List.of(
                 new URLPermission("http://" + httpAuth + "/*", "GET:X-Foo"),
-                new URLPermission("https://" + httpsAuth + "/*", "POST:X-Fob")));
-        }
+                new URLPermission("https://" + httpsAuth + "/*", "POST:X-Fob"));
 
         String url1 = "http://" + httpAuth + "/foo.html";
         String url2 = "https://" + httpsAuth + "/foo.html";
@@ -119,33 +101,29 @@ public class URLTest {
         String url4 = "https://" + httpsAuth + "/bar.html";
 
         // simple positive test. Should succeed
-        test(url1, "GET", "X-Foo");
-        test(url2, "POST", "X-Fob");
-        test(url3, "GET", "X-Foo");
-        test(url4, "POST", "X-Fob");
+        test(url1, "GET", "X-Foo", perms);
+        test(url2, "POST", "X-Fob", perms);
+        test(url3, "GET", "X-Foo", perms);
+        test(url4, "POST", "X-Fob", perms);
     }
 
     static void test3() throws IOException {
         System.out.println("\n--- Test 3 ---");
 
-        boolean expectException = false;
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            expectException = true;
-            Policy.setPolicy(new CustomPolicy(
+        List<URLPermission> perms = List.of(
                 new URLPermission("http://" + httpAuth + "/a/b/-", "DELETE,GET:X-Foo,Y-Foo"),
-                new URLPermission("https://" + httpsAuth + "/a/c/-", "POST:*")));
-        }
+                new URLPermission("https://" + httpsAuth + "/a/c/-", "POST:*"));
+
 
         String url1 = "http://" + httpAuth + "/foo.html";
         String url2 = "https://" + httpsAuth + "/a/c/d/e/foo.html";
         String url3 = "http://" + httpAuth + "/a/b/c";
         String url4 = "https://" + httpsAuth + "/a/b/c";
 
-        test(url1, "GET", "X-Foo", expectException);
-        test(url2, "POST", "X-Zxc");
-        test(url3, "DELETE", "Y-Foo");
-        test(url4, "POST", "Y-Foo", expectException);
+        test(url1, "GET", "X-Foo", perms, true);
+        test(url2, "POST", "X-Zxc", perms);
+        test(url3, "DELETE", "Y-Foo", perms);
+        test(url4, "POST", "Y-Foo", perms,true);
     }
 
     static String authority(InetSocketAddress address) {
@@ -159,29 +137,32 @@ public class URLTest {
     }
 
     // Convenience methods to simplify previous explicit test scenarios.
-    static void test(String u, String method, String header) throws IOException {
-        test(u, method, header, null, false);
+    static void test(String u, String method, String header, List<URLPermission> perms) throws IOException {
+        test(u, method, header, perms, false);
     }
 
-    static void test(String u, String method, String header, boolean expectException)
+    static void test(String u, String method, String header, List<URLPermission> perms, boolean expectException)
         throws IOException
     {
-        test(u, method, header, null, expectException);
+        test(u, method, header, null, perms, expectException);
     }
 
-    static void test(String u, String method, String header1, String header2)
+    static void test(String u, String method, String header1, String header2, List<URLPermission> perms)
         throws IOException
     {
-        test(u, method, header1, header2, false);
+        test(u, method, header1, header2, perms, false);
     }
 
     static void test(String u,
                      String method,
                      String header1,
                      String header2,
+                     List<URLPermission> perms,
                      boolean expectException)
         throws IOException
     {
+
+        // check that no SecurityException is thrown
         URL url = new URL(u);
         System.out.println("url=" + u + " method=" + method +
                            " header1=" + header1 + " header2=" + header2 +
@@ -193,24 +174,38 @@ public class URLTest {
             ssl.setSSLSocketFactory(ctx.getSocketFactory());
         }
         urlc.setRequestMethod(method);
-        if (header1 != null)
+        String action = method + ":";
+        if (header1 != null) {
             urlc.addRequestProperty(header1, "foo");
-        if (header2 != null)
+            action = action + header1;
+        }
+        if (header2 != null) {
             urlc.addRequestProperty(header2, "bar");
+            if (header1 != null) action = action + ",";
+            action = action + header2;
+        }
+
+        int code = urlc.getResponseCode();
+        if (code != 200)
+            throw new RuntimeException("Unexpected response " + code);
+
+        InputStream is = urlc.getInputStream();
+        is.readAllBytes();
+        is.close();
+
+        // all good - now check permissions still work
+        URLPermission perm = new URLPermission(url.toString(), action);
+        PermissionCollection allperms = new Permissions();
+        perms.forEach(allperms::add);
 
         try {
-            int code = urlc.getResponseCode();
-            if (expectException) {
-                failed = true;
-                System.out.println("FAIL");
-                return;
+            if (!allperms.implies(perm)) {
+                throw new RuntimeException(new SecurityException(perms.toString()));
             }
-            if (code != 200)
-                throw new RuntimeException("Unexpected response " + code);
-
-            InputStream is = urlc.getInputStream();
-            is.readAllBytes();
-            is.close();
+            if (expectException) {
+                System.out.println("Expected exception not thrown for " + perm);
+                failed = true;
+            }
         } catch (RuntimeException e) {
             if (!expectException || !(e.getCause() instanceof SecurityException)) {
                 System.out.println ("FAIL. Unexpected: " + e.getMessage());
@@ -275,35 +270,4 @@ public class URLTest {
         }
     }
 
-    static class CustomPolicy extends Policy {
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-        final PermissionCollection perms = new Permissions();
-
-        CustomPolicy(Permission... permissions) {
-            java.util.Arrays.stream(permissions).forEach(perms::add);
-
-            // needed for the HTTP(S) server
-            InetAddress loopback = InetAddress.getLoopbackAddress();
-            InetSocketAddress serverBound = new InetSocketAddress(loopback,1024);
-            perms.add(new SocketPermission(authority(serverBound) + "-", "listen,resolve,accept"));
-            // needed by the test to reset the policy, per testX method
-            perms.add(new SecurityPermission("setPolicy"));
-            // needed to shutdown the ThreadPoolExecutor ( used by the servers )
-            perms.add(new RuntimePermission("modifyThread"));
-            // needed by the client code forHttpsURLConnection.setSSLSocketFactory
-            perms.add(new RuntimePermission("setFactory"));
-        }
-
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return perms;
-        }
-
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return perms;
-        }
-
-        public boolean implies(ProtectionDomain domain, Permission perm) {
-            return perms.implies(perm) || DEFAULT_POLICY.implies(domain, perm);
-        }
-    }
 }
