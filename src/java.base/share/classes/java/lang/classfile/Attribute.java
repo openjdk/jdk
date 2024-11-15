@@ -29,7 +29,6 @@ import java.lang.classfile.constantpool.Utf8Entry;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a classfile attribute (JVMS {@jvms 4.7}).  Many, though not all, subtypes of
@@ -42,9 +41,8 @@ import jdk.internal.javac.PreviewFeature;
  * @param <A> the attribute type
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Attribute<A extends Attribute<A>>
         extends ClassFileElement
         permits AnnotationDefaultAttribute, BootstrapMethodsAttribute,
