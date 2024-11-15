@@ -154,7 +154,6 @@ public class Modules {
         ModuleLayer layer = m.getLayer();
 
         ClassLoader loader = m.getClassLoader();
-
         ClassLoader platformClassLoader = ClassLoaders.platformClassLoader();
         if (layer == null || loader == null || loader == platformClassLoader) {
             // update ClassLoader catalog
