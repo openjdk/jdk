@@ -102,11 +102,6 @@ public class MRTestBase {
     }
 
     void javac(int release, Path dest, Path... sourceFiles) throws Throwable {
-        javac(release, dest, List.of(), sourceFiles);
-    }
-
-    void javac(int release, Path dest, List<String> extraParameters, Path... sourceFiles) throws Throwable {
-
         List<String> commands = new ArrayList<>();
         String opts = System.getProperty("test.compiler.opts");
         if (!opts.isEmpty()) {
@@ -116,10 +111,7 @@ public class MRTestBase {
         commands.add(String.valueOf(release));
         commands.add("-d");
         commands.add(dest.toString());
-        Stream.of(sourceFiles)
-                .map(Object::toString)
-                .forEach(x -> commands.add(x));
-        commands.addAll(extraParameters);
+        Stream.of(sourceFiles).map(Object::toString).forEach(commands::add);
 
         StringWriter sw = new StringWriter();
         try (PrintWriter pw = new PrintWriter(sw)) {
