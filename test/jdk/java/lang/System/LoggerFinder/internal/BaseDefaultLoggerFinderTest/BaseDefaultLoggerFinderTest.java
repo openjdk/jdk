@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.security.AccessControlException;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -46,8 +39,6 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,7 +49,7 @@ import sun.util.logging.PlatformLogger;
 
 /**
  * @test
- * @bug     8140364 8145686 8189291
+ * @bug 8140364 8145686 8189291
  * @summary JDK implementation specific unit test for the base DefaultLoggerFinder.
  *          Tests the behavior of DefaultLoggerFinder and SimpleConsoleLogger
  *          implementation.
@@ -66,31 +57,14 @@ import sun.util.logging.PlatformLogger;
  *          java.base/jdk.internal.logger
  * @build AccessSystemLogger BaseDefaultLoggerFinderTest CustomSystemClassLoader BaseLoggerFinder
  * @run  driver AccessSystemLogger
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest NOSECURITY
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest NOPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHPERMISSIONS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHCUSTOMWRAPPERS
- * @run  main/othervm -Xbootclasspath/a:boot -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHREFLECTION
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest DEFAULTS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHCUSTOMWRAPPERS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHREFLECTION
  * @author danielfuchs
  */
 public class BaseDefaultLoggerFinderTest {
 
-    static final Policy DEFAULT_POLICY = Policy.getPolicy();
-    static final RuntimePermission LOGGERFINDER_PERMISSION =
-                new RuntimePermission("loggerFinder");
     final static boolean VERBOSE = false;
-    static final ThreadLocal<AtomicBoolean> allowControl = new ThreadLocal<AtomicBoolean>() {
-        @Override
-        protected AtomicBoolean initialValue() {
-            return  new AtomicBoolean(false);
-        }
-    };
-    static final ThreadLocal<AtomicBoolean> allowAccess = new ThreadLocal<AtomicBoolean>() {
-        @Override
-        protected AtomicBoolean initialValue() {
-            return  new AtomicBoolean(false);
-        }
-    };
 
     final static AccessSystemLogger accessSystemLogger = new AccessSystemLogger();
     static final Class<?>[] providerClass;
@@ -142,24 +116,11 @@ public class BaseDefaultLoggerFinderTest {
 
     }
 
-    static enum TestCases {NOSECURITY, NOPERMISSIONS, WITHPERMISSIONS,
-                           WITHCUSTOMWRAPPERS, WITHREFLECTION};
-
-    static void setSecurityManager() {
-        if (System.getSecurityManager() == null) {
-            Policy.setPolicy(new SimplePolicy(allowControl, allowAccess));
-            System.setSecurityManager(new SecurityManager());
-        }
-    }
+    static enum TestCases {DEFAULTS, WITHCUSTOMWRAPPERS, WITHREFLECTION};
 
     static TestLoggerFinder getLoggerFinder(Class<?> expectedClass) {
-        LoggerFinder provider = null;
-        try {
-            TestLoggerFinder.sequencer.incrementAndGet();
-            provider = LoggerFinder.getLoggerFinder();
-        } catch(AccessControlException a) {
-            throw a;
-        }
+        TestLoggerFinder.sequencer.incrementAndGet();
+        LoggerFinder provider = LoggerFinder.getLoggerFinder();
         ErrorStream.errorStream.store();
         System.out.println("*** Actual LoggerFinder class is: " + provider.getClass().getName());
         expectedClass.cast(provider);
@@ -394,9 +355,7 @@ public class BaseDefaultLoggerFinderTest {
     public static void main(String[] args) {
         if (args.length == 0) {
             args = new String[] {
-                //"NOSECURITY",
-                "NOPERMISSIONS",
-                "WITHPERMISSIONS",
+                "DEFAULTS",
                 "WITHCUSTOMWRAPPERS",
                 "WITHREFLECTION"
             };
@@ -436,90 +395,33 @@ public class BaseDefaultLoggerFinderTest {
             TestLoggerFinder provider;
             ErrorStream.errorStream.restore();
             switch (testCase) {
-                case NOSECURITY:
-                    System.out.println("\n*** Without Security Manager\n");
+                case DEFAULTS:
+                    System.out.println("\n*** Defaults\n");
                     System.out.println(TestLoggerFinder.conf.get());
                     provider = getLoggerFinder(expectedClass);
                     if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
                         throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
                     }
-                    test(provider, true);
+                    test(provider);
                     System.out.println("Tetscase count: " + TestLoggerFinder.sequencer.get());
-                    break;
-                case NOPERMISSIONS:
-                    System.out.println("\n*** With Security Manager, without permissions\n");
-                    System.out.println(TestLoggerFinder.conf.get());
-                    setSecurityManager();
-                    try {
-                        provider = getLoggerFinder(expectedClass);
-                        throw new RuntimeException("Expected exception not raised");
-                    } catch (AccessControlException x) {
-                        if (!LOGGERFINDER_PERMISSION.equals(x.getPermission())) {
-                            throw new RuntimeException("Unexpected permission check", x);
-                        }
-                        final boolean control = allowControl.get().get();
-                        try {
-                            allowControl.get().set(true);
-                            provider = getLoggerFinder(expectedClass);
-                            if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
-                                throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
-                            }
-                        } finally {
-                            allowControl.get().set(control);
-                        }
-                    }
-                    test(provider, false);
-                    System.out.println("Tetscase count: " + TestLoggerFinder.sequencer.get());
-                    break;
-                case WITHPERMISSIONS:
-                    System.out.println("\n*** With Security Manager, with control permission\n");
-                    System.out.println(TestLoggerFinder.conf.get());
-                    setSecurityManager();
-                    final boolean control = allowControl.get().get();
-                    try {
-                        allowControl.get().set(true);
-                        provider = getLoggerFinder(expectedClass);
-                        if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
-                            throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
-                        }
-                        test(provider, true);
-                    } finally {
-                        allowControl.get().set(control);
-                    }
                     break;
                 case WITHCUSTOMWRAPPERS:
-                    System.out.println("\n*** With Security Manager, with control permission and custom Wrapper\n");
+                    System.out.println("\n*** With custom Wrapper\n");
                     System.out.println(TestLoggerFinder.conf.get());
-                    setSecurityManager();
-                    final boolean previous = allowControl.get().get();
-                    try {
-                        allowControl.get().set(true);
-                        provider = getLoggerFinder(expectedClass);
-                        if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
-                            throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
-                        }
-                        test(provider, CustomLoggerWrapper::new, true);
-                    } finally {
-                        allowControl.get().set(previous);
+                    provider = getLoggerFinder(expectedClass);
+                    if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
+                        throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
                     }
+                    test(provider, CustomLoggerWrapper::new);
                     break;
                 case WITHREFLECTION:
-                    System.out.println("\n*** With Security Manager,"
-                            + " with control permission,"
-                            + " using reflection while logging\n");
+                    System.out.println("\n*** Using reflection while logging\n");
                     System.out.println(TestLoggerFinder.conf.get());
-                    setSecurityManager();
-                    final boolean before = allowControl.get().get();
-                    try {
-                        allowControl.get().set(true);
-                        provider = getLoggerFinder(expectedClass);
-                        if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
-                            throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
-                        }
-                        test(provider, ReflectionLoggerWrapper::new, true);
-                    } finally {
-                        allowControl.get().set(before);
+                    provider = getLoggerFinder(expectedClass);
+                    if (!provider.getClass().getName().equals("BaseLoggerFinder")) {
+                        throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
                     }
+                    test(provider, ReflectionLoggerWrapper::new);
                     break;
                 default:
                     throw new RuntimeException("Unknown test case: " + testCase);
@@ -528,11 +430,11 @@ public class BaseDefaultLoggerFinderTest {
         System.out.println("\nPASSED: Tested " + TestLoggerFinder.sequencer.get() + " cases.");
     }
 
-    public static void test(TestLoggerFinder provider, boolean hasRequiredPermissions) {
-        test(provider, Function.identity(), hasRequiredPermissions);
+    public static void test(TestLoggerFinder provider) {
+        test(provider, Function.identity());
     }
 
-    public static void test(TestLoggerFinder provider, Function<Logger, Logger> wrapper, boolean hasRequiredPermissions) {
+    public static void test(TestLoggerFinder provider, Function<Logger, Logger> wrapper) {
 
         ResourceBundle loggerBundle = ResourceBundle.getBundle(MyLoggerBundle.class.getName());
         final Map<Logger, String> loggerDescMap = new HashMap<>();
@@ -861,80 +763,6 @@ public class BaseDefaultLoggerFinderTest {
                     }
                 }
             }
-        }
-
-    }
-
-    final static class PermissionsBuilder {
-        final Permissions perms;
-        public PermissionsBuilder() {
-            this(new Permissions());
-        }
-        public PermissionsBuilder(Permissions perms) {
-            this.perms = perms;
-        }
-        public PermissionsBuilder add(Permission p) {
-            perms.add(p);
-            return this;
-        }
-        public PermissionsBuilder addAll(PermissionCollection col) {
-            if (col != null) {
-                for (Enumeration<Permission> e = col.elements(); e.hasMoreElements(); ) {
-                    perms.add(e.nextElement());
-                }
-            }
-            return this;
-        }
-        public Permissions toPermissions() {
-            final PermissionsBuilder builder = new PermissionsBuilder();
-            builder.addAll(perms);
-            return builder.perms;
-        }
-    }
-
-    public static class SimplePolicy extends Policy {
-        final static RuntimePermission CONTROL = LOGGERFINDER_PERMISSION;
-        final static RuntimePermission ACCESS = new RuntimePermission("accessClassInPackage.jdk.internal.logger");
-
-        final Permissions permissions;
-        final ThreadLocal<AtomicBoolean> allowControl;
-        final ThreadLocal<AtomicBoolean> allowAccess;
-        public SimplePolicy(ThreadLocal<AtomicBoolean> allowControl, ThreadLocal<AtomicBoolean> allowAccess) {
-            this.allowControl = allowControl;
-            this.allowAccess = allowAccess;
-            permissions = new Permissions();
-            permissions.add(new RuntimePermission("setIO"));
-        }
-
-        Permissions getPermissions() {
-            if (allowControl.get().get() || allowAccess.get().get()) {
-                PermissionsBuilder builder =  new PermissionsBuilder()
-                        .addAll(permissions);
-                if (allowControl.get().get()) {
-                    builder.add(CONTROL);
-                }
-                if (allowAccess.get().get()) {
-                    builder.add(ACCESS);
-                }
-                return builder.toPermissions();
-            }
-            return permissions;
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            return getPermissions().implies(permission) ||
-                    DEFAULT_POLICY.implies(domain, permission);
-        }
-
-        @Override
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return new PermissionsBuilder().addAll(getPermissions()).toPermissions();
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return new PermissionsBuilder().addAll(getPermissions()).toPermissions();
         }
     }
 }

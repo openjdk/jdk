@@ -176,8 +176,8 @@ public record ParserVerifier(ClassModel classModel) {
         if (cfe instanceof AttributedElement ae) {
             var attrNames = new HashSet<String>();
             for (var a : ae.attributes()) {
-                if (!a.attributeMapper().allowMultiple() && !attrNames.add(a.attributeName())) {
-                    errors.add(new VerifyError("Multiple %s attributes in %s".formatted(a.attributeName(), toString(ae))));
+                if (!a.attributeMapper().allowMultiple() && !attrNames.add(a.attributeName().stringValue())) {
+                    errors.add(new VerifyError("Multiple %s attributes in %s".formatted(a.attributeName().stringValue(), toString(ae))));
                 }
                 verifyAttribute(ae, a, errors);
             }
@@ -331,7 +331,7 @@ public record ParserVerifier(ClassModel classModel) {
                 throw new AssertionError(a);
         };
         if (size >= 0 && size != ((BoundAttribute)a).payloadLen()) {
-            errors.add(new VerifyError("Wrong %s attribute length in %s".formatted(a.attributeName(), toString(ae))));
+            errors.add(new VerifyError("Wrong %s attribute length in %s".formatted(a.attributeName().stringValue(), toString(ae))));
         }
     }
 

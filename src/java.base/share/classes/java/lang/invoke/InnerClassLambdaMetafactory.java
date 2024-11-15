@@ -25,10 +25,10 @@
 
 package java.lang.invoke;
 
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ClassFileDumper;
 import sun.invoke.util.VerifyAccess;
-import sun.security.action.GetBooleanAction;
 
 import java.io.Serializable;
 import java.lang.classfile.ClassBuilder;
@@ -53,10 +53,8 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.NESTMATE_CLASS;
 import static java.lang.invoke.MethodHandleNatives.Constants.STRONG_LOADER_LINK;
-import static java.lang.invoke.MethodType.methodType;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -84,7 +82,7 @@ import sun.invoke.util.Wrapper;
         lambdaProxyClassFileDumper = ClassFileDumper.getInstance(dumpProxyClassesKey, "DUMP_LAMBDA_PROXY_CLASS_FILES");
 
         final String disableEagerInitializationKey = "jdk.internal.lambda.disableEagerInitialization";
-        disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
+        disableEagerInitialization = Boolean.getBoolean(disableEagerInitializationKey);
     }
 
     // See context values in AbstractValidatingLambdaMetafactory
@@ -135,9 +133,6 @@ import sun.invoke.util.Wrapper;
      *                   implemented by invoking the implementation method
      * @throws LambdaConversionException If any of the meta-factory protocol
      *         invariants are violated
-     * @throws SecurityException If a security manager is present, and it
-     *         <a href="MethodHandles.Lookup.html#secmgr">denies access</a>
-     *         from {@code caller} to the package of {@code implementation}.
      */
     public InnerClassLambdaMetafactory(MethodHandles.Lookup caller,
                                        MethodType factoryType,
@@ -157,7 +152,7 @@ import sun.invoke.util.Wrapper;
         implMethodDesc = methodDesc(implInfo.getMethodType());
         constructorType = factoryType.changeReturnType(Void.TYPE);
         lambdaClassName = lambdaClassName(targetClass);
-        lambdaClassEntry = pool.classEntry(ReferenceClassDescImpl.ofValidated(ConstantUtils.concat("L", lambdaClassName, ";")));
+        lambdaClassEntry = pool.classEntry(ConstantUtils.internalNameToDesc(lambdaClassName));
         // If the target class invokes a protected method inherited from a
         // superclass in a different package, or does 'invokespecial', the
         // lambda class has no access to the resolved method, or does
@@ -190,13 +185,17 @@ import sun.invoke.util.Wrapper;
         return i < ARG_NAME_CACHE.length ? ARG_NAME_CACHE[i] :  "arg$" + (i + 1);
     }
 
-    private static String lambdaClassName(Class<?> targetClass) {
+    private static String sanitizedTargetClassName(Class<?> targetClass) {
         String name = targetClass.getName();
         if (targetClass.isHidden()) {
             // use the original class name
             name = name.replace('/', '_');
         }
-        return name.replace('.', '/').concat("$$Lambda");
+        return name.replace('.', '/');
+    }
+
+    private static String lambdaClassName(Class<?> targetClass) {
+        return sanitizedTargetClassName(targetClass).concat("$$Lambda");
     }
 
     /**
@@ -407,9 +406,9 @@ import sun.invoke.util.Wrapper;
 
     private static class SerializationSupport {
         // Serialization support
-        private static final ClassDesc CD_SerializedLambda = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/SerializedLambda;");
-        private static final ClassDesc CD_ObjectOutputStream = ReferenceClassDescImpl.ofValidated("Ljava/io/ObjectOutputStream;");
-        private static final ClassDesc CD_ObjectInputStream = ReferenceClassDescImpl.ofValidated("Ljava/io/ObjectInputStream;");
+        private static final ClassDesc CD_SerializedLambda = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/SerializedLambda;");
+        private static final ClassDesc CD_ObjectOutputStream = ClassOrInterfaceDescImpl.ofValidated("Ljava/io/ObjectOutputStream;");
+        private static final ClassDesc CD_ObjectInputStream = ClassOrInterfaceDescImpl.ofValidated("Ljava/io/ObjectInputStream;");
         private static final MethodTypeDesc MTD_Object = MethodTypeDescImpl.ofValidated(CD_Object);
         private static final MethodTypeDesc MTD_void_ObjectOutputStream = MethodTypeDescImpl.ofValidated(CD_void, CD_ObjectOutputStream);
         private static final MethodTypeDesc MTD_void_ObjectInputStream = MethodTypeDescImpl.ofValidated(CD_void, CD_ObjectInputStream);
@@ -418,10 +417,10 @@ import sun.invoke.util.Wrapper;
         private static final String NAME_METHOD_READ_OBJECT = "readObject";
         private static final String NAME_METHOD_WRITE_OBJECT = "writeObject";
 
-        static final ClassDesc CD_NotSerializableException = ReferenceClassDescImpl.ofValidated("Ljava/io/NotSerializableException;");
+        static final ClassDesc CD_NotSerializableException = ClassOrInterfaceDescImpl.ofValidated("Ljava/io/NotSerializableException;");
         static final MethodTypeDesc MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION = MethodTypeDescImpl.ofValidated(CD_void, CD_String);
         static final MethodTypeDesc MTD_CTOR_SERIALIZED_LAMBDA = MethodTypeDescImpl.ofValidated(CD_void,
-                CD_Class, CD_String, CD_String, CD_String, CD_int, CD_String, CD_String, CD_String, CD_String, ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;"));
+                CD_Class, CD_String, CD_String, CD_String, CD_int, CD_String, CD_String, CD_String, CD_String, ConstantUtils.CD_Object_array);
 
     }
 
@@ -435,7 +434,7 @@ import sun.invoke.util.Wrapper;
                     public void accept(CodeBuilder cob) {
                         cob.new_(SerializationSupport.CD_SerializedLambda)
                            .dup()
-                           .ldc(classDesc(targetClass))
+                           .ldc(ClassDesc.ofInternalName(sanitizedTargetClassName(targetClass)))
                            .ldc(factoryType.returnType().getName().replace('.', '/'))
                            .ldc(interfaceMethodName)
                            .ldc(interfaceMethodType.toMethodDescriptorString())
@@ -557,12 +556,12 @@ import sun.invoke.util.Wrapper;
     }
 
     static ClassDesc implClassDesc(Class<?> cls) {
-        return cls.isHidden() ? null : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
+        return cls.isHidden() ? null : ConstantUtils.referenceClassDesc(cls.descriptorString());
     }
 
     static ClassDesc classDesc(Class<?> cls) {
         return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).basicClassDescriptor()
-                                 : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
+                                 : ConstantUtils.referenceClassDesc(cls.descriptorString());
     }
 
     static MethodTypeDesc methodDesc(MethodType mt) {

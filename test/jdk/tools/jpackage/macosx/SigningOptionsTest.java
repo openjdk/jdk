@@ -31,9 +31,13 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Test jpackage signing options errors
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
+ * @library /test/lib
+ * @library base
+ * @build SigningBase
+ * @build SigningCheck
+ * @build jtreg.SkippedException
  * @build SigningOptionsTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningOptionsTest
@@ -43,9 +47,13 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Test jpackage signing options errors
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
+ * @library /test/lib
+ * @library base
+ * @build SigningBase
+ * @build SigningCheck
+ * @build jtreg.SkippedException
  * @build SigningOptionsTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningOptionsTest
@@ -69,27 +77,31 @@ public final class SigningOptionsTest {
                                  "--mac-signing-key-user-name", "test-key",
                                  "--mac-app-image-sign-identity", "test-identity"},
                     null,
-                    "Mutually exclusive options"},
+                    "Mutually exclusive options",
+                    Boolean.FALSE},
             // --mac-signing-key-user-name and --mac-installer-sign-identity
             {"Hello",
                     new String[]{"--mac-sign",
                                  "--mac-signing-key-user-name", "test-key",
                                  "--mac-installer-sign-identity", "test-identity"},
                     null,
-                    "Mutually exclusive options"},
+                    "Mutually exclusive options",
+                    Boolean.FALSE},
             // --mac-installer-sign-identity and --type app-image
             {"Hello",
                     new String[]{"--mac-sign",
                                  "--mac-installer-sign-identity", "test-identity"},
                     null,
-                    "Option [--mac-installer-sign-identity] is not valid with type"},
+                    "Option [--mac-installer-sign-identity] is not valid with type",
+                    Boolean.FALSE},
             // --mac-installer-sign-identity and --type dmg
             {"Hello",
                     new String[]{"--type", "dmg",
                                  "--mac-sign",
                                  "--mac-installer-sign-identity", "test-identity"},
                     new String[]{"--type"},
-                    "Option [--mac-installer-sign-identity] is not valid with type"},
+                    "Option [--mac-installer-sign-identity] is not valid with type",
+                    Boolean.FALSE},
             // --app-content and --type app-image
             // JDK-8340802: "codesign" may or may not fail if additional
             // content is specified based on macOS version. For example on
@@ -104,13 +116,19 @@ public final class SigningOptionsTest {
                                  "--mac-app-image-sign-identity", "test-identity"},
                     null,
                     "\"codesign\" failed and additional application content" +
-                    " was supplied via the \"--app-content\" parameter."},
+                    " was supplied via the \"--app-content\" parameter.",
+                    Boolean.TRUE},
         });
     }
 
     public SigningOptionsTest(String javaAppDesc, String[] jpackageArgs,
-                              String[] removeArgs, String expectedError) {
+                              String[] removeArgs, String expectedError,
+                              Boolean checkRequirements) {
         this.expectedError = expectedError;
+
+        if (checkRequirements) {
+            SigningCheck.isXcodeDevToolsInstalled();
+        }
 
         cmd = JPackageCommand.helloAppImage(javaAppDesc)
                 .saveConsoleOutput(true).dumpOutput(true);

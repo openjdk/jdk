@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.lang.classfile.Opcode;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a branching instruction (conditional or unconditional) in the {@code
@@ -46,9 +45,8 @@ import jdk.internal.javac.PreviewFeature;
  * #target() target} cannot be encoded and the {@link ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS
  * FIX_SHORT_JUMPS} option is set.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface BranchInstruction extends Instruction
         permits AbstractInstruction.BoundBranchInstruction,
                 AbstractInstruction.UnboundBranchInstruction {

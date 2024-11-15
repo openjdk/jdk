@@ -380,7 +380,7 @@ Defaults to 4.
 Sets the argument `-timeoutHandlerTimeout` for JTReg. The default value is 0.
 This is only valid if the failure handler is built.
 
-#### JTREG_TEST_THREAD_FACTORY
+#### TEST_THREAD_FACTORY
 
 Sets the `-testThreadFactory` for JTReg. It should be the fully qualified
 classname of a class which implements `java.util.concurrent.ThreadFactory`. One
@@ -602,6 +602,15 @@ $ make test TEST="jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java" \
 
 For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.
+
+### Testing with alternative security providers
+
+Some security tests use a hardcoded provider for `KeyFactory`, `Cipher`,
+`KeyPairGenerator`, `KeyGenerator`, `AlgorithmParameterGenerator`,
+`KeyAgreement`, `Mac`, `MessageDigest`, `SecureRandom`, `Signature`,
+`AlgorithmParameters`, `Configuration`, `Policy`, or `SecretKeyFactory` objects.
+Specify the `-Dtest.provider.name=NAME` property to use a different provider for
+the service(s).
 
 ### Client UI Tests
 

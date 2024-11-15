@@ -34,8 +34,6 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.constant.ConstantUtils;
-
 import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.util.Objects.requireNonNull;
 
@@ -147,6 +145,11 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                     buf.writeU2(bsmSize);
                     for (int i = 0; i < bsmSize; i++)
                         bootstrapMethodEntry(i).writeTo(buf);
+                }
+
+                @Override
+                public Utf8Entry attributeName() {
+                    return utf8Entry(Attributes.NAME_BOOTSTRAP_METHODS);
                 }
             };
             a.writeTo(buf);

@@ -35,7 +35,6 @@ import java.lang.constant.ConstantDesc;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a constant-load instruction in the {@code code} array of a {@code
@@ -47,9 +46,8 @@ import jdk.internal.javac.PreviewFeature;
  * the elements of a {@link CodeModel}.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantInstruction extends Instruction {
 
     /**
@@ -68,9 +66,8 @@ public sealed interface ConstantInstruction extends Instruction {
      * Opcode#ACONST_NULL aconst_null} and {@link
      * Opcode#ICONST_0 iconst_0}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface IntrinsicConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.UnboundIntrinsicConstantInstruction {
 
@@ -85,9 +82,8 @@ public sealed interface ConstantInstruction extends Instruction {
      * constant value in the instruction directly. Includes {@link
      * Opcode#BIPUSH bipush} and {@link Opcode#SIPUSH sipush} instructions.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ArgumentConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.BoundArgumentConstantInstruction,
                     AbstractInstruction.UnboundArgumentConstantInstruction {
@@ -107,9 +103,8 @@ public sealed interface ConstantInstruction extends Instruction {
      * Opcode#LDC ldc} and {@link Opcode#LDC_W ldc_w}, and
      * {@link Opcode#LDC2_W ldc2_w} instructions.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface LoadConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.BoundLoadConstantInstruction,
                     AbstractInstruction.UnboundLoadConstantInstruction {

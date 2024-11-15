@@ -111,30 +111,10 @@ import sun.security.util.Debug;
  * The action "resolve" refers to host/ip name service lookups.
  * <P>
  * The actions string is converted to lowercase before processing.
- * <p>As an example of the creation and meaning of SocketPermissions,
- * note that if the following permission:
  *
- * <pre>
- *   p1 = new SocketPermission("foo.example.com:7777", "connect,accept");
- * </pre>
- *
- * is granted to some code, it allows that code to connect to port 7777 on
- * {@code foo.example.com}, and to accept connections on that port.
- *
- * <p>Similarly, if the following permission:
- *
- * <pre>
- *   p2 = new SocketPermission("localhost:1024-", "accept,connect,listen");
- * </pre>
- *
- * is granted to some code, it allows that code to
- * accept connections on, connect to, or listen on any port between
- * 1024 and 65535 on the local host.
- *
- * <p>Note: Granting code permission to accept or make connections to remote
- * hosts may be dangerous because malevolent code can then more easily
- * transfer and share confidential data among parties who may not
- * otherwise have access to the data.
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @spec https://www.rfc-editor.org/info/rfc2732
  *      RFC 2732: Format for Literal IPv6 Addresses in URL's

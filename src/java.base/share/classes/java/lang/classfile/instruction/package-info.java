@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,7 @@
  * invoking a method with an array or collection containing a {@code null} element
  * will cause a {@code NullPointerException}, unless otherwise specified. </p>
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 package java.lang.classfile.instruction;
 
-import jdk.internal.javac.PreviewFeature;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,8 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Test jpackage output for erroneous input with --type "app-image" and --app-image
- * @library ../../../../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile PredefinedAppImageErrorTest.java
  *
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main

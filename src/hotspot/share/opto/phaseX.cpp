@@ -27,6 +27,7 @@
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "opto/addnode.hpp"
 #include "opto/block.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
@@ -1634,12 +1635,19 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
-  // If changed AddP inputs, check Stores for loop invariant
-  if( use_op == Op_AddP ) {
+  // If changed AddP inputs:
+  // - check Stores for loop invariant, and
+  // - if the changed input is the offset, check constant-offset AddP users for
+  //   address expression flattening.
+  if (use_op == Op_AddP) {
+    bool offset_changed = n == use->in(AddPNode::Offset);
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->is_Mem())
+      if (u->is_Mem()) {
         worklist.push(u);
+      } else if (offset_changed && u->is_AddP() && u->in(AddPNode::Offset)->is_Con()) {
+        worklist.push(u);
+      }
     }
   }
   // If changed initialization activity, check dependent Stores
@@ -1693,6 +1701,14 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     if (use->outcnt() == 1) {
       Node* cmp = use->unique_out();
       worklist.push(cmp);
+    }
+  }
+  if (use->Opcode() == Op_AddX) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_CastX2P) {
+        worklist.push(u);
+      }
     }
   }
 }
