@@ -415,7 +415,6 @@ final class TestMethodSupplier {
     private static class Verifier {
         static boolean isTestClass(Class<?> type) {
             for (var method : type.getDeclaredMethods()) {
-                method.setAccessible(true);
                 if (isParameterized(method) || isTest(method)) {
                     return true;
                 }
@@ -426,7 +425,6 @@ final class TestMethodSupplier {
         static void verifyTestClass(Class<?> type) throws InvalidAnnotationException {
             boolean withTestAnnotations = false;
             for (var method : type.getDeclaredMethods()) {
-                method.setAccessible(true);
                 if (!withTestAnnotations && (isParameterized(method) || isTest(method))) {
                     withTestAnnotations = true;
                 }
