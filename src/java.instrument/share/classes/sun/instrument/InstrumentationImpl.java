@@ -477,13 +477,6 @@ public class InstrumentationImpl implements Instrumentation {
      *  Internals
      */
 
-
-    // Enable or disable Java programming language access checks on a
-    // reflected object (for example, a method)
-    private static void setAccessible(final AccessibleObject ao, final boolean accessible) {
-        ao.setAccessible(accessible);
-    }
-
     // Attempt to load and start an agent
     private void
     loadClassAndStartAgent( String  classname,
@@ -543,7 +536,7 @@ public class InstrumentationImpl implements Instrumentation {
             !javaAgentClass.getModule().isNamed()) {
             // If the java agent class is in an unnamed module, the java agent class can be non-public.
             // Suppress access check upon the invocation of the premain/agentmain method.
-            setAccessible(m, true);
+            m.setAccessible(true);
         }
 
         // invoke the 1 or 2-arg method
