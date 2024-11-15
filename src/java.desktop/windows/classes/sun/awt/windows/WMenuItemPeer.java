@@ -31,7 +31,6 @@ import java.awt.peer.*;
 import java.awt.event.ActionEvent;
 import sun.util.logging.PlatformLogger;
 
-@SuppressWarnings("removal")
 class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.WMenuItemPeer");
 

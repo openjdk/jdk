@@ -89,7 +89,6 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      */
     private HashMap<D3DWindowSurfaceData, GDIWindowSurfaceData> gdiSurfaces;
 
-    @SuppressWarnings("removal")
     public D3DScreenUpdateManager() {
         done = false;
         Runnable shutdownRunnable = () -> {
@@ -340,7 +339,6 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * If the update thread hasn't yet been created, it will be;
      * otherwise it is awaken
      */
-    @SuppressWarnings("removal")
     private synchronized void startUpdateThread() {
         if (screenUpdater == null) {
             String name = "D3D Screen Updater";

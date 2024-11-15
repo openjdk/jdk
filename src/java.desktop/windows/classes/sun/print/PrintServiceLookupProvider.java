@@ -77,7 +77,6 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         return win32PrintLUS;
     }
 
-    @SuppressWarnings("removal")
     public PrintServiceLookupProvider() {
 
         if (win32PrintLUS == null) {

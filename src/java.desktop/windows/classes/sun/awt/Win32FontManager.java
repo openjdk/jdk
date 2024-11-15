@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
+import java.util.function.Supplier;
 
 import sun.awt.windows.WFontConfiguration;
 import sun.font.FontManager;
@@ -45,21 +46,21 @@ import sun.font.TrueTypeFont;
  */
 public final class Win32FontManager extends SunFontManager {
 
-    private static TrueTypeFont eudcFont;
-
-    static {
-        String eudcFile = getEUDCFontFile();
-        if (eudcFile != null) {
-            try {
-                /* Must use Java rasteriser since GDI doesn't
-                 * enumerate (allow direct use) of EUDC fonts.
-                 */
-                eudcFont = new TrueTypeFont(eudcFile, null, 0,
-                                        true, false);
-            } catch (FontFormatException e) {
-            }
-        }
-    }
+    private static final TrueTypeFont eudcFont =
+            ((Supplier<TrueTypeFont>) () -> {
+                String eudcFile = getEUDCFontFile();
+                if (eudcFile != null) {
+                    try {
+                        /* Must use Java rasteriser since GDI doesn't
+                         * enumerate (allow direct use) of EUDC fonts.
+                         */
+                        return new TrueTypeFont(eudcFile, null, 0,
+                                                    true, false);
+                    } catch (FontFormatException e) {
+                    }
+                }
+                return null;
+            }).get();
 
     /* Used on Windows to obtain from the windows registry the name
      * of a file containing the system EUFC font. If running in one of

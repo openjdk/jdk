@@ -576,7 +576,6 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
             Runtime.getRuntime().addShutdownHook(t);
         }
 
-        @SuppressWarnings("removal")
         public synchronized Thread newThread(final Runnable task) {
             final Runnable comRun = new Runnable() {
                 public void run() {

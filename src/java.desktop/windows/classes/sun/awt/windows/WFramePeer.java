@@ -80,8 +80,7 @@ class WFramePeer extends WWindowPeer implements FramePeer {
     private native void clearMaximizedBounds();
 
     private static final boolean keepOnMinimize = "true".equals(
-            new GetPropertyAction(
-            "sun.awt.keepWorkingSetOnMinimize"));
+            System.getProperty("sun.awt.keepWorkingSetOnMinimize"));
 
     @Override
     public final void setMaximizedBounds(Rectangle b) {
