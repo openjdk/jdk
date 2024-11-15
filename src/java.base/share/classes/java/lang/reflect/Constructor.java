@@ -181,7 +181,6 @@ public final class Constructor<T> extends Executable {
     @Override
     @CallerSensitive
     public void setAccessible(boolean flag) {
-        AccessibleObject.checkPermission();
         if (flag) {
             checkCanSetAccessible(Reflection.getCallerClass());
         }

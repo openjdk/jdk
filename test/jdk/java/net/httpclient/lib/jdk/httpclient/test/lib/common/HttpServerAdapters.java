@@ -58,8 +58,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.HexFormat;
@@ -110,11 +108,8 @@ import static java.net.http.HttpClient.Version.HTTP_3;
 public interface HttpServerAdapters {
 
     static final boolean PRINTSTACK = getPrintStack();
-    @SuppressWarnings("removal")
     private static boolean getPrintStack() {
-        PrivilegedAction<Boolean> action = () ->
-                Boolean.getBoolean("jdk.internal.httpclient.debug");
-        return AccessController.doPrivileged(action);
+        return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
     static final HexFormat HEX_FORMAT = HexFormat.ofDelimiter(":").withUpperCase();
 

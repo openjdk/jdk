@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,12 @@
 class NativeLookup : AllStatic {
  private:
   // Style specific lookup
-  static address lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, TRAPS);
+  static address lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, TRAPS);
   static address lookup_base (const methodHandle& method, TRAPS);
   static address lookup_entry(const methodHandle& method, TRAPS);
   static address lookup_entry_prefixed(const methodHandle& method, TRAPS);
 
-  static const char* compute_complete_jni_name(const char* pure_name, const char* long_name, int args_size, bool os_style);
+  static const char* compute_complete_jni_name(const char* pure_name, const char* long_name, int args_size);
  public:
   // JNI name computation
   static char* pure_jni_name(const methodHandle& method);

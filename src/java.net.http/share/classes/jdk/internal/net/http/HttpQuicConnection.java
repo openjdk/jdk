@@ -310,7 +310,6 @@ abstract class HttpQuicConnection extends HttpConnection {
         // we only support H3 right now
         var altSvc = client.registry()
                 .lookup(uri, H3::equals)
-                .filter(exchange::isPermitted)
                 .findFirst().orElse(null);
         if (debug.on()) debug.log("%s: ALT-SVC: %s", where, altSvc);
         if (altSvc == null && Log.altsvc()) {

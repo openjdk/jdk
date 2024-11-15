@@ -42,7 +42,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
 import java.net.URI;
-import java.net.URLPermission;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
@@ -56,8 +55,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.Normalizer;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -99,7 +96,6 @@ import sun.net.www.HeaderParser;
 
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.util.stream.Collectors.joining;
 import static java.net.Authenticator.RequestorType.PROXY;
 import static java.net.Authenticator.RequestorType.SERVER;
 
@@ -118,10 +114,7 @@ public final class Utils {
 
 //    public static final boolean TESTING;
 //    static {
-//        if (ASSERTIONSENABLED) {
-//            PrivilegedAction<String> action = () -> System.getProperty("test.src");
-//            TESTING = AccessController.doPrivileged(action) != null;
-//        } else TESTING = false;
+//        TESTING = ASSERTIONSENABLED ? System.getProperty("test.src") != null : false;
 //    }
     public static final LoggerConfig DEBUG_CONFIG =
             getLoggerConfig(DebugLogger.HTTP_NAME, LoggerConfig.OFF);
@@ -138,9 +131,7 @@ public final class Utils {
             hostnameVerificationDisabledValue();
 
     private static LoggerConfig getLoggerConfig(String loggerName, LoggerConfig def) {
-        PrivilegedAction<String> action = () -> System.getProperty(loggerName);
-        @SuppressWarnings("removal")
-        var prop = AccessController.doPrivileged(action);
+        var prop = System.getProperty(loggerName);
         if (prop == null) return def;
         var config = LoggerConfig.OFF;
         for (var s : prop.split(",")) {
@@ -569,76 +560,6 @@ public final class Utils {
 
     private Utils() { }
 
-    /**
-     * Returns the security permissions required to connect to the proxy, or
-     * {@code null} if none is required or applicable.
-     */
-    public static URLPermission permissionForProxy(InetSocketAddress proxyAddress) {
-        if (proxyAddress == null)
-            return null;
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("socket://")
-          .append(proxyAddress.getHostString()).append(":")
-          .append(proxyAddress.getPort());
-        String urlString = sb.toString();
-        return new URLPermission(urlString, "CONNECT");
-    }
-
-    /**
-     * Returns the security permissions required to connect to an alternate
-     * service, or {@code null} if none is required or applicable.
-     */
-    public static URLPermission permissionForAltService(String altSvcAuthority) {
-        if (altSvcAuthority == null)
-            return null;
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("socket://")
-                .append(altSvcAuthority);
-        String urlString = sb.toString();
-        return new URLPermission(urlString, "CONNECT");
-    }
-
-    public static String hostString(InetSocketAddress address) {
-        String hostString = address.getHostString();
-        if (hostString.indexOf(':') > -1) {
-            return "[" + hostString + "]:" + address.getPort();
-        } else {
-            return hostString + ":" + address.getPort();
-        }
-    }
-
-    public static String hostString(URI uri) {
-        String hostString = uri.getHost();
-        if (hostString.indexOf(':') > -1
-                && hostString.indexOf('[') != 0
-                && hostString.lastIndexOf(']') != hostString.length() - 1) {
-            return "[" + hostString + "]:" + uri.getPort();
-        } else {
-            return hostString + ":" + uri.getPort();
-        }
-    }
-
-    /**
-     * Returns the security permission required for the given details.
-     */
-    public static URLPermission permissionForServer(URI uri,
-                                                    String method,
-                                                    Stream<String> headers) {
-        String urlString = new StringBuilder()
-                .append(uri.getScheme()).append("://")
-                .append(uri.getRawAuthority())
-                .append(uri.getRawPath()).toString();
-
-        StringBuilder actionStringBuilder = new StringBuilder(method);
-        String collected = headers.collect(joining(","));
-        if (!collected.isEmpty()) {
-            actionStringBuilder.append(":").append(collected);
-        }
-        return new URLPermission(urlString, actionStringBuilder.toString());
-    }
-
     private static final boolean[] LOWER_CASE_CHARS = new boolean[128];
 
     // ABNF primitives defined in RFC 7230
@@ -749,40 +670,29 @@ public final class Utils {
         return true;
     }
 
-    @SuppressWarnings("removal")
     public static int getIntegerNetProperty(String name, int defaultValue) {
-        return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-                NetProperties.getInteger(name, defaultValue));
+        return NetProperties.getInteger(name, defaultValue);
     }
 
-    @SuppressWarnings("removal")
     public static String getNetProperty(String name) {
-        return AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                NetProperties.get(name));
+        return NetProperties.get(name);
     }
 
-    @SuppressWarnings("removal")
     public static boolean getBooleanProperty(String name, boolean def) {
-        return AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
-                Boolean.parseBoolean(System.getProperty(name, String.valueOf(def))));
+        return Boolean.parseBoolean(System.getProperty(name, String.valueOf(def)));
     }
 
-    @SuppressWarnings("removal")
     public static String getProperty(String name) {
-        return AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                System.getProperty(name));
+        return System.getProperty(name);
     }
 
-    @SuppressWarnings("removal")
     public static int getIntegerProperty(String name, int defaultValue) {
-        return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-                Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue))));
+        return Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue)));
     }
 
     @SuppressWarnings("removal")
     public static long getLongProperty(String name, long defaultValue) {
-        return AccessController.doPrivileged((PrivilegedAction<Long>) () ->
-                Long.parseLong(System.getProperty(name, String.valueOf(defaultValue))));
+        return Long.parseLong(System.getProperty(name, String.valueOf(defaultValue)));
     }
 
     public static int getIntegerNetProperty(String property, int min, int max, int defaultValue, boolean log) {

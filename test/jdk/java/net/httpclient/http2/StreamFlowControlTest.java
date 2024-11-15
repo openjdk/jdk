@@ -52,7 +52,6 @@ import java.util.function.Consumer;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpHeadOrGetHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.httpclient.test.lib.http2.BodyOutputStream;
@@ -280,7 +279,7 @@ public class StreamFlowControlTest {
         this.https2TestServer.start();
 
         // warmup to eliminate delay due to SSL class loading and initialization.
-        try (var client = HttpClient.newBuilder().sslContext(sslContext).build();) {
+        try (var client = HttpClient.newBuilder().sslContext(sslContext).build()) {
             var request = HttpRequest.newBuilder(URI.create(h2Head)).HEAD().build();
             var resp = client.send(request, BodyHandlers.discarding());
             assertEquals(resp.statusCode(), 200);
@@ -350,8 +349,10 @@ public class StreamFlowControlTest {
             } finally {
                 if (t instanceof FCHttp2TestExchange fct) {
                     fct.responseSent(query);
-                } else fail("Exchange is not %s but %s"
-                        .formatted(FCHttp2TestExchange.class.getName(), t.getClass().getName()));
+                } else {
+                    fail("Exchange is not %s but %s"
+                            .formatted(FCHttp2TestExchange.class.getName(), t.getClass().getName()));
+                }
             }
         }
     }

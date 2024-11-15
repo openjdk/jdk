@@ -32,14 +32,12 @@ import java.util.List;
 
 import jdk.internal.classfile.impl.StackMapDecoder;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models stack map frame of {@code StackMapTable} attribute (JVMS {@jvms 4.7.4}).
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface StackMapFrameInfo
             permits StackMapDecoder.StackMapFrameImpl {
 
@@ -79,9 +77,8 @@ public sealed interface StackMapFrameInfo
     /**
      * The type of a stack value.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface VerificationTypeInfo {
 
         /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#TOP TOP}. */
@@ -124,9 +121,8 @@ public sealed interface StackMapFrameInfo
     /**
      * A simple stack value.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public enum SimpleVerificationTypeInfo implements VerificationTypeInfo {
 
         /** verification type top */
@@ -166,9 +162,8 @@ public sealed interface StackMapFrameInfo
     /**
      * A stack value for an object type. Its {@link #tag() tag} is {@value #ITEM_OBJECT}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ObjectVerificationTypeInfo extends VerificationTypeInfo
             permits StackMapDecoder.ObjectVerificationTypeInfoImpl {
 
@@ -205,9 +200,8 @@ public sealed interface StackMapFrameInfo
     /**
      * An uninitialized stack value. Its {@link #tag() tag} is {@value #ITEM_UNINITIALIZED}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface UninitializedVerificationTypeInfo extends VerificationTypeInfo
             permits StackMapDecoder.UninitializedVerificationTypeInfoImpl {
 

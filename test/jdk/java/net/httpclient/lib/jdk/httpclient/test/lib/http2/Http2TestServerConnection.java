@@ -1443,6 +1443,7 @@ public class Http2TestServerConnection {
         final HttpHeaders pseudoHeaders;
         final HttpHeaders headers;
         final BiPredicate<CharSequence, CharSequence> insertionPolicy;
+
         final int maxFrameSize;
 
         public ResponseHeaders(HttpHeaders pseudoHeaders, HttpHeaders headers) {

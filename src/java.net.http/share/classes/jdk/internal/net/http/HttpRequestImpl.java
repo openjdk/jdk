@@ -32,9 +32,6 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
@@ -68,8 +65,6 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     final boolean secure;
     final boolean expectContinue;
     private volatile boolean isWebSocket;
-    @SuppressWarnings("removal")
-    private volatile AccessControlContext acc;
     private final Duration timeout;  // may be null
     private final Optional<HttpClient.Version> version;
     // An alternative would be to have one field per supported option
@@ -78,9 +73,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     private volatile boolean userSetProxyAuthorization;
 
     private static String userAgent() {
-        PrivilegedAction<String> pa = () -> System.getProperty("java.version");
-        @SuppressWarnings("removal")
-        String version = AccessController.doPrivileged(pa);
+        String version = System.getProperty("java.version");
         return "Java-http-client/" + version;
     }
 
@@ -203,7 +196,6 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.expectContinue = other.expectContinue;
         this.secure = uri.getScheme().toLowerCase(Locale.US).equals("https");
         this.requestPublisher = mayHaveBody ? publisher(other) : null; // may be null
-        this.acc = other.acc;
         this.timeout = other.timeout;
         this.version = other.version();
         this.authority = null;
@@ -308,7 +300,6 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.expectContinue = parent.expectContinue;
         this.secure = parent.secure;
         this.requestPublisher = parent.requestPublisher;
-        this.acc = parent.acc;
         this.timeout = parent.timeout;
         this.version = parent.version;
         this.authority = null;
@@ -435,7 +426,6 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         systemHeadersBuilder.setHeader(name, value);
     }
 
-    @SuppressWarnings("removal")
     InetSocketAddress getAddress() {
         URI uri = uri();
         if (uri == null) {
@@ -452,8 +442,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         final String host = uri.getHost();
         final int port = p;
         if (proxy() == null) {
-            PrivilegedAction<InetSocketAddress> pa = () -> new InetSocketAddress(host, port);
-            return AccessController.doPrivileged(pa);
+            return new InetSocketAddress(host, port);
         } else {
             return InetSocketAddress.createUnresolved(host, port);
         }

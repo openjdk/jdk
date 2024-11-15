@@ -218,28 +218,14 @@ public class ImportModule extends TestRunner {
         List<String> actualErrors;
         List<String> expectedErrors;
 
-        actualErrors =
-                new JavacTask(tb)
-                    .options("--enable-preview", "--release", SOURCE_VERSION,
-                             "-XDrawDiagnostics")
-                    .outdir(classes)
-                    .files(tb.findJavaFiles(src))
-                    .run(Task.Expect.FAIL)
-                    .writeAll()
-                    .getOutputLines(Task.OutputKind.DIRECT);
-
-        expectedErrors = List.of(
-                "Test.java:5:5: compiler.err.ref.ambiguous: Logger, kindname.interface, java.lang.System.Logger, java.lang.System, kindname.class, java.util.logging.Logger, java.util.logging",
-                "- compiler.note.preview.filename: Test.java, DEFAULT",
-                "- compiler.note.preview.recompile",
-                "1 error"
-        );
-
-        if (!Objects.equals(expectedErrors, actualErrors)) {
-            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
-                                      ", actual: " + out);
-
-        }
+        new JavacTask(tb)
+            .options("--enable-preview", "--release", SOURCE_VERSION,
+                     "-XDrawDiagnostics")
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run(Task.Expect.SUCCESS)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
 
         tb.writeJavaFiles(src,
                           """
@@ -793,7 +779,7 @@ public class ImportModule extends TestRunner {
 
         if (!Objects.equals(expectedErrors, actualErrors)) {
             throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
-                                      ", actual: " + out);
+                                      ", actual: " + actualErrors);
 
         }
     }
@@ -843,4 +829,94 @@ public class ImportModule extends TestRunner {
         }
     }
 
+    public void testPackageImportDisambiguates(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        Path ma = src.resolve("ma");
+        tb.writeJavaFiles(ma,
+                          """
+                          module ma {
+                             exports ma.p1;
+                          }
+                          """,
+                          """
+                          package ma.p1;
+                          public class A {}
+                          """);
+        Path mb = src.resolve("mb");
+        tb.writeJavaFiles(mb,
+                          """
+                          module mb {
+                             exports mb.p1;
+                          }
+                          """,
+                          """
+                          package mb.p1;
+                          public class A {}
+                          """);
+        Path test = src.resolve("test");
+        tb.writeJavaFiles(test,
+                          """
+                          module test {
+                              requires ma;
+                              requires mb;
+                          }
+                          """,
+                          """
+                          package test;
+                          import module ma;
+                          import module mb;
+                          public class Test {
+                              A a;
+                          }
+                          """);
+
+        Files.createDirectories(classes);
+
+        List<String> actualErrors = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--enable-preview", "--release", SOURCE_VERSION,
+                         "--module-source-path", src.toString())
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expectedErrors = List.of(
+                "Test.java:5:5: compiler.err.ref.ambiguous: A, kindname.class, mb.p1.A, mb.p1, kindname.class, ma.p1.A, ma.p1",
+                "- compiler.note.preview.filename: Test.java, DEFAULT",
+                "- compiler.note.preview.recompile",
+                "1 error"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
+                                      ", actual: " + actualErrors);
+
+        }
+
+        tb.writeJavaFiles(test,
+                          """
+                          package test;
+                          import module ma;
+                          import module mb;
+                          import mb.p1.*;
+                          public class Test {
+                              A a;
+                          }
+                          """);
+
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--enable-preview", "--release", SOURCE_VERSION,
+                         "--module-source-path", src.toString())
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll();
+    }
 }
