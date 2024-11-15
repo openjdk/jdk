@@ -3415,7 +3415,10 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   if (cl->is_pre_loop() || cl->is_post_loop()) return true;
 
   // TODO check if still to be stalled.
-  if (cl->is_multiversion_stalled_slow_loop()) { return true; }
+  if (cl->is_multiversion_stalled_slow_loop() &&
+      !phase->try_unstall_multiversion_stalled_slow_loop(this)) {
+    return true;
+  }
 
   // Compute loop trip count from profile data
   compute_profile_trip_cnt(phase);

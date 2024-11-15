@@ -460,6 +460,41 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
   return new_if_true;
 }
 
+OpaqueAutoVectorizationMultiversioningNode* find_multiversion_opaque_from_multiversion_if_false(Node* maybe_multiversion_if_false) {
+  IfFalseNode* multiversion_if_false = maybe_multiversion_if_false->isa_IfFalse();
+  if (multiversion_if_false == nullptr) { return nullptr; }
+  IfNode* multiversion_if = multiversion_if_false->in(0)->isa_If();
+  if (multiversion_if == nullptr) { return nullptr; }
+  return multiversion_if->in(1)->isa_OpaqueAutoVectorizationMultiversioning();
+}
+
+bool PhaseIdealLoop::try_unstall_multiversion_stalled_slow_loop(IdealLoopTree* lpt) {
+  CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+  assert(cl->is_multiversion_stalled_slow_loop(), "must currently be stalled");
+
+  // Find multiversion_if.
+  Node* entry = cl->skip_strip_mined()->in(LoopNode::EntryControl);
+  const Predicates predicates(entry);
+
+  Node* slow_path = predicates.entry();
+
+  // Find opaque.
+  OpaqueAutoVectorizationMultiversioningNode* opaque = nullptr;
+  if (slow_path->is_Region()) {
+    for (uint i = 1; i < slow_path->req(); i++) {
+      Node* n = slow_path->in(i);
+      opaque = find_multiversion_opaque_from_multiversion_if_false(n);
+      if (opaque != nullptr) { break; }
+    }
+  } else {
+    opaque = find_multiversion_opaque_from_multiversion_if_false(slow_path);
+  }
+  assert(opaque != nullptr, "must have found multiversion opaque node");
+
+  // TODO
+  return false;
+}
+
 bool PhaseIdealLoop::has_control_dependencies_from_predicates(LoopNode* head) {
   Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
   const Predicates predicates(entry);
