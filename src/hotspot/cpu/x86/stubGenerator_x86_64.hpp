@@ -497,6 +497,10 @@ class StubGenerator: public StubCodeGenerator {
   address generate_intpoly_montgomeryMult_P256();
   address generate_intpoly_assign();
 
+  // SHA3 stubs
+  void generate_sha3_stubs();
+  address generate_sha3_implCompress(bool multiBlock, const char *name);
+
   // BASE64 stubs
 
   address base64_shuffle_addr();
@@ -597,6 +601,8 @@ class StubGenerator: public StubCodeGenerator {
   // TODO: will probably need multiple return barriers depending on return type
   address generate_cont_returnBarrier();
   address generate_cont_returnBarrier_exception();
+
+  address generate_cont_preempt_stub();
 
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception

@@ -25,6 +25,7 @@
 package java.lang.classfile;
 
 import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -65,7 +66,7 @@ public sealed interface Attribute<A extends Attribute<A>>
     /**
      * {@return the name of the attribute}
      */
-    String attributeName();
+    Utf8Entry attributeName();
 
     /**
      * {@return the {@link AttributeMapper} associated with this attribute}
