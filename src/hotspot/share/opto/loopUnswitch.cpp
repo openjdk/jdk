@@ -401,6 +401,7 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
   set_ctrl(one, C->root());
   Node* opaque = new OpaqueAutoVectorizationMultiversioningNode(C, one);
   set_ctrl(opaque, C->root());
+  _igvn.set_type(opaque, TypeInt::BOOL);
 
   const LoopSelector loop_selector(lpt, opaque, PROB_FAIR, COUNT_UNKNOWN);
   OriginalLoop original_loop(lpt, old_new);

@@ -98,6 +98,7 @@ class OpaqueAutoVectorizationMultiversioningNode : public Opaque1Node {
     init_class_id(Class_OpaqueAutoVectorizationMultiversioning);
   }
   virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
 
 // This node is used in the context of intrinsics. We sometimes implicitly know that an object is non-null even though
