@@ -28,7 +28,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
 
 /**
- * @test 
+ * @test
  * @summary Test verifies that jstack --mixed print information about VM locks
  * @requires vm.hasSA
  * @requires vm.flagless
