@@ -251,7 +251,7 @@ public class WindowsHelper {
     }
 
     private static long[] findAppLauncherPIDs(JPackageCommand cmd, String launcherName) {
-        // Get the list of PIDs and PPIDs of app launcher processes. Run setWinEnableUTF8(true) for JDK-XXXXXXX.
+        // Get the list of PIDs and PPIDs of app launcher processes. Run setWinEnableUTF8(true) for JDK-8344275.
         // wmic process where (name = "foo.exe") get ProcessID,ParentProcessID
         List<String> output = Executor.of("wmic", "process", "where", "(name",
                 "=",
