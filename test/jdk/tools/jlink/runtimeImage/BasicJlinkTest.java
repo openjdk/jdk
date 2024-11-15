@@ -39,7 +39,7 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g BasicJlinkTest false
+ * @run main/othervm -Xmx2g BasicJlinkTest false
  */
 public class BasicJlinkTest extends AbstractLinkableRuntimeTest {
 
