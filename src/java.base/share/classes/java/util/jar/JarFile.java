@@ -28,7 +28,6 @@ package java.util.jar;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.misc.ThreadTracker;
-import sun.security.action.GetPropertyAction;
 import sun.security.util.ManifestEntryVerifier;
 import sun.security.util.SignatureFileVerifier;
 
@@ -171,7 +170,7 @@ public class JarFile extends ZipFile {
         // multi-release jar file versions >= 9
         BASE_VERSION = Runtime.Version.parse(Integer.toString(8));
         BASE_VERSION_FEATURE = BASE_VERSION.feature();
-        String jarVersion = GetPropertyAction.privilegedGetProperty("jdk.util.jar.version");
+        String jarVersion = System.getProperty("jdk.util.jar.version");
         int runtimeVersion = Runtime.version().feature();
         if (jarVersion != null) {
             int jarVer = Integer.parseInt(jarVersion);
@@ -180,8 +179,8 @@ public class JarFile extends ZipFile {
                     : Math.max(jarVer, BASE_VERSION_FEATURE);
         }
         RUNTIME_VERSION = Runtime.Version.parse(Integer.toString(runtimeVersion));
-        String enableMultiRelease = GetPropertyAction
-                .privilegedGetProperty("jdk.util.jar.enableMultiRelease", "true");
+        String enableMultiRelease = System.
+                getProperty("jdk.util.jar.enableMultiRelease", "true");
         switch (enableMultiRelease) {
             case "false" -> {
                 MULTI_RELEASE_ENABLED = false;

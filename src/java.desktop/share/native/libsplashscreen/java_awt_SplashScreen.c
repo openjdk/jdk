@@ -122,7 +122,7 @@ Java_java_awt_SplashScreen__1getBounds(JNIEnv * env, jclass thisClass,
     if (clazz && mid) {
         bounds = (*env)->NewObject(env, clazz, mid, splash->x, splash->y,
             splash->width, splash->height);
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             bounds = NULL;
             (*env)->ExceptionDescribe(env);
             (*env)->ExceptionClear(env);

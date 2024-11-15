@@ -33,6 +33,7 @@
  * @run main TestPreview
  */
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import javadoc.tester.JavadocTester;
 
@@ -208,5 +209,19 @@ public class TestPreview extends JavadocTester {
 
         checkOutput("java.base/preview/NoPreview.html", false,
                     "refers to one or more preview");
+    }
+
+    @Test
+    public void testRequiresTransitiveJavaBase() {
+        Path src = Paths.get(testSrc, "requiresTransitiveJavaBase");
+        javadoc("-d", "out-requires-transitive-java-base",
+                "-XDforcePreview", "--enable-preview", "-source", System.getProperty("java.specification.version"),
+                "--module-source-path", src.toString(),
+                "--module", "m",
+                "--expand-requires", "transitive");
+        checkExit(Exit.OK);
+
+        checkOutput("m/module-summary.html", true,
+                    "Indirect exports from the <code>java.base</code> module are");
     }
 }
