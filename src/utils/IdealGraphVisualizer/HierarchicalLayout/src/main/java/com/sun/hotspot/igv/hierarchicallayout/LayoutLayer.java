@@ -201,23 +201,35 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
      * Adjusts the X-coordinates of nodes to ensure minimum spacing between them.
      */
     public void sortNodesByX() {
-        if (this.isEmpty()) return;
+        if (isEmpty()) return;
 
-        // Sort nodes in the layer increasingly by x
-        this.sort(NODE_X_COMPARATOR);
+        sort(NODE_X_COMPARATOR); // Sort nodes in the layer increasingly by x
 
-        int pos = 0;
-        int minX = this.get(0).getX(); // Starting X position for the first node
+        updateNodeIndices();
+        updateMinXSpacing();
+    }
 
+    /**
+     * Adjusts the X-coordinates of the nodes to ensure a minimum spacing between them.
+     * The spacing is determined by each node's outer width and a predefined node offset.
+     * This method ensures that nodes do not overlap and are positioned correctly along the X-axis.
+     */
+    public void updateMinXSpacing() {
+        if (isEmpty()) {
+            return; // If the list is empty, there's no need to adjust spacing.
+        }
+
+        // Starting X position for the first node.
+        int minX = this.get(0).getX();
+
+        // Iterate over each node in the layer.
         for (LayoutNode node : this) {
-            node.setPos(pos);
-            pos++;
-
-            // Set the X position of the node to at least minX, ensuring spacing
+            // Calculate the new X position, ensuring it's at least minX.
             int x = Math.max(node.getX(), minX);
-            node.setX(x);
+            node.setX(x); // Set the adjusted X position for the node.
 
-            // Update minX for the next node based on the current node's outer width and offset
+            // Update minX for the next node.
+            // The new minX is the current node's X position plus its width and the node offset.
             minX = x + node.getOuterWidth() + NODE_OFFSET;
         }
     }
@@ -232,6 +244,14 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
             layoutNode.setPos(pos);
             pos++;
         }
+    }
+
+    /**
+     * Updates position indices and adjusts X-coordinates to ensure minimum spacing.
+     */
+    public void updateIndicesAndSpacing() {
+        updateNodeIndices();
+        updateMinXSpacing();
     }
 
     /**
