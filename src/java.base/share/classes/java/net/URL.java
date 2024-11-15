@@ -30,8 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.spi.URLStreamHandlerProvider;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Hashtable;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
@@ -48,8 +46,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
 import sun.net.util.IPAddressUtil;
-import sun.security.util.SecurityConstants;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Class {@code URL} represents a Uniform Resource
@@ -485,14 +481,6 @@ public final class URL implements java.io.Serializable {
     @Deprecated(since = "20")
     public URL(String protocol, String host, int port, String file,
                URLStreamHandler handler) throws MalformedURLException {
-        if (handler != null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                // check for permission to specify a handler
-                checkSpecifyHandler(sm);
-            }
-        }
 
         protocol = lowerCaseProtocol(protocol);
         this.protocol = protocol;
@@ -684,13 +672,6 @@ public final class URL implements java.io.Serializable {
         boolean isRelative = false;
 
         // Check for permission to specify a handler
-        if (handler != null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                checkSpecifyHandler(sm);
-            }
-        }
 
         try {
             limit = spec.length();
@@ -910,13 +891,6 @@ public final class URL implements java.io.Serializable {
             }
         }
         return true;
-    }
-
-    /*
-     * Checks for permission to specify a stream handler.
-     */
-    private void checkSpecifyHandler(@SuppressWarnings("removal") SecurityManager sm) {
-        sm.checkPermission(SecurityConstants.SPECIFY_HANDLER_PERMISSION);
     }
 
     /**
@@ -1271,16 +1245,6 @@ public final class URL implements java.io.Serializable {
 
         // Create a copy of Proxy as a security measure
         Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY : sun.net.ApplicationProxy.create(proxy);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (p.type() != Proxy.Type.DIRECT && sm != null) {
-            InetSocketAddress epoint = (InetSocketAddress) p.address();
-            if (epoint.isUnresolved())
-                sm.checkConnect(epoint.getHostName(), epoint.getPort());
-            else
-                sm.checkConnect(epoint.getAddress().getHostAddress(),
-                                epoint.getPort());
-        }
         return handler.openConnection(this, p);
     }
 
@@ -1358,11 +1322,6 @@ public final class URL implements java.io.Serializable {
             if (factory != null) {
                 throw new Error("factory already defined");
             }
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkSetFactory();
-            }
             handlers.clear();
 
             // safe publication of URLStreamHandlerFactory with volatile write
@@ -1398,8 +1357,7 @@ public final class URL implements java.io.Serializable {
     }
 
     private static URLStreamHandler lookupViaProperty(String protocol) {
-        String packagePrefixList =
-                GetPropertyAction.privilegedGetProperty(protocolPathProp);
+        String packagePrefixList = System.getProperty(protocolPathProp);
         if (packagePrefixList == null || packagePrefixList.isEmpty()) {
             // not set
             return null;
@@ -1488,26 +1446,20 @@ public final class URL implements java.io.Serializable {
         ThreadTrackHolder.TRACKER.end(key);
     }
 
-    @SuppressWarnings("removal")
     private static URLStreamHandler lookupViaProviders(final String protocol) {
         Object key = tryBeginLookup();
         if (key == null) {
             throw new Error("Circular loading of URL stream handler providers detected");
         }
         try {
-            return AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public URLStreamHandler run() {
-                        Iterator<URLStreamHandlerProvider> itr = providers();
-                        while (itr.hasNext()) {
-                            URLStreamHandlerProvider f = itr.next();
-                            URLStreamHandler h = f.createURLStreamHandler(protocol);
-                            if (h != null)
-                                return h;
-                        }
-                        return null;
-                    }
-                });
+            Iterator<URLStreamHandlerProvider> itr = providers();
+            while (itr.hasNext()) {
+                URLStreamHandlerProvider f = itr.next();
+                URLStreamHandler h = f.createURLStreamHandler(protocol);
+                if (h != null)
+                    return h;
+            }
+            return null;
         } finally {
             endLookup(key);
         }
