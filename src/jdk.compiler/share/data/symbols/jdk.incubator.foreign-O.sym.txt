@@ -46,3 +46,13 @@ method name fill descriptor (B)Ljava/lang/foreign/MemorySegment; flags 11 runtim
 method name checkEnclosingLayout descriptor (JLjava/lang/foreign/MemoryLayout;Z)V flags 11 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name ofBuffer descriptor (Ljava/nio/Buffer;)Ljdk/internal/foreign/AbstractMemorySegmentImpl; flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
+class name jdk/internal/foreign/GlobalSession
+-method name isCloseable descriptor ()Z
+
+class name jdk/internal/foreign/ImplicitSession
+-method name isCloseable descriptor ()Z
+
+class name jdk/internal/foreign/MemorySessionImpl
+-method name isCloseable descriptor ()Z
+method name isCloseable descriptor ()Z flags 11
+

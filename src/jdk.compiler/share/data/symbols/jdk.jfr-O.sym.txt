@@ -29,3 +29,11 @@
 module name jdk.jfr
 header exports jdk/jfr,jdk/jfr/consumer requires name\u0020;java.base\u0020;flags\u0020;8000 target macos-aarch64 moduleMainClass jdk/jfr/internal/tool/Main flags 8000 classAnnotations @Ljdk/internal/javac/ParticipatesInPreview;
 
+class name jdk/jfr/FlightRecorder
+-method name getFlightRecorder descriptor ()Ljdk/jfr/FlightRecorder;
+-method name addPeriodicEvent descriptor (Ljava/lang/Class;Ljava/lang/Runnable;)V
+-method name removePeriodicEvent descriptor (Ljava/lang/Runnable;)Z
+method name getFlightRecorder descriptor ()Ljdk/jfr/FlightRecorder; thrownTypes java/lang/IllegalStateException flags 9
+method name addPeriodicEvent descriptor (Ljava/lang/Class;Ljava/lang/Runnable;)V flags 9 signature (Ljava/lang/Class<+Ljdk/jfr/Event;>;Ljava/lang/Runnable;)V
+method name removePeriodicEvent descriptor (Ljava/lang/Runnable;)Z flags 9
+

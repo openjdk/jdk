@@ -27,14 +27,64 @@
 # ##########################################################
 #
 module name java.base
-header exports java/io,java/lang,java/lang/annotation,java/lang/classfile,java/lang/classfile/attribute,java/lang/classfile/components,java/lang/classfile/constantpool,java/lang/classfile/instruction,java/lang/constant,java/lang/foreign,java/lang/invoke,java/lang/module,java/lang/ref,java/lang/reflect,java/lang/runtime,java/math,java/net,java/net/spi,java/nio,java/nio/channels,java/nio/channels/spi,java/nio/charset,java/nio/charset/spi,java/nio/file,java/nio/file/attribute,java/nio/file/spi,java/security,java/security/cert,java/security/interfaces,java/security/spec,java/text,java/text/spi,java/time,java/time/chrono,java/time/format,java/time/temporal,java/time/zone,java/util,java/util/concurrent,java/util/concurrent/atomic,java/util/concurrent/locks,java/util/function,java/util/jar,java/util/random,java/util/regex,java/util/spi,java/util/stream,java/util/zip,javax/crypto,javax/crypto/interfaces,javax/crypto/spec,javax/net,javax/net/ssl,javax/security/auth,javax/security/auth/callback,javax/security/auth/login,javax/security/auth/spi,javax/security/auth/x500,javax/security/cert,jdk/internal/event[jdk.jfr],jdk/internal/vm/vector[jdk.incubator.vector] extraModulePackages jdk/internal/access/foreign,jdk/internal/classfile/impl,jdk/internal/constant,jdk/internal/foreign/abi,jdk/internal/foreign/abi/aarch64/linux,jdk/internal/foreign/abi/aarch64/macos,jdk/internal/foreign/abi/aarch64/windows,jdk/internal/foreign/abi/fallback,jdk/internal/foreign/abi/ppc64/aix,jdk/internal/foreign/abi/ppc64/linux,jdk/internal/foreign/abi/riscv64/linux,jdk/internal/foreign/abi/s390/linux,jdk/internal/foreign/abi/x64/sysv,jdk/internal/foreign/abi/x64/windows,jdk/internal/foreign/layout,sun/nio/ch,sun/net,jdk/internal/foreign,jdk/internal/foreign,sun/net,sun/nio/ch uses java/lang/System$LoggerFinder,java/net/ContentHandlerFactory,java/net/spi/InetAddressResolverProvider,java/net/spi/URLStreamHandlerProvider,java/nio/channels/spi/AsynchronousChannelProvider,java/nio/channels/spi/SelectorProvider,java/nio/charset/spi/CharsetProvider,java/nio/file/spi/FileSystemProvider,java/nio/file/spi/FileTypeDetector,java/security/Provider,java/text/spi/BreakIteratorProvider,java/text/spi/CollatorProvider,java/text/spi/DateFormatProvider,java/text/spi/DateFormatSymbolsProvider,java/text/spi/DecimalFormatSymbolsProvider,java/text/spi/NumberFormatProvider,java/time/chrono/AbstractChronology,java/time/chrono/Chronology,java/time/zone/ZoneRulesProvider,java/util/spi/CalendarDataProvider,java/util/spi/CalendarNameProvider,java/util/spi/CurrencyNameProvider,java/util/spi/LocaleNameProvider,java/util/spi/ResourceBundleControlProvider,java/util/spi/ResourceBundleProvider,java/util/spi/TimeZoneNameProvider,java/util/spi/ToolProvider,javax/security/auth/spi/LoginModule,jdk/internal/io/JdkConsoleProvider,jdk/internal/logger/DefaultLoggerFinder,sun/text/spi/JavaTimeDateTimePatternProvider,sun/util/locale/provider/LocaleDataMetaInfo,sun/util/resources/LocaleData$CommonResourceBundleProvider,sun/util/resources/LocaleData$SupplementaryResourceBundleProvider,sun/util/spi/CalendarProvider provides interface\u0020;java/nio/file/spi/FileSystemProvider\u0020;impls\u0020;jdk/internal/jrtfs/JrtFileSystemProvider target macos-aarch64 flags 8000
+header exports java/io,java/lang,java/lang/annotation,java/lang/classfile,java/lang/classfile/attribute,java/lang/classfile/components,java/lang/classfile/constantpool,java/lang/classfile/instruction,java/lang/constant,java/lang/foreign,java/lang/invoke,java/lang/module,java/lang/ref,java/lang/reflect,java/lang/runtime,java/math,java/net,java/net/spi,java/nio,java/nio/channels,java/nio/channels/spi,java/nio/charset,java/nio/charset/spi,java/nio/file,java/nio/file/attribute,java/nio/file/spi,java/security,java/security/cert,java/security/interfaces,java/security/spec,java/text,java/text/spi,java/time,java/time/chrono,java/time/format,java/time/temporal,java/time/zone,java/util,java/util/concurrent,java/util/concurrent/atomic,java/util/concurrent/locks,java/util/function,java/util/jar,java/util/random,java/util/regex,java/util/spi,java/util/stream,java/util/zip,javax/crypto,javax/crypto/interfaces,javax/crypto/spec,javax/net,javax/net/ssl,javax/security/auth,javax/security/auth/callback,javax/security/auth/login,javax/security/auth/spi,javax/security/auth/x500,javax/security/cert,jdk/internal/event[jdk.jfr],jdk/internal/javac[java.compiler\u005C;u002C;java.desktop\u005C;u002C;jdk.compiler\u005C;u002C;jdk.incubator.vector\u005C;u002C;jdk.jartool\u005C;u002C;jdk.jdeps\u005C;u002C;jdk.jfr\u005C;u002C;jdk.jlink\u005C;u002C;jdk.jshell],jdk/internal/vm/vector[jdk.incubator.vector] extraModulePackages jdk/internal/access/foreign,jdk/internal/classfile/impl,jdk/internal/constant,jdk/internal/foreign/abi,jdk/internal/foreign/abi/aarch64/linux,jdk/internal/foreign/abi/aarch64/macos,jdk/internal/foreign/abi/aarch64/windows,jdk/internal/foreign/abi/fallback,jdk/internal/foreign/abi/ppc64/aix,jdk/internal/foreign/abi/ppc64/linux,jdk/internal/foreign/abi/riscv64/linux,jdk/internal/foreign/abi/s390/linux,jdk/internal/foreign/abi/x64/sysv,jdk/internal/foreign/abi/x64/windows,jdk/internal/foreign/layout,sun/nio/ch,sun/net,jdk/internal/foreign,jdk/internal/foreign,sun/net,sun/nio/ch uses java/lang/System$LoggerFinder,java/net/ContentHandlerFactory,java/net/spi/InetAddressResolverProvider,java/net/spi/URLStreamHandlerProvider,java/nio/channels/spi/AsynchronousChannelProvider,java/nio/channels/spi/SelectorProvider,java/nio/charset/spi/CharsetProvider,java/nio/file/spi/FileSystemProvider,java/nio/file/spi/FileTypeDetector,java/security/Provider,java/text/spi/BreakIteratorProvider,java/text/spi/CollatorProvider,java/text/spi/DateFormatProvider,java/text/spi/DateFormatSymbolsProvider,java/text/spi/DecimalFormatSymbolsProvider,java/text/spi/NumberFormatProvider,java/time/chrono/AbstractChronology,java/time/chrono/Chronology,java/time/zone/ZoneRulesProvider,java/util/spi/CalendarDataProvider,java/util/spi/CalendarNameProvider,java/util/spi/CurrencyNameProvider,java/util/spi/LocaleNameProvider,java/util/spi/ResourceBundleControlProvider,java/util/spi/ResourceBundleProvider,java/util/spi/TimeZoneNameProvider,java/util/spi/ToolProvider,javax/security/auth/spi/LoginModule,jdk/internal/io/JdkConsoleProvider,jdk/internal/logger/DefaultLoggerFinder,sun/text/spi/JavaTimeDateTimePatternProvider,sun/util/locale/provider/LocaleDataMetaInfo,sun/util/resources/LocaleData$CommonResourceBundleProvider,sun/util/resources/LocaleData$SupplementaryResourceBundleProvider,sun/util/spi/CalendarProvider provides interface\u0020;java/nio/file/spi/FileSystemProvider\u0020;impls\u0020;jdk/internal/jrtfs/JrtFileSystemProvider target macos-aarch64 flags 8000
+
+class name java/io/ByteArrayOutputStream
+-method name writeTo descriptor (Ljava/io/OutputStream;)V
+method name writeTo descriptor (Ljava/io/OutputStream;)V thrownTypes java/io/IOException flags 21
+
+class name java/io/ObjectInputStream
+-method name <init> descriptor ()V
+-method name enableResolveObject descriptor (Z)Z
+method name <init> descriptor ()V thrownTypes java/io/IOException flags 4
+method name enableResolveObject descriptor (Z)Z flags 4
+
+class name java/io/ObjectOutputStream
+-method name <init> descriptor ()V
+-method name enableReplaceObject descriptor (Z)Z
+method name <init> descriptor ()V thrownTypes java/io/IOException flags 4
+method name enableReplaceObject descriptor (Z)Z flags 4
 
 class name java/io/Reader
 method name of descriptor (Ljava/lang/CharSequence;)Ljava/io/Reader; flags 9
 
 class name java/lang/Class
 -method name getSigners descriptor ()[Ljava/lang/Object;
+-method name getEnclosingMethod descriptor ()Ljava/lang/reflect/Method;
+-method name getEnclosingConstructor descriptor ()Ljava/lang/reflect/Constructor;
+-method name getDeclaringClass descriptor ()Ljava/lang/Class;
+-method name getEnclosingClass descriptor ()Ljava/lang/Class;
+-method name getFields descriptor ()[Ljava/lang/reflect/Field;
+-method name getMethods descriptor ()[Ljava/lang/reflect/Method;
+-method name getConstructors descriptor ()[Ljava/lang/reflect/Constructor;
+-method name getField descriptor (Ljava/lang/String;)Ljava/lang/reflect/Field;
+-method name getMethod descriptor (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
+-method name getConstructor descriptor ([Ljava/lang/Class;)Ljava/lang/reflect/Constructor;
+-method name getDeclaredClasses descriptor ()[Ljava/lang/Class;
+-method name getDeclaredFields descriptor ()[Ljava/lang/reflect/Field;
+-method name getDeclaredMethods descriptor ()[Ljava/lang/reflect/Method;
+-method name getDeclaredConstructors descriptor ()[Ljava/lang/reflect/Constructor;
+-method name getDeclaredField descriptor (Ljava/lang/String;)Ljava/lang/reflect/Field;
+-method name getDeclaredMethod descriptor (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
+-method name getDeclaredConstructor descriptor ([Ljava/lang/Class;)Ljava/lang/reflect/Constructor;
 method name getSigners descriptor ()[Ljava/lang/Object; flags 1
+method name getEnclosingMethod descriptor ()Ljava/lang/reflect/Method; flags 1 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getEnclosingConstructor descriptor ()Ljava/lang/reflect/Constructor; flags 1 signature ()Ljava/lang/reflect/Constructor<*>; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getDeclaringClass descriptor ()Ljava/lang/Class; flags 1 signature ()Ljava/lang/Class<*>; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getEnclosingClass descriptor ()Ljava/lang/Class; flags 1 signature ()Ljava/lang/Class<*>; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getFields descriptor ()[Ljava/lang/reflect/Field; flags 1 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getMethods descriptor ()[Ljava/lang/reflect/Method; flags 1 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getConstructors descriptor ()[Ljava/lang/reflect/Constructor; flags 1 signature ()[Ljava/lang/reflect/Constructor<*>; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getField descriptor (Ljava/lang/String;)Ljava/lang/reflect/Field; thrownTypes java/lang/NoSuchFieldException flags 1 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getMethod descriptor (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; thrownTypes java/lang/NoSuchMethodException flags 81 signature (Ljava/lang/String;[Ljava/lang/Class<*>;)Ljava/lang/reflect/Method; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getConstructor descriptor ([Ljava/lang/Class;)Ljava/lang/reflect/Constructor; thrownTypes java/lang/NoSuchMethodException flags 81 signature ([Ljava/lang/Class<*>;)Ljava/lang/reflect/Constructor<TT;>; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getDeclaredClasses descriptor ()[Ljava/lang/Class; flags 1 signature ()[Ljava/lang/Class<*>; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getDeclaredFields descriptor ()[Ljava/lang/reflect/Field; flags 1 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getDeclaredMethods descriptor ()[Ljava/lang/reflect/Method; flags 1 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getDeclaredConstructors descriptor ()[Ljava/lang/reflect/Constructor; flags 1 signature ()[Ljava/lang/reflect/Constructor<*>; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getDeclaredField descriptor (Ljava/lang/String;)Ljava/lang/reflect/Field; thrownTypes java/lang/NoSuchFieldException flags 1 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getDeclaredMethod descriptor (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method; thrownTypes java/lang/NoSuchMethodException flags 81 signature (Ljava/lang/String;[Ljava/lang/Class<*>;)Ljava/lang/reflect/Method; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name getDeclaredConstructor descriptor ([Ljava/lang/Class;)Ljava/lang/reflect/Constructor; thrownTypes java/lang/NoSuchMethodException flags 81 signature ([Ljava/lang/Class<*>;)Ljava/lang/reflect/Constructor<TT;>; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 
 class name java/lang/Math
 -method name tanh descriptor (D)D
@@ -53,11 +103,26 @@ class name java/lang/ScopedValue
 -method name runWhere descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;Ljava/lang/Runnable;)V
 -method name callWhere descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;Ljava/lang/ScopedValue$CallableOp;)Ljava/lang/Object;
 
+class name java/lang/SecurityManager
+header extends java/lang/Object flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+innerclass innerClass java/lang/StackWalker$StackFrame outerClass java/lang/StackWalker innerClassName StackFrame flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name getClassContext descriptor ()[Ljava/lang/Class;
+-method name checkMulticast descriptor (Ljava/net/InetAddress;B)V
+method name getClassContext descriptor ()[Ljava/lang/Class; flags 4 signature ()[Ljava/lang/Class<*>;
+method name checkMulticast descriptor (Ljava/net/InetAddress;B)V flags 1
+
 class name java/lang/System
 -method name load descriptor (Ljava/lang/String;)V
 -method name loadLibrary descriptor (Ljava/lang/String;)V
+-method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V
 method name load descriptor (Ljava/lang/String;)V flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;@Ljdk/internal/javac/Restricted;
 method name loadLibrary descriptor (Ljava/lang/String;)V flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;@Ljdk/internal/javac/Restricted;
+method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
+class name java/lang/Thread
+-method name getContextClassLoader descriptor ()Ljava/lang/ClassLoader;
+method name getContextClassLoader descriptor ()Ljava/lang/ClassLoader; flags 1
 
 class name java/lang/classfile/AccessFlags
 -method name ofClass descriptor (I)Ljava/lang/classfile/AccessFlags;
@@ -921,6 +986,31 @@ class name java/nio/DirectShortBufferS
 class name java/nio/DirectShortBufferU
 -field name UNALIGNED descriptor Z
 
+class name java/security/AccessController
+-method name doPrivilegedWithCombiner descriptor (Ljava/security/PrivilegedAction;)Ljava/lang/Object;
+-method name doPrivileged descriptor (Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;[Ljava/security/Permission;)Ljava/lang/Object;
+-method name doPrivilegedWithCombiner descriptor (Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;[Ljava/security/Permission;)Ljava/lang/Object;
+-method name doPrivilegedWithCombiner descriptor (Ljava/security/PrivilegedExceptionAction;)Ljava/lang/Object;
+-method name doPrivileged descriptor (Ljava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;[Ljava/security/Permission;)Ljava/lang/Object;
+-method name doPrivilegedWithCombiner descriptor (Ljava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;[Ljava/security/Permission;)Ljava/lang/Object;
+-method name doPrivileged descriptor (Ljava/security/PrivilegedAction;)Ljava/lang/Object;
+-method name doPrivileged descriptor (Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;)Ljava/lang/Object;
+-method name doPrivileged descriptor (Ljava/security/PrivilegedExceptionAction;)Ljava/lang/Object;
+-method name doPrivileged descriptor (Ljava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;)Ljava/lang/Object;
+method name doPrivileged descriptor (Ljava/security/PrivilegedAction;)Ljava/lang/Object; flags 9 signature <T:Ljava/lang/Object;>(Ljava/security/PrivilegedAction<TT;>;)TT;
+method name doPrivilegedWithCombiner descriptor (Ljava/security/PrivilegedAction;)Ljava/lang/Object; flags 9 signature <T:Ljava/lang/Object;>(Ljava/security/PrivilegedAction<TT;>;)TT;
+method name doPrivileged descriptor (Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;)Ljava/lang/Object; flags 9 signature <T:Ljava/lang/Object;>(Ljava/security/PrivilegedAction<TT;>;Ljava/security/AccessControlContext;)TT;
+method name doPrivileged descriptor (Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;[Ljava/security/Permission;)Ljava/lang/Object; flags 89 signature <T:Ljava/lang/Object;>(Ljava/security/PrivilegedAction<TT;>;Ljava/security/AccessControlContext;[Ljava/security/Permission;)TT;
+method name doPrivilegedWithCombiner descriptor (Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;[Ljava/security/Permission;)Ljava/lang/Object; flags 89 signature <T:Ljava/lang/Object;>(Ljava/security/PrivilegedAction<TT;>;Ljava/security/AccessControlContext;[Ljava/security/Permission;)TT;
+method name doPrivileged descriptor (Ljava/security/PrivilegedExceptionAction;)Ljava/lang/Object; thrownTypes java/security/PrivilegedActionException flags 9 signature <T:Ljava/lang/Object;>(Ljava/security/PrivilegedExceptionAction<TT;>;)TT;
+method name doPrivilegedWithCombiner descriptor (Ljava/security/PrivilegedExceptionAction;)Ljava/lang/Object; thrownTypes java/security/PrivilegedActionException flags 9 signature <T:Ljava/lang/Object;>(Ljava/security/PrivilegedExceptionAction<TT;>;)TT;
+method name doPrivileged descriptor (Ljava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;)Ljava/lang/Object; thrownTypes java/security/PrivilegedActionException flags 9 signature <T:Ljava/lang/Object;>(Ljava/security/PrivilegedExceptionAction<TT;>;Ljava/security/AccessControlContext;)TT;
+method name doPrivileged descriptor (Ljava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;[Ljava/security/Permission;)Ljava/lang/Object; thrownTypes java/security/PrivilegedActionException flags 89 signature <T:Ljava/lang/Object;>(Ljava/security/PrivilegedExceptionAction<TT;>;Ljava/security/AccessControlContext;[Ljava/security/Permission;)TT;
+method name doPrivilegedWithCombiner descriptor (Ljava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;[Ljava/security/Permission;)Ljava/lang/Object; thrownTypes java/security/PrivilegedActionException flags 89 signature <T:Ljava/lang/Object;>(Ljava/security/PrivilegedExceptionAction<TT;>;Ljava/security/AccessControlContext;[Ljava/security/Permission;)TT;
+
+class name java/security/ProtectionDomain
+header extends java/lang/Object flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
+
 class name java/text/DecimalFormat
 header extends java/text/NumberFormat flags 21
 innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
@@ -945,6 +1035,38 @@ innerclass innerClass java/util/Locale$Category outerClass java/util/Locale inne
 innerclass innerClass java/text/NumberFormat$Style outerClass java/text/NumberFormat innerClassName Style flags 4019
 innerclass innerClass java/text/NumberFormat$Field outerClass java/text/NumberFormat innerClassName Field flags 9
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name java/util/stream/Gatherer
+header extends java/lang/Object nestMembers java/util/stream/Gatherer$Integrator,java/util/stream/Gatherer$Integrator$Greedy,java/util/stream/Gatherer$Downstream flags 601 signature <T:Ljava/lang/Object;A:Ljava/lang/Object;R:Ljava/lang/Object;>Ljava/lang/Object;
+innerclass innerClass java/util/stream/Gatherer$Integrator outerClass java/util/stream/Gatherer innerClassName Integrator flags 609
+innerclass innerClass java/util/stream/Gatherer$Downstream outerClass java/util/stream/Gatherer innerClassName Downstream flags 609
+innerclass innerClass java/util/stream/Gatherer$Integrator$Greedy outerClass java/util/stream/Gatherer$Integrator innerClassName Greedy flags 609
+
+class name java/util/stream/Gatherer$Downstream
+header extends java/lang/Object nestHost java/util/stream/Gatherer flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
+innerclass innerClass java/util/stream/Gatherer$Downstream outerClass java/util/stream/Gatherer innerClassName Downstream flags 609
+
+class name java/util/stream/Gatherer$Integrator
+header extends java/lang/Object nestHost java/util/stream/Gatherer flags 601 signature <A:Ljava/lang/Object;T:Ljava/lang/Object;R:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
+innerclass innerClass java/util/stream/Gatherer$Integrator outerClass java/util/stream/Gatherer innerClassName Integrator flags 609
+innerclass innerClass java/util/stream/Gatherer$Integrator$Greedy outerClass java/util/stream/Gatherer$Integrator innerClassName Greedy flags 609
+innerclass innerClass java/util/stream/Gatherer$Downstream outerClass java/util/stream/Gatherer innerClassName Downstream flags 609
+
+class name java/util/stream/Gatherer$Integrator$Greedy
+header extends java/lang/Object implements java/util/stream/Gatherer$Integrator nestHost java/util/stream/Gatherer flags 601 signature <A:Ljava/lang/Object;T:Ljava/lang/Object;R:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/stream/Gatherer$Integrator<TA;TT;TR;>; runtimeAnnotations @Ljava/lang/FunctionalInterface;
+innerclass innerClass java/util/stream/Gatherer$Integrator outerClass java/util/stream/Gatherer innerClassName Integrator flags 609
+innerclass innerClass java/util/stream/Gatherer$Integrator$Greedy outerClass java/util/stream/Gatherer$Integrator innerClassName Greedy flags 609
+
+class name java/util/stream/Gatherers
+header extends java/lang/Object flags 31
+innerclass innerClass java/util/stream/Gatherer$Integrator outerClass java/util/stream/Gatherer innerClassName Integrator flags 609
+innerclass innerClass java/util/stream/Gatherer$Integrator$Greedy outerClass java/util/stream/Gatherer$Integrator innerClassName Greedy flags 609
+innerclass innerClass java/util/stream/Gatherer$Downstream outerClass java/util/stream/Gatherer innerClassName Downstream flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name java/util/stream/Stream
+-method name gather descriptor (Ljava/util/stream/Gatherer;)Ljava/util/stream/Stream;
+method name gather descriptor (Ljava/util/stream/Gatherer;)Ljava/util/stream/Stream; flags 1 signature <R:Ljava/lang/Object;>(Ljava/util/stream/Gatherer<-TT;*TR;>;)Ljava/util/stream/Stream<TR;>;
 
 class name java/util/zip/ZipError
 header extends java/lang/InternalError flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="24")
