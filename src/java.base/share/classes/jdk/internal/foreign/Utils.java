@@ -298,22 +298,22 @@ public final class Utils {
         return "0x" + Long.toHexString(value);
     }
 
-    public record BaseAndScale(int base, long scale) {
+    public record BaseAndScale(long base, long scale) {
 
         public static final BaseAndScale BYTE =
-                new BaseAndScale((int) Unsafe.ARRAY_BYTE_BASE_OFFSET, Unsafe.ARRAY_BYTE_INDEX_SCALE);
+                new BaseAndScale(Unsafe.ARRAY_BYTE_BASE_OFFSET, Unsafe.ARRAY_BYTE_INDEX_SCALE);
         public static final BaseAndScale CHAR =
-                new BaseAndScale((int) Unsafe.ARRAY_CHAR_BASE_OFFSET, Unsafe.ARRAY_CHAR_INDEX_SCALE);
+                new BaseAndScale(Unsafe.ARRAY_CHAR_BASE_OFFSET, Unsafe.ARRAY_CHAR_INDEX_SCALE);
         public static final BaseAndScale SHORT =
-                new BaseAndScale((int) Unsafe.ARRAY_SHORT_BASE_OFFSET, Unsafe.ARRAY_SHORT_INDEX_SCALE);
+                new BaseAndScale(Unsafe.ARRAY_SHORT_BASE_OFFSET, Unsafe.ARRAY_SHORT_INDEX_SCALE);
         public static final BaseAndScale INT =
-                new BaseAndScale((int) Unsafe.ARRAY_INT_BASE_OFFSET, Unsafe.ARRAY_INT_INDEX_SCALE);
+                new BaseAndScale(Unsafe.ARRAY_INT_BASE_OFFSET, Unsafe.ARRAY_INT_INDEX_SCALE);
         public static final BaseAndScale FLOAT =
-                new BaseAndScale((int) Unsafe.ARRAY_FLOAT_BASE_OFFSET, Unsafe.ARRAY_FLOAT_INDEX_SCALE);
+                new BaseAndScale(Unsafe.ARRAY_FLOAT_BASE_OFFSET, Unsafe.ARRAY_FLOAT_INDEX_SCALE);
         public static final BaseAndScale LONG =
-                new BaseAndScale((int) Unsafe.ARRAY_LONG_BASE_OFFSET, Unsafe.ARRAY_LONG_INDEX_SCALE);
+                new BaseAndScale(Unsafe.ARRAY_LONG_BASE_OFFSET, Unsafe.ARRAY_LONG_INDEX_SCALE);
         public static final BaseAndScale DOUBLE =
-                new BaseAndScale((int) Unsafe.ARRAY_DOUBLE_BASE_OFFSET, Unsafe.ARRAY_DOUBLE_INDEX_SCALE);
+                new BaseAndScale(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, Unsafe.ARRAY_DOUBLE_INDEX_SCALE);
 
         public static BaseAndScale of(Object array) {
             return switch (array) {
