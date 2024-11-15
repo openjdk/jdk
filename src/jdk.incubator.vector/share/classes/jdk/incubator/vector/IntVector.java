@@ -536,6 +536,19 @@ public abstract class IntVector extends AbstractVector<Integer> {
         return r;
     }
 
+    static IntVector selectFromTwoVectorHelper(Vector<Integer> indexes, Vector<Integer> src1, Vector<Integer> src2) {
+        int vlen = indexes.length();
+        int[] res = new int[vlen];
+        int[] vecPayload1 = ((IntVector)indexes).vec();
+        int[] vecPayload2 = ((IntVector)src1).vec();
+        int[] vecPayload3 = ((IntVector)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return ((IntVector)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -871,6 +884,18 @@ public abstract class IntVector extends AbstractVector<Integer> {
                     v0.bOp(v1, vm, (i, a, n) -> rotateLeft(a, (int)n));
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateRight(a, (int)n));
+            case VECTOR_OP_UMAX: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (int)VectorMath.maxUnsigned(a, b));
+            case VECTOR_OP_UMIN: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (int)VectorMath.minUnsigned(a, b));
+            case VECTOR_OP_SADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (int)(VectorMath.addSaturating(a, b)));
+            case VECTOR_OP_SSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (int)(VectorMath.subSaturating(a, b)));
+            case VECTOR_OP_SUADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (int)(VectorMath.addSaturatingUnsigned(a, b)));
+            case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (int)(VectorMath.subSaturatingUnsigned(a, b)));
             case VECTOR_OP_COMPRESS_BITS: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> Integer.compress(a, n));
             case VECTOR_OP_EXPAND_BITS: return (v0, v1, vm) ->
@@ -2378,17 +2403,18 @@ public abstract class IntVector extends AbstractVector<Integer> {
      */
     @Override
     public abstract
-    IntVector rearrange(VectorShuffle<Integer> m);
+    IntVector rearrange(VectorShuffle<Integer> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<Integer>>
     IntVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, int.class, length(),
-            this, shuffle, null,
+            this, ws, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = s_.laneSource(i);
                 return v1.lane(ei);
@@ -2413,17 +2439,14 @@ public abstract class IntVector extends AbstractVector<Integer> {
                                            M m) {
 
         m.check(masktype, this);
-        VectorMask<Integer> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
-        }
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, int.class, length(),
-                   this, shuffle, m,
+                   this, ws, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = s_.laneSource(i);
-                        return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
+                        return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
 
@@ -2536,7 +2559,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
     /*package-private*/
     @ForceInline
     final IntVector selectFromTemplate(IntVector v) {
-        return v.rearrange(this.toShuffle());
+        return (IntVector)VectorSupport.selectFromOp(getClass(), null, int.class,
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
 
     /**
@@ -2548,9 +2574,31 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     /*package-private*/
     @ForceInline
-    final IntVector selectFromTemplate(IntVector v,
-                                                  AbstractMask<Integer> m) {
-        return v.rearrange(this.toShuffle(), m);
+    final
+    <M extends VectorMask<Integer>>
+    IntVector selectFromTemplate(IntVector v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return (IntVector)VectorSupport.selectFromOp(getClass(), masktype, int.class,
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    IntVector selectFrom(Vector<Integer> v1, Vector<Integer> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final IntVector selectFromTemplate(IntVector v1, IntVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), int.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations
@@ -3691,7 +3739,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
-        return Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        return (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
     }
 
     // ================================================

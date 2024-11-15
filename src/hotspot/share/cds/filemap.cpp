@@ -55,6 +55,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -204,6 +205,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
+  _compact_headers = UseCompactObjectHeaders;
   if (CDSConfig::is_dumping_heap()) {
     _narrow_oop_mode = CompressedOops::mode();
     _narrow_oop_base = CompressedOops::base();
@@ -211,7 +213,14 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   }
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
-  _use_secondary_supers_table = UseSecondarySupersTable;
+  if (UseCompressedClassPointers) {
+#ifdef _LP64
+    _narrow_klass_pointer_bits = CompressedKlassPointers::narrow_klass_pointer_bits();
+    _narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
+#endif
+  } else {
+    _narrow_klass_pointer_bits = _narrow_klass_shift = -1;
+  }
   _max_heap_size = MaxHeapSize;
   _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
@@ -270,12 +279,15 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
   st->print_cr("- narrow_oop_shift                %d", _narrow_oop_shift);
   st->print_cr("- compact_strings:                %d", _compact_strings);
+  st->print_cr("- compact_headers:                %d", _compact_headers);
   st->print_cr("- max_heap_size:                  " UINTX_FORMAT, _max_heap_size);
   st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
   st->print_cr("- compressed_oops:                %d", _compressed_oops);
   st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
-  st->print_cr("- use_secondary_supers_table:     %d", _use_secondary_supers_table);
+  st->print_cr("- narrow_klass_pointer_bits:      %d", _narrow_klass_pointer_bits);
+  st->print_cr("- narrow_klass_shift:             %d", _narrow_klass_shift);
   st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_X, _cloned_vtables_offset);
+  st->print_cr("- early_serialized_data_offset:   " SIZE_FORMAT_X, _early_serialized_data_offset);
   st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_X, _serialized_data_offset);
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
   st->print_cr("- shared_path_table_offset:       " SIZE_FORMAT_X, _shared_path_table_offset);
@@ -581,7 +593,7 @@ int FileMapInfo::get_module_shared_path_index(Symbol* location) {
 
   // skip_uri_protocol was also called during dump time -- see ClassLoaderExt::process_module_table()
   ResourceMark rm;
-  const char* file = ClassLoader::skip_uri_protocol(location->as_C_string());
+  const char* file = ClassLoader::uri_to_path(location->as_C_string());
   for (int i = ClassLoaderExt::app_module_paths_start_index(); i < get_number_of_shared_paths(); i++) {
     SharedClassPathEntry* ent = shared_path(i);
     if (!ent->is_non_existent()) {
@@ -781,12 +793,12 @@ bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, Growable
     assert(strlen(rp_array->at(i)) > (size_t)runtime_prefix_len, "sanity");
     const char* runtime_path = rp_array->at(i)  + runtime_prefix_len;
     if (!os::same_files(dumptime_path, runtime_path)) {
-      return true;
+      return false;
     }
     i++;
     j++;
   }
-  return false;
+  return true;
 }
 
 bool FileMapInfo::validate_boot_class_paths() {
@@ -810,7 +822,7 @@ bool FileMapInfo::validate_boot_class_paths() {
   char* rp = skip_first_path_entry(runtime_boot_path);
   assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
   int dp_len = header()->app_class_paths_start_index() - 1; // ignore the first path to the module image
-  bool mismatch = false;
+  bool match = true;
 
   bool relaxed_check = !header()->has_platform_or_app_classes();
   if (dp_len == 0 && rp == nullptr) {
@@ -823,7 +835,7 @@ bool FileMapInfo::validate_boot_class_paths() {
       if (check_paths_existence(rp)) {
         // If a path exists in the runtime boot paths, it is considered a mismatch
         // since there's no boot path specified during dump time.
-        mismatch = true;
+        match = false;
       }
     }
   } else if (dp_len > 0 && rp != nullptr) {
@@ -840,16 +852,16 @@ bool FileMapInfo::validate_boot_class_paths() {
         // check the full runtime boot path, must match with dump time
         num = rp_len;
       }
-      mismatch = check_paths(1, num, rp_array, 0, 0);
+      match = check_paths(1, num, rp_array, 0, 0);
     } else {
       // create_path_array() ignores non-existing paths. Although the dump time and runtime boot classpath lengths
       // are the same initially, after the call to create_path_array(), the runtime boot classpath length could become
       // shorter. We consider boot classpath mismatch in this case.
-      mismatch = true;
+      match = false;
     }
   }
 
-  if (mismatch) {
+  if (!match) {
     // The paths are different
     return classpath_failure("[BOOT classpath mismatch, actual =", runtime_boot_path);
   }
@@ -860,7 +872,7 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
   const char *appcp = Arguments::get_appclasspath();
   assert(appcp != nullptr, "null app classpath");
   int rp_len = num_paths(appcp);
-  bool mismatch = false;
+  bool match = false;
   if (rp_len < shared_app_paths_len) {
     return classpath_failure("Run time APP classpath is shorter than the one at dump time: ", appcp);
   }
@@ -889,8 +901,8 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
     // run 2: -cp x.jar:NE4:b.jar      -> x.jar:b.jar -> mismatched
 
     int j = header()->app_class_paths_start_index();
-    mismatch = check_paths(j, shared_app_paths_len, rp_array, 0, 0);
-    if (mismatch) {
+    match = check_paths(j, shared_app_paths_len, rp_array, 0, 0);
+    if (!match) {
       // To facilitate app deployment, we allow the JAR files to be moved *together* to
       // a different location, as long as they are still stored under the same directory
       // structure. E.g., the following is OK.
@@ -901,10 +913,10 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
       if (dumptime_prefix_len != 0 || runtime_prefix_len != 0) {
         log_info(class, path)("LCP length for app classpath (dumptime: %u, runtime: %u)",
                               dumptime_prefix_len, runtime_prefix_len);
-        mismatch = check_paths(j, shared_app_paths_len, rp_array,
+        match = check_paths(j, shared_app_paths_len, rp_array,
                                dumptime_prefix_len, runtime_prefix_len);
       }
-      if (mismatch) {
+      if (!match) {
         return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
       }
     }
@@ -926,15 +938,35 @@ void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
   }
 }
 
+void FileMapInfo::extract_module_paths(const char* runtime_path, GrowableArray<const char*>* module_paths) {
+  GrowableArray<const char*>* path_array = create_path_array(runtime_path);
+  int num_paths = path_array->length();
+  for (int i = 0; i < num_paths; i++) {
+    const char* name = path_array->at(i);
+    ClassLoaderExt::extract_jar_files_from_path(name, module_paths);
+  }
+  // module paths are stored in sorted order in the CDS archive.
+  module_paths->sort(ClassLoaderExt::compare_module_names);
+}
+
 bool FileMapInfo::check_module_paths() {
-  const char* rp = Arguments::get_property("jdk.module.path");
-  int num_paths = CDSConfig::num_archives(rp);
-  if (num_paths != header()->num_module_paths()) {
+  const char* runtime_path = Arguments::get_property("jdk.module.path");
+  int archived_num_module_paths = header()->num_module_paths();
+  if (runtime_path == nullptr && archived_num_module_paths == 0) {
+    return true;
+  }
+  if ((runtime_path == nullptr && archived_num_module_paths > 0) ||
+      (runtime_path != nullptr && archived_num_module_paths == 0)) {
     return false;
   }
   ResourceMark rm;
-  GrowableArray<const char*>* rp_array = create_path_array(rp);
-  return check_paths(header()->app_module_paths_start_index(), num_paths, rp_array, 0, 0);
+  GrowableArray<const char*>* module_paths = new GrowableArray<const char*>(3);
+  extract_module_paths(runtime_path, module_paths);
+  int num_paths = module_paths->length();
+  if (num_paths != archived_num_module_paths) {
+    return false;
+  }
+  return check_paths(header()->app_module_paths_start_index(), num_paths, module_paths, 0, 0);
 }
 
 bool FileMapInfo::validate_shared_path_table() {
@@ -944,6 +976,16 @@ bool FileMapInfo::validate_shared_path_table() {
 
   // Load the shared path table info from the archive header
   _shared_path_table = header()->shared_path_table();
+
+  bool matched_module_paths = true;
+  if (CDSConfig::is_dumping_dynamic_archive() || header()->has_full_module_graph()) {
+    matched_module_paths = check_module_paths();
+  }
+  if (header()->has_full_module_graph() && !matched_module_paths) {
+    CDSConfig::stop_using_optimized_module_handling();
+    log_info(cds)("optimized module handling: disabled because of mismatched module paths");
+  }
+
   if (CDSConfig::is_dumping_dynamic_archive()) {
     // Only support dynamic dumping with the usage of the default CDS archive
     // or a simple base archive.
@@ -959,7 +1001,7 @@ bool FileMapInfo::validate_shared_path_table() {
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
     }
     if (header()->num_module_paths() > 0) {
-      if (!check_module_paths()) {
+      if (!matched_module_paths) {
         CDSConfig::disable_dumping_dynamic_archive();
         log_warning(cds)(
           "Dynamic archiving is disabled because base layer archive has a different module path");
@@ -2024,8 +2066,7 @@ void FileMapInfo::map_or_load_heap_region() {
       success = ArchiveHeapLoader::load_heap_region(this);
     } else {
       if (!UseCompressedOops && !ArchiveHeapLoader::can_map()) {
-        // TODO - remove implicit knowledge of G1
-        log_info(cds)("Cannot use CDS heap data. UseG1GC is required for -XX:-UseCompressedOops");
+        log_info(cds)("Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops");
       } else {
         log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
       }
@@ -2055,22 +2096,23 @@ bool FileMapInfo::can_use_heap_region() {
   }
 
   // We pre-compute narrow Klass IDs with the runtime mapping start intended to be the base, and a shift of
-  // ArchiveHeapWriter::precomputed_narrow_klass_shift. We enforce this encoding at runtime (see
+  // ArchiveBuilder::precomputed_narrow_klass_shift. We enforce this encoding at runtime (see
   // CompressedKlassPointers::initialize_for_given_encoding()). Therefore, the following assertions must
   // hold:
   address archive_narrow_klass_base = (address)header()->mapped_base_address();
-  const int archive_narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+  const int archive_narrow_klass_pointer_bits = header()->narrow_klass_pointer_bits();
+  const int archive_narrow_klass_shift = header()->narrow_klass_shift();
 
   log_info(cds)("CDS archive was created with max heap size = " SIZE_FORMAT "M, and the following configuration:",
                 max_heap_size()/M);
-  log_info(cds)("    narrow_klass_base at mapping start address, narrow_klass_shift = %d",
-                archive_narrow_klass_shift);
+  log_info(cds)("    narrow_klass_base at mapping start address, narrow_klass_pointer_bits = %d, narrow_klass_shift = %d",
+                archive_narrow_klass_pointer_bits, archive_narrow_klass_shift);
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
   log_info(cds)("The current max heap size = " SIZE_FORMAT "M, G1HeapRegion::GrainBytes = " SIZE_FORMAT,
                 MaxHeapSize/M, G1HeapRegion::GrainBytes);
-  log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
-                p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
+  log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", arrow_klass_pointer_bits = %d, narrow_klass_shift = %d",
+                p2i(CompressedKlassPointers::base()), CompressedKlassPointers::narrow_klass_pointer_bits(), CompressedKlassPointers::shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
   log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
@@ -2079,10 +2121,35 @@ bool FileMapInfo::can_use_heap_region() {
                 UseCompressedOops ? p2i(CompressedOops::end()) :
                                     UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) : 0L);
 
-  assert(archive_narrow_klass_base == CompressedKlassPointers::base(), "Unexpected encoding base encountered "
-         "(" PTR_FORMAT ", expected " PTR_FORMAT ")", p2i(CompressedKlassPointers::base()), p2i(archive_narrow_klass_base));
-  assert(archive_narrow_klass_shift == CompressedKlassPointers::shift(), "Unexpected encoding shift encountered "
-         "(%d, expected %d)", CompressedKlassPointers::shift(), archive_narrow_klass_shift);
+  int err = 0;
+  if ( archive_narrow_klass_base != CompressedKlassPointers::base() ||
+       (err = 1, archive_narrow_klass_pointer_bits != CompressedKlassPointers::narrow_klass_pointer_bits()) ||
+       (err = 2, archive_narrow_klass_shift != CompressedKlassPointers::shift()) ) {
+    stringStream ss;
+    switch (err) {
+    case 0:
+      ss.print("Unexpected encoding base encountered (" PTR_FORMAT ", expected " PTR_FORMAT ")",
+               p2i(CompressedKlassPointers::base()), p2i(archive_narrow_klass_base));
+      break;
+    case 1:
+      ss.print("Unexpected narrow Klass bit length encountered (%d, expected %d)",
+               CompressedKlassPointers::narrow_klass_pointer_bits(), archive_narrow_klass_pointer_bits);
+      break;
+    case 2:
+      ss.print("Unexpected narrow Klass shift encountered (%d, expected %d)",
+               CompressedKlassPointers::shift(), archive_narrow_klass_shift);
+      break;
+    default:
+      ShouldNotReachHere();
+    };
+    LogTarget(Info, cds) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print_raw(ss.base());
+      header()->print(&ls);
+    }
+    assert(false, "%s", ss.base());
+  }
 
   return true;
 }
@@ -2105,7 +2172,7 @@ address FileMapInfo::heap_region_requested_address() {
   assert(CDSConfig::is_using_archive(), "runtime only");
   FileMapRegion* r = region_at(MetaspaceShared::hp);
   assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
-  assert(ArchiveHeapLoader::can_map(), "cannot be used by ArchiveHeapLoader::can_load() mode");
+  assert(ArchiveHeapLoader::can_use(), "GC must support mapping or loading");
   if (UseCompressedOops) {
     // We can avoid relocation if each region's offset from the runtime CompressedOops::base()
     // is the same as its offset from the CompressedOops::base() during dumptime.
@@ -2454,16 +2521,19 @@ bool FileMapHeader::validate() {
             "for testing purposes only and should not be used in a production environment");
   }
 
-  log_info(cds)("Archive was created with UseCompressedOops = %d, UseCompressedClassPointers = %d",
-                          compressed_oops(), compressed_class_pointers());
+  log_info(cds)("Archive was created with UseCompressedOops = %d, UseCompressedClassPointers = %d, UseCompactObjectHeaders = %d",
+                          compressed_oops(), compressed_class_pointers(), compact_headers());
   if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != UseCompressedClassPointers) {
-    log_info(cds)("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
+    log_warning(cds)("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
                                "different from runtime, CDS will be disabled.");
     return false;
   }
 
-  if (! _use_secondary_supers_table && UseSecondarySupersTable) {
-    log_warning(cds)("The shared archive was created without UseSecondarySupersTable.");
+  if (compact_headers() != UseCompactObjectHeaders) {
+    log_warning(cds)("Unable to use shared archive.\nThe shared archive file's UseCompactObjectHeaders setting (%s)"
+                     " does not equal the current UseCompactObjectHeaders setting (%s).",
+                     _compact_headers          ? "enabled" : "disabled",
+                     UseCompactObjectHeaders   ? "enabled" : "disabled");
     return false;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,13 +92,6 @@ public class SecureZipFSProvider extends FileSystemProvider {
     public InputStream newInputStream(Path path, OpenOption... options)
             throws IOException {
         Path p = toTestPath(path).unwrap();
-
-        // Added permission checks before opening the file
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("customPermission"));
-            sm.checkRead(p.toString());
-        }
         return defaultProvider.newInputStream(p, options);
     }
 

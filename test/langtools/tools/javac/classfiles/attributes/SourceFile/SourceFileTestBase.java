@@ -108,7 +108,7 @@ public class SourceFileTestBase extends TestBase {
 
         SourceFileAttribute attribute = sourceFileAttributes.get(0);
 
-        assertEquals(attribute.attributeName(), Attributes.sourceFile().name(), "Incorrect attribute name");
+        assertEquals(attribute.attributeName().stringValue(), Attributes.sourceFile().name(), "Incorrect attribute name");
         assertEquals(attribute.sourceFile().stringValue(), fileName,
                 "Incorrect source file name");
         assertEquals(((BoundAttribute<?>)attribute).payloadLen(), 2, "Incorrect attribute length");

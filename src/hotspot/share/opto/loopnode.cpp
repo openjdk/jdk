@@ -692,14 +692,24 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 
     // We can only use that safepoint if there's no side effect between the backedge and the safepoint.
 
-    // mm is used for book keeping
+    // mm is the memory state at the safepoint (when it's a MergeMem)
+    // no_side_effect_since_safepoint() goes over the memory state at the backedge. It resets the mm input for each
+    // component of the memory state it encounters so it points to the base memory. Once no_side_effect_since_safepoint()
+    // is done, if no side effect after the safepoint was found, mm should transform to the base memory: the states at
+    // the backedge and safepoint are the same so all components of the memory state at the safepoint should have been
+    // reset.
     MergeMemNode* mm = nullptr;
 #ifdef ASSERT
     if (mem->is_MergeMem()) {
       mm = mem->clone()->as_MergeMem();
       _igvn._worklist.push(mm);
       for (MergeMemStream mms(mem->as_MergeMem()); mms.next_non_empty(); ) {
-        if (mms.alias_idx() != Compile::AliasIdxBot && loop != get_loop(ctrl_or_self(mms.memory()))) {
+        // Loop invariant memory state won't be reset by no_side_effect_since_safepoint(). Do it here.
+        // Escape Analysis can add state to mm that it doesn't add to the backedge memory Phis, breaking verification
+        // code that relies on mm. Clear that extra state here.
+        if (mms.alias_idx() != Compile::AliasIdxBot &&
+            (loop != get_loop(ctrl_or_self(mms.memory())) ||
+             (mms.adr_type()->isa_oop_ptr() && mms.adr_type()->is_known_instance()))) {
           mm->set_memory_at(mms.alias_idx(), mem->as_MergeMem()->base_memory());
         }
       }
@@ -2591,7 +2601,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   const TypeInt* init_t  = phase->type(in(Init) )->is_int();
   const TypeInt* limit_t = phase->type(in(Limit))->is_int();
-  int stride_p;
+  jlong stride_p;
   jlong lim, ini;
   julong max;
   if (stride_con > 0) {
@@ -2600,10 +2610,10 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     ini = init_t->_lo;
     max = (julong)max_jint;
   } else {
-    stride_p = -stride_con;
+    stride_p = -(jlong)stride_con;
     lim = init_t->_hi;
     ini = limit_t->_lo;
-    max = (julong)min_jint;
+    max = (julong)(juint)min_jint; // double cast to get 0x0000000080000000, not 0xffffffff80000000
   }
   julong range = lim - ini + stride_p;
   if (range <= max) {
@@ -2816,11 +2826,15 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
 
 Node* CountedLoopNode::skip_assertion_predicates_with_halt() {
   Node* ctrl = in(LoopNode::EntryControl);
+  if (ctrl == nullptr) {
+    // Dying loop.
+    return nullptr;
+  }
   if (is_main_loop()) {
     ctrl = skip_strip_mined()->in(LoopNode::EntryControl);
   }
   if (is_main_loop() || is_post_loop()) {
-    AssertionPredicatesWithHalt assertion_predicates(ctrl);
+    AssertionPredicates assertion_predicates(ctrl);
     return assertion_predicates.entry();
   }
   return ctrl;
@@ -3937,6 +3951,41 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 
 //---------------------------replace_parallel_iv-------------------------------
 // Replace parallel induction variable (parallel to trip counter)
+// This optimization looks for patterns similar to:
+//
+//    int a = init2;
+//    for (int iv = init; iv < limit; iv += stride_con) {
+//      a += stride_con2;
+//    }
+//
+// and transforms it to:
+//
+//    int iv2 = init2
+//    int iv = init
+//    loop:
+//      if (iv >= limit) goto exit
+//      iv += stride_con
+//      iv2 = init2 + (iv - init) * (stride_con2 / stride_con)
+//      goto loop
+//    exit:
+//    ...
+//
+// Such transformation introduces more optimization opportunities. In this
+// particular example, the loop can be eliminated entirely given that
+// `stride_con2 / stride_con` is exact  (i.e., no remainder). Checks are in
+// place to only perform this optimization if such a division is exact. This
+// example will be transformed into its semantic equivalence:
+//
+//     int iv2 = (iv * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
+//
+// which corresponds to the structure of transformed subgraph.
+//
+// However, if there is a mismatch between types of the loop and the parallel
+// induction variable (e.g., a long-typed IV in an int-typed loop), type
+// conversions are required:
+//
+//     long iv2 = ((long) iv * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
+//
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
@@ -3949,7 +3998,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   }
   Node *init = cl->init_trip();
   Node *phi  = cl->phi();
-  int stride_con = cl->stride_con();
+  jlong stride_con = cl->stride_con();
 
   // Visit all children, looking for Phis
   for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
@@ -3966,7 +4015,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
         incr2->req() != 3 ||
         incr2->in(1)->uncast() != phi2 ||
         incr2 == incr ||
-        incr2->Opcode() != Op_AddI ||
+        (incr2->Opcode() != Op_AddI && incr2->Opcode() != Op_AddL) ||
         !incr2->in(2)->is_Con()) {
       continue;
     }
@@ -3982,11 +4031,15 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // the trip-counter, so we need to convert all these to trip-counter
     // expressions.
     Node* init2 = phi2->in(LoopNode::EntryControl);
-    int stride_con2 = incr2->in(2)->get_int();
+
+    // Determine the basic type of the stride constant (and the iv being incremented).
+    BasicType stride_con2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
+    jlong stride_con2 = incr2->in(2)->get_integer_as_long(stride_con2_bt);
 
     // The ratio of the two strides cannot be represented as an int
-    // if stride_con2 is min_int and stride_con is -1.
-    if (stride_con2 == min_jint && stride_con == -1) {
+    // if stride_con2 is min_jint (or min_jlong, respectively) and
+    // stride_con is -1.
+    if (stride_con2 == min_signed_integer(stride_con2_bt) && stride_con == -1) {
       continue;
     }
 
@@ -3997,42 +4050,65 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // Instead we require 'stride_con2' to be a multiple of 'stride_con',
     // where +/-1 is the common case, but other integer multiples are
     // also easy to handle.
-    int ratio_con = stride_con2/stride_con;
+    jlong ratio_con = stride_con2 / stride_con;
 
-    if ((ratio_con * stride_con) == stride_con2) { // Check for exact
-#ifndef PRODUCT
-      if (TraceLoopOpts) {
-        tty->print("Parallel IV: %d ", phi2->_idx);
-        loop->dump_head();
-      }
-#endif
-      // Convert to using the trip counter.  The parallel induction
-      // variable differs from the trip counter by a loop-invariant
-      // amount, the difference between their respective initial values.
-      // It is scaled by the 'ratio_con'.
-      Node* ratio = _igvn.intcon(ratio_con);
-      set_ctrl(ratio, C->root());
-      Node* ratio_init = new MulINode(init, ratio);
-      _igvn.register_new_node_with_optimizer(ratio_init, init);
-      set_early_ctrl(ratio_init, false);
-      Node* diff = new SubINode(init2, ratio_init);
-      _igvn.register_new_node_with_optimizer(diff, init2);
-      set_early_ctrl(diff, false);
-      Node* ratio_idx = new MulINode(phi, ratio);
-      _igvn.register_new_node_with_optimizer(ratio_idx, phi);
-      set_ctrl(ratio_idx, cl);
-      Node* add = new AddINode(ratio_idx, diff);
-      _igvn.register_new_node_with_optimizer(add);
-      set_ctrl(add, cl);
-      _igvn.replace_node( phi2, add );
-      // Sometimes an induction variable is unused
-      if (add->outcnt() == 0) {
-        _igvn.remove_dead_node(add);
-      }
-      --i; // deleted this phi; rescan starting with next position
-      continue;
+    if ((ratio_con * stride_con) != stride_con2) { // Check for exact (no remainder)
+        continue;
     }
+
+#ifndef PRODUCT
+    if (TraceLoopOpts) {
+      tty->print("Parallel IV: %d ", phi2->_idx);
+      loop->dump_head();
+    }
+#endif
+
+    // Convert to using the trip counter.  The parallel induction
+    // variable differs from the trip counter by a loop-invariant
+    // amount, the difference between their respective initial values.
+    // It is scaled by the 'ratio_con'.
+    Node* ratio = _igvn.integercon(ratio_con, stride_con2_bt);
+    set_ctrl(ratio, C->root());
+
+    Node* init_converted = insert_convert_node_if_needed(stride_con2_bt, init);
+    Node* phi_converted = insert_convert_node_if_needed(stride_con2_bt, phi);
+
+    Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
+    _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
+    set_early_ctrl(ratio_init, false);
+
+    Node* diff = SubNode::make(init2, ratio_init, stride_con2_bt);
+    _igvn.register_new_node_with_optimizer(diff, init2);
+    set_early_ctrl(diff, false);
+
+    Node* ratio_idx = MulNode::make(phi_converted, ratio, stride_con2_bt);
+    _igvn.register_new_node_with_optimizer(ratio_idx, phi_converted);
+    set_ctrl(ratio_idx, cl);
+
+    Node* add = AddNode::make(ratio_idx, diff, stride_con2_bt);
+    _igvn.register_new_node_with_optimizer(add);
+    set_ctrl(add, cl);
+
+    _igvn.replace_node( phi2, add );
+    // Sometimes an induction variable is unused
+    if (add->outcnt() == 0) {
+      _igvn.remove_dead_node(add);
+    }
+    --i; // deleted this phi; rescan starting with next position
   }
+}
+
+Node* PhaseIdealLoop::insert_convert_node_if_needed(BasicType target, Node* input) {
+  BasicType source = _igvn.type(input)->basic_type();
+  if (source == target) {
+    return input;
+  }
+
+  Node* converted = ConvertNode::create_convert(source, target, input);
+  _igvn.register_new_node_with_optimizer(converted, input);
+  set_early_ctrl(converted, false);
+
+  return converted;
 }
 
 void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
@@ -4339,13 +4415,21 @@ void PhaseIdealLoop::mark_loop_associated_parse_predicates_useful() {
   }
 }
 
+// This visitor marks all visited Parse Predicates useful.
+class ParsePredicateUsefulMarker : public PredicateVisitor {
+ public:
+  using PredicateVisitor::visit;
+
+  void visit(const ParsePredicate& parse_predicate) override {
+    parse_predicate.head()->mark_useful();
+  }
+};
+
 void PhaseIdealLoop::mark_useful_parse_predicates_for_loop(IdealLoopTree* loop) {
   Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-  const Predicates predicates(entry);
-  ParsePredicateIterator iterator(predicates);
-  while (iterator.has_next()) {
-    iterator.next()->mark_useful();
-  }
+  const PredicateIterator predicate_iterator(entry);
+  ParsePredicateUsefulMarker useful_marker;
+  predicate_iterator.for_each(useful_marker);
 }
 
 void PhaseIdealLoop::add_useless_parse_predicates_to_igvn_worklist() {
@@ -4359,7 +4443,8 @@ void PhaseIdealLoop::add_useless_parse_predicates_to_igvn_worklist() {
 
 
 // Eliminate all Template Assertion Predicates that do not belong to their originally associated loop anymore by
-// replacing the Opaque4 node of the If node with true. These nodes will be removed during the next round of IGVN.
+// replacing the OpaqueTemplateAssertionPredicate node of the If node with true. These nodes will be removed during the
+// next round of IGVN.
 void PhaseIdealLoop::eliminate_useless_template_assertion_predicates() {
   Unique_Node_List useful_predicates;
   if (C->has_loops()) {
@@ -4384,25 +4469,28 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
   if (UseProfiledLoopPredicate) {
     const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
     if (profiled_loop_predicate_block->has_parse_predicate()) {
-      IfProjNode* parse_predicate_proj = profiled_loop_predicate_block->parse_predicate_success_proj();
-      get_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+      ParsePredicateSuccessProj* parse_predicate_proj = profiled_loop_predicate_block->parse_predicate_success_proj();
+      get_template_assertion_predicates(parse_predicate_proj, useful_predicates, true);
     }
   }
 
   if (UseLoopPredicate) {
     const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
     if (loop_predicate_block->has_parse_predicate()) {
-      IfProjNode* parse_predicate_proj = loop_predicate_block->parse_predicate_success_proj();
-      get_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+      ParsePredicateSuccessProj* parse_predicate_proj = loop_predicate_block->parse_predicate_success_proj();
+      get_template_assertion_predicates(parse_predicate_proj, useful_predicates, true);
     }
   }
 }
 
 void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) {
   for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
-    Opaque4Node* opaque4_node = C->template_assertion_predicate_opaq_node(i - 1)->as_Opaque4();
-    if (!useful_predicates.member(opaque4_node)) { // not in the useful list
-      _igvn.replace_node(opaque4_node, opaque4_node->in(2));
+    OpaqueTemplateAssertionPredicateNode* opaque_node =
+        C->template_assertion_predicate_opaq_node(i - 1)->as_OpaqueTemplateAssertionPredicate();
+    if (!useful_predicates.member(opaque_node)) { // not in the useful list
+      ConINode* one = _igvn.intcon(1);
+      set_ctrl(one, C->root());
+      _igvn.replace_node(opaque_node, one);
     }
   }
 }
@@ -4883,7 +4971,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Auto-vectorize main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
-    Compile::TracePhase tp("autoVectorize", &timers[_t_autoVectorize]);
+    Compile::TracePhase tp(_t_autoVectorize);
 
     // Shared data structures for all AutoVectorizations, to reduce allocations
     // of large arrays.
@@ -4935,7 +5023,9 @@ void PhaseIdealLoop::verify() const {
   bool success = true;
 
   PhaseIdealLoop phase_verify(_igvn, this);
-  if (C->failing()) return;
+  if (C->failing_internal()) {
+    return;
+  }
 
   // Verify ctrl and idom of every node.
   success &= verify_idom_and_nodes(C->root(), &phase_verify);
@@ -6287,6 +6377,43 @@ void PhaseIdealLoop::build_loop_late_post(Node *n) {
   build_loop_late_post_work(n, true);
 }
 
+// Class to visit all predicates in a predicate chain to find out which are dominated by a given node. Keeps track of
+// the entry to the earliest predicate that is still dominated by the given dominator. This class is used when trying to
+// legally skip all predicates when figuring out the latest placement such that a node does not interfere with Loop
+// Predication or creating a Loop Limit Check Predicate later.
+class DominatedPredicates : public UnifiedPredicateVisitor {
+  Node* const _dominator;
+  Node* _earliest_dominated_predicate_entry;
+  bool _should_continue;
+  PhaseIdealLoop* const _phase;
+
+ public:
+  DominatedPredicates(Node* dominator, Node* start_node, PhaseIdealLoop* phase)
+      : _dominator(dominator),
+        _earliest_dominated_predicate_entry(start_node),
+        _should_continue(true),
+        _phase(phase) {}
+  NONCOPYABLE(DominatedPredicates);
+
+  bool should_continue() const override {
+    return _should_continue;
+  }
+
+  // Returns the entry to the earliest predicate that is still dominated by the given dominator (all could be dominated).
+  Node* earliest_dominated_predicate_entry() const {
+    return _earliest_dominated_predicate_entry;
+  }
+
+  void visit_predicate(const Predicate& predicate) override {
+    Node* entry = predicate.entry();
+    if (_phase->is_strict_dominator(entry, _dominator)) {
+      _should_continue = false;
+    } else {
+      _earliest_dominated_predicate_entry = entry;
+    }
+  }
+};
+
 void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
 
   if (n->req() == 2 && (n->Opcode() == Op_ConvI2L || n->Opcode() == Op_CastII) && !C->major_progress() && !_verify_only) {
@@ -6398,14 +6525,10 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     // Move the node above predicates as far up as possible so a
     // following pass of Loop Predication doesn't hoist a predicate
     // that depends on it above that node.
-    PredicateEntryIterator predicate_iterator(least);
-    while (predicate_iterator.has_next()) {
-      Node* next_predicate_entry = predicate_iterator.next_entry();
-      if (is_strict_dominator(next_predicate_entry, early)) {
-        break;
-      }
-      least = next_predicate_entry;
-    }
+    const PredicateIterator predicate_iterator(least);
+    DominatedPredicates dominated_predicates(early, least, this);
+    predicate_iterator.for_each(dominated_predicates);
+    least = dominated_predicates.earliest_dominated_predicate_entry();
   }
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.

@@ -41,7 +41,6 @@ public class StrongSecureRandom {
     private static final String os = System.getProperty("os.name", "unknown");
 
     private static void testDefaultEgd() throws Exception {
-        // No SecurityManager installed.
         String s = Security.getProperty("securerandom.source");
 
         System.out.println("Testing:  default EGD: " + s);

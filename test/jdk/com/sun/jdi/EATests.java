@@ -158,6 +158,19 @@
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                 -XX:LockingMode=0
  *                 -XX:GuaranteedAsyncDeflationInterval=1000
+ *
+ * @bug 8341819
+ * @comment Regression test for re-locking racing with deflation with LM_LIGHTWEIGHT.
+ * @run driver EATests
+ *                 -XX:+UnlockDiagnosticVMOptions
+ *                 -Xms256m -Xmx256m
+ *                 -Xbootclasspath/a:.
+ *                 -XX:CompileCommand=dontinline,*::dontinline_*
+ *                 -XX:+WhiteBoxAPI
+ *                 -Xbatch
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=2
+ *                 -XX:GuaranteedAsyncDeflationInterval=1
  */
 
 /**

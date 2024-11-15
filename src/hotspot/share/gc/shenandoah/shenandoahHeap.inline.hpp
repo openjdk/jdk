@@ -108,7 +108,7 @@ inline void ShenandoahHeap::leave_evacuation(Thread* t) {
 }
 
 template <class T>
-inline void ShenandoahHeap::update_with_forwarded(T* p) {
+inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
@@ -434,7 +434,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     oop obj = cast_to_oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
-    size_t size = obj->size();
+    size_t size = ShenandoahForwarding::size(obj);
     cl->do_object(obj);
     cs += size;
   }

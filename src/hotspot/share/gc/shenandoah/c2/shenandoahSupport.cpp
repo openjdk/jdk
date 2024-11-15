@@ -995,7 +995,7 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
       name = "load_reference_barrier_phantom";
     }
   }
-  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(), calladdr, name, TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::load_reference_barrier_Type(), calladdr, name, TypeRawPtr::BOTTOM);
 
   call->init_req(TypeFunc::Control, ctrl);
   call->init_req(TypeFunc::I_O, phase->C->top());
@@ -1041,6 +1041,7 @@ void ShenandoahBarrierC2Support::fix_ctrl(Node* barrier, Node* region, const Mem
     Node* u = ctrl->fast_out(i);
     if (u->_idx < last &&
         u != barrier &&
+        !u->depends_only_on_test() && // preserve dependency on test
         !uses_to_ignore.member(u) &&
         (u->in(0) != ctrl || (!u->is_Region() && !u->is_Phi())) &&
         (ctrl->Opcode() != Op_CatchProj || u->Opcode() != Op_CreateEx)) {

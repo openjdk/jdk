@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,25 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.classfile.Attributes;
 import java.lang.constant.ConstantDesc;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a constant pool entry that can be used as the constant in a
- * {@code ConstantValue} attribute; this includes the four primitive constant
- * types and {@linkplain String} constants.
+ * {@link Attributes#constantValue() ConstantValue} attribute; this includes the four
+ * primitive constant types and {@linkplain String} constants.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantValueEntry extends LoadableConstantEntry
         permits DoubleEntry, FloatEntry, IntegerEntry, LongEntry, StringEntry {
 
     /**
      * {@return the constant value}  The constant value will be an {@link Integer},
      * {@link Long}, {@link Float}, {@link Double}, or {@link String}.
+     *
+     * @see ConstantPoolBuilder#constantValueEntry(ConstantDesc)
      */
     @Override
     ConstantDesc constantValue();

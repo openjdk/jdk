@@ -28,18 +28,10 @@
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-
-ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,  ShenandoahReferenceProcessor* rp) :
-  MetadataVisitingOopIterateClosure(rp),
-  _queue(q),
-  _mark_context(ShenandoahHeap::heap()->marking_context()),
-  _weak(false)
-{ }
 
 ShenandoahMark::ShenandoahMark() :
   _task_queues(ShenandoahHeap::heap()->marking_context()->task_queues()) {

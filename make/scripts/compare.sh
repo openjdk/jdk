@@ -76,26 +76,13 @@ fi
 # disassembly, such as hard-coded addresses, to be able to catch "actual" differences.
 
 if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-  if [ "$OPENJDK_TARGET_CPU" = "x86" ]; then
-    DIS_DIFF_FILTER="$SED -r \
-        -e 's/^  [0-9A-F]{16}: //' \
-        -e 's/^  [0-9A-F]{8}: /  <ADDR>: /' \
-        -e 's/(offset \?\?)_C@_.*/\1<SYM>/' \
-        -e 's/[@?][A-Za-z0-9_]{1,25}/<SYM>/' \
-        -e 's/([-,+])[0-9A-F]{2,16}/\1<HEXSTR>/g' \
-        -e 's/\[[0-9A-F]{4,16}h\]/[<HEXSTR>]/' \
-        -e 's/: ([a-z]{2}[a-z ]{2})        [0-9A-F]{2,16}h?$/: \1        <HEXSTR>/' \
-        -e 's/_20[0-9]{2}_[0-1][0-9]_[0-9]{2}/_<DATE>/' \
-        "
-  elif [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
-    DIS_DIFF_FILTER="$SED -r \
-        -e 's/^  [0-9A-F]{16}: //' \
-        -e 's/\[[0-9A-F]{4,16}h\]/[<HEXSTR>]/' \
-        -e 's/([,+])[0-9A-F]{2,16}h/\1<HEXSTR>/' \
-        -e 's/([a-z]{2}[a-z ]{2})        [0-9A-F]{4,16}$/\1        <HEXSTR>/' \
-        -e 's/\[\?\?_C@_.*/[<SYM>]/' \
-        "
-  fi
+  DIS_DIFF_FILTER="$SED -r \
+      -e 's/^  [0-9A-F]{16}: //' \
+      -e 's/\[[0-9A-F]{4,16}h\]/[<HEXSTR>]/' \
+      -e 's/([,+])[0-9A-F]{2,16}h/\1<HEXSTR>/' \
+      -e 's/([a-z]{2}[a-z ]{2})        [0-9A-F]{4,16}$/\1        <HEXSTR>/' \
+      -e 's/\[\?\?_C@_.*/[<SYM>]/' \
+      "
 elif [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
   DIS_DIFF_FILTER="$SED \
       -e 's/0x[0-9a-f]\{3,16\}/<HEXSTR>/g' -e 's/^[0-9a-f]\{12,20\}/<ADDR>/' \
@@ -1467,11 +1454,7 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         OTHER_SEC_BIN="$OTHER_SEC_DIR/sec-bin.zip"
         THIS_SEC_BIN="$THIS_SEC_DIR/sec-bin.zip"
         if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-            if [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
-                JGSS_WINDOWS_BIN="jgss-windows-x64-bin.zip"
-            else
-                JGSS_WINDOWS_BIN="jgss-windows-i586-bin.zip"
-            fi
+            JGSS_WINDOWS_BIN="jgss-windows-x64-bin.zip"
             OTHER_SEC_WINDOWS_BIN="$OTHER_SEC_DIR/sec-windows-bin.zip"
             OTHER_JGSS_WINDOWS_BIN="$OTHER_SEC_DIR/$JGSS_WINDOWS_BIN"
             THIS_SEC_WINDOWS_BIN="$THIS_SEC_DIR/sec-windows-bin.zip"

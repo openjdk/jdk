@@ -24,12 +24,11 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.List;
-
-import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.util.List;
 
 import static jdk.internal.classfile.impl.AbstractPoolEntry.MethodHandleEntryImpl;
 

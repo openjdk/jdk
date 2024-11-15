@@ -61,8 +61,6 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
-    vm.gc.ZGenerational \
-    vm.gc.ZSinglegen \
     vm.jvmci \
     vm.jvmci.enabled \
     vm.emulatedClient \
@@ -81,14 +79,16 @@ requires.properties= \
     vm.jvmti \
     vm.graal.enabled \
     jdk.hasLibgraal \
-    vm.libgraal.enabled \
+    vm.libgraal.jit \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.musl \
     vm.flagless \
-    docker.support \
+    container.support \
     systemd.support \
-    jdk.containerized
+    jdk.containerized \
+    jlink.runtime.linkable \
+    jlink.packagedModules
 
 # Minimum jtreg version
 requiredVersion=7.4+1

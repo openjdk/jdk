@@ -42,12 +42,11 @@ import static jdk.jpackage.test.WindowsHelper.getTempDirectory;
 /*
  * @test
  * @summary Custom l10n of msi installers in jpackage
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinL10nTest.java
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinL10nTest

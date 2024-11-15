@@ -186,8 +186,12 @@ objArrayOop ArchiveHeapWriter::allocate_root_segment(size_t offset, int element_
   memset(mem, 0, objArrayOopDesc::object_size(element_count));
 
   // The initialization code is copied from MemAllocator::finish and ObjArrayAllocator::initialize.
-  oopDesc::set_mark(mem, markWord::prototype());
-  oopDesc::release_set_klass(mem, Universe::objectArrayKlass());
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, Universe::objectArrayKlass()->prototype_header());
+  } else {
+    oopDesc::set_mark(mem, markWord::prototype());
+    oopDesc::release_set_klass(mem, Universe::objectArrayKlass());
+  }
   arrayOopDesc::set_length(mem, element_count);
   return objArrayOop(cast_to_oop(mem));
 }
@@ -223,6 +227,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
                             MIN_GC_REGION_ALIGNMENT,
                             max_elem_count);
 
+  int root_index = 0;
   for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
     int size_elems = segments.size_in_elems(seg_idx);
     size_t size_bytes = segments.size_in_bytes(seg_idx);
@@ -235,7 +240,6 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
            "Roots segment " SIZE_FORMAT " start is not aligned: " SIZE_FORMAT,
            segments.count(), oop_offset);
 
-    int root_index = 0;
     objArrayOop seg_oop = allocate_root_segment(oop_offset, size_elems);
     for (int i = 0; i < size_elems; i++) {
       root_segment_at_put(seg_oop, i, roots->at(root_index++));
@@ -244,6 +248,8 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
     log_info(cds, heap)("archived obj root segment [%d] = " SIZE_FORMAT " bytes, obj = " PTR_FORMAT,
                         size_elems, size_bytes, p2i(seg_oop));
   }
+
+  assert(root_index == roots->length(), "Post-condition: All roots are handled");
 
   _heap_root_segments = segments;
 }
@@ -348,9 +354,13 @@ HeapWord* ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, s
   Klass* oak = Universe::objectArrayKlass(); // already relocated to point to archived klass
   HeapWord* mem = offset_to_buffered_address<HeapWord*>(_buffer_used);
   memset(mem, 0, fill_bytes);
-  oopDesc::set_mark(mem, markWord::prototype());
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(oak);
-  cast_to_oop(mem)->set_narrow_klass(nk);
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, markWord::prototype().set_narrow_klass(nk));
+  } else {
+    oopDesc::set_mark(mem, markWord::prototype());
+    cast_to_oop(mem)->set_narrow_klass(nk);
+  }
   arrayOopDesc::set_length(mem, array_length);
   return mem;
 }
@@ -554,18 +564,31 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
   address buffered_addr = requested_addr_to_buffered_addr(cast_from_oop<address>(requested_obj));
 
   oop fake_oop = cast_to_oop(buffered_addr);
-  fake_oop->set_narrow_klass(nk);
+  if (UseCompactObjectHeaders) {
+    fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk));
+  } else {
+    fake_oop->set_narrow_klass(nk);
+  }
 
+  if (src_obj == nullptr) {
+    return;
+  }
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (src_obj != nullptr && !src_obj->fast_no_hash_check()) {
+  if (!src_obj->fast_no_hash_check()) {
     intptr_t src_hash = src_obj->identity_hash();
-    fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
+    if (UseCompactObjectHeaders) {
+      fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));
+    } else {
+      fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
+    }
     assert(fake_oop->mark().is_unlocked(), "sanity");
 
     DEBUG_ONLY(intptr_t archived_hash = fake_oop->identity_hash());
     assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
   }
+  // Strip age bits.
+  fake_oop->set_mark(fake_oop->mark().set_age(0));
 }
 
 class ArchiveHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {

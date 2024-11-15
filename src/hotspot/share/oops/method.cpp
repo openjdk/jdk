@@ -846,10 +846,6 @@ bool Method::is_constant_getter() const {
           Bytecodes::is_return(java_code_at(last_index)));
 }
 
-bool Method::is_initializer() const {
-  return is_object_initializer() || is_static_initializer();
-}
-
 bool Method::has_valid_initializer_flags() const {
   return (is_static() ||
           method_holder()->major_version() < 51);
@@ -869,6 +865,11 @@ bool Method::is_object_initializer() const {
 
 bool Method::needs_clinit_barrier() const {
   return is_static() && !method_holder()->is_initialized();
+}
+
+bool Method::is_object_wait0() const {
+  return klass_name() == vmSymbols::java_lang_Object()
+         && name() == vmSymbols::wait_name();
 }
 
 objArrayHandle Method::resolved_checked_exceptions_impl(Method* method, TRAPS) {

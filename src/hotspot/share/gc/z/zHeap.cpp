@@ -34,6 +34,7 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zHeuristics.hpp"
+#include "gc/z/zInitialize.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zResurrection.hpp"
@@ -74,7 +75,7 @@ ZHeap::ZHeap()
 
   // Prime cache
   if (!_page_allocator.prime_cache(_old.workers(), InitialHeapSize)) {
-    log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", InitialHeapSize / M);
+    ZInitialize::error("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", InitialHeapSize / M);
     return;
   }
 
@@ -240,19 +241,15 @@ void ZHeap::undo_alloc_page(ZPage* page) {
   log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: " SIZE_FORMAT,
                 p2i(Thread::current()), ZUtils::thread_name(), p2i(page), page->size());
 
-  free_page(page);
+  free_page(page, false /* allow_defragment */);
 }
 
-void ZHeap::free_page(ZPage* page) {
+void ZHeap::free_page(ZPage* page, bool allow_defragment) {
   // Remove page table entry
   _page_table.remove(page);
 
-  if (page->is_old()) {
-    page->remset_delete();
-  }
-
   // Free page
-  _page_allocator.free_page(page);
+  _page_allocator.free_page(page, allow_defragment);
 }
 
 size_t ZHeap::free_empty_pages(const ZArray<ZPage*>* pages) {
@@ -261,9 +258,6 @@ size_t ZHeap::free_empty_pages(const ZArray<ZPage*>* pages) {
   ZArrayIterator<ZPage*> iter(pages);
   for (ZPage* page; iter.next(&page);) {
     _page_table.remove(page);
-    if (page->is_old()) {
-      page->remset_delete();
-    }
     freed += page->size();
   }
 

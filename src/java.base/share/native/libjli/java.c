@@ -236,7 +236,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     InvocationFunctions ifn;
     jlong start = 0, end = 0;
     char jvmpath[MAXPATHLEN];
-    char jrepath[MAXPATHLEN];
+    char jdkroot[MAXPATHLEN];
     char jvmcfg[MAXPATHLEN];
 
     _fVersion = fullversion;
@@ -265,9 +265,9 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     }
 
     CreateExecutionEnvironment(&argc, &argv,
-                               jrepath, sizeof(jrepath),
+                               jdkroot, sizeof(jdkroot),
                                jvmpath, sizeof(jvmpath),
-                               jvmcfg,  sizeof(jvmcfg));
+                               jvmcfg, sizeof(jvmcfg));
 
     ifn.CreateJavaVM = 0;
     ifn.GetDefaultJavaVMInitArgs = 0;
@@ -351,7 +351,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
 #define CHECK_EXCEPTION_NULL_LEAVE(CENL_exception) \
     do { \
-        if ((*env)->ExceptionOccurred(env)) { \
+        if ((*env)->ExceptionCheck(env)) { \
             JLI_ReportExceptionDescription(env); \
             LEAVE(); \
         } \
@@ -363,7 +363,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
 #define CHECK_EXCEPTION_LEAVE(CEL_return_value) \
     do { \
-        if ((*env)->ExceptionOccurred(env)) { \
+        if ((*env)->ExceptionCheck(env)) { \
             JLI_ReportExceptionDescription(env); \
             ret = (CEL_return_value); \
             LEAVE(); \
@@ -1198,9 +1198,6 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCmp(arg, "-cp") == 0) {
             REPORT_ERROR (has_arg_any_len, ARG_ERROR1, arg);
             SetClassPath(value);
-            if (mode != LM_SOURCE) {
-                mode = LM_CLASS;
-            }
         } else if (JLI_StrCmp(arg, "--list-modules") == 0) {
             listModules = JNI_TRUE;
         } else if (JLI_StrCmp(arg, "--show-resolved-modules") == 0) {
@@ -1355,11 +1352,12 @@ ParseArguments(int *pargc, char ***pargv,
             *pret = 1;
         }
     } else if (mode == LM_UNKNOWN) {
-        /* default to LM_CLASS if -m, -jar and -cp options are
-         * not specified */
         if (!_have_classpath) {
             SetClassPath(".");
         }
+        /* If neither of -m, -jar, --source option is set, then the
+         * launcher mode is LM_UNKNOWN. In such cases, we determine the
+         * mode as LM_CLASS or LM_SOURCE per the input file. */
         mode = IsSourceFile(arg) ? LM_SOURCE : LM_CLASS;
     } else if (mode == LM_CLASS && IsSourceFile(arg)) {
         /* override LM_CLASS mode if given a source file */
@@ -1522,7 +1520,7 @@ NewPlatformString(JNIEnv *env, char *s)
     if (ary != 0) {
         jstring str = 0;
         (*env)->SetByteArrayRegion(env, ary, 0, len, (jbyte *)s);
-        if (!(*env)->ExceptionOccurred(env)) {
+        if (!(*env)->ExceptionCheck(env)) {
             if (makePlatformStringMID == NULL) {
                 NULL_CHECK0(makePlatformStringMID = (*env)->GetStaticMethodID(env,
                         cls, "makePlatformString", "(Z[B)Ljava/lang/String;"));
@@ -2023,7 +2021,7 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
  * JVM on the command line.
  *
  * The intent of the jvm.cfg file is to allow several JVM libraries to
- * be installed in different subdirectories of a single JRE installation,
+ * be installed in different subdirectories of a single JDK installation,
  * for space-savings and convenience in testing.
  * The intent is explicitly not to provide a full aliasing or predicate
  * mechanism.

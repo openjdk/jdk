@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ class os::win32 {
   static void   setmode_streams();
   static bool   is_windows_11_or_greater();
   static bool   is_windows_server_2022_or_greater();
+  static bool   request_lock_memory_privilege();
+  static size_t large_page_init_decide_size();
   static int windows_major_version() {
     assert(_major_version > 0, "windows version not initialized.");
     return _major_version;
@@ -144,22 +146,7 @@ class os::win32 {
   // return information about that area.
   static bool find_mapping(address p, mapping_info_t* mapping_info);
 
-#ifndef _WIN64
-  // A wrapper to install a structured exception handler for fast JNI accessors.
-  static address fast_jni_accessor_wrapper(BasicType);
-#endif
-
-  // Fast access to current thread
-protected:
-  static int _thread_ptr_offset;
-private:
-  static void initialize_thread_ptr_offset();
 public:
-  static inline void set_thread_ptr_offset(int offset) {
-    _thread_ptr_offset = offset;
-  }
-  static inline int get_thread_ptr_offset() { return _thread_ptr_offset; }
-
   // signal support
   static void* install_signal_handler(int sig, signal_handler_t handler);
   static void* user_handler();

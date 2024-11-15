@@ -28,7 +28,7 @@ import javax.net.ssl.*;
 
 /**
  * @test
- * @bug 8337664
+ * @bug 8337664 8341059
  * @summary Check that TLS Server certificates chaining back to distrusted
  *          Entrust roots are invalid
  * @library /test/lib
@@ -52,7 +52,7 @@ public class Entrust {
 
     // Date when the restrictions take effect
     private static final ZonedDateTime DISTRUST_DATE =
-            LocalDate.of(2024, 11, 1).atStartOfDay(ZoneOffset.UTC);
+            LocalDate.of(2024, 11, 12).atStartOfDay(ZoneOffset.UTC);
 
     public static void main(String[] args) throws Exception {
         Distrust distrust = new Distrust(args);

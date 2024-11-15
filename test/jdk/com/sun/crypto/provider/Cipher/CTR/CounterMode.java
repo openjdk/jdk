@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,8 @@ public class CounterMode {
                     continue;
                 }
                 System.out.println("Running test " + i +  " (" + alg + ")");
-                Cipher cipher = Cipher.getInstance(alg + "/CTR/NoPadding", "SunJCE");
+                Cipher cipher = Cipher.getInstance(alg + "/CTR/NoPadding",
+                                System.getProperty("test.provider.name", "SunJCE"));
                 SecretKeySpec key = new SecretKeySpec(KEYS[i], alg);
                 IvParameterSpec iv = new IvParameterSpec(IVS[i]);
                 byte[] plainText = PLAIN[i];
