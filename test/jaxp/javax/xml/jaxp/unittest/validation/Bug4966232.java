@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -39,11 +38,9 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 4966232
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4966232
  * @run testng/othervm validation.Bug4966232
  * @summary Test SchemaFactory.newSchema(Source) returns a Schema instance for DOMSource & SAXSource.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug4966232 {
 
     // test for W3C XML Schema 1.0 - newSchema(Source schema)
