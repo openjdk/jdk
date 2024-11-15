@@ -149,24 +149,21 @@ class BulkLoaderTestApp {
               "module java.compiler",
               "package javax.tools",
               "jrt:/java.compiler <no signer certificates>",
-              "jdk.internal.loader.ClassLoaders[$]PlatformClassLoader.*<no principals>.*java.security.Permissions.*"
-              + "java.lang.RuntimePermission.*accessSystemModules");
+              "jdk.internal.loader.ClassLoaders[$]PlatformClassLoader.*<no principals>.*java.security.Permissions");
 
         check(BulkLoaderTestApp.class,
               "jdk.internal.loader.ClassLoaders[$]AppClassLoader@",
               "^unnamed module @",
               "package ",
               "file:.*BulkLoaderTestApp.jar <no signer certificates>",
-              "jdk.internal.loader.ClassLoaders[$]AppClassLoader.*<no principals>.*java.security.Permissions.*"
-              + "java.io.FilePermission.*BulkLoaderTestApp.jar.*read");
+              "jdk.internal.loader.ClassLoaders[$]AppClassLoader.*<no principals>.*java.security.Permissions");
 
         check(Class.forName("com.sun.tools.javac.Main"),
               "jdk.internal.loader.ClassLoaders[$]AppClassLoader@",
               "module jdk.compiler",
               "package com.sun.tools.javac",
               "jrt:/jdk.compiler <no signer certificates>",
-              "jdk.internal.loader.ClassLoaders[$]AppClassLoader.*<no principals>.*java.security.Permissions.*"
-              + "java.lang.RuntimePermission.*accessSystemModules");
+              "jdk.internal.loader.ClassLoaders[$]AppClassLoader.*<no principals>.*java.security.Permissions");
 
         doit(() -> {
             Class<?> lambdaClass = MyUtil.getCallerClass(1);
@@ -175,8 +172,7 @@ class BulkLoaderTestApp {
               "unnamed module",
               "package ",
               "file:.*BulkLoaderTestApp.jar <no signer certificates>",
-              "jdk.internal.loader.ClassLoaders[$]AppClassLoader.*<no principals>.*java.security.Permissions.*"
-              + "java.io.FilePermission.*BulkLoaderTestApp.jar.*read");
+              "jdk.internal.loader.ClassLoaders[$]AppClassLoader.*<no principals>.*java.security.Permissions");
 
           });
     }
