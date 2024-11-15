@@ -28,15 +28,12 @@ package java.lang.reflect;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
-import sun.security.action.GetPropertyAction;
-import sun.security.util.SecurityConstants;
 
 /**
  * The {@code AccessibleObject} class is the base class for {@code Field},
@@ -81,17 +78,6 @@ public class AccessibleObject implements AnnotatedElement {
         SharedSecrets.setJavaLangReflectAccess(new ReflectAccess());
     }
 
-    static void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            // SecurityConstants.ACCESS_PERMISSION is used to check
-            // whether a client has sufficient privilege to defeat Java
-            // language access control checks.
-            sm.checkPermission(SecurityConstants.ACCESS_PERMISSION);
-        }
-    }
-
     /**
      * Convenience method to set the {@code accessible} flag for an
      * array of reflected objects.
@@ -114,7 +100,6 @@ public class AccessibleObject implements AnnotatedElement {
      */
     @CallerSensitive
     public static void setAccessible(AccessibleObject[] array, boolean flag) {
-        checkPermission();
         if (flag) {
             Class<?> caller = Reflection.getCallerClass();
             array = array.clone();
@@ -196,7 +181,6 @@ public class AccessibleObject implements AnnotatedElement {
      */
     @CallerSensitive   // overrides in Method/Field/Constructor are @CS
     public void setAccessible(boolean flag) {
-        AccessibleObject.checkPermission();
         setAccessible0(flag);
     }
 
@@ -257,8 +241,6 @@ public class AccessibleObject implements AnnotatedElement {
      */
     @CallerSensitive
     public final boolean trySetAccessible() {
-        AccessibleObject.checkPermission();
-
         if (override == true) return true;
 
         // if it's not a Constructor, Method, Field then no access check
@@ -502,10 +484,7 @@ public class AccessibleObject implements AnnotatedElement {
     // Reflection factory used by subclasses for creating field,
     // method, and constructor accessors. Note that this is called
     // very early in the bootstrapping process.
-    @SuppressWarnings("removal")
-    static final ReflectionFactory reflectionFactory =
-        AccessController.doPrivileged(
-            new ReflectionFactory.GetReflectionFactoryAction());
+    static final ReflectionFactory reflectionFactory = ReflectionFactory.getReflectionFactory();
 
     /**
      * {@inheritDoc}
@@ -623,8 +602,7 @@ public class AccessibleObject implements AnnotatedElement {
     // For non-public members or members in package-private classes,
     // it is necessary to perform somewhat expensive access checks.
     // If the access check succeeds for a given class, it will
-    // always succeed (it is not affected by the granting or revoking
-    // of permissions); we speed up the check in the common case by
+    // always succeed; we speed up the check in the common case by
     // remembering the last Class for which the check succeeded.
     //
     // The simple access check for Constructor is to see if
@@ -756,8 +734,7 @@ public class AccessibleObject implements AnnotatedElement {
      */
     private static boolean printStackTraceWhenAccessFails() {
         if (!printStackPropertiesSet && VM.initLevel() >= 1) {
-            String s = GetPropertyAction.privilegedGetProperty(
-                    "sun.reflect.debugModuleAccessChecks");
+            String s = System.getProperty("sun.reflect.debugModuleAccessChecks");
             if (s != null) {
                 printStackWhenAccessFails = !s.equalsIgnoreCase("false");
             }
