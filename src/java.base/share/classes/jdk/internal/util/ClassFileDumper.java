@@ -126,7 +126,6 @@ public final class ClassFileDumper {
         write(pathname(name + ".failed-" + counter.incrementAndGet()), bytes);
     }
 
-    @SuppressWarnings("removal")
     private void write(Path path, byte[] bytes) {
         try {
             Files.createDirectories(path.getParent());
@@ -145,7 +144,6 @@ public final class ClassFileDumper {
     /*
      * Validate if the given dir is a writeable directory if exists.
      */
-    @SuppressWarnings("removal")
     private static Path validateDumpDir(String dir) {
         Path path = Path.of(dir);
         if (Files.notExists(path)) {
