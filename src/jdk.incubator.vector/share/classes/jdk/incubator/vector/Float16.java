@@ -95,8 +95,7 @@ import static java.lang.Math.multiplyHigh;
 // Currently Float16 is a value-based class and in future it is
 // expected to be aligned with Value Classes and Object as described in
 // JEP-401 (https://openjdk.org/jeps/401).
-// @jdk.internal.MigratedValueClass
-// @jdk.internal.ValueBased
+@jdk.internal.ValueBased
 public final class Float16
     extends Number
     implements Comparable<Float16> {
@@ -323,7 +322,7 @@ public final class Float16
     * @param  f a {@code float}
     */
     public static Float16 valueOf(float f) {
-        return new Float16(Float.floatToFloat16(f));
+        return new Float16(floatToFloat16(f));
     }
 
    /**
