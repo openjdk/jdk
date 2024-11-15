@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,9 +91,6 @@ public final class EventFactory {
      *         input might not be valid if the field type or name is not valid in
      *         the Java language or an annotation element references a type that
      *         can't be found.
-     *
-     * @throws SecurityException if a security manager exists and the caller does
-     *         not have {@code FlightRecorderPermission("registerEvent")}
      *
      * @see Event#set(int, Object)
      */
@@ -200,8 +197,6 @@ public final class EventFactory {
      * If the event class associated with this event factory is already registered,
      * the call to this method is ignored.
      *
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have {@code FlightRecorderPermission("registerEvent")}
      * @see Registered
      * @see FlightRecorder#register(Class)
      */
@@ -219,8 +214,6 @@ public final class EventFactory {
      * If the event class associated with this event factory is not already
      * registered, the call to this method is ignored.
      *
-     * @throws SecurityException if a security manager exists and the caller does
-     *         not have {@code FlightRecorderPermission("registerEvent")}
      * @see Registered
      * @see FlightRecorder#unregister(Class)
      */

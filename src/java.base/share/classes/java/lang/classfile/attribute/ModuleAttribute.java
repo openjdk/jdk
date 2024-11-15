@@ -43,7 +43,6 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.ModuleAttributeBuilderImpl;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code Module} attribute (JVMS {@jvms 4.7.25}), which can
@@ -57,9 +56,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 9.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModuleAttribute
         extends Attribute<ModuleAttribute>, ClassElement
         permits BoundAttribute.BoundModuleAttribute, UnboundAttribute.UnboundModuleAttribute {
@@ -172,9 +170,8 @@ public sealed interface ModuleAttribute
     /**
      * A builder for module attributes.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ModuleAttributeBuilder
             permits ModuleAttributeBuilderImpl {
 
