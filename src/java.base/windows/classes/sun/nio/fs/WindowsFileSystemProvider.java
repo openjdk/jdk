@@ -112,7 +112,6 @@ class WindowsFileSystemProvider
         try {
             return WindowsChannelFactory
                 .newFileChannel(file.getPathForWin32Calls(),
-                                file.getPathForPermissionCheck(),
                                 options,
                                 sd.address());
         } catch (WindowsException x) {
@@ -142,7 +141,6 @@ class WindowsFileSystemProvider
         try {
             return WindowsChannelFactory
                 .newAsynchronousFileChannel(file.getPathForWin32Calls(),
-                                            file.getPathForPermissionCheck(),
                                             options,
                                             sd.address(),
                                             pool);
@@ -227,7 +225,6 @@ class WindowsFileSystemProvider
         try {
             return WindowsChannelFactory
                 .newFileChannel(file.getPathForWin32Calls(),
-                                file.getPathForPermissionCheck(),
                                 options,
                                 sd.address());
         } catch (WindowsException x) {
@@ -323,7 +320,6 @@ class WindowsFileSystemProvider
             Set<OpenOption> opts = Collections.emptySet();
             FileChannel fc = WindowsChannelFactory
                 .newFileChannel(file.getPathForWin32Calls(),
-                                file.getPathForPermissionCheck(),
                                 opts,
                                 0L);
             fc.close();

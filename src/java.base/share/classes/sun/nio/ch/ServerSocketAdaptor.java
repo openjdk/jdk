@@ -89,7 +89,7 @@ class ServerSocketAdaptor                        // package-private
         if (local == null) {
             return null;
         } else {
-            return Net.getRevealedLocalAddress(local).getAddress();
+            return ((InetSocketAddress)local).getAddress();
         }
     }
 

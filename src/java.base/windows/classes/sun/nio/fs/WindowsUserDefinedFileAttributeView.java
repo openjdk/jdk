@@ -116,9 +116,9 @@ class WindowsUserDefinedFileAttributeView
             if (!followLinks)
                 opts.add(WindowsChannelFactory.OPEN_REPARSE_POINT);
             fc = WindowsChannelFactory
-                .newFileChannel(join(file, name), null, opts, 0L);
+                .newFileChannel(join(file, name), opts, 0L);
         } catch (WindowsException x) {
-            x.rethrowAsIOException(join(file.getPathForPermissionCheck(), name));
+            x.rethrowAsIOException(join(file.getPathForExceptionMessage(), name));
         }
         try {
             long size = fc.size();
@@ -140,9 +140,9 @@ class WindowsUserDefinedFileAttributeView
             if (!followLinks)
                 opts.add(WindowsChannelFactory.OPEN_REPARSE_POINT);
             fc = WindowsChannelFactory
-                .newFileChannel(join(file, name), null, opts, 0L);
+                .newFileChannel(join(file, name), opts, 0L);
         } catch (WindowsException x) {
-            x.rethrowAsIOException(join(file.getPathForPermissionCheck(), name));
+            x.rethrowAsIOException(join(file.getPathForExceptionMessage(), name));
         }
 
         // read to EOF (nothing we can do if I/O error occurs)
@@ -196,9 +196,9 @@ class WindowsUserDefinedFileAttributeView
             FileChannel named = null;
             try {
                 named = WindowsChannelFactory
-                    .newFileChannel(join(file, name), null, opts, 0L);
+                    .newFileChannel(join(file, name), opts, 0L);
             } catch (WindowsException x) {
-                x.rethrowAsIOException(join(file.getPathForPermissionCheck(), name));
+                x.rethrowAsIOException(join(file.getPathForExceptionMessage(), name));
             }
             // write value (nothing we can do if I/O error occurs)
             try {

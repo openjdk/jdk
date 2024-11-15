@@ -139,15 +139,12 @@ class UnixSecureDirectoryStream
         int mode = UnixFileModeAttribute
             .toUnixMode(UnixFileModeAttribute.ALL_READWRITE, attrs);
 
-        // path for permission check
-        String pathToCheck = ds.directory().resolve(file).getPathForPermissionCheck();
-
         ds.readLock().lock();
         try {
             if (!ds.isOpen())
                 throw new ClosedDirectoryStreamException();
             try {
-                return UnixChannelFactory.newFileChannel(dfd, file, pathToCheck, options, mode);
+                return UnixChannelFactory.newFileChannel(dfd, file, options, mode);
             } catch (UnixException x) {
                 x.rethrowAsIOException(file);
                 return null; // keep compiler happy

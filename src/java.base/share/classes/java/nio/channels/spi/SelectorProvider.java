@@ -110,11 +110,7 @@ public abstract class SelectorProvider {
                                    ClassLoader.getSystemClassLoader());
             Iterator<SelectorProvider> i = sl.iterator();
             for (;;) {
-                try {
-                    return i.hasNext() ? i.next() : null;
-                } catch (ServiceConfigurationError sce) {
-                    throw sce;
-                }
+                return i.hasNext() ? i.next() : null;
             }
         }
     }

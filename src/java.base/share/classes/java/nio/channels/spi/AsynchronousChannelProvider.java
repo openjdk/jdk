@@ -92,11 +92,7 @@ public abstract class AsynchronousChannelProvider {
                                    ClassLoader.getSystemClassLoader());
             Iterator<AsynchronousChannelProvider> i = sl.iterator();
             for (;;) {
-                try {
-                    return (i.hasNext()) ? i.next() : null;
-                } catch (ServiceConfigurationError sce) {
-                    throw sce;
-                }
+                return (i.hasNext()) ? i.next() : null;
             }
         }
     }

@@ -40,7 +40,6 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedMap;
@@ -344,9 +343,7 @@ public abstract class Charset
         cache1 = new Object[] { charsetName, cs };
     }
 
-    // Creates an iterator that walks over the available providers, ignoring
-    // those whose lookup or instantiation causes a security exception to be
-    // thrown.  Should be invoked with full privileges.
+    // Creates an iterator that walks over the available providers
     //
     private static Iterator<CharsetProvider> providers() {
         return new Iterator<>() {
@@ -358,13 +355,9 @@ public abstract class Charset
 
                 private boolean getNext() {
                     while (next == null) {
-                        try {
-                            if (!i.hasNext())
-                                return false;
-                            next = i.next();
-                        } catch (ServiceConfigurationError sce) {
-                            throw sce;
-                        }
+                        if (!i.hasNext())
+                            return false;
+                        next = i.next();
                     }
                     return true;
                 }

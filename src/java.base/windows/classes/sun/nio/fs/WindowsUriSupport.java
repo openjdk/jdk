@@ -105,7 +105,7 @@ class WindowsUriSupport {
         if (!s.endsWith("\\")) {
             try {
                  addSlash = WindowsFileAttributes.get(path, true).isDirectory();
-            } catch (SecurityException | WindowsException x) {
+            } catch (WindowsException x) {
             }
         }
 

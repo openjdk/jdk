@@ -123,7 +123,7 @@ class SocketAdaptor
         if (sc.isOpen()) {
             InetSocketAddress local = localAddress();
             if (local != null) {
-                return Net.getRevealedLocalAddress(local).getAddress();
+                return local.getAddress();
             }
         }
         return new InetSocketAddress(0).getAddress();
@@ -156,7 +156,7 @@ class SocketAdaptor
 
     @Override
     public SocketAddress getLocalSocketAddress() {
-        return Net.getRevealedLocalAddress(sc.localAddress());
+        return sc.localAddress();
     }
 
     @Override

@@ -59,21 +59,12 @@ class UnixDomainSockets {
         return supported;
     }
 
-    static UnixDomainSocketAddress getRevealedLocalAddress(SocketAddress sa) {
-        UnixDomainSocketAddress addr = (UnixDomainSocketAddress) sa;
-        return addr;
-    }
-
     static UnixDomainSocketAddress localAddress(FileDescriptor fd) throws IOException {
         String path = new String(localAddress0(fd), UnixDomainSocketsUtil.getCharset());
         return UnixDomainSocketAddress.of(path);
     }
 
     private static native byte[] localAddress0(FileDescriptor fd) throws IOException;
-
-    static String getRevealedLocalAddressAsString(SocketAddress sa) {
-        return sa.toString();
-    }
 
     static UnixDomainSocketAddress checkAddress(SocketAddress sa) {
         if (sa == null)

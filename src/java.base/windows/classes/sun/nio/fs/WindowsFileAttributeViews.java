@@ -109,7 +109,7 @@ class WindowsFileAttributeViews {
                             // retry succeeded
                             x = null;
                         }
-                    } catch (SecurityException | WindowsException | IOException ignore) {
+                    } catch (WindowsException | IOException ignore) {
                         // ignore exceptions to let original exception be thrown
                     }
                 }

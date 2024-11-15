@@ -128,15 +128,9 @@ class PollingWatchService
         if (!isOpen())
             throw new ClosedWatchServiceException();
 
-        return doPrivilegedRegister(path, eventSet);
-    }
+        // registers directory returning a new key if not already registered or
+        // existing key if already registered
 
-    // registers directory returning a new key if not already registered or
-    // existing key if already registered
-    private PollingWatchKey doPrivilegedRegister(Path path,
-                                                 Set<? extends WatchEvent.Kind<?>> events)
-        throws IOException
-    {
         // check file is a directory and get its file key if possible
         BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
         if (!attrs.isDirectory()) {
@@ -163,7 +157,7 @@ class PollingWatchService
                     watchKey.disable();
                 }
             }
-            watchKey.enable(events);
+            watchKey.enable(eventSet);
             return watchKey;
         }
 

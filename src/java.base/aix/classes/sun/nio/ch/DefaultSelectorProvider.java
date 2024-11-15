@@ -30,8 +30,7 @@ package sun.nio.ch;
  */
 
 public class DefaultSelectorProvider {
-    private static final SelectorProviderImpl INSTANCE =
-        new PollSelectorProvider();
+    private static final SelectorProviderImpl INSTANCE = new PollSelectorProvider();
 
     /**
      * Prevent instantiation.

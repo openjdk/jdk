@@ -243,11 +243,7 @@ class SocketChannelImpl
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
             ensureOpen();
-            if (isUnixSocket()) {
-                return UnixDomainSockets.getRevealedLocalAddress(localAddress);
-            } else {
-                return Net.getRevealedLocalAddress(localAddress);
-            }
+            return localAddress;
         }
     }
 
@@ -1605,11 +1601,7 @@ class SocketChannelImpl
                 SocketAddress addr = localAddress();
                 if (addr != null) {
                     sb.append(" local=");
-                    if (isUnixSocket()) {
-                        sb.append(UnixDomainSockets.getRevealedLocalAddressAsString(addr));
-                    } else {
-                        sb.append(Net.getRevealedLocalAddressAsString(addr));
-                    }
+                    sb.append(addr.toString());
                 }
                 if (remoteAddress() != null) {
                     sb.append(" remote=");

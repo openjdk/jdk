@@ -171,7 +171,7 @@ abstract class AsynchronousServerSocketChannelImpl
     public final SocketAddress getLocalAddress() throws IOException {
         if (!isOpen())
             throw new ClosedChannelException();
-        return Net.getRevealedLocalAddress(localAddress);
+        return localAddress;
     }
 
     @Override
@@ -253,7 +253,7 @@ abstract class AsynchronousServerSocketChannelImpl
             if (localAddress == null) {
                 sb.append("unbound");
             } else {
-                sb.append(Net.getRevealedLocalAddressAsString(localAddress));
+                sb.append(localAddress.toString());
             }
         }
         sb.append(']');

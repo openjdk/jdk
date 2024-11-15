@@ -202,11 +202,7 @@ class ServerSocketChannelImpl
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
             ensureOpen();
-            if (isUnixSocket()) {
-                return UnixDomainSockets.getRevealedLocalAddress(localAddress);
-            } else {
-                return Net.getRevealedLocalAddress(localAddress);
-            }
+            return localAddress;
         }
     }
 
@@ -733,9 +729,7 @@ class ServerSocketChannelImpl
                 if (addr == null) {
                     sb.append("unbound");
                 } else if (isUnixSocket()) {
-                    sb.append(UnixDomainSockets.getRevealedLocalAddressAsString(addr));
-                } else {
-                    sb.append(Net.getRevealedLocalAddressAsString(addr));
+                    sb.append(addr.toString());
                 }
             }
         }

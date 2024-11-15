@@ -61,9 +61,7 @@ class PipeImpl
     private final SourceChannelImpl source;
     private final SinkChannelImpl sink;
 
-    private static class Initializer
-    {
-
+    private static class Initializer {
         private final SelectorProvider sp;
         private final boolean preferUnixDomain;
         private IOException ioe;
@@ -75,7 +73,7 @@ class PipeImpl
             this.preferUnixDomain = preferUnixDomain;
         }
 
-        public Void run() throws IOException {
+        public void init() throws IOException {
             LoopbackConnector connector = new LoopbackConnector();
             connector.run();
             if (ioe instanceof ClosedByInterruptException) {
@@ -96,8 +94,6 @@ class PipeImpl
 
             if (ioe != null)
                 throw new IOException("Unable to establish loopback connection", ioe);
-
-            return null;
         }
 
         private class LoopbackConnector implements Runnable {
@@ -187,7 +183,7 @@ class PipeImpl
      */
     PipeImpl(SelectorProvider sp, boolean preferAfUnix, boolean buffering) throws IOException {
         Initializer initializer = new Initializer(sp, preferAfUnix);
-        initializer.run();
+        initializer.init();
         SinkChannelImpl sink = initializer.sink;
         if (sink.isNetSocket() && !buffering) {
             sink.setOption(StandardSocketOptions.TCP_NODELAY, true);

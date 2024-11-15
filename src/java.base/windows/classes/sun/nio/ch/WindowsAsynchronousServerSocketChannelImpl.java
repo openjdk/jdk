@@ -187,7 +187,7 @@ class WindowsAsynchronousServerSocketChannelImpl
                 closeChildChannel();
                 if (x instanceof ClosedChannelException)
                     x = new AsynchronousCloseException();
-                if (!(x instanceof IOException) && !(x instanceof SecurityException))
+                if (!(x instanceof IOException))
                     x = new IOException(x);
                 enableAccept();
                 result.setFailure(x);
@@ -239,7 +239,7 @@ class WindowsAsynchronousServerSocketChannelImpl
                 closeChildChannel();
                 if (x instanceof ClosedChannelException)
                     x = new AsynchronousCloseException();
-                if (!(x instanceof IOException) && !(x instanceof SecurityException))
+                if (!(x instanceof IOException))
                     x = new IOException(x);
                 result.setFailure(x);
             }

@@ -212,19 +212,6 @@ public class Net {
         translateException(x, false);
     }
 
-    /**
-     * Returns the local address
-     */
-    static InetSocketAddress getRevealedLocalAddress(SocketAddress sa) {
-        InetSocketAddress isa = (InetSocketAddress) sa;
-        return isa;
-    }
-
-    static String getRevealedLocalAddressAsString(SocketAddress sa) {
-        InetSocketAddress isa = (InetSocketAddress) sa;
-        return isa.toString();
-    }
-
     private static InetSocketAddress getLoopbackAddress(int port) {
         return new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
     }

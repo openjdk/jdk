@@ -41,17 +41,13 @@ class Reflect {                                 // package-private
         }
     }
 
-    private static void setAccessible(final AccessibleObject ao) {
-        ao.setAccessible(true);
-    }
-
     static Constructor<?> lookupConstructor(String className,
                                             Class<?>[] paramTypes)
     {
         try {
             Class<?> cl = Class.forName(className);
             Constructor<?> c = cl.getDeclaredConstructor(paramTypes);
-            setAccessible(c);
+            c.setAccessible(true);
             return c;
         } catch (ClassNotFoundException | NoSuchMethodException x) {
             throw new ReflectionError(x);
@@ -75,7 +71,7 @@ class Reflect {                                 // package-private
         try {
             Class<?> cl = Class.forName(className);
             Method m = cl.getDeclaredMethod(methodName, paramTypes);
-            setAccessible(m);
+            m.setAccessible(true);
             return m;
         } catch (ClassNotFoundException | NoSuchMethodException x) {
             throw new ReflectionError(x);
@@ -108,7 +104,7 @@ class Reflect {                                 // package-private
         try {
             Class<?> cl = Class.forName(className);
             Field f = cl.getDeclaredField(fieldName);
-            setAccessible(f);
+            f.setAccessible(true);
             return f;
         } catch (ClassNotFoundException | NoSuchFieldException x) {
             throw new ReflectionError(x);

@@ -166,11 +166,6 @@ class WindowsPath implements Path {
         return path;
     }
 
-    // use this path for permission checks
-    String getPathForPermissionCheck() {
-        return path;
-    }
-
     // use this path for Win32 calls
     // This method will prefix long paths with \\?\ or \\?\UNC as required.
     String getPathForWin32Calls() throws WindowsException {

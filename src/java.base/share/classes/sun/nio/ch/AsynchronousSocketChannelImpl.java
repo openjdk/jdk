@@ -442,7 +442,7 @@ abstract class AsynchronousSocketChannelImpl
     public final SocketAddress getLocalAddress() throws IOException {
         if (!isOpen())
             throw new ClosedChannelException();
-         return Net.getRevealedLocalAddress(localAddress);
+         return localAddress;
     }
 
     @Override
@@ -586,8 +586,7 @@ abstract class AsynchronousSocketChannelImpl
                 }
                 if (localAddress != null) {
                     sb.append(" local=");
-                    sb.append(
-                            Net.getRevealedLocalAddressAsString(localAddress));
+                    sb.append(localAddress.toString());
                 }
                 if (remoteAddress != null) {
                     sb.append(" remote=");

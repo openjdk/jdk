@@ -101,7 +101,7 @@ class WindowsFileSystem
             throw new AssertionError(x.getMessage());
         }
 
-        // iterate over roots, ignoring those that the security manager denies
+        // iterate over roots
         ArrayList<Path> result = new ArrayList<>();
         for (int i = 0; i <= 25; i++) {  // 0->A, 1->B, 2->C...
             if ((drives & (1 << i)) != 0) {
@@ -171,11 +171,7 @@ class WindowsFileSystem
 
     @Override
     public Iterable<FileStore> getFileStores() {
-        return new Iterable<FileStore>() {
-            public Iterator<FileStore> iterator() {
-                return new FileStoreIterator();
-            }
-        };
+        return FileStoreIterator::new;
     }
 
     // supported views

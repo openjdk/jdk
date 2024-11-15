@@ -838,8 +838,7 @@ class UnixPath implements Path {
         if (isAbsolute()) {
             return this;
         }
-        // The path is relative so need to resolve against default directory,
-        // taking care not to reveal the user.dir
+        // The path is relative so need to resolve against default directory
         return new UnixPath(getFileSystem(),
             resolve(getFileSystem().defaultDirectory(), path));
     }

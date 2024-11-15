@@ -108,7 +108,6 @@ class UnixChannelFactory {
      */
     static FileChannel newFileChannel(int dfd,
                                       UnixPath path,
-                                      String pathForPermissionCheck,
                                       Set<? extends OpenOption> options,
                                       int mode)
         throws UnixException
@@ -130,7 +129,7 @@ class UnixChannelFactory {
         if (flags.append && flags.truncateExisting)
             throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
 
-        FileDescriptor fdObj = open(dfd, path, pathForPermissionCheck, flags, mode);
+        FileDescriptor fdObj = open(dfd, path, flags, mode);
         return FileChannelImpl.open(fdObj, path.toString(), flags.read, flags.write,
                 (flags.sync || flags.dsync), flags.direct, null);
     }
@@ -143,7 +142,7 @@ class UnixChannelFactory {
                                       int mode)
         throws UnixException
     {
-        return newFileChannel(-1, path, null, options, mode);
+        return newFileChannel(-1, path, options, mode);
     }
 
     /**
@@ -167,7 +166,7 @@ class UnixChannelFactory {
             throw new UnsupportedOperationException("APPEND not allowed");
 
         // for now use simple implementation
-        FileDescriptor fdObj = open(-1, path, null, flags, mode);
+        FileDescriptor fdObj = open(-1, path, flags, mode);
         return SimpleAsynchronousFileChannelImpl.open(fdObj, path.toString(), flags.read, flags.write, pool);
     }
 
@@ -177,7 +176,6 @@ class UnixChannelFactory {
      */
     protected static FileDescriptor open(int dfd,
                                          UnixPath path,
-                                         String pathForPermissionCheck,
                                          Flags flags,
                                          int mode)
         throws UnixException

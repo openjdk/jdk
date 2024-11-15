@@ -125,7 +125,7 @@ class UnixUriUtils {
                 if (attrs != null
                         && ((attrs.mode() & UnixConstants.S_IFMT) == UnixConstants.S_IFDIR))
                     sb.append('/');
-            } catch (UnixException | SecurityException ignore) { }
+            } catch (UnixException ignore) { }
         }
 
         try {

@@ -176,12 +176,7 @@ abstract class UnixFileSystem
      */
     @Override
     public final Iterable<Path> getRootDirectories() {
-        final List<Path> allowedList = List.of(rootDirectory);
-        return new Iterable<>() {
-            public Iterator<Path> iterator() {
-                return allowedList.iterator();
-            }
-        };
+        return List.of(rootDirectory);
     }
 
     /**
@@ -254,11 +249,7 @@ abstract class UnixFileSystem
 
     @Override
     public final Iterable<FileStore> getFileStores() {
-        return new Iterable<>() {
-            public Iterator<FileStore> iterator() {
-                return new FileStoreIterator();
-            }
-        };
+        return FileStoreIterator::new;
     }
 
     @Override

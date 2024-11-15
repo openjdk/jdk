@@ -447,7 +447,6 @@ public class Util {
 
     private static volatile Constructor<?> directByteBufferRConstructor;
 
-    @SuppressWarnings("removal")
     private static void initDBBRConstructor() {
         try {
             Class<?> cl = Class.forName("java.nio.DirectByteBufferR");
