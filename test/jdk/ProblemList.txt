@@ -823,8 +823,3 @@ java/awt/Checkbox/CheckboxBoxSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxIndicatorSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all
 java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
-java/awt/print/PrinterJob/CheckPrivilege.java 8343219 generic-all
-javax/print/PrintSE/PrintSE.sh 8343219 generic-all
-java/awt/print/PrinterJob/SecurityDialogTest.java 8343219 generic-all
-java/awt/Dialog/PrintToFileTest/PrintToFileGranted.java 8343219 generic-all
-java/awt/Dialog/PrintToFileTest/PrintToFileRevoked.java 8343219 generic-all
