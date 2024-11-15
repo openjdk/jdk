@@ -98,6 +98,9 @@ body {
 main [id] {
     scroll-margin-top: calc(var(--nav-height) + 6px);
 }
+div.main-grid {
+    max-width: 2100px;
+}
 a:link, a:visited {
     text-decoration:none;
     color:var(--link-color);
@@ -276,8 +279,7 @@ ol.sub-nav-list a.current-selection {
 }
 .sub-nav .nav-list-search {
     flex: 1 1 10%;
-    margin:0;
-    padding:6px;
+    margin: 0 10px;
     position:relative;
     white-space: nowrap;
 }
@@ -354,7 +356,7 @@ body.class-declaration-page .details h3 {
     flex-direction: row;
 }
 .main-grid main {
-    flex: 3 1 0;
+    flex: 3.2 1 0;
     min-width: 240px
 }
 .main-grid nav.toc {
@@ -499,7 +501,6 @@ nav.toc ol.toc-list ol.toc-list {
 nav.toc ol.toc-list li {
     margin: 0;
     font-size: var(--nav-font-size);
-    overflow-x: hidden;
 }
 a.current-selection {
     font-weight: bold;
@@ -507,6 +508,8 @@ a.current-selection {
 nav.toc a {
     display: block;
     padding: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 nav.toc a.current-selection {
     background-color: var(--subnav-background-color);
@@ -947,12 +950,11 @@ input#search-input, input#page-search-input {
     margin: 0;
 }
 input#search-input {
-    margin: 0 4px;
     padding-right: 18px;
     max-width: 340px;
 }
 input.filter-input {
-    width: 40%;
+    width: 44%;
     max-width: 140px;
     margin: 0 4px;
     padding-right: 18px;
@@ -971,8 +973,8 @@ input#reset-search, input.reset-filter {
 }
 input#reset-search {
     position:absolute;
-    right:15px;
-    top:11px;
+    right:5px;
+    top:5px;
 }
 input.reset-filter {
     position: relative;
@@ -1426,7 +1428,7 @@ table.striped > tbody > tr > th {
 }
 @media screen and (max-width: 800px) {
     .about-language {
-        padding-right: 16px;
+        padding: 0 16px;
         max-width: 90%;
     }
     ul.nav-list li {
