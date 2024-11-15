@@ -22,13 +22,13 @@
  *
  */
 
-#ifndef SHARE_CDS_CLASSPRELINKER_HPP
-#define SHARE_CDS_CLASSPRELINKER_HPP
+#ifndef SHARE_CDS_AOTCONSTANTPOOLRESOLVER_HPP
+#define SHARE_CDS_AOTCONSTANTPOOLRESOLVER_HPP
 
 #include "interpreter/bytecodes.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
@@ -39,7 +39,9 @@ class constantPoolHandle;
 class InstanceKlass;
 class Klass;
 
-// ClassPrelinker is used to perform ahead-of-time linking of ConstantPool entries
+template <typename T> class GrowableArray;
+
+// AOTConstantPoolResolver is used to perform ahead-of-time linking of ConstantPool entries
 // for archived InstanceKlasses.
 //
 // At run time, Java classes are loaded dynamically and may be replaced with JVMTI.
@@ -49,23 +51,21 @@ class Klass;
 // For example, a JVM_CONSTANT_Class reference to a supertype can be safely resolved
 // at dump time, because at run time we will load a class from the CDS archive only
 // if all of its supertypes are loaded from the CDS archive.
-class ClassPrelinker :  AllStatic {
-  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, 15889, AnyObj::C_HEAP, mtClassShared> ;
+class AOTConstantPoolResolver :  AllStatic {
+  static const int TABLE_SIZE = 15889; // prime number
+  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared> ;
   static ClassesTable* _processed_classes;
-  static ClassesTable* _vm_classes;
-
-  static void add_one_vm_class(InstanceKlass* ik);
 
 #ifdef ASSERT
+  template <typename T> static bool is_in_archivebuilder_buffer(T p) {
+    return is_in_archivebuilder_buffer((address)(p));
+  }
   static bool is_in_archivebuilder_buffer(address p);
 #endif
 
-  template <typename T>
-  static bool is_in_archivebuilder_buffer(T p) {
-    return is_in_archivebuilder_buffer((address)(p));
-  }
   static void resolve_string(constantPoolHandle cp, int cp_index, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_class_resolution_deterministic(InstanceKlass* cp_holder, Klass* resolved_class);
+  static bool is_indy_resolution_deterministic(ConstantPool* cp, int cp_index);
 
   static Klass* find_loaded_class(Thread* current, oop class_loader, Symbol* name);
   static Klass* find_loaded_class(Thread* current, ConstantPool* cp, int class_cp_index);
@@ -73,18 +73,20 @@ class ClassPrelinker :  AllStatic {
   // fmi = FieldRef/MethodRef/InterfaceMethodRef
   static void maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m, Bytecodes::Code bc, int raw_index,
                                     GrowableArray<bool>* resolve_fmi_list, TRAPS);
+
+  static bool check_methodtype_signature(ConstantPool* cp, Symbol* sig, Klass** return_type_ret = nullptr);
+  static bool check_lambda_metafactory_signature(ConstantPool* cp, Symbol* sig);
+  static bool check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i);
+  static bool check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i);
+
 public:
   static void initialize();
   static void dispose();
 
   static void preresolve_class_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
   static void preresolve_field_and_method_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
+  static void preresolve_indy_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
 
-  // Is this class resolved as part of vmClasses::resolve_all()? If so, these
-  // classes are guatanteed to be loaded at runtime (and cannot be replaced by JVMTI)
-  // when CDS is enabled. Therefore, we can safely keep a direct reference to these
-  // classes.
-  static bool is_vm_class(InstanceKlass* ik);
 
   // Resolve all constant pool entries that are safe to be stored in the
   // CDS archive.
@@ -93,4 +95,4 @@ public:
   static bool is_resolution_deterministic(ConstantPool* cp, int cp_index);
 };
 
-#endif // SHARE_CDS_CLASSPRELINKER_HPP
+#endif // SHARE_CDS_AOTCONSTANTPOOLRESOLVER_HPP

@@ -223,7 +223,9 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   }
   _max_heap_size = MaxHeapSize;
   _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
+  _has_aot_linked_classes = CDSConfig::is_dumping_aot_linked_classes();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
+  _has_archived_invokedynamic = CDSConfig::is_dumping_invokedynamic();
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -313,6 +315,8 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
+  st->print_cr("- has_aot_linked_classes          %d", _has_aot_linked_classes);
+  st->print_cr("- has_archived_invokedynamic      %d", _has_archived_invokedynamic);
 }
 
 void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
@@ -1060,7 +1064,9 @@ bool FileMapInfo::validate_shared_path_table() {
     }
   }
 
-  validate_non_existent_class_paths();
+  if (!validate_non_existent_class_paths()) {
+    return false;
+  }
 
   _validating_shared_path_table = false;
 
@@ -1076,7 +1082,7 @@ bool FileMapInfo::validate_shared_path_table() {
   return true;
 }
 
-void FileMapInfo::validate_non_existent_class_paths() {
+bool FileMapInfo::validate_non_existent_class_paths() {
   // All of the recorded non-existent paths came from the Class-Path: attribute from the JAR
   // files on the app classpath. If any of these are found to exist during runtime,
   // it will change how classes are loading for the app loader. For safety, disable
@@ -1089,11 +1095,19 @@ void FileMapInfo::validate_non_existent_class_paths() {
        i++) {
     SharedClassPathEntry* ent = shared_path(i);
     if (!ent->check_non_existent()) {
-      log_warning(cds)("Archived non-system classes are disabled because the "
-              "file %s exists", ent->name());
-      header()->set_has_platform_or_app_classes(false);
+      if (header()->has_aot_linked_classes()) {
+        log_error(cds)("CDS archive has aot-linked classes. It cannot be used because the "
+                       "file %s exists", ent->name());
+        return false;
+      } else {
+        log_warning(cds)("Archived non-system classes are disabled because the "
+                         "file %s exists", ent->name());
+        header()->set_has_platform_or_app_classes(false);
+      }
     }
   }
+
+  return true;
 }
 
 // A utility class for reading/validating the GenericCDSFileMapHeader portion of
@@ -2074,7 +2088,16 @@ void FileMapInfo::map_or_load_heap_region() {
   }
 
   if (!success) {
-    CDSConfig::stop_using_full_module_graph();
+    if (CDSConfig::is_using_aot_linked_classes()) {
+      // It's too late to recover -- we have already committed to use the archived metaspace objects, but
+      // the archived heap objects cannot be loaded, so we don't have the archived FMG to guarantee that
+      // all AOT-linked classes are visible.
+      //
+      // We get here because the heap is too small. The app will fail anyway. So let's quit.
+      MetaspaceShared::unrecoverable_loading_error("CDS archive has aot-linked classes but the archived "
+                                                   "heap objects cannot be loaded. Try increasing your heap size.");
+    }
+    CDSConfig::stop_using_full_module_graph("archive heap loading failed");
   }
 }
 
@@ -2429,6 +2452,34 @@ bool FileMapInfo::initialize() {
   return true;
 }
 
+bool FileMapInfo::validate_aot_class_linking() {
+  // These checks need to be done after FileMapInfo::initialize(), which gets called before Universe::heap()
+  // is available.
+  if (header()->has_aot_linked_classes()) {
+    CDSConfig::set_has_aot_linked_classes(true);
+    if (JvmtiExport::should_post_class_file_load_hook()) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
+      return false;
+    }
+    if (JvmtiExport::has_early_vmstart_env()) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when JVMTI early vm start is in use.");
+      return false;
+    }
+    if (!CDSConfig::is_using_full_module_graph()) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
+      return false;
+    }
+
+    const char* prop = Arguments::get_property("java.security.manager");
+    if (prop != nullptr && strcmp(prop, "disallow") != 0) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used with -Djava.security.manager=%s.", prop);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 // The 2 core spaces are RW->RO
 FileMapRegion* FileMapInfo::first_core_region() const {
   return region_at(MetaspaceShared::rw);
@@ -2478,6 +2529,11 @@ bool FileMapHeader::validate() {
   // header data
   const char* prop = Arguments::get_property("java.system.class.loader");
   if (prop != nullptr) {
+    if (has_aot_linked_classes()) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when the "
+                     "java.system.class.loader property is specified.");
+      return false;
+    }
     log_warning(cds)("Archived non-system classes are disabled because the "
             "java.system.class.loader property is specified (value = \"%s\"). "
             "To use archived non-system classes, this property must not be set", prop);
@@ -2542,9 +2598,15 @@ bool FileMapHeader::validate() {
     log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
   }
 
-  if (is_static() && !_has_full_module_graph) {
+  if (is_static()) {
     // Only the static archive can contain the full module graph.
-    CDSConfig::stop_using_full_module_graph("archive was created without full module graph");
+    if (!_has_full_module_graph) {
+      CDSConfig::stop_using_full_module_graph("archive was created without full module graph");
+    }
+
+    if (_has_archived_invokedynamic) {
+      CDSConfig::set_has_archived_invokedynamic();
+    }
   }
 
   return true;
