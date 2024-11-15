@@ -412,10 +412,11 @@ final class MethodHandleAccessorFactory {
      *
      * @param method the method to check
      * @return {@code true} if this method is signature polymorphic
-     * @jls 15.12 Method Invocation Expressions
+     * @jls 15.12.3 Compile-Time Step 3: Is the Chosen Method Appropriate?
+     * @jvms 2.9.3 Signature Polymorphic Methods
      */
     public static boolean isSignaturePolymorphicMethod(Method method) {
-        // Native; has variable arity parameter
+        // ACC_NATIVE and ACC_VARARGS
         if (!method.isVarArgs() || !Modifier.isNative(method.getModifiers())) {
             return false;
         }
