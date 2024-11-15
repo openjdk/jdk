@@ -64,7 +64,6 @@ import static java.net.Proxy.NO_PROXY;
  *      -Djdk.httpclient.HttpClient.log=headers,requests,trace
  *      -Djdk.internal.httpclient.debug=true
  *      PlainProxyConnectionTest
- * @author danielfuchs
  */
 public class PlainProxyConnectionTest {
 
