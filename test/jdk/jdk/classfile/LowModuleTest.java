@@ -77,7 +77,7 @@ class LowModuleTest {
 
     private void testRead0(ClassModel classLow) {
         for (Attribute<?> attr : classLow.attributes()) {
-            switch (attr.attributeName()) {
+            switch (attr.attributeName().stringValue()) {
                 case Attributes.NAME_SOURCE_FILE: {
                     SourceFileAttribute sfa = (SourceFileAttribute) attr;
                     Utf8Entry sf = sfa.sourceFile();
