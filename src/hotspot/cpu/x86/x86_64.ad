@@ -6222,7 +6222,7 @@ instruct cmovI_imm_01U(rRegI dst, immI_1 src, rFlagsRegU cr, cmpOpU cop)
 %}
 
 instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
-  predicate(!UseAPX);
+  //predicate(!UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6233,6 +6233,7 @@ instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
   ins_pipe(pipe_cmov_reg);
 %}
 
+/*
 instruct cmovI_regU_ndd(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src1, rRegI src2) %{
   predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
@@ -6243,7 +6244,7 @@ instruct cmovI_regU_ndd(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src1, rRegI 
     __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
-%}
+%}*/
 
 instruct cmovI_imm_01UCF(rRegI dst, immI_1 src, rFlagsRegUCF cr, cmpOpUCF cop)
 %{
@@ -6333,7 +6334,7 @@ instruct cmovI_memUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegI dst, memory src) %{
 // Conditional move
 instruct cmovN_reg(rRegN dst, rRegN src, rFlagsReg cr, cmpOp cop)
 %{
-  predicate(!UseAPX);
+  //predicate(!UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6345,6 +6346,7 @@ instruct cmovN_reg(rRegN dst, rRegN src, rFlagsReg cr, cmpOp cop)
 %}
 
 // Conditional move ndd
+/*
 instruct cmovN_reg_ndd(rRegN dst, rRegN src1, rRegN src2, rFlagsReg cr, cmpOp cop)
 %{
   predicate(UseAPX);
@@ -6356,12 +6358,12 @@ instruct cmovN_reg_ndd(rRegN dst, rRegN src1, rRegN src2, rFlagsReg cr, cmpOp co
     __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
-%}
+%}*/
 
 // Conditional move
 instruct cmovN_regU(cmpOpU cop, rFlagsRegU cr, rRegN dst, rRegN src)
 %{
-  predicate(!UseAPX);
+  predicate(true || !UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6382,6 +6384,7 @@ instruct cmovN_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
 %}
 
 // Conditional move ndd
+/*
 instruct cmovN_regU_ndd(rRegN dst, cmpOpU cop, rFlagsRegU cr, rRegN src1, rRegN src2)
 %{
   predicate(UseAPX);
@@ -6393,8 +6396,9 @@ instruct cmovN_regU_ndd(rRegN dst, cmpOpU cop, rFlagsRegU cr, rRegN src1, rRegN 
     __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
-%}
+%}*/
 
+/*
 instruct cmovN_regUCF_ndd(rRegN dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegN src1, rRegN src2) %{
   predicate(UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary src1 src2)));
@@ -6402,7 +6406,7 @@ instruct cmovN_regUCF_ndd(rRegN dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegN src1, 
   expand %{
     cmovN_regU_ndd(dst, cop, cr, src1, src2);
   %}
-%}
+%}*/
 
 instruct cmovN_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
@@ -6892,7 +6896,7 @@ instruct incI_rReg_ndd(rRegI dst, rRegI src, immI_1 val)
 
   format %{ "eincl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ eincrementl($dst$$Register, $src$$Register, true, $val$$constant);
+    __ eincrementl($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -6932,7 +6936,7 @@ instruct decI_rReg_ndd(rRegI dst, rRegI src, immI_M1 val)
 
   format %{ "edecl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ edecrementl($dst$$Register, $src$$Register, true, $val$$constant);
+    __ edecrementl($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7104,7 +7108,7 @@ instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val)
 
   format %{ "eincq    $dst, $src\t# long" %}
   ins_encode %{
-    __ eincrementq($dst$$Register, $src$$Register, true, $val$$constant);
+    __ eincrementq($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7144,7 +7148,7 @@ instruct decL_rReg_ndd(rRegL dst, rRegL src, immL_M1 val)
 
   format %{ "edecq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ edecrementq($dst$$Register, $src$$Register, true, $val$$constant);
+    __ edecrementq($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -12729,7 +12733,7 @@ instruct testB_mem_imm(rFlagsReg cr, memory mem, immI8 imm, immI_0 zero)
 
 instruct cmovI_reg_g(rRegI dst, rRegI src, rFlagsReg cr)
 %{
-  predicate(!UseAPX);
+  //predicate(!UseAPX);
   effect(USE_DEF dst, USE src, USE cr);
 
   format %{ "cmovlgt $dst, $src\t# min" %}
@@ -12739,10 +12743,11 @@ instruct cmovI_reg_g(rRegI dst, rRegI src, rFlagsReg cr)
   ins_pipe(pipe_cmov_reg);
 %}
 
+/*
 instruct cmovI_reg_g_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
-  effect(USE_DEF dst, USE src1, USE src2, USE cr);
+  effect(USE src1, USE src2, USE cr);
 
   format %{ "ecmovlgt $dst, $src1, $src2\t# min ndd" %}
   ins_encode %{
@@ -12750,11 +12755,12 @@ instruct cmovI_reg_g_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   %}
   ins_pipe(pipe_cmov_reg);
 %}
+*/
 
 
 instruct minI_rReg(rRegI dst, rRegI src)
 %{
-  predicate(!UseAPX);
+  //predicate(!UseAPX);
   match(Set dst (MinI dst src));
 
   ins_cost(200);
@@ -12765,6 +12771,7 @@ instruct minI_rReg(rRegI dst, rRegI src)
   %}
 %}
 
+/*
 instruct minI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
 %{
   predicate(UseAPX);
@@ -12777,10 +12784,11 @@ instruct minI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
     cmovI_reg_g_ndd(dst, src1, src2, cr);
   %}
 %}
+*/
 
 instruct cmovI_reg_l(rRegI dst, rRegI src, rFlagsReg cr)
 %{
-  predicate(!UseAPX);
+  //predicate(!UseAPX);
   effect(USE_DEF dst, USE src, USE cr);
 
   format %{ "cmovllt $dst, $src\t# max" %}
@@ -12790,6 +12798,7 @@ instruct cmovI_reg_l(rRegI dst, rRegI src, rFlagsReg cr)
   ins_pipe(pipe_cmov_reg);
 %}
 
+/*
 instruct cmovI_reg_l_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
@@ -12800,12 +12809,12 @@ instruct cmovI_reg_l_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
     __ ecmovl(Assembler::less, $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
-%}
+%}*/
 
 
 instruct maxI_rReg(rRegI dst, rRegI src)
 %{
-  predicate(!UseAPX);
+  //predicate(!UseAPX);
   match(Set dst (MaxI dst src));
 
   ins_cost(200);
@@ -12816,6 +12825,7 @@ instruct maxI_rReg(rRegI dst, rRegI src)
   %}
 %}
 
+/*
 instruct maxI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
 %{
   predicate(UseAPX);
@@ -12827,7 +12837,7 @@ instruct maxI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
     compI_rReg(cr, src1, src2);
     cmovI_reg_l_ndd(dst, src1, src2, cr);
   %}
-%}
+%}*/
 
 // ============================================================================
 // Branch Instructions
