@@ -303,7 +303,8 @@ class nmethod : public CodeBlob {
           int frame_size,
           ByteSize basic_lock_owner_sp_offset, /* synchronized natives only */
           ByteSize basic_lock_sp_offset,       /* synchronized natives only */
-          OopMapSet* oop_maps);
+          OopMapSet* oop_maps,
+          int mutable_data_size);
 
   // For normal JIT compiled code
   nmethod(Method* method,
@@ -314,7 +315,6 @@ class nmethod : public CodeBlob {
           int compile_id,
           int entry_bci,
           address immutable_data,
-          address mutable_data,
           CodeOffsets* offsets,
           int orig_pc_offset,
           DebugInformationRecorder *recorder,
@@ -526,7 +526,7 @@ public:
   address insts_begin           () const { return           code_begin()   ; }
   address insts_end             () const { return           header_begin() + _stub_offset             ; }
   address stub_begin            () const { return           header_begin() + _stub_offset             ; }
-  address stub_end              () const { return           data_begin()   ; }
+  address stub_end              () const { return           code_end()     ; }
   address exception_begin       () const { return           header_begin() + _exception_offset        ; }
   address deopt_handler_begin   () const { return           header_begin() + _deopt_handler_offset    ; }
   address deopt_mh_handler_begin() const { return           header_begin() + _deopt_mh_handler_offset ; }

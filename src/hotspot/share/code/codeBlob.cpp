@@ -108,34 +108,23 @@ unsigned int CodeBlob::align_code_offset(int offset) {
 }
 
 // This must be consistent with the CodeBlob constructor's layout actions.
-unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size, bool external_mutable_data) {
-  unsigned int size = header_size;
-  if (!external_mutable_data) {
-    // In a standard CodeBlob, the relocation_info is located before the code section.
-    // However, in an nmethod, the relocation_info is stored in the mutable data, so
-    // it does not contribute to the nmethod's total size, as it is moved to the C heap.
-    size += align_up(cb->total_relocation_size(), oopSize);
-  }
+unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   // align the size to CodeEntryAlignment
-  size = align_code_offset(size);
+  unsigned int size = align_code_offset(header_size);
   size += align_up(cb->total_content_size(), oopSize);
-  if (!external_mutable_data) {
-    size += align_up(cb->total_oop_size(), oopSize);
-    size += align_up(cb->total_metadata_size(), oopSize);
-  }
   return size;
 }
 
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
                    int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
-                   bool external_mutable_data) :
+                   int mutable_data_size) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
   _size(size),
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
-  _content_offset(CodeBlob::align_code_offset(header_size + (external_mutable_data ? 0 : _relocation_size))),
+  _content_offset(CodeBlob::align_code_offset(header_size)),
   _code_offset(_content_offset + cb->total_offset_of(cb->insts())),
-  _data_offset(_content_offset + align_up(cb->total_content_size(), oopSize)),
+  _code_end_offset(_content_offset + align_up(cb->total_content_size(), oopSize)),
   _frame_size(frame_size),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
@@ -148,12 +137,22 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   assert(is_aligned(_size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,      oopSize), "unaligned size");
   assert(is_aligned(_relocation_size, oopSize), "unaligned size");
-  assert(_data_offset <= _size, "codeBlob is too small: %d > %d", _data_offset, _size);
+  assert(_code_end_offset <= _size, "codeBlob is too small: %d > %d", _code_end_offset, _size);
   assert(code_end() == content_end(), "must be the same - see code_end()");
 #ifdef COMPILER1
   // probably wrong for tiered
   assert(_frame_size >= -1, "must use frame size or -1 for runtime stubs");
 #endif // COMPILER1
+
+  // The mutable_data_size is either calculated by the nmethod constructor to account
+  // for reloc_info and additional data, or it is set here to accommodate only the relocation data.
+  _mutable_data_size = (mutable_data_size == 0) ? cb->total_relocation_size() : mutable_data_size;
+  if (_mutable_data_size > 0) {
+    _mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
+    if (_mutable_data == nullptr) {
+      vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
+    }
+  }
 
   set_oop_maps(oop_maps);
 }
@@ -166,7 +165,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
   _code_offset(_content_offset),
-  _data_offset(size),
+  _code_end_offset(size),
   _frame_size(0),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
