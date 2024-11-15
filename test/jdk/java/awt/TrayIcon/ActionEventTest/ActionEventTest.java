@@ -27,8 +27,9 @@
  * @key headful
  * @summary Verify that ActionEvent is received with correct modifiers set.
  * @modules java.desktop/java.awt:open java.desktop/java.awt.peer
- * @library ../ /java/awt/patchlib /test/lib
- * @build java.desktop/java.awt.Helper SystemTrayIconHelper jtreg.SkippedException
+ * @library ../ /lib/client /java/awt/patchlib /test/lib
+ * @build java.desktop/java.awt.Helper ExtendedRobot
+ *        SystemTrayIconHelper jtreg.SkippedException
  * @run main ActionEventTest
  */
 
@@ -53,10 +54,9 @@ public class ActionEventTest {
             throw new jtreg.SkippedException("SystemTray not supported on the platform." +
                     " Marking the test passed.");
         }
-            ActionEventTest test = new ActionEventTest();
-            test.doTest();
-            test.clear();
-        }
+        ActionEventTest test = new ActionEventTest();
+        test.doTest();
+        test.clear();
     }
 
     public ActionEventTest() throws Exception {
