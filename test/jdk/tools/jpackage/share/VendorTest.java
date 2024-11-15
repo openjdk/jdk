@@ -21,7 +21,6 @@
  * questions.
  */
 
-package jdk.jpackage.tests;
 
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -61,7 +60,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @build jdk.jpackage.test.*
  * @compile VendorTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.VendorTest
+ *  --jpt-run=VendorTest
  */
 
 /*
@@ -74,7 +73,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @build jdk.jpackage.test.*
  * @compile VendorTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.VendorTest
+ *  --jpt-run=VendorTest
  */
 public class VendorTest {
 

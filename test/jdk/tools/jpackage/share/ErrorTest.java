@@ -21,7 +21,6 @@
  * questions.
  */
 
-package jdk.jpackage.tests;
 
 import java.util.Collection;
 import java.util.List;
@@ -37,7 +36,7 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @compile ErrorTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.ErrorTest
+ *  --jpt-run=ErrorTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useExecutableByDefault
  */
 
@@ -48,7 +47,7 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @compile ErrorTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.ErrorTest
+ *  --jpt-run=ErrorTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault
  */
 

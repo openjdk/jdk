@@ -21,7 +21,6 @@
  * questions.
  */
 
-package jdk.jpackage.tests;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -47,7 +46,7 @@ import jdk.jpackage.test.HelloApp;
  * @build jdk.jpackage.test.*
  * @compile NoMPathRuntimeTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.NoMPathRuntimeTest
+ *  --jpt-run=NoMPathRuntimeTest
  */
 
 public final class NoMPathRuntimeTest {

@@ -21,7 +21,6 @@
  * questions.
  */
 
-package jdk.jpackage.tests;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -40,7 +39,7 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @compile ModulePathTest2.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.ModulePathTest2
+ *  --jpt-run=ModulePathTest2
  */
 
 public final class ModulePathTest2 {

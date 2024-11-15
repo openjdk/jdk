@@ -21,7 +21,6 @@
  * questions.
  */
 
-package jdk.jpackage.tests;
 
 import java.nio.file.Path;
 import jdk.jpackage.test.Annotations.Test;
@@ -37,7 +36,7 @@ import jdk.jpackage.test.JPackageCommand;
  * @build jdk.jpackage.test.*
  * @compile MultipleJarAppTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.MultipleJarAppTest
+ *  --jpt-run=MultipleJarAppTest
  */
 
 public final class MultipleJarAppTest {

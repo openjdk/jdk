@@ -37,8 +37,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Executor;
 
-import static jdk.jpackage.test.WindowsHelper.getTempDirectory;
-
 /*
  * @test
  * @summary Custom l10n of msi installers in jpackage
@@ -182,9 +180,8 @@ public class WinL10nTest {
             }
 
             // Preserve config dir to check the set of copied l10n files.
-            Path tempDir = getTempDirectory(cmd, tempRoot);
-            Files.createDirectories(tempDir.getParent());
-            cmd.addArguments("--temp", tempDir.toString());
+            Path tempDir = tempRoot.resolve(cmd.packageType().name());
+            cmd.addArguments("--temp", tempDir);
         })
         .addBundleVerifier((cmd, result) -> {
             if (expectedCultures != null) {
@@ -213,8 +210,8 @@ public class WinL10nTest {
                             v.createCmdOutputVerifier(wixSrcDir).apply(getBuildCommandLine(result));
                         }
                     }
-                    Path tempDir = getTempDirectory(cmd, tempRoot).toAbsolutePath();
-                    for (var v : createDefaultL10nFilesLocVerifiers(tempDir)) {
+                    var tempDir = Path.of(cmd.getArgumentValue("--temp"));
+                    for (var v : createDefaultL10nFilesLocVerifiers(tempDir.toAbsolutePath().normalize())) {
                         v.apply(getBuildCommandLine(result));
                     }
                 } else {
