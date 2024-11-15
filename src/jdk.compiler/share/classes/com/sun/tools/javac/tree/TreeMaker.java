@@ -738,7 +738,7 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     /** Create a qualified identifier from a symbol, adding enough qualifications
-     *  to make the reference unique.
+     *  to make the reference unique. The types in the AST nodes will be erased.
      */
     public JCExpression QualIdent(Symbol sym) {
         JCExpression result = isUnqualifiable(sym)
