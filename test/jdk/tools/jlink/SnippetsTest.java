@@ -50,7 +50,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import jdk.tools.jlink.internal.Snippets.*;
 import static jdk.tools.jlink.internal.Snippets.*;
-import jdk.tools.jlink.internal.Snippets.ElementLoader;
 
 /*
  * @test
@@ -92,18 +91,9 @@ public class SnippetsTest {
         }
     }
 
-    @Test
-    void testEnumLoader() {
-        ClassDesc CD_ACCESSFLAG = AccessFlag.class.describeConstable().get();
-        var expected = AccessFlag.values();
-        var loadable = new SimpleArray(CD_ACCESSFLAG, expected, getEnumLoader(CD_ACCESSFLAG));
-        Supplier<AccessFlag[]> supplier = generateSupplier("TestEnumLoader", loadable);
-        assertArrayEquals(expected, supplier.get());
-    }
-
     @ParameterizedTest
     @ValueSource(booleans = { true, false })
-    void testWrapperLoadable(boolean isStatic) throws NoSuchMethodException {
+    void testLoadableProvider(boolean isStatic) throws NoSuchMethodException {
         var expected = IntStream.range(0, 1234)
                                  .mapToObj(i -> "WrapperTestString" + i)
                                  .toList();
@@ -116,20 +106,20 @@ public class SnippetsTest {
         assertEquals(13, loadable.pageCount());
         assertTrue(loadable.isLastPagePartial());
 
-        var wrapped = new WrappedLoadable(loadable, testClassDesc, "wrapper", isStatic);
-        Supplier<String[]> supplier = generateSupplier(className, wrapped, loadable);
+        var provider = new LoadableProvider(loadable, testClassDesc, "wrapper", isStatic);
+        Supplier<String[]> supplier = generateSupplier(className, provider, loadable);
         verifyPaginationMethods(supplier.getClass(), String.class, "page", 13);
         assertArrayEquals(expected.toArray(), supplier.get());
 
         // check wrapper function
         var methodType = MethodType.methodType(String[].class);
         try {
-            lookup().findStatic(supplier.getClass(), wrapped.methodName(), methodType);
+            lookup().findStatic(supplier.getClass(), provider.methodName(), methodType);
         } catch (IllegalAccessException ex) {
             assertFalse(isStatic);
         }
         try {
-            lookup().findVirtual(supplier.getClass(), wrapped.methodName(), methodType);
+            lookup().findVirtual(supplier.getClass(), provider.methodName(), methodType);
         } catch (IllegalAccessException ex) {
             assertTrue(isStatic);
         }
@@ -144,10 +134,10 @@ public class SnippetsTest {
             ModuleDescriptor.Requires.Modifier.TRANSITIVE
         };
 
-        var loadable = new SimpleArray<LoadableEnum>(
+        var loadable = new SimpleArray<EnumConstant>(
                 Enum.class.describeConstable().get(),
-                Arrays.stream(enums).map(LoadableEnum::new).toList(),
-                ElementLoader.selfLoader());
+                Arrays.stream(enums).map(EnumConstant::new).toList(),
+                (enumConstant, _) -> enumConstant);
 
         Supplier<Enum<?>[]> supplier = generateSupplier("LoadableEnumTest", loadable);
         assertArrayEquals(enums, supplier.get());
@@ -280,9 +270,7 @@ public class SnippetsTest {
                         cob.return_();
                     });
 
-                    if (loadable.doesRequireSetup()) {
-                        loadable.setup(clb);
-                    }
+                    loadable.setup(clb);
 
                     for (var e: extra) {
                         // always call setup should be no harm
@@ -291,7 +279,7 @@ public class SnippetsTest {
                     }
 
                     clb.withMethodBody("get", MethodTypeDesc.of(CD_Object), ACC_PUBLIC, cob -> {
-                        loadable.load(cob);
+                        loadable.emit(cob);
                         cob.areturn();
                     });
                 });

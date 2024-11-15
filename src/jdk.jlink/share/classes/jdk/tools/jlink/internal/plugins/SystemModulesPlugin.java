@@ -715,11 +715,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         private void genModuleDescriptorsMethod(ClassBuilder clb) {
-            var moduleInfoLoader = new ModuleInfoLoader(dedupSetBuilder, classDesc);
-            var moduleDescriptors = LoadableArray.of(
-                    CD_MODULE_DESCRIPTOR,
+            var converter = new ModuleDescriptorBuilder(dedupSetBuilder, classDesc);
+            var moduleDescriptors = LoadableArray.of(CD_MODULE_DESCRIPTOR,
                     moduleInfos,
-                    moduleInfoLoader,
+                    converter::build,
                     moduleDescriptorsPerMethod,
                     classDesc,
                     "sub",
@@ -734,12 +733,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     MTD_ModuleDescriptorArray,
                     ACC_PUBLIC,
                     cob -> {
-                            moduleDescriptors.load(cob);
-                            cob.areturn();
+                        moduleDescriptors.emit(cob);
+                        cob.areturn();
                     });
-
-            // amend class with helpers needed by individual ModuleDescriptor
-            moduleInfoLoader.finish(clb);
         }
 
         /**
@@ -948,7 +944,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          */
         private void genImmutableSet(CodeBuilder cob, Set<String> set) {
             var loadableSet = LoadableSet.of(sorted(set), STRING_LOADER);
-            loadableSet.load(cob);
+            loadableSet.emit(cob);
         }
 
         class ModuleHashesBuilder {
@@ -1075,7 +1071,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 this.owner = owner;
             }
 
-            <T extends Comparable<T>> SetReference createLoadableSet(Set<T> elements, ElementLoader<T> elementLoader) {
+            <T extends Comparable<T>> SetReference createLoadableSet(Set<T> elements, CollectionElementBuilder<T> elementLoader) {
                 var loadableSet = LoadableSet.of(sorted(elements),
                                                  elementLoader,
                                                  PAGING_THRESHOLD,
@@ -1102,7 +1098,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void exportsModifiers(Set<Exports.Modifier> mods) {
                 exportsModifiersSets.computeIfAbsent(mods,
-                        s -> createLoadableSet(s, getEnumLoader(CD_EXPORTS_MODIFIER))
+                        s -> createLoadableSet(s, (export, _) -> new EnumConstant(export))
                 ).increment();
             }
 
@@ -1111,7 +1107,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void opensModifiers(Set<Opens.Modifier> mods) {
                 opensModifiersSets.computeIfAbsent(mods,
-                        s -> createLoadableSet(s, getEnumLoader(CD_OPENS_MODIFIER))
+                        s -> createLoadableSet(s, (open, _) -> new EnumConstant(open))
                 ).increment();
             }
 
@@ -1120,7 +1116,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void requiresModifiers(Set<Requires.Modifier> mods) {
                 requiresModifiersSets.computeIfAbsent(mods,
-                        s -> createLoadableSet(s, getEnumLoader(CD_REQUIRES_MODIFIER))
+                        s -> createLoadableSet(s, (require, _) -> new EnumConstant(require))
                 ).increment();
             }
 
@@ -1128,21 +1124,21 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Load the given set to the top of operand stack.
              */
             void loadStringSet(CodeBuilder cob, Set<String> names) {
-                stringSets.get(names).load(cob);
+                stringSets.get(names).emit(cob);
             }
 
             /*
              * Load the given set to the top of operand stack.
              */
             void loadExportsModifiers(CodeBuilder cob, Set<Exports.Modifier> mods) {
-                exportsModifiersSets.get(mods).load(cob);
+                exportsModifiersSets.get(mods).emit(cob);
             }
 
             /*
              * Load the given set to the top of operand stack.
              */
             void loadOpensModifiers(CodeBuilder cob, Set<Opens.Modifier> mods) {
-                opensModifiersSets.get(mods).load(cob);
+                opensModifiersSets.get(mods).emit(cob);
             }
 
 
@@ -1150,13 +1146,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Load the given set to the top of operand stack.
              */
             void loadRequiresModifiers(CodeBuilder cob, Set<Requires.Modifier> mods) {
-                requiresModifiersSets.get(mods).load(cob);
+                requiresModifiersSets.get(mods).emit(cob);
             }
 
             /*
              * Adding provider methods to the class. For those set used more than once, built
              * once and keep the reference for later access.
-             * Return a list of snippet to be used in <clinit>.
+             * Return a snippet to setup the cache <clinit>.
              *
              * The returned snippet would set up the set referenced more than once,
              *
@@ -1174,7 +1170,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 var staticCache = new ArrayList<SetReference>();
 
                 for (var set: values) {
-                    set.loadableSet().setup(clb);
+                    set.setup(clb);
                     if (set.refCount() > 1) {
                         staticCache.add(set);
                     }
@@ -1184,28 +1180,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     return Optional.empty();
                 }
 
-                // This is called when the value is build for the cache
-                // At that time, a slot in cache is assigned
-                // The loader is called when building the static initializer
-                // We need to ensure that happens before we access SetReference::load
-                ElementLoader<SetReference> cacheLoader = (cob, setRef, index) -> {
-                    setRef.assignTo(index);
-                    setRef.loadableSet().load(cob);
-                };
-
-                var loadableArray = LoadableArray.of(
+                var cacheValuesArray = LoadableArray.of(
                         CD_Set,
                         staticCache,
-                        cacheLoader,
+                        SetReference::build,
                         PAGING_THRESHOLD,
                         owner,
                         VALUES_ARRAY,
                         2000);
 
-                loadableArray.setup(clb);
+                cacheValuesArray.setup(clb);
                 clb.withField(VALUES_ARRAY, CD_Set.arrayType(), ACC_STATIC | ACC_FINAL);
+
                 return Optional.of(cob -> {
-                        loadableArray.load(cob);
+                        cacheValuesArray.emit(cob);
                         cob.putstatic(owner, VALUES_ARRAY, CD_Set.arrayType());
                 });
             }
@@ -1217,7 +1205,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * and load from there. Otherwise, the set is built in place and load onto the operand
              * stack.
              */
-            class SetReference {
+            class SetReference implements Snippet {
                 // sorted elements of the set to ensure same generated code
                 private final LoadableSet loadableSet;
 
@@ -1237,28 +1225,37 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     return refCount;
                 }
 
-                LoadableSet loadableSet() {
-                    return loadableSet;
-                }
-
-                void assignTo(int index) {
-                    this.index = index;
-                }
-
                 // Load the set to the operand stack.
                 // When referenced more than once, the value is pre-built with static initialzer
                 // and is load from the cache array with
                 //   dedupSetValues[index]
                 // Otherwise, LoadableSet will load the set onto the operand stack.
-                void load(CodeBuilder cob) {
+                @Override
+                public void emit(CodeBuilder cob) {
                     if (refCount > 1) {
                         assert index >= 0;
                         cob.getstatic(owner, VALUES_ARRAY, CD_Set.arrayType());
                         cob.loadConstant(index);
                         cob.aaload();
                     } else {
-                        loadableSet.load(cob);
+                        loadableSet.emit(cob);
                     }
+                }
+
+                @Override
+                public void setup(ClassBuilder clb) {
+                    loadableSet.setup(clb);
+                }
+
+                /**
+                 * Build the snippet to load the set onto the operand stack for storing into cache
+                 * to be later accessed by the SetReference::emit
+                 */
+                Snippet build(int index) {
+                    return cob -> {
+                        this.index = index;
+                        loadableSet.emit(cob);
+                    };
                 }
             }
         }

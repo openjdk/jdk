@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,21 +39,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 
-import jdk.tools.jlink.internal.Snippets.ElementLoader;
-import jdk.tools.jlink.internal.Snippets.Loadable;
 import jdk.tools.jlink.internal.Snippets.LoadableArray;
 import jdk.tools.jlink.internal.Snippets.LoadableSet;
 import static jdk.tools.jlink.internal.Snippets.STRING_LOADER;
 import static jdk.tools.jlink.internal.Snippets.STRING_PAGE_SIZE;
+import jdk.tools.jlink.internal.Snippets.Snippet;
 
 import jdk.tools.jlink.internal.plugins.SystemModulesPlugin.ModuleInfo;
 import jdk.tools.jlink.internal.plugins.SystemModulesPlugin.SystemModulesClassGenerator.DedupSetBuilder;
 
-class ModuleInfoLoader implements ElementLoader<ModuleInfo> {
+class ModuleDescriptorBuilder {
     private static final ClassDesc CD_MODULE_DESCRIPTOR =
         ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor");
     private static final ClassDesc CD_MODULE_BUILDER =
@@ -62,27 +59,17 @@ class ModuleInfoLoader implements ElementLoader<ModuleInfo> {
     private static final int PAGING_THRESHOLD = 512;
     private final DedupSetBuilder dedupSetBuilder;
     private final ClassDesc ownerClassDesc;
-    private final ArrayList<Consumer<ClassBuilder>> amendments = new ArrayList<>();
 
-    ModuleInfoLoader(DedupSetBuilder dedupSetBuilder, ClassDesc ownerClassDesc) {
+    ModuleDescriptorBuilder(DedupSetBuilder dedupSetBuilder, ClassDesc ownerClassDesc) {
         this.dedupSetBuilder = dedupSetBuilder;
         this.ownerClassDesc = ownerClassDesc;
     }
 
-    @Override
-    public void load(CodeBuilder cob, ModuleInfo moduleInfo, int index) {
-        var mdBuilder = new ModuleDescriptorBuilder(moduleInfo.descriptor(), moduleInfo.packages(), index);
-        mdBuilder.load(cob);
-        if (mdBuilder.doesRequireSetup()) {
-            amendments.add(mdBuilder::setup);
-        }
+    public Snippet build(ModuleInfo moduleInfo, int index) {
+        return new ModuleDescriptorSnippet(moduleInfo.descriptor(), moduleInfo.packages(), index);
     }
 
-    public void finish(ClassBuilder clb) {
-        amendments.forEach(a -> a.accept(clb));
-    }
-
-    class ModuleDescriptorBuilder {
+    class ModuleDescriptorSnippet implements Snippet {
         static final ClassDesc CD_EXPORTS =
             ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Exports");
         static final ClassDesc CD_OPENS =
@@ -126,40 +113,96 @@ class ModuleInfoLoader implements ElementLoader<ModuleInfo> {
         static final MethodTypeDesc MTD_ModuleDescriptor_int = MethodTypeDesc.of(CD_MODULE_DESCRIPTOR, CD_int);
         static final MethodTypeDesc MTD_List_ObjectArray = MethodTypeDesc.of(CD_List, CD_Object.arrayType());
 
-
         final ModuleDescriptor md;
         final Set<String> packages;
         final int index;
-        Consumer<ClassBuilder> amendment;
+        final Snippet requiresArray;
+        final Snippet exportsArray;
+        final Snippet opensArray;
+        final Snippet providesArray;
+        final Snippet packagesSet;
 
-        ModuleDescriptorBuilder(ModuleDescriptor md, Set<String> packages, int index) {
+        ModuleDescriptorSnippet(ModuleDescriptor md, Set<String> packages, int index) {
             if (md.isAutomatic()) {
                 throw new InternalError("linking automatic module is not supported");
             }
 
-
             this.md = md;
             this.packages = packages;
             this.index = index;
+            requiresArray = buildRequiresArray();
+            exportsArray = buildExportsArray();
+            opensArray = buildOpensArray();
+            providesArray = buildProvidesArray();
+            packagesSet = buildPackagesSet();
         }
 
-        private LoadableArray requiresArray() {
-            var requiresArray = LoadableArray.of(
+        /*
+         * Invoke Builder.newRequires(Set<Modifier> mods, String mn, String compiledVersion)
+         *
+         * Set<Modifier> mods = ...
+         * Builder.newRequires(mods, mn, compiledVersion);
+         */
+        Snippet loadRequire(Requires require, int unused) {
+            return cob -> {
+                dedupSetBuilder.loadRequiresModifiers(cob, require.modifiers());
+                cob.loadConstant(require.name());
+                if (require.compiledVersion().isPresent()) {
+                    cob.loadConstant(require.compiledVersion().get().toString())
+                    .invokestatic(CD_MODULE_BUILDER,
+                                    "newRequires",
+                                    MTD_REQUIRES_SET_STRING_STRING);
+                } else {
+                    cob.invokestatic(CD_MODULE_BUILDER,
+                                    "newRequires",
+                                    MTD_REQUIRES_SET_STRING);
+                }
+            };
+        }
+
+        private LoadableArray buildRequiresArray() {
+            return LoadableArray.of(
                     CD_REQUIRES,
                     sorted(md.requires()),
-                    this::newRequires,
+                    this::loadRequire,
                     PAGING_THRESHOLD,
                     ownerClassDesc,
                     "module" + index + "Requires",
                     // number safe for a single page helper under 64K size limit
                     2000);
-
-            setupLoadable(requiresArray);
-            return requiresArray;
         }
 
-        private LoadableArray exportArray() {
-            var exportArray = LoadableArray.of(
+        /*
+         * Invoke
+         *     Builder.newExports(Set<Exports.Modifier> ms, String pn,
+         *                        Set<String> targets)
+         * or
+         *     Builder.newExports(Set<Exports.Modifier> ms, String pn)
+         *
+         * ms = export.modifiers()
+         * pn = export.source()
+         * targets = export.targets()
+         */
+        Snippet loadExports(Exports export, int unused) {
+            return cob -> {
+                dedupSetBuilder.loadExportsModifiers(cob, export.modifiers());
+                cob.loadConstant(export.source());
+                var targets = export.targets();
+                if (!targets.isEmpty()) {
+                    dedupSetBuilder.loadStringSet(cob, targets);
+                    cob.invokestatic(CD_MODULE_BUILDER,
+                                    "newExports",
+                                    MTD_EXPORTS_MODIFIER_SET_STRING_SET);
+                } else {
+                    cob.invokestatic(CD_MODULE_BUILDER,
+                                    "newExports",
+                                    MTD_EXPORTS_MODIFIER_SET_STRING);
+                }
+            };
+        }
+
+        private LoadableArray buildExportsArray() {
+            return LoadableArray.of(
                     CD_EXPORTS,
                     sorted(md.exports()),
                     this::loadExports,
@@ -168,71 +211,113 @@ class ModuleInfoLoader implements ElementLoader<ModuleInfo> {
                     "module" + index + "Exports",
                     // number safe for a single page helper under 64K size limit
                     2000);
-
-            setupLoadable(exportArray);
-            return exportArray;
         }
 
-        private LoadableArray opensArray() {
-            var opensArray = LoadableArray.of(
+        /*
+         * Invoke
+         *     Builder.newOpens(Set<Opens.Modifier> ms, String pn,
+         *                        Set<String> targets)
+         * or
+         *     Builder.newOpens(Set<Opens.Modifier> ms, String pn)
+         *
+         * ms = open.modifiers()
+         * pn = open.source()
+         * targets = open.targets()
+         * Builder.newOpens(mods, pn, targets);
+         */
+        Snippet loadOpens(Opens open, int unused) {
+            return cob -> {
+                dedupSetBuilder.loadOpensModifiers(cob, open.modifiers());
+                cob.loadConstant(open.source());
+                var targets = open.targets();
+                if (!targets.isEmpty()) {
+                    dedupSetBuilder.loadStringSet(cob, targets);
+                    cob.invokestatic(CD_MODULE_BUILDER,
+                                    "newOpens",
+                                    MTD_OPENS_MODIFIER_SET_STRING_SET);
+                } else {
+                    cob.invokestatic(CD_MODULE_BUILDER,
+                                    "newOpens",
+                                    MTD_OPENS_MODIFIER_SET_STRING);
+                }
+            };
+        }
+
+        private LoadableArray buildOpensArray() {
+            return LoadableArray.of(
                     CD_OPENS,
                     sorted(md.opens()),
-                    this::newOpens,
+                    this::loadOpens,
                     PAGING_THRESHOLD,
                     ownerClassDesc,
                     "module" + index + "Opens",
                     // number safe for a single page helper under 64K size limit
                     2000);
-
-            setupLoadable(opensArray);
-            return opensArray;
         }
 
-        private LoadableArray providesArray() {
-            var providesArray = LoadableArray.of(
+        /*
+         * Invoke Builder.newProvides(String service, List<String> providers)
+         *
+         * service = provide.service()
+         * providers = List.of(new String[] { provide.providers() }
+         * Builder.newProvides(service, providers);
+         */
+        private Snippet loadProvides(Provides provide, int offset) {
+            return cob -> {
+                var providersArray = LoadableArray.of(
+                        CD_String,
+                        provide.providers(),
+                        STRING_LOADER,
+                        PAGING_THRESHOLD,
+                        ownerClassDesc,
+                        "module" + index + "Provider" + offset,
+                        STRING_PAGE_SIZE);
+
+                cob.loadConstant(provide.service());
+                providersArray.emit(cob);
+                cob.invokestatic(CD_List,
+                                "of",
+                                MTD_List_ObjectArray,
+                                true)
+                .invokestatic(CD_MODULE_BUILDER,
+                                "newProvides",
+                                MTD_PROVIDES_STRING_LIST);
+            };
+        }
+
+        private LoadableArray buildProvidesArray() {
+            return LoadableArray.of(
                     CD_PROVIDES,
                     sorted(md.provides()),
-                    this::newProvides,
+                    this::loadProvides,
                     PAGING_THRESHOLD,
                     ownerClassDesc,
                     "module" + index + "Provides",
                     // number safe for a single page helper under 64K size limit
                     2000);
-
-            setupLoadable(providesArray);
-            return providesArray;
         }
 
-        private LoadableSet packagesSet() {
-            var packagesSet = LoadableSet.of(
+        private LoadableSet buildPackagesSet() {
+            return LoadableSet.of(
                     sorted(packages),
                     STRING_LOADER,
                     PAGING_THRESHOLD,
                     ownerClassDesc,
                     "module" + index + "Packages",
                     STRING_PAGE_SIZE);
-
-            setupLoadable(packagesSet);
-            return packagesSet;
         }
 
-        private void setupLoadable(Loadable loadable) {
-            if (amendment == null) {
-                amendment = loadable::setup;
-            } else {
-                amendment = amendment.andThen(loadable::setup);
-            }
+        @Override
+        public void setup(ClassBuilder clb) {
+            requiresArray.setup(clb);
+            exportsArray.setup(clb);
+            opensArray.setup(clb);
+            providesArray.setup(clb);
+            packagesSet.setup(clb);
         }
 
-        boolean doesRequireSetup() {
-            return amendment != null;
-        }
-
-        void setup(ClassBuilder clb) {
-            if (amendment != null) amendment.accept(clb);
-        }
-
-        void load(CodeBuilder cob) {
+        @Override
+        public void emit(CodeBuilder cob) {
             // new jdk.internal.module.Builder
             cob.new_(CD_MODULE_BUILDER)
                .dup()
@@ -251,19 +336,19 @@ class ModuleInfoLoader implements ElementLoader<ModuleInfo> {
             }
 
             // requires
-            requiresArray().load(cob);
+            requiresArray.emit(cob);
             cob.invokevirtual(CD_MODULE_BUILDER,
                               "requires",
                               MTD_REQUIRES_ARRAY);
 
             // exports
-            exportArray().load(cob);
+            exportsArray.emit(cob);
             cob.invokevirtual(CD_MODULE_BUILDER,
                     "exports",
                     MTD_EXPORTS_ARRAY);
 
             // opens
-            opensArray().load(cob);
+            opensArray.emit(cob);
             cob.invokevirtual(CD_MODULE_BUILDER,
                               "opens",
                               MTD_OPENS_ARRAY);
@@ -275,13 +360,13 @@ class ModuleInfoLoader implements ElementLoader<ModuleInfo> {
                               MTD_SET);
 
             // provides
-            providesArray().load(cob);
+            providesArray.emit(cob);
             cob.invokevirtual(CD_MODULE_BUILDER,
                               "provides",
                               MTD_PROVIDES_ARRAY);
 
             // all packages
-            packagesSet().load(cob);
+            packagesSet.emit(cob);
             cob.invokevirtual(CD_MODULE_BUILDER,
                               "packages",
                               MTD_SET);
@@ -314,112 +399,6 @@ class ModuleInfoLoader implements ElementLoader<ModuleInfo> {
                               methodName,
                               MTD_STRING);
         }
-
-        /*
-         * Invoke Builder.newRequires(Set<Modifier> mods, String mn, String compiledVersion)
-         *
-         * Set<Modifier> mods = ...
-         * Builder.newRequires(mods, mn, compiledVersion);
-         */
-        void newRequires(CodeBuilder cob, Requires require, int unused) {
-            dedupSetBuilder.loadRequiresModifiers(cob, require.modifiers());
-            cob.loadConstant(require.name());
-            if (require.compiledVersion().isPresent()) {
-                cob.loadConstant(require.compiledVersion().get().toString())
-                   .invokestatic(CD_MODULE_BUILDER,
-                                 "newRequires",
-                                 MTD_REQUIRES_SET_STRING_STRING);
-            } else {
-                cob.invokestatic(CD_MODULE_BUILDER,
-                                 "newRequires",
-                                 MTD_REQUIRES_SET_STRING);
-            }
-        }
-
-        /*
-         * Invoke
-         *     Builder.newExports(Set<Exports.Modifier> ms, String pn,
-         *                        Set<String> targets)
-         * or
-         *     Builder.newExports(Set<Exports.Modifier> ms, String pn)
-         *
-         * ms = export.modifiers()
-         * pn = export.source()
-         * targets = export.targets()
-         */
-        void loadExports(CodeBuilder cb, Exports export, int unused) {
-            dedupSetBuilder.loadExportsModifiers(cb, export.modifiers());
-            cb.loadConstant(export.source());
-            var targets = export.targets();
-            if (!targets.isEmpty()) {
-                dedupSetBuilder.loadStringSet(cb, targets);
-                cb.invokestatic(CD_MODULE_BUILDER,
-                                "newExports",
-                                MTD_EXPORTS_MODIFIER_SET_STRING_SET);
-            } else {
-                cb.invokestatic(CD_MODULE_BUILDER,
-                                "newExports",
-                                MTD_EXPORTS_MODIFIER_SET_STRING);
-            }
-        }
-
-        /*
-         * Invoke
-         *     Builder.newOpens(Set<Opens.Modifier> ms, String pn,
-         *                        Set<String> targets)
-         * or
-         *     Builder.newOpens(Set<Opens.Modifier> ms, String pn)
-         *
-         * ms = open.modifiers()
-         * pn = open.source()
-         * targets = open.targets()
-         * Builder.newOpens(mods, pn, targets);
-         */
-        void newOpens(CodeBuilder cb, Opens open, int unused) {
-            dedupSetBuilder.loadOpensModifiers(cb, open.modifiers());
-            cb.loadConstant(open.source());
-            var targets = open.targets();
-            if (!targets.isEmpty()) {
-                dedupSetBuilder.loadStringSet(cb, targets);
-                cb.invokestatic(CD_MODULE_BUILDER,
-                                 "newOpens",
-                                 MTD_OPENS_MODIFIER_SET_STRING_SET);
-            } else {
-                cb.invokestatic(CD_MODULE_BUILDER,
-                                 "newOpens",
-                                 MTD_OPENS_MODIFIER_SET_STRING);
-            }
-        }
-
-        /*
-         * Invoke Builder.newProvides(String service, List<String> providers)
-         *
-         * service = provide.service()
-         * providers = List.of(new String[] { provide.providers() }
-         * Builder.newProvides(service, providers);
-         */
-        void newProvides(CodeBuilder cb, Provides provide, int offset) {
-            var providersArray = LoadableArray.of(
-                    CD_String,
-                    provide.providers(),
-                    STRING_LOADER,
-                    PAGING_THRESHOLD,
-                    ownerClassDesc,
-                    "module" + index + "Provider" + offset,
-                    STRING_PAGE_SIZE);
-
-            setupLoadable(providersArray);
-
-            cb.loadConstant(provide.service());
-            providersArray.load(cb);
-            cb.invokestatic(CD_List,
-                             "of",
-                             MTD_List_ObjectArray,
-                             true)
-               .invokestatic(CD_MODULE_BUILDER,
-                             "newProvides",
-                             MTD_PROVIDES_STRING_LIST);
-        }
     }
 
     /**
@@ -430,7 +409,7 @@ class ModuleInfoLoader implements ElementLoader<ModuleInfo> {
      * @return a sorted copy of the given collection.
      */
     private static <T extends Comparable<T>> List<T> sorted(Collection<T> c) {
-        var l = new ArrayList<T>(c);
+        var l = new ArrayList<>(c);
         Collections.sort(l);
         return l;
     }

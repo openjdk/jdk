@@ -25,61 +25,91 @@
 package jdk.tools.jlink.internal;
 
 import java.lang.classfile.ClassBuilder;
-import static java.lang.classfile.ClassFile.ACC_PUBLIC;
-import static java.lang.classfile.ClassFile.ACC_STATIC;
 import java.lang.classfile.CodeBuilder;
 import java.lang.constant.ClassDesc;
-import static java.lang.constant.ConstantDescs.CD_Integer;
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_Set;
-import static java.lang.constant.ConstantDescs.CD_int;
+import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.function.BiConsumer;
 
-import jdk.tools.jlink.internal.Snippets.ElementLoader;
-
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.CD_Integer;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_Set;
+import static java.lang.constant.ConstantDescs.CD_int;
 public class Snippets {
     // Tested page size of string array
     public static final int STRING_PAGE_SIZE = 8000;
 
-    public static final ElementLoader<String> STRING_LOADER = ElementLoader.of(CodeBuilder::loadConstant);
-    public static final ElementLoader<Integer> INTEGER_LOADER = (cob, value, index) -> {
+    public static final CollectionElementBuilder<String> STRING_LOADER = (value, index) -> new Constant<>(value);
+
+    public static final CollectionElementBuilder<Integer> INTEGER_LOADER = (value, index) -> cob -> {
         // loadConstant will unbox
         cob.loadConstant(value)
-        .invokestatic(ClassDesc.ofInternalName("java/lang/Integer"), "valueOf", MethodTypeDesc.of(CD_Integer, CD_int));
+           .invokestatic(ClassDesc.ofInternalName("java/lang/Integer"), "valueOf", MethodTypeDesc.of(CD_Integer, CD_int));
     };
-    public static final ElementLoader<Loadable> LOADABLE_LOADER = (cob, loadable, index) -> loadable.load(cob);
+
+    public static final CollectionElementBuilder<Loadable> LOADABLE_LOADER = (loadable, index) -> loadable;
+
+    /**
+     * Snippet of bytecodes
+     */
+    @FunctionalInterface
+    public interface Snippet {
+        /**
+         * Emit the bytecode snippet to the CodeBuilder.
+         *
+         * @param cob  The CodeBuilder the bytecode snippet.
+         * @throws IllegalStateException If the snippet is not setup properly.
+         */
+        void emit(CodeBuilder cob);
+
+        /**
+         * Perpare a snippet needs some extra support like field or methods from the class.
+         *
+         * @param clb  The ClassBuilder to setup the helpers.
+         */
+        default void setup(ClassBuilder clb) {};
+    }
 
     /**
      * Describe a reference that can be load onto the operand stack.
      * For example, an array of string can be described as a Loadable.
-     * The {@link load} method
+     * The {@link load#emit} method
      */
-    public sealed interface Loadable {
+    public sealed interface Loadable extends Snippet {
         /**
          * Generate the bytecode to load the Loadable onto the operand stack.
          * @param cob  The CodeBuilder to add the bytecode for loading
          */
-        void load(CodeBuilder cob);
+        @Override
+        void emit(CodeBuilder cob);
 
         /**
          * The type of the reference be loaded onto the operand stack.
          */
         ClassDesc classDesc();
+    }
 
-        /**
-         * Generate fields or methods needed to support the load of the Loadable.
-         * @param clb  The ClassBuilder to setup the helpers.
-         */
-        default void setup(ClassBuilder clb) {};
+    public record Constant<T extends ConstantDesc>(T value) implements Snippet {
+        @Override
+        public void emit(CodeBuilder cob) {
+            cob.loadConstant(value);
+        }
+    }
 
-        /**
-         * Whether {@link setup} must be called to {@link load} properly.
-         */
-        default boolean doesRequireSetup() { return false; }
+    public final record EnumConstant(Enum<?> o) implements Loadable {
+        @Override
+        public void emit(CodeBuilder cob) {
+            cob.getstatic(classDesc(), o.name(), classDesc());
+        }
+
+        @Override
+        public ClassDesc classDesc() {
+            return o.getClass().describeConstable().get();
+        }
     }
 
     /**
@@ -92,15 +122,15 @@ public class Snippets {
      * @param isStatic  Should the generated method be static or public
      * @throws IllegalArgumentException if the value is a {@code WrappedLoadable}
      */
-    public record WrappedLoadable(Loadable value, ClassDesc ownerClass, String methodName, boolean isStatic) implements Loadable {
-        public WrappedLoadable {
-            if (value instanceof WrappedLoadable) {
+    public final record LoadableProvider(Loadable value, ClassDesc ownerClass, String methodName, boolean isStatic) implements Loadable {
+        public LoadableProvider {
+            if (value instanceof LoadableProvider) {
                 throw new IllegalArgumentException();
             }
         }
 
         @Override
-        public void load(CodeBuilder cob) {
+        public void emit(CodeBuilder cob) {
             if (isStatic()) {
                 cob.invokestatic(ownerClass, methodName, methodType());
             } else {
@@ -114,12 +144,11 @@ public class Snippets {
             // TODO: decide whether we should call value.setup(clb)
             // Prefer to have creator be responsible, given value
             // is provided to constructor, it should be ready to use.
-            clb.withMethodBody(
-                    methodName,
+            clb.withMethodBody(methodName,
                     methodType(),
                     isStatic ? ACC_STATIC : ACC_PUBLIC,
                     cob -> {
-                        value.load(cob);
+                        value.emit(cob);
                         cob.areturn();
                     });
         }
@@ -127,11 +156,6 @@ public class Snippets {
         @Override
         public ClassDesc classDesc() {
             return value.classDesc();
-        }
-
-        @Override
-        public boolean doesRequireSetup() {
-            return true;
         }
 
         /**
@@ -142,45 +166,15 @@ public class Snippets {
         }
     }
 
-    public record LoadableEnum(Enum<?> o) implements Loadable {
-        @Override
-        public void load(CodeBuilder cob) {
-            cob.getstatic(classDesc(), o.name(), classDesc());
-        }
-
-        @Override
-        public ClassDesc classDesc() {
-            return o.getClass().describeConstable().get();
-        }
-    }
-
-    /**
-     * A function to load an element of type {@code T} onto the operand stack.
-     * @param cob  The {@link CodeBuilder} to generate load code.
-     * @param element  The element to be load.
-     * @param index  The index of the element in the containing collection.
-     */
-    public interface ElementLoader<T> {
-        void load(CodeBuilder cob, T element, int index);
-
-        static <T> ElementLoader<T> of(BiConsumer<CodeBuilder, T> ignoreIndex) {
-            return (cob, element, _) -> {
-                ignoreIndex.accept(cob, element);
-            };
-        }
-
-        @SuppressWarnings("unchecked")
-        static <T extends Loadable> ElementLoader<T> selfLoader() {
-            return (ElementLoader<T>) LOADABLE_LOADER;
-        }
-    }
-
-    /**
-     * Return a snippet builder that loads an enum onto the operand stack using
-     * the enum name static final field
-     */
-    public static <T extends Enum<T>> ElementLoader<T> getEnumLoader(ClassDesc enumClassDesc) {
-        return (cob, element, _) -> cob.getstatic(enumClassDesc, element.name(), enumClassDesc);
+    @FunctionalInterface
+    public interface CollectionElementBuilder<T> {
+        /**
+         * Build a snippet to load the element onto the operand stack.
+         * @param element  The element to be load.
+         * @param index  The index of the element in the containing collection.
+         * @return A snippet of bytecodes to load the element onto the operand stack.
+         */
+        Snippet build(T element, int index);
     }
 
     // Array supports
@@ -192,8 +186,8 @@ public class Snippets {
          *
          * @param elementType  The type of the array element
          * @param elements  The elements for the array
-         * @param elementLoader  The loader function to load a single element onto operand stack to
-         *                       be stored at given index
+         * @param elementLoader  The snippet builder to generate bytecodes to load an element onto
+         *                       the operand stack
          * @param activatePagingThreshold  Use pagination methods if the count of elements is larger
          *                                 than the given value
          * @param ownerClassDesc  The owner class for the paginattion methods
@@ -205,7 +199,7 @@ public class Snippets {
          */
         static <T> LoadableArray of(ClassDesc elementType,
                                     Collection<T> elements,
-                                    ElementLoader<T> elementLoader,
+                                    CollectionElementBuilder<T> elementLoader,
                                     int activatePagingThreshold,
                                     ClassDesc ownerClassDesc,
                                     String methodNamePrefix,
@@ -223,13 +217,16 @@ public class Snippets {
      */
     private sealed static abstract class AbstractLoadableArray<T> implements LoadableArray {
         protected final ClassDesc elementType;
-        protected final Collection<T> elements;
-        protected final ElementLoader<T> elementLoader;
+        protected final ArrayList<Snippet> loadElementSnippets;
 
-        public AbstractLoadableArray(ClassDesc elementType, Collection<T> elements, ElementLoader<T> elementLoader) {
+        public AbstractLoadableArray(ClassDesc elementType, Collection<T> elements, CollectionElementBuilder<T> elementLoader) {
             this.elementType = elementType;
-            this.elements = elements;
-            this.elementLoader = elementLoader;
+            loadElementSnippets = new ArrayList<>(elements.size());
+            for (var element: elements) {
+                loadElementSnippets.add(elementLoader.build(element, loadElementSnippets.size()));
+            }
+
+            assert(loadElementSnippets.size() == elements.size());
         }
 
         @Override
@@ -237,13 +234,17 @@ public class Snippets {
             return elementType.arrayType();
         }
 
-        protected void fill(CodeBuilder cob, Iterable<T> elements, int offset) {
-            for (T t : elements) {
+        @Override
+        public void setup(ClassBuilder clb) {
+            loadElementSnippets.forEach(s -> s.setup(clb));
+        }
+
+        protected void fill(CodeBuilder cob, int fromIndex, int toIndex) {
+            for (var index = fromIndex; index < toIndex; index++) {
                 cob.dup()    // arrayref
-                   .loadConstant(offset);
-                elementLoader.load(cob, t, offset);  // value
+                   .loadConstant(index);
+                loadElementSnippets.get(index).emit(cob);  // value
                 cob.aastore();
-                offset++;
             }
         }
     }
@@ -253,19 +254,19 @@ public class Snippets {
      *   new T[] { elements }
      */
     public static final class SimpleArray<T> extends AbstractLoadableArray<T> {
-        public SimpleArray(ClassDesc elementType, T[] elements, ElementLoader<T> elementLoader) {
+        public SimpleArray(ClassDesc elementType, T[] elements, CollectionElementBuilder<T> elementLoader) {
             this(elementType, Arrays.asList(elements), elementLoader);
         }
 
-        public SimpleArray(ClassDesc elementType, Collection<T> elements, ElementLoader<T> elementLoader) {
+        public SimpleArray(ClassDesc elementType, Collection<T> elements, CollectionElementBuilder<T> elementLoader) {
             super(elementType, elements, elementLoader);
         }
 
         @Override
-        public void load(CodeBuilder cob) {
-            cob.loadConstant(elements.size())
+        public void emit(CodeBuilder cob) {
+            cob.loadConstant(loadElementSnippets.size())
                .anewarray(elementType);
-            fill(cob, elements, 0);
+            fill(cob, 0, loadElementSnippets.size());
         }
     }
 
@@ -298,7 +299,7 @@ public class Snippets {
 
         public PaginatedArray(ClassDesc elementType,
                               T[] elements,
-                              ElementLoader<T> elementLoader,
+                              CollectionElementBuilder<T> elementLoader,
                               ClassDesc ownerClassDesc,
                               String methodNamePrefix,
                               int pageSize) {
@@ -312,7 +313,7 @@ public class Snippets {
 
         public PaginatedArray(ClassDesc elementType,
                               Collection<T> elements,
-                              ElementLoader<T> elementLoader,
+                              CollectionElementBuilder<T> elementLoader,
                               ClassDesc ownerClassDesc,
                               String methodNamePrefix,
                               int pageSize) {
@@ -324,39 +325,36 @@ public class Snippets {
         }
 
         @Override
-        public void load(CodeBuilder cob) {
+        public void emit(CodeBuilder cob) {
             // Invoke the first page, which will call next page until fulfilled
-            cob.loadConstant(elements.size())
+            cob.loadConstant(loadElementSnippets.size())
                .anewarray(elementType)
                .invokestatic(ownerClassDesc, methodNamePrefix + "0", MTD_PageHelper);
         }
 
+        /**
+         * Generate helper methods to fill each page
+         */
         @Override
         public void setup(ClassBuilder clb) {
-            var pages = paginate(elements, pageSize);
-
-            assert(pages.size() == pageCount());
-
-            var lastPageNo = pages.size() - 1;
+            super.setup(clb);
+            var lastPageNo = pageCount() - 1;
             for (int pageNo = 0; pageNo <= lastPageNo; pageNo++) {
-                genFillPageHelper(clb, pages.get(pageNo), pageNo, pageNo < lastPageNo);
+                genFillPageHelper(clb, pageNo, pageNo < lastPageNo);
             }
         }
 
-        @Override
-        public boolean doesRequireSetup() { return true; }
-
         // each helper function is T[] methodNamePrefix{pageNo}(T[])
         // fill the page portion and chain calling to fill next page
-        private void genFillPageHelper(ClassBuilder clb, Collection<T> pageElements, int pageNo, boolean hasNextPage) {
-            var offset = pageSize * pageNo;
-            clb.withMethodBody(
-                    methodNamePrefix + pageNo,
+        private void genFillPageHelper(ClassBuilder clb, int pageNo, boolean hasNextPage) {
+            var fromIndex = pageSize * pageNo;
+            var toIndex = hasNextPage ? (fromIndex + pageSize) : loadElementSnippets.size();
+            clb.withMethodBody(methodNamePrefix + pageNo,
                     MTD_PageHelper,
                     ACC_STATIC,
                     mcob -> {
                         mcob.aload(0); // arrayref
-                        fill(mcob, pageElements, offset);
+                        fill(mcob, fromIndex, toIndex);
                         if (hasNextPage) {
                             mcob.invokestatic(
                                     ownerClassDesc,
@@ -368,11 +366,11 @@ public class Snippets {
         }
 
         public boolean isLastPagePartial() {
-            return (elements.size() % pageSize) != 0;
+            return (loadElementSnippets.size() % pageSize) != 0;
         }
 
         public int pageCount() {
-            var pages = elements.size() / pageSize;
+            var pages = loadElementSnippets.size() / pageSize;
             return isLastPagePartial() ? pages + 1 : pages;
         }
     }
@@ -382,7 +380,7 @@ public class Snippets {
         /**
          * Factory method for LoadableSet without using pagination methods.
          */
-        static <T> LoadableSet of(Collection<T> elements, ElementLoader<T> loader) {
+        static <T> LoadableSet of(Collection<T> elements, CollectionElementBuilder<T> loader) {
             // Set::of implementation optimization with 2 elements
             if (elements.size() <= 2) {
                 return new TinySet<>(elements, loader);
@@ -396,7 +394,7 @@ public class Snippets {
          * given threshold.
          */
         static <T> LoadableSet of(Collection<T> elements,
-                                  ElementLoader<T> loader,
+                                  CollectionElementBuilder<T> loader,
                                   int activatePagingThreshold,
                                   ClassDesc ownerClassDesc,
                                   String methodNamePrefix,
@@ -422,27 +420,34 @@ public class Snippets {
     }
 
     private static final class TinySet<T> implements LoadableSet {
-        Collection<T> elements;
-        ElementLoader<T> loader;
+        ArrayList<Snippet> loadElementSnippets;
 
-        TinySet(Collection<T> elements, ElementLoader<T> loader) {
+        TinySet(Collection<T> elements, CollectionElementBuilder<T> loader) {
             // The Set::of API supports up to 10 elements
             if (elements.size() > 10) {
                 throw new IllegalArgumentException();
             }
-            this.elements = elements;
-            this.loader = loader;
+            loadElementSnippets = new ArrayList<>(elements.size());
+            for (T e: elements) {
+                loadElementSnippets.add(loader.build(e, loadElementSnippets.size()));
+            }
         }
 
         @Override
-        public void load(CodeBuilder cob) {
-            var index = 0;
-            for (T t : elements) {
-                loader.load(cob, t, index++);
+        public void emit(CodeBuilder cob) {
+            for (var snippet: loadElementSnippets) {
+                snippet.emit(cob);
             }
-            var mtdArgs = new ClassDesc[elements.size()];
+            var mtdArgs = new ClassDesc[loadElementSnippets.size()];
             Arrays.fill(mtdArgs, CD_Object);
             cob.invokestatic(CD_Set, "of", MethodTypeDesc.of(CD_Set, mtdArgs), true);
+        }
+
+        @Override
+        public void setup(ClassBuilder clb) {
+            for (var snippet: loadElementSnippets) {
+                snippet.setup(clb);
+            }
         }
     }
 
@@ -454,36 +459,14 @@ public class Snippets {
         }
 
         @Override
-        public void load(CodeBuilder cob) {
-            elements.load(cob);
+        public void emit(CodeBuilder cob) {
+            elements.emit(cob);
             cob.invokestatic(CD_Set, "of", MethodTypeDesc.of(CD_Set, CD_Object.arrayType()), true);
-        }
-
-        @Override
-        public boolean doesRequireSetup() {
-            return elements.doesRequireSetup();
         }
 
         @Override
         public void setup(ClassBuilder clb) {
             elements.setup(clb);
         }
-    }
-
-    // utilities
-    private static <T> ArrayList<ArrayList<T>> paginate(Iterable<T> elements, int pageSize) {
-        ArrayList<ArrayList<T>> pages = new ArrayList<>(pageSize);
-        ArrayList<T> currentPage = null;
-        var index = 0;
-        for (T element: elements) {
-            if (index % pageSize == 0) {
-                currentPage = new ArrayList<>();
-                pages.add(currentPage);
-            }
-            currentPage.add(element);
-            index++;
-        }
-
-        return pages;
     }
 }
