@@ -1279,6 +1279,11 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   // the LRB. It must therefore also keep the gc state locally.
   prepare_for_update_refs.do_thread(control_thread());
 
+  // The VM thread will run barriers during a full GC or a degenerated cycle. It may also go
+  // through barriers for certain diagnostic commands that run during concurrent phases. Not
+  // sure we want it to have any LABs though.
+  ShenandoahThreadLocalData::set_gc_state(VMThread::vm_thread(), gc_state());
+
   workers()->threads_do(&prepare_for_update_refs);
 
   // Safepoint workers may be asked to evacuate objects if they are visiting oops to create a heap dump
@@ -2022,6 +2027,7 @@ void ShenandoahHeap::propagate_gc_state_to_worker_threads() {
     ShenandoahThreadLocalData::set_gc_state(t, state);
   };
 
+  do_thread(VMThread::vm_thread());
   do_thread(control_thread());
   _workers->threads_do_l(do_thread);
 }
