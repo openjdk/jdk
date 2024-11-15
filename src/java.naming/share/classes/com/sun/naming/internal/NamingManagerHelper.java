@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,18 +198,11 @@ public class NamingManagerHelper {
         }
         // All other exceptions are passed up.
 
-        // Not in class path; try to use codebase
-        String codebase;
+        // Not in class path; loading of a factory from remote
+        // codebase is not supported
         if (clas == null &&
-                (codebase = ref.getFactoryClassLocation()) != null) {
-            try {
-                clas = helper.loadClass(factoryName, codebase);
-                // Validate factory's class with the objects factory serial filter
-                if (clas == null || !filter.test(clas)) {
-                    return null;
-                }
-            } catch (ClassNotFoundException e) {
-            }
+            ref.getFactoryClassLocation() != null) {
+            return null;
         }
 
         @SuppressWarnings("deprecation") // Class.newInstance
@@ -401,12 +394,6 @@ public class NamingManagerHelper {
             ObjectFactoryBuilder builder) throws NamingException {
         if (object_factory_builder != null)
             throw new IllegalStateException("ObjectFactoryBuilder already set");
-
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSetFactory();
-        }
         object_factory_builder = builder;
     }
 
