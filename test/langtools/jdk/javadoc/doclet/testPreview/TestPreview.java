@@ -196,7 +196,7 @@ public class TestPreview extends JavadocTester {
                 <ul class="preview-comment">
                 <li><code>NonPreviewExtendsPreview</code> refers to one or more preview APIs:  <a href="CoreInterface.html" title="interface in nonpreviewextendspreview"><code>CoreInterface</code></a>.</li>
                 </ul>
-                <div class="preview-comment">Programs can use <code>NonPreviewExtendsPreview</code> without enabling preview features. Programs can only reference the preview API by name when preview features are enabled.</div>
+                <div class="preview-comment">Programs can only use <code>NonPreviewExtendsPreview</code> as <code><code>CoreInterface</code></code> when preview features are enabled.</div>
                 <div class="preview-comment">Preview features may be removed in a future release, or upgraded to permanent features of the Java platform.</div>
                 </div>
                 <div class="block">Non preview feature</div>
