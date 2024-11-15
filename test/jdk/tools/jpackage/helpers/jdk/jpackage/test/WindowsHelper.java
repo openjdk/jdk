@@ -237,7 +237,7 @@ public class WindowsHelper {
 
     public static void killAppLauncherProcess(JPackageCommand cmd,
             String launcherName, int expectedCount) {
-        var pids = findAppLauncherPIDs(cmd, launcherName, expectedCount);
+        var pids = findAppLauncherPIDs(cmd, launcherName);
         try {
             TKit.assertEquals(expectedCount, pids.length, String.format(
                     "Check [%d] %s app launcher processes found running",
@@ -250,28 +250,18 @@ public class WindowsHelper {
         }
     }
 
-    private static long[] findAppLauncherPIDs(JPackageCommand cmd, String launcherName, int expectedCount) {
-        // Get the list of PIDs and PPIDs of app launcher processes.
+    private static long[] findAppLauncherPIDs(JPackageCommand cmd, String launcherName) {
+        // Get the list of PIDs and PPIDs of app launcher processes. Run setWinEnableUTF8(true) for JDK-XXXXXXX.
         // wmic process where (name = "foo.exe") get ProcessID,ParentProcessID
-        Executor executor = Executor.of("wmic", "process", "where", "(name",
+        List<String> output = Executor.of("wmic", "process", "where", "(name",
                 "=",
                 "\"" + cmd.appLauncherPath(launcherName).getFileName().toString() + "\"",
-                ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).saveOutput();
-        List<String> output;
-        if (expectedCount == 0) {
-            // setWinEnableUTF8(true) for JDK-XXXXXXX
-            output = executor.setWinEnableUTF8(true).executeAndGetOutput();
-            if ("No Instance(s) Available.".equals(output.get(1).trim())) {
+                ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).saveOutput().setWinEnableUTF8(true).executeAndGetOutput();
+        if ("No Instance(s) Available.".equals(output.get(1).trim())) {
                 return new long[0];
-            }
-        } else {
-            output = executor.executeAndGetOutput();
-            if ("No Instance(s) Available.".equals(output.getFirst().trim())) {
-                return new long[0];
-            }
         }
 
-        String[] headers = Stream.of(output.getFirst().split("\\s+", 2)).map(
+        String[] headers = Stream.of(output.get(1).split("\\s+", 2)).map(
                 String::trim).map(String::toLowerCase).toArray(String[]::new);
         Pattern pattern;
         if (headers[0].equals("parentprocessid") && headers[1].equals(
@@ -285,7 +275,7 @@ public class WindowsHelper {
                     "Unrecognizable output of \'wmic process\' command");
         }
 
-        List<long[]> processes = output.stream().skip(1).map(line -> {
+        List<long[]> processes = output.stream().skip(2).map(line -> {
             Matcher m = pattern.matcher(line);
             long[] pids = null;
             if (m.matches()) {
