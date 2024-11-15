@@ -210,7 +210,7 @@ public class WinL10nTest {
                         }
                     }
                     var tempDir = Path.of(cmd.getArgumentValue("--temp"));
-                    for (var v : createDefaultL10nFilesLocVerifiers(tempDir.toAbsolutePath().normalize())) {
+                    for (var v : createDefaultL10nFilesLocVerifiers(tempDir.toAbsolutePath())) {
                         v.apply(getBuildCommandLine(result));
                     }
                 } else {
