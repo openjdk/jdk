@@ -274,10 +274,8 @@ void ShenandoahPacer::wait(size_t time_ms, jlong wait_deadline, bool& budget_rep
   assert(time_ms > 0, "Should not call this with zero argument, as it would stall until notify");
   assert(time_ms <= LONG_MAX, "Sanity");
   MonitorLocker locker(_wait_monitor);
-  if (Atomic::load(&_budget) < 0) {
+  if (!((budget_replenished = Atomic::load(&_budget) >= 0)) && os::elapsed_counter() < wait_deadline) {
     budget_replenished = !(_wait_monitor->wait(time_ms)) || Atomic::load(&_budget) >= 0;
-  } else {
-    budget_replenished = true;
   }
 }
 
