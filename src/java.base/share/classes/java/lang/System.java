@@ -200,7 +200,6 @@ public final class System {
      * @since   1.1
      */
     public static void setIn(InputStream in) {
-        checkIO();
         setIn0(in);
     }
 
@@ -212,7 +211,6 @@ public final class System {
      * @since   1.1
      */
     public static void setOut(PrintStream out) {
-        checkIO();
         setOut0(out);
     }
 
@@ -224,7 +222,6 @@ public final class System {
      * @since   1.1
      */
     public static void setErr(PrintStream err) {
-        checkIO();
         setErr0(err);
     }
 
@@ -275,24 +272,9 @@ public final class System {
         return SelectorProvider.provider().inheritedChannel();
     }
 
-    private static void checkIO() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("setIO"));
-        }
-    }
-
     private static native void setIn0(InputStream in);
     private static native void setOut0(PrintStream out);
     private static native void setErr0(PrintStream err);
-
-    private static class CallersHolder {
-        // Remember callers of setSecurityManager() here so that warning
-        // is only printed once for each different caller
-        static final Map<Class<?>, Boolean> callers
-            = Collections.synchronizedMap(new WeakHashMap<>());
-    }
 
     static URL codeSource(Class<?> clazz) {
         PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
@@ -681,12 +663,6 @@ public final class System {
      * @see        java.util.Properties
      */
     public static Properties getProperties() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
-
         return props;
     }
 
@@ -725,12 +701,6 @@ public final class System {
      * @see        java.util.Properties
      */
     public static void setProperties(Properties props) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
-
         if (props == null) {
             Map<String, String> tempProps = SystemProps.initProperties();
             VersionProps.init(tempProps);
@@ -762,12 +732,6 @@ public final class System {
      */
     public static String getProperty(String key) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertyAccess(key);
-        }
-
         return props.getProperty(key);
     }
 
@@ -790,12 +754,6 @@ public final class System {
      */
     public static String getProperty(String key, String def) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertyAccess(key);
-        }
-
         return props.getProperty(key, def);
     }
 
@@ -822,13 +780,6 @@ public final class System {
      */
     public static String setProperty(String key, String value) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new PropertyPermission(key,
-                SecurityConstants.PROPERTY_WRITE_ACTION));
-        }
-
         return (String) props.setProperty(key, value);
     }
 
@@ -853,12 +804,6 @@ public final class System {
      */
     public static String clearProperty(String key) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new PropertyPermission(key, "write"));
-        }
-
         return (String) props.remove(key);
     }
 
@@ -905,12 +850,6 @@ public final class System {
      * @see    ProcessBuilder#environment()
      */
     public static String getenv(String name) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getenv."+name));
-        }
-
         return ProcessEnvironment.getenv(name);
     }
 
@@ -945,12 +884,6 @@ public final class System {
      * @since  1.5
      */
     public static java.util.Map<String,String> getenv() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getenv.*"));
-        }
-
         return ProcessEnvironment.getenv();
     }
 
@@ -1401,11 +1334,6 @@ public final class System {
         }
 
         private static Void checkPermission() {
-            @SuppressWarnings("removal")
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(LOGGERFINDER_PERMISSION);
-            }
             return null;
         }
 
@@ -1476,11 +1404,6 @@ public final class System {
          * @return the {@link LoggerFinder LoggerFinder} instance.
          */
         public static LoggerFinder getLoggerFinder() {
-            @SuppressWarnings("removal")
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(LOGGERFINDER_PERMISSION);
-            }
             return accessProvider();
         }
 
@@ -1601,17 +1524,6 @@ public final class System {
         final Class<?> caller = Reflection.getCallerClass();
         if (caller == null) {
             throw new IllegalCallerException("no caller frame");
-        }
-        final SecurityManager sm = System.getSecurityManager();
-        // We don't use LazyLoggers if a resource bundle is specified.
-        // Bootstrap sensitive classes in the JDK do not use resource bundles
-        // when logging. This could be revisited later, if it needs to.
-        if (sm != null) {
-            final PrivilegedAction<Logger> pa =
-                    () -> LoggerFinder.accessProvider()
-                            .getLocalizedLogger(name, rb, caller.getModule());
-            return AccessController.doPrivileged(pa, null,
-                                         LoggerFinder.LOGGERFINDER_PERMISSION);
         }
         return LoggerFinder.accessProvider()
                 .getLocalizedLogger(name, rb, caller.getModule());
