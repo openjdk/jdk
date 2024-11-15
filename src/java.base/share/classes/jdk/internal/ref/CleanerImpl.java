@@ -240,6 +240,14 @@ public final class CleanerImpl implements Runnable {
          */
         private Node head;
 
+        /**
+         * Cached node instance to provide better behavior near NODE_CAPACITY
+         * threshold: if list size flips around NODE_CAPACITY, it would reuse
+         * the cached node instead of wasting and re-allocating a new node all
+         * the time.
+         */
+        private Node cache;
+
         public CleanableList() {
             reset();
         }
@@ -266,8 +274,15 @@ public final class CleanerImpl implements Runnable {
          */
         public synchronized void insert(PhantomCleanable<?> phc) {
             if (head.size == NODE_CAPACITY) {
-                // Head is full, insert new one.
-                Node newHead = new Node();
+                // Head node is full, insert new one.
+                // If possible, pick a pre-allocated node from cache.
+                Node newHead;
+                if (cache != null) {
+                    newHead = cache;
+                    cache = null;
+                } else {
+                    newHead = new Node();
+                }
                 newHead.next = head;
                 head.prev = newHead;
                 head = newHead;
@@ -309,15 +324,21 @@ public final class CleanerImpl implements Runnable {
             phc.node = null;
 
             // Remove the last element from the head node.
-            // If head node becomes empty after this, and there are
-            // nodes that follow it, replace the head node with another
-            // full one.
             head.arr[head.size - 1] = null;
             head.size--;
+
+            // If head node becomes empty after this, and there are
+            // nodes that follow it, replace the head node with another
+            // full one. If needed, stash the now free node in cache.
             if (head.size == 0 && head.next != null) {
-               Node newHead = head.next;
-               newHead.prev = null;
-               head = newHead;
+                Node newHead = head.next;
+                newHead.prev = null;
+                if (cache == null) {
+                    cache = head;
+                    cache.prev = null;
+                    cache.next = null;
+                }
+                head = newHead;
             }
 
             return true;
