@@ -56,7 +56,6 @@ class riscv {
   static address _string_indexof_linear_ll;
   static address _string_indexof_linear_uu;
   static address _string_indexof_linear_ul;
-  static address _large_byte_array_inflate;
 
   static bool _completed;
 
@@ -92,10 +91,6 @@ class riscv {
 
   static address string_indexof_linear_uu() {
     return _string_indexof_linear_uu;
-  }
-
-  static address large_byte_array_inflate() {
-    return _large_byte_array_inflate;
   }
 
   static bool complete() {
