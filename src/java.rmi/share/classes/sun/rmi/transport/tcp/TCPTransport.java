@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package sun.rmi.transport.tcp;
 
 import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -47,11 +46,6 @@ import java.rmi.server.RMISocketFactory;
 import java.rmi.server.RemoteCall;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UID;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.Permissions;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -67,7 +61,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import sun.rmi.runtime.Log;
 import sun.rmi.runtime.NewThreadAction;
-import sun.rmi.transport.Channel;
 import sun.rmi.transport.Connection;
 import sun.rmi.transport.DGCAckHandler;
 import sun.rmi.transport.Endpoint;
@@ -87,23 +80,16 @@ import sun.rmi.transport.TransportConstants;
 public class TCPTransport extends Transport {
 
     /* tcp package log */
-    @SuppressWarnings("removal")
     static final Log tcpLog = Log.getLog("sun.rmi.transport.tcp", "tcp",
-        LogStream.parseLevel(AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.transport.tcp.logLevel"))));
+        LogStream.parseLevel(System.getProperty("sun.rmi.transport.tcp.logLevel")));
 
     /** maximum number of connection handler threads */
-    @SuppressWarnings("removal")
     private static final int maxConnectionThreads =     // default no limit
-        AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-            Integer.getInteger("sun.rmi.transport.tcp.maxConnectionThreads",
-                               Integer.MAX_VALUE));
+        Integer.getInteger("sun.rmi.transport.tcp.maxConnectionThreads", Integer.MAX_VALUE);
 
     /** keep alive time for idle connection handler threads */
-    @SuppressWarnings("removal")
     private static final long threadKeepAliveTime =     // default 1 minute
-        AccessController.doPrivileged((PrivilegedAction<Long>) () ->
-            Long.getLong("sun.rmi.transport.tcp.threadKeepAliveTime", 60000));
+        Long.getLong("sun.rmi.transport.tcp.threadKeepAliveTime", 60000);
 
     /** thread pool for connection handlers */
     private static final ExecutorService connectionThreadPool =
@@ -111,10 +97,9 @@ public class TCPTransport extends Transport {
             threadKeepAliveTime, TimeUnit.MILLISECONDS,
             new SynchronousQueue<Runnable>(),
             new ThreadFactory() {
-                @SuppressWarnings("removal")
                 public Thread newThread(Runnable runnable) {
-                    return AccessController.doPrivileged(new NewThreadAction(
-                        runnable, "TCP Connection(idle)", true, true));
+                    return new NewThreadAction(
+                        runnable, "TCP Connection(idle)", true, true).run();
                 }
             });
 
@@ -124,17 +109,6 @@ public class TCPTransport extends Transport {
     /** client host for the current thread's connection */
     private static final ThreadLocal<ConnectionHandler>
         threadConnectionHandler = new ThreadLocal<>();
-
-    /** an AccessControlContext with no permissions */
-    @SuppressWarnings("removal")
-    private static final AccessControlContext NOPERMS_ACC = createNopermsAcc();
-
-    @SuppressWarnings("removal")
-    private static AccessControlContext createNopermsAcc() {
-        Permissions perms = new Permissions();
-        ProtectionDomain[] pd = { new ProtectionDomain(null, perms) };
-        return new AccessControlContext(pd);
-    }
 
     /** endpoints for this transport */
     private final LinkedList<TCPEndpoint> epList;
@@ -149,16 +123,15 @@ public class TCPTransport extends Transport {
     static final RMISocketFactory defaultSocketFactory =
         RMISocketFactory.getDefaultSocketFactory();
 
-    /** number of milliseconds in accepted-connection timeout.
+    /**
+     * Number of milliseconds in accepted-connection timeout.
      * Warning: this should be greater than 15 seconds (the client-side
      * timeout), and defaults to 2 hours.
      * The maximum representable value is slightly more than 24 days
      * and 20 hours.
      */
-    @SuppressWarnings("removal")
     private static final int connectionReadTimeout =    // default 2 hours
-        AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-            Integer.getInteger("sun.rmi.transport.tcp.readTimeout", 2 * 3600 * 1000));
+        Integer.getInteger("sun.rmi.transport.tcp.readTimeout", 2 * 3600 * 1000);
 
     /**
      * Constructs a TCPTransport.
@@ -302,24 +275,6 @@ public class TCPTransport extends Transport {
         }
     }
 
-    /**
-     * Verify that the current access control context has permission to
-     * accept the connection being dispatched by the current thread.
-     */
-    protected void checkAcceptPermission(@SuppressWarnings("removal") AccessControlContext acc) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            return;
-        }
-        ConnectionHandler h = threadConnectionHandler.get();
-        if (h == null) {
-            throw new Error(
-                "checkAcceptPermission not in ConnectionHandler thread");
-        }
-        h.checkAcceptPermission(sm, acc);
-    }
-
     private TCPEndpoint getEndpoint() {
         synchronized (epList) {
             return epList.getLast();
@@ -327,7 +282,8 @@ public class TCPTransport extends Transport {
     }
 
     /**
-     * Listen on transport's endpoint.
+     * Listen on transport's endpoint. Do nothing if a server socket
+     * and listening thread already exist.
      */
     private void listen() throws RemoteException {
         assert Thread.holdsLock(this);
@@ -347,23 +303,13 @@ public class TCPTransport extends Transport {
                  * "port in use" will cause export to hang if an
                  * RMIFailureHandler is not installed.
                  */
-                @SuppressWarnings("removal")
-                Thread t = AccessController.doPrivileged(
-                    new NewThreadAction(new AcceptLoop(server),
-                                        "TCP Accept-" + port, true));
+                Thread t = new NewThreadAction(new AcceptLoop(server),
+                                        "TCP Accept-" + port, true).run();
                 t.start();
             } catch (java.net.BindException e) {
                 throw new ExportException("Port already in use: " + port, e);
             } catch (IOException e) {
                 throw new ExportException("Listen failed on port: " + port, e);
-            }
-
-        } else {
-            // otherwise verify security access to existing server socket
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkListen(port);
             }
         }
     }
@@ -656,17 +602,6 @@ public class TCPTransport extends Transport {
          *  make this once-reviled tactic again socially acceptable) */
         private static final int POST = 0x504f5354;
 
-        /** most recently accept-authorized AccessControlContext */
-        @SuppressWarnings("removal")
-        private AccessControlContext okContext;
-        /** cache of accept-authorized AccessControlContexts */
-        @SuppressWarnings("removal")
-        private Map<AccessControlContext,
-                    Reference<AccessControlContext>> authCache;
-        /** security manager which authorized contexts in authCache */
-        @SuppressWarnings("removal")
-        private SecurityManager cacheSecurityManager = null;
-
         private Socket socket;
         private String remoteHost;
 
@@ -679,37 +614,6 @@ public class TCPTransport extends Transport {
             return remoteHost;
         }
 
-        /**
-         * Verify that the given AccessControlContext has permission to
-         * accept this connection.
-         */
-        @SuppressWarnings("removal")
-        void checkAcceptPermission(SecurityManager sm,
-                                   AccessControlContext acc)
-        {
-            /*
-             * Note: no need to synchronize on cache-related fields, since this
-             * method only gets called from the ConnectionHandler's thread.
-             */
-            if (sm != cacheSecurityManager) {
-                okContext = null;
-                authCache = new WeakHashMap<AccessControlContext,
-                                            Reference<AccessControlContext>>();
-                cacheSecurityManager = sm;
-            }
-            if (acc.equals(okContext) || authCache.containsKey(acc)) {
-                return;
-            }
-            InetAddress addr = socket.getInetAddress();
-            String host = (addr != null) ? addr.getHostAddress() : "*";
-
-            sm.checkAccept(host, socket.getPort());
-
-            authCache.put(acc, new SoftReference<AccessControlContext>(acc));
-            okContext = acc;
-        }
-
-        @SuppressWarnings("removal")
         public void run() {
             Thread t = Thread.currentThread();
             String name = t.getName();
@@ -717,10 +621,7 @@ public class TCPTransport extends Transport {
                 t.setName("RMI TCP Connection(" +
                           connectionCount.incrementAndGet() +
                           ")-" + remoteHost);
-                AccessController.doPrivileged((PrivilegedAction<Void>)() -> {
-                    run0();
-                    return null;
-                }, NOPERMS_ACC);
+                run0();
             } finally {
                 t.setName(name);
             }

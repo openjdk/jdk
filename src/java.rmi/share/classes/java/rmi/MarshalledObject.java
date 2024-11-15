@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamConstants;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import sun.rmi.server.MarshalInputStream;
 import sun.rmi.server.MarshalOutputStream;
@@ -317,7 +315,6 @@ public final class MarshalledObject<T> implements Serializable {
          * <code>null</code>, then all annotations will be
          * <code>null</code>.
          */
-        @SuppressWarnings("removal")
         MarshalledObjectInputStream(InputStream objIn, InputStream locIn,
                     ObjectInputFilter filter)
             throws IOException
@@ -325,13 +322,10 @@ public final class MarshalledObject<T> implements Serializable {
             super(objIn);
             this.locIn = (locIn == null ? null : new ObjectInputStream(locIn));
             if (filter != null) {
-                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                    MarshalledObjectInputStream.this.setObjectInputFilter(filter);
-                    if (MarshalledObjectInputStream.this.locIn != null) {
-                        MarshalledObjectInputStream.this.locIn.setObjectInputFilter(filter);
-                    }
-                    return null;
-                });
+                MarshalledObjectInputStream.this.setObjectInputFilter(filter);
+                if (MarshalledObjectInputStream.this.locIn != null) {
+                    MarshalledObjectInputStream.this.locIn.setObjectInputFilter(filter);
+                }
             }
         }
 

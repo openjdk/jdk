@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,6 @@ package sun.rmi.log;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
-import java.rmi.server.RMIClassLoader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * This class is a simple implementation of a reliable Log.  The
@@ -132,15 +129,13 @@ public class ReliableLog {
      * if an exception occurs during invocation of the handler's
      * snapshot method or if other IOException occurs.
      */
-    @SuppressWarnings("removal")
     public ReliableLog(String dirPath,
                      LogHandler handler,
                      boolean pad)
         throws IOException
     {
         super();
-        this.Debug = AccessController.doPrivileged(
-            (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("sun.rmi.log.debug"));
+        this.Debug = Boolean.getBoolean("sun.rmi.log.debug");
         dir = new File(dirPath);
         if (!(dir.exists() && dir.isDirectory())) {
             // create directory
@@ -331,19 +326,10 @@ public class ReliableLog {
     private static Constructor<? extends LogFile>
         getLogClassConstructor() {
 
-        @SuppressWarnings("removal")
-        String logClassName = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.log.class"));
+        String logClassName = System.getProperty("sun.rmi.log.class");
         if (logClassName != null) {
             try {
-                @SuppressWarnings("removal")
-                ClassLoader loader =
-                    AccessController.doPrivileged(
-                        new PrivilegedAction<ClassLoader>() {
-                            public ClassLoader run() {
-                               return ClassLoader.getSystemClassLoader();
-                            }
-                        });
+                ClassLoader loader = ClassLoader.getSystemClassLoader();
                 Class<? extends LogFile> cl =
                     loader.loadClass(logClassName).asSubclass(LogFile.class);
                 return cl.getConstructor(String.class, String.class);
