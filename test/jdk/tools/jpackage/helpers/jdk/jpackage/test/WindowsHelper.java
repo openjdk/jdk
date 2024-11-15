@@ -181,9 +181,8 @@ public class WindowsHelper {
             var outputMsiPath = cmd.outputBundle().normalize();
             if (isPathTooLong(outputMsiPath)) {
                 return toSupplier(() -> {
-                    var transientMsiPath = TKit.createTempFile(Path.of("a.msi")).normalize();
+                    var transientMsiPath = TKit.createTempDirectory("msi-copy").resolve("a.msi").normalize();
                     TKit.trace(String.format("Copy [%s] to [%s]", outputMsiPath, transientMsiPath));
-                    Files.delete(transientMsiPath);
                     Files.copy(outputMsiPath, transientMsiPath);
                     return new TransientMsi(transientMsiPath);
                 }).get();
