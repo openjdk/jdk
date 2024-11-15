@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary  jlink should use the version from java.base.jmod to find modules
  * @bug 8185130
  * @summary jlink should throw error if target image and current JDK versions don't match
+ * @requires jlink.packagedModules
  * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.process.* CheckRuntimeVersion

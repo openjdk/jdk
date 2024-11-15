@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,9 +70,6 @@ public abstract class CookieHandler {
      *
      * @return the system-wide cookie handler; A null return means
      *        there is no system-wide cookie handler currently set.
-     * @throws SecurityException
-     *       If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("getCookieHandler")}
      * @see #setDefault(CookieHandler)
      */
     public static synchronized CookieHandler getDefault() {
@@ -91,9 +88,6 @@ public abstract class CookieHandler {
      *
      * @param cHandler The HTTP cookie handler, or
      *       {@code null} to unset.
-     * @throws SecurityException
-     *       If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("setCookieHandler")}
      * @see #getDefault()
      */
     public static synchronized void setDefault(CookieHandler cHandler) {
