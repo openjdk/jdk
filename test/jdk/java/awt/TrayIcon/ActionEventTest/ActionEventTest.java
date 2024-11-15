@@ -57,18 +57,18 @@ public class ActionEventTest {
     public static void main(String[] args) throws Exception {
         if (!SystemTray.isSupported()) {
             System.out.println("SystemTray not supported on the platform." +
-                    " Marking the test passed.");
+                " Marking the test passed.");
         } else {
             if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
                 System.err.println(
-                        "Test can fail on Windows platform\n"+
-                                "On Windows 7, by default icon hides behind icon pool\n" +
-                                "Due to which test might fail\n" +
-                                "Set \"Right mouse click\" -> " +
-                                "\"Customize notification icons\" -> \"Always show " +
-                                "all icons and notifications on the taskbar\" true " +
-                                "to avoid this problem.\nOR change behavior only for " +
-                                "Java SE tray icon and rerun test.");
+                    "Test can fail on Windows platform\n"+
+                    "On Windows 7, by default icon hides behind icon pool\n" +
+                    "Due to which test might fail\n" +
+                    "Set \"Right mouse click\" -> " +
+                    "\"Customize notification icons\" -> \"Always show " +
+                    "all icons and notifications on the taskbar\" true " +
+                    "to avoid this problem.\nOR change behavior only for " +
+                    "Java SE tray icon and rerun test.");
             }
 
             ActionEventTest test = new ActionEventTest();
@@ -88,7 +88,7 @@ public class ActionEventTest {
     private void initializeGUI() {
 
         icon = new TrayIcon(
-                new BufferedImage(20, 20, BufferedImage.TYPE_INT_RGB), "ti");
+            new BufferedImage(20, 20, BufferedImage.TYPE_INT_RGB), "ti");
         icon.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
@@ -100,7 +100,7 @@ public class ActionEventTest {
                 if ((md & expectedMask) != expectedMask) {
                     clear();
                     throw new RuntimeException("Action Event modifiers are not"
-                            + " set correctly.");
+                        + " set correctly.");
                 }
             }
         });
