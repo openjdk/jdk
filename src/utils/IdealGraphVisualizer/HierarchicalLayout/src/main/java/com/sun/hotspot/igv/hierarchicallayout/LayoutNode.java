@@ -437,6 +437,16 @@ public class LayoutNode {
         this.weightedPosition = weightedPosition;
     }
 
+    public int crossingNumber;
+
+    public int getCrossingNumber() {
+        return crossingNumber;
+    }
+
+    public void setCrossingNumber(int crossingNumber) {
+        this.crossingNumber = crossingNumber;
+    }
+
     /**
      * Groups the successor edges by their relative x-coordinate from the current node.
      *
