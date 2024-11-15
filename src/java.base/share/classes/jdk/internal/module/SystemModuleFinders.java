@@ -361,7 +361,7 @@ public final class SystemModuleFinders {
     }
 
     /**
-     * Holder class for the ImageReader
+     * Holder class for the ImageReader.
      */
     private static class SystemImage {
         static final ImageReader READER = ImageReaderFactory.getImageReader();
