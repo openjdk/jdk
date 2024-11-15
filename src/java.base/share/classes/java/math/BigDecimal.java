@@ -2158,7 +2158,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
             // The code below favors relative simplicity over checking
             // for special cases that could run faster.
-
             final int preferredScale = this.scale/2;
 
             BigDecimal result;
@@ -2167,8 +2166,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 final BigDecimal stripped = this.stripTrailingZeros();
                 final int strippedScale = stripped.scale;
 
+                if ((strippedScale & 1) != 0) // 10*stripped.unscaledValue() can't be an exact square
+                    throw new ArithmeticException("Computed square root not exact.");
+
                 // Check for even powers of 10. Numerically sqrt(10^2N) = 10^N
-                if (stripped.isPowerOfTen() && (strippedScale & 1) == 0) {
+                if (stripped.isPowerOfTen()) {
                     result = valueOf(1L, strippedScale >> 1);
                     // Adjust to requested precision and preferred
                     // scale as appropriate.
@@ -2181,18 +2183,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 // unscaledValue * 10^(-scale)
                 //
                 // where unscaledValue is an integer with the minimum
-                // precision for the cohort of the numerical value.
-                BigInteger working = stripped.unscaledValue();
-                final int resultScale;
-                if ((strippedScale & 1) == 0) {
-                    resultScale = strippedScale >> 1;
-                } else {
-                    working = working.multiply(10L);
-                    resultScale = (int) ((strippedScale + 1L) >> 1);
-                }
-
-                BigInteger[] sqrtRem = working.sqrtAndRemainder();
-                result = new BigDecimal(sqrtRem[0], resultScale);
+                // precision for the cohort of the numerical value and the scale is even.
+                BigInteger[] sqrtRem = stripped.unscaledValue().sqrtAndRemainder();
+                result = new BigDecimal(sqrtRem[0], strippedScale >> 1);
 
                 // If result*result != this numerically or requires too high precision,
                 // the square root isn't exact
