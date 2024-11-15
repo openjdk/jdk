@@ -258,14 +258,12 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     jlong const start_time = os::elapsed_counter();
     jlong const deadline = start_time + (ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC);
     jlong now = start_time;
-    bool budget_replenished = false;
-    do  {
+    bool budget_replenished = Atomic::load(&_budget) >= 0;
+    while (!budget_replenished &&
+          (now = os::elapsed_counter()) < deadline)  {
       // We could instead assist GC, but this would suffice for now.
       wait(1, now + NANOSECS_PER_MILLISEC, budget_replenished);
-    } while (!budget_replenished &&
-             Atomic::load(&_budget) < 0 &&
-             (now = os::elapsed_counter()) < deadline);
-
+    }
     ShenandoahThreadLocalData::add_paced_time(current, (double)(os::elapsed_counter() - start_time) / NANOSECS_PER_SEC);
   }
 }
@@ -276,13 +274,10 @@ void ShenandoahPacer::wait(size_t time_ms, jlong wait_deadline, bool& budget_rep
   assert(time_ms > 0, "Should not call this with zero argument, as it would stall until notify");
   assert(time_ms <= LONG_MAX, "Sanity");
   MonitorLocker locker(_wait_monitor);
-  if (os::elapsed_counter() < wait_deadline) {
-    if (Atomic::load(&_budget) < 0) {
-      //Avoid non-needed sys call if possible
-      _wait_monitor->wait(time_ms);
-    } else {
-      budget_replenished = true;
-    }
+  if (Atomic::load(&_budget) < 0) {
+    budget_replenished = !(_wait_monitor->wait(time_ms)) || Atomic::load(&_budget) >= 0;
+  } else {
+    budget_replenished = true;
   }
 }
 
