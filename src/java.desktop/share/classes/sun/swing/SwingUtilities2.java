@@ -61,8 +61,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.text.BreakIterator;
@@ -1706,10 +1704,8 @@ public class SwingUtilities2 {
                                   final String imageFile,
                                   final boolean enablePrivileges) {
         return (UIDefaults.LazyValue) (table) -> {
-            @SuppressWarnings("removal")
-            byte[] buffer = enablePrivileges ? AccessController.doPrivileged(
-                    (PrivilegedAction<byte[]>) ()
-                    -> getIconBytes(baseClass, rootClass, imageFile))
+            byte[] buffer = enablePrivileges ?
+                    getIconBytes(baseClass, rootClass, imageFile)
                     : getIconBytes(baseClass, rootClass, imageFile);
 
             if (buffer == null) {

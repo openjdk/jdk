@@ -87,16 +87,12 @@ public class PerformanceLogger {
     private static long baseTime;
 
     static {
-        String perfLoggingProp =
-            java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.perflog"));
+        String perfLoggingProp = System.getProperty("sun.perflog");
         if (perfLoggingProp != null) {
             perfLoggingOn = true;
 
             // Check if we should use nanoTime
-            String perfNanoProp =
-                java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("sun.perflog.nano"));
+            String perfNanoProp = System.getProperty("sun.perflog.nano");
             if (perfNanoProp != null) {
                 useNanoTime = true;
             }
@@ -107,21 +103,15 @@ public class PerformanceLogger {
             }
             if (logFileName != null) {
                 if (logWriter == null) {
-                    java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
-                        public Void run() {
-                            try {
-                                File logFile = new File(logFileName);
-                                logFile.createNewFile();
-                                logWriter = new FileWriter(logFile);
-                            } catch (Exception e) {
-                                System.out.println(e + ": Creating logfile " +
-                                                   logFileName +
-                                                   ".  Log to console");
-                            }
-                            return null;
-                        }
-                    });
+                    try {
+                        File logFile = new File(logFileName);
+                        logFile.createNewFile();
+                        logWriter = new FileWriter(logFile);
+                    } catch (Exception e) {
+                        System.out.println(e + ": Creating logfile " +
+                                           logFileName +
+                                           ".  Log to console");
+                    }
                 }
             }
             if (logWriter == null) {

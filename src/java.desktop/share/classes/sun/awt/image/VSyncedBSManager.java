@@ -35,11 +35,8 @@ public abstract class VSyncedBSManager {
 
     private static VSyncedBSManager theInstance;
 
-    @SuppressWarnings("removal")
     private static final boolean vSyncLimit =
-        Boolean.parseBoolean(java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction(
-                    "sun.java2d.vsynclimit", "true")));
+        Boolean.parseBoolean(System.getProperty("sun.java2d.vsynclimit", "true"));
 
     private static VSyncedBSManager getInstance(boolean create) {
         if (theInstance == null && create) {

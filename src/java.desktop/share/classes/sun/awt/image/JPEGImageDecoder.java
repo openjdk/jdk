@@ -42,7 +42,7 @@ import java.awt.image.*;
  *
  * @author Jim Graham
  */
-@SuppressWarnings({"removal", "restricted"})
+@SuppressWarnings("restricted")
 public class JPEGImageDecoder extends ImageDecoder {
     private static ColorModel RGBcolormodel;
     private static ColorModel ARGBcolormodel;
@@ -54,13 +54,7 @@ public class JPEGImageDecoder extends ImageDecoder {
     private ColorModel colormodel;
 
     static {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("javajpeg");
-                    return null;
-                }
-            });
+        System.loadLibrary("javajpeg");
         initIDs(InputStreamClass);
         RGBcolormodel = new DirectColorModel(24, 0xff0000, 0xff00, 0xff);
         ARGBcolormodel = ColorModel.getRGBdefault();

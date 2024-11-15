@@ -36,8 +36,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -46,7 +44,6 @@ import sun.awt.image.BufImgSurfaceData;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SurfaceData;
 import sun.java2d.pipe.Region;
-import sun.security.action.GetPropertyAction;
 
 /**
  * defines interface for primitives which can be placed into
@@ -336,9 +333,7 @@ public abstract class GraphicsPrimitive {
     public static final int TRACECOUNTS = 4;
 
     static {
-        GetPropertyAction gpa = new GetPropertyAction("sun.java2d.trace");
-        @SuppressWarnings("removal")
-        String trace = AccessController.doPrivileged(gpa);
+        String trace = System.getProperty("sun.java2d.trace");
         if (trace != null) {
             boolean verbose = false;
             int traceflags = 0;
@@ -401,17 +396,12 @@ public abstract class GraphicsPrimitive {
     private static PrintStream getTraceOutputFile() {
         if (traceout == null) {
             if (tracefile != null) {
-                @SuppressWarnings("removal")
-                FileOutputStream o = AccessController.doPrivileged(
-                    new PrivilegedAction<FileOutputStream>() {
-                        public FileOutputStream run() {
-                            try {
-                                return new FileOutputStream(tracefile);
-                            } catch (FileNotFoundException e) {
-                                return null;
-                            }
-                        }
-                    });
+                FileOutputStream o;
+                try {
+                    o = new FileOutputStream(tracefile);
+                } catch (FileNotFoundException e) {
+                    o = null;
+                }
                 if (o != null) {
                     traceout = new PrintStream(o);
                 } else {
@@ -425,17 +415,13 @@ public abstract class GraphicsPrimitive {
     }
 
     public static class TraceReporter implements Runnable {
-        @SuppressWarnings("removal")
         public static void setShutdownHook() {
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                TraceReporter t = new TraceReporter();
-                Thread thread = new Thread(
-                        ThreadGroupUtils.getRootThreadGroup(), t,
-                        "TraceReporter", 0, false);
-                thread.setContextClassLoader(null);
-                Runtime.getRuntime().addShutdownHook(thread);
-                return null;
-            });
+            TraceReporter t = new TraceReporter();
+            Thread thread = new Thread(
+                    ThreadGroupUtils.getRootThreadGroup(), t,
+                    "TraceReporter", 0, false);
+            thread.setContextClassLoader(null);
+            Runtime.getRuntime().addShutdownHook(thread);
         }
 
         public void run() {
