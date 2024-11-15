@@ -50,9 +50,7 @@ import java.awt.event.KeyEvent;
  */
 
 public class ExtendedRobot extends Robot {
-
     private static int DEFAULT_SPEED = 20;       // Speed for mouse glide and click
-    private static int DEFAULT_SYNC_DELAY = 500; // Default Additional delay for waitForIdle()
     private static int DEFAULT_STEP_LENGTH = 2;  // Step length (in pixels) for mouse glide
 
     private final int syncDelay = DEFAULT_SYNC_DELAY;
@@ -119,6 +117,17 @@ public class ExtendedRobot extends Robot {
      */
     public int getSyncDelay() {
         return this.syncDelay;
+    }
+
+    /**
+     * Moves mouse pointer to given screen coordinates.
+     *
+     * @param   position    Target position
+     *
+     * @see     java.awt.Robot#mouseMove(int, int)
+     */
+    public synchronized void mouseMove(Point position) {
+        mouseMove(position.x, position.y);
     }
 
     /**

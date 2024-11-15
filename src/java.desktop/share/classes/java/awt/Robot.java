@@ -116,6 +116,9 @@ public class Robot {
     private int autoDelay = 0;
     private static int LEGAL_BUTTON_MASK = 0;
 
+    private static int DEFAULT_SPEED = 20;       // Speed for mouse glide and click
+    private static int DEFAULT_STEP_LENGTH = 2;  // Step length (in pixels) for mouse glide
+
     private DirectColorModel screenCapCM = null;
 
     /**
@@ -776,11 +779,6 @@ public class Robot {
         return getClass().getName() + "[ " + params + " ]";
     }
 
-
-    private static int DEFAULT_SPEED = 20;       // Speed for mouse glide and click
-    private static int DEFAULT_SYNC_DELAY = 500; // Default Additional delay for waitForIdle()
-    private static int DEFAULT_STEP_LENGTH = 2;  // Step length (in pixels) for mouse glide
-
     /**
      * Clicks mouse button(s) by calling {@link java.awt.Robot#mousePress(int)} and
      * {@link java.awt.Robot#mouseRelease(int)} methods
@@ -800,9 +798,9 @@ public class Robot {
      * @see     InputEvent#getMaskForButton(int)
      * @see     Toolkit#areExtraMouseButtonsEnabled()
      * @see     java.awt.event.MouseEvent
+     * @since   24
      */
     public void click(int buttons) {
-//        throw new RuntimeException("click");
         mousePress(buttons);
         waitForIdle(DEFAULT_SPEED);
         mouseRelease(buttons);
@@ -821,9 +819,9 @@ public class Robot {
      *          by Java
      *
      * @see     #click(int)
+     * @since   24
      */
     public void click() {
-//        throw new RuntimeException("click");
         click(InputEvent.BUTTON1_DOWN_MASK);
     }
 
@@ -836,9 +834,9 @@ public class Robot {
      *                      sync been completed
      * @throws  sun.awt.SunToolkit.IllegalThreadException if called on the AWT event
      *          dispatching thread
+     * @since   24
      */
     public synchronized void waitForIdle(int delayValue) {
-//        throw new RuntimeException("waitForIdle");
         waitForIdle();
         delay(delayValue);
     }
@@ -851,9 +849,9 @@ public class Robot {
      * @param   y   Destination point y coordinate
      *
      * @see     #glide(int, int, int, int)
+     * @since   24
      */
     public void glide(int x, int y) {
-//        throw new RuntimeException("glide");
         Point p = MouseInfo.getPointerInfo().getLocation();
         glide(p.x, p.y, x, y);
     }
@@ -865,9 +863,9 @@ public class Robot {
      * @param   dest    Destination point
      *
      * @see     #glide(int, int)
+     * @since   24
      */
     public void glide(Point dest) {
-//        throw new RuntimeException("glide");
         glide(dest.x, dest.y);
     }
 
@@ -881,9 +879,9 @@ public class Robot {
      * @param   toY     Destination point y coordinate
      *
      * @see     #glide(int, int, int, int, int, int)
+     * @since   24
      */
     public void glide(int fromX, int fromY, int toX, int toY) {
-//        throw new RuntimeException("glide");
         glide(fromX, fromY, toX, toY, DEFAULT_STEP_LENGTH, DEFAULT_SPEED);
     }
 
@@ -895,9 +893,9 @@ public class Robot {
      * @param   dest    Destination point
      *
      * @see     #glide(int, int, int, int, int, int)
+     * @since   24
      */
     public void glide(Point src, Point dest) {
-//        throw new RuntimeException("glide");
         glide(src.x, src.y, dest.x, dest.y, DEFAULT_STEP_LENGTH, DEFAULT_SPEED);
     }
 
@@ -914,9 +912,9 @@ public class Robot {
      *
      * @see     #mouseMove(int, int)
      * @see     #delay(int)
+     * @since   24
      */
     public void glide(int srcX, int srcY, int destX, int destY, int stepLength, int speed) {
-//        throw new RuntimeException("glide");
         int stepNum;
         double tDx, tDy;
         double dx, dy, ds;
@@ -949,18 +947,6 @@ public class Robot {
     }
 
     /**
-     * Moves mouse pointer to given screen coordinates.
-     *
-     * @param   position    Target position
-     *
-     * @see     java.awt.Robot#mouseMove(int, int)
-     */
-    public synchronized void mouseMove(Point position) {
-//        throw new RuntimeException("mouseMove");
-        mouseMove(position.x, position.y);
-    }
-
-    /**
      * Successively presses and releases a given key.
      * <p>
      * Key codes that have more than one physical key associated with them
@@ -974,9 +960,9 @@ public class Robot {
      * @see     java.awt.Robot#keyPress(int)
      * @see     java.awt.Robot#keyRelease(int)
      * @see     java.awt.event.KeyEvent
+     * @since   24
      */
     public void type(int keycode) {
-//        throw new RuntimeException("type");
         keyPress(keycode);
         waitForIdle(DEFAULT_SPEED);
         keyRelease(keycode);
@@ -990,9 +976,9 @@ public class Robot {
      *
      * @see     #type(int)
      * @see     java.awt.event.KeyEvent
+     * @since   24
      */
     public void type(char c) {
-//        throw new RuntimeException("type");
         type(KeyEvent.getExtendedKeyCodeForChar(c));
     }
 
@@ -1002,9 +988,9 @@ public class Robot {
      * @param   symbols Array of characters to be typed
      *
      * @see     #type(char)
+     * @since   24
      */
     public void type(char[] symbols) {
-//        throw new RuntimeException("type");
         for (int i = 0; i < symbols.length; i++) {
             type(symbols[i]);
         }
@@ -1016,9 +1002,9 @@ public class Robot {
      * @param   s   String to be typed
      *
      * @see     #type(char[])
+     * @since   24
      */
     public void type(String s) {
-//        throw new RuntimeException("type");
         type(s.toCharArray());
     }
 }
