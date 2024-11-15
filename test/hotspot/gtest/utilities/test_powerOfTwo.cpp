@@ -307,12 +307,20 @@ TEST(power_of_2, log2i) {
 }
 
 template <typename T> void test_ceil_log2() {
-  EXPECT_EQ(ceil_log2(T(1)), T(0)) << "value = " << T(1);
-  EXPECT_EQ(ceil_log2(T(2)), T(1)) << "value = " << T(2);
-  EXPECT_EQ(ceil_log2(T(3)), T(2)) << "value = " << T(3);
-  EXPECT_EQ(ceil_log2(T(4)), T(2)) << "value = " << T(4);
-  EXPECT_EQ(ceil_log2(T(5)), T(3)) << "value = " << T(5);
-  EXPECT_EQ(ceil_log2(T(127)), T(7)) << "value = " << T(127);
+  EXPECT_EQ(ceil_log2(T(1)), 0) << "value = " << T(1);
+  EXPECT_EQ(ceil_log2(T(2)), 1) << "value = " << T(2);
+  EXPECT_EQ(ceil_log2(T(3)), 2) << "value = " << T(3);
+  EXPECT_EQ(ceil_log2(T(4)), 2) << "value = " << T(4);
+  EXPECT_EQ(ceil_log2(T(5)), 3) << "value = " << T(5);
+
+  // Test max values
+  if (std::is_unsigned<T>::value) {
+    EXPECT_EQ(ceil_log2(std::numeric_limits<T>::max()),
+            (int)(sizeof(T) * 8)) << "value = " << std::numeric_limits<T>::max();
+  } else {
+    EXPECT_EQ(ceil_log2(std::numeric_limits<T>::max()),
+            (int)(sizeof(T) * 8 - 1)) << "value = " << std::numeric_limits<T>::max();
+  }
 }
 
 TEST(power_of_2, ceil_log2) {
