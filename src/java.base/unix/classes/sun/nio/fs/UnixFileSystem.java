@@ -577,14 +577,14 @@ abstract class UnixFileSystem
             // copy time stamps last
             if (flags.copyBasicAttributes) {
                 try {
-                    if (dfd >= 0 && futimesSupported()) {
-                        futimes(dfd,
-                                attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                                attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
+                    if (dfd >= 0) {
+                        futimens(dfd,
+                                 attrs.lastAccessTime().to(TimeUnit.NANOSECONDS),
+                                 attrs.lastModifiedTime().to(TimeUnit.NANOSECONDS));
                     } else {
-                        utimes(target,
-                               attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                               attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
+                        utimensat(AT_FDCWD, target,
+                                  attrs.lastAccessTime().to(TimeUnit.NANOSECONDS),
+                                  attrs.lastModifiedTime().to(TimeUnit.NANOSECONDS), 0);
                     }
                 } catch (UnixException x) {
                     // unable to set times
@@ -727,15 +727,9 @@ abstract class UnixFileSystem
                 // copy time attributes
                 if (flags.copyBasicAttributes) {
                     try {
-                        if (futimesSupported()) {
-                            futimes(fo,
-                                    attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                                    attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
-                        } else {
-                            utimes(target,
-                                   attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                                   attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
-                        }
+                        futimens(fo,
+                                 attrs.lastAccessTime().to(TimeUnit.NANOSECONDS),
+                                 attrs.lastModifiedTime().to(TimeUnit.NANOSECONDS));
                     } catch (UnixException x) {
                         if (flags.failIfUnableToCopyBasic)
                             x.rethrowAsIOException(target);
@@ -814,9 +808,10 @@ abstract class UnixFileSystem
             }
             if (flags.copyBasicAttributes) {
                 try {
-                    utimes(target,
-                           attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                           attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
+                    utimensat(AT_FDCWD, target,
+                              attrs.lastAccessTime().to(TimeUnit.NANOSECONDS),
+                              attrs.lastModifiedTime().to(TimeUnit.NANOSECONDS),
+                              0);
                 } catch (UnixException x) {
                     if (flags.failIfUnableToCopyBasic)
                         x.rethrowAsIOException(target);

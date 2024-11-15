@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,14 +71,8 @@ final class P11KeyAgreement extends KeyAgreementSpi {
 
     private static class AllowKDF {
 
-        private static final boolean VALUE = getValue();
-
-        @SuppressWarnings("removal")
-        private static boolean getValue() {
-            return AccessController.doPrivileged(
-                (PrivilegedAction<Boolean>)
-                () -> Boolean.getBoolean("jdk.crypto.KeyAgreement.legacyKDF"));
-        }
+        private static final boolean VALUE =
+            Boolean.getBoolean("jdk.crypto.KeyAgreement.legacyKDF");
     }
 
     P11KeyAgreement(Token token, String algorithm, long mechanism) {

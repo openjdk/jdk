@@ -32,7 +32,6 @@ import java.util.function.Consumer;
 import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedFieldBuilder;
 import jdk.internal.classfile.impl.TerminalFieldBuilder;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A builder for fields.  Builders are not created directly; they are passed
@@ -43,9 +42,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see FieldTransform
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldBuilder
         extends ClassFileBuilder<FieldElement, FieldBuilder>
         permits TerminalFieldBuilder, ChainedFieldBuilder {

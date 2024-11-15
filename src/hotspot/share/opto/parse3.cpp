@@ -131,6 +131,8 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   int offset = field->offset_in_bytes();
   const TypePtr* adr_type = C->alias_type(field)->adr_type();
   Node *adr = basic_plus_adr(obj, obj, offset);
+  assert(C->get_alias_index(adr_type) == C->get_alias_index(_gvn.type(adr)->isa_ptr()),
+    "slice of address and input slice don't match");
 
   // Build the resultant type of the load
   const Type *type;
@@ -204,6 +206,8 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   int offset = field->offset_in_bytes();
   const TypePtr* adr_type = C->alias_type(field)->adr_type();
   Node* adr = basic_plus_adr(obj, obj, offset);
+  assert(C->get_alias_index(adr_type) == C->get_alias_index(_gvn.type(adr)->isa_ptr()),
+    "slice of address and input slice don't match");
   BasicType bt = field->layout_type();
   // Value to be stored
   Node* val = type2size[bt] == 1 ? pop() : pop_pair();
@@ -406,7 +410,7 @@ void Parse::do_multianewarray() {
       // Fill-in it with values
       for (j = 0; j < ndimensions; j++) {
         Node *dims_elem = array_element_address(dims, intcon(j), T_INT);
-        store_to_memory(control(), dims_elem, length[j], T_INT, TypeAryPtr::INTS, MemNode::unordered);
+        store_to_memory(control(), dims_elem, length[j], T_INT, MemNode::unordered);
       }
     }
 
