@@ -209,8 +209,8 @@ public class WinL10nTest {
                             v.createCmdOutputVerifier(wixSrcDir).apply(getBuildCommandLine(result));
                         }
                     }
-                    var tempDir = Path.of(cmd.getArgumentValue("--temp"));
-                    for (var v : createDefaultL10nFilesLocVerifiers(tempDir.toAbsolutePath())) {
+                    var tempDir = Path.of(cmd.getArgumentValue("--temp")).toAbsolutePath();
+                    for (var v : createDefaultL10nFilesLocVerifiers(tempDir)) {
                         v.apply(getBuildCommandLine(result));
                     }
                 } else {
