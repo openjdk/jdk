@@ -129,7 +129,7 @@ private:
 
   size_t update_and_get_progress_history();
 
-  void wait(size_t time_ms, jlong deadline, bool& budget_replenished);
+  bool wait(size_t time_ms);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPACER_HPP

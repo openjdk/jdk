@@ -255,28 +255,26 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   }
 
   if (!claimed) {
-    jlong const start_time = os::elapsed_counter();
-    jlong const deadline = start_time + (ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC);
-    jlong now = start_time;
-    bool budget_replenished = Atomic::load(&_budget) >= 0;
-    while (!budget_replenished &&
-          (now = os::elapsed_counter()) < deadline)  {
+    jlong const start_time = os::javaTimeMillis();
+    jlong const deadline = start_time + ShenandoahPacingMaxDelay;
+    bool timeout = false;
+    while (Atomic::load(&_budget) < 0 &&
+          os::javaTimeMillis() < deadline)  {
       // We could instead assist GC, but this would suffice for now.
-      wait(1, now + NANOSECS_PER_MILLISEC, budget_replenished);
+      timeout = wait(1);
+      NOT_WINDOWS(if (!timeout) break;)
     }
-    ShenandoahThreadLocalData::add_paced_time(current, (double)(os::elapsed_counter() - start_time) / NANOSECS_PER_SEC);
+    ShenandoahThreadLocalData::add_paced_time(current, (double)(os::javaTimeMillis() - start_time) / (double)MILLIUNITS);
   }
 }
 
-void ShenandoahPacer::wait(size_t time_ms, jlong wait_deadline, bool& budget_replenished) {
+bool ShenandoahPacer::wait(size_t time_ms) {
   // Perform timed wait. It works like like sleep(), except without modifying
   // the thread interruptible status. MonitorLocker also checks for safepoints.
   assert(time_ms > 0, "Should not call this with zero argument, as it would stall until notify");
   assert(time_ms <= LONG_MAX, "Sanity");
   MonitorLocker locker(_wait_monitor);
-  if (!((budget_replenished = Atomic::load(&_budget) >= 0)) && os::elapsed_counter() < wait_deadline) {
-    budget_replenished = !(_wait_monitor->wait(time_ms)) || Atomic::load(&_budget) >= 0;
-  }
+  return _wait_monitor->wait(time_ms);
 }
 
 void ShenandoahPacer::notify_waiters() {
