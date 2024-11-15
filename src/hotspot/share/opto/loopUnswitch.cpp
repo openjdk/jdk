@@ -424,7 +424,7 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
 // TODO desc / ASCII art
 IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj) {
   IfNode* multiversion_if = multiversioning_fast_proj->in(0)->as_If();
-  OpaqueAutoVectorizationMultiversioningNode* opaque = multiversion_if->as_OpaqueAutoVectorizationMultiversioning();
+  OpaqueAutoVectorizationMultiversioningNode* opaque = multiversion_if->in(1)->as_OpaqueAutoVectorizationMultiversioning();
 
   // Create new_if with its projections.
   Node* entry = multiversion_if->in(0);
@@ -445,6 +445,7 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
   IfFalseNode* old_multiversion_slow_proj = multiversion_if->proj_out(0)->as_IfFalse();
   Node* slow_path = old_multiversion_slow_proj->unique_ctrl_out();
   IfFalseNode* new_multiversion_slow_proj = old_multiversion_slow_proj->clone()->as_IfFalse();
+  register_control(new_multiversion_slow_proj, lp, multiversion_if);
 
   // Create new Region.
   RegionNode* region = new RegionNode(1);
