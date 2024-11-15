@@ -49,8 +49,6 @@ static const int MAX_REGIONS_RETURNED = 1000000;
 
 class DllEntry {
   public:
-  static DllEntry* _dll_list;
-  static DllEntry* _dll_cursor;
 
   const char* _address;
   const char* _dll_name;
@@ -69,6 +67,7 @@ class DllEntry {
   static DllEntry* build(const char* addr, const char* dll_name) {
     DllEntry* e = (DllEntry*)::malloc(sizeof(DllEntry));
     assert(e != nullptr, "malloc failure");
+    assert(dll_name != nullptr, "null dll name");
     e->_address = addr;
     e->_dll_name = ::strdup(dll_name);
     e->_next = nullptr;
@@ -88,25 +87,61 @@ class DllEntry {
     }
     return first;
   }
+};
 
-  static int dll_cb(const char *dll_name, address low, address high, void* param) {
-    DllEntry* entry = build((const char*)low, dll_name);
+class DllList {
+  DllEntry* _dll_list;
+  DllEntry* _dll_cursor;
+
+  public:
+
+  DllList() : _dll_list(nullptr), _dll_cursor(nullptr) {}
+  ~DllList() {
+    /* free any held resources */
+    if (_dll_list != nullptr) {
+      _dll_list->free();
+      ::free(_dll_list);
+    }
+  }
+
+  DllEntry* cursor_rewind() {
+    _dll_cursor = _dll_list;
+    return _dll_cursor;
+  }
+
+  DllEntry* cursor_current() {
+    return _dll_cursor;
+  }
+
+  DllEntry* cursor_next() {
+    if (_dll_cursor != nullptr) {
+      _dll_cursor = _dll_cursor->_next;
+    }
+    return _dll_cursor;
+  }
+
+  void append(DllEntry* entry) {
     if (_dll_list == nullptr) {
       _dll_list = entry;
     } else {
       _dll_list = _dll_list->append(entry);
     }
+  }
+
+  static int dll_cb(const char *dll_name, address low, address high, void* param) {
+    DllList* list = (DllList*)(param);
+    DllEntry* entry = DllEntry::build((const char*)low, dll_name);
+    list->append(entry);
     return 0;
   };
 
-  static void add_all_dlls() {
-    os::get_loaded_modules_info(dll_cb, nullptr);
-    _dll_cursor = _dll_list;
+  void add_all_dlls() {
+    os::get_loaded_modules_info(dll_cb, this);
+    cursor_rewind();
   }
 };
 
-DllEntry* DllEntry::_dll_list = nullptr;
-DllEntry* DllEntry::_dll_cursor = nullptr;
+DllList dll_list;
 
 class MappingInfo {
 public:
@@ -345,8 +380,8 @@ public:
     st->cr();
 
     if (mapping_info._file_name.count() == 0) {
-      for (; DllEntry::_dll_cursor != nullptr; DllEntry::_dll_cursor = DllEntry::_dll_cursor->_next) {
-        DllEntry* e = DllEntry::_dll_cursor;
+      for (; dll_list.cursor_current() != nullptr; dll_list.cursor_next()) {
+        DllEntry* e = dll_list.cursor_current();
         if ((uint64_t)(e->_address) < region_info.pri_address) {
           continue;
         }
@@ -406,7 +441,7 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
   st->cr();
   printer.print_header();
 
-  DllEntry::add_all_dlls();
+  dll_list.add_all_dlls();
 
   proc_regionwithpathinfo region_info;
   MappingInfo mapping_info;
@@ -435,9 +470,5 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
   st->cr();
   summary.print_on(session);
   st->cr();
-
-  /* free any held resources */
-  DllEntry::_dll_list->free();
-  ::free(DllEntry::_dll_list);
 }
 #endif // __APPLE__
