@@ -686,7 +686,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     /**
      * Interrupt all unfinished threads.
      */
-    private void implInterruptAll() {
+    private void interruptAll() {
         flock.threads()
             .filter(t -> t != Thread.currentThread())
             .forEach(t -> {
@@ -694,10 +694,6 @@ public class StructuredTaskScope<T> implements AutoCloseable {
                     t.interrupt();
                 } catch (Throwable ignore) { }
             });
-    }
-
-    private void interruptAll() {
-            implInterruptAll();
     }
 
     /**

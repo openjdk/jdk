@@ -2101,7 +2101,7 @@ public class CopyOnWriteArrayList<E>
             lockField.setAccessible(true);
             lockField.set(this, new Object());
         } catch (IllegalAccessException | NoSuchFieldException e) {
-                throw new RuntimeException(e);
+            throw new Error(e);
         }
     }
 }

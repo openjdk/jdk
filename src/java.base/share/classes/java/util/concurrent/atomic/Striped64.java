@@ -381,8 +381,7 @@ abstract class Striped64 extends Number {
         BASE = MhUtil.findVarHandle(l1, "base", long.class);
         CELLSBUSY = MhUtil.findVarHandle(l1, "cellsBusy", int.class);
         try {
-            MethodHandles.Lookup l2 =
-                 MethodHandles.privateLookupIn(Thread.class, MethodHandles.lookup());
+            MethodHandles.Lookup l2 = MethodHandles.privateLookupIn(Thread.class, l1);
             THREAD_PROBE = MhUtil.findVarHandle(l2, "threadLocalRandomProbe", int.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
