@@ -227,7 +227,7 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 }
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
-  if (tmp->is_valid()) {
+  if (c > 0 && c < max_jint && tmp->is_valid()) {
     if (is_power_of_2(c + 1)) {
       __ move(left, tmp);
       __ shift_left(left, log2i_exact(c + 1), left);
@@ -497,7 +497,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
       bool use_tmp = false;
       if (right_arg->is_constant()) {
         int iconst = right_arg->get_jint_constant();
-        if (is_power_of_2(iconst - 1) || is_power_of_2(iconst + 1)) {
+        if (iconst > 0 && iconst < max_jint && is_power_of_2(iconst - 1) || is_power_of_2(iconst + 1)) {
           use_tmp = true;
         }
       }
