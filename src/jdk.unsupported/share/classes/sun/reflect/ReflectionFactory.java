@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,43 +29,23 @@ import java.io.OptionalDataException;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.PrivilegedAction;
 
 /**
  * ReflectionFactory supports custom serialization.
  * Its methods support the creation of uninitialized objects, invoking serialization
  * private methods for readObject, writeObject, readResolve, and writeReplace.
- * <p>
- * ReflectionFactory access is restricted, if a security manager is active,
- * unless the permission {@code RuntimePermission("reflectionFactoryAccess")}
- * is granted.
  */
 public class ReflectionFactory {
 
     private static final ReflectionFactory soleInstance = new ReflectionFactory();
-    @SuppressWarnings("removal")
-    private static final jdk.internal.reflect.ReflectionFactory delegate = AccessController.doPrivileged(
-            new PrivilegedAction<jdk.internal.reflect.ReflectionFactory>() {
-                public jdk.internal.reflect.ReflectionFactory run() {
-                    return jdk.internal.reflect.ReflectionFactory.getReflectionFactory();
-                }
-            });
+    private static final jdk.internal.reflect.ReflectionFactory delegate =
+            jdk.internal.reflect.ReflectionFactory.getReflectionFactory();
 
     private ReflectionFactory() {}
-
-    private static final Permission REFLECTION_FACTORY_ACCESS_PERM
-            = new RuntimePermission("reflectionFactoryAccess");
 
     /**
      * Provides the caller with the capability to instantiate reflective
      * objects.
-     *
-     * <p> First, if there is a security manager, its {@code checkPermission}
-     * method is called with a {@link java.lang.RuntimePermission} with target
-     * {@code "reflectionFactoryAccess"}.  This may result in a security
-     * exception.
      *
      * <p> The returned {@code ReflectionFactory} object should be carefully
      * guarded by the caller, since it can be used to read and write private
@@ -73,16 +53,8 @@ public class ReflectionFactory {
      * It must never be passed to untrusted code.
      *
      * @return the ReflectionFactory
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkPermission} method doesn't allow access to
-     *         the RuntimePermission "reflectionFactoryAccess".
      */
     public static ReflectionFactory getReflectionFactory() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(REFLECTION_FACTORY_ACCESS_PERM);
-        }
         return soleInstance;
     }
 
