@@ -284,7 +284,6 @@ public final class CleanerImpl implements Runnable {
                     newHead = new Node();
                 }
                 newHead.next = head;
-                head.prev = newHead;
                 head = newHead;
             }
             assert head.size < NODE_CAPACITY;
@@ -332,10 +331,8 @@ public final class CleanerImpl implements Runnable {
             // full one. If needed, stash the now free node in cache.
             if (head.size == 0 && head.next != null) {
                 Node newHead = head.next;
-                newHead.prev = null;
                 if (cache == null) {
                     cache = head;
-                    cache.prev = null;
                     cache.next = null;
                 }
                 head = newHead;
@@ -353,7 +350,6 @@ public final class CleanerImpl implements Runnable {
             int size;
 
             // Linked list structure.
-            Node prev;
             Node next;
         }
     }
