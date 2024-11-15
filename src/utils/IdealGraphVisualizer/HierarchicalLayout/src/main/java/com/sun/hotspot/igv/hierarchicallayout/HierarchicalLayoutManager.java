@@ -482,32 +482,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
         private static ArrayList<LayoutNode>[] downProcessingOrder;
         private static ArrayList<LayoutNode>[] upProcessingOrder;
 
-        private static final Comparator<LayoutNode> nodeProcessingDownComparator = (n1, n2) -> {
-            if (n1.isDummy()) {
-                if (n2.isDummy()) {
-                    return 0;
-                }
-                return -1;
-            }
-            if (n2.isDummy()) {
-                return 1;
-            }
-            return n1.getInDegree() - n2.getInDegree();
-        };
-
-        private static final Comparator<LayoutNode> nodeProcessingUpComparator = (n1, n2) -> {
-            if (n1.isDummy()) {
-                if (n2.isDummy()) {
-                    return 0;
-                }
-                return -1;
-            }
-            if (n2.isDummy()) {
-                return 1;
-            }
-            return n1.getOutDegree() - n2.getOutDegree();
-        };
-
         public static void apply(LayoutGraph graph) {
             space = new ArrayList[graph.getLayerCount()];
             downProcessingOrder = new ArrayList[graph.getLayerCount()];
@@ -526,8 +500,8 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     upProcessingOrder[i].add(n);
                 }
 
-                downProcessingOrder[i].sort(nodeProcessingDownComparator);
-                upProcessingOrder[i].sort(nodeProcessingUpComparator);
+                downProcessingOrder[i].sort(NODE_PROCESSING_DOWN_COMPARATOR);
+                upProcessingOrder[i].sort(NODE_PROCESSING_UP_COMPARATOR);
             }
 
             for (LayoutNode n : graph.getLayoutNodes()) {
