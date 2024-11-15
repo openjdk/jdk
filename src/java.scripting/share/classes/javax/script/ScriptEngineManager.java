@@ -86,8 +86,7 @@ public class ScriptEngineManager  {
     private void initEngines(final ClassLoader loader) {
         Iterator<ScriptEngineFactory> itr;
         try {
-            var sl = getServiceLoader(loader);
-            itr = sl.iterator();
+            itr = getServiceLoader(loader).iterator();
         } catch (ServiceConfigurationError err) {
             reportException("Can't find ScriptEngineFactory providers: ", err);
             // do not throw any exception here. user may want to
