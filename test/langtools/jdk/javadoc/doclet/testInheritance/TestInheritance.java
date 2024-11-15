@@ -88,20 +88,20 @@ public class TestInheritance extends JavadocTester {
         checkExit(Exit.OK);
         checkOrder("pkg/A.html", """
                      <div class="inheritance" title="Inheritance Tree">java.lang.Object
-                     <div class="inheritance">pkg.A&lt;M, <wbr>N&gt;</div>""");
+                     <div class="inheritance">pkg.A&lt;M,<wbr>N&gt;</div>""");
         checkOrder("pkg/B.html", """
                      <div class="inheritance" title="Inheritance Tree">java.lang.Object
-                     <div class="inheritance"><a href="A.html" title="class in pkg">pkg.A</a>&lt;O, <wbr>P&gt;
-                     <div class="inheritance">pkg.B&lt;O, <wbr>P&gt;</div>""");
+                     <div class="inheritance"><a href="A.html" title="class in pkg">pkg.A</a>&lt;O,<wbr>P&gt;
+                     <div class="inheritance">pkg.B&lt;O,<wbr>P&gt;</div>""");
         checkOrder("pkg/C.html", """
                      <div class="inheritance" title="Inheritance Tree">java.lang.Object
-                     <div class="inheritance"><a href="A.html" title="class in pkg">pkg.A</a>&lt;java.lang.String, <wbr>Q&gt;
-                     <div class="inheritance"><a href="B.html" title="class in pkg">pkg.B</a>&lt;java.lang.String, <wbr>Q&gt;
+                     <div class="inheritance"><a href="A.html" title="class in pkg">pkg.A</a>&lt;java.lang.String, Q&gt;
+                     <div class="inheritance"><a href="B.html" title="class in pkg">pkg.B</a>&lt;java.lang.String, Q&gt;
                      <div class="inheritance">pkg.C&lt;Q&gt;</div>""");
         checkOrder("pkg/D.html", """
                      <div class="inheritance" title="Inheritance Tree">java.lang.Object
-                     <div class="inheritance"><a href="A.html" title="class in pkg">pkg.A</a>&lt;S, <wbr><a href="B.html" title="class in pkg">B</a>&gt;
-                     <div class="inheritance"><a href="B.html" title="class in pkg">pkg.B</a>&lt;S, <wbr><a href="B.html" title="class in pkg">B</a>&gt;
-                     <div class="inheritance">pkg.D&lt;R, <wbr>S&gt;</div>""");
+                     <div class="inheritance"><a href="A.html" title="class in pkg">pkg.A</a>&lt;S, <a href="B.html" title="class in pkg">B</a>&gt;
+                     <div class="inheritance"><a href="B.html" title="class in pkg">pkg.B</a>&lt;S, <a href="B.html" title="class in pkg">B</a>&gt;
+                     <div class="inheritance">pkg.D&lt;R,<wbr>S&gt;</div>""");
     }
 }

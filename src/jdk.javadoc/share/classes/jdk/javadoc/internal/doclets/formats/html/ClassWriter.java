@@ -461,7 +461,7 @@ public class ClassWriter extends SubWriterHolderWriter {
             var first = true;
             for (TypeParameterElement t : typeParams) {
                 if (!first) {
-                    content.add(", ").add(HtmlTree.WBR());
+                    content.add(",").add(HtmlTree.WBR());
                 }
                 var typeParamLink = getLink(linkInfo.forType(t.asType()));
                 content.add(needsId

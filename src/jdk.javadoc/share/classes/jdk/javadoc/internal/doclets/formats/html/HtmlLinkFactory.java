@@ -41,6 +41,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -399,10 +400,16 @@ public class HtmlLinkFactory {
             }
             links.add("<");
             boolean many = false;
+            boolean hasUsesOfParameterizedTypes =
+                    vars.stream()
+                            .anyMatch(typeMirror -> typeMirror.getKind() != TypeKind.TYPEVAR);
             for (TypeMirror t : vars) {
                 if (many) {
-                    links.add(", ");
-                    links.add(HtmlTree.WBR());
+                    if (hasUsesOfParameterizedTypes) {
+                        links.add(", ");
+                    } else {
+                        links.add(",").add(HtmlTree.WBR());
+                    }
                     if (linkInfo.addLineBreaksInTypeParameters()) {
                         links.add(Text.NL);
                     }
