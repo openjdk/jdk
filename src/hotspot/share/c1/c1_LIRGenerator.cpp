@@ -530,14 +530,12 @@ void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr l
 
         if (right->is_constant()) {
           jint c = right->as_jint();
-          if (c > 0 && c < max_jint) {
-            if (is_power_of_2(c)) {
-              // do not need tmp here
-              __ shift_left(left_op, exact_log2(c), result_op);
-              did_strength_reduce = true;
-            } else {
-              did_strength_reduce = strength_reduce_multiply(left_op, c, result_op, tmp_op);
-            }
+          if (c > 0 && is_power_of_2(c)) {
+            // do not need tmp here
+            __ shift_left(left_op, exact_log2(c), result_op);
+            did_strength_reduce = true;
+          } else {
+            did_strength_reduce = strength_reduce_multiply(left_op, c, result_op, tmp_op);
           }
         }
         // we couldn't strength reduce so just emit the multiply
