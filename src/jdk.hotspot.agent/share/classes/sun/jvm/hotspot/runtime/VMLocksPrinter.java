@@ -62,7 +62,7 @@ public class VMLocksPrinter {
             if (mutex.owner() != null) {
 	            tty.println("Internal VM Mutex " + mutex.name() + " is owned by " + ownerThreadName(mutex.owner())
                         + " with address: " + mutex.owner());
-	        }
+               }
          }
     }
 
