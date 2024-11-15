@@ -421,6 +421,44 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
   C->set_major_progress();
 }
 
+// TODO desc / ASCII art
+IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj) {
+  IfNode* multiversion_if = multiversioning_fast_proj->in(0)->as_If();
+  OpaqueAutoVectorizationMultiversioningNode* opaque = multiversion_if->as_OpaqueAutoVectorizationMultiversioning();
+
+  // Create new_if with its projections.
+  Node* entry = multiversion_if->in(0);
+  IfNode* new_if = IfNode::make_with_same_profile(multiversion_if, entry, opaque);
+  IdealLoopTree* lp = get_loop(entry);
+  register_control(new_if, lp, entry);
+
+  IfTrueNode*  new_if_true  = new IfTrueNode(new_if);
+  IfFalseNode* new_if_false = new IfFalseNode(new_if);
+  register_control(new_if_true,  lp, new_if);
+  register_control(new_if_false, lp, new_if);
+
+  // Hook new_if_true into multiversion_if.
+  _igvn.replace_input_of(multiversion_if, 0, new_if_true);
+
+  // Clone multiversion_slow_path - this allows us to easily carry the dependencies to
+  // the new region below.
+  IfFalseNode* old_multiversion_slow_proj = multiversion_if->proj_out(0)->as_IfFalse();
+  Node* slow_path = old_multiversion_slow_proj->unique_ctrl_out();
+  IfFalseNode* new_multiversion_slow_proj = old_multiversion_slow_proj->clone()->as_IfFalse();
+
+  // Create new Region.
+  RegionNode* region = new RegionNode(1);
+  region->add_req(new_multiversion_slow_proj);
+  region->add_req(new_if_false);
+  register_control(region, lp, new_multiversion_slow_proj);
+
+  // Hook region into slow_path, in stead of the old_multiversion_slow_proj.
+  // This also moves all other dependencies of the old_multiversion_slow_proj to the region.
+  _igvn.replace_node(old_multiversion_slow_proj, region);
+
+  return new_if_true;
+}
+
 bool PhaseIdealLoop::has_control_dependencies_from_predicates(LoopNode* head) {
   Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
   const Predicates predicates(entry);

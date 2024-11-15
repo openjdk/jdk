@@ -472,7 +472,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   return new ConINode(TypeInt::ZERO);
 }
 
-IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol) {
+IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node* bol) {
   // Assert here that we only try to create a clone from an If node with the same profiling if that actually makes sense.
   // Some If node subtypes should not be cloned in this way. In theory, we should not clone BaseCountedLoopEndNodes.
   // But they can end up being used as normal If nodes when peeling a loop - they serve as zero-trip guard.

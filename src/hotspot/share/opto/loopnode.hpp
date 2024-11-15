@@ -1490,6 +1490,7 @@ public:
   void maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new);
 
   void do_multiversioning(IdealLoopTree* loop, Node_List& old_new);
+  IfTrueNode* create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj);
 
   // Move an unordered Reduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);

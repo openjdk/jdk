@@ -221,8 +221,7 @@ void VTransform::add_speculative_check(BoolNode* bol) {
                                                           Deoptimization::Reason_auto_vectorization_check,
                                                           Op_If);
   } else {
-    assert(false, "TODO");
-    return;
+    new_check_proj = phase()->create_new_if_for_multiversion(_vloop.multiversioning_fast_proj());
   }
   Node* iff_speculate = new_check_proj->in(0);
   igvn().replace_input_of(iff_speculate, 1, bol);
