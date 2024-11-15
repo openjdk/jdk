@@ -2096,20 +2096,11 @@ public class CopyOnWriteArrayList<E>
 
     /** Initializes the lock; for use when deserializing or cloning. */
     private void resetLock() {
-        @SuppressWarnings("removal")
-        Field lockField = java.security.AccessController.doPrivileged(
-            (java.security.PrivilegedAction<Field>) () -> {
-                try {
-                    Field f = CopyOnWriteArrayList.class
-                        .getDeclaredField("lock");
-                    f.setAccessible(true);
-                    return f;
-                } catch (ReflectiveOperationException e) {
-                    throw new Error(e);
-                }});
         try {
+            Field lockField = CopyOnWriteArrayList.class.getDeclaredField("lock");
+            lockField.setAccessible(true);
             lockField.set(this, new Object());
-        } catch (IllegalAccessException e) {
+        } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new Error(e);
         }
     }

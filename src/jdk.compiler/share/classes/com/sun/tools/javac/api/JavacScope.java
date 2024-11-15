@@ -87,12 +87,26 @@ public class JavacScope implements com.sun.source.tree.Scope {
         } else {
             // synthesize an outermost "star-import" scope
             return new JavacScope(env) {
-                public boolean isStarImportScope() {
-                    return true;
+                @Override
+                public ScopeType getScopeType() {
+                    return ScopeType.STAR_IMPORT;
                 }
                 @DefinedBy(Api.COMPILER_TREE)
                 public JavacScope getEnclosingScope() {
-                    return null;
+                    return new JavacScope(env) {
+                        @Override
+                        public ScopeType getScopeType() {
+                            return ScopeType.MODULE_IMPORT;
+                        }
+                        @Override @DefinedBy(Api.COMPILER_TREE)
+                        public JavacScope getEnclosingScope() {
+                            return null;
+                        }
+                        @Override @DefinedBy(Api.COMPILER_TREE)
+                        public Iterable<? extends Element> getLocalElements() {
+                            return env.toplevel.moduleImportScope.getSymbols(VALIDATOR);
+                        }
+                    };
                 }
                 @DefinedBy(Api.COMPILER_TREE)
                 public Iterable<? extends Element> getLocalElements() {
@@ -122,21 +136,27 @@ public class JavacScope implements com.sun.source.tree.Scope {
         return env;
     }
 
-    public boolean isStarImportScope() {
-        return false;
+    public ScopeType getScopeType() {
+        return ScopeType.ORDINARY;
     }
 
     public boolean equals(Object other) {
         return other instanceof JavacScope javacScope
                 && env.equals(javacScope.env)
-                && isStarImportScope() == javacScope.isStarImportScope();
+                && getScopeType()== javacScope.getScopeType();
     }
 
     public int hashCode() {
-        return env.hashCode() + (isStarImportScope() ? 1 : 0);
+        return env.hashCode() + getScopeType().hashCode();
     }
 
     public String toString() {
-        return "JavacScope[env=" + env + ",starImport=" + isStarImportScope() + "]";
+        return "JavacScope[env=" + env + ", scope type=" + getScopeType() + "]";
+    }
+
+    private enum ScopeType {
+        ORDINARY,
+        STAR_IMPORT,
+        MODULE_IMPORT;
     }
 }

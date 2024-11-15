@@ -2149,23 +2149,32 @@ public class Resolve {
         return null;
     };
 
-    private final RecoveryLoadClass starImportScopeRecovery = (env, name) -> {
-        Scope importScope = env.toplevel.starImportScope;
-        Symbol existing = importScope.findFirst(Convert.shortName(name),
-                                                sym -> sym.kind == TYP && sym.flatName() == name);
+    private final RecoveryLoadClass starImportScopeRecovery =
+            onDemandImportScopeRecovery(false);
 
-        if (existing != null) {
-            try {
-                existing = finder.loadClass(existing.packge().modle, name);
+    private final RecoveryLoadClass moduleImportScopeRecovery =
+            onDemandImportScopeRecovery(true);
 
-                return new InvisibleSymbolError(env, true, existing);
-            } catch (CompletionFailure cf) {
-                //ignore
+    private RecoveryLoadClass onDemandImportScopeRecovery(boolean moduleImportScope) {
+        return (env, name) -> {
+            Scope importScope = moduleImportScope ? env.toplevel.moduleImportScope
+                                                  : env.toplevel.starImportScope;
+            Symbol existing = importScope.findFirst(Convert.shortName(name),
+                                                    sym -> sym.kind == TYP && sym.flatName() == name);
+
+            if (existing != null) {
+                try {
+                    existing = finder.loadClass(existing.packge().modle, name);
+
+                    return new InvisibleSymbolError(env, true, existing);
+                } catch (CompletionFailure cf) {
+                    //ignore
+                }
             }
-        }
 
-        return null;
-    };
+            return null;
+        };
+    }
 
     Symbol lookupPackage(Env<AttrContext> env, Name name) {
         PackageSymbol pack = syms.lookupPackage(env.toplevel.modle, name);
@@ -2432,6 +2441,11 @@ public class Resolve {
 
             sym = findGlobalType(env, env.toplevel.starImportScope, name, starImportScopeRecovery);
             if (sym.exists()) return sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
+
+            sym = findGlobalType(env, env.toplevel.moduleImportScope, name, moduleImportScopeRecovery);
+            if (sym.exists()) return sym;
+
             else bestSoFar = bestOf(bestSoFar, sym);
         }
 
@@ -3730,11 +3744,10 @@ public class Resolve {
 
         @Override
         protected Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
-            Symbol sym = needsInference ?
+            return needsInference ?
                 findDiamond(env, site, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired()) :
                 findMethod(env, site, name, argtypes, typeargtypes,
                         phase.isBoxingRequired(), phase.isVarargsRequired());
-            return enclosingInstanceMissing(env, site) ? new BadConstructorReferenceError(sym) : sym;
         }
 
         @Override
@@ -3780,6 +3793,63 @@ public class Resolve {
     }
 
     /**
+     * Find a "valid" reference to an enclosing 'A.this' such that A is a subclass of the provided class symbol.
+     * A reference to an enclosing 'A.this' is "valid" if (a) we're not in the early-construction context for A
+     * and (b) if the current class is not an inner class of A.
+     */
+    Symbol findSelfContaining(DiagnosticPosition pos,
+                    Env<AttrContext> env,
+                    TypeSymbol c,
+                    boolean isSuper) {
+        Env<AttrContext> env1 = isSuper ? env.outer : env;
+        boolean staticOnly = false;
+        while (env1.outer != null) {
+            if (isStatic(env1)) staticOnly = true;
+            if (env1.enclClass.sym.isSubClass(c, types)) {
+                Symbol sym = env1.info.scope.findFirst(names._this);
+                if (sym != null) {
+                    if (staticOnly) {
+                        // current class is not an inner class, stop search
+                        return new StaticError(sym);
+                    } else if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym)) {
+                        // early construction context, stop search
+                        return new RefBeforeCtorCalledError(sym);
+                    } else {
+                        // found it
+                        return sym;
+                    }
+                }
+            }
+            if ((env1.enclClass.sym.flags() & STATIC) != 0) staticOnly = true;
+            env1 = env1.outer;
+        }
+        return varNotFound;
+    }
+
+    /**
+     * Resolve the (method) owner of a local class. This can fail if the local class
+     * is referenced from a static context nested inside the local class. Effectively,
+     * this lookup succeeds if we can access a local variable declared inside the owner
+     * method from the provided env.
+     */
+    Symbol findLocalClassOwner(Env<AttrContext> env, TypeSymbol c) {
+        Symbol owner = c.owner;
+        Assert.check(owner.kind == MTH);
+        Env<AttrContext> env1 = env;
+        boolean staticOnly = false;
+        while (env1.outer != null) {
+            if (env1.info.scope.owner == owner) {
+                return (staticOnly) ?
+                    new BadLocalClassCreation(c) :
+                    owner;
+            }
+            if (isStatic(env1)) staticOnly = true;
+            env1 = env1.outer;
+        }
+        return methodNotFound;
+    }
+
+    /**
      * Resolve `c.name' where name == this or name == super.
      * @param pos           The position to use for error reporting.
      * @param env           The environment current at the expression.
@@ -3803,15 +3873,15 @@ public class Resolve {
                     else if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym))
                         sym = new RefBeforeCtorCalledError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
-                                  name, true);
+                            name, true);
                 }
             }
             if ((env1.enclClass.sym.flags() & STATIC) != 0) staticOnly = true;
             env1 = env1.outer;
         }
         if (c.isInterface() &&
-            name == names._super && !isStatic(env) &&
-            types.isDirectSuperInterface(c, env.enclClass.sym)) {
+                name == names._super && !isStatic(env) &&
+                types.isDirectSuperInterface(c, env.enclClass.sym)) {
             //this might be a default super call if one of the superinterfaces is 'c'
             for (Type t : pruneInterfaces(env.enclClass.type)) {
                 if (t.tsym == c) {
@@ -3826,8 +3896,8 @@ public class Resolve {
             for (Type i : types.directSupertypes(env.enclClass.type)) {
                 if (i.tsym.isSubClass(c, types) && i.tsym != c) {
                     log.error(pos,
-                              Errors.IllegalDefaultSuperCall(c,
-                                                             Fragments.RedundantSupertype(c, i)));
+                            Errors.IllegalDefaultSuperCall(c,
+                                    Fragments.RedundantSupertype(c, i)));
                     return syms.errSymbol;
                 }
             }
@@ -3932,76 +4002,6 @@ public class Resolve {
             v.owner.kind == TYP &&
             types.isSubtype(env.enclClass.type, v.owner.type) &&
             (base == null || TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base));
-    }
-
-    /**
-     * Resolve `c.this' for an enclosing class c that contains the
-     * named member.
-     * @param pos           The position to use for error reporting.
-     * @param env           The environment current at the expression.
-     * @param member        The member that must be contained in the result.
-     */
-    Symbol resolveSelfContaining(DiagnosticPosition pos,
-                                 Env<AttrContext> env,
-                                 Symbol member,
-                                 boolean isSuperCall) {
-        Symbol sym = resolveSelfContainingInternal(env, member, isSuperCall);
-        if (sym == null) {
-            log.error(pos, Errors.EnclClassRequired(member));
-            return syms.errSymbol;
-        } else {
-            return accessBase(sym, pos, env.enclClass.sym.type, sym.name, true);
-        }
-    }
-
-    boolean enclosingInstanceMissing(Env<AttrContext> env, Type type) {
-        if (type.hasTag(CLASS) && type.getEnclosingType().hasTag(CLASS)) {
-            Symbol encl = resolveSelfContainingInternal(env, type.tsym, false);
-            return encl == null || encl.kind.isResolutionError();
-        }
-        return false;
-    }
-
-    private Symbol resolveSelfContainingInternal(Env<AttrContext> env,
-                                 Symbol member,
-                                 boolean isSuperCall) {
-        Name name = names._this;
-        Env<AttrContext> env1 = isSuperCall ? env.outer : env;
-        boolean staticOnly = false;
-        if (env1 != null) {
-            while (env1 != null && env1.outer != null) {
-                if (isStatic(env1)) staticOnly = true;
-                if (env1.enclClass.sym.isSubClass(member.owner.enclClass(), types)) {
-                    Symbol sym = env1.info.scope.findFirst(name);
-                    if (sym != null) {
-                        if (staticOnly) sym = new StaticError(sym);
-                        return sym;
-                    }
-                }
-                if ((env1.enclClass.sym.flags() & STATIC) != 0)
-                    staticOnly = true;
-                env1 = env1.outer;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Resolve an appropriate implicit this instance for t's container.
-     * JLS 8.8.5.1 and 15.9.2
-     */
-    Type resolveImplicitThis(DiagnosticPosition pos, Env<AttrContext> env, Type t) {
-        return resolveImplicitThis(pos, env, t, false);
-    }
-
-    Type resolveImplicitThis(DiagnosticPosition pos, Env<AttrContext> env, Type t, boolean isSuperCall) {
-        Type thisType = (t.tsym.owner.kind.matches(KindSelector.VAL_MTH)
-                         ? resolveSelf(pos, env, t.getEnclosingType().tsym, names._this)
-                         : resolveSelfContaining(pos, env, t.tsym, isSuperCall)).type;
-        if (env.info.ctorPrologue && thisType.tsym == env.enclClass.sym) {
-            log.error(pos, Errors.CantRefBeforeCtorCalled(names._this));
-        }
-        return thisType;
     }
 
 /* ***************************************************************************
@@ -4728,6 +4728,28 @@ public class Resolve {
     }
 
     /**
+     * Specialization of {@link StaticError} for illegal
+     * creation of local class instances from a static context.
+     */
+    class BadLocalClassCreation extends StaticError {
+        BadLocalClassCreation(Symbol sym) {
+            super(sym, "bad local class creation");
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                                   DiagnosticPosition pos,
+                                   Symbol location,
+                                   Type site,
+                                   Name name,
+                                   List<Type> argtypes,
+                                   List<Type> typeargtypes) {
+            return diags.create(dkind, log.currentSource(), pos,
+                    "local.cant.be.inst.static", kindName(sym), sym);
+        }
+    }
+
+    /**
      * Specialization of {@link InvalidSymbolError} for illegal
      * early accesses within a constructor prologue.
      */
@@ -4883,23 +4905,6 @@ public class Resolve {
             return sym.kind.isResolutionError() ?
                     ((ResolveError)sym).getDiagnostic(dkind, pos, location, site, name, argtypes, typeargtypes) :
                     diags.create(dkind, log.currentSource(), pos, key, Kinds.kindName(sym), sym);
-        }
-    }
-
-    /**
-     * BadConstructorReferenceError error class indicating that a constructor reference symbol has been found,
-     * but pointing to a class for which an enclosing instance is not available.
-     */
-    class BadConstructorReferenceError extends InvalidSymbolError {
-
-        public BadConstructorReferenceError(Symbol sym) {
-            super(MISSING_ENCL, sym, "BadConstructorReferenceError");
-        }
-
-        @Override
-        JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-           return diags.create(dkind, log.currentSource(), pos,
-                "cant.access.inner.cls.constr", site.tsym.name, argtypes, site.getEnclosingType());
         }
     }
 

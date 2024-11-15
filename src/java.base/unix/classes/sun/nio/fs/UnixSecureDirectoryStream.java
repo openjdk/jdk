@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -415,9 +415,9 @@ class UnixSecureDirectoryStream
                     }
                     // update times
                     try {
-                        futimes(fd,
-                                lastAccessTime.to(TimeUnit.MICROSECONDS),
-                                lastModifiedTime.to(TimeUnit.MICROSECONDS));
+                        futimens(fd,
+                                 lastAccessTime.to(TimeUnit.NANOSECONDS),
+                                 lastModifiedTime.to(TimeUnit.NANOSECONDS));
                     } catch (UnixException x) {
                         x.rethrowAsIOException(file);
                     }

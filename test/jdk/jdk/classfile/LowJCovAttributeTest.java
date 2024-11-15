@@ -76,7 +76,7 @@ class LowJCovAttributeTest {
     private void testRead0() {
         int[] mask = new int[1];
         for (Attribute<?> attr : classLow.attributes()) {
-            switch (attr.attributeName()) {
+            switch (attr.attributeName().stringValue()) {
                 case Attributes.NAME_COMPILATION_ID: {
                     CompilationIDAttribute cid = (CompilationIDAttribute) attr;
                     Utf8Entry v = cid.compilationId();
