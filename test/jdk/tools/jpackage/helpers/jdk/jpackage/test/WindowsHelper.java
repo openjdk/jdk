@@ -256,7 +256,8 @@ public class WindowsHelper {
         List<String> output = Executor.of("wmic", "process", "where", "(name",
                 "=",
                 "\"" + cmd.appLauncherPath(launcherName).getFileName().toString() + "\"",
-                ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).saveOutput().setWinEnableUTF8(true).executeAndGetOutput();
+                ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).saveOutput().
+                setWinEnableUTF8(true).executeAndGetOutput();
         if ("No Instance(s) Available.".equals(output.get(1).trim())) {
                 return new long[0];
         }
