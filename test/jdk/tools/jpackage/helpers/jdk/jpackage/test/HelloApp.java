@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,15 +56,10 @@ public final class HelloApp {
 
     private JarBuilder prepareSources(Path srcDir) throws IOException {
         final String srcClassName = appDesc.srcClassName();
-
-        final String qualifiedClassName = appDesc.className();
-
-        final String className = qualifiedClassName.substring(
-                qualifiedClassName.lastIndexOf('.') + 1);
+        final String className = appDesc.shortClassName();
         final String packageName = appDesc.packageName();
 
-        final Path srcFile = srcDir.resolve(Path.of(String.join(
-                File.separator, qualifiedClassName.split("\\.")) + ".java"));
+        final Path srcFile = srcDir.resolve(appDesc.classNameAsPath(".java"));
         Files.createDirectories(srcFile.getParent());
 
         JarBuilder jarBuilder = createJarBuilder().addSourceFile(srcFile);
@@ -351,7 +345,7 @@ public final class HelloApp {
     }
 
 
-    public final static class AppOutputVerifier {
+    public static final class AppOutputVerifier {
         AppOutputVerifier(Path helloAppLauncher) {
             this.launcherPath = helloAppLauncher;
             this.outputFilePath = TKit.workDir().resolve(OUTPUT_FILENAME);
@@ -493,13 +487,13 @@ public final class HelloApp {
         return new AppOutputVerifier(helloAppLauncher);
     }
 
-    final static String OUTPUT_FILENAME = "appOutput.txt";
+    static final String OUTPUT_FILENAME = "appOutput.txt";
 
     private final JavaAppDesc appDesc;
 
     private static final Path HELLO_JAVA = TKit.TEST_SRC_ROOT.resolve(
             "apps/Hello.java");
 
-    private final static String CLASS_NAME = HELLO_JAVA.getFileName().toString().split(
+    private static final String CLASS_NAME = HELLO_JAVA.getFileName().toString().split(
             "\\.", 2)[0];
 }

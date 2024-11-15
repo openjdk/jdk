@@ -24,7 +24,6 @@
 /* @test
  * @bug 8181493 8231174 8343417
  * @summary Verify that nanosecond precision is maintained for file timestamps
- * @requires (os.family == "linux") | (os.family == "mac") | (os.family == "windows")
  * @library ../.. /test/lib
  * @build jdk.test.lib.Platform
  * @modules java.base/sun.nio.fs:+open
@@ -51,18 +50,6 @@ import jtreg.SkippedException;
 public class SetTimesNanos {
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.isWindows()) {
-            // Check whether futimens() system call is supported
-            Class unixNativeDispatcherClass =
-                Class.forName("sun.nio.fs.UnixNativeDispatcher");
-            Method futimensSupported =
-                unixNativeDispatcherClass.getDeclaredMethod("futimensSupported");
-            futimensSupported.setAccessible(true);
-            if (!(boolean)futimensSupported.invoke(null)) {
-                throw new SkippedException("futimens() not supported");
-            }
-        }
-
         Path dirPath = Path.of("test");
         Path dir = Files.createDirectory(dirPath);
         FileStore store = Files.getFileStore(dir);
@@ -80,10 +67,8 @@ public class SetTimesNanos {
         Path file = Files.createFile(dir.resolve("test.dat"));
         testNanos(file);
 
-        if (Platform.isLinux()) {
-            testNanosLink(false);
-            testNanosLink(true);
-        }
+        testNanosLink(false);
+        testNanosLink(true);
     }
 
     private static void testNanos(Path path) throws IOException {
@@ -130,7 +115,14 @@ public class SetTimesNanos {
             Files.createFile(target);
             Files.createSymbolicLink(symlink, target);
 
-            var newTime = FileTime.from(1730417633157646106L, NANOSECONDS);
+            long timeNanos = 1730417633157646106L;
+
+            // Windows file time resolution is 100ns so truncate
+            if (Platform.isWindows()) {
+                timeNanos = 100L*(timeNanos/100L);
+            }
+
+            var newTime = FileTime.from(timeNanos, NANOSECONDS);
             System.out.println("newTime: " + newTime.to(NANOSECONDS));
 
             for (Path p : List.of(target, symlink)) {
