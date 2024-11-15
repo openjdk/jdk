@@ -1079,7 +1079,10 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   CallGenerator* cg = generator();
   CallGenerator* fcg = failed_generator();
   if (fcg != nullptr) {
-    phase->C->add_late_inline(fcg);
+    if (!late_inline_added()) {
+      phase->C->prepend_late_inline(fcg);
+      set_late_inline_added(true);
+    }
   } else if (can_reshape && cg != nullptr) {
     assert(IncrementalInlineMH, "required");
     assert(cg->call_node() == this, "mismatch");
