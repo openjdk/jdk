@@ -235,7 +235,7 @@ public:
 #define shenandoah_assert_control_or_vm_thread()
 #define shenandoah_assert_control_or_vm_thread_at_safepoint()
 #define shenandoah_assert_generational()
-#define shenandoah_assert_generations_reconciled()                                                             \
+#define shenandoah_assert_generations_reconciled()
 
 #endif
 

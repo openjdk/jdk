@@ -115,23 +115,17 @@ protected:
     }
 
     inline ShenandoahHeapRegion* get_region() const {
-#ifdef ASSERT
-      assert(_union_tag != is_uninitialized, "Cannot fetch region from uninialized RegionData");
-#endif
+      assert(_union_tag != is_uninitialized, "Cannot fetch region from uninitialized RegionData");
       return _region;
     }
 
     inline size_t get_garbage() const {
-#ifdef ASSERT
       assert(_union_tag == is_garbage, "Invalid union fetch");
-#endif
       return _region_union._garbage;
     }
 
     inline size_t get_livedata() const {
-#ifdef ASSERT
       assert(_union_tag == is_live_data, "Invalid union fetch");
-#endif
       return _region_union._live_data;
     }
   };
