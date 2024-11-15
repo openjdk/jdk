@@ -26,29 +26,13 @@
 #define SHARE_OOPS_OBJLAYOUT_HPP
 
 /*
- * This class helps to avoid loading more than one flag when
- * accessing the Klass* in oopDesc::klass(). This is important
- * on some performance critical paths where the Klass* is
- * accessed frequently, especially by GC oop iterators.
+ * This class helps to avoid loading more than one flag in some
+ * operations that require checking UseCompressedClassPointers,
+ * UseCompactObjectHeaders and possibly more.
  *
- * Instead of doing:
- * if (UseCompactObjectHeaders) { // Load first flag
- *   ..
- * } else if (UseCompressedClassPointers) { // Load second flag
- *   ..
- * } else {
- *   ..
- * }
- *
- * we can do:
- * switch (ObjLayout::klass_mode()) {
- * case Compact:
- *   ..
- * case Compressed:
- *   ..
- * case Uncompressed:
- *   ..
- * }
+ * This is important on some performance critical paths, e.g. where
+ * the Klass* is accessed frequently, especially by GC oop iterators
+ * and stack-trace builders.
  */
 class ObjLayout {
 public:
