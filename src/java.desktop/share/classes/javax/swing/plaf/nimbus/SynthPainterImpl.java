@@ -24,12 +24,20 @@
  */
 package javax.swing.plaf.nimbus;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.image.BufferedImage;
-import java.util.*;
-import javax.swing.*;
+import javax.swing.JDesktopPane;
+import javax.swing.JSlider;
+import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
+import javax.swing.Painter;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.synth.SynthContext;
 import javax.swing.plaf.synth.SynthPainter;
