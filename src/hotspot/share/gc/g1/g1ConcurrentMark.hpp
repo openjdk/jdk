@@ -823,7 +823,7 @@ private:
   void attempt_termination(bool is_serial);
 
   // Handles the has_aborted scenario.
-  void handle_abortion(bool is_serial, double elapsed_time_ms);
+  void handle_abort(bool is_serial, double elapsed_time_ms);
 
   // Called when either the words scanned or the refs visited limit
   // has been reached

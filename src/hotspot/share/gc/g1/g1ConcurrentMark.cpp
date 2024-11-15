@@ -2637,7 +2637,7 @@ void G1CMTask::attempt_termination(bool is_serial) {
   }
 }
 
-void G1CMTask::handle_abortion(bool is_serial, double elapsed_time_ms) {
+void G1CMTask::handle_abort(bool is_serial, double elapsed_time_ms) {
   if (_has_timed_out) {
     double diff_ms = elapsed_time_ms - _time_target_ms;
     // Keep statistics of how well we did with respect to hitting
@@ -2912,7 +2912,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
 
   if (has_aborted()) {
     // The task was aborted for some reason.
-    handle_abortion(is_serial, elapsed_time_ms);
+    handle_abort(is_serial, elapsed_time_ms);
   }
 }
 
