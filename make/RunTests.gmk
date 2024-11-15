@@ -711,7 +711,7 @@ endef
 #
 #  After calling this, the following variables are defined
 #   $1_AOT_TARGETS   List of all targets that the test rule will need to depend on
-#   $1_AOT_JDK_CACHE The AOT cache file to be usd to wun the test with
+#   $1_AOT_JDK_CACHE The AOT cache file to be used to run the test with
 #
 SetupAot = $(NamedParamsMacroTemplate)
 define SetupAotBody
