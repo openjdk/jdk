@@ -78,8 +78,7 @@ import java.util.ResourceBundle;
  * <p>
  * Refer to {@link ResourceBundleProvider} for details.
  *
- * @see <a href="ResourceBundle##resource-bundle-modules">
- * Resource Bundles and Named Modules</a>
+ * @see ResourceBundle##resource-bundle-modules Resource Bundles and Named Modules
  * @since 9
  */
 public abstract class AbstractResourceBundleProvider implements ResourceBundleProvider {
