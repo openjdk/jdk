@@ -123,7 +123,7 @@ inline T next_power_of_2(T value)  {
 // Find log2 value greater than this input
 template <typename T, typename U = typename std::make_unsigned<T>::type, ENABLE_IF(std::is_integral<T>::value)>
 inline int ceil_log2(T value) {
-  assert(value > 0 && "Invalid value");
+  assert(value > 0, "Invalid value");
   U unsigned_value = static_cast<U>(value);
   int max_bits = sizeof(U) * 8;
   int ret;
