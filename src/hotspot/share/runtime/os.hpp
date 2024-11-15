@@ -1042,8 +1042,6 @@ class os: AllStatic {
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 
-  static bool dont_yield();                     // when true, JVM_Yield() is nop
-
   // Thread priority helpers (implemented in OS-specific part)
   static OSReturn set_native_priority(Thread* thread, int native_prio);
   static OSReturn get_native_priority(const Thread* const thread, int* priority_ptr);

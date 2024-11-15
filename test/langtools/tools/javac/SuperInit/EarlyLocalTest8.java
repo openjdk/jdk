@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,23 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+/*
+ * @test
+ * @bug 8333313
+ * @summary Verify references to local classes declared in early construction contexts
+ * @enablePreview
+ */
+import java.util.concurrent.atomic.AtomicReference;
 
-#ifndef OS_CPU_LINUX_RISCV_VM_GLOBALS_LINUX_RISCV_HPP
-#define OS_CPU_LINUX_RISCV_VM_GLOBALS_LINUX_RISCV_HPP
+public class EarlyLocalTest8 {
 
-// Sets the default values for platform dependent flags used by the runtime system.
-// (see globals.hpp)
+    class Test extends AtomicReference<Runnable> {
+        Test(int x) {
+            super(
+                switch (x) {
+                    case 0 -> null;
+                    default -> {
+                        class InnerLocal { }
+                        yield () -> new InnerLocal() { { System.out.println(EarlyLocalTest8.this); } };
+                    }
+                });
+        }
+    }
 
-define_pd_global(intx,  ThreadStackSize,          2048); // 0 => use system default
-define_pd_global(intx,  VMThreadStackSize,        2048);
-
-define_pd_global(intx,  CompilerThreadStackSize,  2048);
-
-define_pd_global(uintx, JVMInvokeMethodSlack,     8192);
-
-// Used on 64 bit platforms for UseCompressedOops base address
-define_pd_global(uintx, HeapBaseMinAddress,       2 * G);
-
-#endif // OS_CPU_LINUX_RISCV_VM_GLOBALS_LINUX_RISCV_HPP
+    public static void main(String[] args) {
+        new EarlyLocalTest8().new Test(42);
+    }
+}
