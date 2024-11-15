@@ -232,7 +232,6 @@ public final class Win32FontManager extends SunFontManager {
         fontsForPrinting = pathName;
     }
 
-    @SuppressWarnings("removal")
     public static void registerJREFontsForPrinting() {
         final String pathName;
         synchronized (Win32GraphicsEnvironment.class) {

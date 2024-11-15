@@ -35,7 +35,6 @@ import java.awt.peer.FramePeer;
 
 import sun.awt.AWTAccessor;
 import sun.awt.im.InputMethodManager;
-import sun.security.action.GetPropertyAction;
 
 import static sun.java2d.SunGraphicsEnvironment.getGCDeviceBounds;
 import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;

@@ -44,7 +44,6 @@ import sun.java2d.pipe.RenderQueue;
 import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.hw.AccelGraphicsConfig;
 import sun.java2d.pipe.hw.AccelSurface;
-import sun.security.action.GetPropertyAction;
 
 import static java.awt.image.VolatileImage.*;
 import static sun.java2d.pipe.hw.AccelSurface.*;

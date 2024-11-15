@@ -89,7 +89,6 @@ import sun.awt.OSInfo;
 import sun.awt.SunToolkit;
 import sun.awt.shell.ShellFolder;
 import sun.font.FontUtilities;
-import sun.security.action.GetPropertyAction;
 import sun.swing.DefaultLayoutStyle;
 import sun.swing.ImageIconUIResource;
 import sun.swing.MnemonicHandler;

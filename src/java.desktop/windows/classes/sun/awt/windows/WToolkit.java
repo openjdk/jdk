@@ -200,7 +200,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     private static native boolean startToolkitThread(Runnable thread, ThreadGroup rootThreadGroup);
 
-    @SuppressWarnings("removal")
     public WToolkit() {
         // Startup toolkit threads
         if (PerformanceLogger.loggingEnabled()) {

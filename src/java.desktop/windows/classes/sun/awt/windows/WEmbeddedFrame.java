@@ -32,7 +32,6 @@ import java.awt.peer.ComponentPeer;
 import java.awt.image.*;
 
 import sun.awt.image.ByteInterleavedRaster;
-import sun.security.action.GetPropertyAction;
 
 import java.awt.peer.FramePeer;
 
@@ -58,7 +57,6 @@ public class WEmbeddedFrame extends EmbeddedFrame {
      */
     private boolean isEmbeddedInIE = false;
 
-    @SuppressWarnings("removal")
     private static String printScale = System.getProperty("sun.java2d.print.pluginscalefactor");
 
     public WEmbeddedFrame() {
