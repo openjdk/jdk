@@ -681,7 +681,7 @@ void* SplashProcAddress(const char* name) {
 /*
  * Signature adapter for _beginthreadex().
  */
-static unsigned __stdcall ThreadJavaMain(void* args) {
+static unsigned ThreadJavaMain(void* args) {
     return (unsigned)JavaMain(args);
 }
 

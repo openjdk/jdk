@@ -423,8 +423,7 @@ jdk_imageio = \
     javax/imageio
 
 jdk_accessibility = \
-    javax/accessibility \
-    com/sun/java/accessibility
+    javax/accessibility
 
 jfc_demo = \
      demo/jfc
@@ -630,8 +629,6 @@ jdk_security_manual_no_input = \
     com/sun/security/sasl/gsskerb/AuthOnly.java \
     com/sun/security/sasl/gsskerb/ConfSecurityLayer.java \
     com/sun/security/sasl/gsskerb/NoSecurityLayer.java \
-    sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java \
-    sun/security/provider/PolicyParser/PrincipalExpansionError.java \
     sun/security/smartcardio/TestChannel.java \
     sun/security/smartcardio/TestConnect.java \
     sun/security/smartcardio/TestConnectAgain.java \
@@ -654,7 +651,6 @@ jdk_core_manual_interactive = \
 
 jdk_security_manual_interactive = \
     sun/security/tools/keytool/i18n.java \
-    java/security/Policy/Root/Root.java \
     com/sun/security/auth/callback/TextCallbackHandler/Password.java \
     sun/security/krb5/config/native/TestDynamicStore.java
 
@@ -670,4 +666,4 @@ jdk_core_no_security = \
 
 # Set of tests for `@since` checks in source code documentation
 jdk_since_checks = \
-   tools/sincechecker/modules/java_base/CheckSince_javaBase.java
+   tools/sincechecker/

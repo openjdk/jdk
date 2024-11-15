@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,8 +261,6 @@ public class Taskbar {
      *
      * @param enabled disables this request if false
      * @param critical if this is an important request
-     * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#USER_ATTENTION} feature
      */
@@ -280,8 +278,6 @@ public class Taskbar {
      * of window type, platform, and implementation.
      *
      * @param w window
-     * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#USER_ATTENTION_WINDOW} feature
      */
@@ -296,8 +292,6 @@ public class Taskbar {
      * in the task area.
      *
      * @param menu the PopupMenu to attach to this application
-     * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#MENU} feature
      */
@@ -311,8 +305,6 @@ public class Taskbar {
      * Gets PopupMenu used to add items to this application's icon in system task area.
      *
      * @return the PopupMenu
-     * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#MENU} feature
      */
@@ -326,8 +318,6 @@ public class Taskbar {
      * Requests the system to change this application's icon to the provided {@code image}.
      *
      * @param image to change
-     * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#ICON_IMAGE} feature
      */
@@ -345,8 +335,6 @@ public class Taskbar {
      * but should be visually similar.
      *
      * @return an image of this application's icon
-     * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#ICON_IMAGE} feature
      */
@@ -367,8 +355,6 @@ public class Taskbar {
      *
      * Passing {@code null} as parameter hides the badge.
      * @param badge label to affix to the icon
-     * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#ICON_BADGE_NUMBER}
      * or {@link Taskbar.Feature#ICON_BADGE_TEXT} feature
@@ -390,8 +376,6 @@ public class Taskbar {
      *
      * @param w window to update
      * @param badge image to affix to the icon
-     * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#ICON_BADGE_IMAGE_WINDOW} feature
      */
@@ -408,8 +392,6 @@ public class Taskbar {
      * Affixes a small system-provided progress bar to this application's icon.
      *
      * @param value from 0 to 100, other to disable progress indication
-     * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#PROGRESS_VALUE} feature
      */
@@ -440,8 +422,6 @@ public class Taskbar {
      * @param value from 0 to 100, other to switch to {@link State#OFF} state
      *              and disable progress indication
      * @see #setWindowProgressState(java.awt.Window, State)
-     * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#PROGRESS_VALUE_WINDOW} feature
      */
@@ -474,8 +454,6 @@ public class Taskbar {
      * @see State#ERROR
      * @see State#INDETERMINATE
      * @see #setWindowProgressValue(java.awt.Window, int)
-     * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#PROGRESS_STATE_WINDOW} feature
      */

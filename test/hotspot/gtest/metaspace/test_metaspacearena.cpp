@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2023 Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,98 +29,125 @@
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/internalStats.hpp"
+#include "memory/metaspace/freeBlocks.hpp"
+#include "memory/metaspace/metablock.inline.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
+#include "memory/metaspace/metachunkList.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
+#include "memory/metaspace.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-//#define LOG_PLEASE
+#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestContexts.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
 
-using metaspace::AllocationAlignmentByteSize;
-using metaspace::ArenaGrowthPolicy;
-using metaspace::CommitLimiter;
-using metaspace::InternalStats;
-using metaspace::MemRangeCounter;
-using metaspace::MetaspaceArena;
-using metaspace::SizeAtomicCounter;
-using metaspace::Settings;
-using metaspace::ArenaStats;
+#define HANDLE_FAILURE \
+  if (testing::Test::HasFailure()) { \
+    return; \
+  }
+
+namespace metaspace {
+
+class MetaspaceArenaTestFriend {
+  const MetaspaceArena* const _arena;
+public:
+  MetaspaceArenaTestFriend(const MetaspaceArena* arena) : _arena(arena) {}
+  const MetachunkList& chunks() const { return _arena->_chunks; }
+  const FreeBlocks* fbl() const { return _arena->_fbl; }
+};
 
 class MetaspaceArenaTestHelper {
 
   MetaspaceGtestContext& _context;
+  const ArenaGrowthPolicy* const _growth_policy;
 
-  const ArenaGrowthPolicy* _growth_policy;
-  SizeAtomicCounter _used_words_counter;
   MetaspaceArena* _arena;
-
-  void initialize(const ArenaGrowthPolicy* growth_policy, const char* name = "gtest-MetaspaceArena") {
-    _growth_policy = growth_policy;
-    _arena = new MetaspaceArena(&_context.cm(), _growth_policy, &_used_words_counter, name);
-    DEBUG_ONLY(_arena->verify());
-  }
 
 public:
 
-  // Create a helper; growth policy for arena is determined by the given spacetype|class tupel
-  MetaspaceArenaTestHelper(MetaspaceGtestContext& helper,
-                            Metaspace::MetaspaceType space_type, bool is_class,
-                            const char* name = "gtest-MetaspaceArena") :
-    _context(helper)
-  {
-    initialize(ArenaGrowthPolicy::policy_for_space_type(space_type, is_class), name);
-  }
-
   // Create a helper; growth policy is directly specified
   MetaspaceArenaTestHelper(MetaspaceGtestContext& helper, const ArenaGrowthPolicy* growth_policy,
-                           const char* name = "gtest-MetaspaceArena") :
-    _context(helper)
+                           size_t allocation_alignment_words = Metaspace::min_allocation_alignment_words) :
+    _context(helper), _growth_policy(growth_policy), _arena(nullptr)
   {
-    initialize(growth_policy, name);
+    _arena = new MetaspaceArena(_context.context(), _growth_policy, allocation_alignment_words, "gtest-MetaspaceArena");
+    DEBUG_ONLY(_arena->verify());
+    _context.inc_num_arenas_created();
   }
+
+
+  // Create a helper; growth policy for arena is determined by the given spacetype|class tupel
+  MetaspaceArenaTestHelper(MetaspaceGtestContext& helper,
+                           Metaspace::MetaspaceType space_type, bool is_class,
+                           size_t allocation_alignment_words = Metaspace::min_allocation_alignment_words) :
+    MetaspaceArenaTestHelper(helper, ArenaGrowthPolicy::policy_for_space_type(space_type, is_class), allocation_alignment_words)
+  {}
 
   ~MetaspaceArenaTestHelper() {
     delete_arena_with_tests();
   }
 
-  const CommitLimiter& limiter() const { return _context.commit_limiter(); }
   MetaspaceArena* arena() const { return _arena; }
-  SizeAtomicCounter& used_words_counter() { return _used_words_counter; }
 
   // Note: all test functions return void due to gtests limitation that we cannot use ASSERT
   // in non-void returning tests.
 
   void delete_arena_with_tests() {
     if (_arena != nullptr) {
-      size_t used_words_before = _used_words_counter.get();
-      size_t committed_words_before = limiter().committed_words();
+      size_t used_words_before = _context.used_words();
+      size_t committed_words_before = _context.committed_words();
       DEBUG_ONLY(_arena->verify());
       delete _arena;
       _arena = nullptr;
-      size_t used_words_after = _used_words_counter.get();
-      size_t committed_words_after = limiter().committed_words();
-      ASSERT_0(used_words_after);
+      size_t used_words_after = _context.used_words();
+      size_t committed_words_after = _context.committed_words();
+      assert(_context.num_arenas_created() >= 1, "Sanity");
+      if (_context.num_arenas_created() == 1) {
+        ASSERT_0(used_words_after);
+      } else {
+        ASSERT_LE(used_words_after, used_words_before);
+      }
       ASSERT_LE(committed_words_after, committed_words_before);
     }
   }
 
   void usage_numbers_with_test(size_t* p_used, size_t* p_committed, size_t* p_capacity) const {
-    _arena->usage_numbers(p_used, p_committed, p_capacity);
-    if (p_used != nullptr) {
-      if (p_committed != nullptr) {
-        ASSERT_GE(*p_committed, *p_used);
-      }
-      // Since we own the used words counter, it should reflect our usage number 1:1
-      ASSERT_EQ(_used_words_counter.get(), *p_used);
+    size_t arena_used = 0, arena_committed = 0, arena_reserved = 0;
+    _arena->usage_numbers(&arena_used, &arena_committed, &arena_reserved);
+    EXPECT_GE(arena_committed, arena_used);
+    EXPECT_GE(arena_reserved, arena_committed);
+
+    size_t context_used = _context.used_words();
+    size_t context_committed = _context.committed_words();
+    size_t context_reserved = _context.reserved_words();
+    EXPECT_GE(context_committed, context_used);
+    EXPECT_GE(context_reserved, context_committed);
+
+    // If only one arena uses the context, usage numbers must match.
+    if (_context.num_arenas_created() == 1) {
+      EXPECT_EQ(context_used, arena_used);
+    } else {
+      assert(_context.num_arenas_created() > 1, "Sanity");
+      EXPECT_GE(context_used, arena_used);
     }
-    if (p_committed != nullptr && p_capacity != nullptr) {
-      ASSERT_GE(*p_capacity, *p_committed);
+
+    // commit, reserve numbers don't have to match since free chunks may exist
+    EXPECT_GE(context_committed, arena_committed);
+    EXPECT_GE(context_reserved, arena_reserved);
+
+    if (p_used) {
+      *p_used = arena_used;
+    }
+    if (p_committed) {
+      *p_committed = arena_committed;
+    }
+    if (p_capacity) {
+      *p_capacity = arena_reserved;
     }
   }
 
@@ -142,23 +170,33 @@ public:
     ASSERT_NULL(dummy);
   }
 
-  // Allocate; it may or may not work; return value in *p_return_value
   void allocate_from_arena_with_tests(MetaWord** p_return_value, size_t word_size) {
+    MetaBlock result, wastage;
+    allocate_from_arena_with_tests(word_size, result, wastage);
+    if (wastage.is_nonempty()) {
+      _arena->deallocate(wastage);
+      wastage.reset();
+    }
+    (*p_return_value) = result.base();
+  }
+
+  // Allocate; it may or may not work; return value in *p_return_value
+  void allocate_from_arena_with_tests(size_t word_size, MetaBlock& result, MetaBlock& wastage) {
 
     // Note: usage_numbers walks all chunks in use and counts.
     size_t used = 0, committed = 0, capacity = 0;
     usage_numbers_with_test(&used, &committed, &capacity);
 
-    size_t possible_expansion = limiter().possible_expansion_words();
+    size_t possible_expansion = _context.commit_limiter().possible_expansion_words();
 
-    MetaWord* p = _arena->allocate(word_size);
+    result = _arena->allocate(word_size, wastage);
 
     SOMETIMES(DEBUG_ONLY(_arena->verify();))
 
     size_t used2 = 0, committed2 = 0, capacity2 = 0;
     usage_numbers_with_test(&used2, &committed2, &capacity2);
 
-    if (p == nullptr) {
+    if (result.is_empty()) {
       // Allocation failed.
       ASSERT_LT(possible_expansion, word_size);
       ASSERT_EQ(used, used2);
@@ -166,7 +204,8 @@ public:
       ASSERT_EQ(capacity, capacity2);
     } else {
       // Allocation succeeded. Should be correctly aligned.
-      ASSERT_TRUE(is_aligned(p, AllocationAlignmentByteSize));
+      ASSERT_TRUE(result.is_aligned_base(_arena->allocation_alignment_words()));
+
       // used: may go up or may not (since our request may have been satisfied from the freeblocklist
       //   whose content already counts as used).
       // committed: may go up, may not
@@ -175,8 +214,6 @@ public:
       ASSERT_GE(committed2, committed);
       ASSERT_GE(capacity2, capacity);
     }
-
-    *p_return_value = p;
   }
 
   // Allocate; it may or may not work; but caller does not care for the result value
@@ -189,7 +226,7 @@ public:
     size_t used = 0, committed = 0, capacity = 0;
     usage_numbers_with_test(&used, &committed, &capacity);
 
-    _arena->deallocate(p, word_size);
+    _arena->deallocate(MetaBlock(p, word_size));
 
     SOMETIMES(DEBUG_ONLY(_arena->verify();))
 
@@ -209,9 +246,13 @@ public:
     return stats;
   }
 
+  MetaspaceArenaTestFriend internal_access() const {
+    return MetaspaceArenaTestFriend (_arena);
+  }
+
   // Convenience method to return number of chunks in arena (including current chunk)
   int get_number_of_chunks() const {
-    return get_arena_statistics().totals()._num;
+    return internal_access().chunks().count();
   }
 
 };
@@ -391,23 +432,28 @@ TEST_VM(metaspace, MetaspaceArena_deallocate) {
 
     MetaWord* p1 = nullptr;
     helper.allocate_from_arena_with_tests_expect_success(&p1, s);
+    ASSERT_FALSE(HasFailure());
 
     size_t used1 = 0, capacity1 = 0;
     helper.usage_numbers_with_test(&used1, nullptr, &capacity1);
+    ASSERT_FALSE(HasFailure());
     ASSERT_EQ(used1, s);
 
     helper.deallocate_with_tests(p1, s);
 
     size_t used2 = 0, capacity2 = 0;
     helper.usage_numbers_with_test(&used2, nullptr, &capacity2);
+    ASSERT_FALSE(HasFailure());
     ASSERT_EQ(used1, used2);
     ASSERT_EQ(capacity2, capacity2);
 
     MetaWord* p2 = nullptr;
     helper.allocate_from_arena_with_tests_expect_success(&p2, s);
+    ASSERT_FALSE(HasFailure());
 
     size_t used3 = 0, capacity3 = 0;
     helper.usage_numbers_with_test(&used3, nullptr, &capacity3);
+    ASSERT_FALSE(HasFailure());
     ASSERT_EQ(used3, used2);
     ASSERT_EQ(capacity3, capacity2);
 
@@ -450,6 +496,7 @@ static void test_recover_from_commit_limit_hit() {
     helper1.allocate_from_arena_with_tests_expect_success(1);
     helper2.allocate_from_arena_with_tests_expect_success(1);
     allocated_from_1_and_2 += 2;
+    HANDLE_FAILURE
   }
 
   // Now, allocating from helper3, creep up on the limit
@@ -494,11 +541,11 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
   // have different initial capacities.
 
   MetaspaceGtestContext context;
-  MetaspaceArenaTestHelper smhelper(context, type, is_class, "Grower");
+  MetaspaceArenaTestHelper smhelper(context, type, is_class);
 
   const Metaspace::MetaspaceType other_type =
          (type == Metaspace::StandardMetaspaceType) ? Metaspace::ClassMirrorHolderMetaspaceType : Metaspace::StandardMetaspaceType;
-  MetaspaceArenaTestHelper smhelper_harrasser(context, other_type, true, "Harasser");
+  MetaspaceArenaTestHelper smhelper_harrasser(context, other_type, true);
 
   size_t used = 0, committed = 0, capacity = 0;
   const size_t alloc_words = 16;
@@ -561,12 +608,14 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
     }
 
     smhelper.allocate_from_arena_with_tests_expect_success(alloc_words);
+    HANDLE_FAILURE
     words_allocated += metaspace::get_raw_word_size_for_requested_word_size(alloc_words);
     num_allocated++;
 
     size_t used2 = 0, committed2 = 0, capacity2 = 0;
 
     smhelper.arena()->usage_numbers(&used2, &committed2, &capacity2);
+    HANDLE_FAILURE
 
     // used should not grow larger than what we allocated, plus possible overhead.
     ASSERT_GE(used2, used);
@@ -607,6 +656,10 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
     capacity = capacity2;
 
   }
+
+  // No FBL should exist, we did not deallocate
+  ASSERT_EQ(smhelper.internal_access().fbl(), (FreeBlocks*)nullptr);
+  ASSERT_EQ(smhelper_harrasser.internal_access().fbl(), (FreeBlocks*)nullptr);
 
   // After all this work, we should see an increase in number of chunk-in-place-enlargements
   //  (this especially is vulnerable to regression: the decisions of when to do in-place-enlargements are somewhat
@@ -691,7 +744,8 @@ TEST_VM(metaspace, MetaspaceArena_growth_boot_nc_not_inplace) {
 //  block should be reused by the next allocation).
 static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
   // Test various sizes, including (important) the max. possible block size = 1 root chunk
-  for (size_t blocksize = Metaspace::max_allocation_word_size(); blocksize >= 1; blocksize /= 2) {
+  for (size_t blocksize = Metaspace::max_allocation_word_size();
+       blocksize >= Metaspace::min_allocation_word_size; blocksize /= 2) {
     size_t used1 = 0, used2 = 0, committed1 = 0, committed2 = 0;
     MetaWord* p = nullptr, *p2 = nullptr;
 
@@ -703,6 +757,7 @@ static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
     if (!is_topmost) {
       // another one on top, size does not matter.
       helper.allocate_from_arena_with_tests_expect_success(0x10);
+      HANDLE_FAILURE
     }
 
     // Measure
@@ -712,6 +767,7 @@ static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
     for (int i = 0; i < 5; i ++) {
       helper.deallocate_with_tests(p, blocksize);
       helper.allocate_from_arena_with_tests_expect_success(&p2, blocksize);
+      HANDLE_FAILURE
       // We should get the same pointer back.
       EXPECT_EQ(p2, p);
     }
@@ -730,3 +786,120 @@ TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_top_al
 TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop_allocation) {
   test_repeatedly_allocate_and_deallocate(false);
 }
+
+static void test_random_aligned_allocation(size_t arena_alignment_words, SizeRange range) {
+  // We let the arena use 4K chunks, unless the alloc size is larger.
+  chunklevel_t level = CHUNK_LEVEL_4K;
+  const ArenaGrowthPolicy policy (&level, 1);
+  const size_t chunk_word_size = word_size_for_level(level);
+
+  size_t expected_used = 0;
+
+  MetaspaceGtestContext context;
+  MetaspaceArenaTestHelper helper(context, &policy, arena_alignment_words);
+
+  size_t last_alloc_size = 0;
+  unsigned num_allocations = 0;
+
+  const size_t max_used = MIN2(MAX2(chunk_word_size * 10, (range.highest() * 100)),
+                               LP64_ONLY(64) NOT_LP64(16) * M); // word size!
+  while (expected_used < max_used) {
+
+    const int chunks_before = helper.get_number_of_chunks();
+
+    MetaBlock result, wastage;
+    size_t alloc_words = range.random_value();
+    NOT_LP64(alloc_words = align_up(alloc_words, Metaspace::min_allocation_alignment_words));
+    helper.allocate_from_arena_with_tests(alloc_words, result, wastage);
+
+    ASSERT_TRUE(result.is_nonempty());
+    ASSERT_TRUE(result.is_aligned_base(arena_alignment_words));
+    ASSERT_EQ(result.word_size(), alloc_words);
+
+    expected_used += alloc_words + wastage.word_size();
+    const int chunks_now = helper.get_number_of_chunks();
+    ASSERT_GE(chunks_now, chunks_before);
+    ASSERT_LE(chunks_now, chunks_before + 1);
+
+    // Estimate wastage:
+    // Guessing at wastage is somewhat simple since we don't expect to ever use the fbl (we
+    // don't deallocate). Therefore, wastage can only be caused by alignment gap or by
+    // salvaging an old chunk before a new chunk is added.
+    const bool expect_alignment_gap = !is_aligned(last_alloc_size, arena_alignment_words);
+    const bool new_chunk_added = chunks_now > chunks_before;
+
+    if (num_allocations == 0) {
+      // expect no wastage if its the first allocation in the arena
+      ASSERT_TRUE(wastage.is_empty());
+    } else {
+      if (expect_alignment_gap) {
+        // expect wastage if the alignment requires it
+        ASSERT_TRUE(wastage.is_nonempty());
+      }
+    }
+
+    if (wastage.is_nonempty()) {
+      // If we have wastage, we expect it to be either too small or unaligned. That would not be true
+      // for wastage from the fbl, which could have any size; however, in this test we don't deallocate,
+      // so we don't expect wastage from the fbl.
+      if (wastage.is_aligned_base(arena_alignment_words)) {
+        ASSERT_LT(wastage.word_size(), alloc_words);
+      }
+      if (new_chunk_added) {
+        // chunk turnover: no more wastage than size of a commit granule, since we salvage the
+        // committed remainder of the old chunk.
+        ASSERT_LT(wastage.word_size(), Settings::commit_granule_words());
+      } else {
+        // No chunk turnover: no more wastage than what alignment requires.
+        ASSERT_LT(wastage.word_size(), arena_alignment_words);
+      }
+    }
+
+    // Check stats too
+    size_t used, committed, reserved;
+    helper.usage_numbers_with_test(&used, &committed, &reserved);
+    ASSERT_EQ(used, expected_used);
+
+    // No FBL should exist, we did not deallocate
+    ASSERT_EQ(helper.internal_access().fbl(), (FreeBlocks*)nullptr);
+
+    HANDLE_FAILURE
+
+    last_alloc_size = alloc_words;
+    num_allocations ++;
+  }
+  LOG("allocs: %u", num_allocations);
+}
+
+#define TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(al)                              \
+TEST_VM(metaspace, MetaspaceArena_test_random_small_aligned_allocation_##al) { \
+  static const SizeRange range(Metaspace::min_allocation_word_size, 128);      \
+  test_random_aligned_allocation(al, range);                                   \
+}
+
+#ifdef _LP64
+TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(1);
+#endif
+TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(2);
+TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(8);
+TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(32);
+TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(128);
+TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(MIN_CHUNK_WORD_SIZE);
+
+#define TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(al)                              \
+TEST_VM(metaspace, MetaspaceArena_test_random_large_aligned_allocation_##al) { \
+  static const SizeRange range(Metaspace::max_allocation_word_size() / 2,      \
+                                   Metaspace::max_allocation_word_size());     \
+  test_random_aligned_allocation(al, range);                                   \
+}
+
+#ifdef _LP64
+TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(1);
+#endif
+TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(2);
+TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(8);
+TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(32);
+TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(128);
+TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(MIN_CHUNK_WORD_SIZE);
+
+} // namespace metaspace

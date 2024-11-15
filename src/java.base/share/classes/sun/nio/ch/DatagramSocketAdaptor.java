@@ -48,9 +48,6 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.MembershipKey;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
@@ -167,24 +164,11 @@ public class DatagramSocketAdaptor
 
     @Override
     public SocketAddress getLocalSocketAddress() {
-        InetSocketAddress local = dc.localAddress();
-        if (local == null || isClosed())
+        if (isClosed()) {
             return null;
-
-        InetAddress addr = local.getAddress();
-        if (addr.isAnyLocalAddress())
-            return local;
-
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkConnect(addr.getHostAddress(), -1);
-            } catch (SecurityException x) {
-                return new InetSocketAddress(local.getPort());
-            }
+        } else {
+            return dc.localAddress();
         }
-        return local;
     }
 
     @Override
@@ -223,17 +207,7 @@ public class DatagramSocketAdaptor
         InetSocketAddress local = dc.localAddress();
         if (local == null)
             local = new InetSocketAddress(0);
-        InetAddress result = local.getAddress();
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkConnect(result.getHostAddress(), -1);
-            } catch (SecurityException x) {
-                return new InetSocketAddress(0).getAddress();
-            }
-        }
-        return result;
+        return local.getAddress();
     }
 
     @Override
@@ -484,11 +458,6 @@ public class DatagramSocketAdaptor
         synchronized (this) {
             MembershipKey key = dc.findMembership(group, ni);
             if (key != null) {
-                // already a member but need to check permission anyway
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null)
-                    sm.checkMulticast(group);
                 throw new SocketException("Already a member of group");
             }
             dc.join(group, ni);  // checks permission
@@ -501,10 +470,6 @@ public class DatagramSocketAdaptor
         NetworkInterface ni = (netIf != null) ? netIf : defaultNetworkInterface();
         if (isClosed())
             throw new SocketException("Socket is closed");
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkMulticast(group);
         synchronized (this) {
             MembershipKey key = dc.findMembership(group, ni);
             if (key == null)
@@ -541,12 +506,7 @@ public class DatagramSocketAdaptor
                     return outgoingInetAddress;
                 } else {
                     // network interface has changed so update cached values
-                    PrivilegedAction<InetAddress> pa;
-                    pa = () -> ni.inetAddresses().findFirst().orElse(null);
-                    @SuppressWarnings("removal")
-                    InetAddress ia = AccessController.doPrivileged(pa);
-                    if (ia == null)
-                        throw new SocketException("Network interface has no IP address");
+                    InetAddress ia = ni.inetAddresses().findFirst().orElse(null);
                     outgoingNetworkInterface = ni;
                     outgoingInetAddress = ia;
                     return ia;
@@ -660,10 +620,7 @@ public class DatagramSocketAdaptor
         static final MethodHandle CONSTRUCTOR;
         static {
             try {
-                PrivilegedExceptionAction<Lookup> pa = () ->
-                    MethodHandles.privateLookupIn(NetworkInterface.class, MethodHandles.lookup());
-                @SuppressWarnings("removal")
-                MethodHandles.Lookup l = AccessController.doPrivileged(pa);
+                Lookup l = MethodHandles.privateLookupIn(NetworkInterface.class, MethodHandles.lookup());
                 MethodType methodType = MethodType.methodType(NetworkInterface.class);
                 GET_DEFAULT = l.findStatic(NetworkInterface.class, "getDefault", methodType);
                 methodType = MethodType.methodType(void.class, String.class, int.class, InetAddress[].class);
@@ -703,10 +660,7 @@ public class DatagramSocketAdaptor
         private static final SocketAddress NO_DELEGATE;
         static {
             try {
-                PrivilegedExceptionAction<Lookup> pa = () ->
-                    MethodHandles.privateLookupIn(DatagramSocket.class, MethodHandles.lookup());
-                @SuppressWarnings("removal")
-                MethodHandles.Lookup l = AccessController.doPrivileged(pa);
+                Lookup l = MethodHandles.privateLookupIn(DatagramSocket.class, MethodHandles.lookup());
                 var handle = l.findStaticVarHandle(DatagramSocket.class, "NO_DELEGATE", SocketAddress.class);
                 NO_DELEGATE = (SocketAddress) handle.get();
             } catch (Exception e) {

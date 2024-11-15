@@ -239,11 +239,12 @@ class Compile : public Phase {
    private:
     Compile*    _compile;
     CompileLog* _log;
-    const char* _phase_name;
     bool _dolog;
    public:
-    TracePhase(const char* name, elapsedTimer* accumulator);
+    TracePhase(PhaseTraceId phaseTraceId);
+    TracePhase(const char* name, PhaseTraceId phaseTraceId);
     ~TracePhase();
+    const char* phase_name() const { return title(); }
   };
 
   // Information per category of alias (memory slice)
