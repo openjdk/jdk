@@ -1315,6 +1315,9 @@ private:
   const int      _pre_stride;     // address increment per pre-loop iteration
   const int      _main_stride;    // address increment per main-loop iteration
 
+  // TODO desc
+  const bool     _are_speculative_checks_possible;
+
   DEBUG_ONLY( const bool _is_trace; );
 
   static const MemNode* mem_ref_not_null(const MemNode* mem_ref) {
@@ -1332,7 +1335,8 @@ public:
                   const int scale,
                   const Node* init_node,
                   const int pre_stride,
-                  const int main_stride
+                  const int main_stride,
+                  const bool are_speculative_checks_possible
                   DEBUG_ONLY( COMMA const bool is_trace)
                   ) :
       _mem_ref(           mem_ref_not_null(mem_ref)),
@@ -1347,7 +1351,8 @@ public:
       _scale(             scale),
       _init_node(         init_node),
       _pre_stride(        pre_stride),
-      _main_stride(       main_stride)
+      _main_stride(       main_stride),
+      _are_speculative_checks_possible(are_speculative_checks_possible)
       DEBUG_ONLY( COMMA _is_trace(is_trace) )
   {
     assert(_mem_ref != nullptr &&

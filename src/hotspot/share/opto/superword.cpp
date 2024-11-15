@@ -1441,7 +1441,8 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
                          mem_ref_p.scale_in_bytes(),
                          pre_end->init_trip(),
                          pre_end->stride_con(),
-                         iv_stride()
+                         iv_stride(),
+                         _vloop.are_speculative_checks_possible()
                          DEBUG_ONLY(COMMA is_trace_align_vector()));
   return solver.solve();
 }

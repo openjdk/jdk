@@ -1709,9 +1709,6 @@ AlignmentSolution* AlignmentSolver::solve() const {
     return new EmptyAlignmentSolution("non power-of-2 scale not supported");
   }
 
-  // TODO add the adr for native memory!!! - maybe piggy-back on invar? But then we might lose some cases...
-  // or can we make sure to win them back? Might require a big rewrite here...
-
   // We analyze the address of mem_ref. The idea is to disassemble it into a linear
   // expression, where we can use the constant factors as the basis for ensuring the
   // alignment of vector memory accesses.
@@ -1744,9 +1741,18 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //                          \   + scale * main_stride * main_iter         + C_main  * main_iter       (main-loop term)
   //
   // We describe the 6 terms:
-  //   1) The "base" of the address is the address of a Java object (e.g. array),
-  //      and as such ObjectAlignmentInBytes (a power of 2) aligned. We have
-  //      defined aw = MIN(vector_width, ObjectAlignmentInBytes), which is also
+  //   1) The "base" of the address:
+  //        - For heap objects, this is the base of the object, and as such
+  //          ObjectAlignmentInBytes (a power of 2) aligned.
+  //        - For off-heap / native memory, the "base" is null, but instead
+  //          there is some "adr" of unknown alignment. If we can, we add
+  //          a runtime check to verify ObjectAlignmentInBytes alignment.
+  //          If we do not pass this check, then we currently have to return
+  //          an empty solution.
+  //          In a future RFE, we could add the "adr" to the "invar", and
+  //          have some alignment runtime-check on the "invar" instead, which
+  //          would allow more cases to vectorize.
+  //      We defined aw = MIN(vector_width, ObjectAlignmentInBytes), which is
   //      a power of 2. And hence we know that "base" is thus also aw-aligned:
   //
   //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0
@@ -1773,6 +1779,13 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //      memory reference.
   //   6) The "C_main * main_iter" term represents how much the iv is increased
   //      during "main_iter" main-loop iterations.
+
+  // For native memory, we must add a runtime-check that "adr % ObjectAlignmentInBytes". If we
+  // cannot add this runtime-check, we have no guarantee on its alignment.
+  // In a future RFE we can generalize this, and add runtime-checks for the invariant as well.
+  if (_base->is_top() && !_are_speculative_checks_possible) {
+    return new EmptyAlignmentSolution("Cannot add speculative check for native memory alignment.");
+  }
 
   // Attribute init (i.e. _init_node) either to C_const or to C_init term.
   const int C_const_init = _init_node->is_ConI() ? _init_node->as_ConI()->get_int() : 0;
