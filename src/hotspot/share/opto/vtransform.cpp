@@ -213,16 +213,20 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
 }
 
 void VTransform::add_speculative_check(BoolNode* bol) {
-  // TODO decide if predicate or unswitching!
+  assert(_vloop.are_speculative_checks_possible(), "otherwise we cannot make speculative assumptions");
   ParsePredicateSuccessProj* parse_predicate_proj = _vloop.auto_vectorization_parse_predicate_proj();
-  assert(parse_predicate_proj != nullptr, "we must be able to find the parse predicate");
-
-  Node* new_predicate_proj = phase()->create_new_if_for_predicate(parse_predicate_proj, nullptr,
-                                                                  Deoptimization::Reason_auto_vectorization_check,
-                                                                  Op_If);
-  Node* iff_alignment = new_predicate_proj->in(0);
-  igvn().replace_input_of(iff_alignment, 1, bol);
-  TRACE_ALIGN_VECTOR_NODE(iff_alignment);
+  IfTrueNode* new_check_proj = nullptr;
+  if (parse_predicate_proj != nullptr) {
+    new_check_proj = phase()->create_new_if_for_predicate(parse_predicate_proj, nullptr,
+                                                          Deoptimization::Reason_auto_vectorization_check,
+                                                          Op_If);
+  } else {
+    assert(false, "TODO");
+    return;
+  }
+  Node* iff_speculate = new_check_proj->in(0);
+  igvn().replace_input_of(iff_speculate, 1, bol);
+  TRACE_ALIGN_VECTOR_NODE(iff_speculate);
   // TODO trace more generally!
 }
 
