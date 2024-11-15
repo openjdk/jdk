@@ -176,7 +176,6 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
-    @SuppressWarnings("removal")
     protected static int getPrintScaleFactor() {
         // check if value is already cached
         if (pScale != 0)
