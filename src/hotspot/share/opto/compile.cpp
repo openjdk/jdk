@@ -4487,7 +4487,6 @@ void Compile::print_inlining_append_late(CallGenerator* cg, InliningResult resul
     CompileTask::print_inlining_inner_message(buffer->ss(), result, msg);
 
     _print_inlining_list->at_put(_print_inlining_idx, buffer);
-    print_inlining_reset();
   }
 }
 
