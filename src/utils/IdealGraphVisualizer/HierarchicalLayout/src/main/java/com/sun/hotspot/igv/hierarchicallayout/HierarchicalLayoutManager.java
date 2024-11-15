@@ -538,13 +538,10 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 n.setX(space[n.getLayer()].get(n.getPos()));
             }
 
-            for (int i = 0; i < SWEEP_ITERATIONS; i++) {
-                sweepDown(graph);
-                adjustSpace(graph);
-                sweepUp(graph);
-                adjustSpace(graph);
-            }
-
+            sweepDown(graph);
+            adjustSpace(graph);
+            sweepUp(graph);
+            adjustSpace(graph);
             sweepDown(graph);
             adjustSpace(graph);
             sweepUp(graph);
@@ -577,54 +574,54 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 }
             }
         }
-    }
 
-    public static class NodeRow {
+        private static class NodeRow {
 
-        private final TreeSet<LayoutNode> treeSet;
-        private final ArrayList<Integer> space;
+            private final TreeSet<LayoutNode> treeSet;
+            private final ArrayList<Integer> space;
 
-        public NodeRow(ArrayList<Integer> space) {
-            treeSet = new TreeSet<>(NODE_POS_COMPARATOR);
-            this.space = space;
-        }
-
-        public int offset(LayoutNode n1, LayoutNode n2) {
-            int v1 = space.get(n1.getPos()) + n1.getOuterWidth();
-            int v2 = space.get(n2.getPos());
-            return v2 - v1;
-        }
-
-        public void insert(LayoutNode n, int pos) {
-
-            SortedSet<LayoutNode> headSet = treeSet.headSet(n);
-
-            LayoutNode leftNeighbor;
-            int minX = Integer.MIN_VALUE;
-            if (!headSet.isEmpty()) {
-                leftNeighbor = headSet.last();
-                minX = leftNeighbor.getOuterRight() + offset(leftNeighbor, n);
+            public NodeRow(ArrayList<Integer> space) {
+                treeSet = new TreeSet<>(NODE_POS_COMPARATOR);
+                this.space = space;
             }
 
-            if (pos < minX) {
-                n.setX(minX);
-            } else {
+            public int offset(LayoutNode n1, LayoutNode n2) {
+                int v1 = space.get(n1.getPos()) + n1.getOuterWidth();
+                int v2 = space.get(n2.getPos());
+                return v2 - v1;
+            }
 
-                LayoutNode rightNeighbor;
-                SortedSet<LayoutNode> tailSet = treeSet.tailSet(n);
-                int maxX = Integer.MAX_VALUE;
-                if (!tailSet.isEmpty()) {
-                    rightNeighbor = tailSet.first();
-                    maxX = rightNeighbor.getX() - offset(n, rightNeighbor) - n.getOuterWidth();
+            public void insert(LayoutNode n, int pos) {
+
+                SortedSet<LayoutNode> headSet = treeSet.headSet(n);
+
+                LayoutNode leftNeighbor;
+                int minX = Integer.MIN_VALUE;
+                if (!headSet.isEmpty()) {
+                    leftNeighbor = headSet.last();
+                    minX = leftNeighbor.getOuterRight() + offset(leftNeighbor, n);
                 }
 
-                n.setX(Math.min(pos, maxX));
+                if (pos < minX) {
+                    n.setX(minX);
+                } else {
+
+                    LayoutNode rightNeighbor;
+                    SortedSet<LayoutNode> tailSet = treeSet.tailSet(n);
+                    int maxX = Integer.MAX_VALUE;
+                    if (!tailSet.isEmpty()) {
+                        rightNeighbor = tailSet.first();
+                        maxX = rightNeighbor.getX() - offset(n, rightNeighbor) - n.getOuterWidth();
+                    }
+
+                    n.setX(Math.min(pos, maxX));
+                }
+
+                treeSet.add(n);
             }
-
-            treeSet.add(n);
         }
-    }
 
+    }
 
     public static class WriteResult {
 
