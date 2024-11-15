@@ -32,8 +32,6 @@
  * @run build RMIPasswdAuthTest SimpleStandard SimpleStandardMBean
  *
  * @run main/othervm RMIPasswdAuthTest
- * @run main/othervm -Djava.security.manager=allow RMIPasswdAuthTest
- * @run main/othervm -Djava.security.manager=allow -DSimpleStandard.useGetSubjectACC=true RMIPasswdAuthTest
  */
 
 import java.io.File;

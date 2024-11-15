@@ -666,7 +666,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be c_rarg1");
   if (LockingMode == LM_MONITOR) {
-    call_VM(noreg,
+    call_VM_preemptable(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
@@ -697,7 +697,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       lightweight_lock(lock_reg, obj_reg, tmp, tmp2, tmp3, slow_case);
-      b(count);
+      b(done);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
       ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
@@ -747,18 +747,18 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
       // Save the test result, for recursive case, the result is zero
       str(swap_reg, Address(lock_reg, mark_offset));
-      br(Assembler::EQ, count);
+      br(Assembler::NE, slow_case);
+
+      bind(count);
+      inc_held_monitor_count(rscratch1);
+      b(done);
     }
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    call_VM(noreg,
+    call_VM_preemptable(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
-    b(done);
-
-    bind(count);
-    increment(Address(rthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
   }
@@ -804,11 +804,10 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     // Free entry
     str(zr, Address(lock_reg, BasicObjectLock::obj_offset()));
 
+    Label slow_case;
     if (LockingMode == LM_LIGHTWEIGHT) {
-      Label slow_case;
       lightweight_unlock(obj_reg, header_reg, swap_reg, tmp_reg, slow_case);
-      b(count);
-      bind(slow_case);
+      b(done);
     } else if (LockingMode == LM_LEGACY) {
       // Load the old header from BasicLock structure
       ldr(header_reg, Address(swap_reg,
@@ -818,16 +817,17 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       cbz(header_reg, count);
 
       // Atomic swap back the old header
-      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, count, /*fallthrough*/nullptr);
+      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, count, &slow_case);
+
+      bind(count);
+      dec_held_monitor_count(rscratch1);
+      b(done);
     }
+
+    bind(slow_case);
     // Call the runtime routine for slow case.
     str(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset())); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
-    b(done);
-
-    bind(count);
-    decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
-
     bind(done);
     restore_bcp();
   }
@@ -1529,6 +1529,55 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
 // interpreter specific
   restore_bcp();
   restore_locals();
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                                                    address entry_point,
+                                                    Register arg_1) {
+  assert(arg_1 == c_rarg1, "");
+  Label resume_pc, not_preempted;
+
+#ifdef ASSERT
+  {
+    Label L;
+    ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    cbz(rscratch1, L);
+    stop("Should not have alternate return address set");
+    bind(L);
+  }
+#endif /* ASSERT */
+
+  // Force freeze slow path.
+  push_cont_fastpath();
+
+  // Make VM call. In case of preemption set last_pc to the one we want to resume to.
+  adr(rscratch1, resume_pc);
+  str(rscratch1, Address(rthread, JavaThread::last_Java_pc_offset()));
+  call_VM_base(oop_result, noreg, noreg, entry_point, 1, false /*check_exceptions*/);
+
+  pop_cont_fastpath();
+
+  // Check if preempted.
+  ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+  cbz(rscratch1, not_preempted);
+  str(zr, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+  br(rscratch1);
+
+  // In case of preemption, this is where we will resume once we finally acquire the monitor.
+  bind(resume_pc);
+  restore_after_resume(false /* is_native */);
+
+  bind(not_preempted);
+}
+
+void InterpreterMacroAssembler::restore_after_resume(bool is_native) {
+  lea(rscratch1, ExternalAddress(Interpreter::cont_resume_interpreter_adapter()));
+  blr(rscratch1);
+  if (is_native) {
+    // On resume we need to set up stack as expected
+    push(dtos);
+    push(ltos);
+  }
 }
 
 void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& mdo_addr) {

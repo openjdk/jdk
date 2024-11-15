@@ -109,9 +109,8 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     jcc(Assembler::notZero, slow_case);
     // done
     bind(done);
+    inc_held_monitor_count();
   }
-
-  inc_held_monitor_count();
 
   return null_check_offset;
 }
@@ -153,9 +152,9 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
     // we do unlocking via runtime call
     jcc(Assembler::notEqual, slow_case);
     // done
+    bind(done);
+    dec_held_monitor_count();
   }
-  bind(done);
-  dec_held_monitor_count();
 }
 
 

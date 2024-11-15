@@ -35,7 +35,7 @@ import jdk.incubator.vector.*;
 import jdk.internal.vm.annotation.ForceInline;
 
 /*
- * @test id=Z
+ * @test
  * @bug 8260473
  * @requires vm.gc.Z
  * @modules jdk.incubator.vector
