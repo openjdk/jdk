@@ -25,7 +25,7 @@
 
 package sun.nio.ch;
 
-import jdk.internal.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
 
 
 public interface DirectBuffer {
@@ -41,6 +41,6 @@ public interface DirectBuffer {
 
     public Object attachment();
 
-    public Cleaner cleaner();
+    public Cleanable cleanable();
 
 }

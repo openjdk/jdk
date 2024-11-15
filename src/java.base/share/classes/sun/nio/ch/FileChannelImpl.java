@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Arena;
+import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -58,7 +59,6 @@ import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.misc.VM.BufferPool;
-import jdk.internal.ref.Cleaner;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.event.FileReadEvent;
 import jdk.internal.event.FileWriteEvent;
@@ -1437,9 +1437,10 @@ public class FileChannelImpl
     }
 
     private static void unmap(MappedByteBuffer bb) {
-        Cleaner cl = ((DirectBuffer)bb).cleaner();
-        if (cl != null)
+        Cleanable cl = ((DirectBuffer)bb).cleanable();
+        if (cl != null) {
             cl.clean();
+        }
     }
 
     private static final int MAP_INVALID = -1;

@@ -25,7 +25,7 @@
 
 package jdk.internal.misc;
 
-import jdk.internal.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.ch.DirectBuffer;
@@ -3862,9 +3862,9 @@ public final class Unsafe {
         if (db.attachment() != null)
             throw new IllegalArgumentException("duplicate or slice");
 
-        Cleaner cleaner = db.cleaner();
-        if (cleaner != null) {
-            cleaner.clean();
+        Cleanable cleanable = db.cleanable();
+        if (cleanable != null) {
+            cleanable.clean();
         }
     }
 }
