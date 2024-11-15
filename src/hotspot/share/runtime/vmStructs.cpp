@@ -1022,7 +1022,11 @@
   nonstatic_field(elapsedTimer,                _active,                                       bool)                                  \
   nonstatic_field(InvocationCounter,           _counter,                                      unsigned int)                          \
                                                                                                                                      \
-  nonstatic_field(UpcallStub::FrameData,       jfa,                                           JavaFrameAnchor)
+  nonstatic_field(UpcallStub::FrameData,       jfa,                                           JavaFrameAnchor)                       \
+  nonstatic_field(Mutex,                       _name,                                         const char*)                           \
+  static_field(Mutex,                          _mutex_array,                                  Mutex**)                               \
+  static_field(Mutex,                          _num_mutex,                                    int)                                   \
+  volatile_nonstatic_field(Mutex,              _owner,                                        Thread*)
 
 //--------------------------------------------------------------------------------
 // VM_TYPES
@@ -1937,6 +1941,7 @@
   declare_toplevel_type(JNIid)                                            \
   declare_toplevel_type(JNIid*)                                           \
   declare_toplevel_type(jmethodID*)                                       \
+  declare_toplevel_type(Mutex)                                            \
   declare_toplevel_type(Mutex*)                                           \
   declare_toplevel_type(nmethod*)                                         \
   COMPILER2_PRESENT(declare_unsigned_integer_type(node_idx_t))            \

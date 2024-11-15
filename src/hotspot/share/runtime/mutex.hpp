@@ -51,6 +51,7 @@
 
 class Mutex : public CHeapObj<mtSynchronizer> {
 
+ friend class VMStructs;
  public:
   // Special low level locks are given names and ranges avoid overlap.
   enum class Rank {
@@ -103,6 +104,9 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 #ifndef PRODUCT
   bool    _allow_vm_block;
 #endif
+  static Mutex** _mutex_array;
+  static int _num_mutex;
+
 #ifdef ASSERT
   Rank    _rank;                 // rank (to avoid/detect potential deadlocks)
   Mutex*  _next;                 // Used by a Thread to link up owned locks
@@ -131,6 +135,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;
 
  public:
+  static void  add_mutex(Mutex* var);
   static const bool _allow_vm_block_flag        = true;
 
   // Locks can be acquired with or without a safepoint check. NonJavaThreads do not follow
@@ -195,6 +200,11 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   const char *name() const                  { return _name; }
 
   void print_on_error(outputStream* st) const;
+
+  // Print all mutexes/monitors that are currently owned by a thread; called
+  // by fatal error handler.
+  static void print_owned_locks_on_error(outputStream* st);
+  static void print_lock_ranks(outputStream* st);
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
     void print() const;
