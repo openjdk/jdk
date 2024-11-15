@@ -230,10 +230,6 @@ public final class RequestPublishers {
         private final long length;
         private final Function<Path, InputStream> inputStreamSupplier;
 
-        private static String checkPathForDefaultFS(Path path) {
-            return path.toFile().getPath();
-        }
-
         /**
          * Factory for creating FilePublisher.
          */
@@ -242,8 +238,9 @@ public final class RequestPublishers {
             boolean defaultFS = true;
 
             try {
-                checkPathForDefaultFS(path);
+                path.toFile().getPath();
             } catch (UnsupportedOperationException uoe) {
+                // path not associated with the default file system provider
                 defaultFS = false;
             }
 

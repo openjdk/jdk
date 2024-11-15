@@ -183,15 +183,6 @@ public class ResponseSubscribers {
             this.options = options.stream().toArray(OpenOption[]::new);
         }
 
-        private static boolean isDefaultFS(Path file) {
-            try {
-                file.toFile();
-                return true;
-            } catch (UnsupportedOperationException uoe) {
-                return false;
-            }
-        }
-
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
             Objects.requireNonNull(subscription);

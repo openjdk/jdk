@@ -52,10 +52,6 @@ public final class ResponseBodyHandlers {
 
     private ResponseBodyHandlers() { }
 
-    private static final String checkPathForDefaultFS(Path path) {
-        return path.toFile().getPath();
-    }
-
     /**
      * A Path body handler.
      */
@@ -146,7 +142,7 @@ public final class ResponseBodyHandlers {
         public static FileDownloadBodyHandler create(Path directory,
                                                      List<OpenOption> openOptions) {
             try {
-                checkPathForDefaultFS(directory);
+                directory.toFile().getPath();
             } catch (UnsupportedOperationException uoe) {
                 // directory not associated with the default file system provider
                 throw new IllegalArgumentException("invalid path: " + directory, uoe);
