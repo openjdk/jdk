@@ -287,13 +287,6 @@ public final class System {
     private static native void setOut0(PrintStream out);
     private static native void setErr0(PrintStream err);
 
-    private static class CallersHolder {
-        // Remember callers of setSecurityManager() here so that warning
-        // is only printed once for each different caller
-        static final Map<Class<?>, Boolean> callers
-            = Collections.synchronizedMap(new WeakHashMap<>());
-    }
-
     static URL codeSource(Class<?> clazz) {
         PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
         @SuppressWarnings("removal")
