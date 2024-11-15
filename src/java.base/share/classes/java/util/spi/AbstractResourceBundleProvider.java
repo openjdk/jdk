@@ -78,7 +78,7 @@ import java.util.ResourceBundle;
  * <p>
  * Refer to {@link ResourceBundleProvider} for details.
  *
- * @see <a href="../ResourceBundle.html#resource-bundle-modules">
+ * @see <a href="ResourceBundle##resource-bundle-modules">
  * Resource Bundles and Named Modules</a>
  * @since 9
  */

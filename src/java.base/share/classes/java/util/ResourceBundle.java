@@ -1886,7 +1886,7 @@ public abstract class ResourceBundle {
                 Class<ResourceBundleProvider> s = (Class<ResourceBundleProvider>) c;
                 return s;
             }
-        } catch (ClassNotFoundException e) {}
+        } catch (ClassNotFoundException _) {}
         return null;
     }
 
