@@ -53,11 +53,11 @@ import static java.net.Proxy.NO_PROXY;
 
 /**
  * @test
- * @bug 8230526 8342811
+ * @bug 8230526
  * @summary Verifies that PlainProxyConnections are cached and reused properly. We do this by
  *          verifying that the remote address of the HTTP exchange (on the fake proxy server)
  *          is always the same InetSocketAddress. Logging verbosity is increased to aid in
- *          diagnosis of intermittent failures reported in 8342811.
+ *          diagnosis of intermittent failures.
  * @library /test/lib
  *          /test/jdk/java/net/httpclient/lib
  * @run main/othervm -Djdk.tracePinnedThreads=full
@@ -67,7 +67,7 @@ import static java.net.Proxy.NO_PROXY;
  */
 public class PlainProxyConnectionTest {
 
-    // Increase logging verbosity to troubleshoot intermittent failures reported in 8342811
+    // Increase logging verbosity to troubleshoot intermittent failures
     static {
         HttpServerAdapters.enableServerLogging();
     }
