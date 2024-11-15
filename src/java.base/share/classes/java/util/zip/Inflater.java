@@ -716,7 +716,7 @@ public class Inflater implements AutoCloseable {
      * @since 24
      */
     @Override
-    public void close() {
+    public final void close() {
         end();
     }
 
