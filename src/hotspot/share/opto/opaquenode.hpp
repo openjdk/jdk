@@ -92,15 +92,15 @@ public:
 };
 
 // TODO where to find more info, how stalling works etc
-class OpaqueAutoVectorizationMultiversioningNode : public Opaque1Node {
+class OpaqueMultiversioningNode : public Opaque1Node {
 private:
   bool _is_stall_slow_loop;
 
 public:
-  OpaqueAutoVectorizationMultiversioningNode(Compile* C, Node* n) :
+  OpaqueMultiversioningNode(Compile* C, Node* n) :
       Opaque1Node(C, n), _is_stall_slow_loop(true)
   {
-    init_class_id(Class_OpaqueAutoVectorizationMultiversioning);
+    init_class_id(Class_OpaqueMultiversioning);
   }
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }

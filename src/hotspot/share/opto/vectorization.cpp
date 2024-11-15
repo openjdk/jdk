@@ -133,7 +133,7 @@ VStatus VLoop::check_preconditions_helper() {
     IfTrueNode* before_predicates = predicates.entry()->isa_IfTrue();
     if (before_predicates != nullptr &&
         before_predicates->in(0)->is_If() &&
-        before_predicates->in(0)->in(1)->is_OpaqueAutoVectorizationMultiversioning()) {
+        before_predicates->in(0)->in(1)->is_OpaqueMultiversioning()) {
       _multiversioning_fast_proj = before_predicates;
     }
 #ifndef PRODUCT

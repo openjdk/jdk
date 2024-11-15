@@ -323,7 +323,7 @@ public:
   // Multiversioning allows us to duplicate a CountedLoop, and have two versions:
   // (1) fast_loop: we make speculative assumptions and add the corresponding
   //                runtime-checks above the multiversion_if which is guarded
-  //                by a OpaqueAutoVectorizationMultiversioning.
+  //                by a OpaqueMultiversioning.
   // (2) slow_loop: we make no assumptions. This loop is taken if any of the
   //                runtime-checks fails. We keep this loop stalled as long
   //                as there are no runtime-checks added. As long as it is stalled,

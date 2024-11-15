@@ -395,7 +395,7 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
 
   Node* one = _igvn.intcon(1);
   set_ctrl(one, C->root());
-  Node* opaque = new OpaqueAutoVectorizationMultiversioningNode(C, one);
+  Node* opaque = new OpaqueMultiversioningNode(C, one);
   set_ctrl(opaque, C->root());
   _igvn.set_type(opaque, TypeInt::BOOL);
 
@@ -418,7 +418,7 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
 // TODO desc / ASCII art
 IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj) {
   IfNode* multiversion_if = multiversioning_fast_proj->in(0)->as_If();
-  OpaqueAutoVectorizationMultiversioningNode* opaque = multiversion_if->in(1)->as_OpaqueAutoVectorizationMultiversioning();
+  OpaqueMultiversioningNode* opaque = multiversion_if->in(1)->as_OpaqueMultiversioning();
 
   // Now that we have at least one condition for the multiversioning,
   // we should unstall the slow loop.
@@ -458,12 +458,12 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
   return new_if_true;
 }
 
-OpaqueAutoVectorizationMultiversioningNode* find_multiversion_opaque_from_multiversion_if_false(Node* maybe_multiversion_if_false) {
+OpaqueMultiversioningNode* find_multiversion_opaque_from_multiversion_if_false(Node* maybe_multiversion_if_false) {
   IfFalseNode* multiversion_if_false = maybe_multiversion_if_false->isa_IfFalse();
   if (multiversion_if_false == nullptr) { return nullptr; }
   IfNode* multiversion_if = multiversion_if_false->in(0)->isa_If();
   if (multiversion_if == nullptr) { return nullptr; }
-  return multiversion_if->in(1)->isa_OpaqueAutoVectorizationMultiversioning();
+  return multiversion_if->in(1)->isa_OpaqueMultiversioning();
 }
 
 bool PhaseIdealLoop::try_unstall_multiversion_stalled_slow_loop(IdealLoopTree* lpt) {
@@ -477,7 +477,7 @@ bool PhaseIdealLoop::try_unstall_multiversion_stalled_slow_loop(IdealLoopTree* l
   Node* slow_path = predicates.entry();
 
   // Find opaque.
-  OpaqueAutoVectorizationMultiversioningNode* opaque = nullptr;
+  OpaqueMultiversioningNode* opaque = nullptr;
   if (slow_path->is_Region()) {
     for (uint i = 1; i < slow_path->req(); i++) {
       Node* n = slow_path->in(i);
