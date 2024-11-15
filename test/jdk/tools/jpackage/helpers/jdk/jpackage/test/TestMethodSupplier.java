@@ -131,6 +131,7 @@ final class TestMethodSupplier {
     void verifyTestClass(Class<?> type) throws InvalidAnnotationException {
         var typeStatus = processedTypes.get(type);
         if (typeStatus == null) {
+            // The "type" has not been verified yet.
             try {
                 Verifier.verifyTestClass(type);
                 processedTypes.put(type, TypeStatus.VALID_TEST_CLASS);
@@ -426,8 +427,7 @@ final class TestMethodSupplier {
             boolean withTestAnnotations = false;
             for (var method : type.getDeclaredMethods()) {
                 method.setAccessible(true);
-                if (withTestAnnotations) {
-                } else if (isParameterized(method) || isTest(method)) {
+                if (!withTestAnnotations && (isParameterized(method) || isTest(method))) {
                     withTestAnnotations = true;
                 }
                 verifyAnnotationsCorrect(method);

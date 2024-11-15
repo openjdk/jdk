@@ -154,7 +154,7 @@ class MethodCall implements ThrowingConsumer {
                 final var paramType = paramTypes[idx];
                 final var argValue = args[idx];
                 newArgs[idx] = Optional.ofNullable(argValue).map(Object::getClass).map(argType -> {
-                    if(argType.isArray() && !paramType.isAssignableFrom(argType) ) {
+                    if(argType.isArray() && !paramType.isAssignableFrom(argType)) {
                         var length = Array.getLength(argValue);
                         var newArray = Array.newInstance(paramType.getComponentType(), length);
                         for (var arrayIdx = 0; arrayIdx != length; ++arrayIdx) {
