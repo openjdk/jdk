@@ -22,7 +22,7 @@
  */
 
 import java.nio.file.Path;
-import jdk.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
