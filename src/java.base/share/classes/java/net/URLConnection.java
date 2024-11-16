@@ -1399,15 +1399,7 @@ public abstract class URLConnection {
 
         ContentHandler handler = null;
         while (iterator.hasNext()) {
-            ContentHandlerFactory f;
-            try {
-                f = iterator.next();
-            } catch (ServiceConfigurationError e) {
-                if (e.getCause() instanceof SecurityException) {
-                    continue;
-                }
-                throw e;
-            }
+            ContentHandlerFactory f = iterator.next();
             handler = f.createContentHandler(contentType);
             if (handler != null) {
                 break;

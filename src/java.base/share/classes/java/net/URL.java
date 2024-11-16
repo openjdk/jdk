@@ -37,8 +37,6 @@ import java.io.ObjectStreamField;
 import java.io.ObjectInputStream.GetField;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.NoSuchElementException;
-import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 import jdk.internal.access.JavaNetURLAccess;
@@ -1391,47 +1389,6 @@ public final class URL implements java.io.Serializable {
         return handler;
     }
 
-    private static Iterator<URLStreamHandlerProvider> providers() {
-        return new Iterator<>() {
-
-            final ClassLoader cl = ClassLoader.getSystemClassLoader();
-            final ServiceLoader<URLStreamHandlerProvider> sl =
-                    ServiceLoader.load(URLStreamHandlerProvider.class, cl);
-            final Iterator<URLStreamHandlerProvider> i = sl.iterator();
-
-            URLStreamHandlerProvider next = null;
-
-            private boolean getNext() {
-                while (next == null) {
-                    try {
-                        if (!i.hasNext())
-                            return false;
-                        next = i.next();
-                    } catch (ServiceConfigurationError sce) {
-                        if (sce.getCause() instanceof SecurityException) {
-                            // Ignore security exceptions
-                            continue;
-                        }
-                        throw sce;
-                    }
-                }
-                return true;
-            }
-
-            public boolean hasNext() {
-                return getNext();
-            }
-
-            public URLStreamHandlerProvider next() {
-                if (!getNext())
-                    throw new NoSuchElementException();
-                URLStreamHandlerProvider n = next;
-                next = null;
-                return n;
-            }
-        };
-    }
-
     private static class ThreadTrackHolder {
         static final ThreadTracker TRACKER = new ThreadTracker();
     }
@@ -1450,7 +1407,10 @@ public final class URL implements java.io.Serializable {
             throw new Error("Circular loading of URL stream handler providers detected");
         }
         try {
-            Iterator<URLStreamHandlerProvider> itr = providers();
+            final ClassLoader cl = ClassLoader.getSystemClassLoader();
+            final ServiceLoader<URLStreamHandlerProvider> sl =
+                    ServiceLoader.load(URLStreamHandlerProvider.class, cl);
+            final Iterator<URLStreamHandlerProvider> itr = sl.iterator();
             while (itr.hasNext()) {
                 URLStreamHandlerProvider f = itr.next();
                 URLStreamHandler h = f.createURLStreamHandler(protocol);
