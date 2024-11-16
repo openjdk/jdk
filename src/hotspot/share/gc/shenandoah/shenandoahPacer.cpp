@@ -233,13 +233,7 @@ intptr_t ShenandoahPacer::epoch() {
 void ShenandoahPacer::pace_for_alloc(size_t words) {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
 
-  // Fast path: try to allocate right away
-  bool claimed = claim_for_alloc<false>(words);
-  if (claimed) {
-    return;
-  }
-
-  claimed = claim_for_alloc<true>(words);
+  bool claimed = claim_for_alloc<true>(words);
 
   // Threads that are attaching should not block at all: they are not
   // fully initialized yet. Blocking them would be awkward.
@@ -249,25 +243,24 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   // This can happen during VM init when main thread is still not an
   // active Java thread.
   JavaThread* current = JavaThread::current();
-  if (current->is_attaching_via_jni() ||
+  if (claimed ||
+      current->is_attaching_via_jni() ||
       !current->is_active_Java_thread()) {
     return;
   }
 
-  if (!claimed) {
-    jlong const start_time = os::javaTimeNanos();
-    jlong const deadline = start_time + (ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC);
-    bool timeout = false;
-    while (Atomic::load(&_budget) < 0 &&
-           os::javaTimeNanos() < deadline) {
-      // We could instead assist GC, but this would suffice for now.
-      timeout = wait(1);
-      // Finish pacing wait if no timeout, but not for Windows.
-      // In Windows, thread is usually waken up before timeout interval elapses, even w/o notify
-      NOT_WINDOWS(if (!timeout) break;)
-    }
-    ShenandoahThreadLocalData::add_paced_time(current, (double)(os::javaTimeNanos() - start_time) / NANOSECS_PER_SEC);
+  jlong const start_time = os::javaTimeNanos();
+  jlong const deadline = start_time + (ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC);
+  bool timeout = false;
+  while (Atomic::load(&_budget) < 0 &&
+         os::javaTimeNanos() < deadline) {
+    // We could instead assist GC, but this would suffice for now.
+    timeout = wait(1);
+    // Finish pacing wait if no timeout, but not for Windows.
+    // In Windows, thread is usually waken up before timeout interval elapses, even w/o notify
+    NOT_WINDOWS(if (!timeout) break;)
   }
+  ShenandoahThreadLocalData::add_paced_time(current, (double)(os::javaTimeNanos() - start_time) / NANOSECS_PER_SEC);
 }
 
 bool ShenandoahPacer::wait(size_t time_ms) {
