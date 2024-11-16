@@ -347,7 +347,7 @@ Handle java_lang_String::create_from_str(const char* utf8_str, TRAPS) {
 #ifdef ASSERT
   // This check is too strict when the input string is not a valid UTF8.
   // For example, it may be created with arbitrary content via jni_NewStringUTF.
-  if (UTF8::is_legal_utf8((const unsigned char*)utf8_str, strlen(utf8_str), false)) {
+  if (UTF8::is_legal_utf8((const unsigned char*)utf8_str, strlen(utf8_str), /*version_leq_47*/false)) {
     ResourceMark rm;
     const char* expected = utf8_str;
     char* actual = as_utf8_string(h_obj());
@@ -365,7 +365,7 @@ oop java_lang_String::create_oop_from_str(const char* utf8_str, TRAPS) {
   return h_obj();
 }
 
-Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
+Handle java_lang_String::create_from_symbol(const Symbol* symbol, TRAPS) {
   const char* utf8_str = (char*)symbol->bytes();
   int utf8_len = symbol->utf8_length();
 
@@ -389,6 +389,8 @@ Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
   }
 
 #ifdef ASSERT
+  // This check is too strict on older classfile versions
+  if (UTF8::is_legal_utf8((const unsigned char*)utf8_str, utf8_len, /*version_leq_47*/false))
   {
     ResourceMark rm;
     const char* expected = symbol->as_utf8();
@@ -755,6 +757,35 @@ bool java_lang_String::equals(oop java_string, const jchar* chars, int len) {
   return true;
 }
 
+bool java_lang_String::equals(oop java_string, const char* utf8_string, size_t utf8_len) {
+  assert(java_string->klass() == vmClasses::String_klass(),
+         "must be java_string");
+  typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
+  int length = java_lang_String::length(java_string, value);
+  int unicode_length = UTF8::unicode_length(utf8_string, utf8_len);
+  if (length != unicode_length) {
+    return false;
+  }
+  bool is_latin1 = java_lang_String::is_latin1(java_string);
+  jchar c;
+  if (!is_latin1) {
+    for (int i = 0; i < unicode_length; i++) {
+      utf8_string = UTF8::next(utf8_string, &c);
+      if (value->char_at(i) != c) {
+        return false;
+      }
+    }
+  } else {
+    for (int i = 0; i < unicode_length; i++) {
+      utf8_string = UTF8::next(utf8_string, &c);
+      if ((((jchar) value->byte_at(i)) & 0xff) != c) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 bool java_lang_String::equals(oop str1, oop str2) {
   assert(str1->klass() == vmClasses::String_klass(),
          "must be java String");
@@ -836,6 +867,7 @@ int java_lang_Class::_name_offset;
 int java_lang_Class::_source_file_offset;
 int java_lang_Class::_classData_offset;
 int java_lang_Class::_classRedefinedCount_offset;
+int java_lang_Class::_reflectionData_offset;
 
 bool java_lang_Class::_offsets_computed = false;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = nullptr;
@@ -1272,6 +1304,11 @@ void java_lang_Class::set_class_data(oop java_class, oop class_data) {
   java_class->obj_field_put(_classData_offset, class_data);
 }
 
+void java_lang_Class::set_reflection_data(oop java_class, oop reflection_data) {
+  assert(_reflectionData_offset != 0, "must be set");
+  java_class->obj_field_put(_reflectionData_offset, reflection_data);
+}
+
 void java_lang_Class::set_class_loader(oop java_class, oop loader) {
   assert(_class_loader_offset != 0, "offsets should have been initialized");
   java_class->obj_field_put(_class_loader_offset, loader);
@@ -1462,6 +1499,7 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
   macro(_module_offset,              k, "module",              module_signature,       false); \
   macro(_name_offset,                k, "name",                string_signature,       false); \
   macro(_classData_offset,           k, "classData",           object_signature,       false); \
+  macro(_reflectionData_offset,      k, "reflectionData",      java_lang_ref_SoftReference_signature, false); \
   macro(_signers_offset,             k, "signers",             object_array_signature, false);
 
 void java_lang_Class::compute_offsets() {
@@ -5448,20 +5486,18 @@ void JavaClasses::serialize_offsets(SerializeClosure* soc) {
 bool JavaClasses::is_supported_for_archiving(oop obj) {
   Klass* klass = obj->klass();
 
-  if (klass == vmClasses::ClassLoader_klass() ||  // ClassLoader::loader_data is malloc'ed.
-      // The next 3 classes are used to implement java.lang.invoke, and are not used directly in
-      // regular Java code. The implementation of java.lang.invoke uses generated hidden classes
-      // (e.g., as referenced by ResolvedMethodName::vmholder) that are not yet supported by CDS.
-      // So for now we cannot not support these classes for archiving.
-      //
-      // These objects typically are not referenced by static fields, but rather by resolved
-      // constant pool entries, so excluding them shouldn't affect the archiving of static fields.
-      klass == vmClasses::ResolvedMethodName_klass() ||
-      klass == vmClasses::MemberName_klass() ||
-      klass == vmClasses::Context_klass() ||
-      // It's problematic to archive Reference objects. One of the reasons is that
-      // Reference::discovered may pull in unwanted objects (see JDK-8284336)
-      klass->is_subclass_of(vmClasses::Reference_klass())) {
+  if (!CDSConfig::is_dumping_invokedynamic()) {
+    // These are supported by CDS only when CDSConfig::is_dumping_invokedynamic() is enabled.
+    if (klass == vmClasses::ResolvedMethodName_klass() ||
+        klass == vmClasses::MemberName_klass() ||
+        klass == vmClasses::Context_klass()) {
+      return false;
+    }
+  }
+
+  if (klass->is_subclass_of(vmClasses::Reference_klass())) {
+    // It's problematic to archive Reference objects. One of the reasons is that
+    // Reference::discovered may pull in unwanted objects (see JDK-8284336)
     return false;
   }
 

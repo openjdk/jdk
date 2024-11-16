@@ -41,9 +41,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.InvocationTargetException;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import java.util.*;
 
 import javax.swing.Box;
@@ -1319,28 +1316,22 @@ static final class sun_swing_PrintColorUIResource_PersistenceDelegate extends Pe
         }
     }
 
-    @SuppressWarnings("removal")
     static Object getPrivateFieldValue(Object instance, String name) {
         Field field = fields.get(name);
         if (field == null) {
             int index = name.lastIndexOf('.');
             final String className = name.substring(0, index);
             final String fieldName = name.substring(1 + index);
-            field = AccessController.doPrivileged(new PrivilegedAction<Field>() {
-                public Field run() {
-                    try {
-                        Field field = Class.forName(className).getDeclaredField(fieldName);
-                        field.setAccessible(true);
-                        return field;
-                    }
-                    catch (ClassNotFoundException exception) {
-                        throw new IllegalStateException("Could not find class", exception);
-                    }
-                    catch (NoSuchFieldException exception) {
-                        throw new IllegalStateException("Could not find field", exception);
-                    }
-                }
-            });
+            try {
+                field = Class.forName(className).getDeclaredField(fieldName);
+                field.setAccessible(true);
+            }
+            catch (ClassNotFoundException exception) {
+                throw new IllegalStateException("Could not find class", exception);
+            }
+            catch (NoSuchFieldException exception) {
+                throw new IllegalStateException("Could not find field", exception);
+            }
             fields.put(name, field);
         }
         try {

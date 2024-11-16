@@ -38,6 +38,9 @@ class BootstrapInfo;
 class ReservedSpace;
 class VirtualSpace;
 
+template<class E> class Array;
+template<class E> class GrowableArray;
+
 // ArchivePtrMarker is used to mark the location of pointers embedded in a CDS archive. E.g., when an
 // InstanceKlass k is dumped, we mark the location of the k->_name pointer by effectively calling
 // mark_pointer(/*ptr_loc=*/&k->_name). It's required that (_prt_base <= ptr_loc < _ptr_end). _ptr_base is
@@ -253,6 +256,8 @@ class ArchiveUtils {
 public:
   static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
+  static bool has_aot_initialized_mirror(InstanceKlass* src_ik);
+  template <typename T> static Array<T>* archive_array(GrowableArray<T>* tmp_array);
 
   // offset must represent an object of type T in the mapped shared space. Return
   // a direct pointer to this object.

@@ -72,22 +72,6 @@ public final class SecurityConstants {
     public static final NetPermission SPECIFY_HANDLER_PERMISSION =
        new NetPermission("specifyStreamHandler");
 
-    // java.net.CookieHandler
-    public static final NetPermission SET_COOKIEHANDLER_PERMISSION =
-       new NetPermission("setCookieHandler");
-
-    // java.net.CookieHandler
-    public static final NetPermission GET_COOKIEHANDLER_PERMISSION =
-       new NetPermission("getCookieHandler");
-
-    // java.net.ResponseCache
-    public static final NetPermission SET_RESPONSECACHE_PERMISSION =
-       new NetPermission("setResponseCache");
-
-    // java.net.ResponseCache
-    public static final NetPermission GET_RESPONSECACHE_PERMISSION =
-       new NetPermission("getResponseCache");
-
     // java.net.ServerSocket, java.net.Socket
     public static final NetPermission SET_SOCKETIMPL_PERMISSION =
         new NetPermission("setSocketImpl");
