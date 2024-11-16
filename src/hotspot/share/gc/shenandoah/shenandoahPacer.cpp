@@ -255,16 +255,18 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   }
 
   if (!claimed) {
-    jlong const start_time = os::elapsed_counter();
-    jlong const deadline = start_time + (jlong)(ShenandoahPacingMaxDelay / 1000.0 * (double) os::elapsed_frequency());
+    jlong const start_time = os::javaTimeNanos();
+    jlong const deadline = start_time + (ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC);
     bool timeout = false;
     while (Atomic::load(&_budget) < 0 &&
-           os::elapsed_counter() < deadline) {
+           os::javaTimeNanos() < deadline) {
       // We could instead assist GC, but this would suffice for now.
       timeout = wait(1);
+      // Finish pacing wait if no timeout, but not for Windows.
+      // In Windows, thread is usually waken up before timeout interval elapses, even w/o notify
       NOT_WINDOWS(if (!timeout) break;)
     }
-    ShenandoahThreadLocalData::add_paced_time(current, (double)(os::elapsed_counter() - start_time) / (double)os::elapsed_frequency());
+    ShenandoahThreadLocalData::add_paced_time(current, (double)(os::javaTimeNanos() - start_time) / NANOSECS_PER_SEC);
   }
 }
 
