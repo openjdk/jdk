@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ public interface AppImageLayout {
 
     public static PathGroup toPathGroup(AppImageLayout appImageLayout) {
         return new PathGroup(Stream.of(appImageLayout.getClass().getInterfaces())
-                // For all interfaces (it should be one, but multiple is OK) 
-                // extending AppImageLayout interface call all non-static methods 
+                // For all interfaces (it should be one, but multiple is OK)
+                // extending AppImageLayout interface call all non-static methods
                 // without parameters and with java.nio.file.Path return type.
                 // Create a map from the names of methods called and return values.
                 .filter(AppImageLayout.class::isAssignableFrom)

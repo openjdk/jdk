@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,8 @@ public class ToolValidatorTest {
         }
     }
 
-    private final static String TOOL_JAVA;
-    private final static String TOOL_UNKNOWN = Path.of(System.getProperty(
+    private static final String TOOL_JAVA;
+    private static final String TOOL_UNKNOWN = Path.of(System.getProperty(
             "java.home"), "bin").toString();
 
     static {

@@ -145,4 +145,104 @@ public interface Package {
             String description, String version, String aboutURL, Path licenseFile,
             Path predefinedAppImage, Path relativeInstallDir) implements Package {
     }
+
+    class Proxy<T extends Package> extends ProxyBase<T> implements Package {
+
+        Proxy(T target) {
+            super(target);
+        }
+
+        @Override
+        final public Application app() {
+            return target.app();
+        }
+
+        @Override
+        final public PackageType type() {
+            return target.type();
+        }
+
+        @Override
+        final public String packageName() {
+            return target.packageName();
+        }
+
+        @Override
+        final public String description() {
+            return target.description();
+        }
+
+        @Override
+        final public String version() {
+            return target.version();
+        }
+
+        @Override
+        final public String aboutURL() {
+            return target.aboutURL();
+        }
+
+        @Override
+        final public Path licenseFile() {
+            return target.licenseFile();
+        }
+
+        @Override
+        final public Path predefinedAppImage() {
+            return target.predefinedAppImage();
+        }
+
+        @Override
+        final public Path relativeInstallDir() {
+            return target.relativeInstallDir();
+        }
+    }
+
+    class Unsupported implements Package {
+
+        @Override
+        public Application app() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public PackageType type() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String packageName() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String description() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String version() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String aboutURL() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Path licenseFile() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Path predefinedAppImage() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Path relativeInstallDir() {
+            throw new UnsupportedOperationException();
+        }
+    }
 }

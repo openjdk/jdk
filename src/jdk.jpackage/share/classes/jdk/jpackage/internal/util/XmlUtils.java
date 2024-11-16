@@ -44,7 +44,7 @@ import jdk.jpackage.internal.util.xml.PrettyPrintHandler;
 import jdk.jpackage.internal.util.xml.SkipDocumentHandler;
 
 public final class XmlUtils {
-    
+
     @FunctionalInterface
     public interface XmlConsumer {
 
@@ -107,5 +107,5 @@ public final class XmlUtils {
             throw new IllegalStateException(ex);
         }
         return dbf;
-    }    
+    }
 }

@@ -38,7 +38,7 @@ final class WinExePackageBuilder {
     }
 
     WinExePackage create() throws ConfigException {
-        LauncherBuilder.validateIcon(icon);        
+        LauncherBuilder.validateIcon(icon);
         return WinExePackage.create(pkg, icon);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.Optional;
 import jdk.jpackage.internal.util.PathUtils;
 
 
-final public class FileAssociations {
+public final class FileAssociations {
     public FileAssociations(String faSuffixName) {
         suffixName = faSuffixName;
         setFilename("fa");
@@ -243,7 +243,7 @@ final public class FileAssociations {
     }
 
     private Path file;
-    final private String suffixName;
+    private final String suffixName;
     private String description;
     private Path icon;
     private Collection<TestRun> testRuns;

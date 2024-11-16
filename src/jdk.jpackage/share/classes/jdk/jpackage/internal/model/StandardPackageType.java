@@ -27,11 +27,11 @@ package jdk.jpackage.internal.model;
 import java.util.stream.Stream;
 
 public enum StandardPackageType implements PackageType {
-    WIN_MSI(".msi"), 
-    WIN_EXE(".exe"), 
-    LINUX_DEB(".deb"), 
-    LINUX_RPM(".rpm"), 
-    MAC_PKG(".pkg"), 
+    WIN_MSI(".msi"),
+    WIN_EXE(".exe"),
+    LINUX_DEB(".deb"),
+    LINUX_RPM(".rpm"),
+    MAC_PKG(".pkg"),
     MAC_DMG(".dmg");
 
     StandardPackageType(String suffix) {

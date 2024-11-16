@@ -111,7 +111,7 @@ public final class PredefinedAppImageErrorTest {
             = dummyAppFolder.resolve("DummyAppFile").toAbsolutePath();
         Files.createFile(dummyAppFile);
 
-        cmd.addArguments("--app-image", dummyAppFolder.toString());        
+        cmd.addArguments("--app-image", dummyAppFolder.toString());
         new AppImageFile("PredefinedAppImageErrorTest", "Hello").save(dummyAppFolder);
     }
 }

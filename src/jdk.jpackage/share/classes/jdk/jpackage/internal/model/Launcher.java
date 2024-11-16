@@ -78,6 +78,46 @@ public interface Launcher {
     record Stub(String name, LauncherStartupInfo startupInfo,
             List<FileAssociation> fileAssociations, boolean isService,
             String description, Path icon) implements Launcher {
+<<<<<<< HEAD
+=======
+    }
+
+    class Proxy<T extends Launcher> extends ProxyBase<T> implements Launcher {
+
+        public Proxy(T target) {
+            super(target);
+        }
+
+        @Override
+        final public String name() {
+            return target.name();
+        }
+
+        @Override
+        final public LauncherStartupInfo startupInfo() {
+            return target.startupInfo();
+        }
+
+        @Override
+        final public List<FileAssociation> fileAssociations() {
+            return target.fileAssociations();
+        }
+
+        @Override
+        final public boolean isService() {
+            return target.isService();
+        }
+
+        @Override
+        final public String description() {
+            return target.description();
+        }
+
+        @Override
+        final public Path icon() {
+            return target.icon();
+        }
+>>>>>>> JDK-8333664
     }
 
     class Unsupported implements Launcher {

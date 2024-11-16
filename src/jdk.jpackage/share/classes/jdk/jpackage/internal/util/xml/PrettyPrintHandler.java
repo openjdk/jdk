@@ -29,7 +29,7 @@ import java.util.Map;
 import javax.xml.stream.XMLStreamWriter;
 
 public class PrettyPrintHandler implements InvocationHandler {
-    
+
     public PrettyPrintHandler(XMLStreamWriter target) {
         this.target = target;
     }
@@ -85,5 +85,5 @@ public class PrettyPrintHandler implements InvocationHandler {
     private int depth = 0;
     private final Map<Integer, Boolean> hasChildElement = new HashMap<>();
     private static final String INDENT = "  ";
-    private static final String EOL = "\n";    
+    private static final String EOL = "\n";
 }

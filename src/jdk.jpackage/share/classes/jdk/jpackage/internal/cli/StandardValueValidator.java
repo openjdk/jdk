@@ -36,13 +36,13 @@ final class StandardValueValidator {
             throw new IllegalArgumentException();
         }
     }
-    
+
     static void validateDirectoryArray(Path[] paths) {
         for (var path : paths) {
             validateDirectory(path);
         }
     }
-    
+
     static void validateUrl(String str) {
         try {
             new URI(str);

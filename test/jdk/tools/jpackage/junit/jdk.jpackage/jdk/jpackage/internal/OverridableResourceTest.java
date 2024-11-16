@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,8 +192,8 @@ public class OverridableResourceTest {
         assertFalse(dstFile.toFile().exists());
     }
 
-    private final static String DEFAULT_NAME;
-    private final static Map<String, String> SUBSTITUTION_DATA;
+    private static final String DEFAULT_NAME;
+    private static final Map<String, String> SUBSTITUTION_DATA;
     static {
         if (OperatingSystem.isWindows()) {
             DEFAULT_NAME = "WinLauncher.template";
@@ -226,7 +226,7 @@ public class OverridableResourceTest {
 
         return customFile;
     }
-    
+
     private static OverridableResource createOverridableResource(String defaultName) {
         return Optional.ofNullable(defaultName).map(name -> {
             return new OverridableResource(defaultName, ResourceLocator.class);

@@ -27,8 +27,8 @@ public final class PathUtils {
                 "") + Optional.ofNullable(suffix).orElse("");
         return parent != null ? parent.resolve(filename) : Path.of(filename);
     }
-    
+
     public static Path resolveNullablePath(Path base, Path path) {
         return Optional.ofNullable(path).map(base::resolve).orElse(null);
-    }    
+    }
 }

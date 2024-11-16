@@ -29,7 +29,7 @@ import java.lang.reflect.Method;
 import javax.xml.stream.XMLStreamWriter;
 
 public class SkipDocumentHandler implements InvocationHandler {
-    
+
     public SkipDocumentHandler(XMLStreamWriter target) {
         this.target = target;
     }
@@ -43,6 +43,6 @@ public class SkipDocumentHandler implements InvocationHandler {
         }
         return null;
     }
-    
-    private final XMLStreamWriter target;    
+
+    private final XMLStreamWriter target;
 }

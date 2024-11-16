@@ -39,7 +39,7 @@ final class ApplicationLayoutUtils {
             .runtimeDirectory("runtime")
             .appModsDirectory(Path.of("app", "mods"))
             .create();
-    
+
     private final static ApplicationLayout MAC_APPLICATION_LAYOUT = ApplicationLayout.build()
             .launchersDirectory("Contents/MacOS")
             .appDirectory("Contents/app")
@@ -48,7 +48,7 @@ final class ApplicationLayoutUtils {
             .appModsDirectory("Contents/app/mods")
             .contentDirectory("Contents")
             .create();
-    
+
     private final static ApplicationLayout LINUX_APPLICATION_LAYOUT = ApplicationLayout.build()
             .launchersDirectory("bin")
             .appDirectory("lib/app")

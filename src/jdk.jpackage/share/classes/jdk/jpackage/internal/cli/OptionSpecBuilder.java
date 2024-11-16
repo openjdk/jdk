@@ -60,7 +60,7 @@ final class OptionSpecBuilder {
     OptionSpecBuilder ofDirectoryArray() {
         return ofPathArray().valueValidator(StandardValueValidator::validateDirectoryArray);
     }
-    
+
     OptionSpecBuilder ofUrl() {
         return ofString().valueValidator(StandardValueValidator::validateUrl);
     }
