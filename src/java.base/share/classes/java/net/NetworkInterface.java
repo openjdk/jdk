@@ -118,16 +118,15 @@ public final class NetworkInterface {
     }
 
     /**
-     * Get an Enumeration with all, or a subset, of the InetAddresses bound to
-     * this network interface.
+     * Get an Enumeration of the InetAddresses bound to this network interface.
      *
      * @implNote
-     * The returned enumeration contains all, or a subset, of the InetAddresses that were
-     * bound to the interface at the time the {@linkplain #getNetworkInterfaces()
+     * The returned enumeration contains the InetAddresses that were bound to
+     * the interface at the time the {@linkplain #getNetworkInterfaces()
      * interface configuration was read}
      *
-     * @return an Enumeration object with all, or a subset, of the InetAddresses
-     * bound to this network interface
+     * @return an Enumeration object with the InetAddresses bound to this
+     * network interface
      * @see #inetAddresses()
      */
     public Enumeration<InetAddress> getInetAddresses() {
@@ -135,16 +134,14 @@ public final class NetworkInterface {
     }
 
     /**
-     * Get a Stream of all, or a subset, of the InetAddresses bound to this
-     * network interface.
+     * Get a Stream of the InetAddresses bound to this network interface.
      *
      * @implNote
-     * The stream contains all, or a subset, of the InetAddresses that were
-     * bound to the interface at the time the {@linkplain #getNetworkInterfaces()
+     * The stream contains the InetAddresses that were bound to the
+     * interface at the time the {@linkplain #getNetworkInterfaces()
      * interface configuration was read}
      *
-     * @return a Stream object with all, or a subset, of the InetAddresses
-     * bound to this network interface
+     * @return a Stream object with the InetAddresses bound to this network interface
      * @since 9
      */
     public Stream<InetAddress> inetAddresses() {
@@ -177,11 +174,11 @@ public final class NetworkInterface {
     }
 
     /**
-     * Get a List of all, or a subset, of the {@code InterfaceAddresses}
-     * of this network interface.
+     * Get a List of the {@code InterfaceAddresses} of this network interface.
      *
-     * @return a {@code List} object with all, or a subset, of the
-     *         InterfaceAddress of this network interface
+     * @return a {@code List} object with the InterfaceAddress of this
+     * network interface
+     *
      * @since 1.6
      */
     public java.util.List<InterfaceAddress> getInterfaceAddresses() {
