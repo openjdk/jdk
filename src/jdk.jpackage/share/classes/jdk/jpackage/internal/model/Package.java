@@ -145,7 +145,7 @@ public interface Package {
             String description, String version, String aboutURL, Path licenseFile,
             Path predefinedAppImage, Path relativeInstallDir) implements Package {
     }
-    
+
     class Proxy<T extends Package> extends ProxyBase<T> implements Package {
 
         Proxy(T target) {
@@ -197,7 +197,7 @@ public interface Package {
             return target.relativeInstallDir();
         }
     }
-    
+
     class Unsupported implements Package {
 
         @Override
@@ -244,5 +244,5 @@ public interface Package {
         public Path relativeInstallDir() {
             throw new UnsupportedOperationException();
         }
-    }    
+    }
 }

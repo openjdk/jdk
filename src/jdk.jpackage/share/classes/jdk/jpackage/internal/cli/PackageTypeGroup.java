@@ -55,7 +55,7 @@ enum PackageTypeGroup {
     }),
     ALL_PACKAGE_TYPES(name -> {
         return Stream.of(
-                APP_IMAGE.forOptionName(name), 
+                APP_IMAGE.forOptionName(name),
                 NATIVE_PACKAGE.forOptionName(name)
         ).flatMap(Set::stream).collect(toSet());
     });

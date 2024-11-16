@@ -226,7 +226,7 @@ public class OverridableResourceTest {
 
         return customFile;
     }
-    
+
     private static OverridableResource createOverridableResource(String defaultName) {
         return Optional.ofNullable(defaultName).map(name -> {
             return new OverridableResource(defaultName, ResourceLocator.class);

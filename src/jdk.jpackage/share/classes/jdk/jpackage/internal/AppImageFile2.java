@@ -330,7 +330,7 @@ final class AppImageFile2 {
                 throw new InavlidAppImageFileException();
             }
         }
-        
+
         Launcher asLauncher() {
             return new Launcher.Stub(name, null, null, service, null, null);
         }

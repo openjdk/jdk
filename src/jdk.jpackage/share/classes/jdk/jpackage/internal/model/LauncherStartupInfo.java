@@ -44,11 +44,11 @@ public interface LauncherStartupInfo {
     List<String> defaultParameters();
 
     /**
-     * Returns list of paths to add to the classath. 
-     * 
+     * Returns list of paths to add to the classath.
+     *
      * Every path in the list is relative to app's main source directory.
-     * 
-     * @see jdk.jpackage.internal.Application#mainSrcDir() 
+     *
+     * @see jdk.jpackage.internal.Application#mainSrcDir()
      */
     List<Path> classPath();
 

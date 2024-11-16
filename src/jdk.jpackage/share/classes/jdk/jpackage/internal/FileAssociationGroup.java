@@ -61,7 +61,7 @@ final record FileAssociationGroup(List<FileAssociation> items) {
     static Builder build() {
         return new Builder();
     }
-    
+
     static final class Builder {
 
         FileAssociationGroup create() {

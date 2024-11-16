@@ -34,11 +34,11 @@ public interface FileAssociation {
     String description();
 
     Path icon();
-    
+
     default boolean hasIcon() {
         return Objects.nonNull(icon());
     }
-    
+
     default boolean hasNonEmptyDescription() {
         return Optional.ofNullable(description()).filter(Predicate.not(String::isEmpty)).isPresent();
     }

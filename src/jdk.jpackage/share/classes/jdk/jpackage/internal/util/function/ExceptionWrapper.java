@@ -25,7 +25,7 @@ package jdk.jpackage.internal.util.function;
 import java.lang.reflect.InvocationTargetException;
 
 public class ExceptionWrapper extends RuntimeException {
-    
+
     private static final long serialVersionUID = 1L;
 
     public static RuntimeException rethrowUnchecked(Throwable throwable) throws
@@ -42,5 +42,5 @@ public class ExceptionWrapper extends RuntimeException {
     private ExceptionWrapper(Throwable throwable) {
         super(throwable);
     }
-    
+
 }

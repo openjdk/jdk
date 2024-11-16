@@ -28,6 +28,6 @@ package jdk.jpackage.internal.cli;
 import java.util.Optional;
 
 
-public interface ParsedOptions { 
+public interface ParsedOptions {
     public <T> Optional<T> get(Option id);
 }

@@ -40,7 +40,7 @@ public interface StringBundle {
             return str;
         }
     }
-    
+
     public static StringBundle fromResourceBundle(ResourceBundle bundle) {
         return bundle::getString;
     }

@@ -28,8 +28,8 @@ package jdk.jpackage.internal.model;
 
 public final class AppImagePackageType implements PackageType {
     private AppImagePackageType() {
-        
+
     }
-    
+
     public final static AppImagePackageType APP_IMAGE = new AppImagePackageType();
 }

@@ -27,7 +27,7 @@ package jdk.jpackage.internal.model;
 import java.nio.file.Path;
 
 final class RuntimeLayoutStub extends AppImageLayout.Proxy<AppImageLayout> implements RuntimeLayout {
-    
+
     RuntimeLayoutStub(AppImageLayout target) {
         super(target);
     }
@@ -35,5 +35,5 @@ final class RuntimeLayoutStub extends AppImageLayout.Proxy<AppImageLayout> imple
     @Override
     public RuntimeLayout resolveAt(Path root) {
         return new RuntimeLayoutStub(target.resolveAt(root));
-    }    
+    }
 }

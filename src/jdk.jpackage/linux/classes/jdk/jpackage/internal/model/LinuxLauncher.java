@@ -37,7 +37,7 @@ public interface LinuxLauncher extends Launcher {
             return Map.of("shortcut", Boolean.toString(v));
         }).orElseGet(Map::of);
     }
-    
+
     @Override
     default String defaultIconResourceName() {
         return "JavaApp.png";

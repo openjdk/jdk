@@ -70,16 +70,16 @@ public interface Launcher {
      * other value for custom icon.
      */
     Path icon();
-    
+
     default String defaultIconResourceName() {
         return null;
     }
 
     record Stub(String name, LauncherStartupInfo startupInfo,
             List<FileAssociation> fileAssociations, boolean isService,
-            String description, Path icon) implements Launcher {        
+            String description, Path icon) implements Launcher {
     }
-    
+
     class Proxy<T extends Launcher> extends ProxyBase<T> implements Launcher {
 
         public Proxy(T target) {
