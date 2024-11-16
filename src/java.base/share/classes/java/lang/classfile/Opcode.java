@@ -25,7 +25,6 @@
 package java.lang.classfile;
 
 import jdk.internal.classfile.impl.RawBytecodeHelper;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Describes the opcodes of the JVM instruction set, as described in JVMS {@jvms 6.5}.
@@ -35,9 +34,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see Instruction
  * @see PseudoInstruction
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public enum Opcode {
 
     /** Do nothing */
@@ -697,9 +695,8 @@ public enum Opcode {
     /**
      * Kinds of opcodes.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public static enum Kind {
 
         /**

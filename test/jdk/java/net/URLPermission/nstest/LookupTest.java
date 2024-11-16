@@ -201,7 +201,6 @@ public class LookupTest {
         final PermissionCollection perms = new Permissions();
 
         LookupTestPermisions(int port) {
-            perms.add(new NetPermission("setProxySelector"));
             perms.add(new SocketPermission("localhost:1024-", "resolve,accept"));
             perms.add(new URLPermission("http://allowedAndFound.com:" + port + "/-", "*:*"));
             perms.add(new URLPermission("http://allowedButNotfound.com:" + port + "/-", "*:*"));

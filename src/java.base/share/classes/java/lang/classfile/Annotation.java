@@ -35,7 +35,6 @@ import java.util.List;
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an {@code annotation} structure (JVMS {@jvms 4.7.16}) or part of a {@code
@@ -63,9 +62,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see RuntimeVisibleParameterAnnotationsAttribute
  * @see RuntimeInvisibleParameterAnnotationsAttribute
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Annotation
         permits AnnotationImpl {
 
