@@ -39,6 +39,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import static jdk.jpackage.internal.OverridableResource.createResource;
+import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -95,7 +96,7 @@ class WixLauncherAsService extends LauncherAsService {
         resource.saveToStream(buffer);
 
         try {
-            Document doc = IOUtils.initDocumentBuilder().parse(
+            Document doc = XmlUtils.initDocumentBuilder().parse(
                     new ByteArrayInputStream(buffer.toByteArray()));
 
             XPath xPath = XPathFactory.newInstance().newXPath();
@@ -109,7 +110,7 @@ class WixLauncherAsService extends LauncherAsService {
                 sources.add(new DOMSource(n));
             }
 
-            IOUtils.mergeXmls(xml, sources);
+            XmlUtils.mergeXmls(xml, sources);
 
         } catch (SAXException ex) {
             throw new IOException(ex);

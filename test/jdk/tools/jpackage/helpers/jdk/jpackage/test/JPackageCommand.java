@@ -45,15 +45,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.PackageFile;
+import jdk.jpackage.internal.util.XmlUtils;
+import jdk.jpackage.internal.util.function.FunctionalUtils;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingFunction;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 /**
  * jpackage command line with prerequisite actions. Prerequisite actions can be
@@ -314,7 +315,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                                     "Error: --app-image expected");
                         }));
 
-        IOUtils.createXml(jpackageXMLFile, xml -> {
+        XmlUtils.createXml(jpackageXMLFile, xml -> {
                 xml.writeStartElement("jpackage-state");
                 xml.writeAttribute("version", AppImageFile.getVersion());
                 xml.writeAttribute("platform", AppImageFile.getPlatform());
@@ -1189,7 +1190,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
     private static boolean defaultWithToolProvider;
 
-    private static final Map<String, PackageType> PACKAGE_TYPES = Functional.identity(
+    private static final Map<String, PackageType> PACKAGE_TYPES = FunctionalUtils.identity(
             () -> {
                 Map<String, PackageType> reply = new HashMap<>();
                 for (PackageType type : PackageType.values()) {
@@ -1198,7 +1199,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 return reply;
             }).get();
 
-    public static final Path DEFAULT_RUNTIME_IMAGE = Functional.identity(() -> {
+    public static final Path DEFAULT_RUNTIME_IMAGE = FunctionalUtils.identity(() -> {
         // Set the property to the path of run-time image to speed up
         // building app images and platform bundles by avoiding running jlink
         // The value of the property will be automativcally appended to

@@ -46,13 +46,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.ApplicationLayout;
-import jdk.jpackage.test.Functional.ThrowingBiConsumer;
-import static jdk.jpackage.test.Functional.ThrowingBiConsumer.toBiConsumer;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
-import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
-import static jdk.jpackage.test.Functional.rethrowUnchecked;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import jdk.jpackage.internal.util.function.FunctionalUtils;
 import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.LINUX_DEB;
 import static jdk.jpackage.test.PackageType.LINUX_RPM;
@@ -532,7 +533,7 @@ public final class PackageTest extends RunnablePackageTest {
             private Path unpackDir;
             private Action unhandledAction;
             private boolean terminated;
-            private final JPackageCommand cmd = Functional.identity(() -> {
+            private final JPackageCommand cmd = FunctionalUtils.identity(() -> {
                 JPackageCommand result = new JPackageCommand();
                 result.setDefaultInputOutput().setDefaultAppName();
                 if (BUNDLE_OUTPUT_DIR != null && !ignoreBundleOutputDir) {

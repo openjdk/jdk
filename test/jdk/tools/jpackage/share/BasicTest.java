@@ -41,7 +41,7 @@ import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 
 /*

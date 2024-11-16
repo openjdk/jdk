@@ -35,6 +35,7 @@ import java.util.Map;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
+import jdk.jpackage.internal.util.PathUtils;
 
 public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
 
@@ -127,7 +128,7 @@ public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
                 mainParams);
         if (iconResource != null) {
             Path iconTarget = appLayout.destktopIntegrationDirectory().resolve(
-                    APP_NAME.fetchFrom(params) + IOUtils.getSuffix(Path.of(
+                    APP_NAME.fetchFrom(params) + PathUtils.getSuffix(Path.of(
                     DEFAULT_ICON)));
             iconResource.saveToFile(iconTarget);
         }

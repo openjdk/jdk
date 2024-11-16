@@ -41,8 +41,8 @@ import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.AdditionalLauncher;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 

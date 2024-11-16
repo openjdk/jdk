@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.FileUtils;
 
 
 /**
@@ -232,7 +233,7 @@ final class PathGroup {
             for (var entry: entries) {
                 Path srcFile = entry.getKey();
                 if (Files.isDirectory(srcFile)) {
-                    IOUtils.deleteRecursive(srcFile);
+                    FileUtils.deleteRecursive(srcFile);
                 }
             }
         }

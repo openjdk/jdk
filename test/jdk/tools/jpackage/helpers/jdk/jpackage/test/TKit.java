@@ -61,14 +61,15 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.test.Functional.ExceptionBox;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.internal.util.function.FunctionalUtils;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 public final class TKit {
 
-    public static final Path TEST_SRC_ROOT = Functional.identity(() -> {
+    public static final Path TEST_SRC_ROOT = FunctionalUtils.identity(() -> {
         Path root = Path.of(System.getProperty("test.src"));
 
         for (int i = 0; i != 10; ++i) {
@@ -81,11 +82,11 @@ public final class TKit {
         throw new RuntimeException("Failed to locate apps directory");
     }).get();
 
-    public static final Path SRC_ROOT = Functional.identity(() -> {
+    public static final Path SRC_ROOT = FunctionalUtils.identity(() -> {
         return TEST_SRC_ROOT.resolve("../../../../src/jdk.jpackage").normalize().toAbsolutePath();
     }).get();
 
-    public static final String ICON_SUFFIX = Functional.identity(() -> {
+    public static final String ICON_SUFFIX = FunctionalUtils.identity(() -> {
         if (isOSX()) {
             return ".icns";
         }
@@ -869,7 +870,7 @@ public final class TKit {
 
         traceAssert(concatMessages("assertStringListEquals()", msg));
 
-        String idxFieldFormat = Functional.identity(() -> {
+        String idxFieldFormat = FunctionalUtils.identity(() -> {
             int listSize = expected.size();
             int width = 0;
             while (listSize != 0) {
@@ -1055,7 +1056,7 @@ public final class TKit {
         return tokens.stream().collect(Collectors.toSet());
     }
 
-    static final Path LOG_FILE = Functional.identity(() -> {
+    static final Path LOG_FILE = FunctionalUtils.identity(() -> {
         String val = getConfigProperty("logfile");
         if (val == null) {
             return null;

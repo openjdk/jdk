@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.FileUtils;
 
 /**
  * StandardBundlerParam
@@ -604,7 +605,7 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
 
         // copy whole runtime, need to skip jmods and src.zip
         final List<Path> excludes = Arrays.asList(Path.of("jmods"), Path.of("src.zip"));
-        IOUtils.copyRecursive(topImage, appLayout.runtimeHomeDirectory(),
+        FileUtils.copyRecursive(topImage, appLayout.runtimeHomeDirectory(),
                         excludes, LinkOption.NOFOLLOW_LINKS);
 
         // if module-path given - copy modules to appDir/mods
@@ -616,7 +617,7 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
             for (Path mp : modulePath) {
                 if (!defaultModulePath.contains(mp)) {
                     Files.createDirectories(dest);
-                    IOUtils.copyRecursive(mp, dest);
+                    FileUtils.copyRecursive(mp, dest);
                 }
             }
         }

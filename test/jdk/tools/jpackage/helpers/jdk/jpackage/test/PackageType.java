@@ -32,6 +32,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.Log;
+import static jdk.jpackage.internal.util.function.ExceptionWrapper.rethrowUnchecked;
+import jdk.jpackage.internal.util.function.FunctionalUtils;
 
 /**
  * jpackage type traits.
@@ -103,7 +105,7 @@ public enum PackageType {
         } catch (ClassNotFoundException | IllegalAccessException ex) {
         } catch (InstantiationException | NoSuchMethodException
                 | InvocationTargetException ex) {
-            Functional.rethrowUnchecked(ex);
+            rethrowUnchecked(ex);
         }
         return false;
     }
@@ -127,7 +129,7 @@ public enum PackageType {
             thread.run();
             thread.join();
         } catch (InterruptedException ex) {
-            Functional.rethrowUnchecked(ex);
+            rethrowUnchecked(ex);
         }
         return reply.get();
     }

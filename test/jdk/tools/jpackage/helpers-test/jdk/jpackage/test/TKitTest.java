@@ -37,9 +37,9 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
-import static jdk.jpackage.test.Functional.ThrowingRunnable.toRunnable;
-import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 public class TKitTest {
 

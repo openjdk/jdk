@@ -38,9 +38,11 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingFunction;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
+import jdk.jpackage.internal.util.function.FunctionalUtils;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 final class TestInstance implements ThrowingRunnable {
 
@@ -260,7 +262,7 @@ final class TestInstance implements ThrowingRunnable {
         StackTraceElement st[] = Thread.currentThread().getStackTrace();
         for (StackTraceElement ste : st) {
             if ("main".equals(ste.getMethodName())) {
-                return Functional.ThrowingSupplier.toSupplier(() -> Class.forName(
+                return ThrowingSupplier.toSupplier(() -> Class.forName(
                         ste.getClassName())).get();
             }
         }
@@ -331,7 +333,7 @@ final class TestInstance implements ThrowingRunnable {
     private final boolean dryRun;
     private final Path workDir;
 
-    private final static Set<Status> KEEP_WORK_DIR = Functional.identity(
+    private final static Set<Status> KEEP_WORK_DIR = FunctionalUtils.identity(
             () -> {
                 final String propertyName = "keep-work-dir";
                 Set<String> keepWorkDir = TKit.tokenizeConfigProperty(

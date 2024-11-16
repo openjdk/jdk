@@ -37,8 +37,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Functional.ThrowingBiConsumer;
-import static jdk.jpackage.test.Functional.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 public class AdditionalLauncher {
 
@@ -189,7 +190,7 @@ public class AdditionalLauncher {
                 propsFile = TKit.createTempFile(propsFile);
                 TKit.deleteIfExists(propsFile);
             } catch (IOException ex) {
-                Functional.rethrowUnchecked(ex);
+                rethrowUnchecked(ex);
             }
         }
 

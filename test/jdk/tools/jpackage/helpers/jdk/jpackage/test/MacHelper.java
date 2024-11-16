@@ -43,11 +43,11 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.IOUtils;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 import jdk.jpackage.internal.RetryExecutor;
+import jdk.jpackage.internal.util.PathUtils;
 import org.xml.sax.SAXException;
 import org.w3c.dom.NodeList;
 
@@ -212,7 +212,7 @@ public final class MacHelper {
             // Unpack all ".pkg" files from $dataDir folder in $unpackDir folder
             try (var dataListing = Files.list(dataDir)) {
                 dataListing.filter(file -> {
-                    return ".pkg".equals(IOUtils.getSuffix(file.getFileName()));
+                    return ".pkg".equals(PathUtils.getSuffix(file.getFileName()));
                 }).forEach(ThrowingConsumer.toConsumer(pkgDir -> {
                     // Installation root of the package is stored in
                     // /pkg-info@install-location attribute in $pkgDir/PackageInfo xml file

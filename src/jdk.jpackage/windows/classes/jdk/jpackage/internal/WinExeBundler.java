@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Map;
+import jdk.jpackage.internal.util.PathUtils;
 
 @SuppressWarnings("restricted")
 public class WinExeBundler extends AbstractBundler {
@@ -127,7 +128,7 @@ public class WinExeBundler extends AbstractBundler {
                 outdir.toAbsolutePath().toString()));
 
         // Copy template msi wrapper next to msi file
-        final Path exePath = IOUtils.replaceSuffix(msi, ".exe");
+        final Path exePath = PathUtils.replaceSuffix(msi, ".exe");
         try (InputStream is = OverridableResource.readDefault(EXE_WRAPPER_NAME)) {
             Files.copy(is, exePath);
         }

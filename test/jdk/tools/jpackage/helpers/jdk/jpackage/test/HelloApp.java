@@ -40,9 +40,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingFunction;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.FunctionalUtils;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 public final class HelloApp {
 
@@ -87,7 +88,7 @@ public final class HelloApp {
         AtomicBoolean classDeclared = new AtomicBoolean();
         AtomicBoolean packageInserted = new AtomicBoolean(packageName == null);
 
-        var packageInserter = Functional.identityFunction((line) -> {
+        var packageInserter = FunctionalUtils.identityFunction((line) -> {
             packageInserted.setPlain(true);
             return String.format("package %s;%s%s", packageName,
                     System.lineSeparator(), line);
