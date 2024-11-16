@@ -41,6 +41,7 @@
 #include "opto/movenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/rootnode.hpp"
+#include "runtime/threadCritical.hpp"
 #include "utilities/align.hpp"
 
 #ifndef PRODUCT
@@ -640,6 +641,18 @@ void PhaseChaitin::Register_Allocate() {
 
   // Merge multidefs if multiple defs representing the same value are used in a single block.
   merge_multidefs();
+
+  if (log_develop_is_enabled(Info, newcode)) {
+    static volatile size_t max = 0;
+    size_t cur_size_bytes = Thread::current()->resource_area()->size_in_bytes();
+    if (max < cur_size_bytes) {
+      ThreadCritical tc;
+      if (max < cur_size_bytes) {
+        log_info(newcode)("New maximum for resource area size: " SIZE_FORMAT " KB", cur_size_bytes / K);
+        max = cur_size_bytes;
+      }
+    }
+  }
 
   C->print_method(PHASE_MERGE_MULTI_DEFS, 4);
 
