@@ -24,10 +24,10 @@
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.internal.util.function.FunctionalUtils;
 import jdk.jpackage.test.Annotations.Parameter;
 
 /**
@@ -77,7 +77,7 @@ import jdk.jpackage.test.Annotations.Parameter;
 public class InstallDirTest {
 
     public static void testCommon() {
-        final Map<PackageType, Path> INSTALL_DIRS = FunctionalUtils.identity(() -> {
+        final Map<PackageType, Path> INSTALL_DIRS = ((Supplier<Map<PackageType, Path>>)() -> {
             Map<PackageType, Path> reply = new HashMap<>();
             reply.put(PackageType.WIN_MSI, Path.of("TestVendor\\InstallDirTest1234"));
             reply.put(PackageType.WIN_EXE, reply.get(PackageType.WIN_MSI));

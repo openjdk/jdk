@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.function.ExceptionBox;
-import jdk.jpackage.internal.util.function.FunctionalUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 public final class FileUtils {

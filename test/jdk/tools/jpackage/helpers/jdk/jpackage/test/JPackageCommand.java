@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -44,12 +43,12 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.PackageFile;
 import jdk.jpackage.internal.util.XmlUtils;
-import jdk.jpackage.internal.util.function.FunctionalUtils;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
@@ -1190,27 +1189,16 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
     private static boolean defaultWithToolProvider;
 
-    private static final Map<String, PackageType> PACKAGE_TYPES = FunctionalUtils.identity(
-            () -> {
-                Map<String, PackageType> reply = new HashMap<>();
-                for (PackageType type : PackageType.values()) {
-                    reply.put(type.getName(), type);
-                }
-                return reply;
-            }).get();
+    private static final Map<String, PackageType> PACKAGE_TYPES = Stream.of(
+            PackageType.values()).collect(toMap(PackageType::getName, x -> x));
 
-    public static final Path DEFAULT_RUNTIME_IMAGE = FunctionalUtils.identity(() -> {
-        // Set the property to the path of run-time image to speed up
-        // building app images and platform bundles by avoiding running jlink
-        // The value of the property will be automativcally appended to
-        // jpackage command line if the command line doesn't have
-        // `--runtime-image` parameter set.
-        String val = TKit.getConfigProperty("runtime-image");
-        if (val != null) {
-            return Path.of(val);
-        }
-        return null;
-    }).get();
+    // Set the property to the path of run-time image to speed up
+    // building app images and platform bundles by avoiding running jlink
+    // The value of the property will be automativcally appended to
+    // jpackage command line if the command line doesn't have
+    // `--runtime-image` parameter set.
+    public static final Path DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(
+            TKit.getConfigProperty("runtime-image")).map(Path::of).orElse(null);
 
     private static final String UNPACKED_PATH_ARGNAME = "jpt-unpacked-folder";
 }
