@@ -6222,7 +6222,7 @@ instruct cmovI_imm_01U(rRegI dst, immI_1 src, rFlagsRegU cr, cmpOpU cop)
 %}
 
 instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
-  //predicate(!UseAPX);
+  predicate(!UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6233,7 +6233,7 @@ instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
   ins_pipe(pipe_cmov_reg);
 %}
 
-/*
+
 instruct cmovI_regU_ndd(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src1, rRegI src2) %{
   predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
@@ -6244,7 +6244,7 @@ instruct cmovI_regU_ndd(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src1, rRegI 
     __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
-%}*/
+%}
 
 instruct cmovI_imm_01UCF(rRegI dst, immI_1 src, rFlagsRegUCF cr, cmpOpUCF cop)
 %{
