@@ -544,10 +544,10 @@ public final class NetworkInterface {
 
     /**
      * Returns the hardware address (usually MAC) of the interface if it
-     * has one and if it can be accessed given the current privileges.
+     * has one.
      *
      * @return  a byte array containing the address, or {@code null} if
-     *          the address doesn't exist or is not accessible
+     *          the address doesn't exist
      *
      * @throws          SocketException if an I/O error occurs.
      * @since 1.6
