@@ -34,10 +34,10 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 
-inline vframeStreamCommon::vframeStreamCommon(JavaThread* thread, 
+inline vframeStreamCommon::vframeStreamCommon(JavaThread* thread,
                                               RegisterMap::UpdateMap update_map,
                                               RegisterMap::ProcessFrames process_frames,
-                                              RegisterMap::WalkContinuation walk_cont) 
+                                              RegisterMap::WalkContinuation walk_cont)
         : _reg_map(thread, update_map, process_frames, walk_cont), _cont_entry(nullptr) {
   _thread = _reg_map.thread();
 }
