@@ -66,7 +66,9 @@ class VM_ForceSafepointStuck: public VM_Operation {
 public:
   VMOp_Type type() const { return VMOp_ForceSafepoint; }
   void doit() {
-    while(true) {}
+    while(true) {
+      os::naked_short_sleep(10);
+    }
   }
 };
 
