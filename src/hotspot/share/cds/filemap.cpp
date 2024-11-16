@@ -2206,8 +2206,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
   _mapped_heap_memregion = MemRegion(start, word_size);
 
-  // Map the archived heap data. No need to call MemTracker::record_virtual_memory_tag()
-  // for mapped region as it is part of the reserved java heap, which is already recorded.
+  // Map the archived heap data.
   char* addr = (char*)_mapped_heap_memregion.start();
   char* base;
 

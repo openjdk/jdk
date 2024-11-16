@@ -79,7 +79,7 @@ MetaspaceTestContext::MetaspaceTestContext(const char* name, size_t commit_limit
   if (reserve_limit > 0) {
     // have reserve limit -> non-expandable context
     _rs = ReservedSpace(reserve_limit * BytesPerWord, Metaspace::reserve_alignment(),
-                        os::vm_page_size(), nullptr, MemTag::mtMetaspace);
+                        os::vm_page_size(), nullptr, mtTest);
     _context = MetaspaceContext::create_nonexpandable_context(name, _rs, &_commit_limiter);
   } else {
     // no reserve limit -> expandable vslist

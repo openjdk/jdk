@@ -663,10 +663,6 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
   assert(markWord::encode_pointer_as_mark(&_base[size]).decode_pointer() == &_base[size],
          "area must be distinguishable from marks for mark-sweep");
 
-  if (base() != nullptr) {
-    MemTracker::record_virtual_memory_tag((address)base(), mtJavaHeap);
-  }
-
   if (_fd_for_heap != -1) {
     ::close(_fd_for_heap);
   }
@@ -682,7 +678,6 @@ ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
                                      size_t rs_page_size) : ReservedSpace() {
   initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true, mtCode);
-  MemTracker::record_virtual_memory_tag((address)base(), mtCode);
 }
 
 // VirtualSpace

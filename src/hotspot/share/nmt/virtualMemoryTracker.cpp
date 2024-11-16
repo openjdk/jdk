@@ -361,7 +361,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       // It can happen when the regions are thread stacks, as JNI
       // thread does not detach from VM before exits, and leads to
       // leak JavaThread object
-      if ((reserved_rgn->mem_tag() == mtThreadStack) && (reserved_rgn->mem_tag() == mem_tag)) {
+      if (reserved_rgn->mem_tag() == mtThreadStack) {
         guarantee(!CheckJNICalls, "Attached JNI thread exited without being detached");
         // Overwrite with new region
 
@@ -379,7 +379,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       // CDS mapping region.
       // CDS reserves the whole region for mapping CDS archive, then maps each section into the region.
       // NMT reports CDS as a whole.
-      if ((reserved_rgn->mem_tag() == mtClassShared) && (reserved_rgn->mem_tag() == mem_tag)) {
+      if (reserved_rgn->mem_tag() == mtClassShared) {
         log_debug(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
                       reserved_rgn->mem_tag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved CDS region should contain this mapping region");
@@ -388,7 +388,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
 
       // Mapped CDS string region.
       // The string region(s) is part of the java heap.
-      if ((reserved_rgn->mem_tag() == mtJavaHeap) && (reserved_rgn->mem_tag() == mem_tag)) {
+      if (reserved_rgn->mem_tag() == mtJavaHeap) {
         log_debug(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
                       reserved_rgn->mem_tag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved heap region should contain this mapping region");
@@ -396,7 +396,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       }
 
       // Mapped GC region
-      if ((reserved_rgn->mem_tag() == mtGC) && (reserved_rgn->mem_tag() == mem_tag)) {
+      if (reserved_rgn->mem_tag() == mtGC) {
         log_debug(nmt)("GC reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
                       reserved_rgn->mem_tag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved heap region should contain this mapping region");
@@ -422,22 +422,69 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   }
 }
 
-void VirtualMemoryTracker::set_reserved_region_type(address addr, MemTag mem_tag) {
-  assert(addr != nullptr, "Invalid address");
-  assert(_reserved_regions != nullptr, "Sanity check");
 
-  ReservedMemoryRegion   rgn(addr, 1);
-  ReservedMemoryRegion*  reserved_rgn = _reserved_regions->find(rgn);
-  if (reserved_rgn != nullptr) {
-    assert(reserved_rgn->contain_address(addr), "Containment");
-    if (reserved_rgn->mem_tag() != mem_tag) {
-      assert(reserved_rgn->mem_tag() == mtNone,
-             "Unexpected overwrite memory tag (should be \"%s\" or \"%s\", current tag is \"%s\")",
-             NMTUtil::tag_to_name(mtNone),
-             NMTUtil::tag_to_name(mem_tag),
-             NMTUtil::tag_to_name(reserved_rgn->mem_tag()));
-      reserved_rgn->set_mem_tag(mem_tag);
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <execinfo.h>
+#include <cxxabi.h>
+
+static inline void print_bt(FILE *out = stderr, unsigned int max_frames_count = 128)
+{
+  fprintf(out, "stack trace:\n");
+  
+  void* traces[max_frames_count+1];
+  int count = backtrace(traces, sizeof(traces) / sizeof(void*));
+  if (count > 0)
+  {
+    size_t max_str_size = 1024;
+    char* names = (char*)malloc(max_str_size);
+    char** symbols = backtrace_symbols(traces, count);
+    for (int i=1; i<count; i++)
+    {
+      // 1   hello                               0x0000000100003d7f _ZN1A7methodAEi + 31
+      char* frame = strtok(symbols[i], " ");
+      char* binary = strtok(NULL, " ");
+      char* address = strtok(NULL, " ");
+      char* mangled = strtok(NULL, " ");
+      char* plus = strtok(NULL, " ");
+      char* offset = strtok(NULL, " ");
+
+      if (frame != NULL)
+      {
+        fprintf(out, "%-5s", frame);
+      }
+      if (address != NULL)
+      {
+        fprintf(out, "%-20s", address);
+      }
+      if (mangled != NULL)
+      {
+        int status = 0;
+        char* demangled = abi::__cxa_demangle(mangled, NULL, NULL, &status);
+        if (demangled != NULL)
+        {
+          fprintf(out, "%s", demangled);
+        }
+        else
+        {
+          fprintf(out, "%s", mangled);
+        }
+        free((void *)demangled);
+      }
+      if (offset != NULL)
+      {
+        fprintf(out, " + %s", offset);
+      }
+      fprintf(out, "\n");
     }
+    
+    free(names);
+    free(symbols);
+  }
+  else
+  {
+    fprintf(out, "\n");
   }
 }
 
