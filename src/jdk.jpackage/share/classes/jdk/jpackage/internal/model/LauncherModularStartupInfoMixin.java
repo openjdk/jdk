@@ -27,7 +27,6 @@ package jdk.jpackage.internal.model;
 import java.nio.file.Path;
 import java.util.List;
 
-<<<<<<< HEAD:src/jdk.jpackage/share/classes/jdk/jpackage/internal/model/LauncherModularStartupInfoMixin.java
 public interface LauncherModularStartupInfoMixin {
 
     String moduleName();
@@ -36,16 +35,5 @@ public interface LauncherModularStartupInfoMixin {
 
     record Stub(String moduleName, List<Path> modulePath) implements LauncherModularStartupInfoMixin {
     }
-=======
-final class RuntimeLayoutStub extends AppImageLayout.Proxy<AppImageLayout> implements RuntimeLayout {
 
-    RuntimeLayoutStub(AppImageLayout target) {
-        super(target);
-    }
-
-    @Override
-    public RuntimeLayout resolveAt(Path root) {
-        return new RuntimeLayoutStub(target.resolveAt(root));
-    }
->>>>>>> JDK-8333664:src/jdk.jpackage/share/classes/jdk/jpackage/internal/model/RuntimeLayoutStub.java
 }
