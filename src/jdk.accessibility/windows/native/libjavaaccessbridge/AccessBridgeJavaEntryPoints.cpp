@@ -1583,7 +1583,7 @@ AccessBridgeJavaEntryPoints::getVersionInfo(AccessBridgeVersionInfo *info) {
 BOOL AccessBridgeJavaEntryPoints::verifyAccessibleText(jobject obj) {
     JavaVM *vm;
     BOOL retval;
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::verifyAccessibleText");
 
     if (jniEnv->GetJavaVM(&vm) != 0) {
@@ -1634,7 +1634,7 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleContextAt(jint x, jint y, jobject accessibleContext) {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleContextAt(%d, %d, %p):",
                      x, y, accessibleContext);
 
@@ -1668,7 +1668,7 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleContextWithFocus() {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleContextWithFocus()");
 
     if (getAccessibleContextWithFocusMethod != (jmethodID) 0) {
@@ -2134,7 +2134,7 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleChildFromContext(jobject accessibleContext, jint childIndex) {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleChildContext(%p, %d):",
                      accessibleContext, childIndex);
 
@@ -2165,7 +2165,7 @@ AccessBridgeJavaEntryPoints::getAccessibleParentFromContext(jobject accessibleCo
 {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleParentFromContext(%p):", accessibleContext);
 
     if (getAccessibleParentFromContextMethod != (jmethodID) 0) {
@@ -2398,7 +2398,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRowHeader(jobject acParent, Acces
 
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableColumnHeader(jobject acParent, AccessibleTableInfo *tableInfo) {
-    
+
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableColumnHeader(%p):",
                      acParent);
 
@@ -2454,7 +2454,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRowDescription(jobject acParent, 
 
     jobject returnedAccessibleContext;
     jobject globalRef;
-    
+
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableRowDescription(%p):",
                      acParent);
 
@@ -2481,7 +2481,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTableColumnDescription(jobject acParen
 
     jobject returnedAccessibleContext;
     jobject globalRef;
-    
+
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableColumnDescription(%p):",
                      acParent);
 
@@ -2556,7 +2556,7 @@ BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableRowSelections(jobject accessibleTable, jint count,
                                                              jint *selections) {
 
-    
+
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableRowSelections(%p, %d %p)",
                      accessibleTable, count, selections);
 
@@ -2630,7 +2630,7 @@ AccessBridgeJavaEntryPoints::isAccessibleTableColumnSelected(jobject accessibleT
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelections(jobject accessibleTable, jint count,
                                                                 jint *selections) {
-    
+
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelections(%p, %d, %p)",
                      accessibleTable, count, selections);
 
@@ -3380,7 +3380,7 @@ BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTextInfo(jobject accessibleContext,
                                                    AccessibleTextInfo *textInfo,
                                                    jint x, jint y) {
-    
+
     // Verify the Java VM still exists and AccessibleContext is
     // an instance of AccessibleText
     if (verifyAccessibleText(accessibleContext) == FALSE) {
@@ -4466,7 +4466,7 @@ AccessBridgeJavaEntryPoints::getMinimumAccessibleValueFromContext(jobject access
 
 void
 AccessBridgeJavaEntryPoints::addAccessibleSelectionFromContext(jobject accessibleContext, int i) {
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::addAccessibleSelectionFromContext(%p):", accessibleContext);
 
     // Add the child to the AccessibleSelection
@@ -4483,7 +4483,7 @@ AccessBridgeJavaEntryPoints::addAccessibleSelectionFromContext(jobject accessibl
 
 void
 AccessBridgeJavaEntryPoints::clearAccessibleSelectionFromContext(jobject accessibleContext) {
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::clearAccessibleSelectionFromContext(%p):", accessibleContext);
 
     // Clearing the Selection of the AccessibleSelection
@@ -4502,7 +4502,7 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleSelectionFromContext(jobject accessibleContext, int i) {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleSelectionFromContext(%p):", accessibleContext);
 
     if (getAccessibleSelectionContextFromContextMethod != (jmethodID) 0) {
@@ -4527,7 +4527,7 @@ AccessBridgeJavaEntryPoints::getAccessibleSelectionFromContext(jobject accessibl
 int
 AccessBridgeJavaEntryPoints::getAccessibleSelectionCountFromContext(jobject accessibleContext) {
     int count;
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleSelectionCountFromContext(%p):", accessibleContext);
 
     // Get (& return) the # of items selected in the AccessibleSelection
@@ -4547,7 +4547,7 @@ AccessBridgeJavaEntryPoints::getAccessibleSelectionCountFromContext(jobject acce
 BOOL
 AccessBridgeJavaEntryPoints::isAccessibleChildSelectedFromContext(jobject accessibleContext, int i) {
     jboolean result;
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::isAccessibleChildSelectedFromContext(%p):", accessibleContext);
 
     // Get (& return) the # of items selected in the AccessibleSelection
@@ -4569,7 +4569,7 @@ AccessBridgeJavaEntryPoints::isAccessibleChildSelectedFromContext(jobject access
 
 void
 AccessBridgeJavaEntryPoints::removeAccessibleSelectionFromContext(jobject accessibleContext, int i) {
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::removeAccessibleSelectionFromContext(%p):", accessibleContext);
 
     // Remove the i-th child from the AccessibleSelection
@@ -4586,7 +4586,7 @@ AccessBridgeJavaEntryPoints::removeAccessibleSelectionFromContext(jobject access
 
 void
 AccessBridgeJavaEntryPoints::selectAllAccessibleSelectionFromContext(jobject accessibleContext) {
-    
+
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::selectAllAccessibleSelectionFromContext(%p):", accessibleContext);
 
     // Select all children (if possible) of the AccessibleSelection
@@ -4606,7 +4606,7 @@ AccessBridgeJavaEntryPoints::selectAllAccessibleSelectionFromContext(jobject acc
 
 BOOL
 AccessBridgeJavaEntryPoints::addJavaEventNotification(jlong type) {
-    
+
     PrintDebugString("[INFO]:   in AccessBridgeJavaEntryPoints::addJavaEventNotification(%016I64X);", type);
 
     // Let AccessBridge know we want to add an event type
@@ -4623,7 +4623,7 @@ AccessBridgeJavaEntryPoints::addJavaEventNotification(jlong type) {
 
 BOOL
 AccessBridgeJavaEntryPoints::removeJavaEventNotification(jlong type) {
-    
+
     PrintDebugString("[INFO]:  in AccessBridgeJavaEntryPoints::removeJavaEventNotification(%016I64X):", type);
 
     // Let AccessBridge know we want to remove an event type
@@ -4640,7 +4640,7 @@ AccessBridgeJavaEntryPoints::removeJavaEventNotification(jlong type) {
 
 BOOL
 AccessBridgeJavaEntryPoints::addAccessibilityEventNotification(jlong type) {
-    
+
     PrintDebugString("[INFO]:   in AccessBridgeJavaEntryPoints::addAccessibilityEventNotification(%016I64X);", type);
 
     // Let AccessBridge know we want to add an event type
@@ -4659,7 +4659,7 @@ AccessBridgeJavaEntryPoints::addAccessibilityEventNotification(jlong type) {
 
 BOOL
 AccessBridgeJavaEntryPoints::removeAccessibilityEventNotification(jlong type) {
-    
+
     PrintDebugString("[INFO]:  in AccessBridgeJavaEntryPoints::removeAccessibilityEventNotification(%016I64X):", type);
 
     // Let AccessBridge know we want to remove an event type
