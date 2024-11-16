@@ -27,6 +27,7 @@ package java.net;
 
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Spliterator;
@@ -79,9 +80,9 @@ public final class NetworkInterface {
     private String name;
     private String displayName;
     private int index;
-    private InetAddress addrs[];
-    private InterfaceAddress bindings[];
-    private NetworkInterface childs[];
+    private InetAddress[] addrs;
+    private InterfaceAddress[] bindings;
+    private NetworkInterface[] childs;
     private NetworkInterface parent = null;
     private boolean virtual = false;
     private static final NetworkInterface defaultInterface;
@@ -130,7 +131,7 @@ public final class NetworkInterface {
      * @see #inetAddresses()
      */
     public Enumeration<InetAddress> getInetAddresses() {
-        return enumerationFromArray(getCheckedInetAddresses());
+        return enumerationFromArray(addrs);
     }
 
     /**
@@ -145,32 +146,7 @@ public final class NetworkInterface {
      * @since 9
      */
     public Stream<InetAddress> inetAddresses() {
-        return streamFromArray(getCheckedInetAddresses());
-    }
-
-    private InetAddress[] getCheckedInetAddresses() {
-        InetAddress[] local_addrs = new InetAddress[addrs.length];
-        boolean trusted = true;
-
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            try {
-                sec.checkPermission(new NetPermission("getNetworkInformation"));
-            } catch (SecurityException e) {
-                trusted = false;
-            }
-        }
-        int i = 0;
-        for (int j = 0; j < addrs.length; j++) {
-            try {
-                if (!trusted) {
-                    sec.checkConnect(addrs[j].getHostAddress(), -1);
-                }
-                local_addrs[i++] = addrs[j];
-            } catch (SecurityException e) { }
-        }
-        return Arrays.copyOf(local_addrs, i);
+        return streamFromArray(addrs);
     }
 
     /**
@@ -181,21 +157,8 @@ public final class NetworkInterface {
      *
      * @since 1.6
      */
-    public java.util.List<InterfaceAddress> getInterfaceAddresses() {
-        java.util.List<InterfaceAddress> lst = new java.util.ArrayList<>(1);
-        if (bindings != null) {
-            @SuppressWarnings("removal")
-            SecurityManager sec = System.getSecurityManager();
-            for (int j=0; j<bindings.length; j++) {
-                try {
-                    if (sec != null) {
-                        sec.checkConnect(bindings[j].getAddress().getHostAddress(), -1);
-                    }
-                    lst.add(bindings[j]);
-                } catch (SecurityException e) { }
-            }
-        }
-        return lst;
+    public List<InterfaceAddress> getInterfaceAddresses() {
+        return bindings == null ? List.of() : List.of(bindings);
     }
 
     /**
@@ -553,18 +516,6 @@ public final class NetworkInterface {
      * @since 1.6
      */
     public byte[] getHardwareAddress() throws SocketException {
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            try {
-                sec.checkPermission(new NetPermission("getNetworkInformation"));
-            } catch (SecurityException e) {
-                if (!getInetAddresses().hasMoreElements()) {
-                    // don't have connect permission to any local address
-                    return null;
-                }
-            }
-        }
         if (isLoopback0(name, index)) {
             return null;
         }
