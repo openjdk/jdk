@@ -202,16 +202,10 @@ public abstract class ColorModel implements Transparency{
      * that the name of the library is "awt".  -br.
      */
     private static boolean loaded = false;
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     static void loadLibraries() {
         if (!loaded) {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        System.loadLibrary("awt");
-                        return null;
-                    }
-                });
+            System.loadLibrary("awt");
             loaded = true;
         }
     }

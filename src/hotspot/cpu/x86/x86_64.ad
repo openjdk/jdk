@@ -4368,11 +4368,15 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   match(Set dst (LoadNKlass mem));
   effect(KILL cr);
   ins_cost(125); // XXX
-  format %{ "load_narrow_klass_compact    $dst, $mem\t# compressed klass ptr" %}
-  ins_encode %{
-    __ load_narrow_klass_compact_c2($dst$$Register, $mem$$Address);
+  format %{
+    "movl    $dst, $mem\t# compressed klass ptr, shifted\n\t"
+    "shrl    $dst, markWord::klass_shift_at_offset"
   %}
-  ins_pipe(pipe_slow); // XXX
+  ins_encode %{
+    __ movl($dst$$Register, $mem$$Address);
+    __ shrl($dst$$Register, markWord::klass_shift_at_offset);
+  %}
+  ins_pipe(ialu_reg_mem); // XXX
 %}
 
 // Load Float
