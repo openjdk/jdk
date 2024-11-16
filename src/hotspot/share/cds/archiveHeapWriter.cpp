@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -186,8 +187,12 @@ objArrayOop ArchiveHeapWriter::allocate_root_segment(size_t offset, int element_
   memset(mem, 0, objArrayOopDesc::object_size(element_count));
 
   // The initialization code is copied from MemAllocator::finish and ObjArrayAllocator::initialize.
-  oopDesc::set_mark(mem, markWord::prototype());
-  oopDesc::release_set_klass(mem, Universe::objectArrayKlass());
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, Universe::objectArrayKlass()->prototype_header());
+  } else {
+    oopDesc::set_mark(mem, markWord::prototype());
+    oopDesc::release_set_klass(mem, Universe::objectArrayKlass());
+  }
   arrayOopDesc::set_length(mem, element_count);
   return objArrayOop(cast_to_oop(mem));
 }
@@ -350,9 +355,13 @@ HeapWord* ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, s
   Klass* oak = Universe::objectArrayKlass(); // already relocated to point to archived klass
   HeapWord* mem = offset_to_buffered_address<HeapWord*>(_buffer_used);
   memset(mem, 0, fill_bytes);
-  oopDesc::set_mark(mem, markWord::prototype());
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(oak);
-  cast_to_oop(mem)->set_narrow_klass(nk);
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, markWord::prototype().set_narrow_klass(nk));
+  } else {
+    oopDesc::set_mark(mem, markWord::prototype());
+    cast_to_oop(mem)->set_narrow_klass(nk);
+  }
   arrayOopDesc::set_length(mem, array_length);
   return mem;
 }
@@ -527,7 +536,14 @@ oop ArchiveHeapWriter::load_oop_from_buffer(narrowOop* buffered_addr) {
 
 template <typename T> void ArchiveHeapWriter::relocate_field_in_buffer(T* field_addr_in_buffer, CHeapBitMap* oopmap) {
   oop source_referent = load_source_oop_from_buffer<T>(field_addr_in_buffer);
-  if (!CompressedOops::is_null(source_referent)) {
+  if (source_referent != nullptr) {
+    if (java_lang_Class::is_instance(source_referent)) {
+      // When the source object points to a "real" mirror, the buffered object should point
+      // to the "scratch" mirror, which has all unarchivable fields scrubbed (to be reinstated
+      // at run time).
+      source_referent = HeapShared::scratch_java_mirror(source_referent);
+      assert(source_referent != nullptr, "must be");
+    }
     oop request_referent = source_obj_to_requested_obj(source_referent);
     store_requested_oop_in_buffer<T>(field_addr_in_buffer, request_referent);
     mark_oop_pointer<T>(field_addr_in_buffer, oopmap);
@@ -556,18 +572,31 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
   address buffered_addr = requested_addr_to_buffered_addr(cast_from_oop<address>(requested_obj));
 
   oop fake_oop = cast_to_oop(buffered_addr);
-  fake_oop->set_narrow_klass(nk);
+  if (UseCompactObjectHeaders) {
+    fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk));
+  } else {
+    fake_oop->set_narrow_klass(nk);
+  }
 
+  if (src_obj == nullptr) {
+    return;
+  }
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (src_obj != nullptr && !src_obj->fast_no_hash_check()) {
+  if (!src_obj->fast_no_hash_check()) {
     intptr_t src_hash = src_obj->identity_hash();
-    fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
+    if (UseCompactObjectHeaders) {
+      fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));
+    } else {
+      fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
+    }
     assert(fake_oop->mark().is_unlocked(), "sanity");
 
     DEBUG_ONLY(intptr_t archived_hash = fake_oop->identity_hash());
     assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
   }
+  // Strip age bits.
+  fake_oop->set_mark(fake_oop->mark().set_age(0));
 }
 
 class ArchiveHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {
@@ -710,7 +739,9 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
 
     Metadata** buffered_field_addr = requested_addr_to_buffered_addr(requested_field_addr);
     Metadata* native_ptr = *buffered_field_addr;
-    assert(native_ptr != nullptr, "sanity");
+    guarantee(native_ptr != nullptr, "sanity");
+    guarantee(ArchiveBuilder::current()->has_been_buffered((address)native_ptr),
+              "Metadata %p should have been archived", native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);

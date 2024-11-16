@@ -1238,41 +1238,27 @@ bool needs_acquiring_load_reserved(const Node *n)
 
 int MachCallStaticJavaNode::ret_addr_offset()
 {
-  if (UseTrampolines) {
-    return 1 * NativeInstruction::instruction_size; // jal
-  }
   return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset()
 {
-  if (UseTrampolines) {
-    return NativeMovConstReg::movptr2_instruction_size +  NativeInstruction::instruction_size; // movptr2, jal
-  }
   return NativeMovConstReg::movptr2_instruction_size + (3 * NativeInstruction::instruction_size); // movptr2, auipc + ld + jal
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
-  // For generated stubs the call will be:
-  //   auipc + ld + jalr
-  // Using trampos:
-  //   jal(addr)
-  // or with far branches
-  //   jal(trampoline_stub)
-  // for real runtime callouts it will be 9 instructions
+  // For address inside the code cache the call will be:
+  //   auipc + jalr
+  // For real runtime callouts it will be 8 instructions
   // see riscv_enc_java_to_runtime
-  //   la(t0, retaddr)                ->  auipc + addi
-  //   addi(sp, sp, -2 * wordSize)    ->  addi
-  //   sd(t0, Address(sp, wordSize))  ->  sd
-  //   movptr(t1, addr, offset, t0)   ->  lui + lui + slli + add
-  //   jalr(t1, offset)               ->  jalr
+  //   la(t0, retaddr)                                             ->  auipc + addi
+  //   sd(t0, Address(xthread, JavaThread::last_Java_pc_offset())) ->  sd
+  //   movptr(t1, addr, offset, t0)                                ->  lui + lui + slli + add
+  //   jalr(t1, offset)                                            ->  jalr
   if (CodeCache::contains(_entry_point)) {
-    if (UseTrampolines) {
-      return 1 * NativeInstruction::instruction_size;
-    }
-    return 3 * NativeInstruction::instruction_size;
+    return 2 * NativeInstruction::instruction_size;
   } else {
-    return 9 * NativeInstruction::instruction_size;
+    return 8 * NativeInstruction::instruction_size;
   }
 }
 
@@ -2434,10 +2420,8 @@ encode %{
       // The NOP here is purely to ensure that eliding a call to
       // JVM_EnsureMaterializedForStackWalk doesn't change the code size.
       __ nop();
-      if (!UseTrampolines) {
-        __ nop();
-        __ nop();
-      }
+      __ nop();
+      __ nop();
       __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
       int method_index = resolved_method_index(masm);
@@ -2488,31 +2472,25 @@ encode %{
   enc_class riscv_enc_java_to_runtime(method meth) %{
     Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
 
-    // some calls to generated routines (arraycopy code) are scheduled
-    // by C2 as runtime calls. if so we can call them using a jr (they
-    // will be in a reachable segment) otherwise we have to use a jalr
-    // which loads the absolute address into a register.
+    // Some calls to generated routines (arraycopy code) are scheduled by C2
+    // as runtime calls. if so we can call them using a far call (they will be
+    // in the code cache, thus in a reachable segment) otherwise we have to use
+    // a movptr+jalr pair which loads the absolute address into a register.
     address entry = (address)$meth$$method;
     if (CodeCache::contains(entry)) {
-      address call = __ reloc_call(Address(entry, relocInfo::runtime_call_type));
-      if (call == nullptr) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
-      }
+      __ far_call(Address(entry, relocInfo::runtime_call_type));
       __ post_call_nop();
     } else {
       Label retaddr;
+      // Make the anchor frame walkable
       __ la(t0, retaddr);
-      // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
-      __ addi(sp, sp, -2 * wordSize);
-      __ sd(t0, Address(sp, wordSize));
+      __ sd(t0, Address(xthread, JavaThread::last_Java_pc_offset()));
       int32_t offset = 0;
       // No relocation needed
       __ movptr(t1, entry, offset, t0); // lui + lui + slli + add
       __ jalr(t1, offset);
       __ bind(retaddr);
       __ post_call_nop();
-      __ addi(sp, sp, 2 * wordSize);
     }
   %}
 
@@ -4790,7 +4768,7 @@ instruct loadN(iRegNNoSp dst, memory mem)
   match(Set dst (LoadN mem));
 
   ins_cost(LOAD_COST);
-  format %{ "lwu  $dst, $mem\t# loadN, compressed ptr, #@loadN" %}
+  format %{ "lwu  $dst, $mem\t# compressed ptr, #@loadN" %}
 
   ins_encode %{
     __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
@@ -4817,13 +4795,29 @@ instruct loadKlass(iRegPNoSp dst, memory mem)
 // Load Narrow Klass Pointer
 instruct loadNKlass(iRegNNoSp dst, memory mem)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
 
   ins_cost(LOAD_COST);
-  format %{ "lwu  $dst, $mem\t# loadNKlass, compressed class ptr, #@loadNKlass" %}
+  format %{ "lwu  $dst, $mem\t# compressed class ptr, #@loadNKlass" %}
 
   ins_encode %{
     __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory mem)
+%{
+  predicate(UseCompactObjectHeaders);
+  match(Set dst (LoadNKlass mem));
+
+  ins_cost(LOAD_COST);
+  format %{ "load_narrow_klass_compact $dst, $mem\t# compressed class ptr, #@loadNKlassCompactHeaders" %}
+
+  ins_encode %{
+    __ load_narrow_klass_compact_c2(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
   ins_pipe(iload_reg_mem);
@@ -10523,17 +10517,19 @@ instruct tlsLoadP(javaThread_RegP dst)
 
 // inlined locking and unlocking
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
+                     iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
   predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3, #@cmpFastLock" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLock" %}
 
   ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_lock($object$$Register, $box$$Register,
+                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -10556,23 +10552,26 @@ instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iR
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box,
+                                iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastLockLightweight" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLockLightweight" %}
 
   ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_lock_lightweight($object$$Register, $box$$Register,
+                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
   %}
 
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box,
+                                  iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
@@ -10582,7 +10581,8 @@ instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNo
   format %{ "fastunlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastUnlockLightweight" %}
 
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_unlock_lightweight($object$$Register, $box$$Register,
+                               $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);

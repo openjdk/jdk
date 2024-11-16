@@ -169,12 +169,10 @@ public final class Method extends Executable {
 
     /**
      * @throws InaccessibleObjectException {@inheritDoc}
-     * @throws SecurityException {@inheritDoc}
      */
     @Override
     @CallerSensitive
     public void setAccessible(boolean flag) {
-        AccessibleObject.checkPermission();
         if (flag) checkCanSetAccessible(Reflection.getCallerClass());
         setAccessible0(flag);
     }

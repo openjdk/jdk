@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @library ../../testlibrary
- * @build TestLibrary RMIRegistryRunner RegistryVM JavaVM testPkg.* RegistryLookup
+ * @build TestLibrary RMIRegistryRunner RegistryVM JavaVM testPkg.* RegistryLookup TestLoaderHandler
  * @summary remove java.rmi.server.codebase property parsing from registyimpl
  * @run main/othervm CodebaseTest
 */
@@ -36,16 +36,15 @@
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.rmi.registry.Registry;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 
 public class CodebaseTest {
 
     public static void main(String args[]) throws Exception {
         RegistryVM rmiregistry = null;
         JavaVM client = null;
+
+        System.setProperty("java.rmi.server.RMIClassLoaderSpi", "TestLoaderHandler");
+
         try {
             File src = new File(System.getProperty("test.classes", "."), "testPkg");
             File dest = new File(System.getProperty("user.dir", "."), "testPkg");
@@ -57,8 +56,9 @@ public class CodebaseTest {
             rmiregistryDir.mkdirs();
             rmiregistry = RegistryVM.createRegistryVMWithRunner(
                     "RMIRegistryRunner",
-                    " -Djava.rmi.server.useCodebaseOnly=false -Djava.security.manager=allow"
-                    + " -Duser.dir=" + rmiregistryDir.getAbsolutePath());
+                    " -Djava.rmi.server.useCodebaseOnly=false"
+                    + " -Duser.dir=" + rmiregistryDir.getAbsolutePath()
+                    + " -Djava.rmi.server.RMIClassLoaderSpi=TestLoaderHandler");
             rmiregistry.start();
             int port = rmiregistry.getPort();
 
@@ -72,7 +72,8 @@ public class CodebaseTest {
             File codebase = new File(System.getProperty("user.dir", "."));
             client = new JavaVM("RegistryLookup",
                     " -Djava.rmi.server.codebase=" + codebase.toURI().toURL()
-                    + " -cp ." + File.pathSeparator + System.getProperty("test.class.path"),
+                    + " -cp ." + File.pathSeparator + System.getProperty("test.class.path")
+                    + " -Djava.rmi.server.RMIClassLoaderSpi=TestLoaderHandler",
                     Integer.toString(port));
             int exit = client.execute();
             if (exit == RegistryLookup.EXIT_FAIL) {

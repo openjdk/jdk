@@ -34,8 +34,6 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * A {@link ClassFileElement} that has complex structure defined in terms of
  * other classfile elements, such as a method, field, method body, or entire
@@ -46,9 +44,8 @@ import jdk.internal.javac.PreviewFeature;
  * @param <E> the element type
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CompoundElement<E extends ClassFileElement>
         extends ClassFileElement, Iterable<E>
         permits ClassModel, CodeModel, FieldModel, MethodModel, jdk.internal.classfile.impl.AbstractUnboundModel {

@@ -43,7 +43,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
 import sun.util.calendar.ZoneInfo;
 import sun.util.calendar.ZoneInfoFile;
 import sun.util.locale.provider.TimeZoneNameUtility;
@@ -683,7 +682,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
     private static synchronized TimeZone setDefaultZone() {
         TimeZone tz;
         // get the time zone ID from the system properties
-        Properties props = GetPropertyAction.privilegedGetProperties();
+        Properties props = System.getProperties();
         String zoneID = props.getProperty("user.timezone");
 
         // if the time zone ID is not set (yet), perform the
@@ -725,20 +724,10 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * of the {@code user.timezone} property.
      *
      * @param zone the new default {@code TimeZone}, or null
-     * @throws SecurityException if the security manager's {@code checkPermission}
-     *                           denies {@code PropertyPermission("user.timezone",
-     *                           "write")}
      * @see #getDefault
-     * @see PropertyPermission
      */
     public static void setDefault(TimeZone zone)
     {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new PropertyPermission
-                               ("user.timezone", "write"));
-        }
         // by saving a defensive clone and returning a clone in getDefault() too,
         // the defaultTimeZone instance is isolated from user code which makes it
         // effectively immutable. This is important to avoid races when the

@@ -73,7 +73,6 @@ public class CheckCSMs {
         Set.of("java/io/ObjectStreamField#getType ()Ljava/lang/Class;",
                "java/lang/Runtime#load (Ljava/lang/String;)V",
                "java/lang/Runtime#loadLibrary (Ljava/lang/String;)V",
-               "java/lang/Thread#getContextClassLoader ()Ljava/lang/ClassLoader;",
                "javax/sql/rowset/serial/SerialJavaObject#getFields ()[Ljava/lang/reflect/Field;"
         );
 
@@ -81,7 +80,6 @@ public class CheckCSMs {
     // methods that takes an additional caller class parameter.
     private static Set<String> UNSUPPORTED_VIRTUAL_METHODS =
         Set.of("java/io/ObjectStreamField#getType (Ljava/lang/Class;)Ljava/lang/Class;",
-               "java/lang/Thread#getContextClassLoader (Ljava/lang/Class;)Ljava/lang/ClassLoader;",
                "javax/sql/rowset/serial/SerialJavaObject#getFields (Ljava/lang/Class;)[Ljava/lang/reflect/Field;"
         );
 
