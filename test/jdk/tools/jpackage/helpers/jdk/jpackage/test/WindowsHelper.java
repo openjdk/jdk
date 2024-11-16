@@ -64,22 +64,6 @@ public class WindowsHelper {
         return Path.of(cmd.getArgumentValue("--install-dir", cmd::name));
     }
 
-    // Tests have problems on windows where path in the temp dir are too long
-    // for the wix tools.  We can't use a tempDir outside the TKit's WorkDir, so
-    // we minimize both the tempRoot directory name (above) and the tempDir name
-    // (below) to the extension part (which is necessary to differenciate between
-    // the multiple PackageTypes that will be run for one JPackageCommand).
-    // It might be beter if the whole work dir name was shortened from:
-    // jtreg_open_test_jdk_tools_jpackage_share_jdk_jpackage_tests_BasicTest_java.
-    public static Path getTempDirectory(JPackageCommand cmd, Path tempRoot) {
-        String ext = cmd.outputBundle().getFileName().toString();
-        int i = ext.lastIndexOf(".");
-        if (i > 0 && i < (ext.length() - 1)) {
-            ext = ext.substring(i+1);
-        }
-        return tempRoot.resolve(ext);
-    }
-
     private static void runMsiexecWithRetries(Executor misexec) {
         Executor.Result result = null;
         for (int attempt = 0; attempt < 8; ++attempt) {

@@ -91,6 +91,21 @@ public final class JdkConsoleImpl implements JdkConsole {
     }
 
     @Override
+    public String readln() {
+        String line = null;
+        synchronized(readLock) {
+            try {
+                char[] ca = readline(false);
+                if (ca != null)
+                    line = new String(ca);
+            } catch (IOException x) {
+                throw new IOError(x);
+            }
+        }
+        return line;
+    }
+
+    @Override
     public JdkConsole format(Locale locale, String format, Object ... args) {
         formatter.format(locale, format, args).flush();
         return this;

@@ -229,6 +229,22 @@ import java.util.Objects;
  * used, but this is not compatible with some implementation techniques and
  * would complicate the work implementations must do.
  *
+ * <p>Uses besides evaluation of lambda expressions and method references are
+ * unintended.  These linkage methods may change their unspecified behaviors at
+ * any time to better suit the Java language features they were designed to
+ * support, and such changes may impact unintended uses.  Unintended uses of
+ * these linkage methods may lead to resource leaks, or other unspecified
+ * negative effects.
+ *
+ * @implNote In the reference implementation, the classes implementing the created
+ * function objects are strongly reachable from the defining class loader of the
+ * caller, like classes and interfaces in Java source code.  This technique
+ * reduces heap memory use, but as a consequence, the implementation classes can
+ * be unloaded only if the caller class can be unloaded.  In particular, if the
+ * caller is a {@linkplain MethodHandles.Lookup.ClassOption#STRONG weak hidden
+ * class}, the implementation class, a strong hidden class, may not be unloaded
+ * even if the caller may be unloaded.
+ *
  * @since 1.8
  */
 public final class LambdaMetafactory {
