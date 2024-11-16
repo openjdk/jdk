@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.List;
 
+import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
@@ -111,7 +112,7 @@ public final class PredefinedAppImageErrorTest {
         Files.createFile(dummyAppFile);
 
         cmd.addArguments("--app-image", dummyAppFolder.toString());
-        cmd.createJPackageXMLFile("PredefinedAppImageErrorTest", "Hello");
+        new AppImageFile("PredefinedAppImageErrorTest", "Hello").save(dummyAppFolder);
     }
 
 }
