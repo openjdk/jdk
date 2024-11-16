@@ -262,7 +262,7 @@ public final class LauncherIconVerifier {
             }
         }
 
-        final static WinIconVerifier instance = new WinIconVerifier();
+        static final WinIconVerifier instance = new WinIconVerifier();
 
         private final Class executableRebranderClass;
         private final Method lockResource;

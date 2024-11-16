@@ -138,15 +138,15 @@ public enum PackageType {
     private final String suffix;
     private final boolean supported;
 
-    public final static Set<PackageType> LINUX = Set.of(LINUX_DEB, LINUX_RPM);
-    public final static Set<PackageType> WINDOWS = Set.of(WIN_EXE, WIN_MSI);
-    public final static Set<PackageType> MAC = Set.of(MAC_PKG, MAC_DMG);
-    public final static Set<PackageType> NATIVE = Stream.concat(
+    public static final Set<PackageType> LINUX = Set.of(LINUX_DEB, LINUX_RPM);
+    public static final Set<PackageType> WINDOWS = Set.of(WIN_EXE, WIN_MSI);
+    public static final Set<PackageType> MAC = Set.of(MAC_PKG, MAC_DMG);
+    public static final Set<PackageType> NATIVE = Stream.concat(
             Stream.concat(LINUX.stream(), WINDOWS.stream()),
             MAC.stream()).collect(Collectors.toUnmodifiableSet());
 
-    private final static class Inner {
-        private final static Set<String> DISABLED_PACKAGERS = Optional.ofNullable(
+    private static final class Inner {
+        private static final Set<String> DISABLED_PACKAGERS = Optional.ofNullable(
                 TKit.tokenizeConfigProperty("disabledPackagers")).orElse(
                 TKit.isLinuxAPT() ? Set.of("rpm") : Collections.emptySet());
     }

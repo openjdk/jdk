@@ -49,12 +49,12 @@ public class AdditionalLauncher {
         setPersistenceHandler(null);
     }
 
-    final public AdditionalLauncher setDefaultArguments(String... v) {
+    public final AdditionalLauncher setDefaultArguments(String... v) {
         defaultArguments = new ArrayList<>(List.of(v));
         return this;
     }
 
-    final public AdditionalLauncher addDefaultArguments(String... v) {
+    public final AdditionalLauncher addDefaultArguments(String... v) {
         if (defaultArguments == null) {
             return setDefaultArguments(v);
         }
@@ -63,12 +63,12 @@ public class AdditionalLauncher {
         return this;
     }
 
-    final public AdditionalLauncher setJavaOptions(String... v) {
+    public final AdditionalLauncher setJavaOptions(String... v) {
         javaOptions = new ArrayList<>(List.of(v));
         return this;
     }
 
-    final public AdditionalLauncher addJavaOptions(String... v) {
+    public final AdditionalLauncher addJavaOptions(String... v) {
         if (javaOptions == null) {
             return setJavaOptions(v);
         }
@@ -77,27 +77,27 @@ public class AdditionalLauncher {
         return this;
     }
 
-    final public AdditionalLauncher setVerifyUninstalled(boolean value) {
+    public final AdditionalLauncher setVerifyUninstalled(boolean value) {
         verifyUninstalled = value;
         return this;
     }
 
-    final public AdditionalLauncher setLauncherAsService() {
+    public final AdditionalLauncher setLauncherAsService() {
         return addRawProperties(LAUNCHER_AS_SERVICE);
     }
 
-    final public AdditionalLauncher addRawProperties(
+    public final AdditionalLauncher addRawProperties(
             Map.Entry<String, String>... v) {
         return addRawProperties(List.of(v));
     }
 
-    final public AdditionalLauncher addRawProperties(
+    public final AdditionalLauncher addRawProperties(
             Collection<Map.Entry<String, String>> v) {
         rawProperties.addAll(v);
         return this;
     }
 
-    final public String getRawPropertyValue(
+    public final String getRawPropertyValue(
             String key, Supplier<String> getDefault) {
         return rawProperties.stream()
                 .filter(item -> item.getKey().equals(key))
@@ -109,13 +109,13 @@ public class AdditionalLauncher {
                 "--description", unused -> cmd.name()));
     }
 
-    final public AdditionalLauncher setShortcuts(boolean menu, boolean shortcut) {
+    public final AdditionalLauncher setShortcuts(boolean menu, boolean shortcut) {
         withMenuShortcut = menu;
         withShortcut = shortcut;
         return this;
     }
 
-    final public AdditionalLauncher setIcon(Path iconPath) {
+    public final AdditionalLauncher setIcon(Path iconPath) {
         if (iconPath == NO_ICON) {
             throw new IllegalArgumentException();
         }
@@ -124,12 +124,12 @@ public class AdditionalLauncher {
         return this;
     }
 
-    final public AdditionalLauncher setNoIcon() {
+    public final AdditionalLauncher setNoIcon() {
         icon = NO_ICON;
         return this;
     }
 
-    final public AdditionalLauncher setPersistenceHandler(
+    public final AdditionalLauncher setPersistenceHandler(
             ThrowingBiConsumer<Path, List<Map.Entry<String, String>>> handler) {
         if (handler != null) {
             createFileHandler = ThrowingBiConsumer.toBiConsumer(handler);
@@ -139,12 +139,12 @@ public class AdditionalLauncher {
         return this;
     }
 
-    final public void applyTo(JPackageCommand cmd) {
+    public final void applyTo(JPackageCommand cmd) {
         cmd.addPrerequisiteAction(this::initialize);
         cmd.addVerifyAction(this::verify);
     }
 
-    final public void applyTo(PackageTest test) {
+    public final void applyTo(PackageTest test) {
         test.addInitializer(this::initialize);
         test.addInstallVerifier(this::verify);
         if (verifyUninstalled) {
@@ -152,7 +152,7 @@ public class AdditionalLauncher {
         }
     }
 
-    final public void verifyRemovedInUpgrade(PackageTest test) {
+    public final void verifyRemovedInUpgrade(PackageTest test) {
         test.addInstallVerifier(this::verifyUninstalled);
     }
 
@@ -447,7 +447,7 @@ public class AdditionalLauncher {
     private Boolean withMenuShortcut;
     private Boolean withShortcut;
 
-    private final static Path NO_ICON = Path.of("");
-    private final static Map.Entry<String, String> LAUNCHER_AS_SERVICE = Map.entry(
+    private static final Path NO_ICON = Path.of("");
+    private static final Map.Entry<String, String> LAUNCHER_AS_SERVICE = Map.entry(
             "launcher-as-service", "true");
 }

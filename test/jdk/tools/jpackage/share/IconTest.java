@@ -428,7 +428,7 @@ public class IconTest {
         private final Path cmdlineIcon;
         private final Path resourceDirIcon;
 
-        private final static Set<Launcher> PRIMARY = Set.of(Main, Additional);
+        private static final Set<Launcher> PRIMARY = Set.of(Main, Additional);
     }
 
     private final boolean appImage;
@@ -440,7 +440,7 @@ public class IconTest {
                 + TKit.ICON_SUFFIX));
     }
 
-    private final static Path[] ICONS = Stream.of("icon", "icon2", "icon3",
+    private static final Path[] ICONS = Stream.of("icon", "icon2", "icon3",
             "icon4")
             .map(IconTest::iconPath)
             .collect(Collectors.toList()).toArray(Path[]::new);

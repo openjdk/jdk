@@ -149,5 +149,5 @@ class MethodCall implements ThrowingConsumer {
     private final Method method;
     private final Object[] ctorArgs;
 
-    final static Object[] DEFAULT_CTOR_ARGS = new Object[0];
+    static final Object[] DEFAULT_CTOR_ARGS = new Object[0];
 }

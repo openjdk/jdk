@@ -458,7 +458,7 @@ final class TestBuilder implements AutoCloseable {
     private String spaceSubstitute;
     private boolean dryRun;
 
-    private final static Map<Class, Function<String, Object>> conv = Map.of(
+    private static final Map<Class, Function<String, Object>> conv = Map.of(
             boolean.class, Boolean::valueOf,
             Boolean.class, Boolean::valueOf,
             int.class, Integer::valueOf,
@@ -467,5 +467,5 @@ final class TestBuilder implements AutoCloseable {
             Long.class, Long::valueOf,
             String.class, String::valueOf);
 
-    final static String CMDLINE_ARG_PREFIX = "--jpt-";
+    static final String CMDLINE_ARG_PREFIX = "--jpt-";
 }

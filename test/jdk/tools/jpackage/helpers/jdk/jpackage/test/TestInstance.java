@@ -333,7 +333,7 @@ final class TestInstance implements ThrowingRunnable {
     private final boolean dryRun;
     private final Path workDir;
 
-    private final static Set<Status> KEEP_WORK_DIR = FunctionalUtils.identity(
+    private static final Set<Status> KEEP_WORK_DIR = FunctionalUtils.identity(
             () -> {
                 final String propertyName = "keep-work-dir";
                 Set<String> keepWorkDir = TKit.tokenizeConfigProperty(
