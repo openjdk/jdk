@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,22 +79,6 @@ public final class SecurityConstants {
     // java.net.ProxySelector
     public static final NetPermission GET_PROXYSELECTOR_PERMISSION =
        new NetPermission("getProxySelector");
-
-    // java.net.CookieHandler
-    public static final NetPermission SET_COOKIEHANDLER_PERMISSION =
-       new NetPermission("setCookieHandler");
-
-    // java.net.CookieHandler
-    public static final NetPermission GET_COOKIEHANDLER_PERMISSION =
-       new NetPermission("getCookieHandler");
-
-    // java.net.ResponseCache
-    public static final NetPermission SET_RESPONSECACHE_PERMISSION =
-       new NetPermission("setResponseCache");
-
-    // java.net.ResponseCache
-    public static final NetPermission GET_RESPONSECACHE_PERMISSION =
-       new NetPermission("getResponseCache");
 
     // java.net.ServerSocket, java.net.Socket
     public static final NetPermission SET_SOCKETIMPL_PERMISSION =

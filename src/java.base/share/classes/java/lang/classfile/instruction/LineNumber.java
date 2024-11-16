@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.attribute.LineNumberTableAttribute;
 
 import jdk.internal.classfile.impl.LineNumberImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A pseudo-instruction which models a single entry in the
@@ -41,9 +40,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see PseudoInstruction
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LineNumber extends PseudoInstruction
         permits LineNumberImpl {
 
