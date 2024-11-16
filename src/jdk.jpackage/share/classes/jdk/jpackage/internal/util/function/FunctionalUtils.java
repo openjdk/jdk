@@ -29,7 +29,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public final class FunctionalUtils {
-    
+
     public static <T> Supplier<T> identity(Supplier<T> v) {
         return v;
     }
