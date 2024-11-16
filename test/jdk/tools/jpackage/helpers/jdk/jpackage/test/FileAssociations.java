@@ -35,7 +35,7 @@ import java.util.Optional;
 import jdk.jpackage.internal.util.PathUtils;
 
 
-final public class FileAssociations {
+public final class FileAssociations {
     public FileAssociations(String faSuffixName) {
         suffixName = faSuffixName;
         setFilename("fa");
@@ -243,7 +243,7 @@ final public class FileAssociations {
     }
 
     private Path file;
-    final private String suffixName;
+    private final String suffixName;
     private String description;
     private Path icon;
     private Collection<TestRun> testRuns;

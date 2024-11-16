@@ -65,7 +65,7 @@ public class AppContentTest {
     // In particular, random files should be placed in "Contents/Resources" folder
     // otherwise "codesign" will fail to sign.
     // Need to prepare arguments for `--app-content` accordingly.
-    private final static boolean copyInResources = TKit.isOSX();
+    private static final boolean copyInResources = TKit.isOSX();
 
     private final List<String> testPathArgs;
 

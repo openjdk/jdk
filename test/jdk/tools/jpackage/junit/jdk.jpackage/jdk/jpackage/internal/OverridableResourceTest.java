@@ -192,8 +192,8 @@ public class OverridableResourceTest {
         assertFalse(dstFile.toFile().exists());
     }
 
-    private final static String DEFAULT_NAME;
-    private final static Map<String, String> SUBSTITUTION_DATA;
+    private static final String DEFAULT_NAME;
+    private static final Map<String, String> SUBSTITUTION_DATA;
     static {
         if (OperatingSystem.isWindows()) {
             DEFAULT_NAME = "WinLauncher.template";
