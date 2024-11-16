@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,11 +25,11 @@
 /**
 * @test
 * @bug 8308363 8336406
-* @summary Validate compiler IR for FP16 scalar operations.
+* @summary Validate compiler IR for various Float16 scalar operations.
 * @modules jdk.incubator.vector
 * @requires vm.compiler2.enabled
 * @library /test/lib /
-* @run driver TestFP16ScalarOps
+* @run driver TestFloat16ScalarOperations
 */
 
 import compiler.lib.ir_framework.*;
@@ -37,7 +37,7 @@ import java.util.Random;
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
 
-public class TestFP16ScalarOps {
+public class TestFloat16ScalarOperations {
     private static final int count = 1024;
 
     private short[] src;
@@ -48,7 +48,7 @@ public class TestFP16ScalarOps {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
     }
 
-    public TestFP16ScalarOps() {
+    public TestFloat16ScalarOperations() {
         src = new short[count];
         dst = new short[count];
         for (int i = 0; i < count; i++) {
@@ -144,17 +144,6 @@ public class TestFP16ScalarOps {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < count; i++) {
             res = Float16.min(res, shortBitsToFloat16(src[i]));
-            dst[i] = float16ToRawShortBits(res);
-        }
-    }
-
-    @Test
-    @IR(counts = {IRNode.ABS_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    public void testAbs() {
-        Float16 res = shortBitsToFloat16((short)0);
-        for (int i = 0; i < count; i++) {
-            res = Float16.abs(shortBitsToFloat16(src[i]));
             dst[i] = float16ToRawShortBits(res);
         }
     }

@@ -6670,12 +6670,12 @@ void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst
 
 void C2_MacroAssembler::efp16sh(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2) {
   switch(opcode) {
-    case Op_AddHF: eaddsh(dst, src1, src2); break;
-    case Op_SubHF: esubsh(dst, src1, src2); break;
-    case Op_MulHF: emulsh(dst, src1, src2); break;
-    case Op_DivHF: edivsh(dst, src1, src2); break;
-    case Op_MaxHF: emaxsh(dst, src1, src2); break;
-    case Op_MinHF: eminsh(dst, src1, src2); break;
+    case Op_AddHF: vaddsh(dst, src1, src2); break;
+    case Op_SubHF: vsubsh(dst, src1, src2); break;
+    case Op_MulHF: vmulsh(dst, src1, src2); break;
+    case Op_DivHF: vdivsh(dst, src1, src2); break;
+    case Op_MaxHF: vmaxsh(dst, src1, src2); break;
+    case Op_MinHF: vminsh(dst, src1, src2); break;
     default: assert(false, "%s", NodeClassNames[opcode]); break;
   }
 }

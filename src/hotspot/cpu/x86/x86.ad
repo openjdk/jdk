@@ -10890,10 +10890,10 @@ instruct reinterpretH2S(rRegI dst, regF src)
 instruct scalar_sqrt_fp16(regF dst, regF src)
 %{
   match(Set dst (SqrtHF src));
-  format %{ "esqrtsh $dst, $src" %}
+  format %{ "vsqrtsh $dst, $src" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    __ esqrtsh($dst$$XMMRegister, $src$$XMMRegister);
+    __ vsqrtsh($dst$$XMMRegister, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10921,7 +10921,7 @@ instruct scalar_fma_fp16(regF dst, regF src1, regF src2)
   format %{ "evfmash $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
   ins_cost(150);
   ins_encode %{
-    __ efmadd132sh($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister);
+    __ vfmadd132sh($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}

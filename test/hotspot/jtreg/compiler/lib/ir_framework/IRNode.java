@@ -162,11 +162,6 @@ public class IRNode {
         beforeMatchingNameRegex(ABS_F, "AbsF");
     }
 
-    public static final String ABS_HF = PREFIX + "ABS_HF" + POSTFIX;
-    static {
-        beforeMatchingNameRegex(ABS_HF, "AbsHF");
-    }
-
     public static final String ABS_I = PREFIX + "ABS_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(ABS_I, "AbsI");
@@ -207,11 +202,6 @@ public class IRNode {
     public static final String ABS_VD = VECTOR_PREFIX + "ABS_VD" + POSTFIX;
     static {
         vectorNode(ABS_VD, "AbsVD", TYPE_DOUBLE);
-    }
-
-    public static final String ABS_VHF = PREFIX + "ABS_VHF" + POSTFIX;
-    static {
-        beforeMatchingNameRegex(ABS_VHF, "AbsVHF");
     }
 
     public static final String ADD = PREFIX + "ADD" + POSTFIX;

@@ -41,6 +41,10 @@ public class Float16OperationsBenchmark {
     short [] vector1;
     short [] vector2;
     short [] vector3;
+    boolean [] vectorPredicate;
+
+    static final short f16_one = Float.floatToFloat16(1.0f);
+    static final short f16_two = Float.floatToFloat16(2.0f);
 
     @Setup(Level.Trial)
     public void BmSetup() {
@@ -49,6 +53,7 @@ public class Float16OperationsBenchmark {
         vector1   = new short[vectorDim];
         vector2   = new short[vectorDim];
         vector3   = new short[vectorDim];
+        vectorPredicate = new boolean[vectorDim];
 
         IntStream.range(0, vectorDim).forEach(i -> {vector1[i] = Float.floatToFloat16((float)i);});
         IntStream.range(0, vectorDim).forEach(i -> {vector2[i] = Float.floatToFloat16((float)i);});
@@ -130,6 +135,53 @@ public class Float16OperationsBenchmark {
             res &= isNaN(shortBitsToFloat16(vector1[i]));
         }
         return res;
+    }
+
+    @Benchmark
+    public void isNaNStoreBenchmark() {
+        for (int i = 0; i < vectorDim; i++) {
+            vectorPredicate[i] = Float16.isNaN(shortBitsToFloat16(vector1[i]));
+        }
+    }
+
+
+    @Benchmark
+    public void isNaNCMovBenchmark() {
+        for (int i = 0; i < vectorDim; i++) {
+            vectorRes[i] = Float16.isNaN(shortBitsToFloat16(vector1[i])) ? f16_one : f16_two;
+        }
+    }
+
+
+    @Benchmark
+    public void isInfiniteStoreBenchmark() {
+        for (int i = 0; i < vectorDim; i++) {
+            vectorPredicate[i] = Float16.isInfinite(shortBitsToFloat16(vector1[i]));
+        }
+    }
+
+
+    @Benchmark
+    public void isInfiniteCMovBenchmark() {
+        for (int i = 0; i < vectorDim; i++) {
+            vectorRes[i] = Float16.isInfinite(shortBitsToFloat16(vector1[i])) ? f16_one : f16_two;
+        }
+    }
+
+
+    @Benchmark
+    public void isFiniteStoreBenchmark() {
+        for (int i = 0; i < vectorDim; i++) {
+            vectorPredicate[i] = Float16.isFinite(shortBitsToFloat16(vector1[i]));
+        }
+    }
+
+
+    @Benchmark
+    public void isFiniteCMovBenchmark() {
+        for (int i = 0; i < vectorDim; i++) {
+            vectorRes[i] = Float16.isFinite(shortBitsToFloat16(vector1[i])) ? f16_one : f16_two;
+        }
     }
 
     @Benchmark

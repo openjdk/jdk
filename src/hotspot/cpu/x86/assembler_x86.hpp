@@ -2697,14 +2697,14 @@ private:
   void vpaddq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
   // FP16 instructions
-  void eaddsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void esubsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void emulsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void edivsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void emaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void eminsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void esqrtsh(XMMRegister dst, XMMRegister src);
-  void efmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
+  void vaddsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vsubsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vmulsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vdivsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vmaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vminsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vsqrtsh(XMMRegister dst, XMMRegister src);
+  void vfmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
   void evaddph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evaddph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);

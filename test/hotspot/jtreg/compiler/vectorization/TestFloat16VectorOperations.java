@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,13 +24,13 @@
 
 /**
 * @test
-* @bug 8308363 8336406
-* @summary Test vectorization of Float16 binary operations
+* @bug 8342103
+* @summary Auto-vectorization support for various Float16 operations
 * @requires vm.compiler2.enabled
 * @modules jdk.incubator.vector
 * @library /test/lib /
-* @compile TestFloat16VectorOps.java
-* @run driver compiler.vectorization.TestFloat16VectorOps
+* @compile TestFloat16VectorOperations.java
+* @run driver compiler.vectorization.TestFloat16VectorOperations
 */
 
 package compiler.vectorization;
@@ -39,7 +39,7 @@ import java.util.Random;
 import static jdk.incubator.vector.Float16.*;
 import static java.lang.Float.*;
 
-public class TestFloat16VectorOps {
+public class TestFloat16VectorOperations {
     private short[] input1;
     private short[] input2;
     private short[] input3;
@@ -51,7 +51,7 @@ public class TestFloat16VectorOps {
         TestFramework.runWithFlags("-XX:-TieredCompilation", "-Xbatch","--add-modules=jdk.incubator.vector");
     }
 
-    public TestFloat16VectorOps() {
+    public TestFloat16VectorOperations() {
         input1 = new short[LEN];
         input2 = new short[LEN];
         input3 = new short[LEN];
@@ -190,28 +190,6 @@ public class TestFloat16VectorOps {
     public void checkResultMax() {
         for (int i = 0; i < LEN; ++i) {
             short expected = float16ToRawShortBits(max(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i])));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
-            }
-        }
-    }
-
-    @Test
-    @Warmup(10000)
-    @IR(counts = {IRNode.ABS_VHF, ">= 1"},
-        applyIfCPUFeatureOr = {"sve", "true"})
-    @IR(counts = {IRNode.ABS_VHF, ">= 1"},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    public void vectorAbsFloat16() {
-        for (int i = 0; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(abs(shortBitsToFloat16(input1[i])));
-        }
-    }
-
-    @Check(test="vectorAbsFloat16")
-    public void checkResultAbs() {
-        for (int i = 0; i < LEN; ++i) {
-            short expected = float16ToRawShortBits(abs(shortBitsToFloat16(input1[i])));
             if (output[i] != expected) {
                 throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
             }
