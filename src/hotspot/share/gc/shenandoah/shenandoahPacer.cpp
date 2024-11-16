@@ -255,16 +255,16 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   }
 
   if (!claimed) {
-    jlong const start_time = os::javaTimeMillis();
-    jlong const deadline = start_time + ShenandoahPacingMaxDelay;
+    double const start_time = os::elapsedTime();
+    double const deadline = start_time + (double)ShenandoahPacingMaxDelay / (double)MILLIUNITS;
     bool timeout = false;
     while (Atomic::load(&_budget) < 0 &&
-          os::javaTimeMillis() < deadline)  {
+          os::elapsedTime() < deadline)  {
       // We could instead assist GC, but this would suffice for now.
       timeout = wait(1);
       NOT_WINDOWS(if (!timeout) break;)
     }
-    ShenandoahThreadLocalData::add_paced_time(current, (double)(os::javaTimeMillis() - start_time) / (double)MILLIUNITS);
+    ShenandoahThreadLocalData::add_paced_time(current, os::elapsedTime() - start_time);
   }
 }
 
