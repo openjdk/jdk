@@ -890,7 +890,6 @@ AccessBridgeJavaEntryPoints::BuildJavaEntryPoints() {
  */
 BOOL
 AccessBridgeJavaEntryPoints::isJavaWindow(jint window) {
-    jthrowable exception;
     BOOL returnVal;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::isJavaWindow(%X):", window);
@@ -913,7 +912,6 @@ AccessBridgeJavaEntryPoints::isJavaWindow(jint window) {
  */
 BOOL
 AccessBridgeJavaEntryPoints::isSameObject(jobject obj1, jobject obj2) {
-    jthrowable exception;
     BOOL returnVal;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::isSameObject(%p %p):", obj1, obj2);
@@ -935,7 +933,6 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleContextFromHWND(jint window) {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getAccessibleContextFromHWND(%X):", window);
 
@@ -961,7 +958,6 @@ AccessBridgeJavaEntryPoints::getAccessibleContextFromHWND(jint window) {
  */
 HWND
 AccessBridgeJavaEntryPoints::getHWNDFromAccessibleContext(jobject accessibleContext) {
-    jthrowable exception;
     HWND rHWND;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getHWNDFromAccessibleContext(%X):",
@@ -987,7 +983,6 @@ AccessBridgeJavaEntryPoints::getHWNDFromAccessibleContext(jobject accessibleCont
  */
 BOOL
 AccessBridgeJavaEntryPoints::setTextContents(const jobject accessibleContext, const wchar_t *text) {
-    jthrowable exception;
     BOOL result = FALSE;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::setTextContents(%p, %ls):",
@@ -1024,7 +1019,6 @@ AccessBridgeJavaEntryPoints::setTextContents(const jobject accessibleContext, co
  */
 jobject
 AccessBridgeJavaEntryPoints::getParentWithRole(const jobject accessibleContext, const wchar_t *role) {
-    jthrowable exception;
     jobject rAccessibleContext;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getParentWithRole(%p):",
@@ -1062,7 +1056,6 @@ AccessBridgeJavaEntryPoints::getParentWithRole(const jobject accessibleContext, 
  */
 jobject
 AccessBridgeJavaEntryPoints::getTopLevelObject(const jobject accessibleContext) {
-    jthrowable exception;
     jobject rAccessibleContext;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getTopLevelObject(%p):",
@@ -1093,7 +1086,6 @@ AccessBridgeJavaEntryPoints::getTopLevelObject(const jobject accessibleContext) 
  */
 jobject
 AccessBridgeJavaEntryPoints::getParentWithRoleElseRoot(const jobject accessibleContext, const wchar_t *role) {
-    jthrowable exception;
     jobject rAccessibleContext;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getParentWithRoleElseRoot(%p):",
@@ -1131,7 +1123,6 @@ AccessBridgeJavaEntryPoints::getParentWithRoleElseRoot(const jobject accessibleC
  */
 jint
 AccessBridgeJavaEntryPoints::getObjectDepth(const jobject accessibleContext) {
-    jthrowable exception;
     jint rResult;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getObjectDepth(%p):",
@@ -1158,7 +1149,6 @@ AccessBridgeJavaEntryPoints::getObjectDepth(const jobject accessibleContext) {
  */
 jobject
 AccessBridgeJavaEntryPoints::getActiveDescendent(const jobject accessibleContext) {
-    jthrowable exception;
     jobject rAccessibleContext;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getActiveDescendent(%p):",
@@ -1266,7 +1256,6 @@ AccessBridgeJavaEntryPoints::getVirtualAccessibleName (
 BOOL
 AccessBridgeJavaEntryPoints::requestFocus(const jobject accessibleContext) {
 
-    jthrowable exception;
     BOOL result = FALSE;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::requestFocus(%p):",
@@ -1294,7 +1283,6 @@ AccessBridgeJavaEntryPoints::requestFocus(const jobject accessibleContext) {
 BOOL
 AccessBridgeJavaEntryPoints::selectTextRange(const jobject accessibleContext, int startIndex, int endIndex) {
 
-    jthrowable exception;
     BOOL result = FALSE;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::selectTextRange(%p start = %d end = %d):",
@@ -1362,7 +1350,6 @@ AccessBridgeJavaEntryPoints::getTextAttributesInRange(const jobject accessibleCo
 
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
     BOOL result = FALSE;
 
@@ -1429,7 +1416,6 @@ AccessBridgeJavaEntryPoints::getTextAttributesInRange(const jobject accessibleCo
 int
 AccessBridgeJavaEntryPoints::getVisibleChildrenCount(const jobject accessibleContext) {
 
-    jthrowable exception;
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getVisibleChildrenCount(%p)",
                      accessibleContext);
 
@@ -1454,8 +1440,6 @@ AccessBridgeJavaEntryPoints::getVisibleChildrenCount(const jobject accessibleCon
 BOOL AccessBridgeJavaEntryPoints::getVisibleChildren(const jobject accessibleContext,
                                                      const int nStartIndex,
                                                      /* OUT */ VisibleChildrenInfo *visibleChildrenInfo) {
-
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getVisibleChildren(%p, startIndex = %d)",
                      accessibleContext, nStartIndex);
@@ -1500,7 +1484,6 @@ BOOL AccessBridgeJavaEntryPoints::getVisibleChildren(const jobject accessibleCon
 BOOL
 AccessBridgeJavaEntryPoints::setCaretPosition(const jobject accessibleContext, int position) {
 
-    jthrowable exception;
     BOOL result = FALSE;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::setCaretPostion(%p position = %d):",
@@ -1531,7 +1514,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getVersionInfo(AccessBridgeVersionInfo *info) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getVersionInfo():");
@@ -1601,8 +1583,7 @@ AccessBridgeJavaEntryPoints::getVersionInfo(AccessBridgeVersionInfo *info) {
 BOOL AccessBridgeJavaEntryPoints::verifyAccessibleText(jobject obj) {
     JavaVM *vm;
     BOOL retval;
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::verifyAccessibleText");
 
     if (jniEnv->GetJavaVM(&vm) != 0) {
@@ -1653,8 +1634,7 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleContextAt(jint x, jint y, jobject accessibleContext) {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleContextAt(%d, %d, %p):",
                      x, y, accessibleContext);
 
@@ -1688,8 +1668,7 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleContextWithFocus() {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleContextWithFocus()");
 
     if (getAccessibleContextWithFocusMethod != (jmethodID) 0) {
@@ -1724,7 +1703,6 @@ AccessBridgeJavaEntryPoints::getAccessibleContextInfo(jobject accessibleContext,
     jstring js;
     const wchar_t *stringBytes;
     jobject returnedJobject;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleContextInfo(%p):", accessibleContext);
@@ -2156,8 +2134,7 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleChildFromContext(jobject accessibleContext, jint childIndex) {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleChildContext(%p, %d):",
                      accessibleContext, childIndex);
 
@@ -2188,8 +2165,7 @@ AccessBridgeJavaEntryPoints::getAccessibleParentFromContext(jobject accessibleCo
 {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleParentFromContext(%p):", accessibleContext);
 
     if (getAccessibleParentFromContextMethod != (jmethodID) 0) {
@@ -2216,8 +2192,6 @@ AccessBridgeJavaEntryPoints::getAccessibleParentFromContext(jobject accessibleCo
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableInfo(jobject accessibleContext,
                                                     AccessibleTableInfo *tableInfo) {
-
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableInfo(%p):",
                      accessibleContext);
@@ -2291,8 +2265,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableInfo(jobject accessibleContext,
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableCellInfo(jobject accessibleTable, jint row, jint column,
                                                         AccessibleTableCellInfo *tableCellInfo) {
-
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableCellInfo(%p): row=%d, column=%d",
                      accessibleTable, row, column);
@@ -2373,8 +2345,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableCellInfo(jobject accessibleTable,
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableRowHeader(jobject acParent, AccessibleTableInfo *tableInfo) {
 
-    jthrowable exception;
-
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableRowHeader(%p):",
                      acParent);
 
@@ -2428,8 +2398,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRowHeader(jobject acParent, Acces
 
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableColumnHeader(jobject acParent, AccessibleTableInfo *tableInfo) {
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableColumnHeader(%p):",
                      acParent);
 
@@ -2485,8 +2454,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRowDescription(jobject acParent, 
 
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableRowDescription(%p):",
                      acParent);
 
@@ -2513,8 +2481,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTableColumnDescription(jobject acParen
 
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableColumnDescription(%p):",
                      acParent);
 
@@ -2540,7 +2507,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableColumnDescription(jobject acParen
 jint
 AccessBridgeJavaEntryPoints::getAccessibleTableRowSelectionCount(jobject accessibleTable) {
 
-    jthrowable exception;
     jint count;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableRowSelectionCount(%p)",
@@ -2565,7 +2531,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRowSelectionCount(jobject accessi
 
 BOOL
 AccessBridgeJavaEntryPoints::isAccessibleTableRowSelected(jobject accessibleTable, jint row) {
-    jthrowable exception;
     BOOL result;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::isAccessibleTableRowSelected(%p, %d)",
@@ -2591,8 +2556,7 @@ BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableRowSelections(jobject accessibleTable, jint count,
                                                              jint *selections) {
 
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableRowSelections(%p, %d %p)",
                      accessibleTable, count, selections);
 
@@ -2618,7 +2582,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRowSelections(jobject accessibleT
 jint
 AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelectionCount(jobject accessibleTable) {
 
-    jthrowable exception;
     jint count;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelectionCount(%p)",
@@ -2643,7 +2606,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelectionCount(jobject acce
 
 BOOL
 AccessBridgeJavaEntryPoints::isAccessibleTableColumnSelected(jobject accessibleTable, jint column) {
-    jthrowable exception;
     BOOL result;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::isAccessibleTableColumnSelected(%p, %d)",
@@ -2668,8 +2630,7 @@ AccessBridgeJavaEntryPoints::isAccessibleTableColumnSelected(jobject accessibleT
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelections(jobject accessibleTable, jint count,
                                                                 jint *selections) {
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelections(%p, %d, %p)",
                      accessibleTable, count, selections);
 
@@ -2694,7 +2655,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelections(jobject accessib
 
 jint
 AccessBridgeJavaEntryPoints::getAccessibleTableRow(jobject accessibleTable, jint index) {
-    jthrowable exception;
     jint result;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableRow(%p, index=%d)",
@@ -2718,7 +2678,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRow(jobject accessibleTable, jint
 
 jint
 AccessBridgeJavaEntryPoints::getAccessibleTableColumn(jobject accessibleTable, jint index) {
-    jthrowable exception;
     jint result;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableColumn(%p, index=%d)",
@@ -2742,7 +2701,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableColumn(jobject accessibleTable, j
 
 jint
 AccessBridgeJavaEntryPoints::getAccessibleTableIndex(jobject accessibleTable, jint row, jint column) {
-    jthrowable exception;
     jint result;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableIndex(%p, row=%d, col=%d)",
@@ -2773,7 +2731,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getAccessibleRelationSet(jobject accessibleContext,
                                                       AccessibleRelationSetInfo *relationSet) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
 
@@ -2853,7 +2810,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getAccessibleHypertext(jobject accessibleContext,
                                                     AccessibleHypertextInfo *hypertext) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
 
@@ -2953,7 +2909,6 @@ BOOL
 AccessBridgeJavaEntryPoints::activateAccessibleHyperlink(jobject accessibleContext,
                                                          jobject accessibleHyperlink) {
 
-    jthrowable exception;
     BOOL returnVal;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::activateAccessibleHyperlink(%p, %p):",
@@ -2983,7 +2938,6 @@ AccessBridgeJavaEntryPoints::getAccessibleHypertextExt(const jobject accessibleC
                                                        const jint nStartIndex,
                                                        /* OUT */ AccessibleHypertextInfo *hypertext) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleHypertextExt(%p, %p, startIndex = %d)",
@@ -3084,8 +3038,6 @@ AccessBridgeJavaEntryPoints::getAccessibleHypertextExt(const jobject accessibleC
 
 jint AccessBridgeJavaEntryPoints::getAccessibleHyperlinkCount(const jobject accessibleContext) {
 
-    jthrowable exception;
-
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleHyperlinkCount(%X)",
                      accessibleContext);
 
@@ -3105,8 +3057,6 @@ jint AccessBridgeJavaEntryPoints::getAccessibleHyperlinkCount(const jobject acce
 
 jint AccessBridgeJavaEntryPoints::getAccessibleHypertextLinkIndex(const jobject hypertext,
                                                                   const jint nIndex) {
-
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleHypertextLinkIndex(%p, index = %d)",
                      hypertext, nIndex);
@@ -3129,7 +3079,6 @@ BOOL AccessBridgeJavaEntryPoints::getAccessibleHyperlink(jobject hypertext,
                                                          const jint index,
                                                          /* OUT */ AccessibleHyperlinkInfo *info) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
 
@@ -3202,8 +3151,6 @@ BOOL AccessBridgeJavaEntryPoints::getAccessibleHyperlink(jobject hypertext,
 BOOL AccessBridgeJavaEntryPoints::getAccessibleKeyBindings(jobject accessibleContext,
                                                            AccessibleKeyBindings *keyBindings) {
 
-    jthrowable exception;
-
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleKeyBindings(%p, %p)",
                      accessibleContext, keyBindings);
 
@@ -3249,7 +3196,6 @@ BOOL AccessBridgeJavaEntryPoints::getAccessibleKeyBindings(jobject accessibleCon
 BOOL AccessBridgeJavaEntryPoints::getAccessibleIcons(jobject accessibleContext,
                                                      AccessibleIcons *icons) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
 
@@ -3328,7 +3274,6 @@ BOOL AccessBridgeJavaEntryPoints::getAccessibleIcons(jobject accessibleContext,
 BOOL AccessBridgeJavaEntryPoints::getAccessibleActions(jobject accessibleContext,
                                                        AccessibleActions *actions) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
 
@@ -3388,7 +3333,6 @@ BOOL AccessBridgeJavaEntryPoints::doAccessibleActions(jobject accessibleContext,
                                                       AccessibleActionsToDo *actionsToDo,
                                                       jint *failure) {
 
-    jthrowable exception;
     BOOL returnVal;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::doAccessibleActions(%p, #actions %d %s):",
@@ -3436,8 +3380,7 @@ BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTextInfo(jobject accessibleContext,
                                                    AccessibleTextInfo *textInfo,
                                                    jint x, jint y) {
-    jthrowable exception;
-
+    
     // Verify the Java VM still exists and AccessibleContext is
     // an instance of AccessibleText
     if (verifyAccessibleText(accessibleContext) == FALSE) {
@@ -3495,7 +3438,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextItems(jobject accessibleContext,
                                                     AccessibleTextItemsInfo *textItems, jint index) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextItems(%p):", accessibleContext);
@@ -3607,7 +3549,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextSelectionInfo(jobject accessibleCo
                                                             AccessibleTextSelectionInfo *selectionInfo) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextSelectionInfo(%p):",
@@ -3680,7 +3621,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextAttributes(jobject accessibleConte
     jstring js;
     const wchar_t *stringBytes;
     jobject AttributeSet;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextAttributes(%p):", accessibleContext);
@@ -4174,8 +4114,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextAttributes(jobject accessibleConte
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTextRect(jobject accessibleContext, AccessibleTextRectInfo *rectInfo, jint index) {
 
-    jthrowable exception;
-
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextRect(%p), index = %d",
                      accessibleContext, index);
 
@@ -4244,8 +4182,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextRect(jobject accessibleContext, Ac
 BOOL
 AccessBridgeJavaEntryPoints::getCaretLocation(jobject accessibleContext, AccessibleTextRectInfo *rectInfo, jint index) {
 
-    jthrowable exception;
-
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getCaretLocation(%p), index = %d",
                      accessibleContext, index);
 
@@ -4311,8 +4247,6 @@ AccessBridgeJavaEntryPoints::getCaretLocation(jobject accessibleContext, Accessi
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTextLineBounds(jobject accessibleContext, jint index, jint *startIndex, jint *endIndex) {
 
-    jthrowable exception;
-
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextLineBounds(%p):", accessibleContext);
 
     // Verify the Java VM still exists and AccessibleContext is
@@ -4353,7 +4287,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextRange(jobject accessibleContext,
                                                     jint start, jint end, wchar_t *text, short len) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextRange(%p, %d, %d, *text, %d):", accessibleContext, start, end, len);
@@ -4412,7 +4345,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getCurrentAccessibleValueFromContext(jobject accessibleContext, wchar_t *value, short len) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getCurrentAccessibleValueFromContext(%p):", accessibleContext);
@@ -4453,7 +4385,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getMaximumAccessibleValueFromContext(jobject accessibleContext, wchar_t *value, short len) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getMaximumAccessibleValueFromContext(%p):", accessibleContext);
@@ -4494,7 +4425,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getMinimumAccessibleValueFromContext(jobject accessibleContext, wchar_t *value, short len) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getMinimumAccessibleValueFromContext(%p):", accessibleContext);
@@ -4536,8 +4466,7 @@ AccessBridgeJavaEntryPoints::getMinimumAccessibleValueFromContext(jobject access
 
 void
 AccessBridgeJavaEntryPoints::addAccessibleSelectionFromContext(jobject accessibleContext, int i) {
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::addAccessibleSelectionFromContext(%p):", accessibleContext);
 
     // Add the child to the AccessibleSelection
@@ -4554,8 +4483,7 @@ AccessBridgeJavaEntryPoints::addAccessibleSelectionFromContext(jobject accessibl
 
 void
 AccessBridgeJavaEntryPoints::clearAccessibleSelectionFromContext(jobject accessibleContext) {
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::clearAccessibleSelectionFromContext(%p):", accessibleContext);
 
     // Clearing the Selection of the AccessibleSelection
@@ -4574,8 +4502,7 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleSelectionFromContext(jobject accessibleContext, int i) {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleSelectionFromContext(%p):", accessibleContext);
 
     if (getAccessibleSelectionContextFromContextMethod != (jmethodID) 0) {
@@ -4600,8 +4527,7 @@ AccessBridgeJavaEntryPoints::getAccessibleSelectionFromContext(jobject accessibl
 int
 AccessBridgeJavaEntryPoints::getAccessibleSelectionCountFromContext(jobject accessibleContext) {
     int count;
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleSelectionCountFromContext(%p):", accessibleContext);
 
     // Get (& return) the # of items selected in the AccessibleSelection
@@ -4621,8 +4547,7 @@ AccessBridgeJavaEntryPoints::getAccessibleSelectionCountFromContext(jobject acce
 BOOL
 AccessBridgeJavaEntryPoints::isAccessibleChildSelectedFromContext(jobject accessibleContext, int i) {
     jboolean result;
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::isAccessibleChildSelectedFromContext(%p):", accessibleContext);
 
     // Get (& return) the # of items selected in the AccessibleSelection
@@ -4644,8 +4569,7 @@ AccessBridgeJavaEntryPoints::isAccessibleChildSelectedFromContext(jobject access
 
 void
 AccessBridgeJavaEntryPoints::removeAccessibleSelectionFromContext(jobject accessibleContext, int i) {
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::removeAccessibleSelectionFromContext(%p):", accessibleContext);
 
     // Remove the i-th child from the AccessibleSelection
@@ -4662,8 +4586,7 @@ AccessBridgeJavaEntryPoints::removeAccessibleSelectionFromContext(jobject access
 
 void
 AccessBridgeJavaEntryPoints::selectAllAccessibleSelectionFromContext(jobject accessibleContext) {
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::selectAllAccessibleSelectionFromContext(%p):", accessibleContext);
 
     // Select all children (if possible) of the AccessibleSelection
@@ -4683,8 +4606,7 @@ AccessBridgeJavaEntryPoints::selectAllAccessibleSelectionFromContext(jobject acc
 
 BOOL
 AccessBridgeJavaEntryPoints::addJavaEventNotification(jlong type) {
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]:   in AccessBridgeJavaEntryPoints::addJavaEventNotification(%016I64X);", type);
 
     // Let AccessBridge know we want to add an event type
@@ -4701,8 +4623,7 @@ AccessBridgeJavaEntryPoints::addJavaEventNotification(jlong type) {
 
 BOOL
 AccessBridgeJavaEntryPoints::removeJavaEventNotification(jlong type) {
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]:  in AccessBridgeJavaEntryPoints::removeJavaEventNotification(%016I64X):", type);
 
     // Let AccessBridge know we want to remove an event type
@@ -4719,8 +4640,7 @@ AccessBridgeJavaEntryPoints::removeJavaEventNotification(jlong type) {
 
 BOOL
 AccessBridgeJavaEntryPoints::addAccessibilityEventNotification(jlong type) {
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]:   in AccessBridgeJavaEntryPoints::addAccessibilityEventNotification(%016I64X);", type);
 
     // Let AccessBridge know we want to add an event type
@@ -4739,8 +4659,7 @@ AccessBridgeJavaEntryPoints::addAccessibilityEventNotification(jlong type) {
 
 BOOL
 AccessBridgeJavaEntryPoints::removeAccessibilityEventNotification(jlong type) {
-    jthrowable exception;
-
+    
     PrintDebugString("[INFO]:  in AccessBridgeJavaEntryPoints::removeAccessibilityEventNotification(%016I64X):", type);
 
     // Let AccessBridge know we want to remove an event type
