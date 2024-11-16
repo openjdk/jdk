@@ -38,7 +38,7 @@
 // Classes are loaded lazily. The default VM class loader is
 // represented as null.
 
-// The underlying data structure is an concurrent hash table (Dictionary) per
+// The underlying data structure is a concurrent hash table (Dictionary) per
 // ClassLoaderData with a fixed number of buckets. During loading the
 // class loader object is locked, (for the VM loader a private lock object is used).
 // The global SystemDictionary_lock is held for all additions into the ClassLoaderData
@@ -241,8 +241,6 @@ public:
   static void restore_archived_method_handle_intrinsics() NOT_CDS_RETURN;
 
   // compute java_mirror (java.lang.Class instance) for a type ("I", "[[B", "LFoo;", etc.)
-  // Either the accessing_klass or the CL can be non-null, but not both.
-  // Callee will fill in CL from the accessing klass, if they are needed.
   static Handle    find_java_mirror_for_type(Symbol* signature,
                                              Klass* accessing_klass,
                                              SignatureStream::FailureMode failure_mode,
