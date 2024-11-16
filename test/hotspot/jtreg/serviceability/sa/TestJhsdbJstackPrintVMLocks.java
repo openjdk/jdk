@@ -40,6 +40,7 @@ import jtreg.SkippedException;
 
 public class TestJhsdbJstackPrintVMLocks {
 
+    final static int MAX_ATTEMPTS = 3;
     public static void main(String[] args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
 
@@ -55,26 +56,32 @@ public class TestJhsdbJstackPrintVMLocks {
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
             theApp.waitAppReadyOrCrashed();
 
-            JDKToolLauncher launcher = JDKToolLauncher
-                    .createUsingTestJDK("jhsdb");
-            launcher.addToolArg("jstack");
-            launcher.addToolArg("--mixed");
-            launcher.addToolArg("--pid");
-            launcher.addToolArg(Long.toString(theApp.getPid()));
+            for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                JDKToolLauncher launcher = JDKToolLauncher
+                        .createUsingTestJDK("jhsdb");
+                launcher.addToolArg("jstack");
+                launcher.addToolArg("--mixed");
+                launcher.addToolArg("--pid");
+                launcher.addToolArg(Long.toString(theApp.getPid()));
 
-            ProcessBuilder pb = SATestUtils.createProcessBuilder(launcher);
-            Process jhsdb = pb.start();
-            OutputAnalyzer out = new OutputAnalyzer(jhsdb);
+                ProcessBuilder pb = SATestUtils.createProcessBuilder(launcher);
+                Process jhsdb = pb.start();
+                OutputAnalyzer out = new OutputAnalyzer(jhsdb);
 
-            jhsdb.waitFor();
+                jhsdb.waitFor();
 
-            System.out.println(out.getStdout());
-            System.err.println(out.getStderr());
+                System.out.println(out.getStdout());
+                System.err.println(out.getStderr());
 
-            out.shouldContain("Mutex Compile_lock is owned by LockerThread");
+                if (out.contains("Mutex Compile_lock is owned by LockerThread")) {
+                    System.out.println("Test PASSED");
+                    return;
+                }
+                Thread.sleep(2000);
+            }
+            throw new RuntimeException("Not able to find lock");
         } finally {
             theApp.getProcess().destroyForcibly();
         }
-        System.out.println("Test PASSED");
     }
 }

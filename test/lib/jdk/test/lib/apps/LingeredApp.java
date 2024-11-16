@@ -589,6 +589,12 @@ public class LingeredApp {
 
     static class SteadyStateLock {};
 
+    private static volatile boolean isReady = false;
+
+    protected static boolean isReady() {
+        return isReady;
+    }
+
     /**
      * This part is the application itself. First arg is optional "forceCrash".
      * Following arg is the lock file name.
@@ -627,6 +633,7 @@ public class LingeredApp {
                 while (Files.exists(path)) {
                     // Touch the lock to indicate our readiness
                     setLastModified(theLockFileName, epoch());
+                    isReady = true;
                     Thread.sleep(spinDelay);
                 }
             }

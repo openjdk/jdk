@@ -28,6 +28,12 @@ public class LingeredAppWithLockInVM extends LingeredApp {
 
     private static class LockerThread implements Runnable {
         public void run() {
+            while (!isReady()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                }
+            }
             WhiteBox wb = WhiteBox.getWhiteBox();
             wb.lockAndStuckInSafepoint();
         }
