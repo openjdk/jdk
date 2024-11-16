@@ -62,14 +62,13 @@ import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.function.ExceptionBox;
-import jdk.jpackage.internal.util.function.FunctionalUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 public final class TKit {
 
-    public static final Path TEST_SRC_ROOT = FunctionalUtils.identity(() -> {
+    public static final Path TEST_SRC_ROOT = ((Supplier<Path>)() -> {
         Path root = Path.of(System.getProperty("test.src"));
 
         for (int i = 0; i != 10; ++i) {
@@ -82,25 +81,22 @@ public final class TKit {
         throw new RuntimeException("Failed to locate apps directory");
     }).get();
 
-    public static final Path SRC_ROOT = FunctionalUtils.identity(() -> {
-        return TEST_SRC_ROOT.resolve("../../../../src/jdk.jpackage").normalize().toAbsolutePath();
-    }).get();
+    public static final Path SRC_ROOT = TEST_SRC_ROOT.resolve(
+            "../../../../src/jdk.jpackage").normalize().toAbsolutePath();
 
-    public static final String ICON_SUFFIX = FunctionalUtils.identity(() -> {
+    public static final String ICON_SUFFIX;
+
+    static {
         if (isOSX()) {
-            return ".icns";
+            ICON_SUFFIX = ".icns";
+        } else if (isLinux()) {
+            ICON_SUFFIX = ".png";
+        } else if (isWindows()) {
+            ICON_SUFFIX = ".ico";
+        } else {
+            throw throwUnknownPlatformError();
         }
-
-        if (isLinux()) {
-            return ".png";
-        }
-
-        if (isWindows()) {
-            return ".ico";
-        }
-
-        throw throwUnknownPlatformError();
-    }).get();
+    }
 
     static void withExtraLogStream(ThrowingRunnable action) {
         if (extraLogStream != null) {
@@ -870,7 +866,7 @@ public final class TKit {
 
         traceAssert(concatMessages("assertStringListEquals()", msg));
 
-        String idxFieldFormat = FunctionalUtils.identity(() -> {
+        String idxFieldFormat = ((Supplier<String>)() -> {
             int listSize = expected.size();
             int width = 0;
             while (listSize != 0) {
@@ -1056,13 +1052,8 @@ public final class TKit {
         return tokens.stream().collect(Collectors.toSet());
     }
 
-    static final Path LOG_FILE = FunctionalUtils.identity(() -> {
-        String val = getConfigProperty("logfile");
-        if (val == null) {
-            return null;
-        }
-        return Path.of(val);
-    }).get();
+    static final Path LOG_FILE = Optional.ofNullable(
+            getConfigProperty("logfile")).map(Path::of).orElse(null);
 
     static {
         Set<String> logOptions = tokenizeConfigProperty("suppress-logging");

@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.Log;
 import static jdk.jpackage.internal.util.function.ExceptionWrapper.rethrowUnchecked;
-import jdk.jpackage.internal.util.function.FunctionalUtils;
 
 /**
  * jpackage type traits.

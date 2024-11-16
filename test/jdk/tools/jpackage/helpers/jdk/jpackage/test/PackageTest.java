@@ -52,7 +52,6 @@ import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
-import jdk.jpackage.internal.util.function.FunctionalUtils;
 import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.LINUX_DEB;
 import static jdk.jpackage.test.PackageType.LINUX_RPM;
@@ -532,7 +531,7 @@ public final class PackageTest extends RunnablePackageTest {
             private Path unpackDir;
             private Action unhandledAction;
             private boolean terminated;
-            private final JPackageCommand cmd = FunctionalUtils.identity(() -> {
+            private final JPackageCommand cmd = ((Supplier<JPackageCommand>)() -> {
                 JPackageCommand result = new JPackageCommand();
                 result.setDefaultInputOutput().setDefaultAppName();
                 if (BUNDLE_OUTPUT_DIR != null && !ignoreBundleOutputDir) {

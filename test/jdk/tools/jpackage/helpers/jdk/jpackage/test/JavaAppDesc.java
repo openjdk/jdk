@@ -24,8 +24,8 @@ package jdk.jpackage.test;
 
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.util.function.FunctionalUtils;
 
 
 public final class JavaAppDesc {
@@ -238,7 +238,7 @@ public final class JavaAppDesc {
             return desc;
         }
 
-        String srcJavaPathAndOther = FunctionalUtils.identity(() -> {
+        String srcJavaPathAndOther = ((Supplier<String>)() -> {
             String[] components = javaAppDesc.split("\\*", 2);
             if (components.length == 2) {
                 desc.setSrcJavaPath(Path.of(components[0]));
@@ -246,7 +246,7 @@ public final class JavaAppDesc {
             return components[components.length - 1];
         }).get();
 
-        String moduleNameAndOther = FunctionalUtils.identity(() -> {
+        String moduleNameAndOther = ((Supplier<String>)() -> {
             String[] components = srcJavaPathAndOther.split(":", 2);
             if (components.length == 2) {
                 desc.setBundleFileName(components[0]);
@@ -254,7 +254,7 @@ public final class JavaAppDesc {
             return components[components.length - 1];
         }).get();
 
-        String classNameAndOther = FunctionalUtils.identity(() -> {
+        String classNameAndOther = ((Supplier<String>)() -> {
             String[] components = moduleNameAndOther.split("/", 2);
             if (components.length == 2) {
                 desc.setModuleName(components[0]);
@@ -262,7 +262,7 @@ public final class JavaAppDesc {
             return components[components.length - 1];
         }).get();
 
-        FunctionalUtils.identity(() -> {
+        ((Runnable)() -> {
             String[] components = classNameAndOther.split("@", 2);
             if (components[0].endsWith("!")) {
                 components[0] = components[0].substring(0,

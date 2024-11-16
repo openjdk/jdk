@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -40,7 +41,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import jdk.jpackage.internal.util.function.FunctionalUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
@@ -88,11 +88,11 @@ public final class HelloApp {
         AtomicBoolean classDeclared = new AtomicBoolean();
         AtomicBoolean packageInserted = new AtomicBoolean(packageName == null);
 
-        var packageInserter = FunctionalUtils.identityFunction((line) -> {
+        Function<String, String> packageInserter = line -> {
             packageInserted.setPlain(true);
             return String.format("package %s;%s%s", packageName,
                     System.lineSeparator(), line);
-        });
+        };
 
         Files.write(srcFile,
                 Files.readAllLines(appDesc.srcJavaPath()).stream().map(line -> {
