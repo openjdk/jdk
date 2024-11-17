@@ -96,22 +96,6 @@ public class DriverManager {
     /* Prevent the DriverManager class from being instantiated. */
     private DriverManager(){}
 
-    /**
-     * The {@code SQLPermission} constant that allows the
-     * setting of the logging stream.
-     * @since 1.3
-     */
-    static final SQLPermission SET_LOG_PERMISSION =
-        new SQLPermission("setLog");
-
-    /**
-     * The {@code SQLPermission} constant that allows the
-     * un-register a registered JDBC driver.
-     * @since 1.8
-     */
-    static final SQLPermission DEREGISTER_DRIVER_PERMISSION =
-        new SQLPermission("deregisterDriver");
-
     //--------------------------JDBC 2.0-----------------------------
 
     /**
