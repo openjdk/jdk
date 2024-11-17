@@ -64,10 +64,10 @@ abstract class TranslucentWindowPainter {
     protected WWindowPeer peer;
 
     // REMIND: we probably would want to remove this later
-    private static final boolean forceOpt  =
-        Boolean.getBoolean("sun.java2d.twp.forceopt", "false");
-    private static final boolean forceSW  =
-        Boolean.getBoolean("sun.java2d.twp.forcesw", "false");
+    private static final boolean forceOpt =
+        Boolean.getBoolean("sun.java2d.twp.forceopt");
+    private static final boolean forceSW =
+        Boolean.getBoolean("sun.java2d.twp.forcesw");
 
     /**
      * Creates an instance of the painter for particular peer.
