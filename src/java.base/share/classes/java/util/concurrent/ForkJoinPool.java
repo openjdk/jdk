@@ -841,10 +841,11 @@ public class ForkJoinPool extends AbstractExecutorService {
      * overridden by system properties, we use workers of subclass
      * InnocuousForkJoinWorkerThread when there is a SecurityManager
      * present. These workers have no permissions set, do not belong
-     * to any user-defined ThreadGroup, and clear all ThreadLocals
-     * after executing any top-level task.  The associated mechanics
-     * may be JVM-dependent and must access particular Thread class
-     * fields to achieve this effect.
+     * to any user-defined ThreadGroup, and clear all ThreadLocals and
+     * reset the ContextClassLoader before (re)activating to execute
+     * top-level task.  The associated mechanics may be JVM-dependent
+     * and must access particular Thread class fields to achieve this
+     * effect.
      *
      * InterruptibleTasks
      * ====================
@@ -1461,14 +1462,11 @@ public class ForkJoinPool extends AbstractExecutorService {
         /**
          * Runs the given task, as well as remaining local tasks.
          */
-        final void topLevelExec(ForkJoinTask<?> task, int cfg) {
-            int fifo = cfg & FIFO;
+        final void topLevelExec(ForkJoinTask<?> task, int fifo) {
             while (task != null) {
                 task.doExec();
                 task = nextLocalTask(fifo);
             }
-            if ((cfg & CLEAR_TLS) != 0)
-                ThreadLocalRandom.eraseThreadLocals(Thread.currentThread());
         }
 
         /**
@@ -1999,7 +1997,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred;     // seed from registerWorker
-            int cfg = w.config, nsteals = 0, src = -1;
+            int fifo = w.config & FIFO, nsteals = 0, src = -1;
             for (;;) {
                 WorkQueue[] qs;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
@@ -2042,7 +2040,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                       interruptibleTaskClass) &&
                                      a[nb & m] != null))
                                     signalWork();
-                                w.topLevelExec(t, cfg);
+                                w.topLevelExec(t, fifo);
                                 if ((b = q.base) != nb && !propagate)
                                     break scan;          // reduce interference
                             }
@@ -2105,7 +2103,9 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     private int awaitWork(WorkQueue w, int p) {
         if (w != null) {
-            long deadline;                     // for idle timeouts
+            ForkJoinWorkerThread t; long deadline;
+            if ((w.config & CLEAR_TLS) != 0 && (t = w.owner) != null)
+                t.resetThreadLocals();          // clear before reactivate
             if ((ctl & RC_MASK) > 0L)
                 deadline = 0L;
             else if ((deadline =
@@ -4059,16 +4059,9 @@ public class ForkJoinPool extends AbstractExecutorService {
             throw new Error("array index scale not a power of two");
 
         interruptibleTaskClass = ForkJoinTask.InterruptibleTask.class;
-        JLA = SharedSecrets.getJavaLangAccess();
-        defaultForkJoinWorkerThreadFactory =
-            new DefaultForkJoinWorkerThreadFactory();
-        @SuppressWarnings("removal")
-        ForkJoinPool p = common = (System.getSecurityManager() == null) ?
-            new ForkJoinPool((byte)0) :
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                    public ForkJoinPool run() {
-                        return new ForkJoinPool((byte)0); }});
+        Class<?> dep = LockSupport.class; // ensure loaded
         // allow access to non-public methods
+        JLA = SharedSecrets.getJavaLangAccess();
         SharedSecrets.setJavaUtilConcurrentFJPAccess(
             new JavaUtilConcurrentFJPAccess() {
                 @Override
@@ -4079,6 +4072,13 @@ public class ForkJoinPool extends AbstractExecutorService {
                     pool.endCompensatedBlock(post);
                 }
             });
-        Class<?> dep = LockSupport.class; // ensure loaded
+        defaultForkJoinWorkerThreadFactory =
+            new DefaultForkJoinWorkerThreadFactory();
+        @SuppressWarnings("removal")
+        ForkJoinPool p = common = (System.getSecurityManager() == null) ?
+            new ForkJoinPool((byte)0) :
+            AccessController.doPrivileged(new PrivilegedAction<>() {
+                    public ForkJoinPool run() {
+                        return new ForkJoinPool((byte)0); }});
     }
 }
