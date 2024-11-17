@@ -410,10 +410,7 @@ public class DocFlavor implements Serializable, Cloneable {
      * @spec https://www.rfc-editor.org/info/rfc2278
      *      RFC 2278: IANA Charset Registration Procedures
      */
-    @SuppressWarnings("removal")
-    public static final String hostEncoding =
-            java.security.AccessController.doPrivileged(
-                  new sun.security.action.GetPropertyAction("file.encoding"));
+    public static final String hostEncoding = System.getProperty("file.encoding");
 
     /**
      * MIME type.

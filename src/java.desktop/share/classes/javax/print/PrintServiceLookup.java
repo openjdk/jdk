@@ -335,7 +335,6 @@ public abstract class PrintServiceLookup {
      *
      * @return all lookup services for this environment
      */
-    @SuppressWarnings("removal")
     private static ArrayList<PrintServiceLookup> getAllLookupServices() {
         synchronized (PrintServiceLookup.class) {
             ArrayList<PrintServiceLookup> listOfLookupServices = getListOfLookupServices();
@@ -344,32 +343,11 @@ public abstract class PrintServiceLookup {
             } else {
                 listOfLookupServices = initListOfLookupServices();
             }
-            try {
-                java.security.AccessController.doPrivileged(
-                     new java.security.PrivilegedExceptionAction<Object>() {
-                        public Object run() {
-                            Iterator<PrintServiceLookup> iterator =
-                                ServiceLoader.load(PrintServiceLookup.class).
-                                iterator();
-                            ArrayList<PrintServiceLookup> los = getListOfLookupServices();
-                            while (iterator.hasNext()) {
-                                try {
-                                    los.add(iterator.next());
-                                }  catch (ServiceConfigurationError err) {
-                                    /* In the applet case, we continue */
-                                    if (System.getSecurityManager() != null) {
-                                        err.printStackTrace();
-                                    } else {
-                                        throw err;
-                                    }
-                                }
-                            }
-                            return null;
-                        }
-                });
-            } catch (java.security.PrivilegedActionException e) {
+            Iterator<PrintServiceLookup> iterator = ServiceLoader.load(PrintServiceLookup.class).iterator();
+            ArrayList<PrintServiceLookup> los = getListOfLookupServices();
+            while (iterator.hasNext()) {
+                los.add(iterator.next());
             }
-
             return listOfLookupServices;
         }
     }
