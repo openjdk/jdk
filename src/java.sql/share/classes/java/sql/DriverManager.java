@@ -528,7 +528,6 @@ public class DriverManager {
      * Load the initial JDBC drivers by checking the System property
      * jdbc.drivers and then use the {@code ServiceLoader} mechanism
      */
-    @SuppressWarnings("removal")
     private static void ensureDriversInitialized() {
         if (driversInitialized) {
             return;

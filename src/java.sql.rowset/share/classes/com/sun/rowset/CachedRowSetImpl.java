@@ -353,7 +353,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * <P>
      * @throws SQLException if an error occurs
      */
-    @SuppressWarnings("removal")
     public CachedRowSetImpl() throws SQLException {
 
         try {
