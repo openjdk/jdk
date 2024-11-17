@@ -1205,7 +1205,6 @@ AccessBridgeJavaEntryPoints::getVirtualAccessibleName (
 
     jstring js = NULL;
     const wchar_t * stringBytes = NULL;
-    jthrowable exception = NULL;
     jsize length = 0;
     PrintDebugString("[INFO]:  getVirtualAccessibleName called.");
     if (getVirtualAccessibleNameFromContextMethod != (jmethodID) 0)
