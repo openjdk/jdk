@@ -245,7 +245,6 @@ public final class AppContext {
     private static final ThreadLocal<AppContext> threadAppContext =
             new ThreadLocal<AppContext>();
 
-    //@SuppressWarnings("removal")
     private static void initMainAppContext() {
         // On the main Thread, we get the ThreadGroup, make a corresponding
         // AppContext, and instantiate the Java EventQueue.  This way, legacy
