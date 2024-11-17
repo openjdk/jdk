@@ -2962,7 +2962,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 // create new instance of the class
                 SQLData obj = null;
                 try {
-                    ReflectUtil.checkPackageAccess(c);
                     @SuppressWarnings("deprecation")
                     Object tmp = c.newInstance();
                     obj = (SQLData) tmp;
