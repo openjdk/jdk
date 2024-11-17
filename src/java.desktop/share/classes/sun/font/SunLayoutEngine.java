@@ -165,7 +165,6 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
 
     static boolean useFFM = true;
     static {
-        @SuppressWarnings("removal")
         String prop = System.getProperty("sun.font.layout.ffm", "true");
         useFFM = "true".equals(prop);
 

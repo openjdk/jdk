@@ -126,6 +126,7 @@ public class CreatedFontTracker {
                  * keeping a strong reference to an application classloader.
                  */
                 t.setContextClassLoader(null);
+                Runtime.getRuntime().addShutdownHook(t);
             }
         }
 
