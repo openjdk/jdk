@@ -531,7 +531,7 @@ public final class PackageTest extends RunnablePackageTest {
             private Path unpackDir;
             private Action unhandledAction;
             private boolean terminated;
-            private final JPackageCommand cmd = ((Supplier<JPackageCommand>)() -> {
+            private final JPackageCommand cmd = Functional.identity(() -> {
                 JPackageCommand result = new JPackageCommand();
                 result.setDefaultInputOutput().setDefaultAppName();
                 if (BUNDLE_OUTPUT_DIR != null && !ignoreBundleOutputDir) {

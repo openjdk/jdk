@@ -68,7 +68,7 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 public final class TKit {
 
-    public static final Path TEST_SRC_ROOT = ((Supplier<Path>)() -> {
+    public static final Path TEST_SRC_ROOT = Functional.identity(() -> {
         Path root = Path.of(System.getProperty("test.src"));
 
         for (int i = 0; i != 10; ++i) {
@@ -81,22 +81,25 @@ public final class TKit {
         throw new RuntimeException("Failed to locate apps directory");
     }).get();
 
-    public static final Path SRC_ROOT = TEST_SRC_ROOT.resolve(
-            "../../../../src/jdk.jpackage").normalize().toAbsolutePath();
+    public static final Path SRC_ROOT = Functional.identity(() -> {
+        return TEST_SRC_ROOT.resolve("../../../../src/jdk.jpackage").normalize().toAbsolutePath();
+    }).get();
 
-    public static final String ICON_SUFFIX;
-
-    static {
+    public static final String ICON_SUFFIX = Functional.identity(() -> {
         if (isOSX()) {
-            ICON_SUFFIX = ".icns";
-        } else if (isLinux()) {
-            ICON_SUFFIX = ".png";
-        } else if (isWindows()) {
-            ICON_SUFFIX = ".ico";
-        } else {
-            throw throwUnknownPlatformError();
+            return ".icns";
         }
-    }
+
+        if (isLinux()) {
+            return ".png";
+        }
+
+        if (isWindows()) {
+            return ".ico";
+        }
+
+        throw throwUnknownPlatformError();
+    }).get();
 
     static void withExtraLogStream(ThrowingRunnable action) {
         if (extraLogStream != null) {
@@ -851,7 +854,7 @@ public final class TKit {
 
         traceAssert(concatMessages("assertStringListEquals()", msg));
 
-        String idxFieldFormat = ((Supplier<String>)() -> {
+        String idxFieldFormat = Functional.identity(() -> {
             int listSize = expected.size();
             int width = 0;
             while (listSize != 0) {
@@ -1065,8 +1068,13 @@ public final class TKit {
         return tokens.stream().collect(Collectors.toSet());
     }
 
-    static final Path LOG_FILE = Optional.ofNullable(
-            getConfigProperty("logfile")).map(Path::of).orElse(null);
+    static final Path LOG_FILE = Functional.identity(() -> {
+        String val = getConfigProperty("logfile");
+        if (val == null) {
+            return null;
+        }
+        return Path.of(val);
+    }).get();
 
     static {
         Set<String> logOptions = tokenizeConfigProperty("suppress-logging");
