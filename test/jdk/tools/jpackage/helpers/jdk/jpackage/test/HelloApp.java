@@ -88,11 +88,11 @@ public final class HelloApp {
         AtomicBoolean classDeclared = new AtomicBoolean();
         AtomicBoolean packageInserted = new AtomicBoolean(packageName == null);
 
-        Function<String, String> packageInserter = line -> {
+        var packageInserter = Functional.identityFunction((line) -> {
             packageInserted.setPlain(true);
             return String.format("package %s;%s%s", packageName,
                     System.lineSeparator(), line);
-        };
+        });
 
         Files.write(srcFile,
                 Files.readAllLines(appDesc.srcJavaPath()).stream().map(line -> {

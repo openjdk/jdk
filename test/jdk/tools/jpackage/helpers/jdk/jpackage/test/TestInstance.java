@@ -332,29 +332,28 @@ final class TestInstance implements ThrowingRunnable {
     private final boolean dryRun;
     private final Path workDir;
 
-    private static final Set<Status> KEEP_WORK_DIR;
+    private static final Set<Status> KEEP_WORK_DIR = Functional.identity(
+            () -> {
+                final String propertyName = "keep-work-dir";
+                Set<String> keepWorkDir = TKit.tokenizeConfigProperty(
+                        propertyName);
+                if (keepWorkDir == null) {
+                    return Set.of(Status.Failed);
+                }
 
-    static {
-        final String propertyName = "keep-work-dir";
-        Set<String> keepWorkDir = TKit.tokenizeConfigProperty(
-                propertyName);
-        if (keepWorkDir == null) {
-            KEEP_WORK_DIR = Set.of(Status.Failed);
-        } else {
+                Predicate<Set<String>> isOneOf = options -> {
+                    return !Collections.disjoint(keepWorkDir, options);
+                };
 
-            Predicate<Set<String>> isOneOf = options -> {
-                return !Collections.disjoint(keepWorkDir, options);
-            };
+                Set<Status> result = new HashSet<>();
+                if (isOneOf.test(Set.of("pass", "p"))) {
+                    result.add(Status.Passed);
+                }
+                if (isOneOf.test(Set.of("fail", "f"))) {
+                    result.add(Status.Failed);
+                }
 
-            Set<Status> result = new HashSet<>();
-            if (isOneOf.test(Set.of("pass", "p"))) {
-                result.add(Status.Passed);
-            }
-            if (isOneOf.test(Set.of("fail", "f"))) {
-                result.add(Status.Failed);
-            }
+                return Collections.unmodifiableSet(result);
+            }).get();
 
-            KEEP_WORK_DIR = Collections.unmodifiableSet(result);
-        }
-    }
 }
