@@ -120,12 +120,6 @@ public abstract class ImageWatched {
             return this;
         }
 
-        private static boolean update(ImageObserver iw,
-                                      Image img, int info,
-                                      int x, int y, int w, int h) {
-            return iw.imageUpdate(img, info, x, y, w, h);
-        }
-
         public boolean newInfo(Image img, int info,
                                int x, int y, int w, int h)
         {
@@ -135,7 +129,7 @@ public abstract class ImageWatched {
             if (myiw == null) {
                 // My referent is null so we must prune in a second pass.
                 ret = true;
-            } else if (update(myiw, img, info, x, y, w, h) == false) {
+            } else if (myiw.imageUpdate(img, info, x, y, w, h) == false) {
                 // My referent has lost interest so clear it and ask
                 // for a pruning pass to remove it later.
                 myref.clear();

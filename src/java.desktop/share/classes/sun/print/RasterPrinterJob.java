@@ -927,7 +927,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
-    @SuppressWarnings("removal")
     public boolean printDialog(final PrintRequestAttributeSet attributes)
         throws HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {

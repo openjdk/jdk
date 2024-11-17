@@ -54,7 +54,6 @@ import sun.awt.AWTAccessor;
 import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
 import sun.awt.OverrideNativeWindowHandle;
-import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2.RepaintListener;
 
 /**

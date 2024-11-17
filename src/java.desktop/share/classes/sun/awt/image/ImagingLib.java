@@ -49,7 +49,7 @@ import java.awt.image.WritableRaster;
  * (in which case our java code will be executed) or may throw
  * an exception.
  */
-@SuppressWarnings({"removal", "restricted"})
+@SuppressWarnings("restricted")
 public class ImagingLib {
 
     static boolean useLib = true;
@@ -88,8 +88,13 @@ public class ImagingLib {
 
     static {
 
-        System.loadLibrary("mlib_image");
-        boolean success = init();
+        boolean success;
+        try {
+            System.loadLibrary("mlib_image");
+            success = init();
+        } catch (UnsatisfiedLinkError e) {
+            success = false;
+        }
 
         useLib = Boolean.valueOf(success);
 

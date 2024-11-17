@@ -339,8 +339,6 @@ public class PSPrinterJob extends RasterPrinterJob {
     }
 
     private static void initStatic() {
-        //enable privileges so initProps can access system properties,
-        // open the property file, etc.
         mFontProps = initProps();
         isMac = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
     }
