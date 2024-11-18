@@ -276,9 +276,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jdkroot[], jint so_jdkroot,
                            char jvmpath[], jint so_jvmpath,
                            char jvmcfg[],  jint so_jvmcfg) {
-    /* Compute/set the name of the executable. This is needed for macOS. */
-    SetExecname(*pargv);
-
     if (JLI_IsStaticallyLinked()) {
         // With static builds, all JDK and VM natives are statically linked
         // with the launcher executable. No need to manipulate LD_LIBRARY_PATH
