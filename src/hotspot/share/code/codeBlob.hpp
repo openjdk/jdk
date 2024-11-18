@@ -109,7 +109,6 @@ protected:
   int      _relocation_size;       // size of relocation (could be bigger than 64Kb)
   int      _content_offset;        // offset to where content region begins (this includes consts, insts, stubs)
   int      _code_offset;           // offset to where instructions region begins (this includes insts, stubs)
-  int      _code_end_offset;       // offset to where code region ends
   int      _frame_size;            // size of stack frame in words (NOT slots. On x64 these are 64bit words)
 
   S390_ONLY(int _ctable_offset;)
@@ -200,11 +199,10 @@ public:
   relocInfo* relocation_begin() const         { return (relocInfo*)_mutable_data; }
   relocInfo* relocation_end() const           { return (relocInfo*)((address)relocation_begin() + _relocation_size); }
   address    content_begin() const            { return (address)    header_begin() + _content_offset; }
-  address    content_end() const              { return (address)    header_begin() + _code_end_offset; }
+  address    content_end() const              { return (address)    header_begin() + _size; }
   address    code_begin() const               { return (address)    header_begin() + _code_offset; }
-  // code_end == content_end is true for all types of blobs for now, it is also checked in the constructor
-  address    code_end() const                 { return (address)    header_begin() + _code_end_offset; }
-  address    blob_end() const                 { return (address) header_begin() + _size; }
+  address    code_end() const                 { return (address)    header_begin() + _size; }
+  address    blob_end() const                 { return (address)    header_begin() + _size; }
 
   // [relocations, oops, metatada, jvmci_data] stays in _mutable_data
   address    mdata_begin() const              { return mutable_data_begin(); }
@@ -229,7 +227,6 @@ public:
   // Only used from CodeCache::free_unused_tail() after the Interpreter blob was trimmed
   void adjust_size(size_t used) {
     _size = (int)used;
-    _code_end_offset = (int)used;
   }
 
   // Containment

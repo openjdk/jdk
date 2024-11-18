@@ -124,7 +124,6 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
   _content_offset(CodeBlob::align_code_offset(header_size)),
   _code_offset(_content_offset + cb->total_offset_of(cb->insts())),
-  _code_end_offset(_content_offset + align_up(cb->total_content_size(), oopSize)),
   _frame_size(frame_size),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
@@ -137,7 +136,8 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   assert(is_aligned(_size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,      oopSize), "unaligned size");
   assert(is_aligned(_relocation_size, oopSize), "unaligned size");
-  assert(_code_end_offset <= _size, "codeBlob is too small: %d > %d", _code_end_offset, _size);
+  int code_end_offset = _content_offset + align_up(cb->total_content_size(), oopSize);
+  assert(code_end_offset == _size, "wrong codeBlob size: %d != %d", _size, code_end_offset);
   assert(code_end() == content_end(), "must be the same - see code_end()");
 #ifdef COMPILER1
   // probably wrong for tiered
@@ -165,7 +165,6 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
   _code_offset(_content_offset),
-  _code_end_offset(size),
   _frame_size(0),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
