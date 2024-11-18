@@ -12731,7 +12731,7 @@ instruct testB_mem_imm(rFlagsReg cr, memory mem, immI8 imm, immI_0 zero)
 
 instruct cmovI_reg_g(rRegI dst, rRegI src, rFlagsReg cr)
 %{
-  //predicate(!UseAPX);
+  predicate(!UseAPX);
   effect(USE_DEF dst, USE src, USE cr);
 
   format %{ "cmovlgt $dst, $src\t# min" %}
@@ -12741,24 +12741,24 @@ instruct cmovI_reg_g(rRegI dst, rRegI src, rFlagsReg cr)
   ins_pipe(pipe_cmov_reg);
 %}
 
-/*
+
 instruct cmovI_reg_g_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
-  effect(USE src1, USE src2, USE cr);
+  effect(DEF dst, USE src1, USE src2, USE cr);
 
   format %{ "ecmovlgt $dst, $src1, $src2\t# min ndd" %}
   ins_encode %{
-    __ ecmovl(Assembler::greater, $dst$$Register, $src1$$Register, $src1$$Register);
+    __ ecmovl(Assembler::greater, $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
-*/
+
 
 
 instruct minI_rReg(rRegI dst, rRegI src)
 %{
-  //predicate(!UseAPX);
+  predicate(!UseAPX);
   match(Set dst (MinI dst src));
 
   ins_cost(200);
@@ -12769,11 +12769,12 @@ instruct minI_rReg(rRegI dst, rRegI src)
   %}
 %}
 
-/*
+
 instruct minI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
 %{
   predicate(UseAPX);
   match(Set dst (MinI src1 src2));
+  effect(DEF dst, USE src1, USE src2);
 
   ins_cost(200);
   expand %{
@@ -12782,11 +12783,11 @@ instruct minI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
     cmovI_reg_g_ndd(dst, src1, src2, cr);
   %}
 %}
-*/
+
 
 instruct cmovI_reg_l(rRegI dst, rRegI src, rFlagsReg cr)
 %{
-  //predicate(!UseAPX);
+  predicate(!UseAPX);
   effect(USE_DEF dst, USE src, USE cr);
 
   format %{ "cmovllt $dst, $src\t# max" %}
@@ -12796,23 +12797,22 @@ instruct cmovI_reg_l(rRegI dst, rRegI src, rFlagsReg cr)
   ins_pipe(pipe_cmov_reg);
 %}
 
-/*
 instruct cmovI_reg_l_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
-  effect(USE_DEF dst, USE src1, USE src2, USE cr);
+  effect(DEF dst, USE src1, USE src2, USE cr);
 
   format %{ "ecmovllt $dst, $src1, $src2\t# max ndd" %}
   ins_encode %{
     __ ecmovl(Assembler::less, $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
-%}*/
+%}
 
 
 instruct maxI_rReg(rRegI dst, rRegI src)
 %{
-  //predicate(!UseAPX);
+  predicate(!UseAPX);
   match(Set dst (MaxI dst src));
 
   ins_cost(200);
@@ -12823,11 +12823,11 @@ instruct maxI_rReg(rRegI dst, rRegI src)
   %}
 %}
 
-/*
 instruct maxI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
 %{
   predicate(UseAPX);
   match(Set dst (MaxI src1 src2));
+  effect(DEF dst, USE src1, USE src2);
 
   ins_cost(200);
   expand %{
@@ -12835,7 +12835,7 @@ instruct maxI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
     compI_rReg(cr, src1, src2);
     cmovI_reg_l_ndd(dst, src1, src2, cr);
   %}
-%}*/
+%}
 
 // ============================================================================
 // Branch Instructions
