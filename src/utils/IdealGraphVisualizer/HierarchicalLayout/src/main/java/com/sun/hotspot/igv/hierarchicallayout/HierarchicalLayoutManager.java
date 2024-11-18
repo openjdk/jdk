@@ -317,17 +317,15 @@ public class HierarchicalLayoutManager extends LayoutManager {
             downSweep(graph);
         }
 
-        private static final Comparator<LayoutNode> crossingNodeComparator = Comparator.comparingInt(n -> n.crossingNumber);
 
         private static void downSweep(LayoutGraph graph) {
-
             for (int i = 1; i < graph.getLayerCount(); i++) {
-
-                for (LayoutNode n : graph.getLayer(i)) {
+                LayoutLayer layer = graph.getLayer(i);
+                for (LayoutNode n : layer) {
                     n.setCrossingNumber(0);
                 }
 
-                for (LayoutNode n : graph.getLayer(i)) {
+                for (LayoutNode n : layer) {
 
                     int sum = 0;
                     int count = 0;
@@ -342,10 +340,10 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     }
                 }
 
-                updateCrossingNumbers(graph.getLayer(i), true);
-                graph.getLayer(i).sort(crossingNodeComparator);
-                graph.getLayer(i).updateMinXSpacing();
-                graph.getLayer(i).updateNodeIndices();
+                updateCrossingNumbers(layer, true);
+                layer.sort(NODE_CROSSING_COMPARATOR);
+                layer.updateMinXSpacing();
+                layer.updateNodeIndices();
             }
         }
 
@@ -379,15 +377,13 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
 
         private static void upSweep(LayoutGraph graph) {
-            // Upsweep
             for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
-
-                for (LayoutNode n : graph.getLayer(i)) {
+                LayoutLayer layer = graph.getLayer(i);
+                for (LayoutNode n : layer) {
                     n.setCrossingNumber(0);
                 }
 
-                for (LayoutNode n : graph.getLayer(i)) {
-
+                for (LayoutNode n : layer) {
                     int count = 0;
                     int sum = 0;
                     for (LayoutEdge e : n.getSuccessors()) {
@@ -402,10 +398,10 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
                 }
 
-                updateCrossingNumbers(graph.getLayer(i), false);
-                graph.getLayer(i).sort(crossingNodeComparator);
-                graph.getLayer(i).updateMinXSpacing();
-                graph.getLayer(i).updateNodeIndices();
+                updateCrossingNumbers(layer, false);
+                layer.sort(NODE_CROSSING_COMPARATOR);
+                layer.updateMinXSpacing();
+                layer.updateNodeIndices();
             }
         }
     }

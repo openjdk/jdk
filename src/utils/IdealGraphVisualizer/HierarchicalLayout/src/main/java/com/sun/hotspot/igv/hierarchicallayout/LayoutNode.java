@@ -47,6 +47,7 @@ public class LayoutNode {
     public static final Comparator<LayoutNode> NODE_PROCESSING_DOWN_COMPARATOR = DUMMY_NODES_FIRST.thenComparingInt(LayoutNode::getInDegree);
     public static final Comparator<LayoutNode> NODE_PROCESSING_UP_COMPARATOR = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOutDegree);
     public static final Comparator<LayoutNode> DUMMY_NODES_THEN_OPTIMAL_X = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOptimalX);
+    static final Comparator<LayoutNode> NODE_CROSSING_COMPARATOR = Comparator.comparingInt(LayoutNode::getCrossingNumber);
 
     // Default dimensions for dummy nodes
     public static final int DUMMY_HEIGHT = 1;
