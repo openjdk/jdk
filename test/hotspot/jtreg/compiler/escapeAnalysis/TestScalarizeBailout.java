@@ -27,24 +27,22 @@
  * @summary Test early bailout during the creation of graph nodes for the scalarization of array fields, rather than during code generation.
  * @run main/othervm -Xcomp
  *                   -XX:EliminateAllocationArraySizeLimit=60240
- *                   compiler.loopopts.superword.TestScalarize_Bailout
+ *                   compiler.escapeAnalysis.TestScalarizeBailout
  */
 
-package compiler.loopopts.superword;
+package compiler.escapeAnalysis;
 
-public class TestScalarize_Bailout {
-
-static Object var1;
-public static void main(String[] args) throws Exception {
+public class TestScalarizeBailout {
+  static Object var1;
+  public static void main(String[] args) throws Exception {
     var1 = new long[48 * 1024];
     long[] a1 = new long[48 * 1024];
     try {
-        Class <?> Class37 = Class.forName("compiler.loopopts.superword.TestScalarize_Bailout");
-        synchronized (compiler.loopopts.superword.TestScalarize_Bailout.class) {
-          for (int i = 0; i < a1.length; i++) {
-            a1[i] = (i + 0);
-          }
-        }
-    } catch (Exception eeeeeeee){throw new RuntimeException(eeeeeeee);}
-    }
+      // load the class to initialize the static object and trigger the EA
+      Class <?> Class37 = Class.forName("compiler.escapeAnalysis.TestScalarizeBailout");
+      for (int i = 0; i < a1.length; i++) {
+        a1[i] = (i + 0);
+      }
+    } catch (Exception e){throw new RuntimeException(e);}
+  }
 }
