@@ -532,7 +532,7 @@ final class WPathGraphics extends PathGraphics {
         double advanceScaleX = Math.sqrt(ptx.x*ptx.x+ptx.y*ptx.y);
         pty = new Point2D.Double(0.0, 1.0);
         deviceTransform.deltaTransform(pty, pty);
-        double advanceScaleY = Math.sqrt(pty.x*pty.x+pty.y*pty.y);
+        double advanceScaleY = -Math.sqrt(pty.x*pty.x+pty.y*pty.y);
 
         Font2D font2D = FontUtilities.getFont2D(font);
         if (font2D instanceof TrueTypeFont) {
@@ -697,7 +697,7 @@ final class WPathGraphics extends PathGraphics {
         double advanceScaleX = Math.sqrt(ptx.x*ptx.x+ptx.y*ptx.y);
         pty = new Point2D.Double(0.0, 1.0);
         deviceTransform.deltaTransform(pty, pty);
-        double advanceScaleY = Math.sqrt(pty.x*pty.x+pty.y*pty.y);
+        double advanceScaleY = -Math.sqrt(pty.x*pty.x+pty.y*pty.y);
 
         int numGlyphs = gv.getNumGlyphs();
         int[] glyphCodes = gv.getGlyphCodes(0, numGlyphs, null);
@@ -757,6 +757,7 @@ final class WPathGraphics extends PathGraphics {
          */
         AffineTransform advanceTransform =
            AffineTransform.getScaleInstance(advanceScaleX, advanceScaleY);
+        advanceTransform.rotate(iangle * Math.PI / 1800.0);
         float[] glyphAdvPos = new float[glyphPos.length];
 
         advanceTransform.transform(glyphPos, 0,         //source
@@ -876,6 +877,7 @@ final class WPathGraphics extends PathGraphics {
               */
              AffineTransform advanceTransform =
                 AffineTransform.getScaleInstance(scaleFactorX, scaleFactorY);
+             advanceTransform.rotate(iangle * Math.PI / 1800.0);
              float[] glyphAdvPos = new float[glyphPos.length];
 
              advanceTransform.transform(glyphPos, 0,         //source
