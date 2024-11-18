@@ -70,7 +70,6 @@ void MethodCounters::clear_counters() {
 }
 
 void MethodCounters::print_value_on(outputStream* st) const {
-  assert(is_methodCounters(), "must be methodCounters");
   st->print("method counters");
   print_address_on(st);
 }
