@@ -206,30 +206,24 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         sort(NODE_X_COMPARATOR); // Sort nodes in the layer increasingly by x
 
         updateNodeIndices();
-        updateMinXSpacing();
+        updateMinXSpacing(false);
     }
 
     /**
-     * Adjusts the X-coordinates of the nodes to ensure a minimum spacing between them.
-     * The spacing is determined by each node's outer width and a predefined node offset.
-     * This method ensures that nodes do not overlap and are positioned correctly along the X-axis.
+     * Ensures nodes have minimum horizontal spacing by adjusting their X positions.
+     *
+     * @param startFromZero if true, starts positioning from X = 0; otherwise, uses the first node's current X.
      */
-    public void updateMinXSpacing() {
+    public void updateMinXSpacing(boolean startFromZero) {
         if (isEmpty()) {
-            return; // If the list is empty, there's no need to adjust spacing.
+            return; // No nodes to adjust.
         }
 
-        // Starting X position for the first node.
-        int minX = this.get(0).getX();
+        int minX = startFromZero ? 0 : this.get(0).getX();
 
-        // Iterate over each node in the layer.
         for (LayoutNode node : this) {
-            // Calculate the new X position, ensuring it's at least minX.
             int x = Math.max(node.getX(), minX);
-            node.setX(x); // Set the adjusted X position for the node.
-
-            // Update minX for the next node.
-            // The new minX is the current node's X position plus its width and the node offset.
+            node.setX(x);
             minX = x + node.getOuterWidth() + NODE_OFFSET;
         }
     }
@@ -244,14 +238,6 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
             layoutNode.setPos(pos);
             pos++;
         }
-    }
-
-    /**
-     * Updates position indices and adjusts X-coordinates to ensure minimum spacing.
-     */
-    public void updateIndicesAndSpacing() {
-        updateNodeIndices();
-        updateMinXSpacing();
     }
 
     /**

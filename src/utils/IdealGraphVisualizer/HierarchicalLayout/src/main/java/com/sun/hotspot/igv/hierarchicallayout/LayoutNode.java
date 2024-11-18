@@ -42,12 +42,11 @@ public class LayoutNode {
     public static final Comparator<LayoutNode> LAYOUT_NODE_DEGREE_COMPARATOR = Comparator.comparingInt(LayoutNode::getDegree);
     public static final Comparator<LayoutNode> NODE_POS_COMPARATOR = Comparator.comparingInt(LayoutNode::getPos);
     public static final Comparator<LayoutNode> NODE_X_COMPARATOR = Comparator.comparingInt(LayoutNode::getX);
-    public static final Comparator<LayoutNode> CROSSING_NODE_COMPARATOR = Comparator.comparingDouble(LayoutNode::getWeightedPosition);
     public static final Comparator<LayoutNode> DUMMY_NODES_FIRST = Comparator.comparing(LayoutNode::isDummy).reversed();
     public static final Comparator<LayoutNode> NODE_PROCESSING_DOWN_COMPARATOR = DUMMY_NODES_FIRST.thenComparingInt(LayoutNode::getInDegree);
     public static final Comparator<LayoutNode> NODE_PROCESSING_UP_COMPARATOR = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOutDegree);
     public static final Comparator<LayoutNode> DUMMY_NODES_THEN_OPTIMAL_X = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOptimalX);
-    static final Comparator<LayoutNode> NODE_CROSSING_COMPARATOR = Comparator.comparingInt(LayoutNode::getCrossingNumber);
+    public static final Comparator<LayoutNode> NODE_BARYCENTER_COMPARATOR = Comparator.comparingDouble(LayoutNode::getBarycenter);
 
     // Default dimensions for dummy nodes
     public static final int DUMMY_HEIGHT = 1;
@@ -73,7 +72,6 @@ public class LayoutNode {
     private final HashMap<Link, List<Point>> reversedLinkEndPoints = new HashMap<>();   // End points of reversed edges
     private int pos = -1; // Position within its layer
 
-    private float weightedPosition = 0; // Used for positioning to minimize crossings
 
     /**
      * Constructs a LayoutNode associated with the given Vertex.
@@ -189,26 +187,70 @@ public class LayoutNode {
     }
 
     /**
-     * Computes the barycenter (weighted average x-coordinate) of the node based on its neighbors.
-     * Each neighbor's x-position is weighted by its degree.
-     *
-     * @return The barycenter x-coordinate.
+     * Enum to specify the type of neighbors to consider when computing the barycenter.
      */
-    public float getBarycenterX() {
+    public enum NeighborType {
+        PREDECESSORS,
+        SUCCESSORS,
+        BOTH
+    }
+
+    private float barycenter = 0; // Current barycenter value
+
+    /**
+     * Sets the barycenter value for the node.
+     *
+     * @param barycenter the calculated barycenter
+     */
+    public void setBarycenter(float barycenter) {
+        this.barycenter = barycenter;
+    }
+
+    /**
+     * Retrieves the barycenter value of the node.
+     *
+     * @return the barycenter
+     */
+    public float getBarycenter() {
+        return barycenter;
+    }
+
+    /**
+     * Computes the barycenter (average x-coordinate) of this node based on its neighboring nodes.
+     * The calculation can include predecessors, successors, or both, depending on the specified
+     * neighbor type. Optionally, the positions can be weighted by the degree (number of connections)
+     * of each neighboring node.
+     *
+     * @param neighborType Specifies which neighbors to include in the calculation:
+     *                     - PREDECESSORS: Include only predecessor nodes.
+     *                     - SUCCESSORS: Include only successor nodes.
+     *                     - BOTH: Include both predecessors and successors.
+     * @param weighted     If true, weights each neighbor's x-coordinate by its degree;
+     *                     if false, all neighbors are weighted equally (weight of 1).
+     * @return The computed barycenter x-coordinate. Returns 0 if there are no neighbors.
+     */
+    public float computeBarycenterX(NeighborType neighborType, boolean weighted) {
         float totalWeightedPosition = 0;
         float totalWeight = 0;
 
-        for (LayoutEdge predEdge : preds) {
-            LayoutNode predNode = predEdge.getFrom();
-            int weight = predNode.getDegree();
-            totalWeightedPosition += weight * predEdge.getStartX();
-            totalWeight += weight;
+        // Include predecessors if specified
+        if (neighborType == NeighborType.PREDECESSORS || neighborType == NeighborType.BOTH) {
+            for (LayoutEdge predEdge : preds) {
+                LayoutNode predNode = predEdge.getFrom();
+                int weight = weighted ? predNode.getDegree() : 1;
+                totalWeightedPosition += weight * predEdge.getStartX();
+                totalWeight += weight;
+            }
         }
-        for (LayoutEdge succEdge : succs) {
-            LayoutNode succNode = succEdge.getTo();
-            int weight = succNode.getDegree();
-            totalWeightedPosition += weight * succEdge.getEndX();
-            totalWeight += weight;
+
+        // Include successors if specified
+        if (neighborType == NeighborType.SUCCESSORS || neighborType == NeighborType.BOTH) {
+            for (LayoutEdge succEdge : succs) {
+                LayoutNode succNode = succEdge.getTo();
+                int weight = weighted ? succNode.getDegree() : 1;
+                totalWeightedPosition += weight * succEdge.getEndX();
+                totalWeight += weight;
+            }
         }
 
         // Calculate the (weighted) average position for the node based on neighbor positions and weights (degree)
@@ -430,23 +472,6 @@ public class LayoutNode {
         this.pos = pos;
     }
 
-    public float getWeightedPosition() {
-        return weightedPosition;
-    }
-
-    public void setWeightedPosition(float weightedPosition) {
-        this.weightedPosition = weightedPosition;
-    }
-
-    public int crossingNumber;
-
-    public int getCrossingNumber() {
-        return crossingNumber;
-    }
-
-    public void setCrossingNumber(int crossingNumber) {
-        this.crossingNumber = crossingNumber;
-    }
 
     /**
      * Groups the successor edges by their relative x-coordinate from the current node.

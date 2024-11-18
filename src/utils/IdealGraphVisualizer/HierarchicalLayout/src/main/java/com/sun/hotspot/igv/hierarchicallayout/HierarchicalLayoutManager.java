@@ -305,105 +305,73 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
     private static class CrossingReductionLegacy {
 
+        /**
+         * Applies the crossing reduction algorithm to the given graph.
+         *
+         * @param graph the layout graph to optimize
+         */
         public static void apply(LayoutGraph graph) {
             graph.updatePositions();
-            graph.updateSpacings();
+            graph.updateSpacings(true);
 
-            // Optimize
             for (int i = 0; i < 2; i++) {
-                downSweep(graph);
-                upSweep(graph);
+                sweep(graph, true);  // Downwards sweep
+                sweep(graph, false); // Upwards sweep
             }
-            downSweep(graph);
+            sweep(graph, true); // Final downwards sweep
         }
 
+        /**
+         * Performs a sweep over the graph layers to reduce crossings.
+         *
+         * @param graph the layout graph
+         * @param down  true for downwards sweep, false for upwards sweep
+         */
+        private static void sweep(LayoutGraph graph, boolean down) {
+            int start, end, step;
+            if (down) {
+                start = 1;
+                end = graph.getLayerCount();
+                step = 1;
+            } else {
+                start = graph.getLayerCount() - 2;
+                end = -1;
+                step = -1;
+            }
+            NeighborType neighborType = down ? NeighborType.PREDECESSORS : NeighborType.SUCCESSORS;
 
-        private static void downSweep(LayoutGraph graph) {
-            for (int i = 1; i < graph.getLayerCount(); i++) {
+            for (int i = start; i != end; i += step) {
                 LayoutLayer layer = graph.getLayer(i);
-                for (LayoutNode n : layer) {
-                    n.setCrossingNumber(0);
+
+                for (LayoutNode node : layer) {
+                    node.setBarycenter(node.computeBarycenterX(neighborType, false));
                 }
 
-                for (LayoutNode n : layer) {
+                // Update barycenter  for nodes without adjacent edges
+                for (int j = 0; j < layer.size(); j++) {
+                    LayoutNode n = layer.get(j);
+                    LayoutNode prev = (j > 0) ? layer.get(j - 1) : null;
+                    LayoutNode next = (j < layer.size() - 1) ? layer.get(j + 1) : null;
 
-                    int sum = 0;
-                    int count = 0;
-                    for (LayoutEdge e : n.getPredecessors()) {
-                        sum += e.getStartX();
-                        count++;
-                    }
-
-                    if (count > 0) {
-                        sum /= count;
-                        n.setCrossingNumber(sum);
+                    // Check if the node has no adjacent edges
+                    if (down ? !n.hasPredecessors() : !n.hasSuccessors()) {
+                        // Adjust barycenter based on neighboring nodes
+                        if (prev != null && next != null) {
+                            n.setBarycenter((prev.getBarycenter() + next.getBarycenter()) / 2);
+                        } else if (prev != null) {
+                            n.setBarycenter(prev.getBarycenter());
+                        } else if (next != null) {
+                            n.setBarycenter(next.getBarycenter());
+                        }
                     }
                 }
 
-                updateCrossingNumbers(layer, true);
-                layer.sort(NODE_CROSSING_COMPARATOR);
-                layer.updateMinXSpacing();
+                layer.sort(NODE_BARYCENTER_COMPARATOR);
+                layer.updateMinXSpacing(true);
                 layer.updateNodeIndices();
             }
         }
 
-        private static void updateCrossingNumbers(LayoutLayer layer, boolean down) {
-            for (int i = 0; i < layer.size(); i++) {
-                LayoutNode n = layer.get(i);
-                LayoutNode prev = null;
-                if (i > 0) {
-                    prev = layer.get(i - 1);
-                }
-                LayoutNode next = null;
-                if (i < layer.size() - 1) {
-                    next = layer.get(i + 1);
-                }
-
-                boolean cond = !n.hasSuccessors();
-                if (down) {
-                    cond = !n.hasPredecessors();
-                }
-
-                if (cond) {
-                    if (prev != null && next != null) {
-                        n.crossingNumber = (prev.crossingNumber + next.crossingNumber) / 2;
-                    } else if (prev != null) {
-                        n.crossingNumber = prev.crossingNumber;
-                    } else if (next != null) {
-                        n.crossingNumber = next.crossingNumber;
-                    }
-                }
-            }
-        }
-
-        private static void upSweep(LayoutGraph graph) {
-            for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
-                LayoutLayer layer = graph.getLayer(i);
-                for (LayoutNode n : layer) {
-                    n.setCrossingNumber(0);
-                }
-
-                for (LayoutNode n : layer) {
-                    int count = 0;
-                    int sum = 0;
-                    for (LayoutEdge e : n.getSuccessors()) {
-                        sum += e.getEndX();
-                        count++;
-                    }
-
-                    if (count > 0) {
-                        sum /= count;
-                        n.crossingNumber = sum;
-                    }
-
-                }
-
-                updateCrossingNumbers(layer, false);
-                layer.sort(NODE_CROSSING_COMPARATOR);
-                layer.updateMinXSpacing();
-                layer.updateNodeIndices();
-            }
-        }
     }
 
 
@@ -420,14 +388,10 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
         private static void doAveragePositions(LayoutLayer layer) {
             for (LayoutNode node : layer) {
-                node.setWeightedPosition(node.getBarycenterX());
+                node.setBarycenter(node.computeBarycenterX(NeighborType.BOTH, true));
             }
-            layer.sort(CROSSING_NODE_COMPARATOR);
-            int x = 0;
-            for (LayoutNode n : layer) {
-                n.setWeightedPosition(x);
-                x += n.getOuterWidth() + NODE_OFFSET;
-            }
+            layer.sort(NODE_BARYCENTER_COMPARATOR);
+            layer.updateMinXSpacing(true);
         }
 
         private static void doMedianPositions(LayoutLayer layer, boolean usePred) {
@@ -437,19 +401,19 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 float[] values = new float[size];
                 for (int j = 0; j < size; j++) {
                     LayoutNode predNode = usePred ? node.getPredecessors().get(j).getFrom() : node.getSuccessors().get(j).getTo();
-                    values[j] = predNode.getWeightedPosition();
+                    values[j] = predNode.getBarycenter();
                 }
                 Arrays.sort(values);
                 if (values.length % 2 == 0) {
-                    node.setWeightedPosition((values[size / 2 - 1] + values[size / 2]) / 2);
+                    node.setBarycenter((values[size / 2 - 1] + values[size / 2]) / 2);
                 } else {
-                    node.setWeightedPosition(values[size / 2]);
+                    node.setBarycenter(values[size / 2]);
                 }
             }
-            layer.sort(CROSSING_NODE_COMPARATOR);
+            layer.sort(NODE_BARYCENTER_COMPARATOR);
             int x = 0;
             for (LayoutNode n : layer) {
-                n.setWeightedPosition(x);
+                n.setBarycenter(x);
                 x += n.getOuterWidth() + NODE_OFFSET;
             }
         }
@@ -460,15 +424,15 @@ public class HierarchicalLayoutManager extends LayoutManager {
             for (int j = 0; j < layer.size(); j++) {
                 LayoutNode node = layer.get(j);
                 if (usePred ? !node.hasPredecessors() : !node.hasSuccessors()) {
-                    float prevWeight = (j > 0) ? layer.get(j - 1).getWeightedPosition() : 0;
-                    float nextWeight = (j < layer.size() - 1) ? layer.get(j + 1).getWeightedPosition() : 0;
-                    node.setWeightedPosition((prevWeight + nextWeight) / 2);
+                    float prevWeight = (j > 0) ? layer.get(j - 1).getBarycenter() : 0;
+                    float nextWeight = (j < layer.size() - 1) ? layer.get(j + 1).getBarycenter() : 0;
+                    node.setBarycenter((prevWeight + nextWeight) / 2);
                 }
             }
-            layer.sort(CROSSING_NODE_COMPARATOR);
+            layer.sort(NODE_BARYCENTER_COMPARATOR);
             int x = 0;
             for (LayoutNode n : layer) {
-                n.setWeightedPosition(x);
+                n.setBarycenter(x);
                 x += n.getOuterWidth() + NODE_OFFSET;
             }
         }

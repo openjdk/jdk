@@ -338,10 +338,12 @@ public class LayoutGraph {
      * Adjusts the X-coordinates of all nodes in each layer to ensure minimum spacing between them.
      * This method should be called after changes to node positions, node sizes, or layer compositions
      * that may affect node spacing.
+     *
+     * @param startFromZero if true, starts positioning from X = 0; otherwise, uses the first node's current X.
      */
-    public void updateSpacings() {
+    public void updateSpacings(boolean startFromZero) {
         for (LayoutLayer layer : layers) {
-            layer.updateMinXSpacing();
+            layer.updateMinXSpacing(startFromZero);
         }
     }
 
