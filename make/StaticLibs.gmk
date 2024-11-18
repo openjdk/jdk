@@ -176,7 +176,15 @@ $(eval $(call SetupCopyFiles, copy-static-launcher, \
 
 TARGETS += $(copy-static-launcher)
 
-static-jdk-image: $(copy-from-jdk-image) $(copy-static-launcher)
+$(eval $(call SetupCopyFiles, copy-static-launcher-debuginfo, \
+    SRC := $(STATIC_LAUNCHER_OUTPUT_DIR), \
+    DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
+    FILES := $(call FindDebuginfoFiles, $(STATIC_LAUNCHER_OUTPUT_DIR)), \
+))
+
+TARGETS += $(copy-static-launcher-debuginfo)
+
+static-jdk-image: $(copy-from-jdk-image) $(copy-static-launcher) $(copy-static-launcher-debuginfo)
 
 TARGETS += static-jdk-image
 
