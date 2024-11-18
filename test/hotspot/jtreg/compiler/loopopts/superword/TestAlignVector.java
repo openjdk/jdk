@@ -60,6 +60,24 @@ import java.nio.ByteOrder;
  * @run driver compiler.loopopts.superword.TestAlignVector VerifyAlignVector
  */
 
+/*
+ * @test id=NoAlignVector-COH
+ * @bug 8310190
+ * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestAlignVector NoAlignVector-COH
+ */
+
+/*
+ * @test id=VerifyAlignVector-COH
+ * @bug 8310190
+ * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestAlignVector VerifyAlignVector-COH
+ */
+
 public class TestAlignVector {
     static int RANGE = 1024*8;
     static int RANGE_FINAL = 1024*8;
@@ -96,9 +114,11 @@ public class TestAlignVector {
                            "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=250");
 
         switch (args[0]) {
-            case "NoAlignVector"     -> { framework.addFlags("-XX:-AlignVector"); }
-            case "AlignVector"       -> { framework.addFlags("-XX:+AlignVector"); }
-            case "VerifyAlignVector" -> { framework.addFlags("-XX:+AlignVector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyAlignVector"); }
+            case "NoAlignVector"         -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "AlignVector"           -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            case "VerifyAlignVector"     -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyAlignVector"); }
+            case "NoAlignVector-COH"     -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "VerifyAlignVector-COH" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyAlignVector"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         }
         framework.start();
@@ -117,7 +137,8 @@ public class TestAlignVector {
 
         // Add all tests to list
         tests.put("test0",       () -> { return test0(aB.clone(), bB.clone(), mB); });
-        tests.put("test1",       () -> { return test1(aB.clone(), bB.clone(), mB); });
+        tests.put("test1a",      () -> { return test1a(aB.clone(), bB.clone(), mB); });
+        tests.put("test1b",      () -> { return test1b(aB.clone(), bB.clone(), mB); });
         tests.put("test2",       () -> { return test2(aB.clone(), bB.clone(), mB); });
         tests.put("test3",       () -> { return test3(aB.clone(), bB.clone(), mB); });
         tests.put("test4",       () -> { return test4(aB.clone(), bB.clone(), mB); });
@@ -198,7 +219,8 @@ public class TestAlignVector {
 
     @Warmup(100)
     @Run(test = {"test0",
-                 "test1",
+                 "test1a",
+                 "test1b",
                  "test2",
                  "test3",
                  "test4",
@@ -398,13 +420,37 @@ public class TestAlignVector {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.AND_VB, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"UseCompactObjectHeaders", "false"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        // UNSAFE.ARRAY_BYTE_BASE_OFFSET = 16, but with compact object headers UNSAFE.ARRAY_BYTE_BASE_OFFSET=12.
+        // If AlignVector=true, we need the offset to be 8-aligned, else the vectors are filtered out.
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
-    static Object[] test1(byte[] a, byte[] b, byte mask) {
+    static Object[] test1a(byte[] a, byte[] b, byte mask) {
         for (int i = 0; i < RANGE; i+=8) {
-            // Safe to vectorize with AlignVector
-            b[i+0] = (byte)(a[i+0] & mask); // offset 0, align 0
+            b[i+0] = (byte)(a[i+0] & mask); // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0 + i*8
+            b[i+1] = (byte)(a[i+1] & mask);
+            b[i+2] = (byte)(a[i+2] & mask);
+            b[i+3] = (byte)(a[i+3] & mask);
+            b[i+4] = (byte)(a[i+4] & mask);
+            b[i+5] = (byte)(a[i+5] & mask);
+            b[i+6] = (byte)(a[i+6] & mask);
+            b[i+7] = (byte)(a[i+7] & mask);
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.AND_VB, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfOr = {"UseCompactObjectHeaders", "true", "AlignVector", "false"},
+        // UNSAFE.ARRAY_BYTE_BASE_OFFSET = 16, but with compact object headers UNSAFE.ARRAY_BYTE_BASE_OFFSET=12.
+        // If AlignVector=true, we need the offset to be 8-aligned, else the vectors are filtered out.
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    static Object[] test1b(byte[] a, byte[] b, byte mask) {
+        for (int i = 4; i < RANGE-8; i+=8) {
+            b[i+0] = (byte)(a[i+0] & mask); // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4 + i*8
             b[i+1] = (byte)(a[i+1] & mask);
             b[i+2] = (byte)(a[i+2] & mask);
             b[i+3] = (byte)(a[i+3] & mask);
@@ -707,7 +753,7 @@ public class TestAlignVector {
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.AND_VS,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">=16", "UseCompactObjectHeaders", "false"},
+        applyIfAnd = {"MaxVectorSize", ">=16", "UseCompactObjectHeaders", "false"}, // TODO
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test10d(short[] a, short[] b, short mask) {
@@ -1002,7 +1048,7 @@ public class TestAlignVector {
                   IRNode.ADD_VB, "> 0",
                   IRNode.ADD_VI, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"UseCompactObjectHeaders", "false"},
+        applyIf = {"UseCompactObjectHeaders", "false"}, // TODO
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13aIB(int[] a, byte[] b) {
@@ -1019,7 +1065,7 @@ public class TestAlignVector {
                   IRNode.ADD_VI, "> 0",
                   IRNode.ADD_VS, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"UseCompactObjectHeaders", "false"},
+        applyIf = {"UseCompactObjectHeaders", "false"}, // TODO
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13aIS(int[] a, short[] b) {
@@ -1040,7 +1086,7 @@ public class TestAlignVector {
                   IRNode.ADD_VI, "> 0",
                   IRNode.ADD_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"UseCompactObjectHeaders", "false"},
+        applyIf = {"UseCompactObjectHeaders", "false"}, // TODO
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13aBSIL(byte[] a, short[] b, int[] c, long[] d) {
@@ -1076,7 +1122,7 @@ public class TestAlignVector {
                   IRNode.ADD_VB, "> 0",
                   IRNode.ADD_VI, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"UseCompactObjectHeaders", "false"},
+        applyIf = {"UseCompactObjectHeaders", "false"}, // TODO
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13bIB(int[] a, byte[] b) {
@@ -1093,7 +1139,7 @@ public class TestAlignVector {
                   IRNode.ADD_VI, "> 0",
                   IRNode.ADD_VS, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"UseCompactObjectHeaders", "false"},
+        applyIf = {"UseCompactObjectHeaders", "false"}, // TODO
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13bIS(int[] a, short[] b) {
@@ -1114,7 +1160,7 @@ public class TestAlignVector {
                   IRNode.ADD_VI, "> 0",
                   IRNode.ADD_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"UseCompactObjectHeaders", "false"},
+        applyIf = {"UseCompactObjectHeaders", "false"}, // TODO
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13bBSIL(byte[] a, short[] b, int[] c, long[] d) {
