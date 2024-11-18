@@ -166,7 +166,7 @@ final class Validator {
         fps.values().forEach( fp -> {
             // all versioned entries must be compatible with their release target number
             if (fp.mrversion() < fp.classReleaseVersion()) {
-                errorAndInvalid(formatMsg2("error.release.unexpected.versioned.entry",
+                errorAndInvalid(formatMsg2("error.release.value.toohigh.versioned.entry",
                         fp.entryName(), String.valueOf(fp.classReleaseVersion())));
                 return;
             }

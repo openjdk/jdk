@@ -213,7 +213,7 @@ public class Basic extends MRTestBase {
         jarTool("uf", jarfile, "-C", classes.resolve("v9").toString(), "version",
                 "--release", "9", "-C", classes.resolve("v10").toString(), ".")
                 .shouldNotHaveExitValue(SUCCESS)
-                .shouldContain("unexpected versioned entry");
+                .shouldContain("classfile release value of META-INF/versions/9/version/Version.class too high: 10");
 
         FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
         FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
