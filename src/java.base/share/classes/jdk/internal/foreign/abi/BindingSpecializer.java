@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi;
 
 import java.lang.classfile.Annotation;
@@ -48,9 +49,6 @@ import jdk.internal.foreign.abi.Binding.ShiftRight;
 import jdk.internal.foreign.abi.Binding.VMLoad;
 import jdk.internal.foreign.abi.Binding.VMStore;
 import jdk.internal.vm.annotation.ForceInline;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetPropertyAction;
 
 import java.io.IOException;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
@@ -78,11 +76,11 @@ import static jdk.internal.constant.ConstantUtils.*;
 
 public class BindingSpecializer {
     private static final String DUMP_CLASSES_DIR
-        = GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.DUMP_CLASSES_DIR");
+            = System.getProperty("jdk.internal.foreign.abi.Specializer.DUMP_CLASSES_DIR");
     private static final boolean PERFORM_VERIFICATION
-        = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.PERFORM_VERIFICATION");
+            = Boolean.getBoolean("jdk.internal.foreign.abi.Specializer.PERFORM_VERIFICATION");
     private static final int SCOPE_DEDUP_DEPTH
-            = GetIntegerAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.SCOPE_DEDUP_DEPTH", 2);
+            = Integer.getInteger("jdk.internal.foreign.abi.Specializer.SCOPE_DEDUP_DEPTH", 2);
 
     // Bunch of helper constants
     private static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();

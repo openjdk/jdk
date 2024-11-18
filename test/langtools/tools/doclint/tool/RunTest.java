@@ -27,7 +27,8 @@
  * @summary Supplementary test cases needed for doclint
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  *          jdk.compiler/com.sun.tools.javac.api
- * @run main/othervm -Djava.security.manager=allow RunTest
+ * @library /test/lib
+ * @run main/othervm RunTest
  */
 
 import java.io.ByteArrayOutputStream;
@@ -36,7 +37,6 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
-import java.security.Permission;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -49,34 +49,13 @@ import com.sun.tools.javac.api.JavacTool;
 import jdk.javadoc.internal.doclint.DocLint;
 import jdk.javadoc.internal.doclint.DocLint.BadArgs;
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
 public class RunTest {
-    static class SimpleSecurityManager extends SecurityManager {
-        boolean allowExit = false;
-
-        @Override
-        public void checkExit(int status) {
-            if (!allowExit)
-                throw new SecurityException("System.exit(" + status + ")");
-        }
-        @Override
-        public void checkPermission(Permission perm) { }
-
-    }
 
     public static void main(String... args) throws Exception {
-        // if no security manager already installed, install one to
-        // prevent System.exit
-        SimpleSecurityManager secmgr = null;
-        if (System.getSecurityManager() == null) {
-            System.setSecurityManager(secmgr = new SimpleSecurityManager() { });
-        }
-
-        try {
-            new RunTest().run();
-        } finally {
-            if (secmgr != null)
-                secmgr.allowExit = true;
-        }
+        new RunTest().run();
     }
 
     void run() throws Exception {
@@ -91,19 +70,23 @@ public class RunTest {
 
     void testMain() {
         System.err.println("test main(String[])");
-        testMain(true, "-help");
-        testMain(false, "-unknownOption");
+        testMain(0, "-help");
+        testMain(1, "-unknownOption");
     }
 
-    void testMain(boolean expectOK, String... args) {
+    void testMain(int expectExitValue, String option) {
+        List<String> args = List.of(
+                "--add-exports=jdk.javadoc/jdk.javadoc.internal.doclint=ALL-UNNAMED",
+                DocLint.class.getName(),
+                option);
         try {
-            DocLint.main(args);
-            if (!expectOK)
-                error("expected SecurityException (from System.exit) not thrown");
-        } catch (SecurityException e) {
-            System.err.println(e);
-            if (expectOK)
-                error("unexpected SecurityException caught");
+            OutputAnalyzer oa = ProcessTools.executeTestJava(args);
+            oa.reportDiagnosticSummary();
+            if (oa.getExitValue() != expectExitValue) {
+                error("unexpected exit value: " + oa.getExitValue());
+            }
+        } catch (Exception e) {
+            error("unexpected Exception caught: " + e);
         }
     }
 

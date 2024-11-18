@@ -1,0 +1,5 @@
+LocalFreeVarStaticInstantiate.java:18:17: compiler.err.local.cant.be.inst.static: kindname.class, Local
+LocalFreeVarStaticInstantiate.java:22:17: compiler.err.local.cant.be.inst.static: kindname.class, Local
+LocalFreeVarStaticInstantiate.java:36:17: compiler.err.local.cant.be.inst.static: kindname.class, Local
+LocalFreeVarStaticInstantiate.java:40:17: compiler.err.local.cant.be.inst.static: kindname.class, Local
+4 errors

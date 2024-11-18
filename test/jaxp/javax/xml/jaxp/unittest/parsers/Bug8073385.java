@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,14 @@
 
 package parsers;
 
-import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
 import static org.testng.Assert.assertTrue;
-
 import java.io.StringReader;
 import java.util.Locale;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -44,12 +39,10 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 8073385
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug8073385
  * @run testng/othervm parsers.Bug8073385
  * @summary test that invalid XML character exception string contains
  *     information about character value, element and attribute names
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug8073385 {
 
     private Locale defLoc;
@@ -57,12 +50,12 @@ public class Bug8073385 {
     @BeforeClass
     public void setup() {
         defLoc = Locale.getDefault();
-        runWithAllPerm(() -> Locale.setDefault(Locale.ENGLISH));
+        Locale.setDefault(Locale.ENGLISH);
     }
 
     @AfterClass
     public void cleanup() {
-        runWithAllPerm(() -> Locale.setDefault(defLoc));
+        Locale.setDefault(defLoc);
     }
 
     @DataProvider(name = "illegalCharactersData")

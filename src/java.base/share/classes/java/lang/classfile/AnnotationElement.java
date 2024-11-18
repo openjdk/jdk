@@ -29,7 +29,6 @@ import java.lang.constant.ClassDesc;
 
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an element-value pair in the {@code element_value_pairs}
@@ -43,9 +42,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see Annotation
  * @see AnnotationValue
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AnnotationElement
         permits AnnotationImpl.AnnotationElementImpl {
 

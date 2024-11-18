@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ package java.lang;
 
 import java.io.*;
 import java.util.*;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.ThrowableTracer;
-import jdk.internal.misc.InternalLock;
 
 /**
  * The {@code Throwable} class is the superclass of all errors and
@@ -689,39 +687,27 @@ public class Throwable implements Serializable {
     }
 
     private void printStackTrace(PrintStreamOrWriter s) {
-        Object lock = s.lock();
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                lockedPrintStackTrace(s);
-            } finally {
-                locker.unlock();
-            }
-        } else synchronized (lock) {
-            lockedPrintStackTrace(s);
-        }
-    }
-
-    private void lockedPrintStackTrace(PrintStreamOrWriter s) {
         // Guard against malicious overrides of Throwable.equals by
         // using a Set with identity equality semantics.
         Set<Throwable> dejaVu = Collections.newSetFromMap(new IdentityHashMap<>());
         dejaVu.add(this);
 
-        // Print our stack trace
-        s.println(this);
-        StackTraceElement[] trace = getOurStackTrace();
-        for (StackTraceElement traceElement : trace)
-            s.println("\tat " + traceElement);
+        synchronized(s.lock()) {
+            // Print our stack trace
+            s.println(this);
+            StackTraceElement[] trace = getOurStackTrace();
+            for (StackTraceElement traceElement : trace)
+                s.println("\tat " + traceElement);
 
-        // Print suppressed exceptions, if any
-        for (Throwable se : getSuppressed())
-            se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION, "\t", dejaVu);
+            // Print suppressed exceptions, if any
+            for (Throwable se : getSuppressed())
+                se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION, "\t", dejaVu);
 
-        // Print cause, if any
-        Throwable ourCause = getCause();
-        if (ourCause != null)
-            ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, "", dejaVu);
+            // Print cause, if any
+            Throwable ourCause = getCause();
+            if (ourCause != null)
+                ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, "", dejaVu);
+        }
     }
 
     /**
@@ -733,7 +719,7 @@ public class Throwable implements Serializable {
                                          String caption,
                                          String prefix,
                                          Set<Throwable> dejaVu) {
-        assert s.isLockedByCurrentThread();
+        assert Thread.holdsLock(s.lock());
         if (dejaVu.contains(this)) {
             s.println(prefix + caption + "[CIRCULAR REFERENCE: " + this + "]");
         } else {
@@ -785,15 +771,6 @@ public class Throwable implements Serializable {
         /** Returns the object to be locked when using this StreamOrWriter */
         abstract Object lock();
 
-        boolean isLockedByCurrentThread() {
-            Object lock = lock();
-            if (lock instanceof InternalLock locker) {
-                return locker.isHeldByCurrentThread();
-            } else {
-                return Thread.holdsLock(lock);
-            }
-        }
-
         /** Prints the specified string as a line on this StreamOrWriter */
         abstract void println(Object o);
     }
@@ -806,7 +783,7 @@ public class Throwable implements Serializable {
         }
 
         Object lock() {
-            return SharedSecrets.getJavaIOPrintStreamAccess().lock(printStream);
+            return printStream;
         }
 
         void println(Object o) {
@@ -822,7 +799,7 @@ public class Throwable implements Serializable {
         }
 
         Object lock() {
-            return SharedSecrets.getJavaIOPrintWriterAccess().lock(printWriter);
+            return printWriter;
         }
 
         void println(Object o) {

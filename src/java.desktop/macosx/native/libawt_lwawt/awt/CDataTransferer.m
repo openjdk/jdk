@@ -136,7 +136,7 @@ static jobjectArray CreateJavaFilenameArray(JNIEnv *env, NSArray *filenameArray)
     jclass stringClazz = (*env)->FindClass(env, "java/lang/String");
     CHECK_NULL_RETURN(stringClazz, nil);
     jobject jfilenameArray = (*env)->NewObjectArray(env, filenameCount, stringClazz, NULL);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionDescribe(env);
         (*env)->ExceptionClear(env);
         return nil;
@@ -156,7 +156,7 @@ static jobjectArray CreateJavaFilenameArray(JNIEnv *env, NSArray *filenameArray)
 
         // Create a Java String:
         jstring string = (*env)->NewStringUTF(env, stringBytes);
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionDescribe(env);
             (*env)->ExceptionClear(env);
             continue;
@@ -168,7 +168,7 @@ static jobjectArray CreateJavaFilenameArray(JNIEnv *env, NSArray *filenameArray)
 
         // Set the Java array element with our String:
         (*env)->SetObjectArrayElement(env, jfilenameArray, i, string);
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionDescribe(env);
             (*env)->ExceptionClear(env);
             continue;

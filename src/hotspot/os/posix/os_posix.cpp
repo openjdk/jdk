@@ -696,14 +696,6 @@ void os::print_active_locale(outputStream* st) {
   }
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
   int retcode = uname(&name);
@@ -816,7 +808,7 @@ void* os::dll_lookup(void* handle, const char* name) {
   void* ret = ::dlsym(handle, name);
   if (ret == nullptr) {
     const char* tmp = ::dlerror();
-    // It is possible that we found a NULL symbol, hence no error.
+    // It is possible that we found a null symbol, hence no error.
     if (tmp != nullptr) {
       log_debug(os)("Symbol %s not found in dll: %s", name, tmp);
     }
@@ -937,10 +929,6 @@ void os::exit(int num) {
 
 void os::_exit(int num) {
   ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
-}
-
-bool os::dont_yield() {
-  return DontYieldALot;
 }
 
 void os::naked_yield() {

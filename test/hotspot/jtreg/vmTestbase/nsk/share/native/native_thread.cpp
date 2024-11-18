@@ -90,7 +90,7 @@ void* THREAD_new(PROCEDURE procedure, void* context) {
 /***************************************************************/
 
 #ifdef windows
-unsigned __stdcall procedure(void* t) {
+unsigned procedure(void* t) {
 #else // !windows
 void* procedure(void* t) {
 #endif
