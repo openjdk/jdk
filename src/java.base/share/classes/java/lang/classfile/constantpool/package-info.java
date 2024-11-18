@@ -30,9 +30,9 @@
  * {@code class} file format.  Constant pool entries are low-level models to faithfully represent the exact structure
  * of a {@code class} file.
  * <p>
- * Unless otherwise noted, passing a {@code null} argument to a constructor or method of any Class-File API class or
- * interface will cause a {@link NullPointerException} to be thrown.  Additionally, invoking a method with an array or
- * collection containing a {@code null} element will cause a {@code NullPointerException}, unless otherwise specified.
+ * Unless otherwise specified, passing {@code null} or an array or collection containing a {@code null} element as an
+ * argument to a constructor or method of any Class-File API class or interface will cause a {@link NullPointerException}
+ * to be thrown.
  *
  * <h2 id="reading">Reading the constant pool entries</h2>
  * When read from {@code class} files, the pool entries are lazily inflated; the contents of these entries, besides the
@@ -47,6 +47,11 @@
  * {@code class} files, and throw {@link IllegalArgumentException} when the accessed constant pool entry contains
  * invalid data.  The nominal descriptors represent validated data, which saves users from extra validations in future
  * processing.
+ * <p>
+ * Due to the lazy nature of {@code class} file parsing, {@link IllegalArgumentException} indicating malformed
+ * {@code class} file data can be thrown at any method invocation.  For example, an exception may come from a {@link
+ * ClassEntry} when it is first read from the constant pool (referring to an illegal entry), when its referred Utf8
+ * entry is expanded (malformed Utf8 data), or when its symbolic information is accessed (the string is not valid).
  *
  * <h2 id="writing">Writing the constant pool entries</h2>
  * In general, users do not need to worry about working with the constant pool and its entries when writing {@code
@@ -65,6 +70,7 @@
  * references can be copied in batch, speeding up class building.  This is especially applicable to class transformations,
  * and {@link ClassFile.ConstantPoolSharingOption ConstantPoolSharingOption} exists to control this behavior.
  *
+ * @jvms 4.4 The Constant Pool
  * @since 24
  */
 package java.lang.classfile.constantpool;
