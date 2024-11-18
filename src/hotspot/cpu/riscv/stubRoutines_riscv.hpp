@@ -35,32 +35,42 @@ static bool returns_to_call_stub(address return_pc) {
   return return_pc == _call_stub_return_address;
 }
 
+// emit enum used to size per-blob code buffers
+
+#define DEFINE_BLOB_SIZE(blob_name, size) \
+  _ ## blob_name ## _code_size = size,
+
 enum platform_dependent_constants {
-  // simply increase sizes if too small (assembler will crash if too small)
-  _initial_stubs_code_size      = 10000,
-  _continuation_stubs_code_size =  2000,
-  _compiler_stubs_code_size     = 45000,
-  _final_stubs_code_size        = 20000 ZGC_ONLY(+10000)
+  STUBGEN_ARCH_BLOBS_DO(DEFINE_BLOB_SIZE)
 };
+
+#undef DEFINE_BLOB_SIZE
 
 class riscv {
  friend class StubGenerator;
+#if INCLUDE_JVMCI
+  friend class JVMCIVMStructs;
+#endif
 
- private:
-  static address _zero_blocks;
+  // declare fields for arch-specific entries
 
-  static address _compare_long_string_LL;
-  static address _compare_long_string_LU;
-  static address _compare_long_string_UL;
-  static address _compare_long_string_UU;
-  static address _string_indexof_linear_ll;
-  static address _string_indexof_linear_uu;
-  static address _string_indexof_linear_ul;
+#define DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  static address STUB_FIELD_NAME(field_name) ;
+
+#define DECLARE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name)
+
+private:
+  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY, DECLARE_ARCH_ENTRY_INIT)
+
+#undef DECLARE_ARCH_ENTRY_INIT
+#undef DECLARE_ARCH_ENTRY
 
   static bool _completed;
 
  public:
 
+<<<<<<< HEAD
   static address zero_blocks() {
     return _zero_blocks;
   }
@@ -92,6 +102,20 @@ class riscv {
   static address string_indexof_linear_uu() {
     return _string_indexof_linear_uu;
   }
+=======
+  // declare getters for arch-specific entries
+
+#define DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name) \
+  static address getter_name() { return STUB_FIELD_NAME(field_name) ; }
+
+#define DEFINE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
+
+  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT)
+
+#undef DEFINE_ARCH_ENTRY_GETTER_INIT
+#undef DEFINE_ARCH_ENTRY_GETTER
+>>>>>>> 84b733b3b36 (add arch-specific stub declarations for riscv)
 
   static bool complete() {
     return _completed;

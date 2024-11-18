@@ -34,14 +34,19 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::riscv::_zero_blocks = nullptr;
-address StubRoutines::riscv::_compare_long_string_LL = nullptr;
-address StubRoutines::riscv::_compare_long_string_UU = nullptr;
-address StubRoutines::riscv::_compare_long_string_LU = nullptr;
-address StubRoutines::riscv::_compare_long_string_UL = nullptr;
-address StubRoutines::riscv::_string_indexof_linear_ll = nullptr;
-address StubRoutines::riscv::_string_indexof_linear_uu = nullptr;
-address StubRoutines::riscv::_string_indexof_linear_ul = nullptr;
+
+// define fields for arch-specific entries
+
+#define DEFINE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = nullptr;
+
+#define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
+
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+
+#undef DEFINE_ARCH_ENTRY_INIT
+#undef DEFINE_ARCH_ENTRY
 
 bool StubRoutines::riscv::_completed = false;
 
