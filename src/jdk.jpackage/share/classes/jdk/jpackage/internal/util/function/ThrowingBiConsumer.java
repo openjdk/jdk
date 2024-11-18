@@ -27,14 +27,14 @@ import java.util.function.BiConsumer;
 @FunctionalInterface
 public interface ThrowingBiConsumer<T, U> {
 
-    void accept(T t, U u) throws Exception;
+    void accept(T t, U u) throws Throwable;
 
     public static <T, U> BiConsumer<T, U> toBiConsumer(
             ThrowingBiConsumer<T, U> v) {
         return (t, u) -> {
             try {
                 v.accept(t, u);
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 throw ExceptionBox.rethrowUnchecked(ex);
             }
         };
