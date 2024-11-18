@@ -37,7 +37,11 @@ public class LayoutEdge {
     /**
      * Comparator to sort LayoutEdges based on the layer of their target nodes.
      */
-    public static final Comparator<LayoutEdge> LAYOUT_EDGE_LAYER_COMPARATOR = Comparator.comparingInt(e -> e.getTo().getLayer());
+    public static final Comparator<LayoutEdge> LAYOUT_EDGE_LAYER_COMPARATOR = Comparator
+            .comparingInt((LayoutEdge e) -> e.getTo().getLayer()) // Primary: Layer of the target node
+            .thenComparingInt(e -> e.getFrom().getLayer())       // Secondary: Layer of the source node
+            .thenComparingInt(System::identityHashCode);  // Tertiary: Unique identifier (fallback)
+
 
     private LayoutNode from;
     private LayoutNode to;

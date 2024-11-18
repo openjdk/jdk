@@ -42,9 +42,9 @@ public class LayoutGraph {
 
     private final Set<? extends Link> links;
     private final SortedSet<Vertex> vertices;
-    private final HashMap<Vertex, List<Port>> inputPorts;
-    private final HashMap<Vertex, List<Port>> outputPorts;
-    private final HashMap<Port, List<Link>> portLinks;
+    private final LinkedHashMap<Vertex, List<Port>> inputPorts;
+    private final LinkedHashMap<Vertex, List<Port>> outputPorts;
+    private final LinkedHashMap<Port, List<Link>> portLinks;
 
     private final List<LayoutNode> dummyNodes;
     private final List<LayoutNode> layoutNodes;
@@ -72,9 +72,9 @@ public class LayoutGraph {
     public LayoutGraph(Collection<? extends Link> links, Collection<? extends Vertex> additionalVertices) {
         this.links = new HashSet<>(links);
         vertices = new TreeSet<>(additionalVertices);
-        portLinks = new HashMap<>(links.size());
-        inputPorts = new HashMap<>(links.size());
-        outputPorts = new HashMap<>(links.size());
+        portLinks = new LinkedHashMap<>(links.size());
+        inputPorts = new LinkedHashMap<>(links.size());
+        outputPorts = new LinkedHashMap<>(links.size());
 
         for (Link link : links) {
             assert link.getFrom() != null;
@@ -109,7 +109,7 @@ public class LayoutGraph {
         // Set up edges
         List<Link> sortedLinks = new ArrayList<>(links);
         sortedLinks.sort(LINK_COMPARATOR);
-        for (Link link : links) {
+        for (Link link : sortedLinks) {
             createLayoutEdge(link);
         }
     }
@@ -946,11 +946,12 @@ public class LayoutGraph {
      * @param maxLayerLength The maximum number of layers an edge can span without splitting it
      */
     public void createDummiesForNodeSuccessor(LayoutNode layoutNode, int maxLayerLength) {
-        HashMap<Integer, List<LayoutEdge>> portsToUnprocessedEdges = new HashMap<>();
+        LinkedHashMap<Integer, List<LayoutEdge>> portsToUnprocessedEdges = new LinkedHashMap<>();
         ArrayList<LayoutEdge> succs = new ArrayList<>(layoutNode.getSuccessors());
-        HashMap<Integer, LayoutNode> portToTopNode = new HashMap<>();
-        HashMap<Integer, HashMap<Integer, LayoutNode>> portToBottomNodeMapping = new HashMap<>();
+        LinkedHashMap<Integer, LayoutNode> portToTopNode = new LinkedHashMap<>();
+        LinkedHashMap<Integer, LinkedHashMap<Integer, LayoutNode>> portToBottomNodeMapping = new LinkedHashMap<>();
         for (LayoutEdge succEdge : succs) {
+            //System.out.print(succEdge + " ");
             int startPort = succEdge.getRelativeFromX();
             LayoutNode fromNode = succEdge.getFrom();
             LayoutNode toNode = succEdge.getTo();
@@ -969,14 +970,14 @@ public class LayoutGraph {
                         topCutNode.setLayer(fromNode.getLayer() + 1);
                         addNodeToLayer(topCutNode, topCutNode.getLayer());
                         portToTopNode.put(startPort, topCutNode);
-                        portToBottomNodeMapping.put(startPort, new HashMap<>());
+                        portToBottomNodeMapping.put(startPort, new LinkedHashMap<>());
                     }
                     LayoutEdge edgeToTopCut = new LayoutEdge(fromNode, topCutNode, succEdge.getRelativeFromX(), topCutNode.getWidth() / 2, succEdge.getLink());
                     if (succEdge.isReversed()) edgeToTopCut.reverse();
                     fromNode.getSuccessors().add(edgeToTopCut);
                     topCutNode.getPredecessors().add(edgeToTopCut);
 
-                    HashMap<Integer, LayoutNode> layerToBottomNode = portToBottomNodeMapping.get(startPort);
+                    LinkedHashMap<Integer, LayoutNode> layerToBottomNode = portToBottomNodeMapping.get(startPort);
                     LayoutNode bottomCutNode = layerToBottomNode.get(toNode.getLayer());
                     if (bottomCutNode == null) {
                         bottomCutNode = new LayoutNode();

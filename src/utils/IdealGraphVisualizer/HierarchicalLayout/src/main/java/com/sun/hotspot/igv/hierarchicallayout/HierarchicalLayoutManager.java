@@ -477,7 +477,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
     }
 
-    private class AssignXCoordinatesLegacy {
+    private static class AssignXCoordinatesLegacy {
 
         private static ArrayList<Integer>[] space;
         private static ArrayList<LayoutNode>[] downProcessingOrder;
