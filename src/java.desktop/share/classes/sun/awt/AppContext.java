@@ -518,7 +518,11 @@ public final class AppContext {
             if (appContext != AppContext.getAppContext()) {
                 // Create a thread that belongs to the thread group associated
                 // with the AppContext and invokes EventQueue.postEvent.
-                Thread thread = new Thread(r);
+                Thread thread = new Thread(appContext.getThreadGroup(),
+                                           r, "AppContext Disposer", 0, false);
+                thread.setContextClassLoader(appContext.getContextClassLoader());
+                thread.setPriority(Thread.NORM_PRIORITY + 1);
+                thread.setDaemon(true);
                 thread.start();
             } else {
                 r.run();

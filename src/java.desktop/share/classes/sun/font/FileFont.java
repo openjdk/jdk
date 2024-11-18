@@ -35,7 +35,6 @@ import java.nio.ByteBuffer;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
-import java.io.IOException;
 import java.util.List;
 
 public abstract class FileFont extends PhysicalFont {

@@ -27,8 +27,6 @@ package sun.font;
 
 import java.io.File;
 import java.io.OutputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Semaphore;

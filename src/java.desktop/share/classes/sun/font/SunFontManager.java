@@ -1698,16 +1698,11 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         } else if (pathDirs.length==1) {
             return pathDirs[0] + File.separator + s;
         } else {
-            String path = null;
             for (int p = 0; p < pathDirs.length; p++) {
                 f = new File(pathDirs[p] + File.separator + s);
                 if (f.exists()) {
-                    path = f.getAbsolutePath();
-                    break;
+                    return f.getAbsolutePath();
                 }
-            }
-            if (path != null) {
-                return path;
             }
         }
         return s; // shouldn't happen, but harmless

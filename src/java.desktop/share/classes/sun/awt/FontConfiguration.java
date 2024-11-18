@@ -154,13 +154,8 @@ public abstract class FontConfiguration {
         short fontNameID = compFontNameIDs[0][0][0];
         short fileNameID = getComponentFileID(fontNameID);
         final String fileName = mapFileName(getComponentFileName(fileNameID));
-        Boolean exists = false;
-        try {
-            File f = new File(fileName);
-            exists = Boolean.valueOf(f.exists());
-        } catch (Exception e) {
-        }
-        return exists.booleanValue();
+        File f = new File(fileName);
+        return f.exists();
     }
 
     private void findFontConfigFile() {
