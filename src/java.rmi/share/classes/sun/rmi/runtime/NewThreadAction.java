@@ -61,9 +61,10 @@ public final class NewThreadAction {
 
 
     /**
-     * special child of the system thread group for running tasks that
-     * may execute user code, so that the security policy for threads in
-     * the system thread group will not apply
+     * Special child of the system thread group for running tasks that
+     * may execute user code. The need for a separate thread group may
+     * be a vestige of it having had a different security policy from
+     * the system thread group, so this might no longer be necessary.
      */
     static final ThreadGroup userThreadGroup = new ThreadGroup(systemThreadGroup, "RMI Runtime");
 

@@ -401,10 +401,9 @@ class ConnectionAcceptor implements Runnable {
      * Start a new thread to accept connections.
      */
     public void startNewAcceptor() {
-        Thread t =
-            new NewThreadAction(ConnectionAcceptor.this,
-                                "TCPChannel Accept-" + ++ threadNum,
-                                true).run();
+        Thread t = new NewThreadAction(ConnectionAcceptor.this,
+                                       "TCPChannel Accept-" + ++ threadNum,
+                                       true).run();
         t.start();
     }
 
