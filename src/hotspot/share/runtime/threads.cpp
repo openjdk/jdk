@@ -385,7 +385,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // Some values are actually configure-time constants but some can be set via the jlink tool and
   // so must be read dynamically. We treat them all the same.
   InstanceKlass* ik = SystemDictionary::find_instance_klass(THREAD, vmSymbols::java_lang_VersionProps(),
-                                                            Handle(), Handle());
+                                                            Handle());
   {
     ResourceMark rm(main_thread);
     JDK_Version::set_java_version(get_java_version_info(ik, vmSymbols::java_version_name()));
