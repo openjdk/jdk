@@ -1000,7 +1000,7 @@ void ShenandoahGenerationalHeap::update_heap_references(bool concurrent) {
   }
 }
 
-namespace ShenandoahCompositeRegionClosure {
+struct ShenandoahCompositeRegionClosure {
   template<typename C1, typename C2>
   class Closure : public ShenandoahHeapRegionClosure {
   private:
@@ -1020,12 +1020,11 @@ namespace ShenandoahCompositeRegionClosure {
     }
   };
 
-
   template<typename C1, typename C2>
-  Closure<C1, C2> of(C1 &c1, C2 &c2) {
+  static Closure<C1, C2> of(C1 &c1, C2 &c2) {
     return Closure<C1, C2>(c1, c2);
   }
-}
+};
 
 class ShenandoahUpdateRegionAges : public ShenandoahHeapRegionClosure {
 private:
