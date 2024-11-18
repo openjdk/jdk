@@ -55,6 +55,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.AppImageFile.LauncherInfo;
+import jdk.jpackage.internal.util.XmlConsumer;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
@@ -64,7 +65,6 @@ import static jdk.jpackage.internal.WinMsiBundler.SERVICE_INSTALLER;
 import static jdk.jpackage.internal.WinMsiBundler.WIN_APP_IMAGE;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.util.PathUtils;
-import jdk.jpackage.internal.util.XmlConsumer;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.NodeList;
 
