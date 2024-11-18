@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,10 +149,6 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
 
-                    @SuppressWarnings("removal")
-                    SecurityManager sm = System.getSecurityManager();
-                    if (sm != null)
-                        sm.checkListen(isa.getPort());
                     Net.bind(fd, isa.getAddress(), isa.getPort());
 
                     InetSocketAddress boundIsa = Net.localAddress(fd);
@@ -508,21 +504,6 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                                     resultContainer.getMessageInfo();
                             info.setAssociation(lookupAssociation(info.
                                     associationID()));
-                            @SuppressWarnings("removal")
-                            SecurityManager sm = System.getSecurityManager();
-                            if (sm != null) {
-                                InetSocketAddress isa  = (InetSocketAddress)info.address();
-                                if (!addressMap.containsKey(isa)) {
-                                    /* must be a new association */
-                                    try {
-                                        sm.checkAccept(isa.getAddress().getHostAddress(),
-                                                       isa.getPort());
-                                    } catch (SecurityException se) {
-                                        buffer.clear();
-                                        throw se;
-                                    }
-                                }
-                            }
 
                             assert info.association() != null;
                             return info;
@@ -805,12 +786,6 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                             checkStreamNumber(association, messageInfo.streamNumber());
                             assocId = association.associationID();
 
-                        } else { /* must be new association */
-                            @SuppressWarnings("removal")
-                            SecurityManager sm = System.getSecurityManager();
-                            if (sm != null)
-                                sm.checkConnect(addr.getAddress().getHostAddress(),
-                                                addr.getPort());
                         }
                     } else {
                         throw new AssertionError(
