@@ -288,7 +288,7 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
                                         CHECK_NULL);
 
   ResourceMark rm(THREAD);
-  ClassFileStream st((u1*)buf, bufLen, nullptr, ClassFileStream::verify);
+  ClassFileStream st((u1*)buf, bufLen, nullptr);
   Handle class_loader (THREAD, JNIHandles::resolve(loaderRef));
   Handle protection_domain;
   ClassLoadInfo cl_info(protection_domain);
@@ -444,9 +444,11 @@ JNI_ENTRY(jobject, jni_ToReflectedMethod(JNIEnv *env, jclass cls, jmethodID meth
   methodHandle m (THREAD, Method::resolve_jmethod_id(method_id));
   assert(m->is_static() == (isStatic != 0), "jni_ToReflectedMethod access flags doesn't match");
   oop reflection_method;
-  if (m->is_initializer()) {
+  if (m->is_object_initializer()) {
     reflection_method = Reflection::new_constructor(m, CHECK_NULL);
   } else {
+    // Note: Static initializers can theoretically be here, if JNI users manage
+    // to get their jmethodID. Record them as plain methods.
     reflection_method = Reflection::new_method(m, false, CHECK_NULL);
   }
   ret = JNIHandles::make_local(THREAD, reflection_method);
@@ -3847,6 +3849,9 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     return JNI_ERR;
   }
 
+  // Want this inside 'attaching via jni'.
+  JFR_ONLY(Jfr::on_thread_start(thread);)
+
   // mark the thread as no longer attaching
   // this uses a fence to push the change through so we don't have
   // to regrab the threads_lock
@@ -3860,8 +3865,6 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_start(thread);
   }
-
-  JFR_ONLY(Jfr::on_thread_start(thread);)
 
   *(JNIEnv**)penv = thread->jni_environment();
 

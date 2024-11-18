@@ -40,13 +40,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.PrivilegedAction;
-import java.util.Properties;
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.Stable;
-import sun.security.action.GetPropertyAction;
-import sun.security.util.SecurityConstants;
 
 /** <P> The master factory for all reflective objects, both those in
     java.lang.reflect (Fields, Methods, Constructors) as well as their
@@ -93,27 +90,12 @@ public class ReflectionFactory {
      * Provides the caller with the capability to instantiate reflective
      * objects.
      *
-     * <p> First, if there is a security manager, its
-     * <code>checkPermission</code> method is called with a {@link
-     * java.lang.RuntimePermission} with target
-     * <code>"reflectionFactoryAccess"</code>.  This may result in a
-     * security exception.
-     *
      * <p> The returned <code>ReflectionFactory</code> object should be
      * carefully guarded by the caller, since it can be used to read and
      * write private data and invoke private methods, as well as to load
      * unverified bytecodes.  It must never be passed to untrusted code.
-     *
-     * @exception SecurityException if a security manager exists and its
-     *             <code>checkPermission</code> method doesn't allow
-     *             access to the RuntimePermission "reflectionFactoryAccess".  */
+     */
     public static ReflectionFactory getReflectionFactory() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(
-                SecurityConstants.REFLECTION_FACTORY_ACCESS_PERMISSION);
-        }
         return soleInstance;
     }
 
@@ -334,16 +316,8 @@ public class ReflectionFactory {
 
     private final Constructor<?> generateConstructor(Class<?> cl,
                                                      Constructor<?> constructorToCall) {
-        ConstructorAccessor acc;
-        if (useOldSerializableConstructor()) {
-            acc = new SerializationConstructorAccessorGenerator().
-                                generateSerializationConstructor(cl,
-                                                                 constructorToCall.getParameterTypes(),
-                                                                 constructorToCall.getModifiers(),
-                                                                 constructorToCall.getDeclaringClass());
-        } else {
-            acc = MethodHandleAccessorFactory.newSerializableConstructorAccessor(cl, constructorToCall);
-        }
+        ConstructorAccessor acc = MethodHandleAccessorFactory
+                .newSerializableConstructorAccessor(cl, constructorToCall);
         // Unlike other root constructors, this constructor is not copied for mutation
         // but directly mutated, as it is not cached. To cache this constructor,
         // setAccessible call must be done on a copy and return that copy instead.
@@ -507,10 +481,6 @@ public class ReflectionFactory {
         return config().useNativeAccessorOnly;
     }
 
-    static boolean useOldSerializableConstructor() {
-        return config().useOldSerializableConstructor;
-    }
-
     private static boolean disableSerialConstructorChecks() {
         return config().disableSerialConstructorChecks;
     }
@@ -527,7 +497,6 @@ public class ReflectionFactory {
     private static @Stable Config config;
 
     private static final Config DEFAULT_CONFIG = new Config(false, // useNativeAccessorOnly
-                                                            false,  // useOldSerializeableConstructor
                                                             false); // disableSerialConstructorChecks
 
     /**
@@ -542,7 +511,6 @@ public class ReflectionFactory {
      * is to override them.
      */
     private record Config(boolean useNativeAccessorOnly,
-                          boolean useOldSerializableConstructor,
                           boolean disableSerialConstructorChecks) {
     }
 
@@ -563,15 +531,12 @@ public class ReflectionFactory {
     private static Config loadConfig() {
         assert VM.isModuleSystemInited();
 
-        Properties props = GetPropertyAction.privilegedGetProperties();
         boolean useNativeAccessorOnly =
-            "true".equals(props.getProperty("jdk.reflect.useNativeAccessorOnly"));
-        boolean useOldSerializableConstructor =
-            "true".equals(props.getProperty("jdk.reflect.useOldSerializableConstructor"));
+            "true".equals(System.getProperty("jdk.reflect.useNativeAccessorOnly"));
         boolean disableSerialConstructorChecks =
-            "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
+            "true".equals(System.getProperty("jdk.disableSerialConstructorChecks"));
 
-        return new Config(useNativeAccessorOnly, useOldSerializableConstructor, disableSerialConstructorChecks);
+        return new Config(useNativeAccessorOnly, disableSerialConstructorChecks);
     }
 
     /**

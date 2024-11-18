@@ -24,18 +24,16 @@
  */
 package java.lang.classfile.constantpool;
 
-import java.lang.constant.ConstantDesc;
 import java.lang.classfile.TypeKind;
-import jdk.internal.javac.PreviewFeature;
+import java.lang.constant.ConstantDesc;
 
 /**
  * Marker interface for constant pool entries suitable for loading via the
  * {@code LDC} instructions.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LoadableConstantEntry extends PoolEntry
         permits ClassEntry, ConstantDynamicEntry, ConstantValueEntry, MethodHandleEntry, MethodTypeEntry {
 

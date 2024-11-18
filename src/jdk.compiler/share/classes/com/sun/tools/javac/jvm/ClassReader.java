@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,9 @@ public class ClassReader {
     int majorVersion;
     /** The minor version number of the class file being read. */
     int minorVersion;
+
+    /** true if the class file being read is a preview class file. */
+    boolean previewClassFile;
 
     /** UTF-8 validation level */
     Convert.Validation utf8validation;
@@ -1200,7 +1203,9 @@ public class ClassReader {
                             ModuleSymbol rsym = poolReader.getModule(nextChar());
                             Set<RequiresFlag> flags = readRequiresFlags(nextChar());
                             if (rsym == syms.java_base && majorVersion >= V54.major) {
-                                if (flags.contains(RequiresFlag.TRANSITIVE)) {
+                                if (flags.contains(RequiresFlag.TRANSITIVE) &&
+                                    (majorVersion != Version.MAX().major || !previewClassFile) &&
+                                    !preview.participatesInPreview(syms, msym)) {
                                     throw badClassFile("bad.requires.flag", RequiresFlag.TRANSITIVE);
                                 }
                                 if (flags.contains(RequiresFlag.STATIC_PHASE)) {
@@ -2192,7 +2197,7 @@ public class ClassReader {
 
         Type resolvePossibleProxyType(Type t) {
             if (t instanceof ProxyType proxyType) {
-                Assert.check(requestingOwner.owner.kind == MDL);
+                Assert.check(requestingOwner.owner instanceof ModuleSymbol);
                 ModuleSymbol prevCurrentModule = currentModule;
                 currentModule = (ModuleSymbol) requestingOwner.owner;
                 try {
@@ -2352,6 +2357,12 @@ public class ClassReader {
             this.attributes = attributes;
         }
 
+        /**
+         * A supertype_index value of 65535 specifies that the annotation appears on the superclass
+         * in an extends clause of a class declaration, see JVMS 4.7.20.1
+         */
+        public static final int SUPERCLASS_INDEX = 65535;
+
         @Override
         public Void visitClassSymbol(Symbol.ClassSymbol s, Void unused) {
             ClassType t = (ClassType) s.type;
@@ -2361,7 +2372,7 @@ public class ClassReader {
                 interfaces.add(addTypeAnnotations(itf, classExtends(i++)));
             }
             t.interfaces_field = interfaces.toList();
-            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(65535));
+            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(SUPERCLASS_INDEX));
             if (t.typarams_field != null) {
                 t.typarams_field =
                         rewriteTypeParameters(
@@ -3179,7 +3190,7 @@ public class ClassReader {
         majorVersion = nextChar();
         int maxMajor = Version.MAX().major;
         int maxMinor = Version.MAX().minor;
-        boolean previewClassFile =
+        previewClassFile =
                 minorVersion == ClassFile.PREVIEW_MINOR_VERSION;
         if (majorVersion > maxMajor ||
             majorVersion * 1000 + minorVersion <

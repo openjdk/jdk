@@ -24,10 +24,8 @@
  */
 package java.lang.classfile;
 
-import java.util.function.Supplier;
-
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.javac.PreviewFeature;
+import java.util.function.Supplier;
 
 /**
  * A transformation on streams of elements. Transforms are used during
@@ -73,9 +71,8 @@ import jdk.internal.javac.PreviewFeature;
  * @param <B> the builder type
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFileTransform<
         C extends ClassFileTransform<C, E, B>,
         E extends ClassFileElement,

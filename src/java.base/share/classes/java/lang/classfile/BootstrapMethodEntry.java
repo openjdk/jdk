@@ -25,13 +25,12 @@
 
 package java.lang.classfile;
 
-import java.util.List;
-
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BootstrapMethodEntryImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an entry in the bootstrap method table.  The bootstrap method table
@@ -39,9 +38,8 @@ import jdk.internal.javac.PreviewFeature;
  * the {@link ConstantPool}, since the bootstrap method table is logically
  * part of the constant pool.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface BootstrapMethodEntry
         permits BootstrapMethodEntryImpl {
 

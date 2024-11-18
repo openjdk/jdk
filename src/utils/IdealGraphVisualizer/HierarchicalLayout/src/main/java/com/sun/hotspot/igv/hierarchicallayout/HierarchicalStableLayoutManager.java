@@ -38,8 +38,8 @@ public class HierarchicalStableLayoutManager {
     public static final int X_OFFSET = 8;
     public static final int LAYER_OFFSET = 8;
     // Algorithm global data structures
-    private HashSet<? extends Vertex> currentVertices;
-    private HashSet<? extends Link> currentLinks;
+    private Set<? extends Vertex> currentVertices;
+    private Set<? extends Link> currentLinks;
     private Set<Link> reversedLinks;
     private List<LayoutNode> nodes;
     private final HashMap<Vertex, LayoutNode> vertexToLayoutNode;
@@ -51,10 +51,19 @@ public class HierarchicalStableLayoutManager {
     private HashMap<Vertex, VertexAction> vertexToAction;
     private List<VertexAction> vertexActions;
     private List<LinkAction> linkActions;
-    private HashSet<? extends Vertex> oldVertices;
-    private HashSet<? extends Link> oldLinks;
+    private Set<? extends Vertex> oldVertices;
+    private Set<? extends Link> oldLinks;
     private boolean shouldRedrawLayout = true;
     private boolean shouldRemoveEmptyLayers = true;
+    private boolean cutEdges = false;
+
+    public void doLayout(LayoutGraph layoutGraph) {
+        boolean oldShouldRedrawLayout = shouldRedrawLayout;
+        setShouldRedrawLayout(true);
+        updateLayout(layoutGraph.getVertices(), layoutGraph.getLinks());
+        setShouldRedrawLayout(oldShouldRedrawLayout);
+    }
+
 
     enum Action {
         ADD,
@@ -88,6 +97,15 @@ public class HierarchicalStableLayoutManager {
         manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
         vertexToLayoutNode = new HashMap<>();
         nodes = new ArrayList<>();
+    }
+
+    public void setCutEdges(boolean enable) {
+        cutEdges = enable;
+        manager.setCutEdges(enable);
+    }
+
+    public boolean getCutEdges() {
+        return cutEdges;
     }
 
     private int calculateOptimalBoth(LayoutNode n) {
@@ -396,7 +414,7 @@ public class HierarchicalStableLayoutManager {
         this.shouldRedrawLayout = shouldRedrawLayout;
     }
 
-    public void updateLayout(HashSet<? extends Vertex> vertices, HashSet<? extends Link> links) {
+    public void updateLayout(Set<? extends Vertex> vertices, Set<? extends Link> links) {
         currentVertices = vertices;
         currentLinks = links;
         reversedLinks = new HashSet<>();

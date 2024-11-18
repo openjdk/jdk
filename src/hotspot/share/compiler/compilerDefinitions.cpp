@@ -497,11 +497,6 @@ bool CompilerConfig::check_args_consistency(bool status) {
                 "Invalid NonNMethodCodeHeapSize=%dK. Must be at least %uK.\n", NonNMethodCodeHeapSize/K,
                 min_code_cache_size/K);
     status = false;
-  } else if (InlineCacheBufferSize > NonNMethodCodeHeapSize / 2) {
-    jio_fprintf(defaultStream::error_stream(),
-                "Invalid InlineCacheBufferSize=" SIZE_FORMAT "K. Must be less than or equal to " SIZE_FORMAT "K.\n",
-                InlineCacheBufferSize/K, NonNMethodCodeHeapSize/2/K);
-    status = false;
   }
 
 #ifdef _LP64
@@ -565,11 +560,6 @@ void CompilerConfig::ergo_initialize() {
 
   if (has_c1()) {
     if (!is_compilation_mode_selected()) {
-#if defined(_WINDOWS) && !defined(_LP64)
-      if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-        FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
-      }
-#endif
       if (NeverActAsServerClassMachine) {
         set_client_emulation_mode_flags();
       }
@@ -633,4 +623,3 @@ void CompilerConfig::ergo_initialize() {
   }
 #endif // COMPILER2
 }
-

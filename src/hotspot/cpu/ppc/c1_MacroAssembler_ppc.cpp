@@ -114,6 +114,8 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
              /*check without membar and ldarx first*/true);
     // If compare/exchange succeeded we found an unlocked object and we now have locked it
     // hence we are done.
+  } else {
+    assert(false, "Unhandled LockingMode:%d", LockingMode);
   }
   b(done);
 
@@ -131,7 +133,9 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   }
 
   bind(done);
-  inc_held_monitor_count(Rmark /*tmp*/);
+  if (LockingMode == LM_LEGACY) {
+    inc_held_monitor_count(Rmark /*tmp*/);
+  }
 }
 
 
@@ -168,6 +172,8 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
              MacroAssembler::cmpxchgx_hint_release_lock(),
              noreg,
              &slow_int);
+  } else {
+    assert(false, "Unhandled LockingMode:%d", LockingMode);
   }
   b(done);
   bind(slow_int);
@@ -175,7 +181,9 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
 
   // Done
   bind(done);
-  dec_held_monitor_count(Rmark /*tmp*/);
+  if (LockingMode == LM_LEGACY) {
+    dec_held_monitor_count(Rmark /*tmp*/);
+  }
 }
 
 
@@ -197,12 +205,19 @@ void C1_MacroAssembler::try_allocate(
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len, t1, t2);
-  load_const_optimized(t1, (intx)markWord::prototype().value());
-  std(t1, oopDesc::mark_offset_in_bytes(), obj);
-  store_klass(obj, klass);
+
+  if (UseCompactObjectHeaders) {
+    ld(t1, in_bytes(Klass::prototype_header_offset()), klass);
+    std(t1, oopDesc::mark_offset_in_bytes(), obj);
+  } else {
+    load_const_optimized(t1, (intx)markWord::prototype().value());
+    std(t1, oopDesc::mark_offset_in_bytes(), obj);
+    store_klass(obj, klass);
+  }
+
   if (len->is_valid()) {
     stw(len, arrayOopDesc::length_offset_in_bytes(), obj);
-  } else if (UseCompressedClassPointers) {
+  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
     // Otherwise length is in the class gap.
     store_klass_gap(obj);
   }

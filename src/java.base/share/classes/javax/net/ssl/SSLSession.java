@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,16 +78,7 @@ public interface SSLSession {
      * <P>
      * This context may be unavailable in some environments,
      * in which case this method returns null.
-     * <P>
-     * If the context is available and there is a
-     * security manager installed, the caller may require
-     * permission to access it or a security exception may be thrown.
-     * In a Java environment, the security manager's
-     * {@code checkPermission} method is called with a
-     * {@code SSLPermission("getSSLSessionContext")} permission.
      *
-     * @throws SecurityException if the calling thread does not have
-     *         permission to get SSL session context.
      * @return the session context used for this session, or null
      * if the context is unavailable.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,18 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.constant.ClassDesc;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
-import java.lang.constant.ClassDesc;
 
 /**
  * Models a {@code CONSTANT_Fieldref_info} constant in the constant pool of a
  * classfile.
  * @jvms 4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldRefEntry extends MemberRefEntry
         permits AbstractPoolEntry.FieldRefEntryImpl {
 
@@ -44,6 +43,6 @@ public sealed interface FieldRefEntry extends MemberRefEntry
      * {@return a symbolic descriptor for the field's type}
      */
     default ClassDesc typeSymbol() {
-        return Util.fieldTypeSymbol(nameAndType());
+        return Util.fieldTypeSymbol(type());
     }
 }

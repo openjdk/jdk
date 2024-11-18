@@ -24,20 +24,19 @@
  */
 package java.lang.classfile.attribute;
 
-import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
-import java.util.Optional;
-
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.util.Optional;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code EnclosingMethod} attribute (JVMS {@jvms 4.7.7}), which can appear
@@ -51,9 +50,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 5.0.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface EnclosingMethodAttribute
         extends Attribute<EnclosingMethodAttribute>, ClassElement
         permits BoundAttribute.BoundEnclosingMethodAttribute,
@@ -92,7 +90,7 @@ public sealed interface EnclosingMethodAttribute
      * immediately enclosed by a method or constructor}
      */
     default Optional<MethodTypeDesc> enclosingMethodTypeSymbol() {
-        return enclosingMethod().map(Util::methodTypeSymbol);
+        return enclosingMethodType().map(Util::methodTypeSymbol);
     }
 
     /**

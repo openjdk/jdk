@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,18 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models instruction discontinued from the {@code code} array of a {@code Code}
  * attribute. Delivered as a {@link CodeElement} when traversing the elements of
  * a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface DiscontinuedInstruction extends Instruction {
 
     /**
@@ -50,9 +50,8 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * {@link Opcode.Kind#DISCONTINUED_JSR}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface JsrInstruction extends DiscontinuedInstruction
             permits AbstractInstruction.BoundJsrInstruction,
                     AbstractInstruction.UnboundJsrInstruction {
@@ -93,9 +92,8 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * {@link Opcode.Kind#DISCONTINUED_RET}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface RetInstruction extends DiscontinuedInstruction
             permits AbstractInstruction.BoundRetInstruction,
                     AbstractInstruction.UnboundRetInstruction {
@@ -112,10 +110,10 @@ public sealed interface DiscontinuedInstruction extends Instruction {
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_RET}
          * @param slot the local variable slot to load return address from
          * @throws IllegalArgumentException if the opcode kind is not
-         *         {@link Opcode.Kind#DISCONTINUED_RET}.
+         *         {@link Opcode.Kind#DISCONTINUED_RET} or if {@code slot} is out of range
          */
         static RetInstruction of(Opcode op, int slot) {
-            Util.checkKind(op, Opcode.Kind.DISCONTINUED_RET);
+            BytecodeHelpers.validateRet(op, slot);
             return new AbstractInstruction.UnboundRetInstruction(op, slot);
         }
 
@@ -123,6 +121,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
          * {@return a RET instruction}
          *
          * @param slot the local variable slot to load return address from
+         * @throws IllegalArgumentException if {@code slot} is out of range
          */
         static RetInstruction of(int slot) {
             return of(slot < 256 ? Opcode.RET : Opcode.RET_W, slot);

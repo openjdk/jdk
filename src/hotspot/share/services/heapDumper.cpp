@@ -1512,6 +1512,38 @@ class ClassDumper : public KlassClosure {
   }
 };
 
+// Support class used to generate HPROF_LOAD_CLASS records
+
+class LoadedClassDumper : public LockedClassesDo {
+ private:
+  AbstractDumpWriter* _writer;
+  GrowableArray<Klass*>* _klass_map;
+  u4 _class_serial_num;
+  AbstractDumpWriter* writer() const { return _writer; }
+  void add_class_serial_number(Klass* k, int serial_num) {
+    _klass_map->at_put_grow(serial_num, k);
+  }
+ public:
+  LoadedClassDumper(AbstractDumpWriter* writer, GrowableArray<Klass*>* klass_map)
+    : _writer(writer), _klass_map(klass_map), _class_serial_num(0) {}
+
+  void do_klass(Klass* k) {
+    // len of HPROF_LOAD_CLASS record
+    u4 remaining = 2 * oopSize + 2 * sizeof(u4);
+    DumperSupport::write_header(writer(), HPROF_LOAD_CLASS, remaining);
+    // class serial number is just a number
+    writer()->write_u4(++_class_serial_num);
+    // class ID
+    writer()->write_classID(k);
+    // add the Klass* and class serial number pair
+    add_class_serial_number(k, _class_serial_num);
+    writer()->write_u4(STACK_TRACE_ID);
+    // class name ID
+    Symbol* name = k->name();
+    writer()->write_symbolID(name);
+  }
+};
+
 // Support class used to generate HPROF_GC_ROOT_JNI_LOCAL records
 
 class JNILocalsDumper : public OopClosure {
@@ -1843,9 +1875,12 @@ void ThreadDumper::dump_stack_refs(AbstractDumpWriter * writer) {
         // native frame
         blk.set_frame_number(depth);
         if (is_top_frame) {
-          // JNI locals for the top frame.
-          assert(_java_thread != nullptr, "impossible for unmounted vthread");
-          _java_thread->active_handles()->oops_do(&blk);
+          // JNI locals for the top frame if mounted
+          assert(_java_thread != nullptr || jvf->method()->is_synchronized()
+                 || jvf->method()->is_object_wait0(), "impossible for unmounted vthread");
+          if (_java_thread != nullptr) {
+            _java_thread->active_handles()->oops_do(&blk);
+          }
         } else {
           if (last_entry_frame != nullptr) {
             // JNI locals for the entry frame
@@ -2190,9 +2225,7 @@ void DumpMerger::do_merge() {
 // The VM operation that performs the heap dump
 class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public UnmountedVThreadDumper {
  private:
-  static VM_HeapDumper*   _global_dumper;
-  static DumpWriter*      _global_writer;
-  DumpWriter*             _local_writer;
+  DumpWriter*             _writer;
   JavaThread*             _oome_thread;
   Method*                 _oome_constructor;
   bool                    _gc_before_heap_dump;
@@ -2218,32 +2251,12 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
     return Atomic::fetch_then_add(&_dump_seq, 1);
   }
 
-  // accessors and setters
-  static VM_HeapDumper* dumper()         {  assert(_global_dumper != nullptr, "Error"); return _global_dumper; }
-  static DumpWriter* writer()            {  assert(_global_writer != nullptr, "Error"); return _global_writer; }
-
-  void set_global_dumper() {
-    assert(_global_dumper == nullptr, "Error");
-    _global_dumper = this;
-  }
-  void set_global_writer() {
-    assert(_global_writer == nullptr, "Error");
-    _global_writer = _local_writer;
-  }
-  void clear_global_dumper() { _global_dumper = nullptr; }
-  void clear_global_writer() { _global_writer = nullptr; }
+  DumpWriter* writer() const { return _writer; }
 
   bool skip_operation() const;
 
-  // writes a HPROF_LOAD_CLASS record to global writer
-  static void do_load_class(Klass* k);
-
   // HPROF_GC_ROOT_THREAD_OBJ records for platform and mounted virtual threads
   void dump_threads(AbstractDumpWriter* writer);
-
-  void add_class_serial_number(Klass* k, int serial_num) {
-    _klass_map->at_put_grow(serial_num, k);
-  }
 
   bool is_oom_thread(JavaThread* thread) const {
     return thread == _oome_thread && _oome_constructor != nullptr;
@@ -2259,7 +2272,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
                     0 /* total full collections, dummy, ignored */,
                     gc_before_heap_dump),
     WorkerTask("dump heap") {
-    _local_writer = writer;
+    _writer = writer;
     _gc_before_heap_dump = gc_before_heap_dump;
     _klass_map = new (mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);
 
@@ -2313,9 +2326,6 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
   void dump_vthread(oop vt, AbstractDumpWriter* segment_writer);
 };
 
-VM_HeapDumper* VM_HeapDumper::_global_dumper = nullptr;
-DumpWriter*    VM_HeapDumper::_global_writer = nullptr;
-
 bool VM_HeapDumper::skip_operation() const {
   return false;
 }
@@ -2327,31 +2337,6 @@ void DumperSupport::end_of_dump(AbstractDumpWriter* writer) {
   writer->write_u1(HPROF_HEAP_DUMP_END);
   writer->write_u4(0);
   writer->write_u4(0);
-}
-
-// writes a HPROF_LOAD_CLASS record for the class
-void VM_HeapDumper::do_load_class(Klass* k) {
-  static u4 class_serial_num = 0;
-
-  // len of HPROF_LOAD_CLASS record
-  u4 remaining = 2*oopSize + 2*sizeof(u4);
-
-  DumperSupport::write_header(writer(), HPROF_LOAD_CLASS, remaining);
-
-  // class serial number is just a number
-  writer()->write_u4(++class_serial_num);
-
-  // class ID
-  writer()->write_classID(k);
-
-  // add the Klass* and class serial number pair
-  dumper()->add_class_serial_number(k, class_serial_num);
-
-  writer()->write_u4(STACK_TRACE_ID);
-
-  // class name ID
-  Symbol* name = k->name();
-  writer()->write_symbolID(name);
 }
 
 // Write a HPROF_GC_ROOT_THREAD_OBJ record for platform/carrier and mounted virtual threads.
@@ -2430,11 +2415,6 @@ void VM_HeapDumper::doit() {
     }
   }
 
-  // At this point we should be the only dumper active, so
-  // the following should be safe.
-  set_global_dumper();
-  set_global_writer();
-
   WorkerThreads* workers = ch->safepoint_workers();
   prepare_parallel_dump(workers);
 
@@ -2446,10 +2426,6 @@ void VM_HeapDumper::doit() {
     workers->run_task(this, _num_dumper_threads);
     _poi = nullptr;
   }
-
-  // Now we clear the global variables, so that a future dumper can run.
-  clear_global_dumper();
-  clear_global_writer();
 }
 
 void VM_HeapDumper::work(uint worker_id) {
@@ -2480,8 +2456,8 @@ void VM_HeapDumper::work(uint worker_id) {
 
     // write HPROF_LOAD_CLASS records
     {
-      LockedClassesDo locked_load_classes(&do_load_class);
-      ClassLoaderDataGraph::classes_do(&locked_load_classes);
+      LoadedClassDumper loaded_class_dumper(writer(), _klass_map);
+      ClassLoaderDataGraph::classes_do(&loaded_class_dumper);
     }
 
     // write HPROF_FRAME and HPROF_TRACE records

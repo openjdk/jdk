@@ -82,6 +82,7 @@
 #include "services/diagnosticCommand.hpp"
 #include "services/finalizerService.hpp"
 #include "services/threadService.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 #if INCLUDE_CDS
@@ -134,19 +135,6 @@ oop SystemDictionary::java_platform_loader() {
 }
 
 void SystemDictionary::compute_java_loaders(TRAPS) {
-  if (_java_system_loader.is_empty()) {
-    oop system_loader = get_system_class_loader_impl(CHECK);
-    _java_system_loader = OopHandle(Universe::vm_global(), system_loader);
-  } else {
-    // It must have been restored from the archived module graph
-    assert(CDSConfig::is_using_archive(), "must be");
-    assert(CDSConfig::is_using_full_module_graph(), "must be");
-    DEBUG_ONLY(
-      oop system_loader = get_system_class_loader_impl(CHECK);
-      assert(_java_system_loader.resolve() == system_loader, "must be");
-    )
- }
-
   if (_java_platform_loader.is_empty()) {
     oop platform_loader = get_platform_class_loader_impl(CHECK);
     _java_platform_loader = OopHandle(Universe::vm_global(), platform_loader);
@@ -157,6 +145,19 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
     DEBUG_ONLY(
       oop platform_loader = get_platform_class_loader_impl(CHECK);
       assert(_java_platform_loader.resolve() == platform_loader, "must be");
+    )
+ }
+
+  if (_java_system_loader.is_empty()) {
+    oop system_loader = get_system_class_loader_impl(CHECK);
+    _java_system_loader = OopHandle(Universe::vm_global(), system_loader);
+  } else {
+    // It must have been restored from the archived module graph
+    assert(CDSConfig::is_using_archive(), "must be");
+    assert(CDSConfig::is_using_full_module_graph(), "must be");
+    DEBUG_ONLY(
+      oop system_loader = get_system_class_loader_impl(CHECK);
+      assert(_java_system_loader.resolve() == system_loader, "must be");
     )
   }
 }
@@ -598,8 +599,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
 
   HandleMark hm(THREAD);
 
-  // Fix for 4474172; see evaluation for more details
-  class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
   ClassLoaderData* loader_data = register_loader(class_loader);
   Dictionary* dictionary = loader_data->dictionary();
 
@@ -765,12 +764,7 @@ InstanceKlass* SystemDictionary::find_instance_klass(Thread* current,
                                                      Handle class_loader,
                                                      Handle protection_domain) {
 
-  // The result of this call should be consistent with the result
-  // of the call to resolve_instance_class_or_null().
-  // See evaluation 6790209 and 4474172 for more details.
-  oop class_loader_oop = java_lang_ClassLoader::non_reflection_class_loader(class_loader());
-  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(class_loader_oop);
-
+  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(class_loader());
   if (loader_data == nullptr) {
     // If the ClassLoaderData has not been setup,
     // then the class loader has no entries in the dictionary.
@@ -832,7 +826,6 @@ InstanceKlass* SystemDictionary::resolve_hidden_class_from_stream(
   loader_data = register_loader(class_loader, create_mirror_cld);
 
   assert(st != nullptr, "invariant");
-  assert(st->need_verify(), "invariant");
 
   // Parse stream and create a klass.
   InstanceKlass* k = KlassFactory::create_from_stream(st,
@@ -1069,7 +1062,7 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
   }
 
   Klass *found = resolve_with_circularity_detection(klass->name(), super_type->name(),
-                                                    class_loader, protection_domain, is_superclass, CHECK_0);
+                                                    class_loader, protection_domain, is_superclass, CHECK_false);
   if (found == super_type) {
     return true;
   } else {
@@ -1088,16 +1081,21 @@ bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle 
   // If unexpected superclass or interfaces are found, we cannot
   // load <ik> from the shared archive.
 
-  if (ik->super() != nullptr &&
-      !check_shared_class_super_type(ik, InstanceKlass::cast(ik->super()),
-                                     class_loader, protection_domain, true, THREAD)) {
-    return false;
+  if (ik->super() != nullptr) {
+    bool check_super = check_shared_class_super_type(ik, InstanceKlass::cast(ik->super()),
+                                                     class_loader, protection_domain, true,
+                                                     CHECK_false);
+    if (!check_super) {
+      return false;
+    }
   }
 
   Array<InstanceKlass*>* interfaces = ik->local_interfaces();
   int num_interfaces = interfaces->length();
   for (int index = 0; index < num_interfaces; index++) {
-    if (!check_shared_class_super_type(ik, interfaces->at(index), class_loader, protection_domain, false, THREAD)) {
+    bool check_interface = check_shared_class_super_type(ik, interfaces->at(index), class_loader, protection_domain, false,
+                                                         CHECK_false);
+    if (!check_interface) {
       return false;
     }
   }
@@ -1153,7 +1151,8 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     return nullptr;
   }
 
-  if (!check_shared_class_super_types(ik, class_loader, protection_domain, THREAD)) {
+  bool check = check_shared_class_super_types(ik, class_loader, protection_domain, CHECK_NULL);
+  if (!check) {
     ik->set_shared_loading_failed();
     return nullptr;
   }
@@ -1720,6 +1719,23 @@ void SystemDictionary::update_dictionary(JavaThread* current,
   mu1.notify_all();
 }
 
+#if INCLUDE_CDS
+// Indicate that loader_data has initiated the loading of class k, which
+// has already been defined by a parent loader.
+// This API should be used only by AOTLinkedClassBulkLoader
+void SystemDictionary::add_to_initiating_loader(JavaThread* current,
+                                                InstanceKlass* k,
+                                                ClassLoaderData* loader_data) {
+  assert(CDSConfig::is_using_aot_linked_classes(), "must be");
+  assert_locked_or_safepoint(SystemDictionary_lock);
+  Symbol* name  = k->name();
+  Dictionary* dictionary = loader_data->dictionary();
+  assert(k->is_loaded(), "must be");
+  assert(k->class_loader_data() != loader_data, "only for classes defined by a parent loader");
+  assert(dictionary->find_class(current, name) == nullptr, "sanity");
+  dictionary->add_klass(current, name, k);
+}
+#endif
 
 // Try to find a class name using the loader constraints.  The
 // loader constraints might know about a class that isn't fully loaded
@@ -2034,6 +2050,52 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
   }
   return nullptr;
 }
+
+#if INCLUDE_CDS
+void SystemDictionary::get_all_method_handle_intrinsics(GrowableArray<Method*>* methods) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  auto do_method = [&] (InvokeMethodKey& key, Method*& m) {
+    methods->append(m);
+  };
+  _invoke_method_intrinsic_table->iterate_all(do_method);
+}
+
+void SystemDictionary::restore_archived_method_handle_intrinsics() {
+  if (UseSharedSpaces) {
+    EXCEPTION_MARK;
+    restore_archived_method_handle_intrinsics_impl(THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // This is probably caused by OOM -- other parts of the CDS archive have direct pointers to
+      // the archived method handle intrinsics, so we can't really recover from this failure.
+      vm_exit_during_initialization(err_msg("Failed to restore archived method handle intrinsics. Try to increase heap size."));
+    }
+  }
+}
+
+void SystemDictionary::restore_archived_method_handle_intrinsics_impl(TRAPS) {
+  Array<Method*>* list = MetaspaceShared::archived_method_handle_intrinsics();
+  for (int i = 0; i < list->length(); i++) {
+    methodHandle m(THREAD, list->at(i));
+    Method::restore_archived_method_handle_intrinsic(m, CHECK);
+    m->constants()->restore_unshareable_info(CHECK);
+    if (!Arguments::is_interpreter_only() || m->intrinsic_id() == vmIntrinsics::_linkToNative) {
+      AdapterHandlerLibrary::create_native_wrapper(m);
+      if (!m->has_compiled_code()) {
+        ResourceMark rm(THREAD);
+        vm_exit_during_initialization(err_msg("Failed to initialize method %s", m->external_name()));
+      }
+    }
+
+    // There's no need to grab the InvokeMethodIntrinsicTable_lock, as we are still very early in
+    // VM start-up -- in init_globals2() -- so we are still running a single Java thread. It's not
+    // possible to have a contention.
+    const int iid_as_int = vmIntrinsics::as_int(m->intrinsic_id());
+    InvokeMethodKey key(m->signature(), iid_as_int);
+    bool created = _invoke_method_intrinsic_table->put(key, m());
+    assert(created, "unexpected contention");
+  }
+}
+#endif // INCLUDE_CDS
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
 static Method* unpack_method_and_appendix(Handle mname,

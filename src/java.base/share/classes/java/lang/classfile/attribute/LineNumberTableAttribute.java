@@ -24,12 +24,11 @@
  */
 package java.lang.classfile.attribute;
 
+import java.lang.classfile.Attribute;
 import java.util.List;
 
-import java.lang.classfile.Attribute;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code LineNumberTable} attribute (JVMS {@jvms 4.7.12}), which can appear
@@ -41,9 +40,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute permits multiple instances in a given location.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LineNumberTableAttribute
         extends Attribute<LineNumberTableAttribute>
         permits BoundAttribute.BoundLineNumberTableAttribute,

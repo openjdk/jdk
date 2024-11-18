@@ -306,8 +306,8 @@ static Node* clone_node(Node* def, Block *b, Compile* C) {
       C->record_failure(C2Compiler::retry_no_subsuming_loads());
     } else {
       // Bailout without retry
-      assert(false, "RA Split failed: attempt to clone node with anti_dependence");
-      C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence");
+      assert(C->failure_is_artificial(), "RA Split failed: attempt to clone node with anti_dependence");
+      C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence" DEBUG_ONLY(COMMA true));
     }
     return nullptr;
   }
@@ -495,7 +495,7 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
 //       Else, hoist LRG back up to register only (ie - split is also DEF)
 // We will compute a new maxlrg as we go
 uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
-  Compile::TracePhase tp("regAllocSplit", &timers[_t_regAllocSplit]);
+  Compile::TracePhase tp(_t_regAllocSplit);
 
   // Free thread local resources used by this method on exit.
   ResourceMark rm(split_arena);

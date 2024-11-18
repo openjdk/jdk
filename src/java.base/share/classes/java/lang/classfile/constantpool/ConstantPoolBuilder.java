@@ -24,26 +24,18 @@
  */
 package java.lang.classfile.constantpool;
 
-import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
-import java.lang.constant.DirectMethodHandleDesc;
-import java.lang.constant.DynamicCallSiteDesc;
-import java.lang.constant.DynamicConstantDesc;
-import java.lang.constant.MethodTypeDesc;
-import java.util.List;
-
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassModel;
-import jdk.internal.classfile.impl.ClassReaderImpl;
-import java.lang.constant.ModuleDesc;
-import java.lang.constant.PackageDesc;
+import java.lang.constant.*;
+import java.util.List;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry.ClassEntryImpl;
-import jdk.internal.classfile.impl.AbstractPoolEntry.NameAndTypeEntryImpl;
+import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
+
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -55,9 +47,8 @@ import static java.util.Objects.requireNonNull;
  * The {@linkplain ConstantPoolBuilder} also provides access to some of the
  * state of the {@linkplain ClassBuilder}, such as classfile processing options.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantPoolBuilder
         extends ConstantPool
         permits SplitConstantPool, TemporaryConstantPool {
@@ -470,10 +461,11 @@ public sealed interface ConstantPoolBuilder
     }
 
     /**
-     * {@return A {@link ConstantValueEntry} descripbing the provided
+     * {@return A {@link ConstantValueEntry} describing the provided
      * Integer, Long, Float, Double, or String constant}
      *
      * @param c the constant
+     * @see ConstantValueEntry#constantValue()
      */
     default ConstantValueEntry constantValueEntry(ConstantDesc c) {
         if (c instanceof Integer i) return intEntry(i);

@@ -233,9 +233,6 @@ cpu_isalist(void)
     SYSTEM_INFO info;
     GetSystemInfo(&info);
     switch (info.wProcessorArchitecture) {
-#ifdef PROCESSOR_ARCHITECTURE_IA64
-    case PROCESSOR_ARCHITECTURE_IA64: return "ia64";
-#endif
 #ifdef PROCESSOR_ARCHITECTURE_AMD64
     case PROCESSOR_ARCHITECTURE_AMD64: return "amd64";
 #endif
@@ -555,8 +552,6 @@ GetJavaProperties(JNIEnv* env)
         sprops.os_version = _strdup(buf);
 #if defined(_M_AMD64)
         sprops.os_arch = "amd64";
-#elif defined(_X86_)
-        sprops.os_arch = "x86";
 #elif defined(_M_ARM64)
         sprops.os_arch = "aarch64";
 #else

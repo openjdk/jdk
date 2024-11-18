@@ -91,12 +91,12 @@ public class Compiler {
     /**
      * Check if libgraal is used as JIT compiler.
      *
-     * libraal is enabled if isGraalEnabled is true and:
+     * libraal JIT is enabled if isGraalEnabled is true and:
      * - UseJVMCINativeLibrary flag is true
      *
      * @return true if libgraal is used as JIT compiler.
      */
-    public static boolean isLibgraalEnabled() {
+    public static boolean isLibgraalJIT() {
         if (!isGraalEnabled()) {
             return false;
         }
