@@ -314,11 +314,12 @@ public class HierarchicalLayoutManager extends LayoutManager {
             graph.updatePositions();
             graph.updateSpacings(true);
 
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < CROSSING_ITERATIONS; i++) {
                 sweep(graph, true);  // Downwards sweep
                 sweep(graph, false); // Upwards sweep
             }
             sweep(graph, true); // Final downwards sweep
+            graph.updatePositions();
         }
 
         /**
@@ -329,43 +330,22 @@ public class HierarchicalLayoutManager extends LayoutManager {
          */
         private static void sweep(LayoutGraph graph, boolean down) {
             int start, end, step;
+            NeighborType neighborType;
             if (down) {
                 start = 1;
                 end = graph.getLayerCount();
                 step = 1;
+                neighborType =  NeighborType.PREDECESSORS;
             } else {
                 start = graph.getLayerCount() - 2;
                 end = -1;
                 step = -1;
+                neighborType =  NeighborType.SUCCESSORS;
             }
-            NeighborType neighborType = down ? NeighborType.PREDECESSORS : NeighborType.SUCCESSORS;
-
             for (int i = start; i != end; i += step) {
                 LayoutLayer layer = graph.getLayer(i);
-
-                for (LayoutNode node : layer) {
-                    node.setBarycenter(node.computeBarycenterX(neighborType, false));
-                }
-
-                // Update barycenter  for nodes without adjacent edges
-                for (int j = 0; j < layer.size(); j++) {
-                    LayoutNode n = layer.get(j);
-                    LayoutNode prev = (j > 0) ? layer.get(j - 1) : null;
-                    LayoutNode next = (j < layer.size() - 1) ? layer.get(j + 1) : null;
-
-                    // Check if the node has no adjacent edges
-                    if (down ? !n.hasPredecessors() : !n.hasSuccessors()) {
-                        // Adjust barycenter based on neighboring nodes
-                        if (prev != null && next != null) {
-                            n.setBarycenter((prev.getBarycenter() + next.getBarycenter()) / 2);
-                        } else if (prev != null) {
-                            n.setBarycenter(prev.getBarycenter());
-                        } else if (next != null) {
-                            n.setBarycenter(next.getBarycenter());
-                        }
-                    }
-                }
-
+                layer.updateBarycenters(neighborType, false);
+                layer.updateBarycentersForIsolatedNodes(neighborType);
                 layer.sort(NODE_BARYCENTER_COMPARATOR);
                 layer.updateMinXSpacing(true);
                 layer.updateNodeIndices();
@@ -411,30 +391,8 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 }
             }
             layer.sort(NODE_BARYCENTER_COMPARATOR);
-            int x = 0;
-            for (LayoutNode n : layer) {
-                n.setBarycenter(x);
-                x += n.getOuterWidth() + NODE_OFFSET;
-            }
-        }
+            layer.updateMinXSpacing(true);
 
-        private static void placeLeavesAndRoots(LayoutLayer layer, boolean usePred) {
-            // Nodes that have no adjacent nodes on the neighboring layer:
-            // leave fixed in their current positions with non-fixed nodes sorted into the remaining positions
-            for (int j = 0; j < layer.size(); j++) {
-                LayoutNode node = layer.get(j);
-                if (usePred ? !node.hasPredecessors() : !node.hasSuccessors()) {
-                    float prevWeight = (j > 0) ? layer.get(j - 1).getBarycenter() : 0;
-                    float nextWeight = (j < layer.size() - 1) ? layer.get(j + 1).getBarycenter() : 0;
-                    node.setBarycenter((prevWeight + nextWeight) / 2);
-                }
-            }
-            layer.sort(NODE_BARYCENTER_COMPARATOR);
-            int x = 0;
-            for (LayoutNode n : layer) {
-                n.setBarycenter(x);
-                x += n.getOuterWidth() + NODE_OFFSET;
-            }
         }
 
         private static void downSweep(LayoutGraph graph) {
@@ -443,7 +401,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
             for (int i = 1; i < graph.getLayerCount(); i++) {
                 doMedianPositions(graph.getLayer(i), true);
-                placeLeavesAndRoots(graph.getLayer(i), true);
+                graph.getLayer(i).updateBarycentersForIsolatedNodes(NeighborType.PREDECESSORS);
             }
         }
 
@@ -453,7 +411,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
             for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
                 doMedianPositions(graph.getLayer(i), false);
-                placeLeavesAndRoots(graph.getLayer(i), false);
+                graph.getLayer(i).updateBarycentersForIsolatedNodes(NeighborType.SUCCESSORS);
             }
         }
     }

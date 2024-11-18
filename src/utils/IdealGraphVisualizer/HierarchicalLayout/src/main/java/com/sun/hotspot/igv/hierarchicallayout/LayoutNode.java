@@ -452,6 +452,24 @@ public class LayoutNode {
         return !succs.isEmpty();
     }
 
+    /**
+     * Determines if the node has neighbors of the specified type.
+     *
+     * @param neighborType the type of neighbors to check for (PREDECESSORS, SUCCESSORS, or BOTH)
+     * @return {@code true} if the node has neighbors of the specified type; {@code false} otherwise
+     */
+    public boolean hasNeighborsOfType(NeighborType neighborType) {
+        if (neighborType.equals(NeighborType.PREDECESSORS)) {
+            return hasPredecessors();
+        } else if (neighborType.equals(NeighborType.SUCCESSORS)) {
+            return hasSuccessors();
+        } else if (neighborType.equals(NeighborType.BOTH)) {
+            return hasPredecessors() || hasSuccessors();
+        } else {
+            return false;
+        }
+    }
+
     public List<LayoutEdge> getSuccessors() {
         return succs;
     }
