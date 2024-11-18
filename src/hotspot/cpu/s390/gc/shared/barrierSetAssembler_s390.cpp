@@ -277,11 +277,10 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
           assert(action == ACTION_COUNT_ONLY, "Sanity");
         }
       }
-    } else if (vm_reg->is_VectorRegister()){
+    } else if (vm_reg->is_VectorRegister()) {
       VectorRegister vs_reg = vm_reg->as_VectorRegister();
       if (vs_reg->encoding() >= Z_V2->encoding() && vs_reg->encoding() <= Z_V31->encoding()) {
         reg_save_index += 2;
-        Register spill_addr = Z_R0;
         if (action == ACTION_SAVE) {
           __ z_vst(vs_reg, Address(Z_SP, offset - reg_save_index * BytesPerWord));
         } else if (action == ACTION_RESTORE) {
