@@ -74,36 +74,36 @@ AccessBridgeJavaEntryPoints::~AccessBridgeJavaEntryPoints() {
         return FALSE; \
     }
 
-#define EXCEPTION_CHECK(situationDescription, returnVal)                                        \
-    if (jniEnv->ExceptionCheck(jniEnv)) {                                                       \
-        PrintDebugString("[ERROR]: *** Exception occured while doing: %s; returning %d", situationDescription, returnVal);   \
-        jniEnv->ExceptionDescribe();                                                            \
-        jniEnv->ExceptionClear();                                                               \
-        return (returnVal);                                                                     \
+#define EXCEPTION_CHECK(situationDescription, returnVal)                                            \
+    if (jniEnv->ExceptionCheck()) {                                                                 \
+        PrintDebugString("[ERROR]: *** Exception occured while doing: %s; returning %d", situationDescription, returnVal);  \
+        jniEnv->ExceptionDescribe();                                                                \
+        jniEnv->ExceptionClear();                                                                   \
+        return (returnVal);                                                                         \
     }
 
-#define EXCEPTION_CHECK_WITH_RELEASE(situationDescription, returnVal, js, stringBytes)          \
-    if (jniEnv->ExceptionCheck(jniEnv)) {                                                       \
-        PrintDebugString("[ERROR]: *** Exception occured while doing: %s - call to GetStringLength; returning %d", situationDescription, returnVal);   \
-        jniEnv->ExceptionDescribe();                                                            \
-        jniEnv->ExceptionClear();                                                               \
-        jniEnv->ReleaseStringChars(js, stringBytes);                                            \
-        return (returnVal);                                                                     \
-    }                                                                                           \
-    jniEnv->ReleaseStringChars(js, stringBytes);                                                \
-    if (jniEnv->ExceptionCheck(jniEnv)) {                                                       \
-        PrintDebugString("[ERROR]: *** Exception occured while doing: %s - call to ReleaseStringChars; returning %d", situationDescription, returnVal);   \
-        jniEnv->ExceptionDescribe();                                                            \
-        jniEnv->ExceptionClear();                                                               \
-        return (returnVal);                                                                     \
+#define EXCEPTION_CHECK_WITH_RELEASE(situationDescription, returnVal, js, stringBytes)              \
+    if (jniEnv->ExceptionCheck()) {                                                                 \
+        PrintDebugString("[ERROR]: *** Exception occured while doing: %s - call to GetStringLength; returning %d", situationDescription, returnVal);    \
+        jniEnv->ExceptionDescribe();                                                                \
+        jniEnv->ExceptionClear();                                                                   \
+        jniEnv->ReleaseStringChars(js, stringBytes);                                                \
+        return (returnVal);                                                                         \
+    }                                                                                               \
+    jniEnv->ReleaseStringChars(js, stringBytes);                                                    \
+    if (jniEnv->ExceptionCheck()) {                                                                 \
+        PrintDebugString("[ERROR]: *** Exception occured while doing: %s - call to ReleaseStringChars; returning %d", situationDescription, returnVal); \
+        jniEnv->ExceptionDescribe();                                                                \
+        jniEnv->ExceptionClear();                                                                   \
+        return (returnVal);                                                                         \
     }
 
-#define EXCEPTION_CHECK_VOID(situationDescription)                                              \
-    if (jniEnv->ExceptionCheck(jniEnv)) {                                                       \
+#define EXCEPTION_CHECK_VOID(situationDescription)                                                  \
+    if (jniEnv->ExceptionCheck()) {                                                                 \
         PrintDebugString("[ERROR]: *** Exception occured while doing: %s", situationDescription);   \
-        jniEnv->ExceptionDescribe();                                                            \
-        jniEnv->ExceptionClear();                                                               \
-        return;                                                                                 \
+        jniEnv->ExceptionDescribe();                                                                \
+        jniEnv->ExceptionClear();                                                                   \
+        return;                                                                                     \
     }
 
 /**
