@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,17 @@
 
 package jdk.jpackage.test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Deque;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toCollection;
+import java.util.stream.Stream;
 import static jdk.jpackage.test.TestBuilder.CMDLINE_ARG_PREFIX;
 
 
@@ -36,11 +42,36 @@ public final class Main {
         boolean listTests = false;
         List<TestInstance> tests = new ArrayList<>();
         try (TestBuilder testBuilder = new TestBuilder(tests::add)) {
-            for (var arg : args) {
+            Deque<String> argsAsList = new ArrayDeque<>(List.of(args));
+            while (!argsAsList.isEmpty()) {
+                var arg = argsAsList.pop();
                 TestBuilder.trace(String.format("Parsing [%s]...", arg));
 
                 if ((CMDLINE_ARG_PREFIX + "list").equals(arg)) {
                     listTests = true;
+                    continue;
+                }
+
+                if (arg.startsWith("@")) {
+                    // Command file
+                    // @=args will read arguments from the "args" file, one argument per line
+                    // @args will read arguments from the "args" file, splitting lines into arguments at whitespaces
+                    arg = arg.substring(1);
+                    var oneArgPerLine = arg.startsWith("=");
+                    if (oneArgPerLine) {
+                        arg = arg.substring(1);
+                    }
+
+                    var newArgsStream = Files.readAllLines(Path.of(arg)).stream();
+                    if (!oneArgPerLine) {
+                        newArgsStream.map(line -> {
+                            return Stream.of(line.split("\\s+"));
+                        }).flatMap(x -> x);
+                    }
+
+                    var newArgs = newArgsStream.collect(toCollection(ArrayDeque::new));
+                    newArgs.addAll(argsAsList);
+                    argsAsList = newArgs;
                     continue;
                 }
 
@@ -62,12 +93,11 @@ public final class Main {
 
         // Order tests by their full names to have stable test sequence.
         List<TestInstance> orderedTests = tests.stream()
-                .sorted((a, b) -> a.fullName().compareTo(b.fullName()))
-                .collect(Collectors.toList());
+                .sorted(Comparator.comparing(TestInstance::fullName)).toList();
 
         if (listTests) {
             // Just list the tests
-            orderedTests.stream().forEach(test -> System.out.println(String.format(
+            orderedTests.forEach(test -> System.out.println(String.format(
                     "%s; workDir=[%s]", test.fullName(), test.workDir())));
             return;
         }

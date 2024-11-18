@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test ClassResolutionTest
- * @bug 8144874
+ * @bug 8144874 8343633
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -35,6 +35,10 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 public class ClassResolutionTest {
 
@@ -57,6 +61,15 @@ public class ClassResolutionTest {
         }
     }
 
+    public static void checkOutput(String file, String decorators) throws Exception {
+        List<String> allLines = Files.readAllLines(Path.of(file));
+        for (String line : allLines) {
+            if (!line.contains(decorators)) {
+                throw new RuntimeException("Logging should contain decorators " + decorators);
+            }
+        }
+    }
+
     public static void main(String... args) throws Exception {
 
         // (1) class+resolve should turn on.
@@ -74,6 +87,15 @@ public class ClassResolutionTest {
         o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
         o.shouldNotContain("[class,resolve]");
+
+        // (3) Test perf+class+link writes to a file, not tty.
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:perf+class+link:output.log",
+                                                              ClassResolutionTestMain.class.getName());
+        o = new OutputAnalyzer(pb.start());
+        o.shouldHaveExitValue(0);
+        o.shouldNotContain("[perf,class,link]");
+
+        checkOutput("output.log", "[perf,class,link]");
     };
 
 }

@@ -2511,7 +2511,7 @@ public:
 
   void clean_method_data(bool always_clean);
   void clean_weak_method_links();
-  Mutex* extra_data_lock() { return &_extra_data_lock; }
+  Mutex* extra_data_lock() const { return const_cast<Mutex*>(&_extra_data_lock); }
   void check_extra_data_locked() const NOT_DEBUG_RETURN;
 };
 
