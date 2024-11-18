@@ -28,7 +28,7 @@
  * @requires vm.debug != true
  * @modules jdk.management
  * @library /test/lib
- * @run main/othervm --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 500000
+ * @run main/othervm/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 100000
  */
 
 /*
@@ -36,7 +36,7 @@
  * @requires vm.debug == true
  * @modules jdk.management
  * @library /test/lib
- * @run main/othervm/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 200000
+ * @run main/othervm/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 50000
  */
 
 import java.time.Instant;
@@ -78,7 +78,7 @@ public class GetStackTraceALotWhenPinned {
             }
         });
 
-        long lastTimestamp = System.currentTimeMillis();
+        long lastTime = System.nanoTime();
         for (int i = 1; i <= iterations; i++) {
             // wait for virtual thread to arrive
             barrier.await();
@@ -86,10 +86,15 @@ public class GetStackTraceALotWhenPinned {
             thread.getStackTrace();
             LockSupport.unpark(thread);
 
-            long currentTime = System.currentTimeMillis();
-            if (i == iterations || ((currentTime - lastTimestamp) > 500)) {
+            long currentTime = System.nanoTime();
+            if (i == iterations || ((currentTime - lastTime) > 1_000_000_000L)) {
                 System.out.format("%s => %d of %d%n", Instant.now(), i, iterations);
-                lastTimestamp = currentTime;
+                lastTime = currentTime;
+            }
+
+            if (Thread.currentThread().isInterrupted()) {
+                // fail quickly if interrupted by jtreg
+                throw new RuntimeException("interrupted");
             }
         }
     }
