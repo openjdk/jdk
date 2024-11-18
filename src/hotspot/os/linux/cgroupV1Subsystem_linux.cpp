@@ -53,13 +53,21 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
     if (strcmp(_root, "/") == 0) {
       // host processes and containers with cgroupns=private
       if (strcmp(cgroup_path,"/") != 0) {
-        // hosts only
         ss.print_raw(cgroup_path);
+        if (strstr((char*)cgroup_path, "../") != nullptr) {
+          log_warning(os, container)("Cgroup v1 path at [%s] is [%s], cgroup limits can be wrong.",
+            _mount_point, cgroup_path);
+        }
       }
-    } else if (strcmp(_root, cgroup_path) != 0) {
-      // containers only, warn if doesn't match
-      log_warning(os, container)("Cgroup v1 controller (%s) mounting root [%s] doesn't match cgroup [%s]",
-        _mount_point, _root, cgroup_path);
+    } else {
+      // containers with cgroupns=host, default setting is _root==cgroup_path
+      if (strcmp(_root, cgroup_path) != 0) {
+        if (strcmp(cgroup_path,"/") != 0) {
+          // When moved to a subgroup, between subgroups, the path suffix will change.
+          // Rely on path adjustment that determines the actual suffix.
+          ss.print_raw(cgroup_path);
+        }
+      }
     }
     _path = os::strdup(ss.base());
   }

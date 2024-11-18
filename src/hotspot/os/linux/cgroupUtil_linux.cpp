@@ -55,14 +55,38 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
   }
   log_trace(os, container)("Adjusting controller path for memory: %s", mem->subsystem_path());
   assert(mem->cgroup_path() != nullptr, "invariant");
-  char* orig = os::strdup(mem->cgroup_path());
+  char* orig = nullptr;
+  julong phys_mem = os::Linux::physical_memory();
+  // adjust orig path down to the actual mounted suffix
+  char *start_suffix = os::strdup(mem->cgroup_path());
+  char *suffix = start_suffix;
+  while (!os::file_exists(mem->subsystem_path())) {
+    if (*suffix == 0) break;
+    suffix = strchr(suffix+1, '/');
+    if (suffix == nullptr) break;
+    mem->set_subsystem_path(suffix);
+  }
+  if (suffix != nullptr && *suffix == '/') {
+    orig = os::strdup(suffix);
+  } else {
+    orig = os::strdup("/");
+    mem->set_subsystem_path(orig);
+  }
+  if (strcmp(start_suffix, orig) != 0) {
+    log_trace(os, container)("Adjusted path suffix to: %s.", orig);
+  }
+  os::free(start_suffix);
+  // adjust up the hierarchy to locate the lowest limit
   char* cg_path = os::strdup(orig);
   char* last_slash;
-  assert(cg_path[0] == '/', "cgroup path must start with '/'");
-  julong phys_mem = os::Linux::physical_memory();
   char* limit_cg_path = nullptr;
   jlong limit = mem->read_memory_limit_in_bytes(phys_mem);
   jlong lowest_limit = phys_mem;
+  if (limit > 0 && limit < lowest_limit) {
+    lowest_limit = limit;
+    os::free(limit_cg_path); // handles nullptr
+    limit_cg_path = os::strdup(cg_path);
+  }
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {
     *last_slash = '\0'; // strip path
     // update to shortened path and try again
@@ -110,14 +134,38 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
   }
   log_trace(os, container)("Adjusting controller path for cpu: %s", cpu->subsystem_path());
   assert(cpu->cgroup_path() != nullptr, "invariant");
-  char* orig = os::strdup(cpu->cgroup_path());
+  char* orig = nullptr;
+  // adjust orig path down to the actual mounted suffix
+  char *start_suffix = os::strdup(cpu->cgroup_path());
+  char *suffix = start_suffix;
+  while (!os::file_exists(cpu->subsystem_path())) {
+    if (*suffix == 0) break;
+    suffix = strchr(suffix+1, '/');
+    if (suffix == nullptr) break;
+    cpu->set_subsystem_path(suffix);
+  }
+  if (suffix != nullptr && *suffix == '/') {
+    orig = os::strdup(suffix);
+  } else {
+    orig = os::strdup("/");
+    cpu->set_subsystem_path(orig);
+  }
+  if (strcmp(start_suffix, orig) != 0) {
+    log_trace(os, container)("Adjusted path suffix to: %s.", orig);
+  }
+  os::free(start_suffix);
+  // adjust up the hierarchy to locate the lowest limit
   char* cg_path = os::strdup(orig);
   char* last_slash;
-  assert(cg_path[0] == '/', "cgroup path must start with '/'");
   int host_cpus = os::Linux::active_processor_count();
   int cpus = CgroupUtil::processor_count(cpu, host_cpus);
   int lowest_limit = host_cpus;
   char* limit_cg_path = nullptr;
+  if (cpus != host_cpus && cpus < lowest_limit) {
+    lowest_limit = cpus;
+    os::free(limit_cg_path); // handles nullptr
+    limit_cg_path = os::strdup(cg_path);
+  }
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {
     *last_slash = '\0'; // strip path
     // update to shortened path and try again

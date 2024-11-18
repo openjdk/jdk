@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Red Hat Inc.
+ * Copyright (c) 2020, 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,6 +316,10 @@ char* CgroupV2Controller::construct_path(char* mount_path, const char* cgroup_pa
   ss.print_raw(mount_path);
   if (strcmp(cgroup_path, "/") != 0) {
     ss.print_raw(cgroup_path);
+    if (strstr((char*)cgroup_path, "../") != nullptr) {
+      log_warning(os, container)("Cgroup v2 path at [%s] is [%s], cgroup limits can be wrong.",
+        mount_path, cgroup_path);
+    }
   }
   return os::strdup(ss.base());
 }

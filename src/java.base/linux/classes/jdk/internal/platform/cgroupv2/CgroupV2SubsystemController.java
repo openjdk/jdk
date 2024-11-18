@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.internal.platform.cgroupv2;
 
+import java.lang.System.Logger.Level;
 import java.nio.file.Paths;
 
 import jdk.internal.platform.CgroupSubsystem;
@@ -36,6 +37,11 @@ public class CgroupV2SubsystemController implements CgroupSubsystemController {
 
     public CgroupV2SubsystemController(String mountPath, String cgroupPath) {
         this.path = Paths.get(mountPath, cgroupPath).toString();
+        if (cgroupPath.indexOf("../") != -1) {
+            System.getLogger("jdk.internal.platform").log(Level.WARNING, String.format(
+                    "Cgroup v2 path at [%s] is [%s], cgroup limits can be wrong.",
+                    mountPath, cgroupPath));
+        }
     }
 
     @Override

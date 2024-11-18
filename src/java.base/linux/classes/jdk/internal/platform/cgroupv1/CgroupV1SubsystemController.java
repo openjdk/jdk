@@ -47,16 +47,24 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
         if (root != null && cgroupPath != null) {
             String path = mountPoint;
             if (root.equals("/")) {
-                // host processes / containers w/private cgroup namespace
+                // host processes and containers with cgroupns=private
                 if (!cgroupPath.equals("/")) {
-                    // hosts only
                     path += cgroupPath;
+                    if (cgroupPath.indexOf("../") != -1) {
+                        System.getLogger("jdk.internal.platform").log(Level.WARNING, String.format(
+                                "Cgroup v1 path at [%s] is [%s], cgroup limits can be wrong.",
+                                mountPoint, cgroupPath));
+                    }
                 }
-            } else if (!root.equals(cgroupPath)) {
-                // containers only, warn if doesn't match
-                System.getLogger("jdk.internal.platform").log(Level.WARNING, String.format(
-                        "Cgroup v1 controller (%s) mounting root [%s] doesn't match cgroup [%s].",
-                        mountPoint, root, cgroupPath));
+            } else {
+                // containers with cgroupns=host, default setting is _root==cgroup_path
+                if (!cgroupPath.equals(root)) {
+                    if (!cgroupPath.equals("/")) {
+                        // When moved to a subgroup, between subgroups, the path suffix will change.
+                        // Rely on path adjustment that determines the actual suffix.
+                        path += cgroupPath;
+                    }
+                }
             }
             this.path = path;
         }
