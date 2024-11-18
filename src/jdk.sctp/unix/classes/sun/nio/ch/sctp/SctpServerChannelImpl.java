@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,10 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
                 InetSocketAddress isa = (local == null) ?
                     new InetSocketAddress(0) : Net.checkAddress(local);
+                @SuppressWarnings("removal")
+                SecurityManager sm = System.getSecurityManager();
+                if (sm != null)
+                    sm.checkListen(isa.getPort());
                 Net.bind(fd, isa.getAddress(), isa.getPort());
 
                 InetSocketAddress boundIsa = Net.localAddress(fd);
@@ -242,6 +246,12 @@ public class SctpServerChannelImpl extends SctpServerChannel
             IOUtil.configureBlocking(newfd, true);
             InetSocketAddress isa = isaa[0];
             sc = new SctpChannelImpl(provider(), newfd);
+
+            @SuppressWarnings("removal")
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null)
+                sm.checkAccept(isa.getAddress().getHostAddress(),
+                               isa.getPort());
 
             return sc;
         }
