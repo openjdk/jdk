@@ -31,10 +31,6 @@ import java.awt.Font;
  */
 public abstract class LayoutManager {
 
-    void setCutEdges(boolean enable);
-
-    void doLayout(LayoutGraph graph);
-
     public abstract void setCutEdges(boolean enable);
 
     public static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);

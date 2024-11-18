@@ -39,7 +39,10 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
     private LayoutGraph graph;
     private LayoutGraph prevGraph;
 
+    int maxLayerLength;
+
     public void setCutEdges(boolean cutEdges) {
+        maxLayerLength = cutEdges ? 10 : -1;
         manager.setCutEdges(cutEdges);
     }
 

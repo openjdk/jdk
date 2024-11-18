@@ -36,16 +36,16 @@ public class HierarchicalLayoutManager extends LayoutManager {
         setCutEdges(false);
     }
 
-    @Override
-    public void setCutEdges(boolean enable) {
-        maxLayerLength = enable ? 10 : -1;
-    }
+    int maxLayerLength;
 
     @Override
     public void setCutEdges(boolean enable) {
         maxLayerLength = enable ? 10 : -1;
     }
 
+    @Override
+    public void doLayout(LayoutGraph layoutGraph) {
+        ReverseEdges.apply(layoutGraph);
         // STEP 2: Assign layers and create dummy nodes
         LayerManager.apply(layoutGraph, maxLayerLength);
 
@@ -59,6 +59,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         // STEP 5: Write back to interface
         WriteResult.apply(layoutGraph);
     }
+
 
     public static class ReverseEdges {
 

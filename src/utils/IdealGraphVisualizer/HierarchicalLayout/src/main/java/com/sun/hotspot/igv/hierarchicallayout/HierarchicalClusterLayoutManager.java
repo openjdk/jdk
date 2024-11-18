@@ -48,18 +48,6 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
         manager.setCutEdges(enable);
     }
 
-    public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks) {
-        doLayout(graph);
-    }
-
-    public void setSubManager(LayoutManager manager) {
-        this.subManager = manager;
-    }
-
-    public void setManager(LayoutManager manager) {
-        this.manager = manager;
-    }
-
     public void doLayout(LayoutGraph graph) {
         HashMap<Cluster, List<Link>> listsConnection = new HashMap<>();
         HashMap<Cluster, HashMap<Port, ClusterInputSlotNode>> clusterInputSlotHash = new HashMap<>();

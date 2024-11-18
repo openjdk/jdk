@@ -41,20 +41,7 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         Canvas canvas = new Canvas();
         Font font = new Font("Arial", Font.BOLD, 14);
         fontMetrics = canvas.getFontMetrics(font);
-    }
-
-    @Override
-    public void setCutEdges(boolean enable) {
-        subManager.setCutEdges(enable);
-        manager.setCutEdges(enable);
-    }
-
-    public void setSubManager(LayoutManager manager) {
-        this.subManager = manager;
-    }
-
-    public void setManager(LayoutManager manager) {
-        this.manager = manager;
+        manager = new HierarchicalLayoutManager();
     }
 
     @Override
