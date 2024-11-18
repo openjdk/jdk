@@ -1691,26 +1691,37 @@ private:
   }
 
  public:
-  // Clone Parse Predicates to slow and fast loop when unswitching a loop
-  void clone_parse_and_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new,
-                                                               IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
+  // Clone Parse Predicates to slow and fast loop when multiversioning (or unswitching) a loop
+  void clone_parse_and_assertion_predicates_to_multiversioned_loop(IdealLoopTree* loop,
+                                                                   Node_List& old_new,
+                                                                   IfProjNode*& iffast_pred,
+                                                                   IfProjNode*& ifslow_pred);
  private:
-  void clone_loop_predication_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
-                                                            const PredicateBlock* predicate_block,
-                                                            Deoptimization::DeoptReason reason, IfProjNode*& iffast_pred,
-                                                            IfProjNode*& ifslow_pred);
-  void clone_parse_predicate_to_unswitched_loops(const PredicateBlock* predicate_block, Deoptimization::DeoptReason reason,
-                                                 IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
-  IfProjNode* clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
-                                                       Deoptimization::DeoptReason reason, bool slow_loop);
-  void clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
-                                                     Deoptimization::DeoptReason reason, ParsePredicateSuccessProj* old_parse_predicate_proj,
-                                                     ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
-                                                     ParsePredicateSuccessProj* slow_loop_parse_predicate_proj);
-  IfProjNode* clone_assertion_predicate_for_unswitched_loops(IfNode* template_assertion_predicate, IfProjNode* predicate,
-                                                             Deoptimization::DeoptReason reason,
-                                                             ParsePredicateSuccessProj* parse_predicate_proj);
-  static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
+  void clone_loop_predication_predicates_to_multiversioned_loop(IdealLoopTree* loop,
+                                                                const Node_List& old_new,
+                                                                const PredicateBlock* predicate_block,
+                                                                Deoptimization::DeoptReason reason,
+                                                                IfProjNode*& iffast_pred,
+                                                                IfProjNode*& ifslow_pred);
+  void clone_parse_predicate_to_multiversioned_loops(const PredicateBlock* predicate_block,
+                                                     Deoptimization::DeoptReason reason,
+                                                     IfProjNode*& iffast_pred,
+                                                     IfProjNode*& ifslow_pred);
+  IfProjNode* clone_parse_predicate_to_multiversioned_loop(ParsePredicateSuccessProj* parse_predicate_proj,
+                                                           Node* new_entry,
+                                                           Deoptimization::DeoptReason reason,
+                                                           bool slow_loop);
+  void clone_assertion_predicates_to_multiversioned_loop(IdealLoopTree* loop,
+                                                         const Node_List& old_new,
+                                                         Deoptimization::DeoptReason reason,
+                                                         ParsePredicateSuccessProj* old_parse_predicate_proj,
+                                                         ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
+                                                         ParsePredicateSuccessProj* slow_loop_parse_predicate_proj);
+  IfProjNode* clone_assertion_predicate_for_multiversioned_loops(IfNode* template_assertion_predicate,
+                                                                 IfProjNode* predicate,
+                                                                 Deoptimization::DeoptReason reason,
+                                                                 ParsePredicateSuccessProj* parse_predicate_proj);
+  static void check_cloned_parse_predicate_for_multiversioning(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
 
   bool _created_loop_node;
   DEBUG_ONLY(void dump_idoms(Node* early, Node* wrong_lca);)

@@ -272,9 +272,10 @@ void PhaseIdealLoop::fix_cloned_data_node_controls(const ProjNode* old_uncommon_
   orig_to_clone.iterate_all(orig_clone_action);
 }
 
-IfProjNode* PhaseIdealLoop::clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* parse_predicate_proj,
-                                                                     Node* new_entry, Deoptimization::DeoptReason reason,
-                                                                     const bool slow_loop) {
+IfProjNode* PhaseIdealLoop::clone_parse_predicate_to_multiversioned_loop(ParsePredicateSuccessProj* parse_predicate_proj,
+                                                                         Node* new_entry,
+                                                                         Deoptimization::DeoptReason reason,
+                                                                         const bool slow_loop) {
 
   IfProjNode* new_predicate_proj = create_new_if_for_predicate(parse_predicate_proj, new_entry, reason, Op_ParsePredicate,
                                                                slow_loop);
@@ -283,14 +284,15 @@ IfProjNode* PhaseIdealLoop::clone_parse_predicate_to_unswitched_loop(ParsePredic
   return new_predicate_proj;
 }
 
-// Clones Assertion Predicates to both unswitched loops starting at 'old_predicate_proj' by following its control inputs.
+// Clones Assertion Predicates to both multiversioned loops starting at 'old_predicate_proj' by following its control inputs.
 // It also rewires the control edges of data nodes with dependencies in the loop from the old predicates to the new
 // cloned predicates.
-void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
-                                                                   Deoptimization::DeoptReason reason,
-                                                                   ParsePredicateSuccessProj* old_parse_predicate_proj,
-                                                                   ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
-                                                                   ParsePredicateSuccessProj* slow_loop_parse_predicate_proj) {
+void PhaseIdealLoop::clone_assertion_predicates_to_multiversioned_loop(IdealLoopTree* loop,
+                                                                       const Node_List& old_new,
+                                                                       Deoptimization::DeoptReason reason,
+                                                                       ParsePredicateSuccessProj* old_parse_predicate_proj,
+                                                                       ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
+                                                                       ParsePredicateSuccessProj* slow_loop_parse_predicate_proj) {
   assert(fast_loop_parse_predicate_proj->in(0)->is_ParsePredicate() &&
          slow_loop_parse_predicate_proj->in(0)->is_ParsePredicate(), "sanity check");
   // Only need to clone range check predicates as those can be changed and duplicated by inserting pre/main/post loops
@@ -301,7 +303,7 @@ void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree
 
   Node_List to_process;
   // Process in reverse order such that 'create_new_if_for_predicate' can be used in
-  // 'clone_assertion_predicate_for_unswitched_loops' and the original order is maintained.
+  // 'clone_assertion_predicate_for_multiversioned_loops' and the original order is maintained.
   for (int i = list.size() - 1; i >= 0; i--) {
     Node* predicate = list.at(i);
     assert(predicate->in(0)->is_If(), "must be If node");
@@ -309,9 +311,9 @@ void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree
     assert(predicate->is_Proj() && predicate->as_Proj()->is_IfProj(), "predicate must be a projection of an if node");
     IfProjNode* predicate_proj = predicate->as_IfProj();
 
-    IfProjNode* fast_proj = clone_assertion_predicate_for_unswitched_loops(iff, predicate_proj, reason, fast_loop_parse_predicate_proj);
+    IfProjNode* fast_proj = clone_assertion_predicate_for_multiversioned_loops(iff, predicate_proj, reason, fast_loop_parse_predicate_proj);
     assert(assertion_predicate_has_loop_opaque_node(fast_proj->in(0)->as_If()), "must find Assertion Predicate for fast loop");
-    IfProjNode* slow_proj = clone_assertion_predicate_for_unswitched_loops(iff, predicate_proj, reason, slow_loop_parse_predicate_proj);
+    IfProjNode* slow_proj = clone_assertion_predicate_for_multiversioned_loops(iff, predicate_proj, reason, slow_loop_parse_predicate_proj);
     assert(assertion_predicate_has_loop_opaque_node(slow_proj->in(0)->as_If()), "must find Assertion Predicate for slow loop");
 
     // Update control dependent data nodes.
@@ -345,13 +347,13 @@ void PhaseIdealLoop::get_assertion_predicates(ParsePredicateSuccessProj* parse_p
   predicate_iterator.for_each(template_assertion_predicate_collector);
 }
 
-// Clone an Assertion Predicate for an unswitched loop. OpaqueLoopInit and OpaqueLoopStride nodes are cloned and uncommon
+// Clone an Assertion Predicate for a multiversioned loop. OpaqueLoopInit and OpaqueLoopStride nodes are cloned and uncommon
 // traps are kept for the predicate (a Halt node is used later when creating pre/main/post loops and copying this cloned
 // predicate again).
-IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfNode* template_assertion_predicate,
-                                                                           IfProjNode* predicate,
-                                                                           Deoptimization::DeoptReason reason,
-                                                                           ParsePredicateSuccessProj* parse_predicate_proj) {
+IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_multiversioned_loops(IfNode* template_assertion_predicate,
+                                                                               IfProjNode* predicate,
+                                                                               Deoptimization::DeoptReason reason,
+                                                                               ParsePredicateSuccessProj* parse_predicate_proj) {
   TemplateAssertionExpression template_assertion_expression(template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate());
   OpaqueTemplateAssertionPredicateNode* cloned_opaque_node = template_assertion_expression.clone(parse_predicate_proj->in(0)->in(0), this);
   IfProjNode* if_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason,
@@ -362,59 +364,77 @@ IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfNod
   return if_proj;
 }
 
-// Clone the old Parse Predicates and Assertion Predicates before the unswitch If to the unswitched loops after the
-// unswitch If.
-void PhaseIdealLoop::clone_parse_and_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new,
-                                                                             IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred) {
+// Clone the old Parse Predicates and Assertion Predicates before the selector If to the multiversioned loops after the
+// selector If.
+void PhaseIdealLoop::clone_parse_and_assertion_predicates_to_multiversioned_loop(IdealLoopTree* loop,
+                                                                                 Node_List& old_new,
+                                                                                 IfProjNode*& iffast_pred,
+                                                                                 IfProjNode*& ifslow_pred) {
   LoopNode* head = loop->_head->as_Loop();
   Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
 
   const Predicates predicates(entry);
-  clone_loop_predication_predicates_to_unswitched_loop(loop, old_new, predicates.loop_predicate_block(),
-                                                       Deoptimization::Reason_predicate, iffast_pred, ifslow_pred);
-  clone_loop_predication_predicates_to_unswitched_loop(loop, old_new, predicates.profiled_loop_predicate_block(),
-                                                       Deoptimization::Reason_profile_predicate, iffast_pred, ifslow_pred);
+  clone_loop_predication_predicates_to_multiversioned_loop(loop,
+                                                           old_new,
+                                                           predicates.loop_predicate_block(),
+                                                           Deoptimization::Reason_predicate,
+                                                           iffast_pred,
+                                                           ifslow_pred);
+  clone_loop_predication_predicates_to_multiversioned_loop(loop,
+                                                           old_new,
+                                                           predicates.profiled_loop_predicate_block(),
+                                                           Deoptimization::Reason_profile_predicate,
+                                                           iffast_pred,
+                                                           ifslow_pred);
 
   const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
   if (loop_limit_check_predicate_block->has_parse_predicate() && !head->is_CountedLoop()) {
     // Don't clone the Loop Limit Check Parse Predicate if we already have a counted loop (a Loop Limit Check Predicate
     // is only created when converting a LoopNode to a CountedLoopNode).
-    clone_parse_predicate_to_unswitched_loops(loop_limit_check_predicate_block, Deoptimization::Reason_loop_limit_check,
-                                              iffast_pred, ifslow_pred);
+    clone_parse_predicate_to_multiversioned_loops(loop_limit_check_predicate_block,
+                                                  Deoptimization::Reason_loop_limit_check,
+                                                  iffast_pred,
+                                                  ifslow_pred);
   }
 }
 
 // Clone the Parse Predicate and Template Assertion Predicates of a Loop Predication related Predicate Block.
-void PhaseIdealLoop::clone_loop_predication_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
-                                                                          const PredicateBlock* predicate_block,
-                                                                          Deoptimization::DeoptReason reason,
-                                                                          IfProjNode*& iffast_pred,
-                                                                          IfProjNode*& ifslow_pred) {
+void PhaseIdealLoop::clone_loop_predication_predicates_to_multiversioned_loop(IdealLoopTree* loop,
+                                                                              const Node_List& old_new,
+                                                                              const PredicateBlock* predicate_block,
+                                                                              Deoptimization::DeoptReason reason,
+                                                                              IfProjNode*& iffast_pred,
+                                                                              IfProjNode*& ifslow_pred) {
   if (predicate_block->has_parse_predicate()) {
     // We currently only clone Assertion Predicates if there are Parse Predicates. This is not entirely correct and will
     // be changed with the complete fix for Assertion Predicates.
-    clone_parse_predicate_to_unswitched_loops(predicate_block, reason, iffast_pred, ifslow_pred);
+    clone_parse_predicate_to_multiversioned_loops(predicate_block, reason, iffast_pred, ifslow_pred);
     assert(iffast_pred->in(0)->is_ParsePredicate() && ifslow_pred->in(0)->is_ParsePredicate(),
            "must be success projections of the cloned Parse Predicates");
-    clone_assertion_predicates_to_unswitched_loop(loop, old_new, reason, predicate_block->parse_predicate_success_proj(),
-                                                  iffast_pred->as_IfTrue(), ifslow_pred->as_IfTrue());
+    clone_assertion_predicates_to_multiversioned_loop(loop,
+                                                      old_new,
+                                                      reason,
+                                                      predicate_block->parse_predicate_success_proj(),
+                                                      iffast_pred->as_IfTrue(),
+                                                      ifslow_pred->as_IfTrue());
   }
 }
 
-void PhaseIdealLoop::clone_parse_predicate_to_unswitched_loops(const PredicateBlock* predicate_block,
-                                                               Deoptimization::DeoptReason reason,
-                                                               IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred) {
+void PhaseIdealLoop::clone_parse_predicate_to_multiversioned_loops(const PredicateBlock* predicate_block,
+                                                                   Deoptimization::DeoptReason reason,
+                                                                   IfProjNode*& iffast_pred,
+                                                                   IfProjNode*& ifslow_pred) {
   assert(predicate_block->has_parse_predicate(), "must have parse predicate");
   ParsePredicateSuccessProj* parse_predicate_proj = predicate_block->parse_predicate_success_proj();
-  iffast_pred = clone_parse_predicate_to_unswitched_loop(parse_predicate_proj, iffast_pred, reason, false);
-  check_cloned_parse_predicate_for_unswitching(iffast_pred, true);
+  iffast_pred = clone_parse_predicate_to_multiversioned_loop(parse_predicate_proj, iffast_pred, reason, false);
+  check_cloned_parse_predicate_for_multiversioning(iffast_pred, true);
 
-  ifslow_pred = clone_parse_predicate_to_unswitched_loop(parse_predicate_proj, ifslow_pred, reason, true);
-  check_cloned_parse_predicate_for_unswitching(ifslow_pred, false);
+  ifslow_pred = clone_parse_predicate_to_multiversioned_loop(parse_predicate_proj, ifslow_pred, reason, true);
+  check_cloned_parse_predicate_for_multiversioning(ifslow_pred, false);
 }
 
 #ifndef PRODUCT
-void PhaseIdealLoop::check_cloned_parse_predicate_for_unswitching(const Node* new_entry, const bool is_fast_loop) {
+void PhaseIdealLoop::check_cloned_parse_predicate_for_multiversioning(const Node* new_entry, const bool is_fast_loop) {
   assert(new_entry != nullptr, "IfTrue or IfFalse after clone predicate");
   if (TraceLoopPredicate) {
     tty->print("Parse Predicate cloned to %s loop: ", is_fast_loop ? "fast" : "slow");

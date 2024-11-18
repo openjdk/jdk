@@ -328,18 +328,18 @@ class OriginalLoop : public StackObj {
     remove_unswitch_candidate_from_loops(unswitched_loop_selector);
   }
 
+  // TODO desc
   void multiversion(const LoopSelector& loop_selector) {
     _phase->clone_loop(_loop, _old_new, _phase->dom_depth(_loop_head),
                        PhaseIdealLoop::CloneIncludesStripMined, loop_selector.selector());
 
     // At this point, the selector If projections are the corresponding loop entries.
-    // clone_parse_and_assertion_predicates_to_unswitched_loop() could clone additional predicates after the selector
+    // clone_parse_and_assertion_predicates_to_multiversioned_loop() could clone additional predicates after the selector
     // If projections. The loop entries are updated accordingly.
     IfProjNode* true_path_loop_entry  = loop_selector.true_path_loop_proj();
     IfProjNode* false_path_loop_entry = loop_selector.false_path_loop_proj();
-    // TODO rename unswitched!!!
-    _phase->clone_parse_and_assertion_predicates_to_unswitched_loop(_loop, _old_new,
-                                                                    true_path_loop_entry, false_path_loop_entry);
+    _phase->clone_parse_and_assertion_predicates_to_multiversioned_loop(_loop, _old_new,
+                                                                        true_path_loop_entry, false_path_loop_entry);
 
     fix_loop_entries(true_path_loop_entry, false_path_loop_entry);
 
