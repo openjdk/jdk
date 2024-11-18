@@ -522,6 +522,22 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
 
+class VTransformCastNode : public VTransformNode {
+private:
+  uint _vlen;
+  BasicType _from_bt;
+  BasicType _to_bt;
+
+public:
+  // req = 2 -> [ctrl, input]
+  VTransformCastNode(VTransform& vtransform, int vlen, BasicType from_bt, BasicType to_bt) : VTransformNode(vtransform, 2),
+    _vlen(vlen), _from_bt(from_bt), _to_bt(to_bt) {}
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "Cast"; };)
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
 // Invoke callback on all memops, in the order of the schedule.
 template<typename Callback>
 void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {

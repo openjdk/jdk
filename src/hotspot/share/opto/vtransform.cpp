@@ -601,6 +601,15 @@ VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloo
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
+VTransformApplyResult VTransformCastNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  Node* value = find_transformed_input(1, vnode_idx_to_transformed_node);
+  VectorNode* vn = VectorCastNode::make(VectorCastNode::opcode(-1, _from_bt), value, _to_bt, _vlen);
+  register_new_node_from_vectorization(vloop_analyzer, vn, value);
+
+  return VTransformApplyResult::make_vector(vn, _vlen, vn->vect_type()->length_in_bytes());
+}
+
 void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const {
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
   Node* first = nodes().at(0);
@@ -694,6 +703,10 @@ void VTransformShiftCountNode::print_spec() const {
 
 void VTransformPopulateIndexNode::print_spec() const {
   tty->print("vlen=%d element_bt=%s", _vlen, type2name(_element_bt));
+}
+
+void VTransformCastNode::print_spec() const {
+  tty->print("vlen=%d from=%s to=%s", _vlen, type2name(_from_bt), type2name(_to_bt));
 }
 
 void VTransformVectorNode::print_spec() const {

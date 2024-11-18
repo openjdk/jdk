@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -192,6 +192,10 @@
         return 30;
       }
     }
+  }
+
+  static bool is_vector_cast_supported(BasicType from_bt, BasicType to_bt) {
+    return false;
   }
 
   // Is SIMD sort supported for this CPU?
