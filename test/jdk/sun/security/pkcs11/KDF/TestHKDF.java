@@ -424,7 +424,7 @@ public final class TestHKDF extends PKCS11Test {
 
     private static void test_RFC_5869_case_1() {
         executeTest("RFC 5869 - Test Case 1",
-                "HKDFWithHmacSHA256",
+                "HKDF-SHA256",
                 "Generic",
                 "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
                 "000102030405060708090a0b0c",
@@ -439,7 +439,7 @@ public final class TestHKDF extends PKCS11Test {
 
     private static void test_RFC_5869_case_2() {
         executeTest("RFC 5869 - Test Case 2",
-                "HKDFWithHmacSHA256",
+                "HKDF-SHA256",
                 "Generic",
                 "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d" +
                 "1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b" +
@@ -461,7 +461,7 @@ public final class TestHKDF extends PKCS11Test {
 
     private static void test_RFC_5869_case_3() {
         executeTest("RFC 5869 - Test Case 3",
-                "HKDFWithHmacSHA256",
+                "HKDF-SHA256",
                 "Generic",
                 "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
                 null,
@@ -476,7 +476,7 @@ public final class TestHKDF extends PKCS11Test {
 
     private static void test_RFC_5869_case_4() {
         executeTest("RFC 5869 - Test Case 4",
-                "HKDFWithHmacSHA1",
+                "HKDF-SHA1",
                 "Generic",
                 "0b0b0b0b0b0b0b0b0b0b0b",
                 "000102030405060708090a0b0c",
@@ -490,7 +490,7 @@ public final class TestHKDF extends PKCS11Test {
 
     private static void test_RFC_5869_case_5() {
         executeTest("RFC 5869 - Test Case 5",
-                "HKDFWithHmacSHA1",
+                "HKDF-SHA1",
                 "Generic",
                 "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d" +
                 "1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b" +
@@ -511,7 +511,7 @@ public final class TestHKDF extends PKCS11Test {
 
     private static void test_RFC_5869_case_6() {
         executeTest("RFC 5869 - Test Case 6",
-                "HKDFWithHmacSHA1",
+                "HKDF-SHA1",
                 "Generic",
                 "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
                 null,
@@ -525,7 +525,7 @@ public final class TestHKDF extends PKCS11Test {
 
     private static void test_RFC_5869_case_7() {
         executeTest("RFC 5869 - Test Case 7",
-                "HKDFWithHmacSHA1",
+                "HKDF-SHA1",
                 "Generic",
                 "0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
                 "0000000000000000000000000000000000000000",
@@ -538,8 +538,8 @@ public final class TestHKDF extends PKCS11Test {
     }
 
     private static void test_AES_HKDFWithHmacSHA1() {
-        executeTest("AES - HKDFWithHmacSHA1",
-                "HKDFWithHmacSHA1",
+        executeTest("AES - HKDF-SHA1",
+                "HKDF-SHA1",
                 "AES",
                 "000102030405060708090a0b0c0d0e0f",
                 "101112131415161718191a1b1c1d1e1f",
@@ -552,8 +552,8 @@ public final class TestHKDF extends PKCS11Test {
     }
 
     private static void test_AES_HKDFWithHmacSHA224() {
-        executeTest("AES - HKDFWithHmacSHA224",
-                "HKDFWithHmacSHA224",
+        executeTest("AES - HKDF-SHA224",
+                "HKDF-SHA224",
                 "AES",
                 "000102030405060708090a0b0c0d0e0f",
                 "101112131415161718191a1b1c1d1e1f",
@@ -566,8 +566,8 @@ public final class TestHKDF extends PKCS11Test {
     }
 
     private static void test_AES_HKDFWithHmacSHA256() {
-        executeTest("AES - HKDFWithHmacSHA256",
-                "HKDFWithHmacSHA256",
+        executeTest("AES - HKDF-SHA256",
+                "HKDF-SHA256",
                 "AES",
                 "000102030405060708090a0b0c0d0e0f",
                 "101112131415161718191a1b1c1d1e1f",
@@ -581,8 +581,8 @@ public final class TestHKDF extends PKCS11Test {
     }
 
     private static void test_AES_HKDFWithHmacSHA384() {
-        executeTest("AES - HKDFWithHmacSHA384",
-                "HKDFWithHmacSHA384",
+        executeTest("AES - HKDF-SHA384",
+                "HKDF-SHA384",
                 "AES",
                 "000102030405060708090a0b0c0d0e0f",
                 "101112131415161718191a1b1c1d1e1f",
@@ -596,8 +596,8 @@ public final class TestHKDF extends PKCS11Test {
     }
 
     private static void test_AES_HKDFWithHmacSHA512() {
-        executeTest("AES - HKDFWithHmacSHA512",
-                "HKDFWithHmacSHA512",
+        executeTest("AES - HKDF-SHA512",
+                "HKDF-SHA512",
                 "AES",
                 "000102030405060708090a0b0c0d0e0f",
                 "101112131415161718191a1b1c1d1e1f",
@@ -634,8 +634,8 @@ public final class TestHKDF extends PKCS11Test {
                 "1015728e5a8aacaa68ffffffffffffffff",
                 "02"
         );
-        executeTest("Test HKDFWithHmacSHA256 after DH exchange (TLS)",
-                "HKDFWithHmacSHA256",
+        executeTest("Test HKDF-SHA256 after DH exchange (TLS)",
+                "HKDF-SHA256",
                 "Generic",
                 tlsPremasterSecret,
                 null,
@@ -656,8 +656,8 @@ public final class TestHKDF extends PKCS11Test {
                 "34333070929362623",
                 "531080873930420952237875954830357399317339863932672261700603" +
                 "26242234504331049");
-        executeTest("Test HKDFWithHmacSHA256 after ECDH exchange (TLS)",
-                "HKDFWithHmacSHA256",
+        executeTest("Test HKDF-SHA256 after ECDH exchange (TLS)",
+                "HKDF-SHA256",
                 "Generic",
                 tlsPremasterSecret,
                 null,
