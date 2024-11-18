@@ -218,10 +218,10 @@ SaveLiveRegisters::SaveLiveRegisters(MacroAssembler *masm, BarrierStubC2 *stub)
 
   const int register_save_size = iterate_over_register_mask(ACTION_COUNT_ONLY) * BytesPerWord;
 
-  _frame_size = align_up(register_save_size, frame::alignment_in_bytes) + frame::z_abi_160_size; // FIXME: this could be restricted to argument only
+  _frame_size = align_up(register_save_size, frame::alignment_in_bytes) + frame::z_abi_160_size;
 
   __ save_return_pc();
-  __ push_frame(_frame_size, Z_R14); // FIXME: check if Z_R1_scaratch can do a job here;
+  __ push_frame(_frame_size, Z_R14);
 
   __ z_lg(Z_R14, _z_common_abi(return_pc) + _frame_size, Z_SP);
 
@@ -277,8 +277,19 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
           assert(action == ACTION_COUNT_ONLY, "Sanity");
         }
       }
-    } else if (false /* vm_reg->is_VectorRegister() */){
-      fatal("Vector register support is not there yet!");
+    } else if (vm_reg->is_VectorRegister()){
+      VectorRegister vs_reg = vm_reg->as_VectorRegister();
+      if (vs_reg->encoding() >= Z_V2->encoding() && vs_reg->encoding() <= Z_V31->encoding()) {
+        reg_save_index += 2;
+        Register spill_addr = Z_R0;
+        if (action == ACTION_SAVE) {
+          __ z_vst(vs_reg, Address(Z_SP, offset - reg_save_index * BytesPerWord));
+        } else if (action == ACTION_RESTORE) {
+          __ z_vl(vs_reg, Address(Z_SP, offset - reg_save_index * BytesPerWord));
+        } else {
+          assert(action == ACTION_COUNT_ONLY, "Sanity");
+        }
+      }
     } else {
       fatal("Register type is not known");
     }
