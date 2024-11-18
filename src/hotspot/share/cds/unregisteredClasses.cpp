@@ -51,6 +51,7 @@ InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, T
                              PerfClassTraceTime::CLASS_LOAD);
 
   Symbol* path_symbol = SymbolTable::new_symbol(path);
+  Symbol* findClass = SymbolTable::new_symbol("findClass");
   Handle url_classloader = get_url_classloader(path_symbol, CHECK_NULL);
   Handle ext_class_name = java_lang_String::externalize_classname(name, CHECK_NULL);
 
@@ -58,11 +59,10 @@ InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, T
   JavaCallArguments args(2);
   args.set_receiver(url_classloader);
   args.push_oop(ext_class_name);
-  args.push_int(JNI_FALSE);
   JavaCalls::call_virtual(&result,
                           vmClasses::URLClassLoader_klass(),
-                          vmSymbols::loadClass_name(),
-                          vmSymbols::string_boolean_class_signature(),
+                          findClass,
+                          vmSymbols::string_class_signature(),
                           &args,
                           CHECK_NULL);
   assert(result.get_type() == T_OBJECT, "just checking");

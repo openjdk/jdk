@@ -73,6 +73,9 @@ import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symtab;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import javax.lang.model.element.ModuleElement.DirectiveKind;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -1153,4 +1156,90 @@ public class EdgeCases extends ModuleTestBase {
         }
     }
 
+    @Test
+    public void testJavaSEHasRequiresTransitiveJavaBase(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path a = src.resolve("a");
+        tb.writeJavaFiles(a,
+                          "module a { requires java.se; }",
+                          """
+                          package test;
+                          import module java.se;
+                          public class Test {
+                              ArrayList<String> l;
+                          }
+                          """);
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        AtomicBoolean seenJavaSEDependency = new AtomicBoolean();
+
+        List<String> log;
+
+        log = new JavacTask(tb)
+            .outdir(classes)
+            .options("-XDrawDiagnostics", "-XDshould-stop.at=FLOW")
+            .callback(verifyJavaSEDependency(true, seenJavaSEDependency))
+            .files(findJavaFiles(src))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "Test.java:2:8: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.module.imports)",
+                "1 error");
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found: " + log);
+
+        if (!seenJavaSEDependency.get()) {
+            throw new AssertionError("Didn't find the java.se dependency!");
+        }
+
+        seenJavaSEDependency.set(false);
+
+        new JavacTask(tb)
+            .outdir(classes)
+            .options("--enable-preview",
+                     "--source", System.getProperty("java.specification.version"))
+            .callback(verifyJavaSEDependency(true, seenJavaSEDependency))
+            .files(findJavaFiles(src))
+            .run(Task.Expect.SUCCESS)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (!seenJavaSEDependency.get()) {
+            throw new AssertionError("Didn't find the java.se dependency!");
+        }
+    }
+        private Consumer<com.sun.source.util.JavacTask> verifyJavaSEDependency(
+                boolean expectedTransitive,
+                AtomicBoolean seenJavaSEDependency) {
+            return t -> {
+                    t.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            if (e.getKind() == TaskEvent.Kind.ANALYZE) {
+                                ModuleElement javaBase =
+                                        t.getElements().getModuleElement("java.base");
+                                ModuleElement javaSE =
+                                        t.getElements().getModuleElement("java.se");
+                                RequiresDirective requiresJavaBase =
+                                        javaSE.getDirectives()
+                                              .stream()
+                                              .filter(d -> d.getKind() == DirectiveKind.REQUIRES)
+                                              .map(d -> (RequiresDirective) d)
+                                              .filter(d -> d.getDependency() == javaBase)
+                                              .findAny()
+                                              .orElseThrow();
+                                if (requiresJavaBase.isTransitive() != expectedTransitive) {
+                                    throw new AssertionError("Expected: " + expectedTransitive + ", " +
+                                                             "but got: " + requiresJavaBase.isTransitive());
+                                }
+                                seenJavaSEDependency.set(true);
+                            }
+                        }
+                    });
+                };
+        }
 }

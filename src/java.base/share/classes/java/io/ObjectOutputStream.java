@@ -237,16 +237,8 @@ public class ObjectOutputStream
      * ensure that constructors for receiving ObjectInputStreams will not block
      * when reading the header.
      *
-     * <p>If a security manager is installed, this constructor will check for
-     * the "enableSubclassImplementation" SerializablePermission when invoked
-     * directly or indirectly by the constructor of a subclass which overrides
-     * the ObjectOutputStream.putFields or ObjectOutputStream.writeUnshared
-     * methods.
-     *
      * @param   out output stream to write to
      * @throws  IOException if an I/O error occurs while writing stream header
-     * @throws  SecurityException if untrusted subclass illegally overrides
-     *          security-sensitive methods
      * @throws  NullPointerException if {@code out} is {@code null}
      * @since   1.4
      * @see     ObjectOutputStream#ObjectOutputStream()
@@ -274,19 +266,9 @@ public class ObjectOutputStream
      * ObjectOutputStream to not have to allocate private data just used by
      * this implementation of ObjectOutputStream.
      *
-     * <p>If there is a security manager installed, this method first calls the
-     * security manager's {@code checkPermission} method with a
-     * {@code SerializablePermission("enableSubclassImplementation")}
-     * permission to ensure it's ok to enable subclassing.
-     *
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method denies enabling
-     *          subclassing.
      * @throws  IOException if an I/O error occurs while creating this stream
-     * @see SecurityManager#checkPermission
-     * @see java.io.SerializablePermission
      */
-    protected ObjectOutputStream() throws IOException, SecurityException {
+    protected ObjectOutputStream() throws IOException {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -413,12 +395,6 @@ public class ObjectOutputStream
      * rules described above only apply to the base-level object written with
      * writeUnshared, and not to any transitively referenced sub-objects in the
      * object graph to be serialized.
-     *
-     * <p>ObjectOutputStream subclasses which override this method can only be
-     * constructed in security contexts possessing the
-     * "enableSubclassImplementation" SerializablePermission; any attempt to
-     * instantiate such a subclass without this permission will cause a
-     * SecurityException to be thrown.
      *
      * @param   obj object to write to stream
      * @throws  NotSerializableException if an object in the graph to be
@@ -611,26 +587,11 @@ public class ObjectOutputStream
      * enabled, the {@link #replaceObject} method is called for every object being
      * serialized.
      *
-     * <p>If object replacement is currently not enabled, and
-     * {@code enable} is true, and there is a security manager installed,
-     * this method first calls the security manager's
-     * {@code checkPermission} method with the
-     * {@code SerializablePermission("enableSubstitution")} permission to
-     * ensure that the caller is permitted to enable the stream to do replacement
-     * of objects written to the stream.
-     *
      * @param   enable true for enabling use of {@code replaceObject} for
      *          every object being serialized
      * @return  the previous setting before this method was invoked
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method denies enabling the stream
-     *          to do replacement of objects written to the stream.
-     * @see SecurityManager#checkPermission
-     * @see java.io.SerializablePermission
      */
-    protected boolean enableReplaceObject(boolean enable)
-        throws SecurityException
-    {
+    protected boolean enableReplaceObject(boolean enable) {
         if (enable == enableReplace) {
             return enable;
         }

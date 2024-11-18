@@ -27,8 +27,8 @@
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
-#include "classfile/classLoadInfo.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/symbolTable.hpp"
@@ -93,6 +93,21 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   PrintLambdaFormMessage plm;
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
     log_info(cds)("Nothing to regenerate for holder classes");
+    return;
+  }
+
+  if (CDSConfig::is_dumping_static_archive() && CDSConfig::is_dumping_invokedynamic()) {
+    // Work around JDK-8310831, as some methods in lambda form holder classes may not get generated.
+    log_info(cds)("Archived MethodHandles may refer to lambda form holder classes. Cannot regenerate.");
+    return;
+  }
+
+  if (CDSConfig::is_dumping_dynamic_archive() && CDSConfig::is_dumping_aot_linked_classes() &&
+      CDSConfig::is_using_aot_linked_classes()) {
+    // The base archive may have some pre-resolved CP entries that point to the lambda form holder
+    // classes in the base archive. If we generate new versions of these classes, those CP entries
+    // will be pointing to invalid classes.
+    log_info(cds)("Base archive already has aot-linked lambda form holder classes. Cannot regenerate.");
     return;
   }
 
@@ -166,7 +181,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
       // make a copy of class bytes so GC will not affect us.
       char *buf = NEW_RESOURCE_ARRAY(char, len);
       memcpy(buf, (char*)h_bytes->byte_at_addr(0), len);
-      ClassFileStream st((u1*)buf, len, nullptr, ClassFileStream::verify);
+      ClassFileStream st((u1*)buf, len, nullptr);
       regenerate_class(class_name, st, CHECK);
     }
   }
