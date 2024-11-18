@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.util.xml;
+package jdk.jpackage.internal.util;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.xml.stream.XMLStreamWriter;
 
-public class PrettyPrintHandler implements InvocationHandler {
+final class PrettyPrintHandler implements InvocationHandler {
 
     public PrettyPrintHandler(XMLStreamWriter target) {
         this.target = target;

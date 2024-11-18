@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.util.xml;
+package jdk.jpackage.internal.util;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import javax.xml.stream.XMLStreamWriter;
 
-public class SkipDocumentHandler implements InvocationHandler {
+final class SkipDocumentHandler implements InvocationHandler {
 
     public SkipDocumentHandler(XMLStreamWriter target) {
         this.target = target;
