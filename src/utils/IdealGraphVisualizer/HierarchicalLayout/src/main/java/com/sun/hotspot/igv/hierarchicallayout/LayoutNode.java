@@ -508,7 +508,7 @@ public class LayoutNode {
      * Computes the start points for reversed outgoing edges.
      * Adjusts the node's margins and records the necessary points for edge routing.
      */
-    private void computeReversedEdgeStartPoints() {
+    private boolean computeReversedEdgeStartPoints() {
         TreeMap<Integer, ArrayList<LayoutEdge>> sortedDownMap = new TreeMap<>(Collections.reverseOrder());
         for (LayoutEdge succEdge : getSuccessors()) {
             if (succEdge.isReversed()) {
@@ -541,14 +541,15 @@ public class LayoutNode {
         }
         setLeftMargin(getLeftMargin());
         setRightMargin(getRightMargin() + (sortedDownMap.size() * offset));
+        return !sortedDownMap.isEmpty();
     }
 
     /**
      * Computes the end points for reversed incoming edges.
      * Adjusts the node's margins and records the necessary points for edge routing.
      */
-    private void computeReversedEdgeEndPoints() {
-        TreeMap<Integer, ArrayList<LayoutEdge>> sortedUpMap = new TreeMap<>(Collections.reverseOrder());
+    private void computeReversedEdgeEndPoints(boolean reverseLeft) {
+        TreeMap<Integer, ArrayList<LayoutEdge>> sortedUpMap = reverseLeft ? new TreeMap<>() : new TreeMap<>(Collections.reverseOrder());
         for (LayoutEdge predEdge : getPredecessors()) {
             if (predEdge.isReversed()) {
                 predEdge.setRelativeToX(predEdge.getLink().getFrom().getRelativePosition().x);
@@ -558,14 +559,15 @@ public class LayoutNode {
         }
 
         int offset = NODE_OFFSET + LayoutNode.DUMMY_WIDTH;
-        int currentX = getWidth();
+        int offsetX = reverseLeft ? -offset : offset;
+        int currentX = reverseLeft ? 0 : getWidth();
         int startY = getHeight();
         int currentY = getHeight();
         for (Map.Entry<Integer, ArrayList<LayoutEdge>> entry : sortedUpMap.entrySet()) {
             int startX = entry.getKey();
             ArrayList<LayoutEdge> reversedPreds = entry.getValue();
 
-            currentX += offset;
+            currentX += offsetX;
             currentY += offset;
             setBottomMargin(getBottomMargin() + offset);
 
@@ -578,8 +580,9 @@ public class LayoutNode {
                 getReversedLinkEndPoints().put(revEdge.getLink(), endPoints);
             }
         }
-        setLeftMargin(getLeftMargin());
-        setRightMargin(getRightMargin() + (sortedUpMap.size() * offset));
+        setLeftMargin(getLeftMargin() + (reverseLeft ? sortedUpMap.size() * offset : 0));
+        setRightMargin(getRightMargin() + (reverseLeft ? 0 : sortedUpMap.size() * offset));
+
     }
 
     /**
@@ -591,8 +594,8 @@ public class LayoutNode {
         getReversedLinkStartPoints().clear();
         getReversedLinkEndPoints().clear();
 
-        computeReversedEdgeStartPoints();
-        computeReversedEdgeEndPoints();
+        boolean hasReversedDown = computeReversedEdgeStartPoints();
+        computeReversedEdgeEndPoints(hasReversedDown);
     }
 
     /**
