@@ -45,7 +45,9 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
     @Override
     public void doLayout(LayoutGraph layoutGraph) {
+        // STEP 1: Remove self edges and reverse edges
         ReverseEdges.apply(layoutGraph);
+
         // STEP 2: Assign layers and create dummy nodes
         LayerManager.apply(layoutGraph, maxLayerLength);
 
