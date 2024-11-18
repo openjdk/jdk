@@ -781,18 +781,18 @@ public final class TKit {
             currentTest.notifyAssert();
 
             var comm = Comm.compare(content, expected);
-            if (!comm.unique1.isEmpty() && !comm.unique2.isEmpty()) {
+            if (!comm.unique1().isEmpty() && !comm.unique2().isEmpty()) {
                 error(String.format(
                         "assertDirectoryContentEquals(%s): Some expected %s. Unexpected %s. Missing %s",
-                        baseDir, format(comm.common), format(comm.unique1), format(comm.unique2)));
-            } else if (!comm.unique1.isEmpty()) {
+                        baseDir, format(comm.common()), format(comm.unique1()), format(comm.unique2())));
+            } else if (!comm.unique1().isEmpty()) {
                 error(String.format(
                         "assertDirectoryContentEquals(%s): Expected %s. Unexpected %s",
-                        baseDir, format(comm.common), format(comm.unique1)));
-            } else if (!comm.unique2.isEmpty()) {
+                        baseDir, format(comm.common()), format(comm.unique1())));
+            } else if (!comm.unique2().isEmpty()) {
                 error(String.format(
                         "assertDirectoryContentEquals(%s): Some expected %s. Missing %s",
-                        baseDir, format(comm.common), format(comm.unique2)));
+                        baseDir, format(comm.common()), format(comm.unique2())));
             } else {
                 traceAssert(String.format(
                         "assertDirectoryContentEquals(%s): Expected %s",
@@ -808,10 +808,10 @@ public final class TKit {
             currentTest.notifyAssert();
 
             var comm = Comm.compare(content, expected);
-            if (!comm.unique2.isEmpty()) {
+            if (!comm.unique2().isEmpty()) {
                 error(String.format(
                         "assertDirectoryContentContains(%s): Some expected %s. Missing %s",
-                        baseDir, format(comm.common), format(comm.unique2)));
+                        baseDir, format(comm.common()), format(comm.unique2())));
             } else {
                 traceAssert(String.format(
                         "assertDirectoryContentContains(%s): Expected %s",
@@ -836,21 +836,6 @@ public final class TKit {
         private DirectoryContentVerifier(Path baseDir, Set<Path> contents) {
             this.baseDir = baseDir;
             this.content = contents;
-        }
-
-        private static record Comm(Set<Path> common, Set<Path> unique1, Set<Path> unique2) {
-            static Comm compare(Set<Path> a, Set<Path> b) {
-                Set<Path> common = new HashSet<>(a);
-                common.retainAll(b);
-
-                Set<Path> unique1 = new HashSet<>(a);
-                unique1.removeAll(common);
-
-                Set<Path> unique2 = new HashSet<>(b);
-                unique2.removeAll(common);
-
-                return new Comm(common, unique1, unique2);
-            }
         }
 
         private static String format(Set<Path> paths) {
