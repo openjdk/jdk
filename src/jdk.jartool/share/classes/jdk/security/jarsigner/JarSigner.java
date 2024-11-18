@@ -1009,17 +1009,26 @@ public final class JarSigner {
      * does not have a manifest entry.
      */
     private ZipEntry getManifestFile(ZipFile zf) {
+        // Check all entries for matching name
+        List<? extends ZipEntry> mfEntries
+                = zf.stream()
+                    .filter(
+                            e -> e.getName()
+                                  .equalsIgnoreCase(
+                                          JarFile.MANIFEST_NAME))
+                    .toList();
+
+        if (mfEntries.size() > 1) {
+            System.err.println("Warning:");
+            System.err.println("Duplicate manifest entries were detected "
+                               + "in the jar file. JarSigner will operate "
+                               + "on the first one found and others will "
+                               + "be discarded.");
+        }
+
         ZipEntry ze = zf.getEntry(JarFile.MANIFEST_NAME);
         if (ze == null) {
-            // Check all entries for matching name
-            Enumeration<? extends ZipEntry> enum_ = zf.entries();
-            while (enum_.hasMoreElements() && ze == null) {
-                ze = enum_.nextElement();
-                if (!JarFile.MANIFEST_NAME.equalsIgnoreCase
-                        (ze.getName())) {
-                    ze = null;
-                }
-            }
+            return (!mfEntries.isEmpty()) ? mfEntries.getFirst() : null;
         }
         return ze;
     }
