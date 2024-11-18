@@ -55,13 +55,12 @@ public class HierarchicalLayoutManager extends LayoutManager {
         CrossingReduction.apply(layoutGraph);
 
         // STEP 4: Assign X coordinates
-        //AssignXCoordinates.apply(layoutGraph);
-        AssignXCoordinatesLegacy.apply(layoutGraph);
+        //AssignXCoordinatesLegacy.apply(layoutGraph);
+        AssignXCoordinates.apply(layoutGraph);
 
         // STEP 5: Write back to interface
         WriteResult.apply(layoutGraph);
     }
-
 
     public static class ReverseEdges {
 

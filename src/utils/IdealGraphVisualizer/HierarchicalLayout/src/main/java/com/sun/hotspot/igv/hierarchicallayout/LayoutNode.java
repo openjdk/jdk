@@ -39,14 +39,19 @@ import static com.sun.hotspot.igv.hierarchicallayout.LayoutManager.NODE_OFFSET;
 public class LayoutNode {
 
     // Comparator constants for sorting LayoutNodes in various ways
+    public static final Comparator<LayoutNode> NODE_PRIORITY = Comparator.comparingInt(LayoutNode::getPriority).reversed();
     public static final Comparator<LayoutNode> LAYOUT_NODE_DEGREE_COMPARATOR = Comparator.comparingInt(LayoutNode::getDegree);
     public static final Comparator<LayoutNode> NODE_POS_COMPARATOR = Comparator.comparingInt(LayoutNode::getPos);
     public static final Comparator<LayoutNode> NODE_X_COMPARATOR = Comparator.comparingInt(LayoutNode::getX);
     public static final Comparator<LayoutNode> DUMMY_NODES_FIRST = Comparator.comparing(LayoutNode::isDummy).reversed();
+    public static final Comparator<LayoutNode> DUMMY_NODES_LAST = Comparator.comparing(LayoutNode::isDummy);
     public static final Comparator<LayoutNode> NODE_PROCESSING_DOWN_COMPARATOR = DUMMY_NODES_FIRST.thenComparingInt(LayoutNode::getInDegree);
     public static final Comparator<LayoutNode> NODE_PROCESSING_UP_COMPARATOR = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOutDegree);
     public static final Comparator<LayoutNode> DUMMY_NODES_THEN_OPTIMAL_X = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOptimalX);
     public static final Comparator<LayoutNode> NODE_BARYCENTER_COMPARATOR = Comparator.comparingDouble(LayoutNode::getBarycenter);
+
+    public LayoutNode alignNode;
+    public LayoutNode rootNode;
 
     // Default dimensions for dummy nodes
     public static final int DUMMY_HEIGHT = 1;
@@ -109,6 +114,14 @@ public class LayoutNode {
         setBottomMargin(0);
         setLeftMargin(0);
         setRightMargin(0);
+    }
+
+    public int getPriority() {
+        if (vertex == null) {
+            return 0;
+        } else {
+            return vertex.getPriority();
+        }
     }
 
     /**
@@ -215,6 +228,26 @@ public class LayoutNode {
         return barycenter;
     }
 
+
+
+
+    public int getPredecessorMedian() {
+        if (hasPredecessors()) {
+            int size = getInDegree();
+            int[] values = new int[size];
+            for (int j = 0; j < getInDegree(); j++) {
+                values[j] = getPredecessorEdge(j).getFromX() - getPredecessorEdge(j).getRelativeToX();
+            }
+            Arrays.sort(values);
+            if (values.length % 2 == 0) {
+                return (values[size / 2 - 1] + values[size / 2]) / 2;
+            } else {
+                return values[size / 2];
+            }
+        } else {
+            return getX();
+        }
+    }
     /**
      * Computes the barycenter (average x-coordinate) of this node based on its neighboring nodes.
      * The calculation can include predecessors, successors, or both, depending on the specified
@@ -438,6 +471,14 @@ public class LayoutNode {
 
     public Vertex getVertex() {
         return vertex;
+    }
+
+    public LayoutEdge getPredecessorEdge(int i) {
+        return preds.get(i);
+    }
+
+    public LayoutEdge getSuccessorEdge(int i) {
+        return succs.get(i);
     }
 
     public List<LayoutEdge> getPredecessors() {

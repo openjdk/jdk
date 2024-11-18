@@ -128,6 +128,11 @@ public class ClusterOutputSlotNode implements Vertex {
         return cluster;
     }
 
+    @Override
+    public int getPriority() {
+        return 1;
+    }
+
     public boolean isRoot() {
         return false;
     }

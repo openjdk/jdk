@@ -63,6 +63,11 @@ public class ClusterNode implements Vertex {
         }
     }
 
+    @Override
+    public int getPriority() {
+        return 1;
+    }
+
     public void updateClusterBounds() {
         cluster.setBounds(new Rectangle(position, size));
     }

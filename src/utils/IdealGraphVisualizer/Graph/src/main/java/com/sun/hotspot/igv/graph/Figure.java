@@ -409,4 +409,16 @@ public class Figure extends Properties.Entity implements Vertex {
     public int compareTo(Vertex f) {
         return toString().compareTo(f.toString());
     }
+
+    @Override
+    public int getPriority() {
+        String category = getInputNode().getProperties().get("category");
+        if (category.equals("control")) {
+            return 2;
+        } else if (category.equals("mixed")) {
+            return 2;
+        } else {
+            return 1;
+        }
+    }
 }
