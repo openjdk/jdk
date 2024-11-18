@@ -451,7 +451,6 @@ public class ManagementFactoryHelper {
      * Registers a given MBean if not registered in the MBeanServer;
      * otherwise, just return.
      */
-    @SuppressWarnings("removal")
     private static void addMBean(MBeanServer mbs, Object mbean, String mbeanName) {
         final ObjectName objName = Util.newObjectName(mbeanName);
 
