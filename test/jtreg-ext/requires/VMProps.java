@@ -122,6 +122,7 @@ public class VMProps implements Callable<Map<String, String>> {
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
+        map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
         map.put("vm.cds.write.archived.java.heap", this::vmCDSCanWriteArchivedJavaHeap);
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
@@ -138,6 +139,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
+        map.put("jlink.packagedModules", this::packagedModules);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -457,6 +459,14 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
+     * @return true if this VM can support the -XX:AOTClassLinking option
+     */
+    protected String vmCDSSupportsAOTClassLinking() {
+      // Currently, the VM supports AOTClassLinking as long as it's able to write archived java heap.
+      return vmCDSCanWriteArchivedJavaHeap();
+    }
+
+    /**
      * @return true if the VM options specified via the "test.cds.runtime.options"
      * property is compatible with writing Java heap objects into the CDS archive
      */
@@ -713,6 +723,21 @@ public class VMProps implements Callable<Map<String, String>> {
     private String jdkContainerized() {
         String isEnabled = System.getenv("TEST_JDK_CONTAINERIZED");
         return "" + "true".equalsIgnoreCase(isEnabled);
+    }
+
+    private String packagedModules() {
+        // Some jlink tests require packaged modules being present (jmods).
+        // For a runtime linkable image build packaged modules aren't present
+        try {
+            Path jmodsDir = Path.of(System.getProperty("java.home"), "jmods");
+            if (jmodsDir.toFile().exists()) {
+                return Boolean.TRUE.toString();
+            } else {
+                return Boolean.FALSE.toString();
+            }
+        } catch (Throwable t) {
+            return Boolean.FALSE.toString();
+        }
     }
 
     /**

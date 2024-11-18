@@ -45,6 +45,12 @@ public class HierarchicalCFGLayoutManager implements LayoutManager {
         fontMetrics = canvas.getFontMetrics(font);
     }
 
+    @Override
+    public void setCutEdges(boolean enable) {
+        subManager.setCutEdges(enable);
+        manager.setCutEdges(enable);
+    }
+
     public void setSubManager(LayoutManager manager) {
         this.subManager = manager;
     }

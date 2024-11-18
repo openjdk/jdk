@@ -165,6 +165,8 @@ class Klass : public Metadata {
   uintx    _secondary_supers_bitmap;
   uint8_t  _hash_slot;
 
+  markWord _prototype_header;   // Used to initialize objects' header
+
   int _vtable_len;              // vtable length. This field may be read very often when we
                                 // have lots of itable dispatches (e.g., lambdas and streams).
                                 // Keep it away from the beginning of a Klass to avoid cacheline
@@ -193,7 +195,12 @@ private:
     _has_archived_enum_objs                = 1 << 4,
     // This class was not loaded from a classfile in the module image
     // or classpath.
-    _is_generated_shared_class             = 1 << 5
+    _is_generated_shared_class             = 1 << 5,
+    // archived mirror already initialized by AOT-cache assembly: no further need to call <clinit>
+    _has_aot_initialized_mirror            = 1 << 6,
+    // If this class has been aot-inititalized, do we need to call its runtimeSetup()
+    // method during the production run?
+    _is_runtime_setup_required             = 1 << 7,
   };
 #endif
 
@@ -372,6 +379,23 @@ protected:
   }
   bool is_generated_shared_class() const {
     CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_has_aot_initialized_mirror() {
+    CDS_ONLY(_shared_class_flags |= _has_aot_initialized_mirror;)
+  }
+  bool has_aot_initialized_mirror() const {
+    CDS_ONLY(return (_shared_class_flags & _has_aot_initialized_mirror) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_is_runtime_setup_required() {
+    assert(has_aot_initialized_mirror(), "sanity");
+    CDS_ONLY(_shared_class_flags |= _is_runtime_setup_required;)
+  }
+  bool is_runtime_setup_required() const {
+    CDS_ONLY(return (_shared_class_flags & _is_runtime_setup_required) != 0;)
     NOT_CDS(return false;)
   }
 
@@ -707,6 +731,10 @@ public:
   bool is_cloneable() const;
   void set_is_cloneable();
 
+  inline markWord prototype_header() const;
+  inline void set_prototype_header(markWord header);
+  static ByteSize prototype_header_offset() { return in_ByteSize(offset_of(Klass, _prototype_header)); }
+
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
@@ -761,6 +789,10 @@ public:
   static bool is_valid(Klass* k);
 
   static void on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg);
+
+  // Returns true if this Klass needs to be addressable via narrow Klass ID.
+  inline bool needs_narrow_id() const;
+
 };
 
 #endif // SHARE_OOPS_KLASS_HPP

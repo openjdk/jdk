@@ -4351,12 +4351,30 @@ instruct loadKlass(rRegP dst, memory mem)
 // Load narrow Klass Pointer
 instruct loadNKlass(rRegN dst, memory mem)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
 
   ins_cost(125); // XXX
   format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
     __ movl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem); // XXX
+%}
+
+instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
+%{
+  predicate(UseCompactObjectHeaders);
+  match(Set dst (LoadNKlass mem));
+  effect(KILL cr);
+  ins_cost(125); // XXX
+  format %{
+    "movl    $dst, $mem\t# compressed klass ptr, shifted\n\t"
+    "shrl    $dst, markWord::klass_shift_at_offset"
+  %}
+  ins_encode %{
+    __ movl($dst$$Register, $mem$$Address);
+    __ shrl($dst$$Register, markWord::klass_shift_at_offset);
   %}
   ins_pipe(ialu_reg_mem); // XXX
 %}
@@ -11665,6 +11683,7 @@ instruct compN_rReg_imm_klass(rFlagsRegU cr, rRegN op1, immNKlass op2) %{
 
 instruct compN_mem_imm_klass(rFlagsRegU cr, memory mem, immNKlass src)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set cr (CmpN src (LoadNKlass mem)));
 
   format %{ "cmpl    $mem, $src\t# compressed klass ptr" %}

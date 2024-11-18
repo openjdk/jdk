@@ -1075,6 +1075,16 @@ bool JvmtiExport::has_early_class_hook_env() {
   return false;
 }
 
+bool JvmtiExport::has_early_vmstart_env() {
+  JvmtiEnvIterator it;
+  for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
+    if (env->early_vmstart_env()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool JvmtiExport::_should_post_class_file_load_hook = false;
 
 // This flag is read by C2 during VM internal objects allocation
@@ -2868,6 +2878,19 @@ void JvmtiExport::post_monitor_waited(JavaThread *thread, ObjectMonitor *obj_mnt
       }
     }
   }
+}
+
+void JvmtiExport::vthread_post_monitor_waited(JavaThread *current, ObjectMonitor *obj_mntr, jboolean timed_out) {
+  Handle vthread(current, current->vthread());
+
+  // Finish the VTMS transition temporarily to post the event.
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)vthread.raw_value(), false);
+
+  // Post event.
+  JvmtiExport::post_monitor_waited(current, obj_mntr, timed_out);
+
+  // Go back to VTMS transition state.
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount((jthread)vthread.raw_value(), true);
 }
 
 void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {

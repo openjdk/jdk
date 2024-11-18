@@ -24,26 +24,40 @@
 
 /*
  * @test
- * @summary Dump time resolutiom of constant pool entries.
+ * @summary Dump time resolution of constant pool entries.
  * @requires vm.cds
+ * @requires vm.cds.supports.aot.class.linking
  * @requires vm.compMode != "Xcomp"
- * @library /test/lib
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
+ * @build OldProvider OldClass OldConsumer StringConcatTestOld
  * @build ResolvedConstants
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
+ *                 MyInterface InterfaceWithClinit NormalClass
+ *                 OldProvider OldClass OldConsumer SubOfOldClass
+ *                 StringConcatTest StringConcatTestOld
  * @run driver ResolvedConstants
  */
 
+import java.util.function.Consumer;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class ResolvedConstants {
     static final String classList = "ResolvedConstants.classlist";
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
     static final String mainClass = ResolvedConstantsApp.class.getName();
 
+    static boolean aotClassLinking;
     public static void main(String[] args) throws Exception {
-        // dump class list
+        test(false);
+        test(true);
+    }
+
+    static void test(boolean testMode) throws Exception {
+        aotClassLinking = testMode;
         CDSTestUtils.dumpClassList(classList, "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                 output.shouldContain("Hello ResolvedConstantsApp");
@@ -52,78 +66,109 @@ public class ResolvedConstants {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-cp", appJar,
-                       "-Xlog:cds+resolve=trace");
-        CDSTestUtils.createArchiveAndCheck(opts)
+                       "-Xlog:cds+resolve=trace",
+                       "-Xlog:cds+class=debug");
+        if (aotClassLinking) {
+            opts.addPrefix("-XX:+AOTClassLinking");
+        } else {
+            opts.addPrefix("-XX:-AOTClassLinking");
+        }
+
+        OutputAnalyzer out = CDSTestUtils.createArchiveAndCheck(opts);
           // Class References ---
 
             // Always resolve reference when a class references itself
-            .shouldMatch("cds,resolve.*archived klass.* ResolvedConstantsApp app => ResolvedConstantsApp app")
+        out.shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => ResolvedConstantsApp app"))
 
             // Always resolve reference when a class references a super class
-            .shouldMatch("cds,resolve.*archived klass.* ResolvedConstantsApp app => java/lang/Object boot")
-            .shouldMatch("cds,resolve.*archived klass.* ResolvedConstantsBar app => ResolvedConstantsFoo app")
+            .shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => java/lang/Object boot"))
+            .shouldMatch(ALWAYS("klass.* ResolvedConstantsBar app => ResolvedConstantsFoo app"))
 
             // Always resolve reference when a class references a super interface
-            .shouldMatch("cds,resolve.*archived klass.* ResolvedConstantsApp app => java/lang/Runnable boot")
+            .shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => java/lang/Runnable boot"))
 
-            // java/lang/System is in the root loader but ResolvedConstantsApp is loaded by the app loader.
-            // Even though System is in the vmClasses list, when ResolvedConstantsApp looks up
-            // "java/lang/System" in its ConstantPool, the app loader may not have resolved the System
-            // class yet (i.e., there's no initiaited class entry for System in the app loader's dictionary)
-            .shouldMatch("cds,resolve.*reverted klass.* ResolvedConstantsApp .*java/lang/System")
+            // Without -XX:+AOTClassLinking:
+            //   java/lang/System is in the boot loader but ResolvedConstantsApp is loaded by the app loader.
+            //   Even though System is in the vmClasses list, when ResolvedConstantsApp looks up
+            //   "java/lang/System" in its ConstantPool, the app loader may not have resolved the System
+            //   class yet (i.e., there's no initiaited class entry for System in the app loader's dictionary)
+            .shouldMatch(AOTLINK_ONLY("klass.* ResolvedConstantsApp .*java/lang/System"))
 
           // Field References ---
 
             // Always resolve references to fields in the current class or super class(es)
-            .shouldMatch("cds,resolve.*archived field.* ResolvedConstantsBar => ResolvedConstantsBar.b:I")
-            .shouldMatch("cds,resolve.*archived field.* ResolvedConstantsBar => ResolvedConstantsBar.a:I")
-            .shouldMatch("cds,resolve.*archived field.* ResolvedConstantsBar => ResolvedConstantsFoo.a:I")
+            .shouldMatch(ALWAYS("field.* ResolvedConstantsBar => ResolvedConstantsBar.b:I"))
+            .shouldMatch(ALWAYS("field.* ResolvedConstantsBar => ResolvedConstantsBar.a:I"))
+            .shouldMatch(ALWAYS("field.* ResolvedConstantsBar => ResolvedConstantsFoo.a:I"))
+            .shouldMatch(ALWAYS("field.* ResolvedConstantsFoo => ResolvedConstantsFoo.a:I"))
 
-            // Do not resolve field references to child classes
-            .shouldMatch("cds,resolve.*archived field.* ResolvedConstantsFoo => ResolvedConstantsFoo.a:I")
-            .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsFoo    ResolvedConstantsBar.a:I")
-            .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsFoo    ResolvedConstantsBar.b:I")
+            // Resolve field references to child classes ONLY when using -XX:+AOTClassLinking
+            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsFoo => ResolvedConstantsBar.a:I"))
+            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsFoo => ResolvedConstantsBar.b:I"))
 
-            // Do not resolve field references to unrelated classes
-            .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsApp    ResolvedConstantsBar.a:I")
-            .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsApp    ResolvedConstantsBar.b:I")
+            // Resolve field references to unrelated classes ONLY when using -XX:+AOTClassLinking
+            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsApp => ResolvedConstantsBar.a:I"))
+            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsApp => ResolvedConstantsBar.b:I"))
 
           // Method References ---
 
             // Should resolve references to own constructor
-            .shouldMatch("cds,resolve.*archived method .* ResolvedConstantsApp ResolvedConstantsApp.<init>:")
+            .shouldMatch(ALWAYS("method.* ResolvedConstantsApp ResolvedConstantsApp.<init>:"))
             // Should resolve references to super constructor
-            .shouldMatch("cds,resolve.*archived method .* ResolvedConstantsApp java/lang/Object.<init>:")
+            .shouldMatch(ALWAYS("method.* ResolvedConstantsApp java/lang/Object.<init>:"))
 
             // Should resolve interface methods in VM classes
-            .shouldMatch("cds,resolve.*archived interface method .* ResolvedConstantsApp java/lang/Runnable.run:")
+            .shouldMatch(ALWAYS("interface method .* ResolvedConstantsApp java/lang/Runnable.run:"))
 
             // Should resolve references to own non-static method (private or public)
-            .shouldMatch("archived method.*: ResolvedConstantsBar ResolvedConstantsBar.doBar:")
-            .shouldMatch("archived method.*: ResolvedConstantsApp ResolvedConstantsApp.privateInstanceCall:")
-            .shouldMatch("archived method.*: ResolvedConstantsApp ResolvedConstantsApp.publicInstanceCall:")
+            .shouldMatch(ALWAYS("method.*: ResolvedConstantsBar ResolvedConstantsBar.doBar:"))
+            .shouldMatch(ALWAYS("method.*: ResolvedConstantsApp ResolvedConstantsApp.privateInstanceCall:"))
+            .shouldMatch(ALWAYS("method.*: ResolvedConstantsApp ResolvedConstantsApp.publicInstanceCall:"))
 
             // Should not resolve references to static method
-            .shouldNotMatch(" archived method CP entry.*: ResolvedConstantsApp ResolvedConstantsApp.staticCall:")
+            .shouldNotMatch(ALWAYS("method.*: ResolvedConstantsApp ResolvedConstantsApp.staticCall:"))
 
             // Should resolve references to method in super type
-            .shouldMatch(" archived method CP entry.*: ResolvedConstantsBar ResolvedConstantsFoo.doBar:")
+            .shouldMatch(ALWAYS("method.*: ResolvedConstantsBar ResolvedConstantsFoo.doBar:"))
 
-            // App class cannot resolve references to methods in boot classes:
+            // Without -XX:+AOTClassLinking App class cannot resolve references to methods in boot classes:
             //    When the app class loader tries to resolve a class X that's normally loaded by
             //    the boot loader, it's possible for the app class loader to get a different copy of
             //    X (by using MethodHandles.Lookup.defineClass(), etc). Therefore, let's be on
             //    the side of safety and revert all such references.
-            //
-            //    This will be addressed in JDK-8315737.
-            .shouldMatch("reverted method.*: ResolvedConstantsApp java/io/PrintStream.println:")
-            .shouldMatch("reverted method.*: ResolvedConstantsBar java/lang/Class.getName:")
+            .shouldMatch(AOTLINK_ONLY("method.*: ResolvedConstantsApp java/io/PrintStream.println:"))
+            .shouldMatch(AOTLINK_ONLY("method.*: ResolvedConstantsBar java/lang/Class.getName:"))
 
-            // Should not resolve methods in unrelated classes.
-            .shouldMatch("reverted method.*: ResolvedConstantsApp ResolvedConstantsBar.doit:")
+            // Resole resolve methods in unrelated classes ONLY when using -XX:+AOTClassLinking
+            .shouldMatch(AOTLINK_ONLY("method.*: ResolvedConstantsApp ResolvedConstantsBar.doit:"))
 
           // End ---
             ;
+
+
+        // Indy References ---
+        if (aotClassLinking) {
+            out.shouldContain("Cannot aot-resolve Lambda proxy because OldConsumer is excluded")
+               .shouldContain("Cannot aot-resolve Lambda proxy because OldProvider is excluded")
+               .shouldContain("Cannot aot-resolve Lambda proxy because OldClass is excluded")
+               .shouldContain("Cannot aot-resolve Lambda proxy of interface type InterfaceWithClinit")
+               .shouldMatch("klasses.* app *NormalClass[$][$]Lambda/.* hidden aot-linked inited")
+               .shouldNotMatch("klasses.* app *SubOfOldClass[$][$]Lambda/")
+               .shouldMatch("archived indy *CP entry.*StringConcatTest .* => java/lang/invoke/StringConcatFactory.makeConcatWithConstants")
+               .shouldNotMatch("archived indy *CP entry.*StringConcatTestOld .* => java/lang/invoke/StringConcatFactory.makeConcatWithConstants");
+        }
+    }
+
+    static String ALWAYS(String s) {
+        return "cds,resolve.*archived " + s;
+    }
+
+    static String AOTLINK_ONLY(String s) {
+        if (aotClassLinking) {
+            return ALWAYS(s);
+        } else {
+            return "cds,resolve.*reverted " + s;
+        }
     }
 }
 
@@ -142,12 +187,98 @@ class ResolvedConstantsApp implements Runnable {
         bar.a ++;
         bar.b ++;
         bar.doit();
+
+        testLambda();
+        StringConcatTest.test();
+        StringConcatTestOld.main(null);
     }
     private static void staticCall() {}
     private void privateInstanceCall() {}
     public void publicInstanceCall() {}
 
     public void run() {}
+
+    static void testLambda() {
+        // The functional type used in the Lambda is an excluded class
+        OldProvider op = () -> {
+            return null;
+        };
+
+        // A captured value is an instance of an excluded Class
+        OldClass c = new OldClass();
+        Runnable r = () -> {
+            System.out.println("Test 1 " + c);
+        };
+        r.run();
+
+        // The functional interface accepts an argument that's an excluded class
+        MyInterface i = (o) -> {
+            System.out.println("Test 2 " + o);
+        };
+        i.dispatch(c);
+
+        // Method reference to old class
+        OldConsumer oldConsumer = new OldConsumer();
+        Consumer<String> wrapper = oldConsumer::consumeString;
+        wrapper.accept("Hello");
+
+        // Lambda of interfaces that have <clinit> are not archived.
+        InterfaceWithClinit i2 = () -> {
+            System.out.println("Test 3");
+        };
+        i2.dispatch();
+
+        // These two classes have almost identical source code, but
+        // only NormalClass should have its lambdas pre-resolved.
+        // SubOfOldClass is "old" -- it should be excluded from the AOT cache,
+        // so none of its lambda proxies should be cached
+        NormalClass.testLambda();   // Lambda proxy should be cached
+        SubOfOldClass.testLambda(); // Lambda proxy shouldn't be cached
+    }
+}
+
+class StringConcatTest {
+    static void test() {
+        System.out.println("StringConcatTest <concat> " + new StringConcatTest()); // concat should be aot-resolved
+    }
+}
+
+/* see StringConcatTestOld.jasm
+
+class StringConcatTestOld {
+    public static void main(String args[]) {
+        // concat should be aot-resolved => the MethodType refers to an old class
+        System.out.println("StringConcatTestOld <concat> " + new OldConsumer());
+    }
+}
+*/
+
+class NormalClass {
+    static void testLambda() {
+        Runnable r = () -> {
+            System.out.println("NormalClass testLambda");
+        };
+        r.run();
+    }
+}
+
+class SubOfOldClass extends OldClass {
+    static void testLambda() {
+        Runnable r = () -> {
+            System.out.println("SubOfOldClass testLambda");
+        };
+        r.run();
+    }
+}
+
+interface MyInterface {
+    void dispatch(OldClass c);
+}
+
+interface InterfaceWithClinit {
+    static final long X = System.currentTimeMillis();
+    void dispatch();
+    default long dummy() { return X; }
 }
 
 class ResolvedConstantsFoo {

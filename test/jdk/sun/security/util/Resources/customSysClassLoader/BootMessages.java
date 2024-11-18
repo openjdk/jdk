@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Ensure that security messages can be formatted during system class
  *   loader initialization.
  * @build CustomClassLoader
- * @run main/othervm/java.security.policy=error.policy -Djava.security.manager -Djava.system.class.loader=CustomClassLoader BootMessages
+ * @run main/othervm -Djava.system.class.loader=CustomClassLoader BootMessages
  */
 
 public class BootMessages {

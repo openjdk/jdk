@@ -27,6 +27,7 @@
 
 #include "cds/archiveUtils.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/array.hpp"
 #include "oops/klass.hpp"
@@ -43,9 +44,9 @@ class Klass;
 class MemRegion;
 class Symbol;
 
-// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
-// We enforce the same alignment rule in blocks allocated from the shared space.
-const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
+// The minimum alignment for non-Klass objects inside the CDS archive. Klass objects need
+// to follow CompressedKlassPointers::klass_alignment_in_bytes().
+constexpr size_t SharedSpaceObjectAlignment = Metaspace::min_allocation_alignment_bytes;
 
 // Overview of CDS archive creation (for both static and dynamic dump):
 //
@@ -291,7 +292,7 @@ public:
   intx buffer_to_requested_delta()           const { return _buffer_to_requested_delta;            }
 
   bool is_in_buffer_space(address p) const {
-    return (buffer_bottom() <= p && p < buffer_top());
+    return (buffer_bottom() != nullptr && buffer_bottom() <= p && p < buffer_top());
   }
 
   template <typename T> bool is_in_requested_static_archive(T p) const {
@@ -419,6 +420,11 @@ public:
     mark_and_relocate_to_buffered_addr((address*)ptr_location);
   }
 
+  bool has_been_buffered(address src_addr) const;
+  template <typename T> bool has_been_buffered(T src_addr) const {
+    return has_been_buffered((address)src_addr);
+  }
+
   address get_buffered_addr(address src_addr) const;
   template <typename T> T get_buffered_addr(T src_addr) const {
     return (T)get_buffered_addr((address)src_addr);
@@ -468,6 +474,29 @@ public:
 
   void print_stats();
   void report_out_of_space(const char* name, size_t needed_bytes);
+
+#ifdef _LP64
+  // The CDS archive contains pre-computed narrow Klass IDs. It carries them in the headers of
+  // archived heap objects. With +UseCompactObjectHeaders, it also carries them in prototypes
+  // in Klass.
+  // When generating the archive, these narrow Klass IDs are computed using the following scheme:
+  // 1) The future encoding base is assumed to point to the first address of the generated mapping.
+  //    That means that at runtime, the narrow Klass encoding must be set up with base pointing to
+  //    the start address of the mapped CDS metadata archive (wherever that may be). This precludes
+  //    zero-based encoding.
+  // 2) The shift must be large enough to result in an encoding range that covers the future assumed
+  //    runtime Klass range. That future Klass range will contain both the CDS metadata archive and
+  //    the future runtime class space. Since we do not know the size of the future class space, we
+  //    need to chose an encoding base/shift combination that will result in a "large enough" size.
+  //    The details depend on whether we use compact object headers or legacy object headers.
+  //  In Legacy Mode, a narrow Klass ID is 32 bit. This gives us an encoding range size of 4G even
+  //    with shift = 0, which is all we need. Therefore, we use a shift=0 for pre-calculating the
+  //    narrow Klass IDs.
+  // TinyClassPointer Mode:
+  //    We use the highest possible shift value to maximize the encoding range size.
+  static int precomputed_narrow_klass_shift();
+#endif // _LP64
+
 };
 
 #endif // SHARE_CDS_ARCHIVEBUILDER_HPP
