@@ -867,6 +867,7 @@ int java_lang_Class::_name_offset;
 int java_lang_Class::_source_file_offset;
 int java_lang_Class::_classData_offset;
 int java_lang_Class::_classRedefinedCount_offset;
+int java_lang_Class::_reflectionData_offset;
 
 bool java_lang_Class::_offsets_computed = false;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = nullptr;
@@ -1303,6 +1304,11 @@ void java_lang_Class::set_class_data(oop java_class, oop class_data) {
   java_class->obj_field_put(_classData_offset, class_data);
 }
 
+void java_lang_Class::set_reflection_data(oop java_class, oop reflection_data) {
+  assert(_reflectionData_offset != 0, "must be set");
+  java_class->obj_field_put(_reflectionData_offset, reflection_data);
+}
+
 void java_lang_Class::set_class_loader(oop java_class, oop loader) {
   assert(_class_loader_offset != 0, "offsets should have been initialized");
   java_class->obj_field_put(_class_loader_offset, loader);
@@ -1493,6 +1499,7 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
   macro(_module_offset,              k, "module",              module_signature,       false); \
   macro(_name_offset,                k, "name",                string_signature,       false); \
   macro(_classData_offset,           k, "classData",           object_signature,       false); \
+  macro(_reflectionData_offset,      k, "reflectionData",      java_lang_ref_SoftReference_signature, false); \
   macro(_signers_offset,             k, "signers",             object_array_signature, false);
 
 void java_lang_Class::compute_offsets() {
@@ -5479,20 +5486,18 @@ void JavaClasses::serialize_offsets(SerializeClosure* soc) {
 bool JavaClasses::is_supported_for_archiving(oop obj) {
   Klass* klass = obj->klass();
 
-  if (klass == vmClasses::ClassLoader_klass() ||  // ClassLoader::loader_data is malloc'ed.
-      // The next 3 classes are used to implement java.lang.invoke, and are not used directly in
-      // regular Java code. The implementation of java.lang.invoke uses generated hidden classes
-      // (e.g., as referenced by ResolvedMethodName::vmholder) that are not yet supported by CDS.
-      // So for now we cannot not support these classes for archiving.
-      //
-      // These objects typically are not referenced by static fields, but rather by resolved
-      // constant pool entries, so excluding them shouldn't affect the archiving of static fields.
-      klass == vmClasses::ResolvedMethodName_klass() ||
-      klass == vmClasses::MemberName_klass() ||
-      klass == vmClasses::Context_klass() ||
-      // It's problematic to archive Reference objects. One of the reasons is that
-      // Reference::discovered may pull in unwanted objects (see JDK-8284336)
-      klass->is_subclass_of(vmClasses::Reference_klass())) {
+  if (!CDSConfig::is_dumping_invokedynamic()) {
+    // These are supported by CDS only when CDSConfig::is_dumping_invokedynamic() is enabled.
+    if (klass == vmClasses::ResolvedMethodName_klass() ||
+        klass == vmClasses::MemberName_klass() ||
+        klass == vmClasses::Context_klass()) {
+      return false;
+    }
+  }
+
+  if (klass->is_subclass_of(vmClasses::Reference_klass())) {
+    // It's problematic to archive Reference objects. One of the reasons is that
+    // Reference::discovered may pull in unwanted objects (see JDK-8284336)
     return false;
   }
 

@@ -39,6 +39,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
@@ -368,6 +369,14 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
       }
     }
   }
+}
+
+bool ArchiveUtils::has_aot_initialized_mirror(InstanceKlass* src_ik) {
+  if (SystemDictionaryShared::is_excluded_class(src_ik)) {
+    assert(!ArchiveBuilder::current()->has_been_buffered(src_ik), "sanity");
+    return false;
+  }
+  return ArchiveBuilder::current()->get_buffered_addr(src_ik)->has_aot_initialized_mirror();
 }
 
 size_t HeapRootSegments::size_in_bytes(size_t seg_idx) {

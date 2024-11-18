@@ -61,8 +61,8 @@ public class OldClassAndRedefineClass {
         String agentCmdArg = "-javaagent:redefineagent.jar";
 
         OutputAnalyzer out = TestCommon.testDump(appJar, sharedClasses, "-Xlog:cds,cds+class=debug");
-        out.shouldMatch("klasses.*OldSuper.[*][*].unlinked")
-           .shouldMatch("klasses.*ChildOldSuper.[*][*].unlinked");
+        out.shouldMatch("klasses.*OldSuper.* unlinked")
+           .shouldMatch("klasses.*ChildOldSuper.* unlinked");
 
         out = TestCommon.exec(
                 appJar,
