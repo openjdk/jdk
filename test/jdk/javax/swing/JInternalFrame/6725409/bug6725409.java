@@ -41,7 +41,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel;
+import com.sun.java.swing.plaf.windows;
 
 public class bug6725409 {
     private JFrame frame;
@@ -52,7 +52,7 @@ public class bug6725409 {
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel(
-                new com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel());
+                new WindowsClassicLookAndFeel());
 
         robot = new Robot();
         final bug6725409 bug6725409 = new bug6725409();
@@ -142,8 +142,7 @@ public class bug6725409 {
     }
 
     // Extend WindowsInternalFrameTitlePane to get access to systemPopupMenu
-    private class TestTitlePane extends
-            com.sun.java.swing.plaf.windows.WindowsInternalFrameTitlePane {
+    private class TestTitlePane extends WindowsInternalFrameTitlePane {
         private JPopupMenu systemPopupMenu;
 
         public TestTitlePane(JInternalFrame f) {
