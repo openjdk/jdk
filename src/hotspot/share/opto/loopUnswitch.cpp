@@ -33,8 +33,22 @@
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 
-// TODO desc: multiversion or unswitch
-
+// Multiversioning:
+// A loop is cloned, and a selector If decides which loop is taken at run-time: the true-path-loop (original) or the
+// false-path-loop (cloned).
+//
+// Use-cases:
+// - Speculative compilation:
+//   The selector If checks some assumptions which allow stronger optimization in the true-path-loop. If the assumptions
+//   do not hold, we can still execute in the false-path-loop, although with fewer optimizations.
+//
+// - Unswitching:
+//   The selector If has the same (loop invariant) condition as some unswitching candidate If inside the loop. This
+//   allows us to constant-fold the unswitching candidate If to true in the true-path-loop and to false in the
+//   false-path-loop, thus eliminating the unswitching candidate If from the loop.
+//
+//
+//
 // Loop Unswitching is a loop optimization to move an invariant, non-loop-exiting test in the loop body before the loop.
 // Such a test is either always true or always false in all loop iterations and could therefore only be executed once.
 // To achieve that, we duplicate the loop and change the original and cloned loop as follows:
@@ -328,7 +342,8 @@ class OriginalLoop : public StackObj {
     remove_unswitch_candidate_from_loops(unswitched_loop_selector);
   }
 
-  // TODO desc
+  // Multiversion the original loop. The loop selector if selects between the original loop (true-path-loop), and
+  // a copy of it (false-path-loop).
   void multiversion(const LoopSelector& loop_selector) {
     _phase->clone_loop(_loop, _old_new, _phase->dom_depth(_loop_head),
                        PhaseIdealLoop::CloneIncludesStripMined, loop_selector.selector());
