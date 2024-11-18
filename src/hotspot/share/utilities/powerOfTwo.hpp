@@ -121,18 +121,10 @@ inline T next_power_of_2(T value)  {
 }
 
 // Find log2 value greater than this input
-template <typename T, typename U = typename std::make_unsigned<T>::type, ENABLE_IF(std::is_integral<T>::value)>
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline int ceil_log2(T value) {
-  assert(value > 0, "Invalid value");
-  U unsigned_value = static_cast<U>(value);
-  int max_bits = sizeof(U) * 8;
-  int ret;
-  for (ret = 0; ret < max_bits; ++ret) {
-    if ((U(1) << ret) >= unsigned_value) {
-      break;
-    }
-  }
-  return ret;
+  assert(value > T(0), "Invalid value");
+  return log2i_graceful(value - 1) + 1;
 }
 
 // Return the largest power of two that is a submultiple of the given value.
