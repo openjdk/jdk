@@ -422,7 +422,8 @@ public final class DynamicLinkerFactory {
 
     private List<GuardingDynamicLinker> discoverAutoLoadLinkers() {
         autoLoadingErrors = new LinkedList<>();
-        final ClassLoader effectiveClassLoader = classLoaderExplicitlySet ? classLoader : getThreadContextClassLoader();
+        final ClassLoader effectiveClassLoader =
+                classLoaderExplicitlySet ? classLoader : Thread.currentThread().getContextClassLoader();
         final List<GuardingDynamicLinker> discovered = new LinkedList<>();
         try {
             final ServiceLoader<GuardingDynamicLinkerExporter> linkerLoader =
@@ -456,10 +457,6 @@ public final class DynamicLinkerFactory {
             autoLoadingErrors.add(e);
         }
         return discovered;
-    }
-
-    private static ClassLoader getThreadContextClassLoader() {
-        return Thread.currentThread().getContextClassLoader();
     }
 
     private static void addClasses(final Set<Class<? extends GuardingDynamicLinker>> knownLinkerClasses,

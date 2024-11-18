@@ -44,6 +44,13 @@ import jdk.dynalink.DynamicLinkerFactory;
  * @since 9
  */
 public abstract class GuardingDynamicLinkerExporter implements Supplier<List<GuardingDynamicLinker>> {
+    /**
+     * The name of the runtime permission for creating instances of this class.
+     * @apiNote
+     * This permission cannot be used for controlling access to resources
+     * anymore as the Security Manager is no longer supported.
+     */
+    public static final String AUTOLOAD_PERMISSION_NAME = "dynalink.exportLinkersAutomatically";
 
     /**
      * Creates a new linker exporter.
