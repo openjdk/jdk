@@ -519,6 +519,8 @@
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
   nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
   nonstatic_field(CodeBlob,                    _caller_must_gc_arguments,                     bool)                                  \
+  nonstatic_field(CodeBlob,                    _mutable_data,                                 address)                               \
+  nonstatic_field(CodeBlob,                    _mutable_data_size,                            int)                                   \
                                                                                                                                      \
   nonstatic_field(DeoptimizationBlob,          _unpack_offset,                                int)                                   \
                                                                                                                                      \
@@ -551,8 +553,6 @@
   nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
   nonstatic_field(nmethod,                     _immutable_data,                               address)                               \
   nonstatic_field(nmethod,                     _immutable_data_size,                          int)                                   \
-  nonstatic_field(nmethod,                     _mutable_data,                                 address)                               \
-  nonstatic_field(nmethod,                     _mutable_data_size,                            int)                                   \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
   volatile_nonstatic_field(nmethod,            _exception_cache,                              ExceptionCache*)                       \
