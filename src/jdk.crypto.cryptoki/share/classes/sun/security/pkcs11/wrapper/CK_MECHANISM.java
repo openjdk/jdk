@@ -127,6 +127,14 @@ public class CK_MECHANISM {
         init(mechanism, params);
     }
 
+    public CK_MECHANISM(long mechanism, CK_HKDF_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism, CK_KEY_DERIVATION_STRING_DATA params) {
+        init(mechanism, params);
+    }
+
     public CK_MECHANISM(long mechanism, CK_ECDH1_DERIVE_PARAMS params) {
         init(mechanism, params);
     }

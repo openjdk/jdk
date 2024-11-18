@@ -446,7 +446,7 @@ abstract class P11Key implements Key, Length {
         }
     }
 
-    private static class P11SecretKey extends P11Key implements SecretKey {
+    static class P11SecretKey extends P11Key implements SecretKey {
         @Serial
         private static final long serialVersionUID = -7828241727014329084L;
 

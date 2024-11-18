@@ -158,6 +158,7 @@ module java.base {
         java.desktop, // for ScopedValue
         java.se, // for ParticipatesInPreview
         jdk.compiler,
+        jdk.crypto.cryptoki, // participates in preview features
         jdk.incubator.vector, // participates in preview features
         jdk.jartool, // participates in preview features
         jdk.jdeps, // participates in preview features
