@@ -118,7 +118,7 @@ GetSDOps(JNIEnv *env, jobject sData, jboolean callSetup)
     }
     ops = (SurfaceDataOps *)JNU_GetLongFieldAsPtr(env, sData, pDataID);
     if (ops == NULL) {
-        if (!(*env)->ExceptionOccurred(env) &&
+        if (!(*env)->ExceptionCheck(env) &&
             !(*env)->IsInstanceOf(env, sData, pNullSurfaceDataClass))
         {
             if (!(*env)->GetBooleanField(env, sData, validID)) {
