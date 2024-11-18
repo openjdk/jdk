@@ -6865,7 +6865,7 @@ ConLNode* PhaseIdealLoop::longcon(jlong i) {
   return node;
 }
 
-ConNode *PhaseIdealLoop::makecon(const Type* t) {
+ConNode* PhaseIdealLoop::makecon(const Type* t) {
   ConNode* node = _igvn.makecon(t);
   set_root_as_ctrl(node);
   return node;
