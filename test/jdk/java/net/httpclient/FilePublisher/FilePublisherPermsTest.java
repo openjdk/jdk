@@ -40,7 +40,6 @@ import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.FileNotFoundException;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -211,9 +210,6 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        policyFile = System.getProperty("java.security.policy");
-        out.println(policyFile);
-
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");

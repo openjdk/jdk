@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassLinker.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/classPrelinker.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
@@ -47,8 +47,8 @@
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -112,7 +112,7 @@ public:
 
     // Block concurrent class unloading from changing the _dumptime_table
     MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-    SystemDictionaryShared::check_excluded_classes();
+    SystemDictionaryShared::find_all_archivable_classes();
 
     if (SystemDictionaryShared::is_dumptime_table_empty()) {
       log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
@@ -135,6 +135,11 @@ public:
 
     verify_estimate_size(_estimated_metaspaceobj_bytes, "MetaspaceObjs");
 
+    sort_methods();
+
+    log_info(cds)("Make classes shareable");
+    make_klasses_shareable();
+
     char* serialized_data;
     {
       // Write the symbol table and system dictionaries to the RO space.
@@ -147,6 +152,7 @@ public:
       ArchiveBuilder::OtherROAllocMark mark;
       SystemDictionaryShared::write_to_archive(false);
       DynamicArchive::dump_array_klasses();
+      AOTClassLinker::write_to_archive();
 
       serialized_data = ro_region()->top();
       WriteClosure wc(ro_region());
@@ -154,11 +160,6 @@ public:
     }
 
     verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
-
-    sort_methods();
-
-    log_info(cds)("Make classes shareable");
-    make_klasses_shareable();
 
     log_info(cds)("Adjust lambda proxy class dictionary");
     SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
@@ -234,7 +235,7 @@ void DynamicArchiveBuilder::release_header() {
 
 void DynamicArchiveBuilder::post_dump() {
   ArchivePtrMarker::reset_map_and_vs();
-  ClassPrelinker::dispose();
+  AOTClassLinker::dispose();
 }
 
 void DynamicArchiveBuilder::sort_methods() {
@@ -497,6 +498,7 @@ void DynamicArchive::check_for_dynamic_dump() {
 void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name) {
   ExceptionMark em(current);
   ResourceMark rm(current);
+  CDSConfig::DumperThreadMark dumper_thread_mark(current);
 
   if (!CDSConfig::is_dumping_dynamic_archive() || archive_name == nullptr) {
     return;
@@ -526,6 +528,7 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
 
 // This is called by "jcmd VM.cds dynamic_dump"
 void DynamicArchive::dump_for_jcmd(const char* archive_name, TRAPS) {
+  CDSConfig::DumperThreadMark dumper_thread_mark(THREAD);
   assert(CDSConfig::is_using_archive() && RecordDynamicDumpInfo, "already checked in arguments.cpp");
   assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp");
   assert(CDSConfig::is_dumping_dynamic_archive(), "already checked by check_for_dynamic_dump() during VM startup");

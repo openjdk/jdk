@@ -47,10 +47,11 @@ class RegisterSaver {
 
   // Boolean flags to force only argument registers to be saved.
   static int live_reg_save_size(RegisterSet reg_set);
-  static int live_reg_frame_size(RegisterSet reg_set);
+  static int live_reg_frame_size(RegisterSet reg_set, bool save_vectors = false);
+  static int calculate_vregstosave_num();
   // Specify the register that should be stored as the return pc in the current frame.
-  static OopMap* save_live_registers(MacroAssembler* masm, RegisterSet reg_set, Register return_pc = Z_R14);
-  static void restore_live_registers(MacroAssembler* masm, RegisterSet reg_set);
+  static OopMap* save_live_registers(MacroAssembler* masm, RegisterSet reg_set, Register return_pc = Z_R14, bool save_vectors = false);
+  static void restore_live_registers(MacroAssembler* masm, RegisterSet reg_set, bool save_vectors = false);
 
   // Generate the OopMap (again, regs where saved before).
   static OopMap* generate_oop_map(MacroAssembler* masm, RegisterSet reg_set);
@@ -65,11 +66,13 @@ class RegisterSaver {
     int_reg           = 0,
     float_reg         = 1,
     excluded_reg      = 2,  // Not saved/restored.
+    v_reg             = 3
   } RegisterType;
 
   typedef enum {
     reg_size          = 8,
     half_reg_size     = reg_size / 2,
+    v_reg_size        = 16
   } RegisterConstants;
 
   // Remember type, number, and VMReg.

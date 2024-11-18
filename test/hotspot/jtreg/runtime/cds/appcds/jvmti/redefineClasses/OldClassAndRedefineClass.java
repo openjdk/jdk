@@ -26,15 +26,15 @@
  * @test
  * @bug 8342303
  * @summary Test loading of shared old class when another class has been redefined.
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes /test/hotspot/jtreg/runtime/cds/appcds/jvmti
- * @requires vm.cds.write.archived.java.heap
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @requires vm.cds
  * @requires vm.jvmti
+ * @run driver RedefineClassHelper
  * @build jdk.test.whitebox.WhiteBox
  *        OldClassAndRedefineClassApp
  * @compile ../../test-classes/OldSuper.jasm
  *          ../../test-classes/ChildOldSuper.java
  *          ../../test-classes/Hello.java
- * @run driver RedefineClassHelper
  * @run driver OldClassAndRedefineClass
  */
 
@@ -61,8 +61,8 @@ public class OldClassAndRedefineClass {
         String agentCmdArg = "-javaagent:redefineagent.jar";
 
         OutputAnalyzer out = TestCommon.testDump(appJar, sharedClasses, "-Xlog:cds,cds+class=debug");
-        out.shouldMatch("klasses.*OldSuper.[*][*].unlinked")
-           .shouldMatch("klasses.*ChildOldSuper.[*][*].unlinked");
+        out.shouldMatch("klasses.*OldSuper.* unlinked")
+           .shouldMatch("klasses.*ChildOldSuper.* unlinked");
 
         out = TestCommon.exec(
                 appJar,
