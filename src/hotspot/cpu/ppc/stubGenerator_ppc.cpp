@@ -2156,19 +2156,19 @@ class StubGenerator: public StubCodeGenerator {
     bool aligned;
     bool dest_uninitialized;
     switch (stub_id) {
-    case oop_disjont_arraycopy_id:
+    case oop_disjoint_arraycopy_id:
       aligned = false;
       dest_uninitialized = false;
       break;
-    case arrayof_oop_disjont_arraycopy_id:
+    case arrayof_oop_disjoint_arraycopy_id:
       aligned = true;
       dest_uninitialized = false;
       break;
-    case oop_disjont_arraycopy_uninit_id:
+    case oop_disjoint_arraycopy_uninit_id:
       aligned = false;
       dest_uninitialized = true;
       break;
-    case arrayof_oop_disjont_arraycopy_uninit_id:
+    case arrayof_oop_disjoint_arraycopy_uninit_id:
       aligned = true;
       dest_uninitialized = true;
       break;
@@ -2390,8 +2390,7 @@ class StubGenerator: public StubCodeGenerator {
   // Examines the alignment of the operands and dispatches
   // to a long, int, short, or byte copy loop.
   //
-  address generate_unsafe_copy(const char* name,
-                               address byte_copy_entry,
+  address generate_unsafe_copy(address byte_copy_entry,
                                address short_copy_entry,
                                address int_copy_entry,
                                address long_copy_entry) {
@@ -2488,8 +2487,7 @@ class StubGenerator: public StubCodeGenerator {
   //    R3 ==  0  -  success
   //    R3 == -1  -  need to call System.arraycopy
   //
-  address generate_generic_copy(const char *name,
-                                address entry_jbyte_arraycopy,
+  address generate_generic_copy(address entry_jbyte_arraycopy,
                                 address entry_jshort_arraycopy,
                                 address entry_jint_arraycopy,
                                 address entry_oop_arraycopy,
@@ -4701,19 +4699,23 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
   address generate_cont_thaw(StubGenStubId stub_id) {
     if (!Continuations::enabled()) return nullptr;
 
+    Continuation::thaw_kind kind;
     bool return_barrier;
     bool return_barrier_exception;
 
     switch (stub_id) {
     case cont_thaw_id:
+      kind = Continuation::thaw_top;
       return_barrier = false;
       return_barrier_exception = false;
       break;
     case cont_returnBarrier_id:
+      kind = Continuation::thaw_return_barrier;
       return_barrier = true;
       return_barrier_exception = false;
       break;
     case cont_returnBarrierExc_id:
+      kind = Continuation::thaw_return_barrier_exception;
       return_barrier = true;
       return_barrier_exception = true;
       break;
@@ -5021,22 +5023,22 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
-    switch(kind) {
-    case Initial_stubs:
+  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code) {
+    switch(blob_id) {
+    case initial_id:
       generate_initial_stubs();
       break;
-     case Continuation_stubs:
+     case continuation_id:
       generate_continuation_stubs();
       break;
-    case Compiler_stubs:
+    case compiler_id:
       generate_compiler_stubs();
       break;
-    case Final_stubs:
+    case final_id:
       generate_final_stubs();
       break;
     default:
-      fatal("unexpected stubs kind: %d", kind);
+      fatal("unexpected blob id: %d", blob_id);
       break;
     };
   }
