@@ -4856,12 +4856,6 @@ int os::loadavg(double loadavg[], int nelem) {
   return -1;
 }
 
-
-// DontYieldALot=false by default: dutifully perform all yields as requested by JVM_Yield()
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
 int os::open(const char *path, int oflag, int mode) {
   errno_t err;
   wchar_t* wide_path = wide_abs_unc_path(path, err);

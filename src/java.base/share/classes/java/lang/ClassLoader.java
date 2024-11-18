@@ -64,7 +64,6 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.StaticProperty;
-import sun.security.util.SecurityConstants;
 
 /**
  * A class loader is an object that is responsible for loading classes. The
@@ -356,12 +355,6 @@ public abstract class ClassLoader {
     private static Void checkCreateClassLoader(String name) {
         if (name != null && name.isEmpty()) {
             throw new IllegalArgumentException("name must be non-empty or null");
-        }
-
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkCreateClassLoader();
         }
         return null;
     }
@@ -1735,18 +1728,7 @@ public abstract class ClassLoader {
      *
      * @since  1.2
      */
-    @CallerSensitive
     public final ClassLoader getParent() {
-        if (parent == null)
-            return null;
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            // Check access to the parent class loader
-            // If the caller's class loader is same as this class loader,
-            // permission check is performed.
-            checkClassLoaderPermission(parent, Reflection.getCallerClass());
-        }
         return parent;
     }
 
@@ -1774,15 +1756,8 @@ public abstract class ClassLoader {
      *
      * @since 9
      */
-    @CallerSensitive
     public static ClassLoader getPlatformClassLoader() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        ClassLoader loader = getBuiltinPlatformClassLoader();
-        if (sm != null) {
-            checkClassLoaderPermission(loader, Reflection.getCallerClass());
-        }
-        return loader;
+        return getBuiltinPlatformClassLoader();
     }
 
     /**
@@ -1853,7 +1828,6 @@ public abstract class ClassLoader {
      *          underlying cause of the error can be retrieved via the
      *          {@link Throwable#getCause()} method.
      */
-    @CallerSensitive
     public static ClassLoader getSystemClassLoader() {
         switch (VM.initLevel()) {
             case 0:
@@ -1867,11 +1841,6 @@ public abstract class ClassLoader {
             default:
                 // system fully initialized
                 assert VM.isBooted() && scl != null;
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
-                    checkClassLoaderPermission(scl, Reflection.getCallerClass());
-                }
                 return scl;
         }
     }
@@ -1902,8 +1871,6 @@ public abstract class ClassLoader {
         }
 
         ClassLoader builtinLoader = getBuiltinAppClassLoader();
-
-        // All are privileged frames.  No need to call doPrivileged.
         String cn = System.getProperty("java.system.class.loader");
         if (cn != null) {
             try {
@@ -1930,36 +1897,6 @@ public abstract class ClassLoader {
         return scl;
     }
 
-    // Returns true if the specified class loader can be found in this class
-    // loader's delegation chain.
-    boolean isAncestor(ClassLoader cl) {
-        ClassLoader acl = this;
-        do {
-            acl = acl.parent;
-            if (cl == acl) {
-                return true;
-            }
-        } while (acl != null);
-        return false;
-    }
-
-    // Tests if class loader access requires "getClassLoader" permission
-    // check.  A class loader 'from' can access class loader 'to' if
-    // class loader 'from' is same as class loader 'to' or an ancestor
-    // of 'to'.  The class loader in a system domain can access
-    // any class loader.
-    private static boolean needsClassLoaderPermissionCheck(ClassLoader from,
-                                                           ClassLoader to)
-    {
-        if (from == to)
-            return false;
-
-        if (from == null)
-            return false;
-
-        return !to.isAncestor(from);
-    }
-
     // Returns the class's class loader, or null if none.
     static ClassLoader getClassLoader(Class<?> caller) {
         // This can be null if the VM is requesting it
@@ -1968,23 +1905,6 @@ public abstract class ClassLoader {
         }
         // Circumvent security check since this is package-private
         return caller.getClassLoader0();
-    }
-
-    /*
-     * Checks RuntimePermission("getClassLoader") permission
-     * if caller's class loader is not null and caller's class loader
-     * is not the same as or an ancestor of the given cl argument.
-     */
-    static void checkClassLoaderPermission(ClassLoader cl, Class<?> caller) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            // caller can be null if the VM is requesting it
-            ClassLoader ccl = getClassLoader(caller);
-            if (needsClassLoaderPermissionCheck(ccl, cl)) {
-                sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-            }
-        }
     }
 
     // The system class loader
