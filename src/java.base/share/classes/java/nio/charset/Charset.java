@@ -412,8 +412,7 @@ public abstract class Charset
             return null;
         }
         try {
-            for (Iterator<CharsetProvider> i = providers();
-                 i.hasNext();) {
+            for (Iterator<CharsetProvider> i = providers(); i.hasNext();) {
                 CharsetProvider cp = i.next();
                 Charset cs = cp.charsetForName(charsetName);
                 if (cs != null)

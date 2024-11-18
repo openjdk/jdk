@@ -1601,11 +1601,11 @@ class SocketChannelImpl
                 SocketAddress addr = localAddress();
                 if (addr != null) {
                     sb.append(" local=");
-                    sb.append(addr.toString());
+                    sb.append(addr);
                 }
                 if (remoteAddress() != null) {
                     sb.append(" remote=");
-                    sb.append(remoteAddress().toString());
+                    sb.append(remoteAddress());
                 }
             }
         }

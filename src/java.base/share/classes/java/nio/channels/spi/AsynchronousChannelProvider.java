@@ -91,9 +91,7 @@ public abstract class AsynchronousChannelProvider {
                 ServiceLoader.load(AsynchronousChannelProvider.class,
                                    ClassLoader.getSystemClassLoader());
             Iterator<AsynchronousChannelProvider> i = sl.iterator();
-            for (;;) {
-                return (i.hasNext()) ? i.next() : null;
-            }
+            return sl.findFirst().orElse(null);
         }
     }
 

@@ -109,9 +109,7 @@ public abstract class SelectorProvider {
                 ServiceLoader.load(SelectorProvider.class,
                                    ClassLoader.getSystemClassLoader());
             Iterator<SelectorProvider> i = sl.iterator();
-            for (;;) {
-                return i.hasNext() ? i.next() : null;
-            }
+            return sl.findFirst().orElse(null);
         }
     }
 

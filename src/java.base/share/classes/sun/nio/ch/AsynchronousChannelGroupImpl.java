@@ -45,7 +45,7 @@ abstract class AsynchronousChannelGroupImpl
     // number of internal threads handling I/O events when using an unbounded
     // thread pool. Internal threads do not dispatch to completion handlers.
     private static final int internalThreadCount =
-        Integer.valueOf(System.getProperty("sun.nio.ch.internalThreadPoolSize", "1"));
+        Integer.getInteger("sun.nio.ch.internalThreadPoolSize", 1);
 
     // associated thread pool
     private final ThreadPool pool;

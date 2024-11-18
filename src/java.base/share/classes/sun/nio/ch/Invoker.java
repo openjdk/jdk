@@ -40,7 +40,7 @@ class Invoker {
     // thread before it re-directs invocations to the thread pool. This helps
     // avoid stack overflow and lessens the risk of starvation.
     private static final int maxHandlerInvokeCount =
-        Integer.valueOf(System.getProperty("sun.nio.ch.maxCompletionHandlersOnStack", "16"));
+        Integer.getInteger("sun.nio.ch.maxCompletionHandlersOnStack", 16);
 
     // Per-thread object with reference to channel group and a counter for
     // the number of completion handlers invoked. This should be reset to 0
