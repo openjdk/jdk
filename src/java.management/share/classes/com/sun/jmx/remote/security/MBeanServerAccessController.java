@@ -72,9 +72,8 @@ import javax.management.remote.MBeanServerForwarder;
  * be overridden, for instance if the default checking behavior is
  * inappropriate.</p>
  *
- * <p>An MBean could possibly be a CassLoader.
- * Users who do want an MBean which could be a ClassLoader should not permit
- * MBean creation.</p>
+ * <p>An MBean could possibly be a ClassLoader.  Users who do not want an
+ * MBean which could be a ClassLoader should not permit MBean creation.</p>
  */
 public abstract class MBeanServerAccessController
         implements MBeanServerForwarder {
