@@ -34,9 +34,9 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-final class CustomCachingFunctions {
+final class CustomStableFunctions {
 
-    private CustomCachingFunctions() {}
+    private CustomStableFunctions() {}
 
     record Pair<L, R>(L left, R right){}
 

@@ -55,7 +55,7 @@ import java.util.stream.IntStream;
 })
 @Threads(Threads.MAX)   // Benchmark under contention
 @OperationsPerInvocation(100)
-public class CachingFunctionBenchmark {
+public class StableFunctionBenchmark {
 
     private static final int SIZE = 100;
     private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());

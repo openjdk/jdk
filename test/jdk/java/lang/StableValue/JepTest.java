@@ -132,7 +132,7 @@ final class JepTest {
 
     class Foo {
         // 1. Declare a Stable field
-        private static final StableValue<Logger> LOGGER = StableValue.empty();
+        private static final StableValue<Logger> LOGGER = StableValue.unset();
 
         static Logger logger() {
 
@@ -241,7 +241,7 @@ final class JepTest {
 
         public CachingPredicate(Set<? extends T> inputs, Predicate<T> original) {
             this(inputs.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.empty())),
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.unset())),
                     original::test
             );
         }
@@ -292,7 +292,7 @@ final class JepTest {
         static <T, U, R> CachingBiFunction<T, U, R> of(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
 
             Map<Pair<T, U>, StableValue<R>> map = inputs.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.empty()));
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.unset()));
 
             return new CachingBiFunction<>(map, pair -> original.apply(pair.left(), pair.right()));
         }
@@ -315,7 +315,7 @@ final class JepTest {
         static <T, U, R> BiFunction<T, U, R> of(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
 
             Map<Pair<T, U>, StableValue<R>> map = inputs.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.empty()));
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.unset()));
 
             return new CachingBiFunction2<>(map, original);
         }
@@ -324,7 +324,7 @@ final class JepTest {
 
     static
     class Application {
-        private final StableValue<Logger> LOGGER = StableValue.empty();
+        private final StableValue<Logger> LOGGER = StableValue.unset();
 
         public Logger getLogger() {
             return LOGGER.computeIfUnset(() -> Logger.getLogger("com.company.Foo"));
@@ -335,7 +335,7 @@ final class JepTest {
                                IntPredicate resultFunction) implements IntPredicate {
 
         CachingIntPredicate(int size, IntPredicate resultFunction) {
-            this(Stream.generate(StableValue::<Boolean>empty).limit(size).toList(), resultFunction);
+            this(Stream.generate(StableValue::<Boolean>unset).limit(size).toList(), resultFunction);
         }
 
         @Override
@@ -351,7 +351,7 @@ final class JepTest {
         private final StableValue<E>[] elements;
 
         FixedStableList(int size) {
-            this.elements = Stream.generate(StableValue::<E>empty)
+            this.elements = Stream.generate(StableValue::<E>unset)
                     .limit(size)
                     .toArray(StableValue[]::new);
         }

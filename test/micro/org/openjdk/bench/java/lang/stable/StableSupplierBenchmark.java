@@ -35,9 +35,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 /**
  * Benchmark measuring StableValue performance
@@ -51,53 +50,47 @@ import java.util.function.IntFunction;
         "--enable-preview"
 })
 @Threads(Threads.MAX)   // Benchmark under contention
-@OperationsPerInvocation(100)
-public class CachingIntFunctionBenchmark {
+@OperationsPerInvocation(2)
+public class StableSupplierBenchmark {
 
-    private static final int SIZE = 100;
-    private static final IntFunction<Integer> IDENTITY = i -> i;
+    private static final int VALUE = 42;
+    private static final int VALUE2 = 23;
 
-    private static final List<Integer> STABLE = StableValue.ofList(SIZE, IDENTITY);
-    private static final IntFunction<Integer> INT_FUNCTION = StableValue.ofIntFunction(SIZE, IDENTITY);
+    private static final StableValue<Integer> STABLE = init(StableValue.unset(), VALUE);
+    private static final StableValue<Integer> STABLE2 = init(StableValue.unset(), VALUE2);
+    private static final Supplier<Integer> SUPPLIER = StableValue.ofSupplier(() -> VALUE);
+    private static final Supplier<Integer> SUPPLIER2 = StableValue.ofSupplier(() -> VALUE);
 
-    private final List<Integer> stable = StableValue.ofList(SIZE, IDENTITY);
-    private final IntFunction<Integer> intFunction = StableValue.ofIntFunction(SIZE, IDENTITY);
+    private final StableValue<Integer> stable = init(StableValue.unset(), VALUE);
+    private final StableValue<Integer> stable2 = init(StableValue.unset(), VALUE2);
+    private final Supplier<Integer> supplier = StableValue.ofSupplier(() -> VALUE);
+    private final Supplier<Integer> supplier2 = StableValue.ofSupplier(() -> VALUE2);
 
     @Benchmark
     public int stable() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += stable.get(i);
-        }
-        return sum;
+        return stable.orElseThrow() + stable2.orElseThrow();
     }
-
 
     @Benchmark
-    public int intFunction() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += intFunction.apply(i);
-        }
-        return sum;
+    public int supplier() {
+        return supplier.get() + supplier2.get();
     }
 
+/*
     @Benchmark
     public int staticStable() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += STABLE.get(i);
-        }
-        return sum;
+        return STABLE.orElseThrow() + STABLE2.orElseThrow();
     }
 
     @Benchmark
-    public int staticIntFunction() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += INT_FUNCTION.apply(i);
-        }
-        return sum;
+    public int staticSupplier() {
+        return SUPPLIER.get() + SUPPLIER2.get();
+    }
+*/
+
+    private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
+        m.trySet(value);
+        return m;
     }
 
 }

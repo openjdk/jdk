@@ -43,7 +43,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.openjdk.bench.java.lang.stable.CustomCachingFunctions.cachingPredicate;
+import static org.openjdk.bench.java.lang.stable.CustomStableFunctions.cachingPredicate;
 
 /**
  * Benchmark measuring custom stable value types
@@ -60,7 +60,7 @@ import static org.openjdk.bench.java.lang.stable.CustomCachingFunctions.cachingP
 })
 @Threads(Threads.MAX)   // Benchmark under contention
 //@OperationsPerInvocation(2)
-public class CustomCachingPredicateBenchmark {
+public class CustomStablePredicateBenchmark {
 
     private static final Set<Integer> SET = IntStream.range(0, 64).boxed().collect(Collectors.toSet());
     private static final Predicate<Integer> EVEN = i -> {
@@ -95,7 +95,7 @@ public class CustomCachingPredicateBenchmark {
 
         public CachingPredicate(Set<? extends T> inputs, Predicate<T> original) {
             this(inputs.stream()
-                            .collect(Collectors.toUnmodifiableMap(Function.identity(), _ -> StableValue.empty())),
+                            .collect(Collectors.toUnmodifiableMap(Function.identity(), _ -> StableValue.unset())),
                     original
             );
         }

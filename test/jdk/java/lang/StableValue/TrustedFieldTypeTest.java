@@ -44,10 +44,10 @@ final class TrustedFieldTypeTest {
     @Test
     void reflection() throws NoSuchFieldException, IllegalAccessException {
         final class Holder {
-            private final StableValue<Integer> value = StableValue.empty();
+            private final StableValue<Integer> value = StableValue.unset();
         }
         final class HolderNonFinal {
-            private StableValue<Integer> value = StableValue.empty();
+            private StableValue<Integer> value = StableValue.unset();
         }
         final class ArrayHolder {
             private final StableValue<Integer>[] array = (StableValue<Integer>[]) new StableValue[]{};
@@ -60,7 +60,7 @@ final class TrustedFieldTypeTest {
         Object read = valueField.get(holder);
         // We should NOT be able to write to the StableValue field
         assertThrows(IllegalAccessException.class, () ->
-                valueField.set(holder, StableValue.empty())
+                valueField.set(holder, StableValue.unset())
         );
 
         Field valueNonFinal = HolderNonFinal.class.getDeclaredField("value");
@@ -68,7 +68,7 @@ final class TrustedFieldTypeTest {
         HolderNonFinal holderNonFinal = new HolderNonFinal();
         // As the field is not final, both read and write should be ok (not trusted)
         Object readNonFinal = valueNonFinal.get(holderNonFinal);
-        valueNonFinal.set(holderNonFinal, StableValue.empty());
+        valueNonFinal.set(holderNonFinal, StableValue.unset());
 
         Field arrayField = ArrayHolder.class.getDeclaredField("array");
         arrayField.setAccessible(true);
@@ -89,7 +89,7 @@ final class TrustedFieldTypeTest {
         sun.misc.Unsafe unsafe = (sun.misc.Unsafe)unsafeField.get(null);
 
         final class Holder {
-            private final StableValue<Integer> value = StableValue.empty();
+            private final StableValue<Integer> value = StableValue.unset();
         }
         final class ArrayHolder {
             private final StableValue<Integer>[] array = (StableValue<Integer>[]) new StableValue[]{};
@@ -107,7 +107,7 @@ final class TrustedFieldTypeTest {
         );
 
         // Test direct access
-        StableValue<?> stableValue = StableValue.empty();
+        StableValue<?> stableValue = StableValue.unset();
         Class<?> clazz = stableValue.getClass();
         System.out.println("clazz = " + clazz);
         assertThrows(NoSuchFieldException.class, () -> clazz.getField("value"));
@@ -117,7 +117,7 @@ final class TrustedFieldTypeTest {
     void varHandle() throws NoSuchFieldException, IllegalAccessException {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
 
-        StableValue<Integer> originalValue = StableValue.empty();
+        StableValue<Integer> originalValue = StableValue.unset();
         @SuppressWarnings("unchecked")
         StableValue<Integer>[] originalArrayValue = new StableValue[10];
 
@@ -133,11 +133,11 @@ final class TrustedFieldTypeTest {
         Holder holder = new Holder();
 
         assertThrows(UnsupportedOperationException.class, () ->
-                valueVarHandle.set(holder, StableValue.empty())
+                valueVarHandle.set(holder, StableValue.unset())
         );
 
         assertThrows(UnsupportedOperationException.class, () ->
-                valueVarHandle.compareAndSet(holder, originalValue, StableValue.empty())
+                valueVarHandle.compareAndSet(holder, originalValue, StableValue.unset())
         );
 
         VarHandle arrayVarHandle = lookup.findVarHandle(ArrayHolder.class, "array", StableValue[].class);
@@ -155,7 +155,7 @@ final class TrustedFieldTypeTest {
 
     @Test
     void updateStableValueUnderlyingData() {
-        StableValue<Integer> stableValue = StableValue.empty();
+        StableValue<Integer> stableValue = StableValue.unset();
         stableValue.trySet(42);
         jdk.internal.misc.Unsafe unsafe = Unsafe.getUnsafe();
 

@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.RandomAccess;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -44,7 +45,7 @@ import java.util.function.Supplier;
  * A stable value is a holder of deferred immutable data.
  * <p>
  * A {@linkplain StableValue {@code StableValue<T>}} is created using the factory method
- * {@linkplain StableValue#empty() {@code StableValue.empty()}}. When created, the
+ * {@linkplain StableValue#unset() {@code StableValue.unset()}}. When created, the
  * stable value is <em>unset</em>, which means it holds no value. Its holder value, of
  * type {@code T}, can be <em>set</em> by calling
  * {@linkplain #trySet(Object) trySet()}, {@linkplain #setOrThrow(Object) setOrThrow()},
@@ -60,7 +61,7 @@ import java.util.function.Supplier;
  * associated with {@code final} fields is too restrictive.
  * <p>
  * Consider the following example where a stable value field "{@code logger}" is an
- * immutable holder of a value of type {@code  Logger} and that is initially created
+ * immutable holder of a value of type {@code Logger} and that is initially created
  * as <em>unset</em>, which means it holds no value. Later in the example, the
  * state of the "{@code logger}" field is checked and if it is still <em>unset</em>,
  * a holder value is <em>set</em>:
@@ -68,9 +69,9 @@ import java.util.function.Supplier;
  * {@snippet lang = java:
  * class Component {
  *
- *    // Creates a new stable value with no holder value
- *    // @link substring="empty" target="#empty" :
- *    private final StableValue<Logger> logger = StableValue.empty();
+ *    // Creates a new unset stable value with no holder value
+ *    // @link substring="unset" target="#unset" :
+ *    private final StableValue<Logger> logger = StableValue.unset();
  *
  *    Logger getLogger() {
  *        if (!logger.isSet()) {
@@ -95,9 +96,9 @@ import java.util.function.Supplier;
  * {@snippet lang = java:
  * class Component {
  *
- *    // Creates a new stable value with no holder value
- *    // @link substring="empty" target="#empty" :
- *    private final StableValue<Logger> logger = StableValue.empty();
+ *    // Creates a new unset stable value with no holder value
+ *    // @link substring="unset" target="#unset" :
+ *    private final StableValue<Logger> logger = StableValue.unset();
  *
  *    Logger getLogger() {
  *        return logger.computeIfUnset( () -> Logger.create(Component.class) );
@@ -192,10 +193,10 @@ import java.util.function.Supplier;
  *}
  *
  * <h2 id="stable-collections">Stable Collections</h2>
- * Stable values can also be used as backing storage for immutable collections.
- * A <em>stable list</em> is an immutable list, backed by an array of
- * stable values. The stable list elements are computed when they are first accessed,
- * using a provided {@linkplain IntFunction}:
+ * Stable values can also be used as backing storage for
+ * {@linkplain Collection##unmodifiable unmodifiable collections}. A <em>stable list</em>
+ * is an unmodifiable list, backed by an array of stable values. The stable list elements
+ * are computed when they are first accessed, using the provided {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
  *     class SqrtUtil {
@@ -214,9 +215,9 @@ import java.util.function.Supplier;
  * Note: In the example above, there is a constructor in the {@code Component}
  *       class that takes an {@code int} parameter.
  * <p>
- * Similarly, a <em>stable map</em> is an immutable map whose keys are known at
+ * Similarly, a <em>stable map</em> is an unmodifiable map whose keys are known at
  * construction. The stable map values are computed when they are first accessed,
- * using a provided {@linkplain Function}:
+ * using the provided {@linkplain Function}:
  *
  * {@snippet lang = java:
  *     class SqrtUtil {
@@ -236,7 +237,7 @@ import java.util.function.Supplier;
  * racing to set a stable value, only one update succeeds, while other updates are
  * blocked until the stable value becomes set.
  * <p>
- * The at-most-once write operation on a stable value (e.g. {@linkplain #trySet(Object)})
+ * The at-most-once write operation on a stable value (e.g. {@linkplain #trySet(Object) trySet()})
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * any subsequent read operation (e.g. {@linkplain #orElseThrow()}).
  * <p>
@@ -249,6 +250,10 @@ import java.util.function.Supplier;
  * <h2 id="miscellaneous">Miscellaneous</h2>
  * Except for a StableValue's holder value itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
+ * <p>
+ * Stable functions and collections are not {@link Serializable} as this would require
+ * {@linkplain #ofList(int, IntFunction) mappers} to be {@link Serializable} as well,
+ * which would introduce security vulnerabilities.
  *
  * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
@@ -349,9 +354,9 @@ public sealed interface StableValue<T>
 
     /**
      * Sets the holder value to the provided {@code value}, or,
-     * if already set, throws {@link IllegalStateException}.
+     * if already set, throws {@code IllegalStateException}.
      * <p>
-     * When this method returns (or throws an Exception), the holder value is always set.
+     * When this method returns (or throws an exception), the holder value is always set.
      *
      * @param value to set
      * @throws IllegalStateException if the holder value was already set
@@ -361,23 +366,18 @@ public sealed interface StableValue<T>
     // Factories
 
     /**
-     * {@return a new empty stable value with no holder value}
+     * {@return a new unset stable value}
      * <p>
-     * The returned {@linkplain StableValue stable value} is a thin, atomic, thread-safe,
-     * set-at-most-once, stable value with no holder value eligible for certain JVM
-     * optimizations once the holder value is set.
+     * An unset stable value has no holder value.
      *
      * @param <T> type of the holder value
      */
-    static <T> StableValue<T> empty() {
-        return StableValueFactories.empty();
+    static <T> StableValue<T> unset() {
+        return StableValueFactories.unset();
     }
 
     /**
-     * {@return a new set stable value with the provided {@code value} as holder value}
-     * <p>
-     * The returned {@linkplain StableValue stable value} is a thin, atomic, thread-safe,
-     * stable value with a set holder value eligible for certain JVM optimizations.
+     * {@return a new set stable value holding the provided {@code value}}
      *
      * @param value holder value to set
      * @param <T>   type of the holder value
@@ -387,9 +387,9 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable supplier with no holder value}
+     * {@return a new unset stable supplier}
      * <p>
-     * The returned stable {@linkplain Supplier supplier} is a thread-safe, caching,
+     * The returned stable {@linkplain Supplier supplier} is a caching,
      * and lazily computed supplier that records the value of the provided {@code original}
      * supplier upon being first accessed via the returned supplier's
      * {@linkplain Supplier#get() get()} method.
@@ -412,10 +412,10 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable int function with no holder values}
+     * {@return a new unset stable int function}
      * <p>
-     * The returned stable {@link IntFunction int function} is a thread-safe, caching,
-     * and lazily computed int function that, for each allowed input, records the values
+     * The returned stable {@link IntFunction int function} is a caching and lazily
+     * computed int function that, for each allowed input, records the values
      * of the provided {@code original} int function upon being first accessed via the
      * returned int function's {@linkplain IntFunction#apply(int) apply()} method.
      * <p>
@@ -443,13 +443,13 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable function with no holder values}
+     * {@return a new unset stable function}
      * <p>
-     * The returned stable {@link Function function} is a stable, thread-safe,
-     * caching, and lazily computed function that, for each allowed input in the given
-     * set of {@code inputs}, records the values of the provided {@code original} function
-     * upon being first accessed via the returned function's
-     * {@linkplain Function#apply(Object) apply()} method.
+     * The returned stable {@link Function function} is a stable caching and lazily
+     * computed function that, for each allowed input in the given set of {@code inputs},
+     * records the values of the provided {@code original} function upon being first
+     * accessed via the returned function's {@linkplain Function#apply(Object) apply()}
+     * method.
      * <p>
      * The provided {@code original} function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
@@ -473,13 +473,12 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable list of the provided {@code size} with no holder values}
+     * {@return a new unset stable list with the provided {@code size}}
      * <p>
-     * The returned {@linkplain List list} is a stable, thread-safe, caching,
-     * lazily computed, and shallowly immutable list where the individual elements of the
-     * list are lazily computed via the provided {@code mapper} whenever an element is
-     * first accessed (directly or indirectly), for example via the returned list's
-     * {@linkplain List#get(int) get()} method.
+     * The returned list is an {@linkplain Collection##unmodifiable unmodifiable} list
+     * whose size is known at construction. The stable list elements are computed via the
+     * provided {@code mapper} when they are first accessed
+     * (e.g. via {@linkplain List#get(int) List::get}).
      * <p>
      * The provided {@code mapper} int function is guaranteed to be successfully invoked
      * at most once per list index, even in a multi-threaded environment. Competing
@@ -487,11 +486,10 @@ public sealed interface StableValue<T>
      * is computed or an exception is thrown by the computing thread.
      * <p>
      * If the provided {@code mapper} throws an exception, it is relayed to the initial
-     * caller and no holder value for the element is recorded.
+     * caller and no value for the element is recorded.
      * <p>
-     * The returned List is not {@link Serializable} as this would require the provided
-     * {@code mapper} to be {@link Serializable} as well, which would create security
-     * concerns.
+     * The returned list and its {@link List#subList(int, int) subList} views implement
+     * the {@link RandomAccess} interface.
      *
      * @param size   the size of the returned list
      * @param mapper to invoke whenever an element is first accessed
@@ -508,20 +506,20 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable map with the provided {@code keys} with no holder values}
+     * {@return a new unset stable map with the provided {@code keys}}
      * <p>
-     * The returned {@linkplain Map map} is a stable, thread-safe, caching,
-     * lazily computed, and shallowly immutable map where the individual values of the map
-     * are lazily computed via the provided {@code mapper} whenever an element is first
-     * accessed (directly or indirectly), for example via the returned map's
-     * {@linkplain Map#get(Object) get()} method.
+     * The returned map is an {@linkplain Collection##unmodifiable unmodifiable} map whose
+     * keys are known at construction. The stable map values are computed via the provided
+     * {@code mapper} when they are first accessed
+     * (e.g. via {@linkplain Map#get(Object) Map::get}).
+     * <p>
+     * The provided {@code mapper} function is guaranteed to be successfully invoked
+     * at most once per key, even in a multi-threaded environment. Competing
+     * threads accessing a value already under computation will block until an element
+     * is computed or an exception is thrown by the computing thread.
      * <p>
      * If the provided {@code mapper} throws an exception, it is relayed to the initial
-     * caller and no holder value associated with the provided key is recorded.
-     * <p>
-     * The returned Map is not {@link Serializable} as this would require the provided
-     * {@code mapper} to be {@link Serializable} as well, which would create security
-     * concerns.
+     * caller and no value associated with the provided key is recorded.
      *
      * @param keys   the keys in the returned map
      * @param mapper to invoke whenever an associated value is first accessed
