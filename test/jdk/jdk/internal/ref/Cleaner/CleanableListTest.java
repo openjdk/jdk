@@ -27,7 +27,7 @@
  * @library /test/lib
  * @compile/module=java.base jdk/internal/ref/CleanableListTestHelper.java jdk/internal/ref/TestCleanable.java
  * @modules java.base/jdk.internal.ref
- * @run testng/othervm --add-exports java.base/jdk.internal.ref=ALL-UNNAMED CleanableListTest
+ * @run testng/othervm CleanableListTest
  */
 
 import java.util.ArrayList;
