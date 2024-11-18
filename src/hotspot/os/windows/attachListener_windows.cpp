@@ -152,7 +152,7 @@ public:
   }
 
   bool read_request() {
-    return AttachOperation::read_request(&_pipe);
+    return AttachOperation::read_request(&_pipe, &_pipe);
   }
 
 public:
