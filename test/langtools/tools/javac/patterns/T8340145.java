@@ -32,7 +32,9 @@ public class T8340145 {
     public static void main(String[] args) {
         Option<Integer> optionInteger = new Option.Some<>(21);
         Number number = Option.unwrapOrElse(optionInteger, 5.2);
-        System.out.println(number);
+
+        Option2<Impl> optionBound = new Option2.Some<>(new Impl (){});
+        Bound number2 = Option2.unwrapOrElse(optionBound, new Impl(){});
     }
 
     sealed interface Option<T> permits Option.Some, Option.None {
@@ -43,6 +45,21 @@ public class T8340145 {
             return switch (option) {
                 case Option.Some(T2 value) -> value;
                 case Option.None<T2> _ -> defaultValue;
+            };
+        }
+    }
+
+    interface Bound {}
+    interface Bound2 {}
+    static class Impl implements Bound, Bound2 {}
+    sealed interface Option2<T> permits Option2.Some, Option2.None {
+        record Some<T>(T value) implements Option2<T> {}
+        record None<T>() implements Option2<T> {}
+
+        static <T extends Bound & Bound2> T unwrapOrElse(Option2<T> option, T defaultValue) {
+            return switch (option) {
+                case Option2.Some(T value) -> value;
+                case Option2.None<T> _ -> defaultValue;
             };
         }
     }
