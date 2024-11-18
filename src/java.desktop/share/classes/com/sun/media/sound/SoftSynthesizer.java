@@ -779,7 +779,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                 /*
                  * Save generated soundbank to disk for faster future use.
                  */
-                OutputStream out = 
+                OutputStream out =
                         ((RunnableAction<OutputStream>) () -> {
                             try {
                                 File userhome = new File(System
