@@ -38,6 +38,8 @@
 class JvmtiThreadState;
 class RecordComponent;
 class SerializeClosure;
+class ObjectWaiter;
+class ObjectMonitor;
 
 #define CHECK_INIT(offset)  assert(offset != 0, "should be initialized"); return offset;
 
@@ -537,6 +539,8 @@ class java_lang_ThreadGroup : AllStatic {
 
 
 // Interface to java.lang.VirtualThread objects
+#define VTHREAD_INJECTED_FIELDS(macro)                                           \
+  macro(java_lang_VirtualThread,   objectWaiter,  intptr_signature,       false)
 
 class java_lang_VirtualThread : AllStatic {
  private:
@@ -549,6 +553,7 @@ class java_lang_VirtualThread : AllStatic {
   static int _notified_offset;
   static int _recheckInterval_offset;
   static int _timeout_offset;
+  static int _objectWaiter_offset;
   JFR_ONLY(static int _jfr_epoch_offset;)
  public:
   enum {
@@ -600,6 +605,11 @@ class java_lang_VirtualThread : AllStatic {
   static void set_notified(oop vthread, jboolean value);
   static bool is_preempted(oop vthread);
   static JavaThreadStatus map_state_to_thread_status(int state);
+
+  static inline ObjectWaiter* objectWaiter(oop vthread);
+  static inline void set_objectWaiter(oop vthread, ObjectWaiter* waiter);
+  static ObjectMonitor* current_pending_monitor(oop vthread);
+  static ObjectMonitor* current_waiting_monitor(oop vthread);
 };
 
 

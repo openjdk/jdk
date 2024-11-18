@@ -1524,7 +1524,6 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size, int argsize_md)
   assert(chunk->flags() == 0, "");
   assert(chunk->is_gc_mode() == false, "");
   assert(chunk->lockstack_size() == 0, "");
-  assert(chunk->object_waiter() == nullptr, "");
 
   // fields are uninitialized
   chunk->set_parent_access<IS_DEST_UNINITIALIZED>(_cont.last_nonempty_chunk());
@@ -2214,11 +2213,10 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
 
   _preempted_case = chunk->preempted();
   if (_preempted_case) {
-    if (chunk->object_waiter() != nullptr) {
+    ObjectWaiter* waiter = java_lang_VirtualThread::objectWaiter(_thread->vthread());
+    if (waiter != nullptr) {
       // Mounted again after preemption. Resume the pending monitor operation,
       // which will be either a monitorenter or Object.wait() call.
-      assert(chunk->current_pending_monitor() != nullptr || chunk->current_waiting_monitor() != nullptr, "");
-      ObjectWaiter* waiter = chunk->object_waiter();
       ObjectMonitor* mon = waiter->monitor();
       preempt_kind = waiter->is_wait() ? Continuation::freeze_on_wait : Continuation::freeze_on_monitorenter;
 
