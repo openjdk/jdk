@@ -76,8 +76,7 @@ public class CheckCSMs {
 
     // These non-static non-final methods must not have @CallerSensitiveAdapter
     // methods that takes an additional caller class parameter.
-    private static Set<String> UNSUPPORTED_VIRTUAL_METHODS =
-        Set.of("java/io/ObjectStreamField#getType (Ljava/lang/Class;)Ljava/lang/Class;");
+    private static Set<String> UNSUPPORTED_VIRTUAL_METHODS = Set.of();
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0 && args[0].equals("--list")) {
