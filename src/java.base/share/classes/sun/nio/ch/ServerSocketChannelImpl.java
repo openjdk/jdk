@@ -729,7 +729,7 @@ class ServerSocketChannelImpl
                 if (addr == null) {
                     sb.append("unbound");
                 } else if (isUnixSocket()) {
-                    sb.append(addr.toString());
+                    sb.append(addr);
                 }
             }
         }
