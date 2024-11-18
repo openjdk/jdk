@@ -128,7 +128,13 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
         } else {
             Log.logSSL("AbstractAsyncSSLConnection: no applications set!");
         }
-        sslParameters.setServerNames(sniServerNames);
+
+
+        sslParameters.setServerNames(
+            Stream.concat(
+                sniServerNames.stream(),
+                Optional.ofNullable(sslParameters.getServerNames()).stream().flatMap(Collection::stream)
+            ).toList());
         return sslParameters;
     }
 
