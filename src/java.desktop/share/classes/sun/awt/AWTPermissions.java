@@ -33,9 +33,6 @@ import java.awt.AWTPermission;
 public final class AWTPermissions {
     private AWTPermissions() { }
 
-    public static final AWTPermission TOPLEVEL_WINDOW_PERMISSION =
-        new AWTPermission("showWindowWithoutWarningBanner");
-
     public static final AWTPermission ACCESS_CLIPBOARD_PERMISSION =
         new AWTPermission("accessClipboard");
 

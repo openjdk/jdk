@@ -590,9 +590,6 @@ public abstract class EmbeddedFrame extends Frame
         public void updateWindow() {
         }
 
-        public void repositionSecurityWarning() {
-        }
-
         public void emulateActivation(boolean activate) {
         }
     }

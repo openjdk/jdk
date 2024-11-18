@@ -81,7 +81,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
 
     private boolean cachedFocusableWindow;
-    XWarningWindow warningWindow;
 
     private boolean alwaysOnTop;
     private boolean locationByPlatform;
@@ -276,15 +275,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     XToolkit.awtUnlock();
                 }
 
-            }
-        }
-
-         // Init warning window(for applets)
-        if (((Window)target).getWarningString() != null) {
-            // accessSystemTray permission allows to display TrayIcon, TrayIcon tooltip
-            // and TrayIcon balloon windows without a warning window.
-            if (!AWTAccessor.getWindowAccessor().isTrayIconWindow((Window)target)) {
-                warningWindow = new XWarningWindow((Window)target, getWindow(), this);
             }
         }
 
@@ -504,9 +494,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
             boolean isResized = !bounds.getSize().equals(oldBounds.getSize());
             boolean isMoved = !bounds.getLocation().equals(oldBounds.getLocation());
-            if (isMoved || isResized) {
-                repositionSecurityWarning();
-            }
             if (isResized) {
                 postEventToEventQueue(new ComponentEvent(getEventSource(), ComponentEvent.COMPONENT_RESIZED));
             }
@@ -825,7 +812,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             AWTAccessor.getComponentAccessor().setLocation(target, x, y);
             postEvent(new ComponentEvent(target, ComponentEvent.COMPONENT_MOVED));
         }
-        repositionSecurityWarning();
     }
 
     final void requestXFocus(long time) {
@@ -1119,9 +1105,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
         updateFocusability();
         promoteDefaultPosition();
-        if (!vis && warningWindow != null) {
-            warningWindow.setSecurityWarningVisible(false, false);
-        }
         boolean refreshChildsTransientFor = isVisible() != vis;
         super.setVisible(vis);
         if (refreshChildsTransientFor) {
@@ -1171,7 +1154,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (isOverrideRedirect() && vis) {
             updateChildrenSizes();
         }
-        repositionSecurityWarning();
     }
 
     protected void suppressWmTakeFocus(boolean doSuppress) {
@@ -1179,9 +1161,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     final boolean isSimpleWindow() {
         return !(target instanceof Frame || target instanceof Dialog);
-    }
-    boolean hasWarningWindow() {
-        return ((Window)target).getWarningString() != null;
     }
 
     // The height of menu bar window
@@ -1194,68 +1173,14 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     void updateChildrenSizes() {
     }
 
-    public void repositionSecurityWarning() {
-        // NOTE: On KWin if the window/border snapping option is enabled,
-        // the Java window may be swinging while it's being moved.
-        // This doesn't make the application unusable though looks quite ugly.
-        // Probably we need to find some hint to assign to our Security
-        // Warning window in order to exclude it from the snapping option.
-        // We are not currently aware of existence of such a property.
-        if (warningWindow != null) {
-            // We can't use the coordinates stored in the XBaseWindow since
-            // they are zeros for decorated frames.
-            ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
-            int x = compAccessor.getX(target);
-            int y = compAccessor.getY(target);
-            int width = compAccessor.getWidth(target);
-            int height = compAccessor.getHeight(target);
-            warningWindow.reposition(x, y, width, height);
-        }
-    }
-
     @Override
     protected void setMouseAbove(boolean above) {
         super.setMouseAbove(above);
-        updateSecurityWarningVisibility();
     }
 
     @Override
     public void setFullScreenExclusiveModeState(boolean state) {
         super.setFullScreenExclusiveModeState(state);
-        updateSecurityWarningVisibility();
-    }
-
-    public void updateSecurityWarningVisibility() {
-        if (warningWindow == null) {
-            return;
-        }
-
-        if (!isVisible()) {
-            return; // The warning window should already be hidden.
-        }
-
-        boolean show = false;
-
-        if (!isFullScreenExclusiveMode()) {
-            int state = getWMState();
-
-            // getWMState() always returns 0 (Withdrawn) for simple windows. Hence
-            // we ignore the state for such windows.
-            if (isVisible() && (state == XUtilConstants.NormalState || isSimpleWindow())) {
-                if (XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow() ==
-                        getTarget())
-                {
-                    show = true;
-                }
-
-                if (isMouseAbove() || warningWindow.isMouseAbove())
-                {
-                    show = true;
-                }
-            }
-        }
-
-        warningWindow.setSecurityWarningVisible(show, true);
     }
 
     boolean isOverrideRedirect() {
@@ -1282,10 +1207,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             windows.remove(this);
         } finally {
             SunToolkit.awtUnlock();
-        }
-
-        if (warningWindow != null) {
-            warningWindow.destroy();
         }
 
         removeRootPropertyEventDispatcher();
@@ -1317,7 +1238,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 //         if (ve.get_state() == XlibWrapper.VisibilityUnobscured) {
 //             // raiseInputMethodWindow
 //         }
-        repositionSecurityWarning();
     }
 
     void handleRootPropertyNotify(XEvent xev) {
@@ -1498,8 +1418,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         for (ToplevelStateListener topLevelListenerTmp : toplevelStateListeners) {
             topLevelListenerTmp.stateChangedICCCM(oldState, newState);
         }
-
-        updateSecurityWarningVisibility();
     }
 
     boolean isWithdrawn() {

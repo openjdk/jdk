@@ -651,16 +651,9 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      private native void nativeGrab();
      private native void nativeUngrab();
 
-     private boolean hasWarningWindow() {
-         return ((Window)target).getWarningString() != null;
-     }
-
      boolean isTargetUndecorated() {
          return true;
      }
-
-     @Override
-     public native void repositionSecurityWarning();
 
     @Override
     public void print(Graphics g) {
