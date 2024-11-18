@@ -656,9 +656,6 @@ public class InstrumentationImpl implements Instrumentation {
      * Holder for StackWalker object.
      */
     private static class HolderStackWalker {
-        static final StackWalker walker;
-        static {
-            walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-        }
+        static final StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
     }
 }
