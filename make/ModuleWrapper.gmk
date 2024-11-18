@@ -46,6 +46,10 @@ TARGETS :=
 include $(MAKEFILE_PREFIX).gmk
 
 ifeq ($(MAKEFILE_PREFIX), Lib)
+  # We need to keep track of what libraries are generated/needed by this
+  # module. This information is required when doing static linking, to know
+  # which static library files to include. The variable ($(MODULE)_JDK_LIBS is
+  # added to for each call to SetupJdkLibrary.
   ifneq ($($(MODULE)_JDK_LIBS), )
     LIBLIST := $(SUPPORT_OUTPUTDIR)/modules_static-libs/$(MODULE)/module-libs.txt
 

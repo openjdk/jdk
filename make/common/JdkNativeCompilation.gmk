@@ -275,6 +275,8 @@ JDK_RCFLAGS=$(RCFLAGS) \
 #     and EXTRA_HEADER_DIRS will be added.
 #   JDK_LIBS_<os> or JDK_LIBS_<osType> -- additional JDK_LIBS for the given OS
 #     or OS type only
+#   EXCLUDE_FROM_STATIC_LIBS -- if true, this library will be flagged as not
+#     to be included for this module when building static libs
 #   EXTRA_RCFLAGS -- additional RCFLAGS to append.
 #   RC_FILEDESC -- override the default FILEDESC for Windows version.rc
 #   DEFAULT_LIBCXX -- if false, do not add LIBCXX to LIBS for C++ compilations
@@ -304,6 +306,8 @@ define SetupJdkNativeCompilationBody
   endif
 
   ifneq ($$(MODULE), )
+    # Record the fact that this native library is part of the current module
+    # (unless told otherwise).
     ifneq ($$($1_EXCLUDE_FROM_STATIC_LIBS), true)
       $$(MODULE)_JDK_LIBS += $$($1_NAME)
     endif
