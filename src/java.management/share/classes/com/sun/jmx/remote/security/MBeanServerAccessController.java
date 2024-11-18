@@ -72,8 +72,8 @@ import javax.management.remote.MBeanServerForwarder;
  * be overridden, for instance if the default checking behavior is
  * inappropriate.</p>
  *
- * <p>An MBean could possibly be a ClassLoader.  Users who do not want an
- * MBean which could be a ClassLoader should not permit MBean creation.</p>
+ * <p>The access controller will refuse to create an MBean that is a ClassLoader.
+ * </p>
  */
 public abstract class MBeanServerAccessController
         implements MBeanServerForwarder {
@@ -168,6 +168,7 @@ public abstract class MBeanServerAccessController
         NotCompliantMBeanException {
         checkCreate(className);
         Object object = getMBeanServer().instantiate(className);
+        checkClassLoader(object);
         return getMBeanServer().registerMBean(object, name);
     }
 
@@ -185,8 +186,9 @@ public abstract class MBeanServerAccessController
         NotCompliantMBeanException {
         checkCreate(className);
         Object object = getMBeanServer().instantiate(className,
-                                                      params,
+                                                     params,
                                                      signature);
+        checkClassLoader(object);
         return getMBeanServer().registerMBean(object, name);
     }
 
@@ -207,6 +209,7 @@ public abstract class MBeanServerAccessController
         checkCreate(className);
         Object object = getMBeanServer().instantiate(className,
                                                      loaderName);
+        checkClassLoader(object);
         return getMBeanServer().registerMBean(object, name);
     }
 
@@ -231,6 +234,7 @@ public abstract class MBeanServerAccessController
                                                      loaderName,
                                                      params,
                                                      signature);
+        checkClassLoader(object);
         return getMBeanServer().registerMBean(object, name);
     }
 
@@ -567,6 +571,17 @@ public abstract class MBeanServerAccessController
         throws InstanceNotFoundException, MBeanRegistrationException {
         checkUnregister(name);
         getMBeanServer().unregisterMBean(name);
+    }
+
+    //----------------
+    // PRIVATE METHODS
+    //----------------
+
+    private void checkClassLoader(Object object) {
+        if (object instanceof ClassLoader)
+            throw new SecurityException("Access denied! Creating an " +
+                                        "MBean that is a ClassLoader " +
+                                        "is forbidden.");
     }
 
     //------------------
