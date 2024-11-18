@@ -30,7 +30,7 @@ import javax.crypto.SecretKey;
 /**
  * A TLS key logger for SunJSSE.
  * <p>
- * This follows the SSLKEYLOGFILE format propsed in draft RFC:
+ * This follows the SSLKEYLOGFILE format proposed in draft RFC:
  * <a href="https://datatracker.ietf.org/doc/draft-ietf-tls-keylogfile/"
  * <p>
  * This is a stub library API that could allow SunJSSE to output connection

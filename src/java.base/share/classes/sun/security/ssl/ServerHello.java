@@ -659,7 +659,7 @@ final class ServerHello {
             if (TLSKeyLogger.INSTANCE != null) {
                 TLSKeyLogger.INSTANCE.log(
                         TLSKeyLoggerLabel.SERVER_HANDSHAKE_TRAFFIC_SECRET,
-                        shc.serverHelloRandom.randomBytes,
+                        shc.clientHelloRandom.randomBytes,
                         writeSecret);
             }
             SSLKeyDerivation writeKD =
@@ -1321,7 +1321,7 @@ final class ServerHello {
             if (TLSKeyLogger.INSTANCE != null) {
                 TLSKeyLogger.INSTANCE.log(
                         TLSKeyLoggerLabel.SERVER_HANDSHAKE_TRAFFIC_SECRET,
-                        chc.serverHelloRandom.randomBytes,
+                        chc.clientHelloRandom.randomBytes,
                         readSecret);
             }
             SSLKeyDerivation readKD =
