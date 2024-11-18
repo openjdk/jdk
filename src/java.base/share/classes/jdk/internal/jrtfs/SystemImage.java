@@ -39,6 +39,7 @@ import java.security.PrivilegedAction;
 
 import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReader.Node;
+import jdk.internal.util.StaticProperty;
 
 /**
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -112,7 +113,7 @@ abstract class SystemImage {
     private static String findHome() {
         CodeSource cs = SystemImage.class.getProtectionDomain().getCodeSource();
         if (cs == null)
-            return System.getProperty("java.home");
+            return StaticProperty.javaHome();
 
         // assume loaded from $TARGETJDK/lib/jrt-fs.jar
         URL url = cs.getLocation();

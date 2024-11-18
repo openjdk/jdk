@@ -47,6 +47,7 @@ import java.util.zip.ZipInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import jdk.internal.util.StaticProperty;
 import sun.security.ssl.SSLLogger;
 
 /**
@@ -209,7 +210,7 @@ class DomainName {
                 new PrivilegedAction<>() {
                     @Override
                     public InputStream run() {
-                        File f = new File(System.getProperty("java.home"),
+                        File f = new File(StaticProperty.javaHome(),
                             "lib/security/public_suffix_list.dat");
                         try {
                             return new FileInputStream(f);
