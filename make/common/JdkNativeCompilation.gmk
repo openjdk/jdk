@@ -307,7 +307,8 @@ define SetupJdkNativeCompilationBody
 
   ifneq ($$(MODULE), )
     # Record the fact that this native library is part of the current module
-    # (unless told otherwise).
+    # (unless told otherwise). This variable stores information about all
+    # created libraries, and is read by ModuleWrapper.
     ifneq ($$($1_EXCLUDE_FROM_STATIC_LIBS), true)
       $$(MODULE)_JDK_LIBS += $$($1_NAME)
     endif
