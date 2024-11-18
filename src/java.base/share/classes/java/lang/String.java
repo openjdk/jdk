@@ -840,7 +840,7 @@ public final class String
     private static final char REPL = '\ufffd';
 
     // Trim the given byte array to the given length
-    private static byte[] safeTrim(byte[] ba, int len) {
+    private static byte[] trimArray(byte[] ba, int len) {
         if (len == ba.length) {
             return ba;
         } else {
@@ -896,7 +896,7 @@ public final class String
             int blen = (coder == LATIN1) ? ae.encodeFromLatin1(val, 0, len, ba)
                     : ae.encodeFromUTF16(val, 0, len, ba);
             if (blen != -1) {
-                return safeTrim(ba, blen);
+                return trimArray(ba, blen);
             }
         }
 
@@ -926,7 +926,7 @@ public final class String
                 throw new Error(x);
             }
         }
-        return safeTrim(ba, bb.position());
+        return trimArray(ba, bb.position());
     }
 
     /*
