@@ -2559,21 +2559,13 @@ const Type* VLoopTypes::container_type(Node* n) const {
     }
     return Type::get_const_basic_type(bt);
   }
+
   const Type* t = _vloop.phase()->igvn().type(n);
-
-  // First check if the node is a float16 node returning a "Short" type.
-  // If it is, then it needs to be checked before the next condition.
-  // Else it might return TypeInt::INT for float16 nodes instead of TypeInt::SHORT
-  // which could cause assertion errors in VectorCastNode::opcode().
-  if (opc == Op_ReinterpretHF2S || VectorNode::is_float16_node(opc)) {
-    return TypeInt::SHORT;
-  }
-
   if (t->basic_type() == T_INT) {
     // Float to half float conversion may be succeeded by a conversion from
     // half float to float, in such a case back propagation of narrow type (SHORT)
     // may not be possible.
-    if (opc == Op_ConvF2HF) {
+    if (n->Opcode() == Op_ConvF2HF || n->Opcode() == Op_ReinterpretHF2S) {
       return TypeInt::SHORT;
     }
     // A narrow type of arithmetic operations will be determined by

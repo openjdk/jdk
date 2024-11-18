@@ -915,6 +915,7 @@ class JavaValue {
  void set_jfloat(jfloat f) { _value.f = f;}
  void set_jdouble(jdouble d) { _value.d = d;}
  void set_jint(jint i) { _value.i = i;}
+ void set_jshort(jshort i) { _value.i = i;}
  void set_jlong(jlong l) { _value.l = l;}
  void set_jobject(jobject h) { _value.h = h;}
  void set_oop(oopDesc* o) { _value.o = o;}

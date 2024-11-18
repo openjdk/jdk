@@ -254,9 +254,6 @@ const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
 //------------------------------Ideal------------------------------------------
 Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Optimize pattern - ConvHF2F (FP32BinOp) ConvF2HF ==> ReinterpretS2HF (FP16BinOp) ReinterpretHF2S.
-  // It is safe to do so as we do not lose any precision bits during ConvHF2F and ConvF2HF conversions.
-  // Eventually if the loop is vectorizable, ReinterpretS2HF/HF2S will be optimized away as they are
-  // of the same size and only the vectorized sqrt nodes for half-precision floats will be generated.
   if (Float16NodeFactory::is_binary_oper(in(1)->Opcode()) &&
       in(1)->in(1)->Opcode() == Op_ConvHF2F &&
       in(1)->in(2)->Opcode() == Op_ConvHF2F) {
@@ -922,20 +919,17 @@ const Type* RoundDoubleModeNode::Value(PhaseGVN* phase) const {
 
 const Type* ReinterpretS2HFNode::Value(PhaseGVN* phase) const {
   const Type* type = phase->type( in(1) );
-  // Convert FP16 constant value to Float constant value, this will allow
-  // further constant folding to be done at float granularity by value routines
-  // of FP16 IR nodes.
-  if ((type->isa_int() && type->is_int()->is_con()) && StubRoutines::hf2f_adr() != nullptr) {
+  // Convert short constant value to a Half Float constant value
+  if ((type->isa_int() && type->is_int()->is_con())) {
      jshort hfval = type->is_int()->get_con();
-     jfloat fval = StubRoutines::hf2f(hfval);
-     return TypeF::make(fval);
+     return TypeH::make(hfval);
   }
-  return Type::FLOAT;
+  return Type::HALF_FLOAT;
 }
 
 Node* ReinterpretS2HFNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_ReinterpretHF2S) {
-     assert(in(1)->in(1)->bottom_type()->isa_float(), "");
+     assert(in(1)->in(1)->bottom_type()->isa_half_float(), "");
      return in(1)->in(1);
   }
   return this;
@@ -943,10 +937,9 @@ Node* ReinterpretS2HFNode::Identity(PhaseGVN* phase) {
 
 const Type* ReinterpretHF2SNode::Value(PhaseGVN* phase) const {
   const Type* type = phase->type( in(1) );
-  // Convert Float constant value to FP16 constant value.
-  if (type->isa_float_constant() && StubRoutines::f2hf_adr() != nullptr) {
-     jfloat fval = type->is_float_constant()->_f;
-     jshort hfval = StubRoutines::f2hf(fval);
+  // Convert Half float constant value to short constant value.
+  if (type->isa_half_float_constant()) {
+     jshort hfval = type->is_half_float_constant()->_f;
      return TypeInt::make(hfval);
   }
   return TypeInt::SHORT;

@@ -590,23 +590,6 @@ bool VectorNode::is_rotate_opcode(int opc) {
   }
 }
 
-bool VectorNode::is_float16_node(int opc) {
-  switch (opc) {
-  case Op_AddHF:
-  case Op_SubHF:
-  case Op_MulHF:
-  case Op_DivHF:
-  case Op_MinHF:
-  case Op_MaxHF:
-  case Op_SqrtHF:
-  case Op_FmaHF:
-  case Op_ConvF2HF:
-  case Op_ReinterpretS2HF:
-     return true;
-  default:
-     return false;
-  }
-}
 bool VectorNode::is_scalar_rotate(Node* n) {
   return is_rotate_opcode(n->Opcode());
 }

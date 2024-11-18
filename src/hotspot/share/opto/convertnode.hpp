@@ -221,7 +221,7 @@ class ReinterpretS2HFNode : public Node {
   public:
   ReinterpretS2HFNode(Node* in1) : Node(0, in1) {}
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return Type::FLOAT; }
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual uint  ideal_reg() const { return Op_RegF; }

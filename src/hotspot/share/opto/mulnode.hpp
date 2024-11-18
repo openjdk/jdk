@@ -145,15 +145,20 @@ public:
 
 //------------------------------MulHFNode---------------------------------------
 // Multiply 2 half floats
-class MulHFNode : public MulFNode {
+class MulHFNode : public MulNode {
 public:
-  MulHFNode(Node* in1, Node* in2) : MulFNode(in1, in2) {}
+  MulHFNode(Node* in1, Node* in2) : MulNode(in1, in2) {}
   virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type *mul_ring( const Type *, const Type * ) const;
+  const Type *mul_id() const { return TypeH::ONE; }
+  const Type *add_id() const { return TypeH::ZERO; }
   int add_opcode() const { return Op_AddHF; }
   int mul_opcode() const { return Op_MulHF; }
   int max_opcode() const { return Op_MaxHF; }
   int min_opcode() const { return Op_MinHF; }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  const Type *bottom_type() const { return Type::HALF_FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
 };
 
 //------------------------------MulDNode---------------------------------------
@@ -405,10 +410,13 @@ public:
 
 //------------------------------FmaHFNode-------------------------------------
 // fused-multiply-add half-precision float
-class FmaHFNode : public FmaFNode {
+class FmaHFNode : public FmaNode {
 public:
-  FmaHFNode(Node* c, Node* in1, Node* in2, Node* in3) : FmaFNode(c, in1, in2, in3) {}
+  FmaHFNode(Node* c, Node* in1, Node* in2, Node* in3) : FmaNode(c, in1, in2, in3) {}
   virtual int Opcode() const;
+  const Type* bottom_type() const { return Type::HALF_FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------MulAddS2INode----------------------------------

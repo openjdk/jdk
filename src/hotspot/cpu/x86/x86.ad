@@ -4513,6 +4513,19 @@ instruct vReplS_reg(vec dst, rRegI src) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct ReplS_imm(vec dst, immH con, rRegI rtmp) %{
+  predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate con));
+  effect(TEMP rtmp);
+  format %{ "replicateS $dst, $con" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ movl($rtmp$$Register, $con$$constant);
+    __ evpbroadcastw($dst$$XMMRegister, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct ReplS_mem(vec dst, memory mem) %{
   predicate(UseAVX >= 2 && Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (Replicate (LoadS mem)));

@@ -80,10 +80,15 @@ public:
 
 //------------------------------DivHFNode--------------------------------------
 // Half float division
-class DivHFNode : public DivFNode {
+class DivHFNode : public Node {
 public:
-  DivHFNode(Node* c, Node* dividend, Node* divisor) : DivFNode(c, dividend, divisor) {}
+  DivHFNode( Node *c, Node *dividend, Node *divisor ) : Node(c, dividend, divisor) {}
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type *bottom_type() const { return Type::HALF_FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
 };
 
 //------------------------------DivDNode---------------------------------------

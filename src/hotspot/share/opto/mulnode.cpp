@@ -545,7 +545,7 @@ Node* MulFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 //------------------------------Ideal------------------------------------------
 // Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
 Node* MulHFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeF* t2 = phase->type(in(2))->isa_float_constant();
+  const TypeH* t2 = phase->type(in(2))->isa_half_float_constant();
 
   // x * 2 -> x + x
   if (t2 != nullptr && t2->getf() == 2) {
@@ -553,6 +553,12 @@ Node* MulHFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return new AddHFNode(base, base);
   }
   return MulNode::Ideal(phase, can_reshape);
+}
+
+// Compute the product type of two double ranges into this node.
+const Type *MulHFNode::mul_ring(const Type *t0, const Type *t1) const {
+  if( t0 == Type::HALF_FLOAT || t1 == Type::HALF_FLOAT ) return Type::HALF_FLOAT;
+  return TypeH::make( t0->getf() * t1->getf() );
 }
 
 //=============================================================================
@@ -1913,6 +1919,28 @@ const Type* FmaFNode::Value(PhaseGVN* phase) const {
   float f2 = t2->getf();
   float f3 = t3->getf();
   return TypeF::make(fma(f1, f2, f3));
+#endif
+}
+
+//=============================================================================
+//------------------------------Value------------------------------------------
+const Type* FmaHFNode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type(in(1));
+  if (t1 == Type::TOP) return Type::TOP;
+  if (t1->base() != Type::HalfFloatCon) return Type::HALF_FLOAT;
+  const Type *t2 = phase->type(in(2));
+  if (t2 == Type::TOP) return Type::TOP;
+  if (t2->base() != Type::HalfFloatCon) return Type::HALF_FLOAT;
+  const Type *t3 = phase->type(in(3));
+  if (t3 == Type::TOP) return Type::TOP;
+  if (t3->base() != Type::HalfFloatCon) return Type::HALF_FLOAT;
+#ifndef __STDC_IEC_559__
+  return Type::HALF_FLOAT;
+#else
+  float f1 = t1->getf();
+  float f2 = t2->getf();
+  float f3 = t3->getf();
+  return TypeH::make(fma(f1, f2, f3));
 #endif
 }
 

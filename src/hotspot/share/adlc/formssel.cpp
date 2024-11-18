@@ -1088,7 +1088,7 @@ uint  InstructForm::reloc(FormDict &globals) {
     } else if ( oper ) {
       // floats and doubles loaded out of method's constant pool require reloc info
       Form::DataType type = oper->is_base_constant(globals);
-      if ( (type == Form::idealF) || (type == Form::idealD) ) {
+      if ( (type == Form::idealH) || (type == Form::idealF) || (type == Form::idealD) ) {
         ++reloc_entries;
       }
     }
@@ -1099,7 +1099,7 @@ uint  InstructForm::reloc(FormDict &globals) {
   // !!!!!
   // Check for any component being an immediate float or double.
   Form::DataType data_type = is_chain_of_constant(globals);
-  if( data_type==idealD || data_type==idealF ) {
+  if( data_type==idealH || data_type==idealD || data_type==idealF ) {
     reloc_entries++;
   }
 
@@ -2662,6 +2662,7 @@ void OperandForm::format_constant(FILE *fp, uint const_index, uint const_type) {
   case Form::idealN: fprintf(fp,"  if (_c%d) _c%d->dump_on(st);\n", const_index, const_index); break;
   case Form::idealL: fprintf(fp,"  st->print(\"#\" INT64_FORMAT, (int64_t)_c%d);\n", const_index); break;
   case Form::idealF: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
+  case Form::idealH: fprintf(fp,"  st->print(\"#%%d\", _c%d);\n", const_index); break;
   case Form::idealD: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
   default:
     assert( false, "ShouldNotReachHere()");
@@ -2743,6 +2744,7 @@ void OperandForm::access_constant(FILE *fp, FormDict &globals,
   case idealP: fprintf(fp,"_c%d->get_con()",const_index); break;
   case idealL: fprintf(fp,"_c%d",           const_index); break;
   case idealF: fprintf(fp,"_c%d",           const_index); break;
+  case idealH: fprintf(fp,"_c%d",           const_index); break;
   case idealD: fprintf(fp,"_c%d",           const_index); break;
   default:
     assert( false, "ShouldNotReachHere()");

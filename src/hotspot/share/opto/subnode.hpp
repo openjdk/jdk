@@ -132,10 +132,15 @@ public:
 
 //------------------------------SubHFNode--------------------------------------
 // Subtract 2 half floats
-class SubHFNode : public SubFNode {
+class SubHFNode : public SubFPNode {
 public:
-  SubHFNode(Node* in1, Node* in2) : SubFNode(in1, in2) {}
+  SubHFNode(Node* in1, Node* in2) : SubFPNode(in1, in2) {}
   virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *sub( const Type *, const Type * ) const;
+  const Type   *add_id() const { return TypeH::ZERO; }
+  const Type   *bottom_type() const { return Type::HALF_FLOAT; }
+  virtual uint  ideal_reg() const { return Op_RegF; }
 };
 
 //------------------------------CmpNode---------------------------------------
@@ -538,10 +543,16 @@ public:
 
 //------------------------------SqrtHFNode-------------------------------------
 // square root of a half-precision float
-class SqrtHFNode : public SqrtFNode {
+class SqrtHFNode : public Node {
 public:
-  SqrtHFNode(Compile* C, Node* c, Node* in1) : SqrtFNode(C, c, in1) {}
+  SqrtHFNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
+    init_flags(Flag_is_expensive);
+    C->add_expensive_node(this);
+  }
   virtual int Opcode() const;
+  const Type *bottom_type() const { return Type::HALF_FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //-------------------------------ReverseBytesINode--------------------------------
