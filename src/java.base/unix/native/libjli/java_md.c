@@ -297,6 +297,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     size_t new_runpath_size;
 #endif  /* SETENV_REQUIRED */
 
+    /* Compute/set the name of the executable */
+    SetExecname(*pargv);
+
     /* Check to see if the jvmpath exists */
     /* Find out where the JDK is that we will be using. */
     if (!GetJDKInstallRoot(jdkroot, so_jdkroot, JNI_FALSE)) {
