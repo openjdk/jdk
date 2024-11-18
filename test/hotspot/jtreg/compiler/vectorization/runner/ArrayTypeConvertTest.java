@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +34,32 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders
+ *                   -XX:-AlignVector
+ *                   compiler.vectorization.runner.ArrayTypeConvertTest
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders
+ *                   -XX:+AlignVector
+ *                   compiler.vectorization.runner.ArrayTypeConvertTest
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders
+ *                   -XX:-AlignVector
+ *                   compiler.vectorization.runner.ArrayTypeConvertTest
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders
+ *                   -XX:+AlignVector
  *                   compiler.vectorization.runner.ArrayTypeConvertTest
  *
  * @requires vm.compiler2.enabled
@@ -41,6 +68,10 @@
 package compiler.vectorization.runner;
 
 import compiler.lib.ir_framework.*;
+
+// Explanation about AlignVector: we require 8-byte alignment of all addresses.
+// But the array base offset changes with UseCompactObjectHeaders.
+// This means it affects the alignment constraints.
 
 public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
@@ -177,11 +208,19 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     // ---------------- Convert Subword-I to F/D ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = {IRNode.VECTOR_CAST_S2F, IRNode.VECTOR_SIZE + "min(max_short, max_float)", ">0"})
     public float[] convertShortToFloat() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
             res[i] = (float) shorts[i];
+            // AlignVector=true requires that all vector load/store are 8-byte aligned.
+            // F_adr = base + UNSAFE.ARRAY_FLOAT_BASE_OFFSET + 4*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 2 = 0
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 2 = 1
+            // S_adr = base + UNSAFE.ARRAY_SHORT_BASE_OFFSET + 2*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 4 = 0  -> can align both
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 4 = 2  -> cannot align both
         }
         return res;
     }
@@ -264,22 +303,38 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     // ---------------- Convert F/D to Subword-I ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE + "min(max_float, max_short)", ">0"})
     public short[] convertFloatToShort() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
             res[i] = (short) floats[i];
+            // AlignVector=true requires that all vector load/store are 8-byte aligned.
+            // F_adr = base + UNSAFE.ARRAY_FLOAT_BASE_OFFSET + 4*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 2 = 0
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 2 = 1
+            // S_adr = base + UNSAFE.ARRAY_SHORT_BASE_OFFSET + 2*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 4 = 0  -> can align both
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 4 = 2  -> cannot align both
         }
         return res;
     }
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE + "min(max_float, max_char)", ">0"})
     public char[] convertFloatToChar() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
             res[i] = (char) floats[i];
+            // AlignVector=true requires that all vector load/store are 8-byte aligned.
+            // F_adr = base + UNSAFE.ARRAY_FLOAT_BASE_OFFSET + 4*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 2 = 0
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 2 = 1
+            // S_adr = base + UNSAFE.ARRAY_SHORT_BASE_OFFSET + 2*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 4 = 0  -> can align both
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 4 = 2  -> cannot align both
         }
         return res;
     }
