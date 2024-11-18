@@ -926,9 +926,8 @@ public final class URL implements java.io.Serializable {
 
     /**
      * Returns the address of the host represented by this URL.
-     * An {@link UnknownHostException}
-     * while getting the host address will result in this method returning
-     * {@code null}
+     * An {@link UnknownHostException} while getting the host address
+     * will result in this method returning {@code null}.
      *
      * @return an {@link InetAddress} representing the host
      */
