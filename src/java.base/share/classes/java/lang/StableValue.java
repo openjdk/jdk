@@ -57,8 +57,8 @@ import java.util.function.Supplier;
  * A stable value that is <em>set</em> is treated as a constant by the JVM, enabling the
  * same performance optimizations that are available for {@code final} fields.
  * As such, stable values can be used to replace {@code final} fields in cases where
- * <em>at-most-once</em> update semantics is crucial, but where the eager initialization semantics
- * associated with {@code final} fields is too restrictive.
+ * <em>at-most-once</em> update semantics is crucial, but where the eager initialization
+ * semantics associated with {@code final} fields is too restrictive.
  * <p>
  * Consider the following example where a stable value field "{@code logger}" is an
  * immutable holder of a value of type {@code Logger} and that is initially created
@@ -89,9 +89,9 @@ import java.util.function.Supplier;
  * <p>
  * Note that the holder value can only be set at most once.
  * <p>
- * To guarantee that, even under races, only one instance of {@code Logger} is ever created, the
- * {@linkplain #computeIfUnset(Supplier) computeIfUnset()} method can be used instead,
- * where the holder is atomically and lazily computed via a lambda expression:
+ * To guarantee that, even under races, only one instance of {@code Logger} is ever
+ * created, the {@linkplain #computeIfUnset(Supplier) computeIfUnset()} method can be used
+ * instead, where the holder is atomically and lazily computed via a lambda expression:
  *
  * {@snippet lang = java:
  * class Component {
@@ -144,17 +144,17 @@ import java.util.function.Supplier;
  *         }
  *     }
  *}
- * A stable supplier encapsulates access to its backing stable value storage. This means that
- * code inside {@code Component} can obtain the logger object directly from the stable supplier,
- * without having to go through an accessor method like {@code getLogger()}.
+ * A stable supplier encapsulates access to its backing stable value storage. This means
+ * that code inside {@code Component} can obtain the logger object directly from the
+ * stable supplier, without having to go through an accessor method like {@code getLogger()}.
  * <p>
  * A <em>stable int function</em> is a function that takes an {@code int} parameter and
  * uses it to compute a result that is then cached into the backing stable value storage
  * for that parameter value. A stable int function is created via the
  * {@linkplain StableValue#ofIntFunction(int, IntFunction) StableValue.ofIntFunction()}
- * factory. Upon creation, the input range (i.e. [0, size)) is specified together with an original
- * {@linkplain IntFunction} which is invoked at most once per input value. In effect,
- * the stable int function will act like a cache for the original {@linkplain IntFunction}:
+ * factory. Upon creation, the input range (i.e. [0, size)) is specified together with
+ * an original {@linkplain IntFunction} which is invoked at most once per input value. In
+ * effect, the stable int function will act like a cache for the original {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
  *     class SqrtUtil {
@@ -389,10 +389,9 @@ public sealed interface StableValue<T>
     /**
      * {@return a new unset stable supplier}
      * <p>
-     * The returned stable {@linkplain Supplier supplier} is a caching,
-     * and lazily computed supplier that records the value of the provided {@code original}
-     * supplier upon being first accessed via the returned supplier's
-     * {@linkplain Supplier#get() get()} method.
+     * The returned {@linkplain Supplier supplier} is a caching supplier that records
+     * the value of the provided {@code original} supplier upon being first accessed via
+     * the returned supplier's {@linkplain Supplier#get() get()} method.
      * <p>
      * The provided {@code original} supplier is guaranteed to be successfully invoked
      * at most once even in a multi-threaded environment. Competing threads invoking the
@@ -414,10 +413,10 @@ public sealed interface StableValue<T>
     /**
      * {@return a new unset stable int function}
      * <p>
-     * The returned stable {@link IntFunction int function} is a caching and lazily
-     * computed int function that, for each allowed input, records the values
-     * of the provided {@code original} int function upon being first accessed via the
-     * returned int function's {@linkplain IntFunction#apply(int) apply()} method.
+     * The returned {@link IntFunction int function} is a caching int function that,
+     * for each allowed input, records the values of the provided {@code original}
+     * int function upon being first accessed via the returned int function's
+     * {@linkplain IntFunction#apply(int) apply()} method.
      * <p>
      * The provided {@code original} int function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
@@ -445,11 +444,10 @@ public sealed interface StableValue<T>
     /**
      * {@return a new unset stable function}
      * <p>
-     * The returned stable {@link Function function} is a stable caching and lazily
-     * computed function that, for each allowed input in the given set of {@code inputs},
-     * records the values of the provided {@code original} function upon being first
-     * accessed via the returned function's {@linkplain Function#apply(Object) apply()}
-     * method.
+     * The returned {@link Function function} is a caching function that, for each allowed
+     * input in the given set of {@code inputs}, records the values of the provided
+     * {@code original} function upon being first accessed via the returned function's
+     * {@linkplain Function#apply(Object) apply()} method.
      * <p>
      * The provided {@code original} function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
@@ -476,7 +474,7 @@ public sealed interface StableValue<T>
      * {@return a new unset stable list with the provided {@code size}}
      * <p>
      * The returned list is an {@linkplain Collection##unmodifiable unmodifiable} list
-     * whose size is known at construction. The stable list elements are computed via the
+     * whose size is known at construction. The list's elements are computed via the
      * provided {@code mapper} when they are first accessed
      * (e.g. via {@linkplain List#get(int) List::get}).
      * <p>
@@ -509,7 +507,7 @@ public sealed interface StableValue<T>
      * {@return a new unset stable map with the provided {@code keys}}
      * <p>
      * The returned map is an {@linkplain Collection##unmodifiable unmodifiable} map whose
-     * keys are known at construction. The stable map values are computed via the provided
+     * keys are known at construction. The map's values are computed via the provided
      * {@code mapper} when they are first accessed
      * (e.g. via {@linkplain Map#get(Object) Map::get}).
      * <p>
