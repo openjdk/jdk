@@ -2919,7 +2919,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
     __ z_lg(Z_R14, Address(Z_thread, JavaThread::saved_exception_pc_offset()));
   }
 
-  bool save_vectors = (poll_type == POLL_AT_VECTOR_LOOP);
+  bool save_vectors = (id == SharedStubId::polling_page_vectors_safepoint_handler_id);
   // Save registers, fpu state, and flags
   map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R14, save_vectors);
 
