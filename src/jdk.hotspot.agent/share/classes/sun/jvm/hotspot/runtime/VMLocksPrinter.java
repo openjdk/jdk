@@ -53,15 +53,17 @@ public class VMLocksPrinter {
                 return thread.getThreadName();
             }
         }
-        return "Unknnown thread (Might be non-Java Thread)";
+        return "Unknown thread";
     }
     public void printVMLocks() {
          int maxNum = Mutex.maxNum();
          for (int i = 0; i < maxNum; i++) {
          Mutex mutex = new Mutex(Mutex.at(i));
             if (mutex.owner() != null) {
+                sun.jvm.hotspot.runtime.Thread t = new sun.jvm.hotspot.runtime.Thread(mutex.owner());
+                int nativeThreadId = t.osThread().threadId();
                 tty.println("Internal VM Mutex " + mutex.name() + " is owned by " + ownerThreadName(mutex.owner())
-                        + " with address: " + mutex.owner());
+                        + ", nid=" + nativeThreadId + ", address=" + mutex.owner());
                }
          }
     }

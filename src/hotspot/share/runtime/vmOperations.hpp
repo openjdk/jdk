@@ -62,7 +62,7 @@ class VM_ForceSafepoint: public VM_EmptyOperation {
 
 // used by whitebox API to emulate VM issues
 // when VM can't operate and doesn't respond to jcmd
-class VM_ForceSafepointStuck: public VM_Operation {
+class VM_HangInSafepoint: public VM_Operation {
 public:
   VMOp_Type type() const { return VMOp_ForceSafepoint; }
   void doit() {
