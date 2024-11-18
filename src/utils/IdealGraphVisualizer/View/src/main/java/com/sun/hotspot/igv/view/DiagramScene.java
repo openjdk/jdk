@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,17 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         }
     };
+
+    public void colorSelectedFigures(Color color) {
+        for (Figure figure : model.getSelectedFigures()) {
+            figure.setColor(color);
+            FigureWidget figureWidget = getWidget(figure);
+            if (figureWidget != null) {
+                figureWidget.refreshColor();
+            }
+        }
+        validateAll();
+    }
 
     private Point getScrollPosition() {
         return scrollPane.getViewport().getViewPosition();
@@ -689,12 +700,19 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void doStableSeaLayout(HashSet<Figure> visibleFigures, HashSet<Connection> visibleConnections) {
-        hierarchicalStableLayoutManager.updateLayout(visibleFigures, visibleConnections);
+        boolean enable = model.getCutEdges();
+        boolean previous = hierarchicalStableLayoutManager.getCutEdges();
+        hierarchicalStableLayoutManager.setCutEdges(enable);
+        if (enable != previous) {
+            hierarchicalStableLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
+        } else {
+            hierarchicalStableLayoutManager.updateLayout(visibleFigures, visibleConnections);
+        }
     }
 
     private void doSeaLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
         HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-        manager.setMaxLayerLength(10);
+        manager.setCutEdges(model.getCutEdges());
         manager.doLayout(new LayoutGraph(edges, figures));
         hierarchicalStableLayoutManager.setShouldRedrawLayout(true);
     }
@@ -702,7 +720,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private void doClusteredLayout(HashSet<Connection> edges) {
         HierarchicalClusterLayoutManager m = new HierarchicalClusterLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
         HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-        manager.setMaxLayerLength(9);
+        manager.setCutEdges(model.getCutEdges());
         manager.setMinLayerDifference(3);
         m.setManager(manager);
         m.setSubManager(new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS));
@@ -713,7 +731,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         Diagram diagram = getModel().getDiagram();
         HierarchicalCFGLayoutManager m = new HierarchicalCFGLayoutManager();
         HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-        manager.setMaxLayerLength(9);
+        manager.setCutEdges(model.getCutEdges());
         manager.setMinLayerDifference(1);
         manager.setLayoutSelfEdges(true);
         manager.setXOffset(25);

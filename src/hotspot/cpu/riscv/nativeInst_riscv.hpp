@@ -124,12 +124,9 @@ class NativeCall: private NativeInstruction {
  public:
 
   static int byte_size() {
-    if (UseTrampolines) {
-      return NativeInstruction::instruction_size; // jal
-    } else {
-      return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
-    }
+    return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
   }
+
   // Creation
   friend NativeCall* nativeCall_at(address addr);
   friend NativeCall* nativeCall_before(address return_address);

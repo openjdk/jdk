@@ -39,8 +39,6 @@ import java.lang.reflect.AccessFlag;
 import java.lang.reflect.AnnotatedElement;
 import java.net.URI;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -64,14 +62,12 @@ import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
-import jdk.internal.module.ModuleBootstrap.IllegalNativeAccess;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.Resources;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.Stable;
-import sun.security.util.SecurityConstants;
 
 /**
  * Represents a run-time module, either {@link #isNamed() named} or unnamed.
@@ -195,22 +191,9 @@ public final class Module implements AnnotatedElement {
     /**
      * Returns the {@code ClassLoader} for this module.
      *
-     * <p> If there is a security manager then its {@code checkPermission}
-     * method if first called with a {@code RuntimePermission("getClassLoader")}
-     * permission to check that the caller is allowed to get access to the
-     * class loader. </p>
-     *
      * @return The class loader for this module
-     *
-     * @throws SecurityException
-     *         If denied by the security manager
      */
     public ClassLoader getClassLoader() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-        }
         return loader;
     }
 
@@ -1564,7 +1547,6 @@ public final class Module implements AnnotatedElement {
     // cached class file with annotations
     private volatile Class<?> moduleInfoClass;
 
-    @SuppressWarnings("removal")
     private Class<?> moduleInfoClass() {
         Class<?> clazz = this.moduleInfoClass;
         if (clazz != null)
@@ -1574,8 +1556,7 @@ public final class Module implements AnnotatedElement {
             clazz = this.moduleInfoClass;
             if (clazz == null) {
                 if (isNamed()) {
-                    PrivilegedAction<Class<?>> pa = this::loadModuleInfoClass;
-                    clazz = AccessController.doPrivileged(pa);
+                    clazz = loadModuleInfoClass();
                 }
                 if (clazz == null) {
                     class DummyModuleInfo { }
@@ -1689,9 +1670,8 @@ public final class Module implements AnnotatedElement {
      * with the name "{@code META-INF/MANIFEST.MF}" is never encapsulated
      * because "{@code META-INF}" is not a legal package name. </p>
      *
-     * <p> This method returns {@code null} if the resource is not in this
-     * module, the resource is encapsulated and cannot be located by the caller,
-     * or access to the resource is denied by the security manager. </p>
+     * <p> This method returns {@code null} if the resource is not in this module
+     * or the resource is encapsulated and cannot be located by the caller. </p>
      *
      * @param  name
      *         The resource name

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,13 @@
  * @test
  * @bug 8235459
  * @summary Confirm that HttpRequest.BodyPublishers#ofFile(Path)
- *          works with changing permissions
- *          policy 1: no custom permission
- *          policy 2: custom permission for test classes
- *          policy 3: custom permission for test classes and httpclient
+ *          works as expected
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        SecureZipFSProvider
- * @run testng/othervm/java.security.policy=FilePublisherPermsTest1.policy FilePublisherPermsTest
- * @run testng/othervm/java.security.policy=FilePublisherPermsTest2.policy FilePublisherPermsTest
- * @run testng/othervm/java.security.policy=FilePublisherPermsTest3.policy FilePublisherPermsTest
+ * @run testng/othervm FilePublisherPermsTest
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -48,12 +40,9 @@ import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.FileNotFoundException;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -67,7 +56,6 @@ import java.nio.file.Path;
 import java.security.*;
 import java.util.Map;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -126,26 +114,8 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
             throws Exception {
         out.printf("\n\n--- testDefaultFs(%s, %s): starting\n",
                 uriString, path);
-
-        if (System.getSecurityManager() != null) {
-            changePerms(path.toString(), "read,write,delete");
-            // Should not throw
-            BodyPublisher bodyPublisher = BodyPublishers.ofFile(path);
-            // Restrict permissions
-            changePerms(path.toString(), "delete");
-            try {
-                BodyPublishers.ofFile(path);
-                fail();
-            } catch (SecurityException e) {
-                out.println("Caught expected: " + e);
-            }
-            try {
-                send(uriString, bodyPublisher);
-                fail();
-            } catch (SecurityException e) {
-                out.println("Caught expected: " + e);
-            }
-        }
+        BodyPublisher bodyPublisher = BodyPublishers.ofFile(path);
+        send(uriString, bodyPublisher);
     }
 
     // Zip File system set up
@@ -187,44 +157,14 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
     @Test(dataProvider = "zipFsData")
     public void testZipFs(String uriString, Path path) throws Exception {
         out.printf("\n\n--- testZipFsCustomPerm(%s, %s): starting\n", uriString, path);
-        if (System.getSecurityManager() != null) {
-            changePerms(path.toString(), "read,write,delete");
-
-            // Custom permission not sufficiently granted, expected to fail
-            if (!policyFile.contains("FilePublisherPermsTest3")) {
-                try {
-                    BodyPublishers.ofFile(path);
-                    fail();
-                } catch (SecurityException e) {
-                    out.println("Caught expected: " + e);
-                    return;
-                }
-            } else {
-                BodyPublisher bodyPublisher = BodyPublishers.ofFile(path);
-                send(uriString, bodyPublisher);
-                // Restrict permissions
-                changePerms(path.toString(), "delete");
-                try {
-                    BodyPublishers.ofFile(path);
-                    fail();
-                } catch (SecurityException e) {
-                    out.println("Caught expected: " + e);
-                }
-                try {
-                    send(uriString, bodyPublisher);
-                    fail();
-                } catch (SecurityException e) {
-                    out.println("Caught expected: " + e);
-                }
-            }
-        }
+        BodyPublisher bodyPublisher = BodyPublishers.ofFile(path);
+        send(uriString, bodyPublisher);
     }
 
     @Test
     public void testFileNotFound() throws Exception {
         out.printf("\n\n--- testFileNotFound(): starting\n");
         var zipPath = Path.of("fileNotFound.zip");
-        changePerms(zipPath.toString(), "read,write,delete");
         try (FileSystem fs = newZipFs(zipPath)) {
             Path fileInZip = zipFsFile(fs);
             Files.deleteIfExists(fileInZip);
@@ -234,7 +174,6 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
             out.println("Caught expected: " + e);
         }
         var path = Path.of("fileNotFound.txt");
-        changePerms(path.toString(), "read,write,delete");
         try {
             Files.deleteIfExists(path);
             BodyPublishers.ofFile(path);
@@ -256,36 +195,6 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
         client.send(req, HttpResponse.BodyHandlers.discarding());
     }
 
-    private void changePerms(String path, String actions) {
-        Policy.setPolicy(new CustomPolicy(
-                new FilePermission(path, actions)
-        ));
-    }
-
-    static class CustomPolicy extends Policy {
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-        final PermissionCollection perms = new Permissions();
-
-        CustomPolicy(Permission... permissions) {
-            java.util.Arrays.stream(permissions).forEach(perms::add);
-        }
-
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return perms;
-        }
-
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return perms;
-        }
-
-        public boolean implies(ProtectionDomain domain, Permission perm) {
-            // Ignore any existing permissions for test files
-            return perm.getName().equals(defaultFsPath.toString())
-                    || perm.getName().equals(zipFsPath.toString())
-                    ? perms.implies(perm)
-                    : perms.implies(perm) || DEFAULT_POLICY.implies(domain, perm);
-        }
-    }
 
     static class HttpEchoHandler implements HttpServerAdapters.HttpTestHandler {
         @Override
@@ -301,9 +210,6 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        policyFile = System.getProperty("java.security.policy");
-        out.println(policyFile);
-
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
