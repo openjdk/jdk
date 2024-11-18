@@ -706,10 +706,10 @@ void ShenandoahOldGeneration::prepare_for_mixed_collections_after_global_gc() {
                _old_heuristics->coalesce_and_fill_candidates_count());
 }
 
-void ShenandoahOldGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
+void ShenandoahOldGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
   // Iterate over old and free regions (exclude young).
   ShenandoahExcludeRegionClosure<YOUNG_GENERATION> exclude_cl(cl);
-  ShenandoahGeneration::parallel_region_iterate_free(&exclude_cl);
+  ShenandoahGeneration::parallel_heap_region_iterate_free(&exclude_cl);
 }
 
 void ShenandoahOldGeneration::set_parsable(bool parsable) {
