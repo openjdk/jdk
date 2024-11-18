@@ -108,51 +108,51 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <dl>
  *   <dt><a id="def_language"><b>language</b></a></dt>
- *   <dd>- ISO 639 alpha-2/alpha-3 language code or a registered
+ *   <dd> ISO 639 alpha-2/alpha-3 language code or a registered
  *   language subtag up to 8 alpha letters (for future enhancements).
  *   When a language has both an alpha-2 code and an alpha-3 code, the
  *   alpha-2 code must be used.</dd>
  *
- *   <dd>- <em>Case convention:</em> {@code language} is case insensitive, but
+ *   <dd> <em>Case convention:</em> {@code language} is case insensitive, but
  *   {@code Locale} always canonicalizes to lower case.</dd>
  *
- *   <dd>- <em>Syntax:</em> Well-formed {@code language} values have the form {@code [a-zA-Z]{2,8}}.
+ *   <dd> <em>Syntax:</em> Well-formed {@code language} values have the form {@code [a-zA-Z]{2,8}}.
  *   BCP 47 deviation: this is not the full BCP 47 language production, since it excludes
  *   <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.2">extlang</a>
  *   (as modern three-letter language codes are preferred).</dd>
  *
- *   <dd>- <em>Example:</em> "en" (English), "ja" (Japanese), "kok" (Konkani)</dd>
+ *   <dd> <em>Example:</em> "en" (English), "ja" (Japanese), "kok" (Konkani)</dd>
  *
  *   <dt><a id="def_script"><b>script</b></a></dt>
  *
- *   <dd>- ISO 15924 alpha-4 script code.</dd>
+ *   <dd> ISO 15924 alpha-4 script code.</dd>
  *
- *   <dd>- <em>Case convention:</em> {@code script} is case insensitive, but
+ *   <dd> <em>Case convention:</em> {@code script} is case insensitive, but
  *   {@code Locale} always canonicalizes to title case (the first
  *   letter is upper case and the rest of the letters are lower
  *   case).</dd>
  *
- *   <dd>- <em>Syntax:</em> Well-formed {@code script} values have the form {@code
+ *   <dd> <em>Syntax:</em> Well-formed {@code script} values have the form {@code
  *   [a-zA-Z]{4}}</dd>
  *
- *   <dd>- <em>Example:</em> "Latn" (Latin), "Cyrl" (Cyrillic)</dd>
+ *   <dd> <em>Example:</em> "Latn" (Latin), "Cyrl" (Cyrillic)</dd>
  *
  *   <dt><a id="def_region"><b>country (region)</b></a></dt>
  *
- *   <dd>- ISO 3166 alpha-2 country code or UN M.49 numeric-3 area code.</dd>
+ *   <dd> ISO 3166 alpha-2 country code or UN M.49 numeric-3 area code.</dd>
  *
- *   <dd>- <em>Case convention:</em> {@code country (region)} is case insensitive, but
+ *   <dd> <em>Case convention:</em> {@code country (region)} is case insensitive, but
  *   {@code Locale} always canonicalizes to upper case.</dd>
  *
- *   <dd>- <em>Syntax:</em> Well-formed {@code country (region)} values have the form {@code
+ *   <dd> <em>Syntax:</em> Well-formed {@code country (region)} values have the form {@code
  *   [a-zA-Z]{2} | [0-9]{3}}</dd>
  *
- *   <dd>- <em>Example:</em> "US" (United States), "FR" (France), "029"
+ *   <dd> <em>Example:</em> "US" (United States), "FR" (France), "029"
  *   (Caribbean)</dd>
  *
  *   <dt><a id="def_variant"><b>variant</b></a></dt>
  *
- *   <dd>- Any arbitrary value used to indicate a variation of a
+ *   <dd> Any arbitrary value used to indicate a variation of a
  *   {@code Locale}. When multiple variants exist, they should be ordered with
  *   higher importance values preceding the others. BCP 47 deviation:
  *   BCP 47 subtags are strictly used to indicate
@@ -167,36 +167,36 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   language, is supported by extension subtags or private use
  *   subtags.</dd>
  *
- *   <dd>- <em>Case convention:</em> {@code variant} is case sensitive. BCP 47
+ *   <dd> <em>Case convention:</em> {@code variant} is case sensitive. BCP 47
  *   deviation: BCP 47 treats the variant field as case insensitive.</dd>
  *
- *   <dd>- <em>Syntax:</em> Well-formed {@code variant} values have the form {@code
+ *   <dd> <em>Syntax:</em> Well-formed {@code variant} values have the form {@code
  *   SUBTAG (('_'|'-') SUBTAG)*} where {@code SUBTAG =
  *   [0-9][0-9a-zA-Z]{3} | [0-9a-zA-Z]{5,8}}. BCP 47 deviation: BCP 47 only
  *   uses hyphen ('-') as a delimiter, {@code Locale} is more lenient.</dd>
  *
- *   <dd>- <em>Example:</em> "polyton" (Polytonic Greek), "POSIX"</dd>
+ *   <dd> <em>Example:</em> "polyton" (Polytonic Greek), "POSIX"</dd>
  *
  *   <dt><a id="def_extensions"><b>extensions</b></a></dt>
  *
- *   <dd>- A map from single character keys to string values, indicating
+ *   <dd> A map from single character keys to string values, indicating
  *   extensions apart from language identification. BCP 47 deviation: The {@code
  *   extensions} in {@code Locale} implement the semantics and syntax of BCP 47
  *   extension subtags <em>and</em> private use subtags. The {@code extensions}
  *   field cannot have empty values. </dd>
  *
- *   <dd>- <em>Case convention:</em> {@code extensions} are
+ *   <dd> <em>Case convention:</em> {@code extensions} are
  *   case insensitive, but {@code Locale} canonicalizes all
  *   extension keys and values to lower case.</dd>
  *
- *   <dd>- <em>Syntax:</em> Well-formed keys are single characters from the set
+ *   <dd> <em>Syntax:</em> Well-formed keys are single characters from the set
  *   {@code [0-9a-zA-Z]}.  Well-formed values have the form
  *   {@code SUBTAG ('-' SUBTAG)*} where for the key 'x'
  *   {@code SUBTAG = [0-9a-zA-Z]{1,8}} and for other keys
  *   {@code SUBTAG = [0-9a-zA-Z]{2,8}} (that is, 'x' allows
  *   single-character subtags).</dd>
  *
- *   <dd>- <em>Example:</em> key="u"/value="ca-japanese" (Japanese Calendar),
+ *   <dd> <em>Example:</em> key="u"/value="ca-japanese" (Japanese Calendar),
  *   key="x"/value="java-1-7"</dd>
  * </dl>
  *
