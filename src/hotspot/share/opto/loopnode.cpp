@@ -6877,7 +6877,7 @@ ConNode* PhaseIdealLoop::integercon(jlong l, BasicType bt) {
   return node;
 }
 
-ConNode *PhaseIdealLoop::zerocon(BasicType bt) {
+ConNode* PhaseIdealLoop::zerocon(BasicType bt) {
   ConNode* node = _igvn.zerocon(bt);
   set_root_as_ctrl(node);
   return node;
