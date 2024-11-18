@@ -941,9 +941,8 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
   va_end(ap);
   JavaThread* THREAD = JavaThread::current();
   if (is_hotspot()) {
-    Handle h_loader = Handle();
-    Handle h_protection_domain = Handle();
-    Exceptions::_throw_msg(THREAD, file, line, vmSymbols::jdk_vm_ci_common_JVMCIError(), msg, h_loader, h_protection_domain);
+    Handle h_loader;
+    Exceptions::_throw_msg(THREAD, file, line, vmSymbols::jdk_vm_ci_common_JVMCIError(), msg, h_loader );
   } else {
     JNIAccessMark jni(this, THREAD);
     jni()->ThrowNew(JNIJVMCI::JVMCIError::clazz(), msg);
