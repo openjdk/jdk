@@ -87,8 +87,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -146,24 +144,14 @@ public final class LWCToolkit extends LWToolkit {
     static {
         System.err.flush();
 
-        @SuppressWarnings({"removal", "restricted"})
-        ResourceBundle platformResources = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<ResourceBundle>() {
-            @Override
-            public ResourceBundle run() {
-                ResourceBundle platformResources = null;
-                try {
-                    platformResources = ResourceBundle.getBundle("sun.awt.resources.awtosx");
-                } catch (MissingResourceException e) {
-                    // No resource file; defaults will be used.
-                }
+        ResourceBundle platformResources = null;
+        try {
+            platformResources = ResourceBundle.getBundle("sun.awt.resources.awtosx");
+        } catch (MissingResourceException e) {
+            // No resource file; defaults will be used.
+        }
 
-                System.loadLibrary("awt");
-                System.loadLibrary("fontmanager");
-
-                return platformResources;
-            }
-        });
+        loadLibrary();
 
         if (!GraphicsEnvironment.isHeadless() &&
             !PlatformGraphicsInfo.isInAquaSession())
@@ -178,32 +166,28 @@ public final class LWCToolkit extends LWToolkit {
         }
     }
 
+    @SuppressWarnings("restricted")
+    private static void loadLibrary() {
+        System.loadLibrary("awt");
+        System.loadLibrary("fontmanager");
+    }
+
     /*
      * If true  we operate in normal mode and nested runloop is executed in JavaRunLoopMode
      * If false we operate in singleThreaded FX/AWT interop mode and nested loop uses NSDefaultRunLoopMode
      */
-    @SuppressWarnings("removal")
     private static final boolean inAWT
-            = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-        @Override
-        public Boolean run() {
-            return !Boolean.parseBoolean(
+            = !Boolean.parseBoolean(
                     System.getProperty("javafx.embed.singleThread", "false"));
-        }
-    });
 
-    @SuppressWarnings("removal")
     public LWCToolkit() {
         final String extraButtons = "sun.awt.enableExtraMouseButtons";
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             areExtraMouseButtonsEnabled =
                  Boolean.parseBoolean(System.getProperty(extraButtons, "true"));
             //set system property if not yet assigned
-            System.setProperty(extraButtons, ""+areExtraMouseButtonsEnabled);
+            System.setProperty(extraButtons, "" + areExtraMouseButtonsEnabled);
             initAppkit(ThreadGroupUtils.getRootThreadGroup(),
                        GraphicsEnvironment.isHeadless());
-            return null;
-        });
     }
 
     /*
@@ -254,13 +238,9 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     // This is only called from native code.
-    @SuppressWarnings("removal")
     static void systemColorsChanged() {
         EventQueue.invokeLater(() -> {
-            AccessController.doPrivileged( (PrivilegedAction<Object>) () -> {
                 AWTAccessor.getSystemColorAccessor().updateSystemColors();
-                return null;
-            });
         });
     }
 
@@ -592,13 +572,9 @@ public final class LWCToolkit extends LWToolkit {
     private static final String APPKIT_THREAD_NAME = "AppKit Thread";
 
     // Intended to be called from the LWCToolkit.m only.
-    @SuppressWarnings("removal")
     private static void installToolkitThreadInJava() {
         Thread.currentThread().setName(APPKIT_THREAD_NAME);
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            Thread.currentThread().setContextClassLoader(null);
-            return null;
-        });
+        Thread.currentThread().setContextClassLoader(null);
     }
 
     @Override
