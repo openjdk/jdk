@@ -499,9 +499,9 @@ Sign the predefined application image (on macOS):
 
 ## jpackage and jlink
 
-jpackage will use jlink to create Java Runtime unless `--runtime-image` option is used.
-On Windows created Java Runtime image will include MS runtime libraries bundled with the JDK.
-If a different version of MS runtime libraries are needed for the application, the user will need
+jpackage will use jlink to create Java Runtime unless the `--runtime-image` option is used.
+The created Java Runtime image on Windows will include MS runtime libraries bundled with the JDK.
+If MS runtime libraries of a different version are needed for the application, the user will need
 to add/replace those themselves.
 
 
