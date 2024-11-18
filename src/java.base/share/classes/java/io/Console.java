@@ -657,7 +657,6 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         });
     }
 
-    @SuppressWarnings("removal")
     private static Console instantiateConsole() {
         Console c = null;
 
@@ -684,7 +683,6 @@ public sealed class Console implements Flushable permits ProxyingConsole {
                 }
             }
         } catch (ServiceConfigurationError _) {
-            c = null;
         }
 
         // If not found, default to built-in Console

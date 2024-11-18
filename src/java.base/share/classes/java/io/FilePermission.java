@@ -181,7 +181,7 @@ public final class FilePermission extends Permission implements Serializable {
     private static final java.nio.file.FileSystem builtInFS =
         DefaultFileSystemProvider.theFileSystem();
 
-    private static final Path here = builtInFS.getPath(System.getProperty("user.dir"));
+    private static final Path here = builtInFS.getPath(jdk.internal.util.StaticProperty.userDir());
 
     private static final Path EMPTY_PATH = builtInFS.getPath("");
     private static final Path DASH_PATH = builtInFS.getPath("-");
