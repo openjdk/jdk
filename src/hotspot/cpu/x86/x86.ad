@@ -4513,6 +4513,7 @@ instruct vReplS_reg(vec dst, rRegI src) %{
   ins_pipe( pipe_slow );
 %}
 
+#ifdef _LP64
 instruct ReplS_imm(vec dst, immH con, rRegI rtmp) %{
   predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (Replicate con));
@@ -4525,6 +4526,7 @@ instruct ReplS_imm(vec dst, immH con, rRegI rtmp) %{
   %}
   ins_pipe( pipe_slow );
 %}
+#endif
 
 instruct ReplS_mem(vec dst, memory mem) %{
   predicate(UseAVX >= 2 && Matcher::vector_element_basic_type(n) == T_SHORT);

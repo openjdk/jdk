@@ -560,6 +560,12 @@ const jfloat min_jfloat = jfloat_cast(min_jintFloat);
 const jint max_jintFloat = (jint)(0x7f7fffff);
 const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 
+const jshort max_jfloat16 = 31743;
+const jshort min_jfloat16 = 1;
+const jshort one_jfloat16 = 15360;
+const jshort pos_inf_jfloat16 = 31744;
+const jshort neg_inf_jfloat16 = -1024;
+
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions
 

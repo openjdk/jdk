@@ -468,12 +468,12 @@ void Type::Initialize_shared(Compile* current) {
   TypeF::POS_INF = TypeF::make(jfloat_cast(POSITIVE_INFINITE_F));
   TypeF::NEG_INF = TypeF::make(-jfloat_cast(POSITIVE_INFINITE_F));
 
-  TypeH::MAX = TypeH::make(max_jfloat); // HalfFloat MAX
-  TypeH::MIN = TypeH::make(min_jfloat); // HalfFloat MIN
-  TypeH::ZERO = TypeH::make(0.0f); // HalfFloat 0 (positive zero)
-  TypeH::ONE  = TypeH::make(1.0f); // HalfFloat 1
-  TypeH::POS_INF = TypeH::make(jfloat_cast(POSITIVE_INFINITE_F));
-  TypeH::NEG_INF = TypeH::make(-jfloat_cast(POSITIVE_INFINITE_F));
+  TypeH::MAX = TypeH::make(max_jfloat16); // HalfFloat MAX
+  TypeH::MIN = TypeH::make(min_jfloat16); // HalfFloat MIN
+  TypeH::ZERO = TypeH::make((jshort)0); // HalfFloat 0 (positive zero)
+  TypeH::ONE  = TypeH::make(one_jfloat16); // HalfFloat 1
+  TypeH::POS_INF = TypeH::make(pos_inf_jfloat16);
+  TypeH::NEG_INF = TypeH::make(neg_inf_jfloat16);
 
   TypeD::MAX = TypeD::make(max_jdouble); // Double MAX
   TypeD::MIN = TypeD::make(min_jdouble); // Double MIN
