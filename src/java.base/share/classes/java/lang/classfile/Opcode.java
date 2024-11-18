@@ -117,7 +117,7 @@ public enum Opcode {
     ICONST_5(RawBytecodeHelper.ICONST_5, 1, Kind.CONSTANT),
 
     /**
-     * Push {@link TypeKind#LONG long} constant {@code 0}.
+     * Push {@link TypeKind#LONG long} constant {@code 0L}.
      *
      * @jvms 6.5.lconst_l <em>lconst_&lt;l&gt;</em>
      * @see ConstantInstruction.IntrinsicConstantInstruction
@@ -125,7 +125,7 @@ public enum Opcode {
     LCONST_0(RawBytecodeHelper.LCONST_0, 1, Kind.CONSTANT),
 
     /**
-     * Push {@link TypeKind#LONG long} constant {@code 1}.
+     * Push {@link TypeKind#LONG long} constant {@code 1L}.
      *
      * @jvms 6.5.lconst_l <em>lconst_&lt;l&gt;</em>
      * @see ConstantInstruction.IntrinsicConstantInstruction
@@ -133,7 +133,7 @@ public enum Opcode {
     LCONST_1(RawBytecodeHelper.LCONST_1, 1, Kind.CONSTANT),
 
     /**
-     * Push {@link TypeKind#FLOAT float} constant {@code 0}.
+     * Push {@link TypeKind#FLOAT float} constant {@code 0.0F}.
      *
      * @jvms 6.5.fconst_f <em>fconst_&lt;f&gt;</em>
      * @see ConstantInstruction.IntrinsicConstantInstruction
@@ -141,7 +141,7 @@ public enum Opcode {
     FCONST_0(RawBytecodeHelper.FCONST_0, 1, Kind.CONSTANT),
 
     /**
-     * Push {@link TypeKind#FLOAT float} constant {@code 1}.
+     * Push {@link TypeKind#FLOAT float} constant {@code 1.0F}.
      *
      * @jvms 6.5.fconst_f <em>fconst_&lt;f&gt;</em>
      * @see ConstantInstruction.IntrinsicConstantInstruction
@@ -149,7 +149,7 @@ public enum Opcode {
     FCONST_1(RawBytecodeHelper.FCONST_1, 1, Kind.CONSTANT),
 
     /**
-     * Push {@link TypeKind#FLOAT float} constant {@code 2}.
+     * Push {@link TypeKind#FLOAT float} constant {@code 2.0F}.
      *
      * @jvms 6.5.fconst_f <em>fconst_&lt;f&gt;</em>
      * @see ConstantInstruction.IntrinsicConstantInstruction
@@ -157,7 +157,7 @@ public enum Opcode {
     FCONST_2(RawBytecodeHelper.FCONST_2, 1, Kind.CONSTANT),
 
     /**
-     * Push {@link TypeKind#DOUBLE double} constant {@code 0}.
+     * Push {@link TypeKind#DOUBLE double} constant {@code 0.0D}.
      *
      * @jvms 6.5.dconst_d <em>dconst_&lt;d&gt;</em>
      * @see ConstantInstruction.IntrinsicConstantInstruction
@@ -165,7 +165,7 @@ public enum Opcode {
     DCONST_0(RawBytecodeHelper.DCONST_0, 1, Kind.CONSTANT),
 
     /**
-     * Push {@link TypeKind#DOUBLE double} constant {@code 1}.
+     * Push {@link TypeKind#DOUBLE double} constant {@code 1.0D}.
      *
      * @jvms 6.5.dconst_d <em>dconst_&lt;d&gt;</em>
      * @see ConstantInstruction.IntrinsicConstantInstruction
