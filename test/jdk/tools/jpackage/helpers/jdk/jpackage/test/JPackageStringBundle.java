@@ -44,7 +44,7 @@ public enum JPackageStringBundle {
     }
 
     /**
-     * Gets a string for the given key from jpackage resources.
+     * Return a string value of the given key from jpackage resources.
      */
     private String getString(String key) {
         try {
