@@ -88,12 +88,11 @@ public class ImagingLib {
 
     static {
 
-        boolean success;
+        boolean success = false;
         try {
             System.loadLibrary("mlib_image");
             success = init();
         } catch (UnsatisfiedLinkError e) {
-            success = false;
         }
 
         useLib = Boolean.valueOf(success);
