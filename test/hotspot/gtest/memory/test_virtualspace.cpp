@@ -371,7 +371,7 @@ class TestReservedSpace : AllStatic {
     ReservedSpace rs(size,            // size
                      alignment,       // alignment
                      page_size,       // page size
-                     (char *)nullptr, // requested_address
+                     (char*)nullptr,  // requested_address
                      mtTest);         // NMT memory tag
 
     EXPECT_TRUE(rs.base() != nullptr);

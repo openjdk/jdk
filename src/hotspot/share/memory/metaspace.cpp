@@ -593,7 +593,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   if (result == nullptr) {
     // Fallback: reserve anywhere
     log_debug(metaspace, map)("Trying anywhere...");
-    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
+    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false, mtAllocated);
   }
 
   // Wrap resulting range in ReservedSpace
@@ -602,7 +602,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     log_debug(metaspace, map)("Mapped at " PTR_FORMAT, p2i(result));
     assert(is_aligned(result, Metaspace::reserve_alignment()), "Alignment too small for metaspace");
     rs = ReservedSpace::space_for_range(result, size, Metaspace::reserve_alignment(),
-                                                      os::vm_page_size(), false, false, mtAllocated);
+                                                      os::vm_page_size(), false, false, mtMetaspace);
   } else {
     log_debug(metaspace, map)("Failed to map.");
     rs = ReservedSpace();

@@ -453,7 +453,7 @@ class os: AllStatic {
   static char*  reserve_memory(size_t bytes, bool executable, MemTag mem_tag);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
-  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable, MemTag mem_tag);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
