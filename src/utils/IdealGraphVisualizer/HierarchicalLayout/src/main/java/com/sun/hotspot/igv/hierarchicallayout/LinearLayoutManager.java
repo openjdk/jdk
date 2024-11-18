@@ -40,6 +40,9 @@ public class LinearLayoutManager implements LayoutManager {
     }
 
     @Override
+    public void setCutEdges(boolean enable) {}
+
+    @Override
     public void doLayout(LayoutGraph graph) {
         doLayout(graph, new HashSet<>());
     }
