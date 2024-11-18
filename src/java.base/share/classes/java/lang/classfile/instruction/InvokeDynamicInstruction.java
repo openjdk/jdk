@@ -24,10 +24,12 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.InvokeDynamicEntry;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
@@ -44,18 +46,41 @@ import jdk.internal.classfile.impl.Util;
  * Models an {@link Opcode#INVOKEDYNAMIC invokedynamic} instruction in the {@code
  * code} array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually, an {@code invokedynamic} instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="InvokeDynamicInstruction" target="CodeBuilder#invokedynamic(DynamicCallSiteDesc)" :
+ * InvokeDynamicInstruction(DynamicCallSiteDesc) // @link substring="DynamicCallSiteDesc" target="#invokedynamic()"
+ * }
+ * <p>
+ * Physically, an {@code invokedynamic} instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="InvokeDynamicInstruction" target="#of" :
+ * InvokeDynamicInstruction(Opcode, InvokeDynamicEntry) // @link substring="InvokeDynamicEntry" target="#invokedynamic()"
+ * }
+ * where the {@code Opcode} is always {@code invokedynamic}.
  *
+ * @see CodeBuilder#invokedynamic CodeBuilder::invokedynamic
+ * @jvms 6.5.invokedynamic <em>invokedynamic</em>
  * @since 24
  */
 public sealed interface InvokeDynamicInstruction extends Instruction
         permits AbstractInstruction.BoundInvokeDynamicInstruction, AbstractInstruction.UnboundInvokeDynamicInstruction {
     /**
      * {@return an {@link InvokeDynamicEntry} describing the call site}
+     *
+     * @apiNote
+     * A symbolic descriptor for the dynamically-computed call site is available
+     * through {@link InvokeDynamicEntry#asSymbol() invokedynamic().asSymbol()}.
      */
     InvokeDynamicEntry invokedynamic();
 
     /**
      * {@return the invocation name of the call site}
+     *
+     * @apiNote
+     * A string value for the invocation name is available through {@link
+     * Utf8Entry#stringValue() name().stringValue()}.
      */
     default Utf8Entry name() {
         return invokedynamic().name();
@@ -63,6 +88,10 @@ public sealed interface InvokeDynamicInstruction extends Instruction
 
     /**
      * {@return the invocation type of the call site}
+     *
+     * @apiNote
+     * A symbolic descriptor for the invocation typeis available through {@link
+     * #typeSymbol() typeSymbol()}.
      */
     default Utf8Entry type() {
         return invokedynamic().type();

@@ -40,6 +40,27 @@ import jdk.internal.classfile.impl.Util;
  * instruction in the {@code code} array of a {@code Code} attribute.  Corresponding
  * opcodes have a {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#TYPE_CHECK}.
  * Delivered as a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * An {@code instanceof} checks the type and pushes a value to the operand stack.
+ * A {@code checkcast} checks the type and throws a {@link ClassCastException} if
+ * the check fails.
+ * <p>
+ * Conceptually, a type check instruction is a record:
+ * {@snippet lang=text :
+ * // @link region substring="TypeCheckInstruction" target="#of(Opcode, ClassDesc)"
+ * // @link substring="Opcode" target="#opcode" :
+ * TypeCheckInstruction(Opcode, ClassDesc) // @link substring="ClassDesc" target="#type"
+ * // @end
+ * }
+ * where the {@code ClassDesc} is not primitive.
+ * <p>
+ * Physically, a type check instruction is a record:
+ * {@snippet lang=text :
+ * // @link region substring="TypeCheckInstruction" target="#of(Opcode, ClassEntry)"
+ * // @link substring="Opcode" target="#opcode" :
+ * TypeCheckInstruction(Opcode, ClassEntry) // @link substring="ClassEntry" target="#type"
+ * // @end
+ * }
  *
  * @since 24
  */
@@ -48,7 +69,11 @@ public sealed interface TypeCheckInstruction extends Instruction
                 AbstractInstruction.UnboundTypeCheckInstruction {
 
     /**
-     * {@return the type against which the instruction checks or casts}
+     * {@return the type against which the instruction checks}
+     *
+     * @apiNote
+     * A symbolic descriptor for the type checked is available through {@link
+     * ClassEntry#asSymbol() type().asSymbol()}.
      */
     ClassEntry type();
 

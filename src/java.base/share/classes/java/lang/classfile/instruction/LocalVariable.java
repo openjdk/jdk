@@ -25,10 +25,12 @@
 package java.lang.classfile.instruction;
 
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Label;
 import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.attribute.LocalVariableInfo;
 import java.lang.classfile.attribute.LocalVariableTableAttribute;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
@@ -43,9 +45,48 @@ import jdk.internal.classfile.impl.Util;
  * {@link LocalVariableTableAttribute}.  Delivered as a {@link CodeElement}
  * during traversal of the elements of a {@link CodeModel}, according to
  * the setting of the {@link ClassFile.DebugElementsOption} option.
+ * <p>
+ * Conceptually, a local variable table entry is a record:
+ * {@snippet lang=text :
+ * // @link region=0 substring="LocalVariable" target="#of(int, String, ClassDesc, Label, Label)"
+ * // @link region=1 substring="int slot" target="#slot"
+ * // @link region=2 substring="String name" target="#name"
+ * // @link region=3 substring="ClassDesc type" target="#typeSymbol"
+ * // @link substring="Label startScope" target="#startScope" :
+ * LocalVariable(int slot, String name, ClassDesc type, Label startScope, Label endScope) // @link substring="Label endScope" target="#endScope"
+ * // @end region=0
+ * // @end region=1
+ * // @end region=2
+ * // @end region=3
+ * }
+ * Where {@code type} must be non-{@code void}.
+ * <p>
+ * Physically, a local variable table entry modeled by a {@link LocalVariableInfo}.
+ * It is a record:
+ * {@snippet lang=text :
+ * // @link region=0 substring="LocalVariable" target="#of(int, Utf8Entry, Utf8Entry, Label, Label)"
+ * // @link region=1 substring="int slot" target="#slot"
+ * // @link region=2 substring="Utf8Entry name" target="#name"
+ * // @link region=3 substring="Utf8Entry type" target="#type"
+ * // @link substring="Label startScope" target="#startScope" :
+ * LocalVariable(Label startScope, Label endScope, Utf8Entry name, Utf8Entry type, int slot) // @link substring="Label endScope" target="#endScope"
+ * // @end region=0
+ * // @end region=1
+ * // @end region=2
+ * // @end region=3
+ * }
+ * Where the {@code endScope} is encoded as a nonnegative bci offset to
+ * {@code startScope}, a bci value.
  *
- * @see PseudoInstruction
+ * @apiNote
+ * Local variable table entries are used for all local variables in Java source
+ * code.  If a local variable has a parameterized type, a type argument, or an
+ * array type of one of the previous types, a local variable type table entry is
+ * created for that local variable as well.
  *
+ * @see LocalVariableTableAttribute
+ * @see LocalVariableInfo
+ * @see CodeBuilder#localVariable CodeBuilder::localVariable
  * @since 24
  */
 public sealed interface LocalVariable extends PseudoInstruction
@@ -57,11 +98,19 @@ public sealed interface LocalVariable extends PseudoInstruction
 
     /**
      * {@return the local variable name}
+     *
+     * @apiNote
+     * A string value for the name is available through {@link
+     * Utf8Entry#stringValue() name().stringValue()}.
      */
     Utf8Entry name();
 
     /**
-     * {@return the local variable field descriptor}
+     * {@return the local variable field descriptor string}
+     *
+     * @apiNote
+     * A symbolic descriptor for the type of the local variable is available
+     * through {@link #typeSymbol() typeSymbol()}.
      */
     Utf8Entry type();
 

@@ -37,6 +37,14 @@ import jdk.internal.classfile.impl.Util;
  * {@code Code} attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
  * {@link Opcode.Kind#STACK}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually and physically, a stack manipulation instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="StackInstruction" target="#of" :
+ * StackInstruction(Opcode) // @link substring="Opcode" target="#opcode()"
+ * }
+ * All attributes of stack manipulation instructions are intrinsic to the
+ * opcode.
  *
  * @since 24
  */

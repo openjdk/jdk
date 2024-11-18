@@ -24,13 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.Instruction;
-import java.lang.classfile.Label;
-import java.lang.classfile.Opcode;
+import java.lang.classfile.*;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
@@ -41,10 +35,29 @@ import jdk.internal.classfile.impl.Util;
  * {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#BRANCH}.  Delivered as
  * a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  * <p>
- * A branch instruction may be rewritten in a {@link CodeBuilder} if the {@link
- * #target() target} cannot be encoded and the {@link ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS
- * FIX_SHORT_JUMPS} option is set.
+ * Conceptually, a branch instruction is a record:
+ * {@snippet lang=text :
+ * // @link region substring="BranchInstruction" target="#of"
+ * // @link substring="Opcode" target="#opcode()" :
+ * BranchInstruction(Opcode, Label) // @link substring="Label" target="#target()"
+ * // @end
+ * }
+ * where the {@code Opcode} is of the branch kind.
+ * <p>
+ * Physically, a branch instruction has the same structure; however, some types
+ * of instructions use a {@code s2} to encode the target, which is insufficient
+ * to encode targets with bci offsets less than {@code -32768} or greater than
+ * {@code 32767}.  Such instructions have a {@linkplain Opcode#sizeIfFixed()
+ * size} of {@code 3} bytes.
+ * <p>
+ * In such cases, if the {@link ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS
+ * FIX_SHORT_JUMPS} option is set, a {@link CodeBuilder} will convert this
+ * instruction to other instructions to achieve the same effect.  Otherwise,
+ * {@link ClassFile.ShortJumpsOption#FAIL_ON_SHORT_JUMPS FAIL_ON_SHORT_JUMPS}
+ * option can ensure the physical accuracy of the generated {@code class} file
+ * and fail if an exact representation is not possible.
  *
+ * @see CodeBuilder#branch CodeBuilder::branch
  * @since 24
  */
 public sealed interface BranchInstruction extends Instruction

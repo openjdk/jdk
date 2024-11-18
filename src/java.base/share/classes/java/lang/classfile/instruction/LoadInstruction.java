@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -39,7 +40,35 @@ import jdk.internal.classfile.impl.Util;
  * {@code Code} attribute.  Corresponding opcodes have a {@linkplain
  * Opcode#kind() kind} of {@link Opcode.Kind#LOAD}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually, a local variable load instruction is a record:
+ * {@snippet lang=text :
+ * // @link region substring="LoadInstruction" target="#of(TypeKind, int)"
+ * // @link substring="TypeKind" target="#typeKind" :
+ * LoadInstruction(TypeKind, int slot) // @link substring="int slot" target="#slot"
+ * // @end
+ * }
+ * where the {@code TypeKind} is {@linkplain TypeKind##computational-type
+ * computational}.  Multiple instructions, such as {@code aload_0}, {@code
+ * aload 0}, and {@code wide aload 0}, may match such a record, but they
+ * are functionally equivalent.
+ * <p>
+ * Physically, load variable instructions are polymorphic, discriminated by
+ * their opcode:
+ * {@snippet lang=text :
+ * LoadInstruction(Opcode) // @link substring="Opcode" target="#opcode"
+ * // @link region substring="LoadInstruction" target="#of(Opcode, int)"
+ * // @link substring="Opcode" target="#opcode" :
+ * LoadInstruction(Opcode, int slot) // @link substring="int slot" target="#slot"
+ * // @end
+ * }
+ * the first form requires the {@code slot} to be intrinsic to the {@code Opcode};
+ * such opcodes have an {@linkplain Opcode#sizeIfFixed() instruction size} of {@code 1}.
+ * Otherwise, the {@code slot} must be compatible with the {@code Opcode}, such
+ * that if the opcode is not {@linkplain Opcode#isWide() wide}, the {@code slot}
+ * must be no greater than {@code 255}.
  *
+ * @see CodeBuilder#loadLocal CodeBuilder::loadLocal
  * @since 24
  */
 public sealed interface LoadInstruction extends Instruction

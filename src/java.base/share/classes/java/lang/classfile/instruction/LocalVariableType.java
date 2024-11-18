@@ -24,12 +24,8 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.Label;
-import java.lang.classfile.PseudoInstruction;
-import java.lang.classfile.Signature;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.attribute.LocalVariableTypeTableAttribute;
 import java.lang.classfile.constantpool.Utf8Entry;
 
@@ -42,7 +38,48 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
  * LocalVariableTypeTableAttribute}.  Delivered as a {@link CodeElement} during
  * traversal of the elements of a {@link CodeModel}, according to the setting of
  * the {@link ClassFile.DebugElementsOption} option.
+ * <p>
+ * Conceptually, a local variable type table entry is a record:
+ * {@snippet lang=text :
+ * // @link region=0 substring="LocalVariableType" target="#of(int, String, Signature, Label, Label)"
+ * // @link region=1 substring="int slot" target="#slot"
+ * // @link region=2 substring="String name" target="#name"
+ * // @link region=3 substring="Signature signature" target="#signatureSymbol"
+ * // @link substring="Label startScope" target="#startScope" :
+ * LocalVariableType(int slot, String name, Signature signature, Label startScope, Label endScope) // @link substring="Label endScope" target="#endScope"
+ * // @end region=0
+ * // @end region=1
+ * // @end region=2
+ * // @end region=3
+ * }
+ * Where {@code signature} must be non-{@code void}.
+ * <p>
+ * Physically, a local variable type table entry modeled by a {@link LocalVariableTypeInfo}.
+ * It is a record:
+ * {@snippet lang=text :
+ * // @link region=0 substring="LocalVariableType" target="#of(int, Utf8Entry, Utf8Entry, Label, Label)"
+ * // @link region=1 substring="int slot" target="#slot"
+ * // @link region=2 substring="Utf8Entry name" target="#name"
+ * // @link region=3 substring="Utf8Entry signature" target="#signature"
+ * // @link substring="Label startScope" target="#startScope" :
+ * LocalVariableType(Label startScope, Label endScope, Utf8Entry name, Utf8Entry signature, int slot) // @link substring="Label endScope" target="#endScope"
+ * // @end region=0
+ * // @end region=1
+ * // @end region=2
+ * // @end region=3
+ * }
+ * Where the {@code endScope} is encoded as a nonnegative bci offset to
+ * {@code startScope}, a bci value.
  *
+ * @apiNote
+ * Local variable type table entry is used if a local variable has a parameterized
+ * type, a type argument, or an array type of one of the previous types as its type.
+ * A local variable table entry with the erased type should still be created for
+ * that local variable.
+ *
+ * @see LocalVariableTypeTableAttribute
+ * @see LocalVariableTypeInfo
+ * @see CodeBuilder#localVariableType CodeBuilder::localVariableType
  * @since 24
  */
 public sealed interface LocalVariableType extends PseudoInstruction
@@ -54,16 +91,24 @@ public sealed interface LocalVariableType extends PseudoInstruction
 
     /**
      * {@return the local variable name}
+     *
+     * @apiNote
+     * A string value for the name is available through {@link
+     * Utf8Entry#stringValue() name().stringValue()}.
      */
     Utf8Entry name();
 
     /**
-     * {@return the local variable signature}
+     * {@return the local variable generic signature string}
+     *
+     * @apiNote
+     * A symbolic generic signature of the local variable is available
+     * through {@link #signatureSymbol() signatureSymbol()}.
      */
     Utf8Entry signature();
 
     /**
-     * {@return the local variable signature}
+     * {@return the local variable generic signature}
      */
     default Signature signatureSymbol() {
         return Signature.parseFrom(signature().stringValue());

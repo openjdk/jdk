@@ -38,6 +38,13 @@ import jdk.internal.classfile.impl.Util;
  * {@code Code} attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
  * {@link Opcode.Kind#OPERATOR}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually and physically, an operator instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="OperatorInstruction" target="#of" :
+ * OperatorInstruction(Opcode) // @link substring="Opcode" target="#opcode()"
+ * }
+ * The {@link #typeKind() typeKind()} attribute is intrinsic to the opcode.
  *
  * @since 24
  */
@@ -51,7 +58,7 @@ public sealed interface OperatorInstruction extends Instruction
     /**
      * {@return an operator instruction}
      *
-     * @param op the opcode for the specific type of array load instruction,
+     * @param op the opcode for the specific type of operator instruction,
      *           which must be of kind {@link Opcode.Kind#OPERATOR}
      * @throws IllegalArgumentException if the opcode kind is not
      *         {@link Opcode.Kind#OPERATOR}.

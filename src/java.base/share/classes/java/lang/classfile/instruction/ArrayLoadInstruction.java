@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -38,15 +39,34 @@ import jdk.internal.classfile.impl.Util;
  * attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind}
  * of {@link Opcode.Kind#ARRAY_LOAD}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually, an array load instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="ArrayLoadInstruction" target="CodeBuilder#arrayLoad(TypeKind)" :
+ * ArrayLoadInstruction(TypeKind) // @link substring="TypeKind" target="#typeKind()"
+ * }
+ * where the {@code TypeKind} is not {@link TypeKind#BOOLEAN boolean} or
+ * {@link TypeKind#VOID void}.  Boolean arrays use the {@link TypeKind#BYTE
+ * byte} kind instruction.
+ * <p>
+ * Physically, an array load instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="ArrayLoadInstruction" target="#of(Opcode)" :
+ * ArrayLoadInstruction(Opcode) // @link substring="Opcode" target="#opcode()"
+ * }
+ * where the {@code Opcode} is of the array load kind.  The component type of
+ * the array is intrinsic to the opcode.
  *
+ * @see CodeBuilder#arrayLoad CodeBuilder::arrayLoad
  * @since 24
  */
 public sealed interface ArrayLoadInstruction extends Instruction
         permits AbstractInstruction.UnboundArrayLoadInstruction {
     /**
-     * {@return the component type of the array} The {@link TypeKind#BYTE byte}
+     * {@return the component type of the array}  The {@link TypeKind#BYTE byte}
      * type load instruction {@link Opcode#BALOAD baload} also operates on
-     * {@link TypeKind#BOOLEAN boolean} arrays.
+     * {@link TypeKind#BOOLEAN boolean} arrays, so this never returns
+     * {@code boolean}.
      */
     TypeKind typeKind();
 

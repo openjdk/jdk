@@ -24,41 +24,65 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.Instruction;
-import java.lang.classfile.Label;
-import java.lang.classfile.Opcode;
+import java.lang.classfile.*;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models instruction discontinued from the {@code code} array of a {@code Code}
- * attribute. Delivered as a {@link CodeElement} when traversing the elements of
- * a {@link CodeModel}.
+ * Marker interface for instruction discontinued from the {@code code} array of
+ * a {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
+ * the elements of a {@link CodeModel}.
+ *
+ * @apiNote
+ * While most instructions have convenience factory methods in {@link
+ * CodeBuilder}, discontinued instructions can only be supplied to code builders
+ * explicitly with {@link CodeBuilder#with CodeBuilder::with} to discourage
+ * their use.
  *
  * @jvms 4.9.1 Static Constraints
- *
  * @sealedGraph
  * @since 24
  */
 public sealed interface DiscontinuedInstruction extends Instruction {
 
     /**
-     * Models {@link Opcode#JSR jsr} and {@link Opcode#JSR_W jsr_w} instructions
-     * discontinued from the {@code code} array of a {@code Code} attribute since
-     * class file major version {@value ClassFile#JAVA_7_VERSION} (JVMS {@jvms 4.9.1}).
-     * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
-     * {@link Opcode.Kind#DISCONTINUED_JSR}.  Delivered as a {@link CodeElement}
-     * when traversing the elements of a {@link CodeModel}.
+     * Models jump subroutine instructions discontinued from the {@code code}
+     * array of a {@code Code} attribute since class file major version {@value
+     * ClassFile#JAVA_7_VERSION} (JVMS {@jvms 4.9.1}).  Corresponding opcodes
+     * have a {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#DISCONTINUED_JSR}.
+     * Delivered as a {@link CodeElement} when traversing the elements of a
+     * {@link CodeModel}.
      * <p>
-     * A {@code jsr} instruction may be rewritten in a {@link CodeBuilder} if the {@link #target()
-     * target} cannot be encoded and the {@link ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS
-     * FIX_SHORT_JUMPS} option is set.
+     * Conceptually, a jump subroutine instruction is a record:
+     * {@snippet lang=text :
+     * // @link substring="JsrInstruction" target="#of(Label)" :
+     * JsrInstruction(Label) // @link substring="Label" target="#target()"
+     * }
+     * <p>
+     * Physically, a jump subroutine instruction is a record:
+     * {@snippet lang=text :
+     * // @link region substring="JsrInstruction" target="#of(Opcode, Label)"
+     * // @link substring="Opcode" target="#opcode()" :
+     * JsrInstruction(Opcode, Label) // @link substring="Label" target="#target()"
+     * // @end
+     * }
+     * where the {@code Opcode} must be {@link Opcode#JSR jsr} or {@link
+     * Opcode#JSR_W jsr_w}.  However, {@code jsr} only uses a {@code s2} to
+     * encode its target, which is insufficient to encode targets with bci
+     * offsets less than {@code -32768} or greater than {@code 32767}.
+     * <p>
+     * In such cases, if the {@link ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS
+     * FIX_SHORT_JUMPS} option is set, a {@link CodeBuilder} will convert a
+     * {@code jsr} instruction to a {@code jsr_w} instruction to achieve the
+     * same effect.  Otherwise, {@link ClassFile.ShortJumpsOption#FAIL_ON_SHORT_JUMPS
+     * FAIL_ON_SHORT_JUMPS} option can ensure the physical accuracy of the
+     * generated {@code class} file and fail if an exact representation is not
+     * possible.
+     * <p>
+     * {@link StoreInstruction astore} series of instructions can operate on the
+     * {@code returnAddress} type from jump subroutine instructions.
      *
      * @since 24
      */
@@ -67,18 +91,18 @@ public sealed interface DiscontinuedInstruction extends Instruction {
                     AbstractInstruction.UnboundJsrInstruction {
 
         /**
-         * {@return the target of the JSR instruction}
+         * {@return the target of the jump subroutine instruction}
          */
         Label target();
 
         /**
-         * {@return a JSR instruction}
+         * {@return a jump subroutine instruction}
          *
          * @apiNote
          * The explicit {@code op} argument allows creating {@code jsr_w}
          * instructions to avoid {@code target} overflow.
          *
-         * @param op the opcode for the specific type of JSR instruction,
+         * @param op the opcode for the specific type of jump subroutine instruction,
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_JSR}
          * @param target target label of the subroutine
          * @throws IllegalArgumentException if the opcode kind is not
@@ -90,7 +114,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
         }
 
         /**
-         * {@return a JSR instruction}
+         * {@return a jump subroutine instruction}
          *
          * @param target target label of the subroutine
          */
@@ -100,12 +124,32 @@ public sealed interface DiscontinuedInstruction extends Instruction {
     }
 
     /**
-     * Models {@link Opcode#RET ret} and {@link Opcode#RET_W wide ret} instructions
-     * discontinued from the {@code code} array of a {@code Code} attribute since
-     * class file major version {@value ClassFile#JAVA_7_VERSION} (JVMS {@jvms 4.9.1}).
+     * Models return from subroutine instructions discontinued from the {@code
+     * code} array of a {@code Code} attribute since class file major version
+     * {@value ClassFile#JAVA_7_VERSION} (JVMS {@jvms 4.9.1}).
      * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
      * {@link Opcode.Kind#DISCONTINUED_RET}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
+     * <p>
+     * Conceptually, a return from subroutine instruction is a record:
+     * {@snippet lang=text :
+     * // @link substring="RetInstruction" target="#of(int)" :
+     * RetInstruction(int slot) // @link substring="int slot" target="#slot()"
+     * }
+     * where the {@code slot}, a local variable slot, has a {@code returnAddress}
+     * computational type previously stored by an {@link StoreInstruction astore}
+     * instruction.
+     * <p>
+     * Physically, a return from subroutine instruction is a record:
+     * {@snippet lang=text :
+     * // @link region substring="RetInstruction" target="#of(Opcode, int)"
+     * // @link substring="Opcode" target="#opcode()" :
+     * RetInstruction(Opcode, int slot) // @link substring="int slot" target="#slot()"
+     * // @end
+     * }
+     * where the {@code Opcode} must be {@link Opcode#RET ret} or {@link
+     * Opcode#RET_W wide ret}.  In addition, if {@code slot} is greater than 255,
+     * {@code Opcode} must be {@code wide ret}.
      *
      * @since 24
      */
@@ -119,14 +163,14 @@ public sealed interface DiscontinuedInstruction extends Instruction {
         int slot();
 
         /**
-         * {@return a RET instruction}
+         * {@return a return from subroutine instruction}
          *
          * @apiNote
          * The explicit {@code op} argument allows creating {@code wide ret}
          * instructions with {@code slot} in the range of regular {@code ret}
          * instructions.
          *
-         * @param op the opcode for the specific type of RET instruction,
+         * @param op the opcode for the specific type of return from subroutine instruction,
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_RET}
          * @param slot the local variable slot to load return address from
          * @throws IllegalArgumentException if the opcode kind is not
@@ -138,7 +182,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
         }
 
         /**
-         * {@return a RET instruction}
+         * {@return a return from subroutine instruction}
          *
          * @param slot the local variable slot to load return address from
          * @throws IllegalArgumentException if {@code slot} is out of range

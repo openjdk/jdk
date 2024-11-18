@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -39,7 +40,24 @@ import jdk.internal.classfile.impl.Util;
  * {@code Code} attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
  * {@link Opcode.Kind#RETURN}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually, a return-from-method instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="ReturnInstruction" target="#of(TypeKind)" :
+ * ReturnInstruction(TypeKind) // @link substring="TypeKind" target="#typeKind()"
+ * }
+ * where the {@code TypeKind} is {@linkplain TypeKind##computational-type
+ * computational} or {@link TypeKind#VOID void}.
+ * <p>
+ * Physically, an return-from-method instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="ReturnInstruction" target="#of(Opcode)" :
+ * ReturnInstruction(Opcode) // @link substring="Opcode" target="#opcode()"
+ * }
+ * where the {@code Opcode} is of the return kind.  The computational type
+ * type of the instruction is intrinsic to the opcode.
  *
+ * @see CodeBuilder#return_(TypeKind) CodeBuilder::return_
  * @since 24
  */
 public sealed interface ReturnInstruction extends Instruction

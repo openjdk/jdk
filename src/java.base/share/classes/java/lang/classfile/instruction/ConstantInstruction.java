@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -44,7 +45,19 @@ import jdk.internal.classfile.impl.Util;
  * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of {@link
  * Opcode.Kind#CONSTANT}.  Delivered as a {@link CodeElement} when traversing
  * the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually, a constant-load instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="ConstantInstruction" target="CodeBuilder#loadConstant(ConstantDesc)" :
+ * ConstantInstruction(ConstantDesc) // @link substring="ConstantDesc" target="#constantValue()"
+ * }
+ * The {@linkplain #typeKind() computational type} is derived from the {@code
+ * ConstantDesc}.
+ * <p>
+ * Physically, a constant-load instruction is polymorphic; nested interfaces in
+ * this interface model different constant instructions as records.
  *
+ * @see CodeBuilder#loadConstant(ConstantDesc) CodeBuilder::loadConstant
  * @sealedGraph
  * @since 24
  */
@@ -65,6 +78,18 @@ public sealed interface ConstantInstruction extends Instruction {
      * the constant value in its opcode. Examples include {@link
      * Opcode#ACONST_NULL aconst_null} and {@link
      * Opcode#ICONST_0 iconst_0}.
+     * <p>
+     * Conceptually, an intrinsic constant instruction is a record:
+     * {@snippet lang=text :
+     * // @link substring="IntrinsicConstantInstruction" target="#ofIntrinsic" :
+     * IntrinsicConstantInstruction(Opcode) // @link substring="Opcode" target="#opcode()"
+     * }
+     * where the {@code Opcode} is of the constant kind and has a fixed size
+     * of 1.  The constant value and the computational type are intrinsic to
+     * the {@code Opcode}.
+     * <p>
+     * Physically, an intrinsic constant instruction is the same as its
+     * conceptual representation.
      *
      * @since 24
      */
@@ -81,7 +106,22 @@ public sealed interface ConstantInstruction extends Instruction {
      * Models an "argument constant" instruction, which encodes the
      * constant value in the instruction directly. Includes {@link
      * Opcode#BIPUSH bipush} and {@link Opcode#SIPUSH sipush} instructions.
+     * <p>
+     * Physically, an argument constant instruction is a record:
+     * {@snippet lang=text :
+     * // @link region substring="ArgumentConstantInstruction" target="#ofArgument"
+     * // @link substring="Opcode" target="#opcode()" :
+     * ArgumentConstantInstruction(Opcode, int) // @link substring="int" target="#constantValue()"
+     * // @end
+     * }
+     * where the {@code Opcode} is either {@code bipush} or {@code sipush}.
+     * The {@code int} must be in the range of {@code byte} for {@code bipush},
+     * and in the range of {@code short} for {@code sipush}.  The {@linkplain
+     * #typeKind() computational type} is trivially {@code int}.
      *
+     * @see CodeBuilder#loadConstant(int) CodeBuilder::loadConstant(int)
+     * @see CodeBuilder#bipush CodeBuilder::bipush
+     * @see CodeBuilder#sipush CodeBuilder::sipush
      * @since 24
      */
     sealed interface ArgumentConstantInstruction extends ConstantInstruction
@@ -99,10 +139,39 @@ public sealed interface ConstantInstruction extends Instruction {
 
     /**
      * Models a "load constant" instruction, which encodes the
-     * constant value in the constant pool. Includes {@link
+     * constant value in the constant pool.  Includes {@link
      * Opcode#LDC ldc} and {@link Opcode#LDC_W ldc_w}, and
      * {@link Opcode#LDC2_W ldc2_w} instructions.
+     * <p>
+     * Conceptually, besides the more generic record for all constant-load
+     * instructions, a load constant instruction are these records:
+     * {@snippet lang=text :
+     * // @link substring="LoadConstantInstruction" target="CodeBuilder#ldc(ConstantDesc)" :
+     * LoadConstantInstruction(ConstantDesc) // @link substring="ConstantDesc" target="#constantValue()"
+     * // @link substring="LoadConstantInstruction" target="CodeBuilder#ldc(LoadableConstantEntry)" :
+     * LoadConstantInstruction(LoadableConstantEntry) // @link substring="LoadableConstantEntry" target="#constantEntry()"
+     * }
+     * <p>
+     * Note that though both the generic constant-load record and the "load
+     * constant" record holds a {@code ConstantDesc}, the physical representation
+     * for the generic instruction may be more optimized, avoiding extra constant
+     * pool entries and using smaller instructions.
+     * <p>
+     * Physically, a load constant instruction is a record:
+     * {@snippet lang=text :
+     * // @link region substring="LoadConstantInstruction" target="#ofLoad"
+     * // @link substring="Opcode" target="#opcode()" :
+     * LoadConstantInstruction(Opcode, LoadableConstantEntry) // @link substring="LoadableConstantEntry" target="#constantEntry()"
+     * // @end
+     * }
+     * where the {@code Opcode} must be {@code ldc} or {@code ldc_w} if the
+     * entry is not of {@code long} or {@code double} types, or it must be
+     * {@code ldc2_w} if the entry is of {@code long} or {@code double} type.
+     * Additionally, {@code ldc} cannot be used if the {@linkplain
+     * LoadableConstantEntry#index() index} of the {@code LoadableConstantEntry}
+     * is not in the range of {@code [0, 255]}.
      *
+     * @see CodeBuilder#ldc(LoadableConstantEntry) CodeBuilder::ldc
      * @since 24
      */
     sealed interface LoadConstantInstruction extends ConstantInstruction

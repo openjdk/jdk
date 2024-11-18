@@ -25,9 +25,11 @@
 package java.lang.classfile.instruction;
 
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.attribute.LineNumberInfo;
 import java.lang.classfile.attribute.LineNumberTableAttribute;
 
 import jdk.internal.classfile.impl.LineNumberImpl;
@@ -37,9 +39,22 @@ import jdk.internal.classfile.impl.LineNumberImpl;
  * {@link LineNumberTableAttribute}.  Delivered as a {@link CodeElement}
  * during traversal of the elements of a {@link CodeModel}, according to
  * the setting of the {@link ClassFile.LineNumbersOption} option.
+ * <p>
+ * Conceptually, a line number entry is a record:
+ * {@snippet lang=text :
+ * // @link substring="LineNumber" target="#of" :
+ * LineNumber(int line) // @link substring="int line" target="#line"
+ * }
+ * <p>
+ * Physically, a line number entry is a different record of {@code (Label, int line)};
+ * it is modeled by a {@link LineNumberInfo}.
  *
- * @see PseudoInstruction
+ * @apiNote
+ * Line numbers are represented with custom pseudo-instructions to avoid using
+ * labels, which usually indicate branching targets for the control flow.
  *
+ * @see LineNumberInfo
+ * @see CodeBuilder#lineNumber CodeBuilder::lineNumber
  * @since 24
  */
 public sealed interface LineNumber extends PseudoInstruction

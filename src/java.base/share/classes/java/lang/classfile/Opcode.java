@@ -1290,7 +1290,7 @@ public enum Opcode {
     GOTO(RawBytecodeHelper.GOTO, 3, Kind.BRANCH),
 
     /**
-     * Jump subroutine (discontinued); last used in major version {@value
+     * (Discontinued) Jump subroutine; last used in major version {@value
      * ClassFile#JAVA_6_VERSION}.
      *
      * @see DiscontinuedInstruction.JsrInstruction
@@ -1300,7 +1300,7 @@ public enum Opcode {
     JSR(RawBytecodeHelper.JSR, 3, Kind.DISCONTINUED_JSR),
 
     /**
-     * Return from subroutine (discontinued); last used in major version
+     * (Discontinued) Return from subroutine; last used in major version
      * {@value ClassFile#JAVA_6_VERSION}.
      *
      * @see DiscontinuedInstruction.RetInstruction
@@ -1522,7 +1522,7 @@ public enum Opcode {
     GOTO_W(RawBytecodeHelper.GOTO_W, 5, Kind.BRANCH),
 
     /**
-     * Jump subroutine (wide index) (discontinued); last used in major
+     * (Discontinued) Jump subroutine (wide index); last used in major
      * version {@value ClassFile#JAVA_6_VERSION}.
      *
      * @see DiscontinuedInstruction.JsrInstruction
@@ -1623,8 +1623,9 @@ public enum Opcode {
     ASTORE_W((RawBytecodeHelper.WIDE << 8) | RawBytecodeHelper.ASTORE, 4, Kind.STORE),
 
     /**
-     * Return from subroutine (wide index) (discontinued); last used in major
+     * (Discontinued) Return from subroutine (wide index) last used in major
      * version {@value ClassFile#JAVA_6_VERSION}.
+     * This is a {@linkplain #isWide() wide}-modified pseudo-opcode.
      *
      * @see DiscontinuedInstruction.RetInstruction
      * @jvms 4.9.1 Static Constraints
@@ -1635,6 +1636,7 @@ public enum Opcode {
 
     /**
      * Increment local variable by constant (wide index).
+     * This is a {@linkplain #isWide() wide}-modified pseudo-opcode.
      *
      * @jvms 6.5.wide <em>wide</em>
      * @jvms 6.5.iinc <em>iinc</em>

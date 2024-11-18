@@ -24,11 +24,13 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
+import java.lang.classfile.constantpool.ClassEntry;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 
@@ -36,7 +38,23 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * Models a {@link Opcode#NEWARRAY newarray} instruction in the {@code code}
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually, a {@code newarray} instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="NewPrimitiveArrayInstruction" target="#of" :
+ * NewPrimitiveArrayInstruction(TypeKind) // @link substring="TypeKind" target="#typeKind"
+ * }
+ * where the {@code TypeKind} is primitive and not {@code void}.
+ * <p>
+ * Physically, a {@code newarray} instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="NewPrimitiveArrayInstruction" target="#of" :
+ * NewPrimitiveArrayInstruction(Opcode.NEWARRAY, int code) // @link substring="int code" target="TypeKind#newarrayCode()"
+ * }
+ * where the code is a valid new array code.
  *
+ * @see CodeBuilder#newarray CodeBuilder::newarray
+ * @jvms 6.5.newarray <em>newarray</em>
  * @since 24
  */
 public sealed interface NewPrimitiveArrayInstruction extends Instruction
@@ -44,6 +62,10 @@ public sealed interface NewPrimitiveArrayInstruction extends Instruction
                 AbstractInstruction.UnboundNewPrimitiveArrayInstruction {
     /**
      * {@return the component type of the array}
+     *
+     * @apiNote
+     * The backing array code for this instruction is available through
+     * {@link TypeKind#newarrayCode() typeKind().newarrayCode()}.
      */
     TypeKind typeKind();
 

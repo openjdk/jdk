@@ -31,8 +31,13 @@ import java.lang.classfile.instruction.*;
 import jdk.internal.classfile.impl.AbstractInstruction;
 
 /**
- * Models an executable instruction in the {@code code} array of the {@link CodeAttribute Code}
- * attribute of a method.
+ * Models an executable instruction in the {@code code} array of the {@link
+ * CodeAttribute Code} attribute of a method.
+ * <p>
+ * Physically, instructions are discriminated unions identified by thier {@link
+ * #opcode() opcode()}.  The exact type of the instruction can be identified
+ * from {@link Opcode#kind() Opcode::kind}.  {@link #sizeInBytes() sizeInBytes()}
+ * indicates the exact size of such a discriminated union.
  *
  * @sealedGraph
  * @since 24

@@ -29,12 +29,27 @@ import java.lang.classfile.Label;
 import jdk.internal.classfile.impl.AbstractInstruction;
 
 /**
- * Models a single case in a {@code lookupswitch} or {@code tableswitch}
- * instruction.
+ * Models a single case in a {@link LookupSwitchInstruction lookupswitch} or
+ * {@link TableSwitchInstruction tableswitch} instruction.
+ * <p>
+ * Conceptually, a switch case is a record:
+ * {@snippet lang=text :
+ * // @link region substring="SwitchCase" target="#of"
+ * // @link substring="Label target" target="#target" :
+ * SwitchCase(int caseValue, Label target) // @link substring="int caseValue" target="#caseValue"
+ * // @end
+ * }
+ * <p>
+ * Physically, a switch case is represented differently in a {@code lookupswitch}
+ * versus in a {@code tableswitch}.  In a {@code lookupswitch}, a switch case
+ * is as its conceptual representation, a tuple of lookup key and jump target.
+ * A {@code tableswitch} instead knows a {@link TableSwitchInstruction#lowValue
+ * lowValue}, and the lookup value of the case is implicitly {@code lowValue
+ * + index}, where {@code index} is the index of the case into the array of
+ * cases.
  *
  * @see LookupSwitchInstruction
  * @see TableSwitchInstruction
- *
  * @since 24
  */
 public sealed interface SwitchCase
@@ -47,11 +62,10 @@ public sealed interface SwitchCase
     Label target();
 
     /**
-     * Create a {@linkplain SwitchCase}
+     * {@return a new switch case}
      *
      * @param caseValue the integer value for the case
      * @param target the branch target for the case
-     * @return the {@linkplain SwitchCase}
      */
     static SwitchCase of(int caseValue, Label target) {
         return new AbstractInstruction.SwitchCaseImpl(caseValue, target);

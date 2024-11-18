@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -39,7 +40,30 @@ import jdk.internal.classfile.impl.Util;
  * {@code Code} attribute, such as {@link Opcode#I2L i2l}.  Corresponding opcodes
  * have a {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#CONVERT}.
  * Delivered as a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually, a primitive conversion instruction is a record:
+ * {@snippet lang=text :
+ * // @link region substring="ConvertInstruction" target="#of(TypeKind, TypeKind)" :
+ * // @link substring="TypeKind fromType" target="#fromType" :
+ * ConvertInstruction(TypeKind fromType, TypeKind toType) // @link substring="TypeKind toType" target="#toType"
+ * // @end
+ * }
+ * where these conversions are valid:
+ * <ul>
+ * <li>Between {@code int}, {@code long}, {@code float}, and {@code double}, where
+ * {@code fromType != toType};
+ * <li>From {@code int} to {@code byte}, {@code char}, and {@code short}.
+ * </ul>
+ * <p>
+ * Physically, a primitive conversion instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="ConvertInstruction" target="#of(Opcode)" :
+ * ConvertInstruction(Opcode opcode) // @link substring="Opcode" target="#opcode"
+ * }
+ * where the {@code Opcode} is of the convert kind.  The {@code fromType} and
+ * {@code toType} are intrinsic to the {@code Opcode}.
  *
+ * @see CodeBuilder#conversion CodeBuilder::conversion
  * @since 24
  */
 public sealed interface ConvertInstruction extends Instruction
@@ -55,20 +79,16 @@ public sealed interface ConvertInstruction extends Instruction
     TypeKind toType();
 
     /**
-     * {@return a conversion instruction} The valid conversions are:
+     * {@return a conversion instruction}  Valid conversions are:
      * <ul>
-     * <li>{@code fromType} and {@code toType} are both one of {@link TypeKind#INT
-     * int}, {@link TypeKind#LONG long}, {@link TypeKind#FLOAT float}, {@link
-     * TypeKind#DOUBLE double}, and {@code fromType} is different than {@code toType};
-     * <li>{@code fromType} is {@code int}, and {@code toType} is one of
-     * {@link TypeKind#BYTE byte}, {@link TypeKind#SHORT short}, or {@link
-     * TypeKind#CHAR char}.
+     * <li>Between {@code int}, {@code long}, {@code float}, and {@code double},
+     * where {@code fromType != toType};
+     * <li>From {@code int} to {@code byte}, {@code char}, and {@code short}.
      * </ul>
      *
      * @param fromType the type to convert from
      * @param toType the type to convert to
-     * @throws IllegalArgumentException if there is no single instruction
-     *         converting {@code from} to {@code to}
+     * @throws IllegalArgumentException if this is not a valid conversion
      */
     static ConvertInstruction of(TypeKind fromType, TypeKind toType) {
         return of(BytecodeHelpers.convertOpcode(fromType, toType));

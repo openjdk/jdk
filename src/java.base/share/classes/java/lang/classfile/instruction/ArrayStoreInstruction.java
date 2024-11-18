@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -38,15 +39,34 @@ import jdk.internal.classfile.impl.Util;
  * attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind}
  * of {@link Opcode.Kind#ARRAY_STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually, an array store instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="ArrayStoreInstruction" target="CodeBuilder#arrayStore(TypeKind)" :
+ * ArrayStoreInstruction(TypeKind) // @link substring="TypeKind" target="#typeKind()"
+ * }
+ * where the {@code TypeKind} is not {@link TypeKind#BOOLEAN boolean} or
+ * {@link TypeKind#VOID void}.  Boolean arrays use the {@link TypeKind#BYTE
+ * byte} kind instruction.
+ * <p>
+ * Physically, an array store instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="ArrayStoreInstruction" target="#of(Opcode)" :
+ * ArrayStoreInstruction(Opcode) // @link substring="Opcode" target="#opcode()"
+ * }
+ * where the {@code Opcode} is of the array store kind.  The component type of
+ * the array is intrinsic to the opcode.
  *
+ * @see CodeBuilder#arrayStore CodeBuilder::arrayStore
  * @since 24
  */
 public sealed interface ArrayStoreInstruction extends Instruction
         permits AbstractInstruction.UnboundArrayStoreInstruction {
     /**
-     * {@return the component type of the array} The {@link TypeKind#BYTE byte}
+     * {@return the component type of the array}  The {@link TypeKind#BYTE byte}
      * type store instruction {@link Opcode#BASTORE bastore} also operates on
-     * {@link TypeKind#BOOLEAN boolean} arrays.
+     * {@link TypeKind#BOOLEAN boolean} arrays, so this never returns
+     * {@code boolean}.
      */
     TypeKind typeKind();
 

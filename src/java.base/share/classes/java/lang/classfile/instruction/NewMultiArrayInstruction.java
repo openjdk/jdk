@@ -24,11 +24,13 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.constant.ClassDesc;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
@@ -37,7 +39,26 @@ import jdk.internal.classfile.impl.BytecodeHelpers;
  * Models a {@link Opcode#MULTIANEWARRAY multianewarray} instruction in the {@code code}
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually, a {@code multianewarray} instruction is a record:
+ * {@snippet lang=text :
+ * // @link region substring="NewMultiArrayInstruction" target="CodeBuilder#multianewarray(ClassDesc, int)"
+ * // @link substring="ClassDesc arrayType" target="#arrayType" :
+ * NewMultiArrayInstruction(ClassDesc arrayType, int dimensions) // @link substring="int dimensions" target="#dimensions"
+ * // @end
+ * }
+ * where the {@code arrayType} is an array class.
+ * <p>
+ * Physically, a {@code multianewarray} instruction is a record:
+ * {@snippet lang=text :
+ * // @link region substring="NewMultiArrayInstruction" target="#of"
+ * // @link substring="ClassEntry arrayType" target="#arrayType" :
+ * NewMultiArrayInstruction(Opcode.MULTIANEWARRAY, ClassEntry arrayType, int dimensions) // @link substring="int dimensions" target="#dimensions"
+ * // @end
+ * }
  *
+ * @see CodeBuilder#multianewarray CodeBuilder::multianewarray
+ * @jvms 6.5.multianewarray <em>multianewarray</em>
  * @since 24
  */
 public sealed interface NewMultiArrayInstruction extends Instruction
@@ -45,7 +66,11 @@ public sealed interface NewMultiArrayInstruction extends Instruction
                 AbstractInstruction.UnboundNewMultidimensionalArrayInstruction {
 
     /**
-     * {@return the type of the array, as a symbolic descriptor}
+     * {@return the type of the array}
+     *
+     * @apiNote
+     * A symbolic descriptor for the type of the array is available through
+     * {@link ClassEntry#asSymbol() arrayType().asSymbol()}.
      */
     ClassEntry arrayType();
 

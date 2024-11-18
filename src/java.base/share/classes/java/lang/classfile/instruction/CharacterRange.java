@@ -25,6 +25,7 @@
 package java.lang.classfile.instruction;
 
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Label;
@@ -40,7 +41,29 @@ import jdk.internal.classfile.impl.BoundCharacterRange;
  * {@link CharacterRangeTableAttribute}.  Delivered as a {@link CodeElement}
  * during traversal of the elements of a {@link CodeModel}, according to
  * the setting of the {@link ClassFile.DebugElementsOption} option.
+ * <p>
+ * Conceptually, a character range entry is a record:
+ * {@snippet lang=text :
+ * // @link region=0 substring="CharacterRange" target="#of"
+ * // @link region=1 substring="Label startScope" target="#startScope"
+ * // @link region=2 substring="Label endScope" target="#endScope"
+ * // @link region=3 substring="int characterRangeStart" target="#characterRangeStart"
+ * // @link region=4 substring="int characterRangeEnd" target="#characterRangeEnd"
+ * // @link substring="int flags" target="#flags()" :
+ * CharacterRange(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags)
+ * // @end region=0
+ * // @end region=1
+ * // @end region=2
+ * // @end region=3
+ * // @end region=4
+ * }
+ * <p>
+ * Physically, a character range has the same structure; it is modeled by a
+ * {@link CharacterRangeInfo}.
  *
+ * @see CharacterRangeTableAttribute
+ * @see CharacterRangeInfo
+ * @see CodeBuilder#characterRange CodeBuilder::characterRange
  * @since 24
  */
 public sealed interface CharacterRange extends PseudoInstruction
@@ -114,7 +137,7 @@ public sealed interface CharacterRange extends PseudoInstruction
      * <li>{@link #FLAG_BRANCH_FALSE}
      * </ul>
      *
-     * @see java.lang.classfile.attribute.CharacterRangeInfo#flags()
+     * @see CharacterRangeInfo#flags()
      *
      * @return the flags
      */

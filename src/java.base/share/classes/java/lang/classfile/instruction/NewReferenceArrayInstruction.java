@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -36,13 +37,32 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * Models a {@link Opcode#ANEWARRAY anewarray} instruction in the {@code code}
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually, an {@code anewarray} instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="NewReferenceArrayInstruction" target="CodeBuilder#anewarray(ClassDesc)" :
+ * NewReferenceArrayInstruction(ClassDesc) // @link substring="ClassDesc" target="#componentType"
+ * }
+ * where the {@code ClassDesc} is not primitive.
+ * <p>
+ * Physically, an {@code anewarray} instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="NewReferenceArrayInstruction" target="#of" :
+ * NewReferenceArrayInstruction(Opcode.ANEWARRAY, ClassEntry) // @link substring="ClassEntry" target="#componentType"
+ * }
  *
+ * @see CodeBuilder#newarray CodeBuilder::anewarray
+ * @jvms 6.5.anewarray <em>anewarray</em>
  * @since 24
  */
 public sealed interface NewReferenceArrayInstruction extends Instruction
         permits AbstractInstruction.BoundNewReferenceArrayInstruction, AbstractInstruction.UnboundNewReferenceArrayInstruction {
     /**
      * {@return the component type of the array}
+     *
+     * @apiNote
+     * A symbolic descriptor for the component type of the array is available
+     * through {@link ClassEntry#asSymbol() componentType().asSymbol()}.
      */
     ClassEntry componentType();
 

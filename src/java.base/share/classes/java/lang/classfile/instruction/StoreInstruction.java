@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -39,7 +40,39 @@ import jdk.internal.classfile.impl.Util;
  * {@code Code} attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
  * {@link Opcode.Kind#STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually, a local variable store instruction is a record:
+ * {@snippet lang=text :
+ * // @link region substring="StoreInstruction" target="#of(TypeKind, int)"
+ * // @link substring="TypeKind" target="#typeKind" :
+ * StoreInstruction(TypeKind, int slot) // @link substring="int slot" target="#slot"
+ * // @end
+ * }
+ * where the {@code TypeKind} is {@linkplain TypeKind##computational-type
+ * computational}.  Multiple instructions, such as {@code astore_0}, {@code
+ * astore 0}, and {@code wide astore 0}, may match such a record, but they
+ * are functionally equivalent.
+ * <p>
+ * Physically, store variable instructions are polymorphic, discriminated by
+ * their opcode:
+ * {@snippet lang=text :
+ * StoreInstruction(Opcode) // @link substring="Opcode" target="#opcode"
+ * // @link region substring="StoreInstruction" target="#of(Opcode, int)"
+ * // @link substring="Opcode" target="#opcode" :
+ * StoreInstruction(Opcode, int slot) // @link substring="int slot" target="#slot"
+ * // @end
+ * }
+ * the first form requires the {@code slot} to be intrinsic to the {@code Opcode};
+ * such opcodes have an {@linkplain Opcode#sizeIfFixed() instruction size} of {@code 1}.
+ * Otherwise, the {@code slot} must be compatible with the {@code Opcode}, such
+ * that if the opcode is not {@linkplain Opcode#isWide() wide}, the {@code slot}
+ * must be no greater than {@code 255}.
+ * <p>
+ * {@code astore} series of instructions can operate on the {@code returnAddress}
+ * type from {@linkplain DiscontinuedInstruction.JsrInstruction jump subroutine
+ * instructions}.
  *
+ * @see CodeBuilder#storeLocal CodeBuilder::storeLocal
  * @since 24
  */
 public sealed interface StoreInstruction extends Instruction
@@ -52,7 +85,7 @@ public sealed interface StoreInstruction extends Instruction
 
     /**
      * {@return the {@linkplain TypeKind##computational-type computational type}
-     * of the value to be stored} The {@link TypeKind#REFERENCE reference}
+     * of the value to be stored}  The {@link TypeKind#REFERENCE reference}
      * type store instructions also operate on the {@code returnAddress} type,
      * which does not apply to {@code reference} type load instructions.
      */

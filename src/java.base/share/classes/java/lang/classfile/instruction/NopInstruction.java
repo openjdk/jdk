@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -35,7 +36,15 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * Models a {@link Opcode#NOP nop} instruction in the {@code code}
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * Conceptually and physically, a no-op instruction is a record:
+ * {@snippet lang=text :
+ * // @link substring="NopInstruction" target="#of" :
+ * NopInstruction(Opcode.NOP)
+ * }
  *
+ * @see CodeBuilder#nop CodeBuilder::nop
+ * @jvms 6.5.nop <em>nop</em>
  * @since 24
  */
 public sealed interface NopInstruction extends Instruction
