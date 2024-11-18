@@ -615,33 +615,31 @@ class DatagramChannelImpl
                 configureSocketNonBlockingIfVirtualThread();
             }
 
-            synchronized (p) {
-                // p.bufLength is the maximum size of the datagram that can be received
-                int bufLength = DatagramPackets.getBufLength(p);
+            boolean completed = false;
+            try {
+                SocketAddress remote = beginRead(true, false);
+                boolean connected = (remote != null);
 
-                boolean completed = false;
-                try {
-                    SocketAddress remote = beginRead(true, false);
-                    boolean connected = (remote != null);
+                synchronized (p) {
+                    // p.bufLength is the maximum size of the datagram that can be received
+                    int bufLength = DatagramPackets.getBufLength(p);
                     ByteBuffer dst = tryBlockingReceive(connected, bufLength, nanos);
                     if (dst != null) {
-                        // if datagram received then get sender and copy to DatagramPacket
+                        // copy to DatagramPacket, set length and sender
                         try {
-                            SocketAddress sender = sourceSocketAddress();
-                            // copy bytes to the DatagramPacket, and set length and sender.
-                            // Need to re-read p.bufLength in case DatagramPacket changed
-                            int len = Math.min(dst.limit(), DatagramPackets.getBufLength(p));
+                            int len = dst.limit();
                             dst.get(p.getData(), p.getOffset(), len);
                             DatagramPackets.setLength(p, len);
-                            p.setSocketAddress(sender);
+                            p.setSocketAddress(sourceSocketAddress());
                         } finally {
                             Util.offerFirstTemporaryDirectBuffer(dst);
                         }
                         completed = true;
                     }
-                } finally {
-                    endRead(true, completed);
                 }
+
+            } finally {
+                endRead(true, completed);
             }
 
         } finally {
