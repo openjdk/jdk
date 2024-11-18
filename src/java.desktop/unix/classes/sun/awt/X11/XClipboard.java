@@ -29,14 +29,12 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.DataFlavor;
 import java.util.SortedMap;
 import java.io.IOException;
-import java.security.AccessController;
 import java.util.HashMap;
 import java.util.Map;
 import sun.awt.UNIXToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.SunClipboard;
 import sun.awt.datatransfer.ClipboardTransferable;
-import sun.security.action.GetIntegerAction;
 
 /**
  * A class which interfaces with the X11 selection service in order to support
@@ -129,13 +127,11 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
         }
     }
 
-    @SuppressWarnings("removal")
     private static int getPollInterval() {
         synchronized (XClipboard.classLock) {
             if (pollInterval <= 0) {
-                pollInterval = AccessController.doPrivileged(
-                        new GetIntegerAction("awt.datatransfer.clipboard.poll.interval",
-                                             defaultPollInterval));
+                pollInterval = Integer.getInteger("awt.datatransfer.clipboard.poll.interval"
+                                                  , defaultPollInterval);
                 if (pollInterval <= 0) {
                     pollInterval = defaultPollInterval;
                 }

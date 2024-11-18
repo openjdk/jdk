@@ -27,8 +27,6 @@ package sun.awt.X11;
 
 import jdk.internal.misc.Unsafe;
 import java.util.Vector;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * This class contains the collection of utility functions to help work with
@@ -43,13 +41,7 @@ class Native {
 
     static int dataModel;
     static {
-        @SuppressWarnings("removal")
-        String dataModelProp = AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                public String run() {
-                    return System.getProperty("sun.arch.data.model");
-                }
-            });
+        String dataModelProp = System.getProperty("sun.arch.data.model");
         try {
             dataModel = Integer.parseInt(dataModelProp);
         } catch (Exception e) {

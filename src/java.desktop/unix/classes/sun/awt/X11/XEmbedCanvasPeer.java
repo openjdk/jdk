@@ -35,9 +35,6 @@ import sun.util.logging.PlatformLogger;
 import java.util.*;
 import static sun.awt.X11.XEmbedHelper.*;
 
-import java.security.AccessController;
-import sun.security.action.GetBooleanAction;
-
 public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener, KeyEventPostProcessor, ModalityListener, WindowIDProvider {
     private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed.XEmbedCanvasPeer");
 
@@ -439,12 +436,11 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
-    @SuppressWarnings("removal")
     void canvasFocusLost(FocusEvent e) {
         if (isXEmbedActive() && !e.isTemporary()) {
             xembedLog.fine("Forwarding FOCUS_LOST");
             int num = 0;
-            if (AccessController.doPrivileged(new GetBooleanAction("sun.awt.xembed.testing"))) {
+            if (Boolean.getBoolean("sun.awt.xembed.testing")) {
                 Component opp = e.getOppositeComponent();
                 try {
                     num = Integer.parseInt(opp.getName());

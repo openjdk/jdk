@@ -30,8 +30,6 @@ import java.awt.event.*;
 import java.awt.peer.TrayIconPeer;
 import sun.awt.*;
 import java.awt.image.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.lang.reflect.InvocationTargetException;
 import sun.util.logging.PlatformLogger;
 
@@ -66,7 +64,6 @@ public class XTrayIconPeer implements TrayIconPeer,
     static final int TRAY_ICON_WIDTH = 24;
     static final int TRAY_ICON_HEIGHT = 24;
 
-    @SuppressWarnings("removal")
     XTrayIconPeer(TrayIcon target)
       throws AWTException
     {
@@ -84,12 +81,7 @@ public class XTrayIconPeer implements TrayIconPeer,
         // Fix for 6317038: as EmbeddedFrame is instance of Frame, it is blocked
         // by modal dialogs, but in the case of TrayIcon it shouldn't. So we
         // set ModalExclusion property on it.
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            public Object run() {
-                eframe.setModalExclusionType(Dialog.ModalExclusionType.TOOLKIT_EXCLUDE);
-                return null;
-            }
-        });
+        eframe.setModalExclusionType(Dialog.ModalExclusionType.TOOLKIT_EXCLUDE);
 
 
         if (XWM.getWMID() != XWM.METACITY_WM) {

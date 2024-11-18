@@ -90,16 +90,10 @@ public class CUPSPrinter  {
         initStatic();
     }
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     private static void initStatic() {
         // load awt library to access native code
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("awt");
-                    return null;
-                }
-            });
+        System.loadLibrary("awt");
         libFound = initIDs();
         if (libFound) {
            cupsServer = getCupsServer();
@@ -308,18 +302,12 @@ public class CUPSPrinter  {
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
-                @SuppressWarnings("removal")
-                OutputStream os = java.security.AccessController.
-                    doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
-                        public OutputStream run() {
-                            try {
-                                return urlConnection.getOutputStream();
-                            } catch (Exception e) {
-                               IPPPrintService.debug_println(debugPrefix+e);
-                            }
-                            return null;
-                        }
-                    });
+                OutputStream os = null;
+                try {
+                    os = urlConnection.getOutputStream();
+                } catch (Exception e) {
+                   IPPPrintService.debug_println(debugPrefix+e);
+                }
 
                 if (os == null) {
                     return null;
@@ -424,17 +412,11 @@ public class CUPSPrinter  {
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
-                @SuppressWarnings("removal")
-                OutputStream os = java.security.AccessController.
-                    doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
-                        public OutputStream run() {
-                            try {
-                                return urlConnection.getOutputStream();
-                            } catch (Exception e) {
-                            }
-                            return null;
-                        }
-                    });
+                OutputStream os = null;
+                try {
+                    os = urlConnection.getOutputStream();
+                } catch (Exception e) {
+                }
 
                 if (os == null) {
                     return null;
@@ -507,12 +489,9 @@ public class CUPSPrinter  {
         return domainSocketPathname;
     }
 
-    @SuppressWarnings("removal")
     private static boolean isSandboxedApp() {
         if (PrintServiceLookupProvider.isMac()) {
-            return java.security.AccessController
-                    .doPrivileged((java.security.PrivilegedAction<Boolean>) () ->
-                            System.getenv("APP_SANDBOX_CONTAINER_ID") != null);
+            return (System.getenv("APP_SANDBOX_CONTAINER_ID") != null);
         }
         return false;
     }

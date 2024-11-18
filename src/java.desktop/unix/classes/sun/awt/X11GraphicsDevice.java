@@ -33,8 +33,6 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Window;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -447,7 +445,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return modes.toArray(retArray);
     }
 
-    @SuppressWarnings("removal")
     @Override
     public synchronized void setDisplayMode(DisplayMode dm) {
         if (!isDisplayChangeSupported()) {
@@ -474,24 +471,20 @@ public final class X11GraphicsDevice extends GraphicsDevice
             // is already in the original DisplayMode at that time, this
             // hook will have no effect)
             shutdownHookRegistered = true;
-            PrivilegedAction<Void> a = () -> {
-                Runnable r = () -> {
-                    Window old = getFullScreenWindow();
-                    if (old != null) {
-                        exitFullScreenExclusive(old);
-                        if (isDisplayChangeSupported()) {
-                            setDisplayMode(origDisplayMode);
-                        }
+            Runnable r = () -> {
+                Window old = getFullScreenWindow();
+                if (old != null) {
+                    exitFullScreenExclusive(old);
+                    if (isDisplayChangeSupported()) {
+                        setDisplayMode(origDisplayMode);
                     }
-                };
-                String name = "Display-Change-Shutdown-Thread-" + screen;
-                Thread t = new Thread(
-                      ThreadGroupUtils.getRootThreadGroup(), r, name, 0, false);
-                t.setContextClassLoader(null);
-                Runtime.getRuntime().addShutdownHook(t);
-                return null;
+                }
             };
-            AccessController.doPrivileged(a);
+            String name = "Display-Change-Shutdown-Thread-" + screen;
+            Thread t = new Thread(
+                  ThreadGroupUtils.getRootThreadGroup(), r, name, 0, false);
+            t.setContextClassLoader(null);
+            Runtime.getRuntime().addShutdownHook(t);
         }
 
         // switch to the new DisplayMode
