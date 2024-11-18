@@ -780,7 +780,7 @@ public class TestAlignVector {
         // If AlignVector=true, we need the offset to be 8-aligned, else the vectors are filtered out.
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
-    static Object[] test10d(short[] a, short[] b, short mask) {
+    static Object[] test10e(short[] a, short[] b, short mask) {
         for (int i = 11; i < RANGE-16; i+=8) {
             // adr = base + UNSAFE.ARRAY_SHORT_BASE_OFFSET + 2*(3 + 11) + iter*16
             b[i+0+3] = (short)(a[i+0+3] & mask);
@@ -1136,7 +1136,7 @@ public class TestAlignVector {
                   IRNode.ADD_VI, "> 0",
                   IRNode.ADD_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"}
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13aBSIL(byte[] a, short[] b, int[] c, long[] d) {
