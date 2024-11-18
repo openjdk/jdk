@@ -52,7 +52,8 @@ public class HierarchicalLayoutManager extends LayoutManager {
         LayerManager.apply(layoutGraph, maxLayerLength);
 
         // STEP 3: Crossing Reduction
-        CrossingReduction.apply(layoutGraph);
+        //CrossingReduction.apply(layoutGraph);
+        CrossingReductionLegacy.apply(layoutGraph);
 
         // STEP 4: Assign X coordinates
         //AssignXCoordinates.apply(layoutGraph);
@@ -301,6 +302,114 @@ public class HierarchicalLayoutManager extends LayoutManager {
             graph.updatePositions();
         }
     }
+
+    private static class CrossingReductionLegacy {
+
+        public static void apply(LayoutGraph graph) {
+            graph.updatePositions();
+            graph.updateSpacings();
+
+            // Optimize
+            for (int i = 0; i < 2; i++) {
+                downSweep(graph);
+                upSweep(graph);
+            }
+            downSweep(graph);
+        }
+
+        private static final Comparator<LayoutNode> crossingNodeComparator = Comparator.comparingInt(n -> n.crossingNumber);
+
+        private static void downSweep(LayoutGraph graph) {
+
+            for (int i = 1; i < graph.getLayerCount(); i++) {
+
+                for (LayoutNode n : graph.getLayer(i)) {
+                    n.setCrossingNumber(0);
+                }
+
+                for (LayoutNode n : graph.getLayer(i)) {
+
+                    int sum = 0;
+                    int count = 0;
+                    for (LayoutEdge e : n.getPredecessors()) {
+                        sum += e.getStartX();
+                        count++;
+                    }
+
+                    if (count > 0) {
+                        sum /= count;
+                        n.setCrossingNumber(sum);
+                    }
+                }
+
+                updateCrossingNumbers(graph.getLayer(i), true);
+                graph.getLayer(i).sort(crossingNodeComparator);
+                graph.getLayer(i).updateMinXSpacing();
+                graph.getLayer(i).updateNodeIndices();
+            }
+        }
+
+        private static void updateCrossingNumbers(LayoutLayer layer, boolean down) {
+            for (int i = 0; i < layer.size(); i++) {
+                LayoutNode n = layer.get(i);
+                LayoutNode prev = null;
+                if (i > 0) {
+                    prev = layer.get(i - 1);
+                }
+                LayoutNode next = null;
+                if (i < layer.size() - 1) {
+                    next = layer.get(i + 1);
+                }
+
+                boolean cond = !n.hasSuccessors();
+                if (down) {
+                    cond = !n.hasPredecessors();
+                }
+
+                if (cond) {
+                    if (prev != null && next != null) {
+                        n.crossingNumber = (prev.crossingNumber + next.crossingNumber) / 2;
+                    } else if (prev != null) {
+                        n.crossingNumber = prev.crossingNumber;
+                    } else if (next != null) {
+                        n.crossingNumber = next.crossingNumber;
+                    }
+                }
+            }
+        }
+
+        private static void upSweep(LayoutGraph graph) {
+            // Upsweep
+            for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
+
+                for (LayoutNode n : graph.getLayer(i)) {
+                    n.setCrossingNumber(0);
+                }
+
+                for (LayoutNode n : graph.getLayer(i)) {
+
+                    int count = 0;
+                    int sum = 0;
+                    for (LayoutEdge e : n.getSuccessors()) {
+                        sum += e.getEndX();
+                        count++;
+                    }
+
+                    if (count > 0) {
+                        sum /= count;
+                        n.crossingNumber = sum;
+                    }
+
+                }
+
+                updateCrossingNumbers(graph.getLayer(i), false);
+                graph.getLayer(i).sort(crossingNodeComparator);
+                graph.getLayer(i).updateMinXSpacing();
+                graph.getLayer(i).updateNodeIndices();
+            }
+        }
+    }
+
 
     public static class CrossingReduction {
 
