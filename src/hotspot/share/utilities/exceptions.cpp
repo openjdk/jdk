@@ -188,30 +188,30 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
 
 
 void Exceptions::_throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message,
-                            Handle h_loader, Handle h_protection_domain) {
+                            Handle h_loader) {
   // Check for special boot-strapping/compiler-thread handling
   if (special_exception(thread, file, line, Handle(), name, message)) return;
   // Create and throw exception
   Handle h_cause(thread, nullptr);
-  Handle h_exception = new_exception(thread, name, message, h_cause, h_loader, h_protection_domain);
+  Handle h_exception = new_exception(thread, name, message, h_cause, h_loader);
   _throw(thread, file, line, h_exception, message);
 }
 
 void Exceptions::_throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause,
-                                  Handle h_loader, Handle h_protection_domain) {
+                                  Handle h_loader) {
   // Check for special boot-strapping/compiler-thread handling
   if (special_exception(thread, file, line, Handle(), name, message)) return;
   // Create and throw exception and init cause
-  Handle h_exception = new_exception(thread, name, message, h_cause, h_loader, h_protection_domain);
+  Handle h_exception = new_exception(thread, name, message, h_cause, h_loader);
   _throw(thread, file, line, h_exception, message);
 }
 
 void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause,
-                              Handle h_loader, Handle h_protection_domain) {
+                              Handle h_loader) {
   // Check for special boot-strapping/compiler-thread handling
   if (special_exception(thread, file, line, Handle(), name)) return;
   // Create and throw exception
-  Handle h_exception = new_exception(thread, name, h_cause, h_loader, h_protection_domain);
+  Handle h_exception = new_exception(thread, name, h_cause, h_loader);
   _throw(thread, file, line, h_exception, nullptr);
 }
 
@@ -229,13 +229,13 @@ void Exceptions::_throw_args(JavaThread* thread, const char* file, int line, Sym
 // Methods for default parameters.
 // NOTE: These must be here (and not in the header file) because of include circularities.
 void Exceptions::_throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause) {
-  _throw_msg_cause(thread, file, line, name, message, h_cause, Handle(thread, nullptr), Handle(thread, nullptr));
+  _throw_msg_cause(thread, file, line, name, message, h_cause, Handle());
 }
 void Exceptions::_throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message) {
-  _throw_msg(thread, file, line, name, message, Handle(thread, nullptr), Handle(thread, nullptr));
+  _throw_msg(thread, file, line, name, message, Handle());
 }
 void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause) {
-  _throw_cause(thread, file, line, name, h_cause, Handle(thread, nullptr), Handle(thread, nullptr));
+  _throw_cause(thread, file, line, name, h_cause, Handle());
 }
 
 
@@ -297,7 +297,7 @@ void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* 
 // and returns a Handle
 Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Symbol* signature, JavaCallArguments *args,
-                                 Handle h_loader, Handle h_protection_domain) {
+                                 Handle h_loader) {
   assert(Universe::is_fully_initialized(),
     "cannot be called during initialization");
   assert(!thread->has_pending_exception(), "already has exception");
@@ -305,7 +305,7 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
   Handle h_exception;
 
   // Resolve exception klass, and check for pending exception below.
-  Klass* klass = SystemDictionary::resolve_or_fail(name, h_loader, h_protection_domain, true, thread);
+  Klass* klass = SystemDictionary::resolve_or_fail(name, h_loader, true, thread);
 
   if (!thread->has_pending_exception()) {
     assert(klass != nullptr, "klass must exist");
@@ -329,8 +329,8 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
 Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Symbol* signature, JavaCallArguments *args,
                                  Handle h_cause,
-                                 Handle h_loader, Handle h_protection_domain) {
-  Handle h_exception = new_exception(thread, name, signature, args, h_loader, h_protection_domain);
+                                 Handle h_loader) {
+  Handle h_exception = new_exception(thread, name, signature, args, h_loader);
 
   // Future: object initializer should take a cause argument
   if (h_cause.not_null()) {
@@ -359,7 +359,7 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
 // creating a new exception
 Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Handle h_cause,
-                                 Handle h_loader, Handle h_protection_domain,
+                                 Handle h_loader,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
   JavaCallArguments args;
   Symbol* signature = nullptr;
@@ -369,14 +369,14 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
     signature = vmSymbols::throwable_void_signature();
     args.push_oop(h_cause);
   }
-  return new_exception(thread, name, signature, &args, h_loader, h_protection_domain);
+  return new_exception(thread, name, signature, &args, h_loader);
 }
 
 // Convenience method. Calls either the <init>() or <init>(String) method when
 // creating a new exception
 Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  const char* message, Handle h_cause,
-                                 Handle h_loader, Handle h_protection_domain,
+                                 Handle h_loader,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
   JavaCallArguments args;
   Symbol* signature = nullptr;
@@ -413,11 +413,10 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
     args.push_oop(msg);
     signature = vmSymbols::string_void_signature();
   }
-  return new_exception(thread, name, signature, &args, h_cause, h_loader, h_protection_domain);
+  return new_exception(thread, name, signature, &args, h_cause, h_loader);
 }
 
-// Another convenience method that creates handles for null class loaders and
-// protection domains and null causes.
+// Another convenience method that creates handles for null class loaders and null causes.
 // If the last parameter 'to_utf8_mode' is safe_to_utf8,
 // it means we can safely ignore the encoding scheme of the message string and
 // convert it directly to a java UTF8 string. Otherwise, we need to take the
@@ -428,11 +427,10 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  const char* message,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
 
-  Handle       h_loader(thread, nullptr);
-  Handle       h_prot(thread, nullptr);
-  Handle       h_cause(thread, nullptr);
+  Handle h_loader;
+  Handle h_cause;
   return Exceptions::new_exception(thread, name, message, h_cause, h_loader,
-                                   h_prot, to_utf8_safe);
+                                   to_utf8_safe);
 }
 
 // invokedynamic uses wrap_dynamic_exception for:

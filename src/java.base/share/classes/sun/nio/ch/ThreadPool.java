@@ -26,10 +26,6 @@
 package sun.nio.ch;
 
 import java.util.concurrent.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import sun.security.action.GetPropertyAction;
-import sun.security.action.GetIntegerAction;
 import jdk.internal.misc.InnocuousThread;
 
 /**
@@ -72,24 +68,12 @@ public class ThreadPool {
         return poolSize;
     }
 
-    @SuppressWarnings("removal")
     static ThreadFactory defaultThreadFactory() {
-        if (System.getSecurityManager() == null) {
-            return (Runnable r) -> {
-                Thread t = new Thread(r);
-                t.setDaemon(true);
-                return t;
-            };
-        } else {
-            return (Runnable r) -> {
-                PrivilegedAction<Thread> action = () -> {
-                    Thread t = InnocuousThread.newThread(r);
-                    t.setDaemon(true);
-                    return t;
-               };
-               return AccessController.doPrivileged(action);
-           };
-        }
+        return (Runnable r) -> {
+            Thread t = new Thread(r);
+            t.setDaemon(true);
+            return t;
+        };
     }
 
     private static class DefaultThreadPoolHolder {
@@ -148,9 +132,7 @@ public class ThreadPool {
     }
 
     private static int getDefaultThreadPoolInitialSize() {
-        @SuppressWarnings("removal")
-        String propValue = AccessController.doPrivileged(new
-            GetPropertyAction(DEFAULT_THREAD_POOL_INITIAL_SIZE));
+        String propValue = System.getProperty(DEFAULT_THREAD_POOL_INITIAL_SIZE);
         if (propValue != null) {
             try {
                 return Integer.parseInt(propValue);
@@ -163,9 +145,7 @@ public class ThreadPool {
     }
 
     private static ThreadFactory getDefaultThreadPoolThreadFactory() {
-        @SuppressWarnings("removal")
-        String propValue = AccessController.doPrivileged(new
-            GetPropertyAction(DEFAULT_THREAD_POOL_THREAD_FACTORY));
+        String propValue = System.getProperty(DEFAULT_THREAD_POOL_THREAD_FACTORY);
         if (propValue != null) {
             try {
                 @SuppressWarnings("deprecation")

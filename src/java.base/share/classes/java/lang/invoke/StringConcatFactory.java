@@ -1080,6 +1080,8 @@ public final class StringConcatFactory {
      * without copying.
      */
     private static final class InlineHiddenClassStrategy {
+        // The CLASS_NAME prefix must be the same as used by HeapShared::is_string_concat_klass()
+        // in the HotSpot code.
         static final String CLASS_NAME   = "java.lang.String$$StringConcat";
         static final String METHOD_NAME  = "concat";
 
@@ -1134,7 +1136,7 @@ public final class StringConcatFactory {
         };
 
         static final ReferencedKeyMap<MethodType, SoftReference<MethodHandlePair>> CACHE =
-                ReferencedKeyMap.create(true, true,
+                ReferencedKeyMap.create(true,
                         new Supplier<>() {
                             @Override
                             public Map<ReferenceKey<MethodType>, SoftReference<MethodHandlePair>> get() {

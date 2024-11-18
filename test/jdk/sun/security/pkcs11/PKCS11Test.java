@@ -54,12 +54,14 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.artifacts.ArtifactResolverException;
@@ -75,7 +77,6 @@ public abstract class PKCS11Test {
     static final char SEP = File.separatorChar;
     // directory corresponding to BASE in the /closed hierarchy
     static final String CLOSED_BASE;
-    private static final String DEFAULT_POLICY = BASE + SEP + ".." + SEP + "policy";
     private static final String PKCS11_REL_PATH = "sun/security/pkcs11";
     private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
     private static final SecureRandom srdm = new SecureRandom();
@@ -109,9 +110,6 @@ public abstract class PKCS11Test {
         String p1 = absBase.substring(0, k);
         String p2 = absBase.substring(k);
         CLOSED_BASE = p1 + "/../closed" + p2;
-
-        // set it as a system property to make it available in policy file
-        System.setProperty("closed.base", CLOSED_BASE);
     }
 
     static {
@@ -121,8 +119,6 @@ public abstract class PKCS11Test {
             // ignore
         }
     }
-
-    private boolean enableSM = false;
 
     public static Provider newPKCS11Provider() {
         ServiceLoader<Provider> sl = ServiceLoader.load(java.security.Provider.class);
@@ -170,22 +166,6 @@ public abstract class PKCS11Test {
     }
 
     public static void main(PKCS11Test test, String[] args) throws Exception {
-        if (args != null) {
-            if (args.length > 0) {
-                if ("sm".equals(args[0])) {
-                    test.enableSM = true;
-                } else {
-                    throw new RuntimeException("Unknown Command, use 'sm' as "
-                            + "first argument to enable security manager");
-                }
-            }
-            if (test.enableSM) {
-                System.setProperty("java.security.policy",
-                        (args.length > 1) ? BASE + SEP + args[1]
-                                : DEFAULT_POLICY);
-            }
-        }
-
         Provider[] oldProviders = Security.getProviders();
         try {
             System.out.println("Beginning test run " + test.getClass().getName() + "...");
@@ -496,14 +476,13 @@ public abstract class PKCS11Test {
             return null;
         }
 
-        String base = getBase();
-
+        String nssConfigDir = copyNssFiles();
         String libfile = libdir + System.mapLibraryName(nss_library);
 
         String customDBdir = System.getProperty("CUSTOM_DB_DIR");
         String dbdir = (customDBdir != null) ?
                 customDBdir :
-                base + SEP + "nss" + SEP + "db";
+                nssConfigDir + SEP + "db";
         // NSS always wants forward slashes for the config path
         dbdir = dbdir.replace('\\', '/');
 
@@ -513,7 +492,7 @@ public abstract class PKCS11Test {
         System.setProperty("pkcs11test.nss.db", dbdir);
         return (customConfig != null) ?
                 customConfig :
-                base + SEP + "nss" + SEP + customConfigName;
+                nssConfigDir + SEP + customConfigName;
     }
 
     // Generate a vector of supported elliptic curves of a given provider
@@ -782,7 +761,6 @@ public abstract class PKCS11Test {
                         + "\nPlease make sure the artifact is available.", e);
             }
         }
-        Policy.setPolicy(null); // Clear the policy created by JIB if any
         return path;
     }
 
@@ -796,6 +774,31 @@ public abstract class PKCS11Test {
         }
     }
 
+    //Copy the nss config files to the current directory for tests. Returns the destination path
+    private static String copyNssFiles() throws Exception {
+        String nss = "nss";
+        String db = "db";
+        Path nssDirSource = Path.of(getBase()).resolve(nss);
+        Path nssDirDestination = Path.of(".").resolve(nss);
+
+        // copy files from nss directory
+        copyFiles(nssDirSource, nssDirDestination);
+        // copy files from nss/db directory
+        copyFiles(nssDirSource.resolve(db), nssDirDestination.resolve(db));
+        return nssDirDestination.toString();
+    }
+
+    private static void copyFiles(Path dirSource, Path dirDestination) throws IOException {
+        List<Path> sourceFiles = Arrays
+                .stream(dirSource.toFile().listFiles())
+                .filter(File::isFile)
+                .map(File::toPath)
+                .collect(Collectors.toList());
+        List<Path> destFiles = Utils.copyFiles(sourceFiles, dirDestination,
+                StandardCopyOption.REPLACE_EXISTING);
+        destFiles.forEach((Path file) -> file.toFile().setWritable(true));
+    }
+
     public abstract void main(Provider p) throws Exception;
 
     protected boolean skipTest(Provider p) {
@@ -807,25 +810,13 @@ public abstract class PKCS11Test {
             return;
         }
 
-        // set a security manager and policy before a test case runs,
-        // and disable them after the test case finished
-        try {
-            if (enableSM) {
-                System.setSecurityManager(new SecurityManager());
-            }
-            long start = System.currentTimeMillis();
-            System.out.printf(
-                    "Running test with provider %s (security manager %s) ...%n",
-                    p.getName(), enableSM ? "enabled" : "disabled");
-            main(p);
-            long stop = System.currentTimeMillis();
-            System.out.println("Completed test with provider " + p.getName() +
-                    " (" + (stop - start) + " ms).");
-        } finally {
-            if (enableSM) {
-                System.setSecurityManager(null);
-            }
-        }
+        long start = System.currentTimeMillis();
+        System.out.printf(
+                "Running test with provider %s...%n", p.getName());
+        main(p);
+        long stop = System.currentTimeMillis();
+        System.out.println("Completed test with provider " + p.getName() +
+                " (" + (stop - start) + " ms).");
     }
 
     // Check support for a curve with a provided Vector of EC support

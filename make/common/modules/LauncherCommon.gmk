@@ -178,10 +178,8 @@ ifeq ($(call isTargetOsType, unix)+$(MAKEFILE_PREFIX), true+Launcher)
   # We assume all our man pages should reside in section 1.
 
   MAN_FILES_MD := $(wildcard $(addsuffix /*.md, $(call FindModuleManDirs, $(MODULE))))
-  MAN_FILES_TROFF := $(wildcard $(addsuffix /*.1, $(call FindModuleManDirs, $(MODULE))))
 
   ifneq ($(MAN_FILES_MD), )
-    # If we got markdown files, ignore the troff files
     ifeq ($(ENABLE_PANDOC), false)
       $(info Warning: pandoc not found. Not generating man pages)
     else
@@ -225,17 +223,6 @@ ifeq ($(call isTargetOsType, unix)+$(MAKEFILE_PREFIX), true+Launcher)
       ))
 
       TARGETS += $(BUILD_MAN_PAGES)
-    endif
-  else
-    # No markdown man pages present
-    ifeq ($(BUILD_MANPAGES), true)
-      # BUILD_MANPAGES is a mis-nomer. It really means "copy the pre-generated man pages".
-      $(eval $(call SetupCopyFiles, COPY_MAN_PAGES, \
-          DEST := $(SUPPORT_OUTPUTDIR)/modules_man/$(MODULE)/man1, \
-          FILES := $(MAN_FILES_TROFF), \
-      ))
-
-      TARGETS += $(COPY_MAN_PAGES)
     endif
   endif
 endif

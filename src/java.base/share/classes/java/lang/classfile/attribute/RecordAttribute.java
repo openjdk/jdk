@@ -31,7 +31,6 @@ import java.util.List;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code Record} attribute (JVMS {@jvms 4.7.30}), which can
@@ -45,9 +44,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 16.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface RecordAttribute extends Attribute<RecordAttribute>, ClassElement
         permits BoundAttribute.BoundRecordAttribute, UnboundAttribute.UnboundRecordAttribute {
 
