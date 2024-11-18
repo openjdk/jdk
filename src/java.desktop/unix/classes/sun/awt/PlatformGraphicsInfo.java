@@ -47,7 +47,7 @@ public class PlatformGraphicsInfo {
       */
     public static boolean getDefaultHeadlessProperty() {
         final String display = System.getenv("DISPLAY");
-        boolean noDisplay = display == null || display.trim().isEmpty();
+        boolean noDisplay = (display == null || display.trim().isEmpty());
 
         if (noDisplay) {
             return true;
