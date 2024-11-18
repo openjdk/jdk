@@ -4479,7 +4479,6 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
 // TODO desc
 // TODO maybe refactor to policy ?
 void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new) {
-  tty->print_cr("###### about to PreMainPost");
   CountedLoopNode* cl = lpt->_head->as_CountedLoop();
   LoopNode* outer_loop = cl->skip_strip_mined();
   Node* entry = outer_loop->in(LoopNode::EntryControl);
@@ -4490,7 +4489,6 @@ void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(Id
   // Check that we do not have a parse-predicate where we can add the runtime checks
   // during auto-vectorization.
   const Predicates predicates(entry);
-  predicates.dump();
   const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
   if (predicate_block->has_parse_predicate()) { return; }
 

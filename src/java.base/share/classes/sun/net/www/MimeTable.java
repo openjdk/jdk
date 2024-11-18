@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,15 +51,8 @@ public class MimeTable implements FileNameMap {
     private final Hashtable<String, MimeEntry> extensionMap = new Hashtable<>();
 
     // Will be reset if in the platform-specific data file
-    @SuppressWarnings("removal")
     private static String tempFileTemplate =
-        java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<String>() {
-                    public String run() {
-                        return System.getProperty("content.types.temp.file.template",
-                                "/tmp/%s");
-                    }
-                });
+            System.getProperty("content.types.temp.file.template", "/tmp/%s");
 
     private static final String filePreamble = "sun.net.www MIME content-types table";
 
@@ -70,16 +63,10 @@ public class MimeTable implements FileNameMap {
     private static class DefaultInstanceHolder {
         static final MimeTable defaultInstance = getDefaultInstance();
 
-        @SuppressWarnings("removal")
         static MimeTable getDefaultInstance() {
-            return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<>() {
-                public MimeTable run() {
-                    MimeTable instance = new MimeTable();
-                    URLConnection.setFileNameMap(instance);
-                    return instance;
-                }
-            });
+            final MimeTable instance = new MimeTable();
+            URLConnection.setFileNameMap(instance);
+            return instance;
         }
     }
 
@@ -235,20 +222,14 @@ public class MimeTable implements FileNameMap {
     // For backward compatibility -- mailcap format files
     // This is not currently used, but may in the future when we add ability
     // to read BOTH the properties format and the mailcap format.
-    @SuppressWarnings("removal")
     protected static String[] mailcapLocations =
-        java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<String[]>() {
-                    public String[] run() {
-                        return new String[]{
-                                System.getProperty("user.mailcap"),
-                                StaticProperty.userHome() + "/.mailcap",
-                                "/etc/mailcap",
-                                "/usr/etc/mailcap",
-                                "/usr/local/etc/mailcap",
-                        };
-                    }
-                });
+            new String[]{
+                    System.getProperty("user.mailcap"),
+                    StaticProperty.userHome() + "/.mailcap",
+                    "/etc/mailcap",
+                    "/usr/etc/mailcap",
+                    "/usr/local/etc/mailcap"
+            };
 
     public synchronized void load() {
         Properties entries = new Properties();
@@ -402,12 +383,6 @@ public class MimeTable implements FileNameMap {
             Properties properties = getAsProperties();
             properties.put("temp.file.template", tempFileTemplate);
             String tag;
-            // Perform the property security check for user.name
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPropertyAccess("user.name");
-            }
             String user = StaticProperty.userName();
             if (user != null) {
                 tag = "; customized for " + user;

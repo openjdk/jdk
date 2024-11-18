@@ -3503,7 +3503,7 @@ void MacroAssembler::increment_counter_eq(address counter_address, Register tmp1
 void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2) {
 
   assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_lock_lightweight");
-  assert_different_registers(oop, box, temp1, temp2);
+  assert_different_registers(oop, box, temp1, temp2, Z_R0_scratch);
 
   Register displacedHeader = temp1;
   Register currentHeader   = temp1;
@@ -3572,14 +3572,13 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   Register zero = temp;
   Register monitor_tagged = displacedHeader; // Tagged with markWord::monitor_value.
-  // The object's monitor m is unlocked iff m->owner is null,
-  // otherwise m->owner may contain a thread or a stack address.
 
-  // Try to CAS m->owner from null to current thread.
-  // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
-  // Otherwise, register zero is filled with the current owner.
+  // Try to CAS owner (no owner => current thread's _lock_id).
+  // If csg succeeds then CR=EQ, otherwise, register zero is filled
+  // with the current owner.
   z_lghi(zero, 0);
-  z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
+  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+  z_csg(zero, Z_R0_scratch, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
 
   // Store a non-null value into the box.
   z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
@@ -3588,7 +3587,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   BLOCK_COMMENT("fast_path_recursive_lock {");
   // Check if we are already the owner (recursive lock)
-  z_cgr(Z_thread, zero); // owner is stored in zero by "z_csg" above
+  z_cgr(Z_R0_scratch, zero); // owner is stored in zero by "z_csg" above
   z_brne(done); // not a recursive lock
 
   // Current thread already owns the lock. Just increment recursion count.
@@ -3606,7 +3605,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2) {
 
   assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_unlock_lightweight");
-  assert_different_registers(oop, box, temp1, temp2);
+  assert_different_registers(oop, box, temp1, temp2, Z_R0_scratch);
 
   Register displacedHeader = temp1;
   Register currentHeader   = temp2;
@@ -3653,7 +3652,8 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   // Handle existing monitor.
   bind(object_has_monitor);
 
-  z_cg(Z_thread, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+  z_cg(Z_R0_scratch, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   z_brne(done);
 
   BLOCK_COMMENT("fast_path_recursive_unlock {");
@@ -6228,7 +6228,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register t
 }
 
 void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2) {
-  assert_different_registers(obj, box, tmp1, tmp2);
+  assert_different_registers(obj, box, tmp1, tmp2, Z_R0_scratch);
 
   // Handle inflated monitor.
   NearLabel inflated;
@@ -6356,15 +6356,16 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
     const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
 
 
-    // Try to CAS m->owner from null to current thread.
-    // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
-    // Otherwise, register zero is filled with the current owner.
+    // Try to CAS owner (no owner => current thread's _lock_id).
+    // If csg succeeds then CR=EQ, otherwise, register zero is filled
+    // with the current owner.
     z_lghi(zero, 0);
-    z_csg(zero, Z_thread, owner_address);
+    z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+    z_csg(zero, Z_R0_scratch, owner_address);
     z_bre(monitor_locked);
 
     // Check if recursive.
-    z_cgr(Z_thread, zero); // zero contains the owner from z_csg instruction
+    z_cgr(Z_R0_scratch, zero); // zero contains the owner from z_csg instruction
     z_brne(slow_path);
 
     // Recursive

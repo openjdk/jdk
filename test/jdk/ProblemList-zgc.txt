@@ -38,3 +38,5 @@ sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java 8307393   generic-all
 sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java 8307393   generic-all
 
 com/sun/jdi/ThreadMemoryLeakTest.java          8307402 generic-all
+
+jdk/jfr/event/runtime/TestNativeMemoryUsageEvents.java   8343893 generic-all
