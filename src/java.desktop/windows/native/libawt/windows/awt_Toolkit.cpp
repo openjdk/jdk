@@ -2195,7 +2195,7 @@ bool AwtToolkit::PreloadThread::Terminate(bool wrongThread)
     return true;
 }
 
-bool AwtToolkit::PreloadThread::InvokeAndTerminate(void(_cdecl *fn)(void *), void *param)
+bool AwtToolkit::PreloadThread::InvokeAndTerminate(void(*fn)(void *), void *param)
 {
     CriticalSection::Lock lock(threadLock);
 
@@ -2225,7 +2225,7 @@ unsigned WINAPI AwtToolkit::PreloadThread::StaticThreadProc(void *param)
 
 unsigned AwtToolkit::PreloadThread::ThreadProc()
 {
-    void(_cdecl *_execFunc)(void *) = NULL;
+    void(*_execFunc)(void *) = NULL;
     void *_execParam = NULL;
     bool _wrongThread = false;
 

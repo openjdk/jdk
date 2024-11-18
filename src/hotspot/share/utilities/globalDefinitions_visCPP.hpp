@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,11 @@
 #define _USE_MATH_DEFINES
 # include <math.h>
 
+// Only 64-bit Windows is supported
+#ifndef _LP64
+#error unsupported platform
+#endif
+
 // 4810578: varargs unsafe on 32-bit integer/64-bit pointer architectures
 // When __cplusplus is defined, NULL is defined as 0 (32-bit constant) in
 // system header files.  On 32-bit architectures, there is no problem.
@@ -61,17 +66,11 @@
 // pointer when it extracts the argument, then we may have a problem.
 //
 // Solution: For 64-bit architectures, redefine NULL as 64-bit constant 0.
-#ifdef _LP64
 #undef NULL
 // 64-bit Windows uses a P64 data model (not LP64, although we define _LP64)
 // Since longs are 32-bit we cannot use 0L here.  Use the Visual C++ specific
 // 64-bit integer-suffix (LL) instead.
 #define NULL 0LL
-#else
-#ifndef NULL
-#define NULL 0
-#endif
-#endif
 
 // NULL vs NULL_WORD:
 // On Linux NULL is defined as a special type '__null'. Assigning __null to
@@ -79,11 +78,7 @@
 // pointer is stored as integer value.
 #define NULL_WORD NULL
 
-#ifdef _WIN64
 typedef int64_t ssize_t;
-#else
-typedef int32_t ssize_t;
-#endif
 
 // Non-standard stdlib-like stuff:
 inline int strcasecmp(const char *s1, const char *s2) { return _stricmp(s1,s2); }
@@ -120,13 +115,8 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 #endif
 
 #ifndef SSIZE_MAX
-#ifdef _LP64
 #define SSIZE_MIN LLONG_MIN
 #define SSIZE_MAX LLONG_MAX
-#else
-#define SSIZE_MIN INT_MIN
-#define SSIZE_MAX INT_MAX
-#endif
 #endif // SSIZE_MAX missing
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_VISCPP_HPP

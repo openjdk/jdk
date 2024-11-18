@@ -46,6 +46,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -2533,19 +2534,23 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -Xshare:dump
     } else if (match_option(option, "-Xshare:dump")) {
       CDSConfig::enable_dumping_static_archive();
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:on
     } else if (match_option(option, "-Xshare:on")) {
       UseSharedSpaces = true;
       RequireSharedSpaces = true;
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:auto || -XX:ArchiveClassesAtExit=<archive file>
     } else if (match_option(option, "-Xshare:auto")) {
       UseSharedSpaces = true;
       RequireSharedSpaces = false;
       xshare_auto_cmd_line = true;
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:off
     } else if (match_option(option, "-Xshare:off")) {
       UseSharedSpaces = false;
       RequireSharedSpaces = false;
+      CDSConfig::set_old_cds_flags_used();
     // -Xverify
     } else if (match_option(option, "-Xverify", &tail)) {
       if (strcmp(tail, ":all") == 0 || strcmp(tail, "") == 0) {
@@ -3673,6 +3678,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
     FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
   }
+  ObjLayout::initialize();
 #endif
 
   return JNI_OK;

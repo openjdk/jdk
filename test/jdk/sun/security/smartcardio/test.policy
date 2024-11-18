@@ -1,3 +1,0 @@
-grant codebase "file:${test.classes}/*" {
-    permission javax.smartcardio.CardPermission "*", "connect,getBasicChannel,reset,transmitControl";
-};

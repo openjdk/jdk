@@ -204,28 +204,19 @@ typedef int openat_func(int, const char *, int, ...);
 typedef int fstatat_func(int, const char *, struct stat *, int);
 typedef int unlinkat_func(int, const char*, int);
 typedef int renameat_func(int, const char*, int, const char*);
-typedef int futimes_func(int, const struct timeval *);
-typedef int futimens_func(int, const struct timespec *);
-typedef int lutimes_func(const char *, const struct timeval *);
 typedef DIR* fdopendir_func(int);
 #if defined(__linux__)
 typedef int statx_func(int dirfd, const char *restrict pathname, int flags,
                        unsigned int mask, struct my_statx *restrict statxbuf);
-typedef int utimensat_func(int dirfd, const char *pathname,
-                           const struct timespec[2], int flags);
 #endif
 
 static openat_func* my_openat_func = NULL;
 static fstatat_func* my_fstatat_func = NULL;
 static unlinkat_func* my_unlinkat_func = NULL;
 static renameat_func* my_renameat_func = NULL;
-static futimes_func* my_futimes_func = NULL;
-static futimens_func* my_futimens_func = NULL;
-static lutimes_func* my_lutimes_func = NULL;
 static fdopendir_func* my_fdopendir_func = NULL;
 #if defined(__linux__)
 static statx_func* my_statx_func = NULL;
-static utimensat_func* my_utimensat_func = NULL;
 #endif
 
 /**
@@ -375,18 +366,6 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #endif
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
-#if defined(__linux__) && defined(__arm__)
-    my_futimes_func = (futimes_func*) lookup_time_t_function("futimes",
-        "__futimes64");
-    my_lutimes_func = (lutimes_func*) lookup_time_t_function("lutimes",
-        "__lutimes64");
-    my_futimens_func = (futimens_func*) lookup_time_t_function("futimens",
-        "__futimens64");
-#else
-    my_futimes_func = (futimes_func*) dlsym(RTLD_DEFAULT, "futimes");
-    my_lutimes_func = (lutimes_func*) dlsym(RTLD_DEFAULT, "lutimes");
-    my_futimens_func = (futimens_func*) dlsym(RTLD_DEFAULT, "futimens");
-#endif
 #if defined(_AIX)
     // Make sure we link to the 64-bit version of the function
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
@@ -402,25 +381,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
         my_fstatat_func = (fstatat_func*)&fstatat_wrapper;
 #endif
 
-    /* supports futimes, futimens, and/or lutimes */
-
-#ifdef _ALLBSD_SOURCE
-    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
-    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_LUTIMES;
-#else
-    if (my_futimes_func != NULL)
-        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
-    if (my_lutimes_func != NULL)
-        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_LUTIMES;
-#endif
-    if (my_futimens_func != NULL)
-        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMENS;
-
     /* supports openat, etc. */
 
     if (my_openat_func != NULL &&  my_fstatat_func != NULL &&
         my_unlinkat_func != NULL && my_renameat_func != NULL &&
-        my_futimes_func != NULL && my_fdopendir_func != NULL)
+        my_fdopendir_func != NULL)
     {
         capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_OPENAT;
     }
@@ -434,10 +399,6 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     my_statx_func = (statx_func*) dlsym(RTLD_DEFAULT, "statx");
     if (my_statx_func != NULL) {
         capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_BIRTHTIME;
-    }
-    my_utimensat_func = (utimensat_func*) dlsym(RTLD_DEFAULT, "utimensat");
-    if (my_utimensat_func != NULL) {
-        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_UTIMENSAT;
     }
 #endif
 
@@ -906,33 +867,6 @@ Java_sun_nio_fs_UnixNativeDispatcher_utimes0(JNIEnv* env, jclass this,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_futimes0(JNIEnv* env, jclass this, jint filedes,
-    jlong accessTime, jlong modificationTime)
-{
-    struct timeval times[2];
-    int err = 0;
-
-    times[0].tv_sec = accessTime / 1000000;
-    times[0].tv_usec = accessTime % 1000000;
-
-    times[1].tv_sec = modificationTime / 1000000;
-    times[1].tv_usec = modificationTime % 1000000;
-
-#ifdef _ALLBSD_SOURCE
-    RESTARTABLE(futimes(filedes, &times[0]), err);
-#else
-    if (my_futimes_func == NULL) {
-        JNU_ThrowInternalError(env, "my_futimes_func is NULL");
-        return;
-    }
-    RESTARTABLE((*my_futimes_func)(filedes, &times[0]), err);
-#endif
-    if (err == -1) {
-        throwUnixException(env, errno);
-    }
-}
-
-JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_futimens0(JNIEnv* env, jclass this, jint filedes,
     jlong accessTime, jlong modificationTime)
 {
@@ -945,39 +879,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_futimens0(JNIEnv* env, jclass this, jint fi
     times[1].tv_sec = modificationTime / 1000000000;
     times[1].tv_nsec = modificationTime % 1000000000;
 
-    if (my_futimens_func == NULL) {
-        JNU_ThrowInternalError(env, "my_futimens_func is NULL");
-        return;
-    }
-    RESTARTABLE((*my_futimens_func)(filedes, &times[0]), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_lutimes0(JNIEnv* env, jclass this,
-    jlong pathAddress, jlong accessTime, jlong modificationTime)
-{
-    int err;
-    struct timeval times[2];
-    const char* path = (const char*)jlong_to_ptr(pathAddress);
-
-    times[0].tv_sec = accessTime / 1000000;
-    times[0].tv_usec = accessTime % 1000000;
-
-    times[1].tv_sec = modificationTime / 1000000;
-    times[1].tv_usec = modificationTime % 1000000;
-
-#ifdef _ALLBSD_SOURCE
-    RESTARTABLE(lutimes(path, &times[0]), err);
-#else
-    if (my_lutimes_func == NULL) {
-        JNU_ThrowInternalError(env, "my_lutimes_func is NULL");
-        return;
-    }
-    RESTARTABLE((*my_lutimes_func)(path, &times[0]), err);
-#endif
+    RESTARTABLE(futimens(filedes, &times[0]), err);
     if (err == -1) {
         throwUnixException(env, errno);
     }
@@ -986,7 +888,6 @@ Java_sun_nio_fs_UnixNativeDispatcher_lutimes0(JNIEnv* env, jclass this,
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_utimensat0(JNIEnv* env, jclass this,
     jint fd, jlong pathAddress, jlong accessTime, jlong modificationTime, jint flags) {
-#if defined(__linux__)
     int err;
     struct timespec times[2];
     const char* path = (const char*)jlong_to_ptr(pathAddress);
@@ -997,18 +898,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_utimensat0(JNIEnv* env, jclass this,
     times[1].tv_sec = modificationTime / 1000000000;
     times[1].tv_nsec = modificationTime % 1000000000;
 
-    if (my_utimensat_func == NULL) {
-        JNU_ThrowInternalError(env, "my_utimensat_func is NULL");
-        return;
-    }
-    RESTARTABLE((*my_utimensat_func)(fd, path, &times[0], flags), err);
+    RESTARTABLE(utimensat(fd, path, &times[0], flags), err);
 
     if (err == -1) {
         throwUnixException(env, errno);
     }
-#else
-    JNU_ThrowInternalError(env, "should not reach here");
-#endif
 }
 
 JNIEXPORT jlong JNICALL

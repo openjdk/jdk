@@ -1914,7 +1914,7 @@ void PSParallelCompact::verify_filler_in_dense_prefix() {
     oop obj = cast_to_oop(cur_addr);
     oopDesc::verify(obj);
     if (!mark_bitmap()->is_marked(cur_addr)) {
-      Klass* k = cast_to_oop(cur_addr)->klass_without_asserts();
+      Klass* k = cast_to_oop(cur_addr)->klass();
       assert(k == Universe::fillerArrayKlass() || k == vmClasses::FillerObject_klass(), "inv");
     }
     cur_addr += obj->size();
