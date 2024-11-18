@@ -131,11 +131,6 @@ public class FileInputStream extends InputStream
     @SuppressWarnings("this-escape")
     public FileInputStream(File file) throws FileNotFoundException {
         String name = (file != null ? file.getPath() : null);
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(name);
-        }
         if (name == null) {
             throw new NullPointerException();
         }
@@ -166,13 +161,8 @@ public class FileInputStream extends InputStream
      */
     @SuppressWarnings("this-escape")
     public FileInputStream(FileDescriptor fdObj) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
         if (fdObj == null) {
             throw new NullPointerException();
-        }
-        if (security != null) {
-            security.checkRead(fdObj);
         }
         fd = fdObj;
         path = null;

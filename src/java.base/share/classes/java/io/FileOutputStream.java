@@ -200,11 +200,6 @@ public class FileOutputStream extends OutputStream
         throws FileNotFoundException
     {
         String name = (file != null ? file.getPath() : null);
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(name);
-        }
         if (name == null) {
             throw new NullPointerException();
         }
@@ -236,13 +231,8 @@ public class FileOutputStream extends OutputStream
      */
     @SuppressWarnings("this-escape")
     public FileOutputStream(FileDescriptor fdObj) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
         if (fdObj == null) {
             throw new NullPointerException();
-        }
-        if (security != null) {
-            security.checkWrite(fdObj);
         }
         this.fd = fdObj;
         this.path = null;

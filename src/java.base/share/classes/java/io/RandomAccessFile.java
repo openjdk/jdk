@@ -245,14 +245,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
                                                + "\" must be one of "
                                                + "\"r\", \"rw\", \"rws\","
                                                + " or \"rwd\"");
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(name);
-            if (rw) {
-                security.checkWrite(name);
-            }
-        }
         if (name == null) {
             throw new NullPointerException();
         }
