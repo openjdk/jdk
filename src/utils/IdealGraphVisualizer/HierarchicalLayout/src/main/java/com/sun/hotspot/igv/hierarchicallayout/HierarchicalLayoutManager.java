@@ -52,8 +52,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         LayerManager.apply(layoutGraph, maxLayerLength);
 
         // STEP 3: Crossing Reduction
-        //CrossingReduction.apply(layoutGraph);
-        CrossingReductionLegacy.apply(layoutGraph);
+        CrossingReduction.apply(layoutGraph);
 
         // STEP 4: Assign X coordinates
         //AssignXCoordinates.apply(layoutGraph);
@@ -303,7 +302,9 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
     }
 
-    private static class CrossingReductionLegacy {
+    private static class CrossingReduction {
+
+        static final boolean LEGACY_MODE = true;
 
         /**
          * Applies the crossing reduction algorithm to the given graph.
@@ -311,8 +312,10 @@ public class HierarchicalLayoutManager extends LayoutManager {
          * @param graph the layout graph to optimize
          */
         public static void apply(LayoutGraph graph) {
-            graph.updatePositions();
-            graph.updateSpacings(true);
+            if (!LEGACY_MODE) {
+                graph.updatePositions();
+                graph.updateSpacings(true);
+            }
 
             for (int i = 0; i < CROSSING_ITERATIONS; i++) {
                 sweep(graph, true);  // Downwards sweep
@@ -332,19 +335,34 @@ public class HierarchicalLayoutManager extends LayoutManager {
             int start, end, step;
             NeighborType neighborType;
             if (down) {
-                start = 1;
+                start = 0;
                 end = graph.getLayerCount();
                 step = 1;
                 neighborType =  NeighborType.PREDECESSORS;
             } else {
-                start = graph.getLayerCount() - 2;
+                start = graph.getLayerCount() - 1;
                 end = -1;
                 step = -1;
                 neighborType =  NeighborType.SUCCESSORS;
             }
-            for (int i = start; i != end; i += step) {
+            if (!LEGACY_MODE) {
+                for (int i = start; i != end; i += step) {
+                    LayoutLayer layer = graph.getLayer(i);
+                    for (LayoutNode node : layer) {
+                        node.setBarycenter(node.computeBarycenterX(NeighborType.BOTH, true));
+                    }
+                    layer.sort(NODE_BARYCENTER_COMPARATOR);
+                    layer.updateMinXSpacing(true);
+                }
+            }
+
+            for (int i = start + step; i != end; i += step) {
                 LayoutLayer layer = graph.getLayer(i);
-                layer.updateBarycenters(neighborType, false);
+                if (LEGACY_MODE) {
+                    layer.updateBarycenters(neighborType, false);
+                } else {
+                    doMedianPositions(layer, neighborType);
+                }
                 layer.updateBarycentersForIsolatedNodes(neighborType);
                 layer.sort(NODE_BARYCENTER_COMPARATOR);
                 layer.updateMinXSpacing(true);
@@ -352,29 +370,8 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
         }
 
-    }
-
-
-    public static class CrossingReduction {
-
-        public static void apply(LayoutGraph graph) {
-            for (int i = 0; i < CROSSING_ITERATIONS; i++) {
-                downSweep(graph);
-                upSweep(graph);
-            }
-            downSweep(graph);
-            graph.updatePositions();
-        }
-
-        private static void doAveragePositions(LayoutLayer layer) {
-            for (LayoutNode node : layer) {
-                node.setBarycenter(node.computeBarycenterX(NeighborType.BOTH, true));
-            }
-            layer.sort(NODE_BARYCENTER_COMPARATOR);
-            layer.updateMinXSpacing(true);
-        }
-
-        private static void doMedianPositions(LayoutLayer layer, boolean usePred) {
+        private static void doMedianPositions(LayoutLayer layer,  NeighborType neighborType) {
+            boolean usePred = neighborType == NeighborType.PREDECESSORS;
             for (LayoutNode node : layer) {
                 int size = usePred ? node.getPredecessors().size() : node.getSuccessors().size();
                 if (size == 0) continue;
@@ -389,29 +386,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 } else {
                     node.setBarycenter(values[size / 2]);
                 }
-            }
-            layer.sort(NODE_BARYCENTER_COMPARATOR);
-            layer.updateMinXSpacing(true);
-
-        }
-
-        private static void downSweep(LayoutGraph graph) {
-            for (int i = 0; i < graph.getLayerCount(); i++) {
-                doAveragePositions(graph.getLayer(i));
-            }
-            for (int i = 1; i < graph.getLayerCount(); i++) {
-                doMedianPositions(graph.getLayer(i), true);
-                graph.getLayer(i).updateBarycentersForIsolatedNodes(NeighborType.PREDECESSORS);
-            }
-        }
-
-        private static void upSweep(LayoutGraph graph) {
-            for (int i = graph.getLayerCount() - 1; i >= 0; i--) {
-                doAveragePositions(graph.getLayer(i));
-            }
-            for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
-                doMedianPositions(graph.getLayer(i), false);
-                graph.getLayer(i).updateBarycentersForIsolatedNodes(NeighborType.SUCCESSORS);
             }
         }
     }
