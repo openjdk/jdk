@@ -40,7 +40,7 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx2g AddOptionsTest
+ * @run main/othervm -Xmx1400m AddOptionsTest
  */
 public class AddOptionsTest extends AbstractLinkableRuntimeTest {
 
