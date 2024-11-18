@@ -614,13 +614,14 @@ public class Socket implements java.io.Closeable {
      *        {@code SocketException} with the interrupt status set.
      * </ol>
      * <p> Besides above noted cases, the socket will also be closed when a
-     * connection attempt fails with a checked exception that is neither
-     * {@linkplain UnknownHostException an address resolution failure} nor
-     * {@linkplain InterruptedIOException an I/O interruption}.
+     * connection attempt fails with an {@link IOException}.
      *
      * @param   endpoint the {@code SocketAddress}
      * @throws  IOException if an error occurs during the connection, the socket
      *          is already connected or the socket is closed
+     * @throws  UnknownHostException if the endpoint address is
+     *          {@linkplain InetSocketAddress#isUnresolved() not resolved},
+     *          the socket is closed
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
      *          and the channel is in non-blocking mode
@@ -652,15 +653,17 @@ public class Socket implements java.io.Closeable {
      *        {@code SocketException} with the interrupt status set.
      * </ol>
      * <p> Besides above noted cases, the socket will also be closed when a
-     * connection attempt fails with a {@link SocketTimeoutException} or a checked
-     * exception that is neither {@linkplain UnknownHostException an address resolution
-     * failure} nor {@linkplain InterruptedIOException an I/O interruption}.
+     * connection attempt fails with an {@link IOException}.
      *
      * @param   endpoint the {@code SocketAddress}
      * @param   timeout  the timeout value to be used in milliseconds.
      * @throws  IOException if an error occurs during the connection, the socket
      *          is already connected or the socket is closed
-     * @throws  SocketTimeoutException if timeout expires before connecting
+     * @throws  SocketTimeoutException if timeout expires before connecting,
+     *          the socket is closed
+     * @throws  UnknownHostException if the endpoint address is
+     *          {@linkplain InetSocketAddress#isUnresolved() not resolved},
+     *          the socket is closed
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
      *          and the channel is in non-blocking mode
@@ -700,20 +703,6 @@ public class Socket implements java.io.Closeable {
 
         try {
             getImpl().connect(epoint, timeout);
-        } catch (SocketTimeoutException error) {
-            closeQuietly(error);
-            throw error;
-        } catch (InterruptedIOException error) {
-            Thread thread = Thread.currentThread();
-            if (thread.isVirtual() && thread.isInterrupted()) {
-                close();
-                throw new SocketException("Closed by interrupt");
-            }
-            throw error;
-        } catch (UnknownHostException error) {
-            // `UnknownHostException` implies that a connection attempt hasn't been made yet.
-            // Hence, the state can be kept as is, no need to close the socket.
-            throw error;
         } catch (IOException error) {
             closeQuietly(error);
             throw error;

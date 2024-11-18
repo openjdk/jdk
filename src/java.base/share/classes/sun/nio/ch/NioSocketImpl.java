@@ -564,7 +564,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             throw new IOException("Unsupported address type");
         InetSocketAddress isa = (InetSocketAddress) remote;
         if (isa.isUnresolved()) {
-            throw new UnknownHostException(isa.getHostName());
+            throw new UnknownHostException("Unresolved address: " + isa.getHostName());
         }
 
         InetAddress address = isa.getAddress();
@@ -609,7 +609,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         } catch (IOException ioe) {
             close();
             if (ioe instanceof InterruptedIOException) {
-                throw ioe;
+                throw new SocketException("Closed by interrupt");
             } else {
                 throw SocketExceptions.of(ioe, isa);
             }
