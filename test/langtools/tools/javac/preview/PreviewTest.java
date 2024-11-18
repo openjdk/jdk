@@ -602,6 +602,274 @@ public class PreviewTest extends TestRunner {
             throw new Exception("expected output not found" + log);
     }
 
+    @Test //JDK-8343540:
+    public void nonPreviewImplementsPreview2(Path base) throws Exception {
+        Path apiSrc = base.resolve("api-src");
+        tb.writeJavaFiles(apiSrc,
+                          """
+                          package preview.api;
+                          @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
+                          public interface Preview {
+                              public default void test() {}
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public interface NonPreviewIntf extends Preview {
+                              public default void test() {}
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public class NonPreview implements Preview {
+                              public void test() {}
+                          }
+                          """);
+        Path apiClasses = base.resolve("api-classes");
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(apiClasses)
+                .options("--patch-module", "java.base=" + apiSrc.toString(),
+                         "-Werror")
+                .files(tb.findJavaFiles(apiSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        Path testSrc = base.resolve("test-src");
+        tb.writeJavaFiles(testSrc,
+                          """
+                          package test;
+                          import preview.api.NonPreview;
+                          import preview.api.NonPreviewIntf;
+                          public class Test {
+                              public void test(NonPreview np1,
+                                               NonPreviewIntf np2) {
+                                  np1.test();
+                                  np2.test();
+                              }
+                          }
+                          """);
+        Path testClasses = base.resolve("test-classes");
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(testClasses)
+                .options("--patch-module", "java.base=" + apiClasses.toString(),
+                         "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                         "-XDrawDiagnostics")
+                .files(tb.findJavaFiles(testSrc))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+    }
+
+    @Test //JDK-8343540:
+    public void nonPreviewImplementsPreview3(Path base) throws Exception {
+        Path apiSrc = base.resolve("api-src");
+        tb.writeJavaFiles(apiSrc,
+                          """
+                          package preview.api;
+                          @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
+                          public class Preview {
+                              public int field;
+                              public static void test() {}
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public class NonPreview extends Preview {
+                          }
+                          """);
+        Path apiClasses = base.resolve("api-classes");
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(apiClasses)
+                .options("--patch-module", "java.base=" + apiSrc.toString(),
+                         "-Werror")
+                .files(tb.findJavaFiles(apiSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        Path testSrc = base.resolve("test-src");
+        tb.writeJavaFiles(testSrc,
+                          """
+                          package test;
+                          import preview.api.NonPreview;
+                          import preview.api.Preview;
+                          public class Test {
+                              public void test(NonPreview np, Preview p) {
+                                  NonPreview.test();
+                                  Preview.test();
+                                  int i1 = np.field;
+                                  int i2 = p.field;
+                              }
+                          }
+                          """);
+        Path testClasses = base.resolve("test-classes");
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(testClasses)
+                .options("--patch-module", "java.base=" + apiClasses.toString(),
+                         "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                         "-XDrawDiagnostics")
+                .files(tb.findJavaFiles(testSrc))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected =
+                List.of("Test.java:3:19: compiler.err.is.preview: preview.api.Preview",
+                        "Test.java:5:37: compiler.err.is.preview: preview.api.Preview",
+                        "Test.java:6:19: compiler.err.is.preview: test()",
+                        "Test.java:7:9: compiler.err.is.preview: preview.api.Preview",
+                        "Test.java:8:20: compiler.err.is.preview: field",
+                        "5 errors");
+
+        if (!log.equals(expected))
+            throw new Exception("expected output not found" + log);
+    }
+
+    @Test //JDK-8343540:
+    public void nonPreviewImplementsPreview4(Path base) throws Exception {
+        Path apiSrc = base.resolve("api-src");
+        tb.writeJavaFiles(apiSrc,
+                          """
+                          package preview.api;
+                          @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
+                          public class Preview {
+                              public int field;
+                              public static void test() {}
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public class NonPreview extends Preview {
+                              public int field;
+                              public static void test() {}
+                          }
+                          """);
+        Path apiClasses = base.resolve("api-classes");
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(apiClasses)
+                .options("--patch-module", "java.base=" + apiSrc.toString(),
+                         "-Werror")
+                .files(tb.findJavaFiles(apiSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        Path testSrc = base.resolve("test-src");
+        tb.writeJavaFiles(testSrc,
+                          """
+                          package test;
+                          import preview.api.NonPreview;
+                          import preview.api.Preview;
+                          public class Test {
+                              public void test(NonPreview np, Preview p) {
+                                  NonPreview.test();
+                                  Preview.test();
+                                  int i1 = np.field;
+                                  int i2 = p.field;
+                              }
+                          }
+                          """);
+        Path testClasses = base.resolve("test-classes");
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(testClasses)
+                .options("--patch-module", "java.base=" + apiClasses.toString(),
+                         "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                         "-XDrawDiagnostics")
+                .files(tb.findJavaFiles(testSrc))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected =
+                List.of("Test.java:3:19: compiler.err.is.preview: preview.api.Preview",
+                        "Test.java:5:37: compiler.err.is.preview: preview.api.Preview",
+                        "Test.java:7:9: compiler.err.is.preview: preview.api.Preview",
+                        "3 errors");
+
+        if (!log.equals(expected))
+            throw new Exception("expected output not found" + log);
+    }
+
+    @Test //JDK-8343540:
+    public void nonPreviewImplementsPreview5(Path base) throws Exception {
+        Path apiSrc = base.resolve("api-src");
+        tb.writeJavaFiles(apiSrc,
+                          """
+                          package preview.api;
+                          @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
+                          public interface Preview {
+                              public static final int CONST1 = 0;
+                              public static final int CONST2 = 0;
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public interface NonPreviewIntf extends Preview {
+                              public static final int CONST2 = 0;
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public class NonPreview implements Preview {
+                              public static final int CONST2 = 0;
+                          }
+                          """);
+        Path apiClasses = base.resolve("api-classes");
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(apiClasses)
+                .options("--patch-module", "java.base=" + apiSrc.toString(),
+                         "-Werror")
+                .files(tb.findJavaFiles(apiSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        Path testSrc = base.resolve("test-src");
+        tb.writeJavaFiles(testSrc,
+                          """
+                          package test;
+                          import preview.api.NonPreview;
+                          import preview.api.NonPreviewIntf;
+                          import preview.api.Preview;
+                          public class Test {
+                              public void test() {
+                                  int i1 = NonPreview.CONST1;
+                                  int i2 = NonPreviewIntf.CONST1;
+                                  int i3 = Preview.CONST1;
+                                  int i4 = NonPreview.CONST2;
+                                  int i5 = NonPreviewIntf.CONST2;
+                                  int i6 = Preview.CONST2;
+                              }
+                          }
+                          """);
+        Path testClasses = base.resolve("test-classes");
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(testClasses)
+                .options("--patch-module", "java.base=" + apiClasses.toString(),
+                         "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                         "-XDrawDiagnostics")
+                .files(tb.findJavaFiles(testSrc))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected =
+                List.of("Test.java:4:19: compiler.err.is.preview: preview.api.Preview",
+                        "Test.java:7:28: compiler.err.is.preview: CONST1",
+                        "Test.java:8:32: compiler.err.is.preview: CONST1",
+                        "Test.java:9:18: compiler.err.is.preview: preview.api.Preview",
+                        "Test.java:12:18: compiler.err.is.preview: preview.api.Preview",
+                        "5 errors");
+
+        if (!log.equals(expected))
+            throw new Exception("expected output not found" + log);
+    }
+
     private int verifyPreviewClassfiles(Path directory) throws Exception {
         Path[] classfiles = tb.findFiles("class", directory);
 
