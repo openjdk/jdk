@@ -40,19 +40,21 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+
+import com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel;
 
 public class bug6725409 {
     private JFrame frame;
     private JInternalFrame iFrame;
     private static TestTitlePane testTitlePane;
-    private boolean passed;
-    private static final Robot robot = createRobot();
+    private static volatile boolean passed;
+    private static Robot robot;
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel(
                 new com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel());
 
+        robot = new Robot();
         final bug6725409 bug6725409 = new bug6725409();
         try {
             SwingUtilities.invokeAndWait(bug6725409::setupUIStep1);
@@ -136,14 +138,7 @@ public class bug6725409 {
 
     private static void sync() {
         robot.waitForIdle();
-    }
-
-    private static Robot createRobot() {
-        try {
-            return new Robot();
-        } catch (Exception ex) {
-            throw new Error("Can't create Robot", ex);
-        }
+        robot.delay(500);
     }
 
     // Extend WindowsInternalFrameTitlePane to get access to systemPopupMenu
