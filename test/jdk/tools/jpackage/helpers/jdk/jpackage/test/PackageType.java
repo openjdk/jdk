@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.Log;
-import static jdk.jpackage.internal.util.function.ExceptionWrapper.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 
 /**
  * jpackage type traits.
