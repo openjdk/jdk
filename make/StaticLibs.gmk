@@ -121,6 +121,8 @@ $(eval $(call SetupBuildLauncher, java, \
     OBJECT_DIR := $(STATIC_LAUNCHER_OUTPUT_DIR), \
 ))
 
+$(java): $(STATIC_LIB_FILES)
+
 TARGETS += $(java)
 
 JAVA_LAUNCHER := $(BUILD_LAUNCHER_java_TARGET)
