@@ -1110,7 +1110,7 @@ public class TestAlignVector {
             // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4*iter
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             a[i]++;
-            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2*iter
+            // adr = base + UNSAFE.ARRAY_SHORT_BASE_OFFSET + 2*iter
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             b[i]++;
             // For AlignVector, all adr must be 8-aligned. Let's see for which iteration this can hold:
@@ -1144,13 +1144,13 @@ public class TestAlignVector {
             // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1*iter
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             a[i]++;
-            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2*iter
+            // adr = base + UNSAFE.ARRAY_SHORT_BASE_OFFSET + 2*iter
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             b[i]++;
-            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4*iter
+            // adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 4*iter
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             c[i]++;
-            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8*iter
+            // adr = base + UNSAFE.ARRAY_LONG_BASE_OFFSET + 8*iter
             //              = 16 (always)
             d[i]++;
             // If AlignVector and UseCompactObjectHeaders, and we want all adr 8-aligned:
@@ -1189,7 +1189,7 @@ public class TestAlignVector {
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13bIB(int[] a, byte[] b) {
         for (int i = 1; i < RANGE; i++) {
-            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4 + 4*iter
+            // adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 4 + 4*iter
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             a[i]++;
             // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1 + 1*iter
@@ -1214,10 +1214,10 @@ public class TestAlignVector {
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static Object[] test13bIS(int[] a, short[] b) {
         for (int i = 1; i < RANGE; i++) {
-            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4 + 4*iter
+            // adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 4 + 4*iter
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             a[i]++;
-            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2 + 2*iter
+            // adr = base + UNSAFE.ARRAY_SHORT_BASE_OFFSET + 2 + 2*iter
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             b[i]++;
             // If AlignVector and UseCompactObjectHeaders, and we want all adr 8-aligned:
@@ -1246,13 +1246,13 @@ public class TestAlignVector {
             // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1 + 1*iter
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             a[i]++;
-            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2 + 2*iter
+            // adr = base + UNSAFE.ARRAY_SHORT_BASE_OFFSET + 2 + 2*iter
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             b[i]++;
-            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4 + 4*iter
+            // adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 4 + 4*iter
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             c[i]++;
-            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 + 8*iter
+            // adr = base + UNSAFE.ARRAY_LONG_BASE_OFFSET + 8 + 8*iter
             //              = 16 (always)
             d[i]++;
             // If AlignVector and UseCompactObjectHeaders, and we want all adr 8-aligned:
