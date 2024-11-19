@@ -95,7 +95,7 @@ public class ImagingLib {
         } catch (UnsatisfiedLinkError e) {
         }
 
-        useLib = Boolean.valueOf(success);
+        useLib = success;
 
         //
         // Cache the class references of the operations we know about
