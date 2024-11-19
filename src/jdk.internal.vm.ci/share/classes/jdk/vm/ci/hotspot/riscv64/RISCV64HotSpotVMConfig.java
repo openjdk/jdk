@@ -50,7 +50,6 @@ class RISCV64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final boolean useRVC = getFlag("UseRVC", Boolean.class);
     final boolean useZba = getFlag("UseZba", Boolean.class);
     final boolean useZbb = getFlag("UseZbb", Boolean.class);
-    final boolean useRVVForBigIntegerShiftIntrinsics = getFlag("UseRVVForBigIntegerShiftIntrinsics", Boolean.class);
 
     final long vmVersionFeatures = getFieldValue("Abstract_VM_Version::_features", Long.class, "uint64_t");
 }

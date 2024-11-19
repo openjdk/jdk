@@ -76,9 +76,6 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         if (config.useZbb) {
             flags.add(RISCV64.Flag.UseZbb);
         }
-        if (config.useRVVForBigIntegerShiftIntrinsics) {
-            flags.add(RISCV64.Flag.UseRVVForBigIntegerShiftIntrinsics);
-        }
 
         return flags;
     }
