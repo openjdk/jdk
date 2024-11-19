@@ -42,11 +42,11 @@ public class HoveringAndDraggingTest {
                     1. Notice components in test window: main-panel, box-for-text,
                        2 scroll-sliders, and 4 scroll-buttons(Not applicable for macosx).
                     2. Hover mouse over box-for-text.
-                       Make sure, that mouse cursor is TextCursor (a.k.a. \"beam\").
+                       Make sure, that mouse cursor is TextCursor (a.k.a. "beam").
                     3. Hover mouse over each of components (see item 1), except for box-for-text.
                        Make sure, that cursor is DefaultCursor (arrow).
-                    4. Drag mouse (using any mouse button) from box-for-text to every"
-                       component in item 1, and also outside application window."
+                    4. Drag mouse (using any mouse button) from box-for-text to every
+                       component in item 1, and also outside application window.
                        Make sure, that cursor remains TextCursor while mouse button is pressed.
                     5. Repeat item 4 for each other component in item 1, except for box-for-text
                        _but_ now make sure that cursor is DefaultCursor.
