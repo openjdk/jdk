@@ -120,8 +120,6 @@ private:
   static int atomic_memory_operation_lock() { return _atomic_memory_operation_lock; }
   static void set_atomic_memory_operation_lock(int value) { _atomic_memory_operation_lock = value; }
 
-  static address partial_subtype_check()                  { return _partial_subtype_check; }
-
   static void generate_load_absolute_address(MacroAssembler* masm, Register table, address table_addr, uint64_t table_contents);
   static void generate_load_crc_table_addr(MacroAssembler* masm, Register table);
   static void generate_load_crc32c_table_addr(MacroAssembler* masm, Register table);
