@@ -990,6 +990,11 @@ public final class Files {
      * be started with implementation specific privileges to create hard links
      * or to create links to directories.
      *
+     * @apiNote
+     * If the {@code existing} parameter is the path to a symbolic link, then
+     * whether the new link is for the target of the symbolic link or for the
+     * symbolic link itself is platform dependent and therefore not specified.
+     *
      * @param   link
      *          the link (directory entry) to create
      * @param   existing
