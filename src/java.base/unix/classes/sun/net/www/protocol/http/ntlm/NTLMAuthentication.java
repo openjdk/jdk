@@ -71,7 +71,6 @@ import sun.security.action.GetPropertyAction;
  */
 
 public class NTLMAuthentication extends AuthenticationInfo {
-    private static final long serialVersionUID = 170L;
 
     private static final NTLMAuthenticationCallback NTLMAuthCallback =
         NTLMAuthenticationCallback.getNTLMAuthenticationCallback();
