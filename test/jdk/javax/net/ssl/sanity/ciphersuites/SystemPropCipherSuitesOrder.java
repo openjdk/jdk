@@ -20,10 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 import java.util.Arrays;
 import java.util.stream.Stream;
-
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
