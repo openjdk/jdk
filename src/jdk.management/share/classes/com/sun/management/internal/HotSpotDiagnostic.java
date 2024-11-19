@@ -49,7 +49,7 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
     public void dumpHeap(String outputFile, boolean live) throws IOException {
 
         String propertyName = "jdk.management.heapdump.allowAnyFileSuffix";
-        boolean allowAnyFileSuffix = Boolean.parseBoolean(System.getProperty(propertyName, "false"));
+        boolean allowAnyFileSuffix = Boolean.getBoolean(propertyName);
         if (!allowAnyFileSuffix && !outputFile.endsWith(".hprof")) {
             throw new IllegalArgumentException("heapdump file must have .hprof extension");
         }
