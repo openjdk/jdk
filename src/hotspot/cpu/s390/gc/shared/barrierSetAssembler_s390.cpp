@@ -269,6 +269,24 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
           && fp_reg->encoding() != Z_F1->encoding()) {
         reg_save_index++;
 
+
+        if (true) {
+          x = a;
+        } else {
+          x = b;
+        }
+
+        z_bre(ok);
+        lg(x, b);
+        z_bru(tmp);
+        bind(ok);
+        lg(x,a);
+        bind(tmp);
+
+
+        z_lochie(a)
+          (b)
+
         if (action == ACTION_SAVE) {
           __ z_std(fp_reg, offset - reg_save_index * BytesPerWord, Z_SP);
         } else if (action == ACTION_RESTORE) {
