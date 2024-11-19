@@ -884,27 +884,23 @@ void CodeHeapAnalyticsDCmd::execute(DCmdSource source, TRAPS) {
 EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
   _log("log", "Name of log to be printed. If omitted, all logs are printed.", "STRING", false, nullptr),
-  _max("max", "Maximum number of events to be printed (newest first). If omitted, all events are printed.", "STRING", false, nullptr)
+  _max("max", "Maximum number of events to be printed (newest first). If omitted or zero, all events are printed.", "INT", false, "0")
 {
   _dcmdparser.add_dcmd_option(&_log);
   _dcmdparser.add_dcmd_option(&_max);
 }
 
 void EventLogDCmd::execute(DCmdSource source, TRAPS) {
-  const char* max_value = _max.value();
-  int max = -1;
-  if (max_value != nullptr) {
-    char* endptr = nullptr;
-    if (!parse_integer(max_value, &max)) {
-      output()->print_cr("Invalid max option: \"%s\".", max_value);
-      return;
-    }
+  int max_value = (int)_max.value();
+  if (max_value < 0) {
+    output()->print_cr("Invalid max option: \"%d\".", max_value);
+    return;
   }
   const char* log_name = _log.value();
   if (log_name != nullptr) {
-    Events::print_one(output(), log_name, max);
+    Events::print_one(output(), log_name, max_value);
   } else {
-    Events::print_all(output(), max);
+    Events::print_all(output(), max_value);
   }
 }
 

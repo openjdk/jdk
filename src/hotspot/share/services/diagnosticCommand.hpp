@@ -889,7 +889,7 @@ public:
 class EventLogDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _log;
-  DCmdArgument<char*> _max;
+  DCmdArgument<jlong> _max;
 public:
   static int num_arguments() { return 2; }
   EventLogDCmd(outputStream* output, bool heap);
