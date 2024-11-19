@@ -283,6 +283,7 @@ public class HtmlDoclet extends AbstractDoclet {
             if (!options.noExternalSpecsPage()){
                 writerFactory.newExternalSpecsWriter().buildPage();
             }
+            writerFactory.newSearchTagsWriter().buildPage();
             writerFactory.newSystemPropertiesWriter().buildPage();
 
             configuration.indexBuilder.addElements();

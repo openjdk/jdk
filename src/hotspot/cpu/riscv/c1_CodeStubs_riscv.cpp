@@ -42,9 +42,7 @@
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   InternalAddress safepoint_pc(__ pc() - __ offset() + safepoint_offset());
-  __ relocate(safepoint_pc.rspec(), [&] {
-    __ la(t0, safepoint_pc.target());
-  });
+  __ la(t0, safepoint_pc);
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
 
   assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
@@ -318,7 +316,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
                   relocInfo::static_call_type);
   address call = __ reloc_call(resolve);
   if (call == nullptr) {
-    ce->bailout("trampoline stub overflow");
+    ce->bailout("reloc call address stub overflow");
     return;
   }
   ce->add_call_info_here(info());

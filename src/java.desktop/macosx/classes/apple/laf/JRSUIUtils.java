@@ -25,12 +25,9 @@
 
 package apple.laf;
 
-import java.security.AccessController;
-
 import apple.laf.JRSUIConstants.Hit;
 import apple.laf.JRSUIConstants.ScrollBarPart;
 import com.apple.laf.AquaImageFactory.NineSliceMetrics;
-import sun.security.action.GetPropertyAction;
 
 public final class JRSUIUtils {
 
@@ -69,8 +66,7 @@ public final class JRSUIUtils {
             final int majorVersion, final int minorVersion, final boolean inclusive,
             final boolean matchBelow, final boolean matchAbove) {
         // split the "x.y.z" version number
-        @SuppressWarnings("removal")
-        String osVersion = AccessController.doPrivileged(new GetPropertyAction("os.version"));
+        String osVersion = System.getProperty("os.version");
         String[] fragments = osVersion.split("\\.");
 
         if (fragments.length < 2) return false;

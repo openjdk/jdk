@@ -141,7 +141,6 @@ public final class ModuleBootstrap {
     private static boolean canUseArchivedBootLayer() {
         return getProperty("jdk.module.upgrade.path") == null &&
                getProperty("jdk.module.patch.0") == null &&       // --patch-module
-               getProperty("jdk.module.addmods.0") == null  &&    // --add-modules
                getProperty("jdk.module.limitmods") == null &&     // --limit-modules
                getProperty("jdk.module.addreads.0") == null &&    // --add-reads
                getProperty("jdk.module.addexports.0") == null &&  // --add-exports
@@ -212,10 +211,9 @@ public final class ModuleBootstrap {
         // If the java heap was archived at CDS dump time, and the environment
         // at dump time matches the current environment, then use the archived
         // system modules and finder.
-        ArchivedModuleGraph archivedModuleGraph = ArchivedModuleGraph.get(mainModule);
+        ArchivedModuleGraph archivedModuleGraph = ArchivedModuleGraph.get(mainModule, addModules);
         if (archivedModuleGraph != null
                 && !haveModulePath
-                && addModules.isEmpty()
                 && limitModules.isEmpty()
                 && !isPatched) {
             systemModuleFinder = archivedModuleGraph.finder();
@@ -466,7 +464,6 @@ public final class ModuleBootstrap {
 
         if (CDS.isDumpingStaticArchive()
                 && !haveUpgradeModulePath
-                && addModules.isEmpty()
                 && allJrtOrModularJar(cf)) {
             assert !isPatched;
 
@@ -478,7 +475,8 @@ public final class ModuleBootstrap {
                                         systemModuleFinder,
                                         cf,
                                         clf,
-                                        mainModule);
+                                        mainModule,
+                                        addModules);
             if (!hasSplitPackages && !hasIncubatorModules) {
                 ArchivedBootLayer.archive(bootLayer);
             }

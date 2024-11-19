@@ -73,6 +73,9 @@ import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
+import javax.tools.JavaFileObject;
 
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 
@@ -89,6 +92,7 @@ public class TestGetScopeResult {
         new TestGetScopeResult().testLocalRecordAnnotation();
         new TestGetScopeResult().testRuleCases();
         new TestGetScopeResult().testNestedSwitchExpression();
+        new TestGetScopeResult().testModuleImportScope();
     }
 
     public void run() throws IOException {
@@ -823,6 +827,64 @@ public class TestGetScopeResult {
         }
     }
 
+    void testModuleImportScope() throws IOException {
+        JavacTool c = JavacTool.create();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            String code = """
+                          import module java.compiler;
+                          import java.util.*;
+                          import java.lang.System;
+                          class Test {
+                          }
+                          """;
+            Context ctx = new Context();
+            TestAnalyzer.preRegister(ctx);
+            JavaFileObject input =
+                    SimpleJavaFileObject.forSource(URI.create("myfo:///Test.java"), code);
+            JavacTask t = (JavacTask) c.getTask(null, fm, null, null, null,
+                                                List.of(input),
+                                                ctx);
+            CompilationUnitTree cut = t.parse().iterator().next();
+            t.analyze();
+
+            TreePath topLevelClass = new TreePath(new TreePath(cut), cut.getTypeDecls().get(0));
+            Scope scope = Trees.instance(t).getScope(topLevelClass);
+
+            if (scope.getEnclosingClass() == null) {
+                throw new AssertionError("Expected an enclosing class.");
+            }
+
+            scope = scope.getEnclosingScope();
+
+            if (scope.getEnclosingClass() != null) {
+                throw new AssertionError("Did not expect an enclosing class.");
+            }
+
+            asssertScopeContainsTypeWithFQN(scope, "java.lang.System");
+            asssertScopeContainsTypeWithFQN(scope, "Test");
+
+            scope = scope.getEnclosingScope();
+
+            if (scope.getEnclosingClass() != null) {
+                throw new AssertionError("Did not expect an enclosing class.");
+            }
+
+            asssertScopeContainsTypeWithFQN(scope, "java.util.List");
+
+            scope = scope.getEnclosingScope();
+
+            if (scope.getEnclosingClass() != null) {
+                throw new AssertionError("Did not expect an enclosing class.");
+            }
+
+            asssertScopeContainsTypeWithFQN(scope, "javax.tools.ToolProvider");
+
+            if (scope.getEnclosingScope() != null) {
+                throw new AssertionError("Did not expect an enclosing scope.");
+            }
+        }
+    }
+
     private List<String> dumpScope(Scope scope) {
         List<String> content = new ArrayList<>();
         while (scope.getEnclosingClass() != null) {
@@ -833,4 +895,17 @@ public class TestGetScopeResult {
         }
         return content;
     }
+
+    private void asssertScopeContainsTypeWithFQN(Scope scope, String fqn) {
+        for (TypeElement type : ElementFilter.typesIn(scope.getLocalElements())) {
+            if (type.getQualifiedName().contentEquals(fqn)) {
+                return ;
+            }
+        }
+
+        throw new AssertionError("Expected to find: " + fqn +
+                                 " in: " + scope.getLocalElements() +
+                                 ", but it is missing.");
+    }
+
 }

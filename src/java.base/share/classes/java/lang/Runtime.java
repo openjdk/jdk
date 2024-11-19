@@ -142,9 +142,9 @@ public class Runtime {
 
     /**
      * Initiates the {@linkplain ##shutdown shutdown sequence} of the Java Virtual Machine.
-     * Unless the security manager denies exiting, this method initiates the shutdown sequence
-     * (if it is not already initiated) and then blocks indefinitely. This method neither returns
-     * nor throws an exception; that is, it does not complete either normally or abruptly.
+     * This method initiates the shutdown sequence (if it is not already initiated) and
+     * then blocks indefinitely. This method neither returns nor throws an exception; that
+     * is, it does not complete either normally or abruptly.
      *
      * <p> The argument serves as a status code. By convention, a nonzero status code
      * indicates abnormal termination.
@@ -169,13 +169,6 @@ public class Runtime {
      *         Termination status.  By convention, a nonzero status code
      *         indicates abnormal termination.
      *
-     * @throws SecurityException
-     *         If a security manager is present and its
-     *         {@link SecurityManager#checkExit checkExit} method does not permit
-     *         exiting with the specified status
-     *
-     * @see java.lang.SecurityException
-     * @see java.lang.SecurityManager#checkExit(int)
      * @see #addShutdownHook
      * @see #removeShutdownHook
      * @see #halt(int)
@@ -233,10 +226,6 @@ public class Runtime {
      * @throws  IllegalStateException
      *          If the shutdown sequence has already begun
      *
-     * @throws  SecurityException
-     *          If a security manager is present and it denies
-     *          {@link RuntimePermission}{@code ("shutdownHooks")}
-     *
      * @see #removeShutdownHook
      * @see #halt(int)
      * @see #exit(int)
@@ -265,10 +254,6 @@ public class Runtime {
      * @throws  IllegalStateException
      *          If the shutdown sequence has already begun
      *
-     * @throws  SecurityException
-     *          If a security manager is present and it denies
-     *          {@link RuntimePermission}{@code ("shutdownHooks")}
-     *
      * @see #addShutdownHook
      * @see #exit(int)
      * @since 1.3
@@ -284,8 +269,7 @@ public class Runtime {
 
     /**
      * Immediately {@linkplain ##termination terminates} the Java Virtual Machine.
-     * If the security manager denies exiting, throws {@link SecurityException}.
-     * Otherwise, termination of the Java Virtual Machine is unconditional and immediate.
+     * Termination of the Java Virtual Machine is unconditional and immediate.
      * This method does not initiate the {@linkplain ##shutdown shutdown sequence}, nor does
      * it wait for the shutdown sequence to finish if it is already in progress. An
      * invocation of this method never returns normally.
@@ -302,11 +286,6 @@ public class Runtime {
      *         (equivalently, {@link System#exit(int) System.exit}) method
      *         has already been invoked then this status code
      *         will override the status code passed to that method.
-     *
-     * @throws SecurityException
-     *         If a security manager is present and its
-     *         {@link SecurityManager#checkExit checkExit} method
-     *         does not permit an exit with the specified status
      *
      * @see #exit
      * @see #addShutdownHook
@@ -340,11 +319,6 @@ public class Runtime {
      * @param   command   a specified system command.
      *
      * @return  A new {@link Process} object for managing the subprocess
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its
-     *          {@link SecurityManager#checkExec checkExec}
-     *          method doesn't allow creation of the subprocess
      *
      * @throws  IOException
      *          If an I/O error occurs
@@ -391,11 +365,6 @@ public class Runtime {
      *                    the environment of the current process.
      *
      * @return  A new {@link Process} object for managing the subprocess
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its
-     *          {@link SecurityManager#checkExec checkExec}
-     *          method doesn't allow creation of the subprocess
      *
      * @throws  IOException
      *          If an I/O error occurs
@@ -457,11 +426,6 @@ public class Runtime {
      *
      * @return  A new {@link Process} object for managing the subprocess
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its
-     *          {@link SecurityManager#checkExec checkExec}
-     *          method doesn't allow creation of the subprocess
-     *
      * @throws  IOException
      *          If an I/O error occurs
      *
@@ -505,11 +469,6 @@ public class Runtime {
      *
      * @return  A new {@link Process} object for managing the subprocess
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its
-     *          {@link SecurityManager#checkExec checkExec}
-     *          method doesn't allow creation of the subprocess
-     *
      * @throws  IOException
      *          If an I/O error occurs
      *
@@ -550,11 +509,6 @@ public class Runtime {
      *                    the environment of the current process.
      *
      * @return  A new {@link Process} object for managing the subprocess
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its
-     *          {@link SecurityManager#checkExec checkExec}
-     *          method doesn't allow creation of the subprocess
      *
      * @throws  IOException
      *          If an I/O error occurs
@@ -610,12 +564,6 @@ public class Runtime {
      * If {@code dir} is {@code null}, the subprocess inherits the
      * current working directory of the current process.
      *
-     * <p>If a security manager exists, its
-     * {@link SecurityManager#checkExec checkExec}
-     * method is invoked with the first component of the array
-     * {@code cmdarray} as its argument. This may result in a
-     * {@link SecurityException} being thrown.
-     *
      * <p>Starting an operating system process is highly system-dependent.
      * Among the many things that can go wrong are:
      * <ul>
@@ -646,11 +594,6 @@ public class Runtime {
      *                    the working directory of the current process.
      *
      * @return  A new {@link Process} object for managing the subprocess
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its
-     *          {@link SecurityManager#checkExec checkExec}
-     *          method doesn't allow creation of the subprocess
      *
      * @throws  UnsupportedOperationException
      *          If the operating system does not support the creation of processes.
@@ -808,10 +751,6 @@ public class Runtime {
      * Otherwise, the filename argument is mapped to a native library image in
      * an implementation-dependent manner.
      * <p>
-     * First, if there is a security manager, its {@code checkLink}
-     * method is called with the {@code filename} as its argument.
-     * This may result in a security exception.
-     * <p>
      * This is similar to the method {@link #loadLibrary(String)}, but it
      * accepts a general file name as an argument rather than just a library
      * name, allowing any file of native code to be loaded.
@@ -820,9 +759,6 @@ public class Runtime {
      * convenient means of invoking this method.
      *
      * @param      filename   the file to load.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkLink} method doesn't allow
-     *             loading of the specified dynamic library
      * @throws     UnsatisfiedLinkError  if either the filename is not an
      *             absolute path name, the native library is not statically
      *             linked with the VM, or the library cannot be mapped to
@@ -833,8 +769,6 @@ public class Runtime {
      *             does not have native access enabled.
      * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#getRuntime()
-     * @see        java.lang.SecurityException
-     * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
     @CallerSensitive
     @Restricted
@@ -871,10 +805,6 @@ public class Runtime {
      * location and mapped to a native library image in an
      * implementation-dependent manner.
      * <p>
-     * First, if there is a security manager, its {@code checkLink}
-     * method is called with the {@code libname} as its argument.
-     * This may result in a security exception.
-     * <p>
      * The method {@link System#loadLibrary(String)} is the conventional
      * and convenient means of invoking this method. If native
      * methods are to be used in the implementation of a class, a standard
@@ -891,9 +821,6 @@ public class Runtime {
      * name, the second and subsequent calls are ignored.
      *
      * @param      libname   the name of the library.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkLink} method doesn't allow
-     *             loading of the specified dynamic library
      * @throws     UnsatisfiedLinkError if either the libname argument
      *             contains a file path, the native library is not statically
      *             linked with the VM,  or the library cannot be mapped to a
@@ -903,8 +830,6 @@ public class Runtime {
      * @throws     IllegalCallerException if the caller is in a module that
      *             does not have native access enabled.
      * @spec jni/index.html Java Native Interface Specification
-     * @see        java.lang.SecurityException
-     * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
     @CallerSensitive
     @Restricted

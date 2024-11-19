@@ -45,13 +45,10 @@ import jdk.jpackage.test.JPackageCommand;
 /*
  * @test
  * @summary jpackage with --app-content option
- * @library ../helpers
- * @library /test/lib
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build AppContentTest
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @modules java.base/jdk.internal.util
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppContentTest
  */

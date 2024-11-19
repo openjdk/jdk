@@ -29,7 +29,6 @@ import java.lang.constant.ClassDesc;
 import java.util.function.Consumer;
 
 import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A builder for a classfile or portion of a classfile.  Builders are rarely
@@ -44,9 +43,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see ClassFileTransform
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends ClassFileBuilder<E, B>>
         extends Consumer<E> permits ClassBuilder, FieldBuilder, MethodBuilder, CodeBuilder {
 

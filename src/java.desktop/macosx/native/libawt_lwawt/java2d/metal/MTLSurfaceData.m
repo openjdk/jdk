@@ -154,7 +154,7 @@ MTLSD_SetNativeDimensions(JNIEnv *env, BMTLSDOps *mtlsdo,
     }
 
     JNU_SetFieldByName(env, NULL, sdObject, "nativeWidth", "I", width);
-    if (!((*env)->ExceptionOccurred(env))) {
+    if (!((*env)->ExceptionCheck(env))) {
         JNU_SetFieldByName(env, NULL, sdObject, "nativeHeight", "I", height);
     }
 
