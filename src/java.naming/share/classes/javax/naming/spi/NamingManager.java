@@ -123,10 +123,10 @@ public class NamingManager {
      *    or {@code Referenceable} containing a factory class name,
      *    use the named factory to create the object.
      *    Return {@code refInfo} if the factory cannot be created.
-     *    The factory class downloading from a location specified in the reference
-     *    is not supported, unless a custom {@link ObjectFactoryBuilder}
-     *    {@linkplain #setObjectFactoryBuilder(ObjectFactoryBuilder) is set}
-     *    to determine object factories load policy.
+     *    Downloading a factory class from a location specified in the reference
+     *    is not supported out of the box. A custom {@link ObjectFactoryBuilder}
+     *    {@linkplain #setObjectFactoryBuilder(ObjectFactoryBuilder) may be used}
+     *    if a different policy is desired.
      *    If an exception is encountered while creating the factory,
      *    it is passed up to the caller.
      * <li>If {@code refInfo} is a {@code Reference} or

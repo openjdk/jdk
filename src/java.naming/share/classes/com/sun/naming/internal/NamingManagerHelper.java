@@ -181,9 +181,8 @@ public class NamingManagerHelper {
     static ObjectFactory getObjectFactoryFromReference(
             Reference ref, String factoryName, Predicate<Class<?>> filter)
             throws IllegalAccessException,
-            InstantiationException,
-            MalformedURLException {
-        Class<?> clas = null;
+            InstantiationException {
+        Class<?> clas;
 
         // Try to use current class loader
         try {
@@ -193,20 +192,11 @@ public class NamingManagerHelper {
                 return null;
             }
         } catch (ClassNotFoundException e) {
-            // ignore and continue
-            // e.printStackTrace();
-        }
-        // All other exceptions are passed up.
-
-        // Not in class path; loading of a factory from remote
-        // codebase is not supported
-        if (clas == null &&
-            ref.getFactoryClassLocation() != null) {
             return null;
         }
-
+        assert clas != null;
         @SuppressWarnings("deprecation") // Class.newInstance
-        ObjectFactory result = (clas != null) ? (ObjectFactory) clas.newInstance() : null;
+        ObjectFactory result = (ObjectFactory) clas.newInstance();
         return result;
     }
 

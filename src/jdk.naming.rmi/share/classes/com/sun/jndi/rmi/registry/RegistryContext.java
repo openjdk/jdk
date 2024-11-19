@@ -467,9 +467,9 @@ public class RegistryContext implements Context, Referenceable {
                         : (Object)r;
 
             /*
-             * Classes may only be loaded from an arbitrary URL codebase when
-             *  a custom ObjectFactoryBuilder() is setup, otherwise load from
-             *  arbitrary URL codebase is disabled.
+             * Downloading a factory class from a location specified in the reference
+             * is not supported out of the box. A custom "ObjectFactoryBuilder"
+             * may be used if a different policy is desired.
              */
 
             // Use reference if possible
