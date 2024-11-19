@@ -129,10 +129,6 @@ public class StartOptionTest {
     protected void startCheckUserOutput(Consumer<String> checkUserOutput,
             String... args) {
         runShell(args);
-        System.err.println("userout: " + userout);
-        System.err.println("usererr: " + usererr);
-        System.err.println("cmdout: " + cmdout);
-        System.err.println("cmderr: " + cmderr);
         check(userout, checkUserOutput, "userout");
         check(usererr, null, "usererr");
     }
