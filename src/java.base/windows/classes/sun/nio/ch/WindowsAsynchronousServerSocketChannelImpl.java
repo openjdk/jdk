@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,6 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.IOException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import jdk.internal.misc.Unsafe;
 
 /**
@@ -115,16 +112,12 @@ class WindowsAsynchronousServerSocketChannelImpl
      */
     private class AcceptTask implements Runnable, Iocp.ResultHandler {
         private final WindowsAsynchronousSocketChannelImpl channel;
-        @SuppressWarnings("removal")
-        private final AccessControlContext acc;
         private final PendingFuture<AsynchronousSocketChannel,Object> result;
 
         AcceptTask(WindowsAsynchronousSocketChannelImpl channel,
-                   @SuppressWarnings("removal") AccessControlContext acc,
                    PendingFuture<AsynchronousSocketChannel,Object> result)
         {
             this.channel = channel;
-            this.acc = acc;
             this.result = result;
         }
 
@@ -139,7 +132,6 @@ class WindowsAsynchronousServerSocketChannelImpl
         }
 
         // caller must have acquired read lock for the listener and child channel.
-        @SuppressWarnings("removal")
         void finishAccept() throws IOException {
             /**
              * Set local/remote addresses. This is currently very inefficient
@@ -151,18 +143,6 @@ class WindowsAsynchronousServerSocketChannelImpl
             InetSocketAddress local = Net.localAddress(channel.fd);
             final InetSocketAddress remote = Net.remoteAddress(channel.fd);
             channel.setConnected(local, remote);
-
-            // permission check (in context of initiating thread)
-            if (acc != null) {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    public Void run() {
-                        SecurityManager sm = System.getSecurityManager();
-                        sm.checkAccept(remote.getAddress().getHostAddress(),
-                                       remote.getPort());
-                        return null;
-                    }
-                }, acc);
-            }
         }
 
         /**
@@ -207,7 +187,7 @@ class WindowsAsynchronousServerSocketChannelImpl
                 closeChildChannel();
                 if (x instanceof ClosedChannelException)
                     x = new AsynchronousCloseException();
-                if (!(x instanceof IOException) && !(x instanceof SecurityException))
+                if (!(x instanceof IOException))
                     x = new IOException(x);
                 enableAccept();
                 result.setFailure(x);
@@ -259,7 +239,7 @@ class WindowsAsynchronousServerSocketChannelImpl
                 closeChildChannel();
                 if (x instanceof ClosedChannelException)
                     x = new AsynchronousCloseException();
-                if (!(x instanceof IOException) && !(x instanceof SecurityException))
+                if (!(x instanceof IOException))
                     x = new IOException(x);
                 result.setFailure(x);
             }
@@ -328,16 +308,9 @@ class WindowsAsynchronousServerSocketChannelImpl
             return null;
         }
 
-        // need calling context when there is security manager as
-        // permission check may be done in a different thread without
-        // any application call frames on the stack
-        @SuppressWarnings("removal")
-        AccessControlContext acc = (System.getSecurityManager() == null) ?
-            null : AccessController.getContext();
-
         PendingFuture<AsynchronousSocketChannel,Object> result =
             new PendingFuture<AsynchronousSocketChannel,Object>(this, handler, attachment);
-        AcceptTask task = new AcceptTask(ch, acc, result);
+        AcceptTask task = new AcceptTask(ch, result);
         result.setContext(task);
 
         // check and set flag to prevent concurrent accepting

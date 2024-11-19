@@ -84,15 +84,6 @@ class WindowsFileCopy {
             throw new UnsupportedOperationException("Unsupported copy option: " + option);
         }
 
-        // check permissions. If the source file is a symbolic link then
-        // later we must also check LinkPermission
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            source.checkRead();
-            target.checkWrite();
-        }
-
         // get attributes of source file
         // attempt to get attributes of target file
         // if both files are the same there is nothing to do
@@ -142,11 +133,6 @@ class WindowsFileCopy {
 
         } finally {
             CloseHandle(sourceHandle);
-        }
-
-        // if source file is a symbolic link then we must check for LinkPermission
-        if (sm != null && sourceAttrs.isSymbolicLink()) {
-            sm.checkPermission(new LinkPermission("symbolic"));
         }
 
         // if source is a Unix domain socket, we don't want to copy it for various
@@ -306,13 +292,6 @@ class WindowsFileCopy {
             }
             if (option == null) throw new NullPointerException();
             throw new UnsupportedOperationException("Unsupported option: " + option);
-        }
-
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            source.checkWrite();
-            target.checkWrite();
         }
 
         final String sourcePath = asWin32Path(source);

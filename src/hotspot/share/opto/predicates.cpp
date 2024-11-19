@@ -33,10 +33,10 @@
 
 // Walk over all Initialized Assertion Predicates and return the entry into the first Initialized Assertion Predicate
 // (i.e. not belonging to an Initialized Assertion Predicate anymore)
-Node* AssertionPredicatesWithHalt::find_entry(Node* start_proj) {
+Node* AssertionPredicates::find_entry(Node* start_proj) {
   assert(start_proj != nullptr, "should not be null");
   Node* entry = start_proj;
-  while (AssertionPredicateWithHalt::is_predicate(entry)) {
+  while (AssertionPredicate::is_predicate(entry)) {
     entry = entry->in(0)->in(0);
   }
   return entry;
@@ -48,7 +48,7 @@ bool may_be_assertion_predicate_if(const Node* node) {
   return node->is_IfTrue() && RegularPredicate::may_be_predicate_if(node->as_IfProj());
 }
 
-bool AssertionPredicateWithHalt::is_predicate(const Node* maybe_success_proj) {
+bool AssertionPredicate::is_predicate(const Node* maybe_success_proj) {
   if (!may_be_assertion_predicate_if(maybe_success_proj)) {
     return false;
   }
@@ -57,14 +57,14 @@ bool AssertionPredicateWithHalt::is_predicate(const Node* maybe_success_proj) {
 
 // Check if the If node of `predicate_proj` has an OpaqueTemplateAssertionPredicate (Template Assertion Predicate) or
 // an OpaqueInitializedAssertionPredicate (Initialized Assertion Predicate) node as input.
-bool AssertionPredicateWithHalt::has_assertion_predicate_opaque(const Node* predicate_proj) {
+bool AssertionPredicate::has_assertion_predicate_opaque(const Node* predicate_proj) {
   IfNode* iff = predicate_proj->in(0)->as_If();
   Node* bol = iff->in(1);
   return bol->is_OpaqueTemplateAssertionPredicate() || bol->is_OpaqueInitializedAssertionPredicate();
 }
 
 // Check if the other projection (UCT projection) of `success_proj` has a Halt node as output.
-bool AssertionPredicateWithHalt::has_halt(const Node* success_proj) {
+bool AssertionPredicate::has_halt(const Node* success_proj) {
   ProjNode* other_proj = success_proj->as_IfProj()->other_if_proj();
   return other_proj->outcnt() == 1 && other_proj->unique_out()->Opcode() == Op_Halt;
 }
@@ -82,7 +82,7 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(Node* parse_predicate_p
   return nullptr;
 }
 
-Deoptimization::DeoptReason RegularPredicateWithUCT::uncommon_trap_reason(IfProjNode* if_proj) {
+Deoptimization::DeoptReason RuntimePredicate::uncommon_trap_reason(IfProjNode* if_proj) {
     CallStaticJavaNode* uct_call = if_proj->is_uncommon_trap_if_pattern();
     if (uct_call == nullptr) {
       return Deoptimization::Reason_none;
@@ -90,7 +90,7 @@ Deoptimization::DeoptReason RegularPredicateWithUCT::uncommon_trap_reason(IfProj
     return Deoptimization::trap_request_reason(uct_call->uncommon_trap_request());
 }
 
-bool RegularPredicateWithUCT::is_predicate(Node* maybe_success_proj) {
+bool RuntimePredicate::is_predicate(Node* maybe_success_proj) {
   if (RegularPredicate::may_be_predicate_if(maybe_success_proj)) {
     return has_valid_uncommon_trap(maybe_success_proj);
   } else {
@@ -98,7 +98,7 @@ bool RegularPredicateWithUCT::is_predicate(Node* maybe_success_proj) {
   }
 }
 
-bool RegularPredicateWithUCT::has_valid_uncommon_trap(const Node* success_proj) {
+bool RuntimePredicate::has_valid_uncommon_trap(const Node* success_proj) {
   assert(RegularPredicate::may_be_predicate_if(success_proj), "must have been checked before");
   const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj->as_IfProj());
   return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
@@ -106,7 +106,7 @@ bool RegularPredicateWithUCT::has_valid_uncommon_trap(const Node* success_proj) 
           deopt_reason == Deoptimization::Reason_profile_predicate);
 }
 
-bool RegularPredicateWithUCT::is_predicate(const Node* node, Deoptimization::DeoptReason deopt_reason) {
+bool RuntimePredicate::is_predicate(const Node* node, const Deoptimization::DeoptReason deopt_reason) {
   if (RegularPredicate::may_be_predicate_if(node)) {
     return deopt_reason == uncommon_trap_reason(node->as_IfProj());
   } else {
@@ -126,16 +126,6 @@ bool RegularPredicate::may_be_predicate_if(const Node* node) {
     }
   }
   return false;
-}
-
-// Runtime Predicates always have an UCT since they could normally fail at runtime. In this case we execute the trap
-// on the failing path.
-bool RuntimePredicate::is_predicate(Node* node) {
-  return RegularPredicateWithUCT::is_predicate(node);
-}
-
-bool RuntimePredicate::is_predicate(Node* node, Deoptimization::DeoptReason deopt_reason) {
-  return RegularPredicateWithUCT::is_predicate(node, deopt_reason);
 }
 
 // Rewire any non-CFG nodes dependent on this Template Assertion Predicate (i.e. with a control input to this
@@ -162,13 +152,28 @@ bool TemplateAssertionPredicate::is_predicate(Node* node) {
 }
 
 // Clone this Template Assertion Predicate and replace the OpaqueLoopInitNode with the provided 'new_opaque_init' node.
+IfTrueNode* TemplateAssertionPredicate::clone(Node* new_control, PhaseIdealLoop* phase) const {
+  assert(PhaseIdealLoop::assertion_predicate_has_loop_opaque_node(_if_node),
+         "must find OpaqueLoop* nodes for Template Assertion Predicate");
+  TemplateAssertionExpression template_assertion_expression(opaque_node());
+  OpaqueTemplateAssertionPredicateNode* new_opaque_node = template_assertion_expression.clone(new_control, phase);
+  AssertionPredicateIfCreator assertion_predicate_if_creator(phase);
+  IfTrueNode* success_proj = assertion_predicate_if_creator.create_for_template(new_control, _if_node->Opcode(),
+                                                                                new_opaque_node,
+                                                                                _if_node->assertion_predicate_type());
+  assert(PhaseIdealLoop::assertion_predicate_has_loop_opaque_node(success_proj->in(0)->as_If()),
+         "Template Assertion Predicates must have OpaqueLoop* nodes in the bool expression");
+  return success_proj;
+}
+
+// Clone this Template Assertion Predicate and replace the OpaqueLoopInitNode with the provided 'new_opaque_init' node.
 IfTrueNode* TemplateAssertionPredicate::clone_and_replace_init(Node* new_control, OpaqueLoopInitNode* new_opaque_init,
                                                                PhaseIdealLoop* phase) const {
   assert(PhaseIdealLoop::assertion_predicate_has_loop_opaque_node(_if_node),
          "must find OpaqueLoop* nodes for Template Assertion Predicate");
   TemplateAssertionExpression template_assertion_expression(opaque_node());
   OpaqueTemplateAssertionPredicateNode* new_opaque_node =
-      template_assertion_expression.clone_and_replace_init(new_opaque_init, new_control, phase);
+      template_assertion_expression.clone_and_replace_init(new_control, new_opaque_init, phase);
   AssertionPredicateIfCreator assertion_predicate_if_creator(phase);
   IfTrueNode* success_proj = assertion_predicate_if_creator.create_for_template(new_control, _if_node->Opcode(),
                                                                                 new_opaque_node,
@@ -295,16 +300,16 @@ class ReplaceInitAndStrideStrategy : public TransformStrategyForOpaqueLoopNodes 
 // OpaqueTemplateAssertionPredicate to and including the OpaqueLoop* nodes). The cloned nodes are rewired to reflect the
 // same graph structure as found for this Template Assertion Expression. The cloned nodes get 'new_ctrl' as ctrl. There
 // is no other update done for the cloned nodes. Return the newly cloned OpaqueTemplateAssertionPredicate.
-OpaqueTemplateAssertionPredicateNode* TemplateAssertionExpression::clone(Node* new_ctrl, PhaseIdealLoop* phase) {
-  CloneStrategy clone_init_and_stride_strategy(phase, new_ctrl);
-  return clone(clone_init_and_stride_strategy, new_ctrl, phase);
+OpaqueTemplateAssertionPredicateNode* TemplateAssertionExpression::clone(Node* new_control, PhaseIdealLoop* phase) {
+  CloneStrategy clone_init_and_stride_strategy(phase, new_control);
+  return clone(clone_init_and_stride_strategy, new_control, phase);
 }
 
 // Same as clone() but instead of cloning the OpaqueLoopInitNode, we replace it with the provided 'new_init' node.
 OpaqueTemplateAssertionPredicateNode*
-TemplateAssertionExpression::clone_and_replace_init(Node* new_init, Node* new_ctrl, PhaseIdealLoop* phase) {
-  ReplaceInitAndCloneStrideStrategy replace_init_and_clone_stride_strategy(new_init, new_ctrl, phase);
-  return clone(replace_init_and_clone_stride_strategy, new_ctrl, phase);
+TemplateAssertionExpression::clone_and_replace_init(Node* new_control, Node* new_init, PhaseIdealLoop* phase) {
+  ReplaceInitAndCloneStrideStrategy replace_init_and_clone_stride_strategy(new_init, new_control, phase);
+  return clone(replace_init_and_clone_stride_strategy, new_control, phase);
 }
 
 // Same as clone() but instead of cloning the OpaqueLoopInit and OpaqueLoopStride node, we replace them with the provided
@@ -617,26 +622,6 @@ void AssertionPredicateIfCreator::create_halt_node(IfFalseNode* fail_proj, Ideal
   _phase->register_control(halt, loop, fail_proj);
 }
 
-// Creates an init and last value Template Assertion Predicate connected together from a Parse Predicate with an UCT on
-// the failing path. Returns the success projection of the last value Template Assertion Predicate.
-IfTrueNode* TemplateAssertionPredicateCreator::create_with_uncommon_trap(
-    Node* new_control, ParsePredicateSuccessProj* parse_predicate_success_proj,
-    const Deoptimization::DeoptReason deopt_reason, const int if_opcode) {
-  OpaqueLoopInitNode* opaque_init = create_opaque_init(new_control);
-  bool does_overflow;
-  OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression =
-      create_for_init_value(new_control, opaque_init, does_overflow);
-  IfTrueNode* template_predicate_success_proj =
-      create_if_node_with_uncommon_trap(template_assertion_predicate_expression, parse_predicate_success_proj,
-                                        deopt_reason, if_opcode, does_overflow,
-                                        AssertionPredicateType::InitValue);
-  template_assertion_predicate_expression = create_for_last_value(template_predicate_success_proj, opaque_init,
-                                                                  does_overflow);
-  return create_if_node_with_uncommon_trap(template_assertion_predicate_expression, parse_predicate_success_proj,
-                                           deopt_reason, if_opcode, does_overflow,
-                                           AssertionPredicateType::LastValue);
-}
-
 OpaqueLoopInitNode* TemplateAssertionPredicateCreator::create_opaque_init(Node* new_control) {
   OpaqueLoopInitNode* opaque_init = new OpaqueLoopInitNode(_phase->C, _loop_head->init_trip());
   _phase->register_new_node(opaque_init, new_control);
@@ -648,17 +633,6 @@ TemplateAssertionPredicateCreator::create_for_init_value(Node* new_control, Opaq
                                                          bool& does_overflow) const {
   AssertionPredicateExpressionCreator expression_creator(_loop_head->stride_con(), _scale, _offset, _range, _phase);
   return expression_creator.create_for_template(new_control, opaque_init, does_overflow);
-}
-
-IfTrueNode* TemplateAssertionPredicateCreator::create_if_node_with_uncommon_trap(
-    OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression,
-    ParsePredicateSuccessProj* parse_predicate_success_proj, const Deoptimization::DeoptReason deopt_reason,
-    const int if_opcode, const bool does_overflow, const AssertionPredicateType assertion_predicate_type) {
-  IfTrueNode* success_proj = _phase->create_new_if_for_predicate(parse_predicate_success_proj, nullptr, deopt_reason,
-                                                                 does_overflow ? Op_If : if_opcode, false,
-                                                                 assertion_predicate_type);
-  _phase->igvn().replace_input_of(success_proj->in(0), 1, template_assertion_predicate_expression);
-  return success_proj;
 }
 
 OpaqueTemplateAssertionPredicateNode*
@@ -683,7 +657,7 @@ Node* TemplateAssertionPredicateCreator::create_last_value(Node* new_control, Op
   return last_value;
 }
 
-IfTrueNode* TemplateAssertionPredicateCreator::create_if_node_with_halt(
+IfTrueNode* TemplateAssertionPredicateCreator::create_if_node(
     Node* new_control, OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression,
     const bool does_overflow, const AssertionPredicateType assertion_predicate_type) {
   AssertionPredicateIfCreator assertion_predicate_if_creator(_phase);
@@ -694,18 +668,18 @@ IfTrueNode* TemplateAssertionPredicateCreator::create_if_node_with_halt(
 
 // Creates an init and last value Template Assertion Predicate connected together with a Halt node on the failing path.
 // Returns the success projection of the last value Template Assertion Predicate latter.
-IfTrueNode* TemplateAssertionPredicateCreator::create_with_halt(Node* new_control) {
+IfTrueNode* TemplateAssertionPredicateCreator::create(Node* new_control) {
   OpaqueLoopInitNode* opaque_init = create_opaque_init(new_control);
   bool does_overflow;
   OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression =
       create_for_init_value(new_control, opaque_init, does_overflow);
   IfTrueNode* template_predicate_success_proj =
-      create_if_node_with_halt(new_control, template_assertion_predicate_expression, does_overflow,
-                               AssertionPredicateType::InitValue);
+      create_if_node(new_control, template_assertion_predicate_expression, does_overflow,
+                     AssertionPredicateType::InitValue);
   template_assertion_predicate_expression = create_for_last_value(template_predicate_success_proj, opaque_init,
                                                                   does_overflow);
-  return create_if_node_with_halt(template_predicate_success_proj, template_assertion_predicate_expression,
-                                  does_overflow, AssertionPredicateType::LastValue);
+  return create_if_node(template_predicate_success_proj, template_assertion_predicate_expression,
+                        does_overflow, AssertionPredicateType::LastValue);
 }
 
 InitializedAssertionPredicateCreator::InitializedAssertionPredicateCreator(PhaseIdealLoop* phase)

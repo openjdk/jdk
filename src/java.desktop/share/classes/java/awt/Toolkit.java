@@ -56,8 +56,6 @@ import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EventListener;
@@ -396,17 +394,11 @@ public abstract class Toolkit {
      * properties are set up properly before any classes dependent upon them
      * are initialized.
      */
-    @SuppressWarnings("removal")
     private static void initAssistiveTechnologies() {
 
         // Get accessibility properties
         final String sep = File.separator;
         final Properties properties = new Properties();
-
-
-        atNames = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<String>() {
-            public String run() {
 
                 // Try loading the per-user accessibility properties file.
                 try {
@@ -459,9 +451,7 @@ public abstract class Toolkit {
                         System.setProperty("javax.accessibility.assistive_technologies", classNames);
                     }
                 }
-                return classNames;
-            }
-        });
+                atNames = classNames;
     }
 
     /**
@@ -512,7 +502,6 @@ public abstract class Toolkit {
      * {@code null} it is ignored. All other errors are handled via an AWTError
      * exception.
      */
-    @SuppressWarnings("removal")
     private static void loadAssistiveTechnologies() {
         // Load any assistive technologies
         if (atNames != null && !atNames.isBlank()) {
@@ -521,20 +510,17 @@ public abstract class Toolkit {
                                       .map(String::trim)
                                       .collect(Collectors.toSet());
             final Map<String, AccessibilityProvider> providers = new HashMap<>();
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                try {
-                    for (AccessibilityProvider p : ServiceLoader.load(AccessibilityProvider.class, cl)) {
-                        String name = p.getName();
-                        if (names.contains(name) && !providers.containsKey(name)) {
-                            p.activate();
-                            providers.put(name, p);
-                        }
+            try {
+                for (AccessibilityProvider p : ServiceLoader.load(AccessibilityProvider.class, cl)) {
+                    String name = p.getName();
+                    if (names.contains(name) && !providers.containsKey(name)) {
+                        p.activate();
+                        providers.put(name, p);
                     }
-                } catch (java.util.ServiceConfigurationError | Exception e) {
-                    newAWTError(e, "Could not load or activate service provider");
                 }
-                return null;
-            });
+            } catch (java.util.ServiceConfigurationError | Exception e) {
+                newAWTError(e, "Could not load or activate service provider");
+            }
             names.stream()
                  .filter(n -> !providers.containsKey(n))
                  .forEach(Toolkit::fallbackToLoadClassForAT);
@@ -1302,16 +1288,10 @@ public abstract class Toolkit {
      * directly.  -hung
      */
     private static boolean loaded = false;
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     static void loadLibraries() {
         if (!loaded) {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        System.loadLibrary("awt");
-                        return null;
-                    }
-                });
+            System.loadLibrary("awt");
             loaded = true;
         }
     }
@@ -1320,7 +1300,6 @@ public abstract class Toolkit {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
     private static void initStatic() {
         AWTAccessor.setToolkitAccessor(
                 new AWTAccessor.ToolkitAccessor() {
@@ -1330,17 +1309,11 @@ public abstract class Toolkit {
                     }
                 });
 
-        java.security.AccessController.doPrivileged(
-                                 new java.security.PrivilegedAction<Void>() {
-            public Void run() {
-                try {
-                    resources = ResourceBundle.getBundle("sun.awt.resources.awt");
-                } catch (MissingResourceException e) {
-                    // No resource file; defaults will be used.
-                }
-                return null;
-            }
-        });
+        try {
+            resources = ResourceBundle.getBundle("sun.awt.resources.awt");
+        } catch (MissingResourceException e) {
+            // No resource file; defaults will be used.
+        }
 
         // ensure that the proper libraries are loaded
         loadLibraries();

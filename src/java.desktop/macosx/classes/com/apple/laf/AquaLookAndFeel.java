@@ -154,22 +154,10 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see #uninitialize
      * @see UIManager#setLookAndFeel
      */
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     public void initialize() {
-        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("osxui");
-                    return null;
-                }
-            });
-
-        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>(){
-            @Override
-            public Void run() {
-                JRSUIControl.initJRSUI();
-                return null;
-            }
-        });
+        System.loadLibrary("osxui");
+        JRSUIControl.initJRSUI();
 
         super.initialize();
         final ScreenPopupFactory spf = new ScreenPopupFactory();
