@@ -28,12 +28,11 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.XmlUtils;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 public record AppImageFile(String mainLauncherName, String mainLauncherClassName,
         String version, boolean macSigned, boolean macAppStore) {
@@ -78,7 +77,7 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
     }
 
     public static AppImageFile load(Path appImageDir) {
-        try {
+        return toSupplier(() -> {
             Document doc = XmlUtils.initDocumentBuilder().parse(
                     Files.newInputStream(getPathInAppImage(appImageDir)));
 
@@ -103,10 +102,7 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
             return new AppImageFile(mainLauncherName, mainLauncherClassName,
                     version, macSigned, macAppStore);
 
-        } catch (XPathExpressionException | SAXException | IOException ex) {
-            // This should never happen as XPath expressions should be correct
-            throw new RuntimeException(ex);
-        }
+        }).get();
     }
 
     private static String getVersion() {
