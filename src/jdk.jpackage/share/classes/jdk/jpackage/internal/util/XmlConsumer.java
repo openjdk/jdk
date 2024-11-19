@@ -31,5 +31,5 @@ import javax.xml.stream.XMLStreamWriter;
 public interface XmlConsumer {
 
     void accept(XMLStreamWriter xml) throws IOException, XMLStreamException;
-    
+
 }

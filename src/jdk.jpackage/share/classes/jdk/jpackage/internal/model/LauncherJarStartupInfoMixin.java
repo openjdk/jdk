@@ -29,8 +29,8 @@ import java.nio.file.Path;
 public interface LauncherJarStartupInfoMixin {
     /**
      * Returns path to the main jar relative to app's main source directory.
-     * 
-     * @see jdk.jpackage.internal.model.Application#srcDir() 
+     *
+     * @see jdk.jpackage.internal.model.Application#srcDir()
      */
     Path jarPath();
 

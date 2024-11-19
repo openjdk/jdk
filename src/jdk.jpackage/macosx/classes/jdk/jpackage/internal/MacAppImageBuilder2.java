@@ -157,7 +157,7 @@ final class MacAppImageBuilder2 {
         return String.format("%s.%s", app.bundleIdentifier(), fa.extension());
     }
 
-    private static void faWriteIcon(XMLStreamWriter xml, String key, FileAssociation fa) 
+    private static void faWriteIcon(XMLStreamWriter xml, String key, FileAssociation fa)
             throws XMLStreamException {
         var icon = fa.icon();
         if (icon != null) {

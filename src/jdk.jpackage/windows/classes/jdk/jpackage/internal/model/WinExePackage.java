@@ -34,7 +34,7 @@ public interface WinExePackage extends Package, WinExePackageMixin {
         return CompositeProxy.create(WinExePackage.class, createExePackage(
                 msiPackage), new WinExePackageMixin.Stub(msiPackage, icon));
     }
-    
+
     private static Package createExePackage(WinMsiPackage pkg) {
         return new Package.Stub(
                 pkg.app(),

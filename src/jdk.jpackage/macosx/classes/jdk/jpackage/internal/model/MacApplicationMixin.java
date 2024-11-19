@@ -29,7 +29,7 @@ import java.nio.file.Path;
 public interface MacApplicationMixin {
 
     Path icon();
-    
+
     String bundleName();
 
     String bundleIdentifier();

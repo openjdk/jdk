@@ -26,13 +26,13 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 
-// Must be publc to allow access from AppImageLayout.toPathGroup() 
+// Must be publc to allow access from AppImageLayout.toPathGroup()
 public interface LinuxApplicationLayoutMixin {
 
     /**
      * Path to "libapplauncher.so".
      */
     Path libAppLauncher();
-    
+
     record Stub(Path libAppLauncher) implements LinuxApplicationLayoutMixin {}
 }

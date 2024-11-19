@@ -28,8 +28,8 @@ package jdk.jpackage.internal.model;
 import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface LinuxApplication extends Application {
-    
+
     public static LinuxApplication create(Application app) {
         return CompositeProxy.create(LinuxApplication.class, app);
-    }    
+    }
 }

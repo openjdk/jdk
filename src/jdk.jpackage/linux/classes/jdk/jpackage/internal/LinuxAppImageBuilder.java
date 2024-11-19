@@ -49,7 +49,7 @@ final class LinuxAppImageBuilder {
             Files.createDirectories(launcherLib.getParent());
             Files.copy(in, launcherLib);
         }
-    }    
+    }
 
     private static void writeLauncherIcons(BuildEnv env, Application app,
             ApplicationLayout appLayout) throws IOException {
