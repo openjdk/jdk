@@ -258,11 +258,11 @@ public class WindowsHelper {
                 "\"" + cmd.appLauncherPath(launcherName).getFileName().toString() + "\"",
                 ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).saveOutput().
                 setWinEnableUTF8(true).executeAndGetOutput();
-        if ("No Instance(s) Available.".equals(output.get(1).trim())) {
+        if ("No Instance(s) Available.".equals(output.getFirst().trim())) {
                 return new long[0];
         }
 
-        String[] headers = Stream.of(output.get(1).split("\\s+", 2)).map(
+        String[] headers = Stream.of(output.getFirst().split("\\s+", 2)).map(
                 String::trim).map(String::toLowerCase).toArray(String[]::new);
         Pattern pattern;
         if (headers[0].equals("parentprocessid") && headers[1].equals(
@@ -276,7 +276,7 @@ public class WindowsHelper {
                     "Unrecognizable output of \'wmic process\' command");
         }
 
-        List<long[]> processes = output.stream().skip(2).map(line -> {
+        List<long[]> processes = output.stream().skip(1).map(line -> {
             Matcher m = pattern.matcher(line);
             long[] pids = null;
             if (m.matches()) {

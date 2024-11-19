@@ -341,7 +341,7 @@ public final class Executor extends CommandArguments<Executor> {
             // run chcp to change the code page to UTF-8 on Windows
             command.add("cmd.exe");
             command.add("/c");
-            command.add("chcp 65001 && " + printCommandLine(executablePath().toString(), args));
+            command.add("chcp 65001 >nul 2>&1 && " + printCommandLine(executablePath().toString(), args));
         } else {
             command.add(executablePath().toString());
             command.addAll(args);
