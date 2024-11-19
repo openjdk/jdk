@@ -32,7 +32,7 @@ class CollectedHeap;
 class SerialArguments : public GenArguments {
 private:
   virtual CollectedHeap* create_heap();
-  virtual void initialize_heap_flags_and_sizes();
+  virtual void initialize();
 };
 
 #endif // SHARE_GC_SERIAL_SERIALARGUMENTS_HPP

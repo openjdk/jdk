@@ -264,6 +264,7 @@ class Arguments : AllStatic {
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
   static jint set_ergonomics_flags();
+  static void setup_compact_headers();
   // Limits the given heap size by the maximum amount of virtual
   // memory this process is currently allowed to use. It also takes
   // the virtual-to-physical ratio of the current GC into account.

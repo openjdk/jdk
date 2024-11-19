@@ -28,8 +28,8 @@
 #include "gc/serial/serialArguments.hpp"
 #include "gc/serial/serialHeap.hpp"
 
-void SerialArguments::initialize_heap_flags_and_sizes() {
-  GenArguments::initialize_heap_flags_and_sizes();
+void SerialArguments::initialize() {
+  GenArguments::initialize();
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 
