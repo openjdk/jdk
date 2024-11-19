@@ -24,31 +24,11 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.util.Map;
-import static java.util.stream.Collectors.joining;
-import java.util.stream.IntStream;
 import jdk.jpackage.internal.util.CompositeProxy;
 
-public interface MacApplication extends Application, MacApplicationMixin {
+public interface MacFileAssociation extends FileAssociation, MacFileAssociationMixin {
 
-    default DottedVersion shortVersion() {
-        var verComponents = DottedVersion.lazy(version()).getComponents();
-        return DottedVersion.greedy(IntStream.range(0, 3).mapToObj(idx -> {
-            if (idx < verComponents.length) {
-                return verComponents[idx].toString();
-            } else {
-                return "0";
-            }
-        }).collect(joining(".")));
-    }
-
-    @Override
-    default Map<String, String> extraAppImageFileData() {
-        return Map.of("signed", Boolean.toString(signed()), "app-store",
-                Boolean.toString(appStore()));
-    }
-
-    public static MacApplication create(Application app, MacApplicationMixin mixin) {
-        return CompositeProxy.create(MacApplication.class, app, mixin);
+    static public MacFileAssociation create(FileAssociation fa, MacFileAssociationMixin mixin) {
+        return CompositeProxy.create(MacFileAssociation.class, fa, mixin);
     }
 }

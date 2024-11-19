@@ -24,31 +24,27 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.util.Map;
-import static java.util.stream.Collectors.joining;
-import java.util.stream.IntStream;
-import jdk.jpackage.internal.util.CompositeProxy;
+import java.nio.file.Path;
 
-public interface MacApplication extends Application, MacApplicationMixin {
+public interface MacApplicationMixin {
 
-    default DottedVersion shortVersion() {
-        var verComponents = DottedVersion.lazy(version()).getComponents();
-        return DottedVersion.greedy(IntStream.range(0, 3).mapToObj(idx -> {
-            if (idx < verComponents.length) {
-                return verComponents[idx].toString();
-            } else {
-                return "0";
-            }
-        }).collect(joining(".")));
-    }
+    Path icon();
+    
+    String bundleName();
 
-    @Override
-    default Map<String, String> extraAppImageFileData() {
-        return Map.of("signed", Boolean.toString(signed()), "app-store",
-                Boolean.toString(appStore()));
-    }
+    String bundleIdentifier();
 
-    public static MacApplication create(Application app, MacApplicationMixin mixin) {
-        return CompositeProxy.create(MacApplication.class, app, mixin);
+    String category();
+
+    boolean signed();
+
+    boolean appStore();
+
+    Path entitlements();
+
+    record Stub(Path icon, String bundleName, String bundleIdentifier, String category,
+            boolean signed, boolean appStore, Path entitlements) implements
+            MacApplicationMixin {
+
     }
 }

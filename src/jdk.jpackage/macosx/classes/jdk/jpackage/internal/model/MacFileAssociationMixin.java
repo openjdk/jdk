@@ -24,31 +24,36 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.util.Map;
-import static java.util.stream.Collectors.joining;
-import java.util.stream.IntStream;
-import jdk.jpackage.internal.util.CompositeProxy;
+import java.util.List;
 
-public interface MacApplication extends Application, MacApplicationMixin {
+public interface MacFileAssociationMixin {
 
-    default DottedVersion shortVersion() {
-        var verComponents = DottedVersion.lazy(version()).getComponents();
-        return DottedVersion.greedy(IntStream.range(0, 3).mapToObj(idx -> {
-            if (idx < verComponents.length) {
-                return verComponents[idx].toString();
-            } else {
-                return "0";
-            }
-        }).collect(joining(".")));
-    }
+    String cfBundleTypeName();
 
-    @Override
-    default Map<String, String> extraAppImageFileData() {
-        return Map.of("signed", Boolean.toString(signed()), "app-store",
-                Boolean.toString(appStore()));
-    }
+    String cfBundleTypeRole();
 
-    public static MacApplication create(Application app, MacApplicationMixin mixin) {
-        return CompositeProxy.create(MacApplication.class, app, mixin);
+    String lsHandlerRank();
+
+    String lsTypeIsPackage();
+
+    String nsDocumentClass();
+
+    String nsPersistentStoreTypeKey();
+
+    boolean lsSupportsOpeningDocumentsInPlace();
+
+    boolean uiSupportsDocumentBrowser();
+
+    List<String> utTypeConformsTo();
+
+    List<String> nsExportableTypes();
+
+    record Stub(String cfBundleTypeName, String cfBundleTypeRole,
+            String lsHandlerRank, String lsTypeIsPackage, String nsDocumentClass,
+            String nsPersistentStoreTypeKey,
+            boolean lsSupportsOpeningDocumentsInPlace,
+            boolean uiSupportsDocumentBrowser, List<String> utTypeConformsTo,
+            List<String> nsExportableTypes) implements MacFileAssociationMixin {
+
     }
 }
