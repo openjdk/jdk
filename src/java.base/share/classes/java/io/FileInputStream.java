@@ -130,17 +130,13 @@ public class FileInputStream extends InputStream
      */
     @SuppressWarnings("this-escape")
     public FileInputStream(File file) throws FileNotFoundException {
-        String name = (file != null ? file.getPath() : null);
-        if (name == null) {
-            throw new NullPointerException();
-        }
         if (file.isInvalid()) {
             throw new FileNotFoundException("Invalid file path");
         }
+        path = file.getPath();
         fd = new FileDescriptor();
         fd.attach(this);
-        path = name;
-        open(name);
+        open(path);
         FileCleanable.register(fd);       // open set the fd, register the cleanup
     }
 
