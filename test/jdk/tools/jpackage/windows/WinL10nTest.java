@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.test.Executor;
 import static jdk.jpackage.test.WindowsHelper.WixType.WIX3;
 import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutput;
