@@ -27,9 +27,9 @@ package java.util.prefs;
 
 import java.util.*;
 import java.io.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
+//import java.security.AccessController;
+//import java.security.PrivilegedAction;
+//import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import sun.util.logging.PlatformLogger;
 
@@ -53,13 +53,13 @@ class FileSystemPreferences extends AbstractPreferences {
         loadPrefsLib();
     }
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     private static void loadPrefsLib() {
-        PrivilegedAction<Void> load = () -> {
+//        PrivilegedAction<Void> load = () -> {
             System.loadLibrary("prefs");
-            return null;
-        };
-        AccessController.doPrivileged(load);
+//            return null;
+//        };
+//        AccessController.doPrivileged(load);
     }
 
     /**
@@ -67,8 +67,7 @@ class FileSystemPreferences extends AbstractPreferences {
      */
     @SuppressWarnings("removal")
     private static final int SYNC_INTERVAL = Math.max(1,
-        AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-             Integer.getInteger("java.util.prefs.syncInterval", 30)));
+            Integer.getInteger("java.util.prefs.syncInterval", 30));
 
     /**
      * Returns logger for error messages. Backing store exceptions are logged at
@@ -117,10 +116,10 @@ class FileSystemPreferences extends AbstractPreferences {
         return root;
     }
 
-    @SuppressWarnings("removal")
+//    @SuppressWarnings("removal")
     private static void setupUserRoot() {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
+//        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+//            public Void run() {
                 userRootDir =
                       new File(System.getProperty("java.util.prefs.userRoot",
                       System.getProperty("user.home")), ".java/.userPrefs");
@@ -160,9 +159,9 @@ class FileSystemPreferences extends AbstractPreferences {
                     getLogger().warning(e.toString());
                 }
                 userRootModTime = userRootModFile.lastModified();
-                return null;
-            }
-        });
+//                return null;
+//            }
+//        });
     }
 
 
@@ -185,10 +184,10 @@ class FileSystemPreferences extends AbstractPreferences {
         return root;
     }
 
-    @SuppressWarnings("removal")
+//    @SuppressWarnings("removal")
     private static void setupSystemRoot() {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
+//        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+//            public Void run() {
                 String systemPrefsDirName =
                   System.getProperty("java.util.prefs.systemRoot","/etc/.java");
                 systemRootDir =
@@ -234,9 +233,9 @@ class FileSystemPreferences extends AbstractPreferences {
                 } catch (IOException e) { getLogger().warning(e.toString());
                 }
                 systemRootModTime = systemRootModFile.lastModified();
-                return null;
-            }
-        });
+//                return null;
+//            }
+//        });
     }
 
 
@@ -456,7 +455,7 @@ class FileSystemPreferences extends AbstractPreferences {
         addShutdownHook();
     }
 
-    @SuppressWarnings("removal")
+//    @SuppressWarnings("removal")
     private static void addShutdownHook() {
         // Add periodic timer task to periodically sync cached prefs
         syncTimer.schedule(new TimerTask() {
@@ -466,8 +465,8 @@ class FileSystemPreferences extends AbstractPreferences {
         }, SYNC_INTERVAL*1000, SYNC_INTERVAL*1000);
 
         // Add shutdown hook to flush cached prefs on normal termination
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
+//        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+//            public Void run() {
                 Runtime.getRuntime().addShutdownHook(
                     new Thread(null, null, "Sync Timer Thread", 0, false) {
                     public void run() {
@@ -475,9 +474,9 @@ class FileSystemPreferences extends AbstractPreferences {
                         syncWorld();
                     }
                 });
-                return null;
-            }
-        });
+//                return null;
+//            }
+//        });
     }
 
     private static void syncWorld() {
@@ -526,19 +525,19 @@ class FileSystemPreferences extends AbstractPreferences {
      * parent node and name.  This constructor, called from childSpi,
      * is used to make every node except for the two //roots.
      */
-    @SuppressWarnings("removal")
+//    @SuppressWarnings("removal")
     private FileSystemPreferences(FileSystemPreferences parent, String name) {
         super(parent, name);
         isUserNode = parent.isUserNode;
         dir  = new File(parent.dir, dirName(name));
         prefsFile = new File(dir, "prefs.xml");
         tmpFile  = new File(dir, "prefs.tmp");
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
+//        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+//            public Void run() {
                 newNode = !dir.exists();
-                return null;
-            }
-        });
+//                return null;
+//            }
+//        });
         if (newNode) {
             // These 2 things guarantee node will get written at next flush/sync
             prefsCache = new TreeMap<>();
@@ -596,12 +595,12 @@ class FileSystemPreferences extends AbstractPreferences {
      * fails, a BackingStoreException is thrown and both prefsCache and
      * lastSyncTime are unaffected by the call.
      */
-    @SuppressWarnings("removal")
+//    @SuppressWarnings("removal")
     private void loadCache() throws BackingStoreException {
-        try {
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Void>() {
-                public Void run() throws BackingStoreException {
+//        try {
+//            AccessController.doPrivileged(
+//                new PrivilegedExceptionAction<Void>() {
+//                public Void run() throws BackingStoreException {
                     Map<String, String> m = new TreeMap<>();
                     long newLastSyncTime = 0;
                     try {
@@ -627,12 +626,12 @@ class FileSystemPreferences extends AbstractPreferences {
                     // Attempt succeeded; update state
                     prefsCache = m;
                     lastSyncTime = newLastSyncTime;
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw (BackingStoreException) e.getException();
-        }
+//                    return null;
+//                }
+//            });
+//        } catch (PrivilegedActionException e) { // get rid of?
+//            throw (BackingStoreException) e.getException();
+//        }
     }
 
     /**
@@ -644,32 +643,21 @@ class FileSystemPreferences extends AbstractPreferences {
      * and lastSyncTime will be unaffected by this call.  This call will
      * NEVER leave prefsFile in a corrupt state.
      */
-    @SuppressWarnings("removal")
     private void writeBackCache() throws BackingStoreException {
         try {
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Void>() {
-                public Void run() throws BackingStoreException {
-                    try {
-                        if (!dir.exists() && !dir.mkdirs())
-                            throw new BackingStoreException(dir +
-                                                             " create failed.");
-                        try (FileOutputStream fos = new FileOutputStream(tmpFile)) {
-                            XmlSupport.exportMap(fos, prefsCache);
-                        }
-                        if (!tmpFile.renameTo(prefsFile))
-                            throw new BackingStoreException("Can't rename " +
-                            tmpFile + " to " + prefsFile);
-                    } catch(Exception e) {
-                        if (e instanceof BackingStoreException)
-                            throw (BackingStoreException)e;
-                        throw new BackingStoreException(e);
-                    }
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw (BackingStoreException) e.getException();
+            if (!dir.exists() && !dir.mkdirs())
+                throw new BackingStoreException(dir +
+                                                 " create failed.");
+            try (FileOutputStream fos = new FileOutputStream(tmpFile)) {
+                XmlSupport.exportMap(fos, prefsCache);
+            }
+            if (!tmpFile.renameTo(prefsFile))
+                throw new BackingStoreException("Can't rename " +
+                tmpFile + " to " + prefsFile);
+        } catch(BackingStoreException e) {
+            throw e;
+        } catch(Exception e) {
+            throw new BackingStoreException(e);
         }
     }
 
@@ -678,21 +666,15 @@ class FileSystemPreferences extends AbstractPreferences {
         return prefsCache.keySet().toArray(new String[prefsCache.size()]);
     }
 
-    @SuppressWarnings("removal")
     protected String[] childrenNamesSpi() {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<String[]>() {
-                public String[] run() {
-                    List<String> result = new ArrayList<>();
-                    File[] dirContents = dir.listFiles();
-                    if (dirContents != null) {
-                        for (int i = 0; i < dirContents.length; i++)
-                            if (dirContents[i].isDirectory())
-                                result.add(nodeName(dirContents[i].getName()));
-                    }
-                    return result.toArray(EMPTY_STRING_ARRAY);
-               }
-            });
+        List<String> result = new ArrayList<>();
+        File[] dirContents = dir.listFiles();
+        if (dirContents != null) {
+            for (int i = 0; i < dirContents.length; i++)
+                if (dirContents[i].isDirectory())
+                    result.add(nodeName(dirContents[i].getName()));
+        }
+        return result.toArray(EMPTY_STRING_ARRAY);
     }
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
@@ -717,42 +699,30 @@ class FileSystemPreferences extends AbstractPreferences {
     /**
      * Called with file lock held (in addition to node locks).
      */
-    @SuppressWarnings("removal")
     protected void removeNodeSpi() throws BackingStoreException {
-        try {
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Void>() {
-                public Void run() throws BackingStoreException {
-                    if (changeLog.contains(nodeCreate)) {
-                        changeLog.remove(nodeCreate);
-                        nodeCreate = null;
-                        return null;
-                    }
-                    if (!dir.exists())
-                        return null;
-                    prefsFile.delete();
-                    tmpFile.delete();
-                    // dir should be empty now.  If it's not, empty it
-                    File[] junk = dir.listFiles();
-                    if (junk.length != 0) {
-                        getLogger().warning(
-                           "Found extraneous files when removing node: "
-                            + Arrays.asList(junk));
-                        for (int i=0; i<junk.length; i++)
-                            junk[i].delete();
-                    }
-                    if (!dir.delete())
-                        throw new BackingStoreException("Couldn't delete dir: "
-                                                                         + dir);
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw (BackingStoreException) e.getException();
+        if (changeLog.contains(nodeCreate)) {
+            changeLog.remove(nodeCreate);
+            nodeCreate = null;
+            return;
         }
+        if (!dir.exists())
+            return;
+        prefsFile.delete();
+        tmpFile.delete();
+        // dir should be empty now.  If it's not, empty it
+        File[] junk = dir.listFiles();
+        if (junk.length != 0) {
+            getLogger().warning(
+               "Found extraneous files when removing node: "
+                + Arrays.asList(junk));
+            for (int i=0; i<junk.length; i++)
+                junk[i].delete();
+        }
+        if (!dir.delete())
+            throw new BackingStoreException("Couldn't delete dir: "
+                                                             + dir);
     }
 
-    @SuppressWarnings("removal")
     public synchronized void sync() throws BackingStoreException {
         boolean userNode = isUserNode();
         boolean shared;
@@ -765,56 +735,35 @@ class FileSystemPreferences extends AbstractPreferences {
             shared = !isSystemRootWritable;
         }
         synchronized (isUserNode()? userLockFile:systemLockFile) {
-           if (!lockFile(shared))
-               throw(new BackingStoreException("Couldn't get file lock."));
-           final Long newModTime =
-                AccessController.doPrivileged(
-                    new PrivilegedAction<Long>() {
-               public Long run() {
-                   long nmt;
-                   if (isUserNode()) {
-                       nmt = userRootModFile.lastModified();
-                       isUserRootModified = userRootModTime == nmt;
-                   } else {
-                       nmt = systemRootModFile.lastModified();
-                       isSystemRootModified = systemRootModTime == nmt;
-                   }
-                   return nmt;
-               }
-           });
+           if (!lockFile(shared)) {
+               throw (new BackingStoreException("Couldn't get file lock."));
+           }
+           long nmt;
+           if (isUserNode()) {
+               nmt = userRootModFile.lastModified();
+               isUserRootModified = userRootModTime == nmt;
+           } else {
+               nmt = systemRootModFile.lastModified();
+               isSystemRootModified = systemRootModTime == nmt;
+           }
+           final long newModTime = nmt;
            try {
                super.sync();
-               AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                   public Void run() {
-                   if (isUserNode()) {
-                       userRootModTime = newModTime.longValue() + 1000;
-                       userRootModFile.setLastModified(userRootModTime);
-                   } else {
-                       systemRootModTime = newModTime.longValue() + 1000;
-                       systemRootModFile.setLastModified(systemRootModTime);
-                   }
-                   return null;
-                   }
-               });
+               if (isUserNode()) {
+                   userRootModTime = newModTime + 1000;
+                   userRootModFile.setLastModified(userRootModTime);
+               } else {
+                   systemRootModTime = newModTime + 1000;
+                   systemRootModFile.setLastModified(systemRootModTime);
+               }
            } finally {
                 unlockFile();
            }
         }
     }
 
-    @SuppressWarnings("removal")
     protected void syncSpi() throws BackingStoreException {
-        try {
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Void>() {
-                public Void run() throws BackingStoreException {
-                    syncSpiPrivileged();
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw (BackingStoreException) e.getException();
-        }
+        syncSpiPrivileged();
     }
     private void syncSpiPrivileged() throws BackingStoreException {
         if (isRemoved())

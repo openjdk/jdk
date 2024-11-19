@@ -27,8 +27,6 @@ package java.util.prefs;
 
 import java.util.*;
 import java.io.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * This class provides a skeletal implementation of the {@link Preferences}
@@ -1060,12 +1058,7 @@ public abstract class AbstractPreferences extends Preferences {
      */
     @SuppressWarnings("removal")
     public boolean isUserNode() {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    return root == Preferences.userRoot();
-            }
-            }).booleanValue();
+        return root == Preferences.userRoot();
     }
 
     public void addPreferenceChangeListener(PreferenceChangeListener pcl) {

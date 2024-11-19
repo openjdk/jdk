@@ -27,8 +27,8 @@ package java.util.prefs;
 
 import java.util.StringTokenizer;
 import java.io.ByteArrayOutputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+//import java.security.AccessController;
+//import java.security.PrivilegedAction;
 
 import sun.util.logging.PlatformLogger;
 
@@ -50,13 +50,9 @@ class WindowsPreferences extends AbstractPreferences {
         loadPrefsLib();
     }
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     private static void loadPrefsLib() {
-        PrivilegedAction<Void> load = () -> {
-            System.loadLibrary("prefs");
-            return null;
-        };
-        AccessController.doPrivileged(load);
+        System.loadLibrary("prefs");
     }
 
     /**

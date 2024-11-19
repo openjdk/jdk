@@ -28,8 +28,6 @@ package java.util.prefs;
 import java.util.Objects;
 
 class MacOSXPreferences extends AbstractPreferences {
-    // fixme need security checks?
-
     // CF preferences file name for Java nodes with short names
     // This value is also in MacOSXPreferencesFile.c
     private static final String defaultAppName = "com.apple.java.util.prefs";
