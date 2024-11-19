@@ -43,13 +43,12 @@ public class TestReachabilityFenceWithBuffer {
 
     static class MyBuffer {
 
-        private static Unsafe UNSAFE;
+        static final jdk.internal.misc.Unsafe UNSAFE = Unsafe.getUnsafe();
 
         static {
             try {
                 Field field = Unsafe.class.getDeclaredField("theUnsafe");
                 field.setAccessible(true);
-                UNSAFE = (Unsafe) field.get(null);
             } catch (Exception e) {
                 e.printStackTrace();
             }
