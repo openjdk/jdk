@@ -414,44 +414,35 @@ public class HierarchicalLayoutManager extends LayoutManager {
     public static class AssignXCoordinates {
 
         static public void apply(LayoutGraph graph) {
+
             for (int k = 0; k < SWEEP_ITERATIONS; k++) {
                 for (LayoutLayer layer : graph.getLayers()) {
                     layer.initXPositions();
                 }
-
-                int[][] space = new int[graph.getLayerCount()][];
-                LayoutNode[][] downProcessingOrder = new LayoutNode[graph.getLayerCount()][];
-                LayoutNode[][] upProcessingOrder = new LayoutNode[graph.getLayerCount()][];
-                for (int i = 0; i < graph.getLayerCount(); i++) {
-                    LayoutLayer layer = graph.getLayer(i);
-
-                    space[i] = new int[layer.size()];
-                    downProcessingOrder[i] = new LayoutNode[layer.size()];
-                    upProcessingOrder[i] = new LayoutNode[layer.size()];
-
-                    for (int j = 0; j < layer.size(); j++) {
-                        LayoutNode node = layer.get(j);
-                        space[i][j] = node.getX();
-                        downProcessingOrder[i][j] = node;
-                        upProcessingOrder[i][j] = node;
-                    }
-                    Arrays.sort(downProcessingOrder[i], NODE_PROCESSING_DOWN_COMPARATOR);
-                    Arrays.sort(upProcessingOrder[i], NODE_PROCESSING_UP_COMPARATOR);
-                }
-
                 for (int i = 1; i < graph.getLayerCount(); i++) {
-                    processRow(space[i], downProcessingOrder[i], true);
+                    LayoutLayer layer = graph.getLayer(i);
+                    processLayer(layer, true);
                 }
-
                 for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
-                    processRow(space[i], upProcessingOrder[i], false);
+                    LayoutLayer layer = graph.getLayer(i);
+                    processLayer(layer, false);
                 }
             }
             graph.optimizeBackEdgeCrossings();
             graph.straightenEdges();
         }
 
-        static private void processRow(int[] space, LayoutNode[] processingOrder, boolean down) {
+        static private void processLayer(LayoutLayer layer, boolean down) {
+            int[] space = new int[layer.size()];
+            LayoutNode[] processingOrder = new LayoutNode[layer.size()];
+            for (int j = 0; j < layer.size(); j++) {
+                LayoutNode node = layer.get(j);
+                space[j] = node.getX();
+                processingOrder[j] = node;
+            }
+            Arrays.sort(processingOrder, down ? NODE_PROCESSING_DOWN_COMPARATOR : NODE_PROCESSING_UP_COMPARATOR);
+
+
             for (LayoutNode node : processingOrder) {
                 int optimalX = down ? node.calculateOptimalXFromPredecessors() : node.calculateOptimalXFromSuccessors();
                 node.setOptimalX(optimalX);
