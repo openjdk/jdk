@@ -121,7 +121,7 @@ void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
 
 #ifndef PRODUCT
 void StubCodeGenerator::verify_stub(StubGenStubId stub_id) {
-  assert(StubRoutines::stub_to_blob(stub_id) == blob_id(), "wrong blob being used to generate stub");
+  assert(StubRoutines::stub_to_blob(stub_id) == blob_id(), "wrong blob %s for generation of stub %s", StubRoutines::get_blob_name(blob_id()), StubRoutines::get_stub_name(stub_id));
 }
 #endif
 
