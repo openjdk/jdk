@@ -394,7 +394,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
                                               bool generate_poll) {
   if (VerifyActivationFrameSize) {
     Label L;
-    subw(rscratch1, rfp, esp);
+    sub(rscratch1, rfp, esp);
     int32_t min_frame_size = (frame::link_offset - frame::interpreter_frame_initial_sp_offset) * wordSize;
     cmpw(rscratch1, min_frame_size);
     br(Assembler::GE, L);
