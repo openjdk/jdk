@@ -238,19 +238,62 @@ public:
 // load has to stall until the store goes from the store-buffer into the L1 cache, incurring
 // a penalty of many CPU cycles.
 //
-// Unfortunately, vectorization can introduce such store-to-load-forwarding failures.
+// Example (with "iteration distance" 2):
+//   for (int i = 10; i < SIZE; i++) {
+//       aI[i] = aI[i - 2] + 1;
+//   }
+//
+//   load_4_bytes( ptr +  -8)
+//   store_4_bytes(ptr +   0)    *
+//   load_4_bytes( ptr +  -4)    |
+//   store_4_bytes(ptr +   4)    | *
+//   load_4_bytes( ptr +   0)  <-+ |
+//   store_4_bytes(ptr +   8)      |
+//   load_4_bytes( ptr +   4)  <---+
+//   store_4_bytes(ptr +  12)
+//   ...
+//
+//   In the scalar loop, we can forward the stores from 2 iterations back.
+//
+// Assume we have 2-element vectors (2*4 = 8 bytes), with the "iteration distance" 2
+// example. This gives us this machine code:
+//   load_8_bytes( ptr +  -8)
+//   store_8_bytes(ptr +   0) |
+//   load_8_bytes( ptr +   0) v
+//   store_8_bytes(ptr +   8)   |
+//   load_8_bytes( ptr +   8)   v
+//   store_8_bytes(ptr +  16)
+//   ...
+//
+//   We packed 2 iterations, and the stores can perfectly forward to the loads of
+//   the next 2 iterations.
+//
 // Example (with "iteration distance" 3):
 //   for (int i = 10; i < SIZE; i++) {
 //       aI[i] = aI[i - 3] + 1;
 //   }
 //
-// Assume we have 2-element vectors (2*4 = 8 bytes). This gives us this machine code:
+//   load_4_bytes( ptr + -12)
+//   store_4_bytes(ptr +   0)    *
+//   load_4_bytes( ptr +  -8)    |
+//   store_4_bytes(ptr +   4)    |
+//   load_4_bytes( ptr +  -4)    |
+//   store_4_bytes(ptr +   8)    |
+//   load_4_bytes( ptr +   0)  <-+
+//   store_4_bytes(ptr +  12)
+//   ...
+//
+//   In the scalar loop, we can forward the stores from 3 iterations back.
+//
+// Unfortunately, vectorization can introduce such store-to-load-forwarding failures.
+// Assume we have 2-element vectors (2*4 = 8 bytes), with the "iteration distance" 3
+// example. This gives us this machine code:
 //   load_8_bytes( ptr + -12)
-//   store_8_bytes(ptr + 0)
-//   load_8_bytes( ptr + -4)
-//   store_8_bytes(ptr + 8)
-//   load_8_bytes( ptr + 4)
-//   store_8_bytes(ptr + 16)
+//   store_8_bytes(ptr +   0)  |   |
+//   load_8_bytes( ptr +  -4)  x   |
+//   store_8_bytes(ptr +   8)     ||
+//   load_8_bytes( ptr +   4)     xx  <-- partial overlap with 2 stores
+//   store_8_bytes(ptr +  16)
 //   ...
 //
 // We see that eventually all loads are dependent on earlier stores, but the values cannot
