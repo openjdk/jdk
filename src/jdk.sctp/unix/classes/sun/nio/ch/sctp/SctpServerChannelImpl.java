@@ -213,7 +213,6 @@ public class SctpServerChannelImpl extends SctpServerChannel
                 throw new ClosedChannelException();
             if (!isBound())
                 throw new NotYetBoundException();
-            SctpChannel sc = null;
 
             int n = 0;
             FileDescriptor newfd = new FileDescriptor();

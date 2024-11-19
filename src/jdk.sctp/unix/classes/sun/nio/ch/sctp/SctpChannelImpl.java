@@ -1082,7 +1082,7 @@ public class SctpChannelImpl extends SctpChannel
         loadSctpLibrary();
     }
 
-    @SuppressWarnings({"restricted"})
+    @SuppressWarnings("restricted")
     private static void loadSctpLibrary() {
         IOUtil.load();   /* loads nio & net native libraries */
         System.loadLibrary("sctp");
