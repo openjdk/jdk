@@ -79,7 +79,8 @@ public record WinLongPathTest(Boolean appImage, String optionName) {
 
     private static void setOptionLongPath(JPackageCommand cmd, String option) throws IOException {
         var root = TKit.createTempDirectory("long-path");
-        var longPath = root.resolve(Path.of("a".repeat(70), "b".repeat(70), "c".repeat(70)));
+        // 261 characters in total, which alone is above the 260 threshold
+        var longPath = root.resolve(Path.of("a".repeat(80), "b".repeat(90), "c".repeat(91)));
         Files.createDirectories(longPath);
         cmd.setArgumentValue(option, longPath);
     }
