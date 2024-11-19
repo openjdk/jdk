@@ -70,7 +70,7 @@ public abstract class VectorThroughputForIterationCount {
             "290","291","292","293","294","295","296","297","298","299",
             "300",
             // Above, the "small loops".
-	    // Below, some "medium" to "large" loops.
+            // Below, some "medium" to "large" loops.
             "1000", "3000", "10000"})
     // Number of iterations spent in a loop.
     public static int ITERATION_COUNT;
