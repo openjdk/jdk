@@ -153,8 +153,10 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public <T> T getArgumentValue(String argName,
             Supplier<T> defaultValueSupplier,
             Function<String, T> stringConverter) {
-        return getArgumentValue(argName, (unused) -> defaultValueSupplier.get(),
-                stringConverter);
+        return getArgumentValue(argName,
+                Optional.ofNullable(defaultValueSupplier).map(supplier -> {
+                    return (Function<JPackageCommand, T>)unused -> supplier.get();
+                }).orElse(null), stringConverter);
     }
 
     public String getArgumentValue(String argName,
