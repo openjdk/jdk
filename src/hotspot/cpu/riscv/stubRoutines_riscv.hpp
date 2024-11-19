@@ -70,39 +70,6 @@ private:
 
  public:
 
-<<<<<<< HEAD
-  static address zero_blocks() {
-    return _zero_blocks;
-  }
-
-  static address compare_long_string_LL() {
-    return _compare_long_string_LL;
-  }
-
-  static address compare_long_string_LU() {
-    return _compare_long_string_LU;
-  }
-
-  static address compare_long_string_UL() {
-    return _compare_long_string_UL;
-  }
-
-  static address compare_long_string_UU() {
-    return _compare_long_string_UU;
-  }
-
-  static address string_indexof_linear_ul() {
-    return _string_indexof_linear_ul;
-  }
-
-  static address string_indexof_linear_ll() {
-    return _string_indexof_linear_ll;
-  }
-
-  static address string_indexof_linear_uu() {
-    return _string_indexof_linear_uu;
-  }
-=======
   // declare getters for arch-specific entries
 
 #define DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name) \
@@ -115,7 +82,6 @@ private:
 
 #undef DEFINE_ARCH_ENTRY_GETTER_INIT
 #undef DEFINE_ARCH_ENTRY_GETTER
->>>>>>> 84b733b3b36 (add arch-specific stub declarations for riscv)
 
   static bool complete() {
     return _completed;

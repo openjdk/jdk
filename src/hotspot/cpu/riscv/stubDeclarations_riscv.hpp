@@ -35,26 +35,6 @@
   do_arch_entry(riscv, initial, get_previous_sp,                        \
                 get_previous_sp_entry,                                  \
                 get_previous_sp_entry)                                  \
-  do_stub(initial, f2i_fixup)                                           \
-  do_arch_entry(riscv, initial, f2i_fixup, f2i_fixup, f2i_fixup)        \
-  do_stub(initial, f2l_fixup)                                           \
-  do_arch_entry(riscv, initial, f2l_fixup, f2l_fixup, f2l_fixup)        \
-  do_stub(initial, d2i_fixup)                                           \
-  do_arch_entry(riscv, initial, d2i_fixup, d2i_fixup, d2i_fixup)        \
-  do_stub(initial, d2l_fixup)                                           \
-  do_arch_entry(riscv, initial, d2l_fixup, d2l_fixup, d2l_fixup)        \
-  do_stub(initial, float_sign_mask)                                     \
-  do_arch_entry(riscv, initial, float_sign_mask, float_sign_mask,       \
-                float_sign_mask)                                        \
-  do_stub(initial, float_sign_flip)                                     \
-  do_arch_entry(riscv, initial, float_sign_flip, float_sign_flip,       \
-                float_sign_flip)                                        \
-  do_stub(initial, double_sign_mask)                                    \
-  do_arch_entry(riscv, initial, double_sign_mask, double_sign_mask,     \
-                double_sign_mask)                                       \
-  do_stub(initial, double_sign_flip)                                    \
-  do_arch_entry(riscv, initial, double_sign_flip, double_sign_flip,     \
-                double_sign_flip)                                       \
 
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
