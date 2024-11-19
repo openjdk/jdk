@@ -69,10 +69,24 @@ class zarch {
     locked   = 1
   };
 
+  // declare fields for arch-specific entries
+
+#define DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  static address STUB_FIELD_NAME(field_name) ;
+
+#define DECLARE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name)
+
+private:
+  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY, DECLARE_ARCH_ENTRY_INIT)
+
+#undef DECLARE_ARCH_ENTRY_INIT
+#undef DECLARE_ARCH_ENTRY
+
  private:
+
   static int _atomic_memory_operation_lock;
 
-  static address _partial_subtype_check;
   static juint   _crc_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
   static juint   _crc32c_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
 
@@ -81,6 +95,20 @@ class zarch {
   static jlong   _trot_table[TROT_COLUMN_SIZE];
 
  public:
+
+  // declare getters for arch-specific entries
+
+#define DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name) \
+  static address getter_name() { return STUB_FIELD_NAME(field_name) ; }
+
+#define DEFINE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
+
+  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT)
+
+#undef DEFINE_ARCH_ENTRY_GETTER_INIT
+#undef DEFINE_ARCH_ENTRY_GETTER
+
   // Global lock for everyone who needs to use atomic_compare_and_exchange
   // or atomic_increment -- should probably use more locks for more
   // scalability -- for instance one for each eden space or group of.
