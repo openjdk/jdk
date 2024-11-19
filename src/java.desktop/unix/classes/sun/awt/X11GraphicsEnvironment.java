@@ -93,7 +93,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
                     xRenderVerbose = true;
                 }
 
-                if(xProp.equalsIgnoreCase("t") || xProp.equalsIgnoreCase("true")) {
+                if (xProp.equalsIgnoreCase("t") || xProp.equalsIgnoreCase("true")) {
                     xRenderIgnoreLinuxVersion = true;
                 }
             }

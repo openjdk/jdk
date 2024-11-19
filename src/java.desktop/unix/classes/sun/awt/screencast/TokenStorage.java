@@ -303,7 +303,7 @@ final class TokenStorage {
             }
 
             if (changed) {
-               store(PROPS_PATH, "save tokens");
+                store(PROPS_PATH, "save tokens");
             }
         }
     }

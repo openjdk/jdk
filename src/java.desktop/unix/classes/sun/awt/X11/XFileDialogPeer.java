@@ -149,7 +149,7 @@ class XFileDialogPeer extends XDialogPeer
         savedDir = target.getDirectory();
         // Shouldn't save 'user.dir' to 'savedDir'
         // since getDirectory() will be incorrect after handleCancel
-        userDir =  System.getProperty("user.dir");
+        userDir = System.getProperty("user.dir");
 
         installStrings();
         gbl = new GridBagLayout();
