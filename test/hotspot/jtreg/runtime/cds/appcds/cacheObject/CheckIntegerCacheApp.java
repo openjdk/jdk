@@ -62,6 +62,14 @@ public class CheckIntegerCacheApp {
             }
         }
 
+        // Check that archived integer cache agrees with runtime integer cache.
+        for (int i = -128; i <= 127; i++) {
+            if (ArchivedIntegerHolder.archivedObjects[i + 128] != Integer.valueOf(i)) {
+                throw new RuntimeException(
+                        "FAILED. Archived and runtime caches disagree for " + i);
+            }
+        }
+
         int high = Integer.parseInt(args[0]);
         if (Integer.valueOf(high) != Integer.valueOf(high)) {
             throw new RuntimeException(

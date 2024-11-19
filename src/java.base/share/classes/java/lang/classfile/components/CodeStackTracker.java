@@ -24,13 +24,13 @@
  */
 package java.lang.classfile.components;
 
-import java.util.Collection;
-import java.util.Optional;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.Label;
 import java.lang.classfile.TypeKind;
+import java.util.Collection;
+import java.util.Optional;
+
 import jdk.internal.classfile.impl.CodeStackTrackerImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * {@link CodeStackTracker} is a {@link CodeTransform} tracking stack content
@@ -50,9 +50,8 @@ import jdk.internal.javac.PreviewFeature;
  *     });
  * }
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeStackTracker extends CodeTransform permits CodeStackTrackerImpl {
 
     /**

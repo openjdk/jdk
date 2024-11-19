@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ErrorHandler;
@@ -70,11 +69,9 @@ import org.xml.sax.ext.DefaultHandler2;
  * @test
  * @bug 8081248 8144966 8146606 8146237 8150969 8151162 8152527 8154220 8163232
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogTest
  * @run testng/othervm catalog.CatalogTest
  * @summary Tests basic Catalog functions.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class CatalogTest extends CatalogSupportBase {
     static final String KEY_FILES = "javax.xml.catalog.files";
 

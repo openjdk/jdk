@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,9 @@ struct NMTUsageOptions {
 
 class NMTUsage : public CHeapObj<mtNMT> {
 private:
-  size_t _malloc_by_type[mt_number_of_types];
+  size_t _malloc_by_type[mt_number_of_tags];
   size_t _malloc_total;
-  NMTUsagePair _vm_by_type[mt_number_of_types];
+  NMTUsagePair _vm_by_type[mt_number_of_tags];
   NMTUsagePair _vm_total;
 
   NMTUsageOptions _usage_options;
@@ -61,8 +61,8 @@ public:
 
   size_t total_reserved() const;
   size_t total_committed() const;
-  size_t reserved(MEMFLAGS flag) const;
-  size_t committed(MEMFLAGS flag) const;
+  size_t reserved(MemTag mem_tag) const;
+  size_t committed(MemTag mem_tag) const;
 };
 
 #endif // SHARE_NMT_NMTUSAGE_HPP

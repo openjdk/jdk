@@ -359,7 +359,11 @@ void print_statistics() {
 
   ThreadsSMRSupport::log_statistics();
 
-  ClassLoader::print_counters(tty);
+  if (log_is_enabled(Info, perf, class, link)) {
+    LogStreamHandle(Info, perf, class, link) log;
+    log.print_cr("At VM exit:");
+    ClassLoader::print_counters(&log);
+  }
 }
 
 // Note: before_exit() can be executed only once, if more than one threads
@@ -437,6 +441,11 @@ void before_exit(JavaThread* thread, bool halt) {
 
 #if INCLUDE_CDS
   ClassListWriter::write_resolved_constants();
+
+  // Initiate Archive Workers shutdown. These workers are likely already
+  // shut down, but we need to make sure they really are. Otherwise, workers
+  // would fail hard on broken semaphores.
+  ArchiveWorkers::workers()->shutdown();
 #endif
 
   // Hang forever on exit if we're reporting an error.

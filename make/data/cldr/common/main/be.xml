@@ -58,6 +58,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bi">біслама</language>
 			<language type="bin">эда</language>
 			<language type="bla">блэкфут</language>
+			<language type="blo">аніі</language>
 			<language type="bm">бамбара</language>
 			<language type="bn">бенгальская</language>
 			<language type="bo">тыбецкая</language>
@@ -242,6 +243,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">комі</language>
 			<language type="kw">корнская</language>
 			<language type="kwk">квакіутль</language>
+			<language type="kxv">куві</language>
 			<language type="ky">кіргізская</language>
 			<language type="la">лацінская</language>
 			<language type="lad">ладына</language>
@@ -250,8 +252,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">лезгінская</language>
 			<language type="lg">ганда</language>
 			<language type="li">лімбургская</language>
+			<language type="lij">лігурская</language>
 			<language type="lil">лілуэт</language>
 			<language type="lkt">лакота</language>
+			<language type="lmo">ламбардская</language>
 			<language type="ln">лінгала</language>
 			<language type="lo">лаоская</language>
 			<language type="lol">монга</language>
@@ -417,6 +421,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw_CD">кангалезская суахілі</language>
 			<language type="swb">каморская</language>
 			<language type="syr">сірыйская</language>
+			<language type="szl">сілезская</language>
 			<language type="ta">тамільская</language>
 			<language type="tce">паўднёвая тутчонэ</language>
 			<language type="te">тэлугу</language>
@@ -456,7 +461,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">узбекская</language>
 			<language type="vai">ваі</language>
 			<language type="ve">венда</language>
+			<language type="vec">венецыянская</language>
 			<language type="vi">в’етнамская</language>
+			<language type="vmw">макуа</language>
 			<language type="vo">валапюк</language>
 			<language type="vun">вунджо</language>
 			<language type="wa">валонская</language>
@@ -468,6 +475,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">ву</language>
 			<language type="xal">калмыцкая</language>
 			<language type="xh">коса</language>
+			<language type="xnr">кангры</language>
 			<language type="xog">сога</language>
 			<language type="yav">янгбэн</language>
 			<language type="ybb">йемба</language>
@@ -476,6 +484,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">ньенгату</language>
 			<language type="yue">кантонскі дыялект кітайскай</language>
 			<language type="yue" alt="menu">кітайская, кантонскі дыялект</language>
+			<language type="za">чжуанская</language>
 			<language type="zap">сапатэк</language>
 			<language type="zgh">стандартная мараканская тамазіхт</language>
 			<language type="zh">кітайская</language>
@@ -702,7 +711,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IM">Востраў Мэн</territory>
 			<territory type="IN">Індыя</territory>
 			<territory type="IO">Брытанская тэрыторыя ў Індыйскім акіяне</territory>
-			<territory type="IO" alt="chagos">архіпелаг Чагас</territory>
+			<territory type="IO" alt="chagos">Архіпелаг Чагас</territory>
 			<territory type="IQ">Ірак</territory>
 			<territory type="IR">Іран</territory>
 			<territory type="IS">Ісландыя</territory>
@@ -2170,6 +2179,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Час: {0}</regionFormat>
 			<regionFormat type="daylight">Летні час: {0}</regionFormat>
 			<regionFormat type="standard">Стандартны час: {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Ганалулу</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Універсальны каардынаваны час</standard>
@@ -2907,9 +2919,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Улан-Батар</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Чайбалсан</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Макаа</exemplarCity>
 			</zone>
@@ -3309,9 +3318,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>Ном</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Ганалулу</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Анкарыдж</exemplarCity>
 			</zone>
@@ -3656,13 +3662,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Летні час Кітая</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Час Чайбалсана</generic>
-					<standard>Стандартны час Чайбалсана</standard>
-					<daylight>Летні час Чайбалсана</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Час вострава Каляд</standard>
@@ -3899,6 +3898,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Час Японіі</generic>
 					<standard>Стандартны час Японіі</standard>
 					<daylight>Летні час Японіі</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Казахстанскі час</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4471,10 +4475,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 трлн ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="few">{0} {1}</unitPattern>
-			<unitPattern count="many">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -6932,6 +6932,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<displayName>брыт. кварты</displayName>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>частак на мільярд</displayName>
+				<unitPattern count="one">{0} частка на мільярд</unitPattern>
+				<unitPattern count="few">{0} часткі на мільярд</unitPattern>
+				<unitPattern count="many">{0} частак на мільярд</unitPattern>
+				<unitPattern count="other">{0} часткі на мільярд</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>ночы</displayName>
+				<unitPattern count="one">{0} ноч</unitPattern>
+				<unitPattern count="few">{0} ночы</unitPattern>
+				<unitPattern count="many">{0} начэй</unitPattern>
+				<unitPattern count="other">{0} ночы</unitPattern>
+				<perUnitPattern>{0} за ноч</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>кірунак свету</displayName>
 				<coordinateUnitPattern type="east">{0} усходняй даўгаты</coordinateUnitPattern>
@@ -8285,6 +8300,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} брыт. кварт</unitPattern>
 				<unitPattern count="other">{0} брыт. кварты</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>частак/мільярд</displayName>
+				<unitPattern count="one">{0} ч/млрд</unitPattern>
+				<unitPattern count="few">{0} ч/млрд</unitPattern>
+				<unitPattern count="many">{0} ч/млрд</unitPattern>
+				<unitPattern count="other">{0} ч/млрд</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>ночы</displayName>
+				<unitPattern count="one">{0} ноч</unitPattern>
+				<unitPattern count="few">{0} ноч</unitPattern>
+				<unitPattern count="many">{0} начэй</unitPattern>
+				<unitPattern count="other">{0} ночы</unitPattern>
+				<perUnitPattern>{0}/ноч</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>кірунак</displayName>
 				<coordinateUnitPattern type="east">{0} усх. д.</coordinateUnitPattern>
@@ -8323,6 +8353,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} дэс. лыжкі</unitPattern>
 				<unitPattern count="many">{0} дэс. лыжак</unitPattern>
 				<unitPattern count="other">{0} дэс. лыжкі</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>ч/млрд</displayName>
+				<unitPattern count="one">{0} ч/млрд</unitPattern>
+				<unitPattern count="few">{0} ч/млрд</unitPattern>
+				<unitPattern count="many">{0} ч/млрд</unitPattern>
+				<unitPattern count="other">{0} ч/млрд</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>ночы</displayName>
+				<unitPattern count="one">{0} ноч</unitPattern>
+				<unitPattern count="few">{0} ночы</unitPattern>
+				<unitPattern count="many">{0} начэй</unitPattern>
+				<unitPattern count="other">{0} ночы</unitPattern>
+				<perUnitPattern>{0}/ноч</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0} У</coordinateUnitPattern>

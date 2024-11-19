@@ -74,7 +74,9 @@ void AbstractInterpreter::print() {
     tty->print_cr("avg codelet size = %6d bytes", _code->used_space() / _code->number_of_stubs());
     tty->cr();
   }
+  _should_print_instructions = PrintInterpreter;
   _code->print();
+  _should_print_instructions = false;
   tty->print_cr("----------------------------------------------------------------------");
   tty->cr();
 }
@@ -90,6 +92,8 @@ address    AbstractInterpreter::_rethrow_exception_entry                    = nu
 address    AbstractInterpreter::_slow_signature_handler;
 address    AbstractInterpreter::_entry_table            [AbstractInterpreter::number_of_method_entries];
 address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::number_of_result_handlers];
+
+bool       AbstractInterpreter::_should_print_instructions = false;
 
 //------------------------------------------------------------------------------------------------------------------------
 // Generation of complete interpreter
@@ -138,6 +142,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
       case vmIntrinsics::_dcos:              return java_lang_math_cos;
       case vmIntrinsics::_dtan:              return java_lang_math_tan;
+      case vmIntrinsics::_dtanh:             return java_lang_math_tanh;
       case vmIntrinsics::_dabs:              return java_lang_math_abs;
       case vmIntrinsics::_dlog:              return java_lang_math_log;
       case vmIntrinsics::_dlog10:            return java_lang_math_log10;
@@ -198,6 +203,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_sin         : return vmIntrinsics::_dsin;
   case java_lang_math_cos         : return vmIntrinsics::_dcos;
   case java_lang_math_tan         : return vmIntrinsics::_dtan;
+  case java_lang_math_tanh        : return vmIntrinsics::_dtanh;
   case java_lang_math_abs         : return vmIntrinsics::_dabs;
   case java_lang_math_log         : return vmIntrinsics::_dlog;
   case java_lang_math_log10       : return vmIntrinsics::_dlog10;
@@ -309,6 +315,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sin     : tty->print("java_lang_math_sin"     ); break;
     case java_lang_math_cos     : tty->print("java_lang_math_cos"     ); break;
     case java_lang_math_tan     : tty->print("java_lang_math_tan"     ); break;
+    case java_lang_math_tanh    : tty->print("java_lang_math_tanh"    ); break;
     case java_lang_math_abs     : tty->print("java_lang_math_abs"     ); break;
     case java_lang_math_log     : tty->print("java_lang_math_log"     ); break;
     case java_lang_math_log10   : tty->print("java_lang_math_log10"   ); break;

@@ -53,3 +53,9 @@ struct iovec {
 
 #endif
 
+/* Defined in UnixDomainSockets.c */
+
+jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, socklen_t len);
+
+jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray uaddr,
+                                struct sockaddr_un *sa, int *len);

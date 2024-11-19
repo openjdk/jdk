@@ -193,10 +193,14 @@ public class JavacTypes implements javax.lang.model.util.Types {
     public ArrayType getArrayType(TypeMirror componentType) {
         switch (componentType.getKind()) {
         case VOID:
+        case NONE:
+        case NULL:
         case EXECUTABLE:
         case WILDCARD:  // heh!
         case PACKAGE:
         case MODULE:
+        case UNION:
+        case INTERSECTION:
             throw new IllegalArgumentException(componentType.toString());
         }
         return new Type.ArrayType((Type) componentType, syms.arrayClass);

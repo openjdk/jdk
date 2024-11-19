@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.InvalidObjectException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -196,23 +197,32 @@ implements java.io.Serializable
         ObjectInputStream.GetField gfields = in.readFields();
 
         // Get permissions
-        @SuppressWarnings("unchecked")
         // writeObject writes a Hashtable<String, Vector<UnresolvedPermission>>
         // for the permissions key, so this cast is safe, unless the data is corrupt.
-        Hashtable<String, Vector<UnresolvedPermission>> permissions =
-                (Hashtable<String, Vector<UnresolvedPermission>>)
-                gfields.get("permissions", null);
-        perms = new ConcurrentHashMap<>(permissions.size()*2);
+        try {
+            @SuppressWarnings("unchecked")
+            Hashtable<String, Vector<UnresolvedPermission>> permissions =
+                    (Hashtable<String, Vector<UnresolvedPermission>>)
+                    gfields.get("permissions", null);
 
-        // Convert each entry (Vector) into a List
-        Set<Map.Entry<String, Vector<UnresolvedPermission>>> set = permissions.entrySet();
-        for (Map.Entry<String, Vector<UnresolvedPermission>> e : set) {
-            // Convert Vector into ArrayList
-            Vector<UnresolvedPermission> vec = e.getValue();
-            List<UnresolvedPermission> list = new CopyOnWriteArrayList<>(vec);
+            if (permissions == null) {
+                throw new InvalidObjectException("Invalid null permissions");
+            }
 
-            // Add to Hashtable being serialized
-            perms.put(e.getKey(), list);
+            perms = new ConcurrentHashMap<>(permissions.size()*2);
+
+            // Convert each entry (Vector) into a List
+            Set<Map.Entry<String, Vector<UnresolvedPermission>>> set = permissions.entrySet();
+            for (Map.Entry<String, Vector<UnresolvedPermission>> e : set) {
+                // Convert Vector into ArrayList
+                Vector<UnresolvedPermission> vec = e.getValue();
+                List<UnresolvedPermission> list = new CopyOnWriteArrayList<>(vec);
+
+                // Add to Hashtable being serialized
+                perms.put(e.getKey(), list);
+            }
+        } catch (ClassCastException cce) {
+            throw new InvalidObjectException("Invalid type for permissions");
         }
     }
 }

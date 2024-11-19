@@ -177,7 +177,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     // which performs a somewhat similar role
     public enum ConditionalPage {
         CONSTANT_VALUES, DEPRECATED, EXTERNAL_SPECS, PREVIEW, RESTRICTED,
-        SERIALIZED_FORM, SYSTEM_PROPERTIES, NEW
+        SEARCH_TAGS, SERIALIZED_FORM, SYSTEM_PROPERTIES, NEW
     }
 
     /**

@@ -209,7 +209,7 @@ void* PORT_NewBooleanControl(void* creatorV, void* controlID, char* type) {
     if (!ctrl) {
         ERROR0("PORT_NewBooleanControl: ctrl is NULL\n");
     }
-    if ((*creator->env)->ExceptionOccurred(creator->env)) {
+    if ((*creator->env)->ExceptionCheck(creator->env)) {
         ERROR0("PORT_NewBooleanControl: ExceptionOccurred!\n");
     }
     TRACE0("PORT_NewBooleanControl succeeded\n");
@@ -264,7 +264,7 @@ void* PORT_NewCompoundControl(void* creatorV, char* type, void** controls, int c
     if (!ctrl) {
         ERROR0("PORT_NewCompoundControl: ctrl is NULL\n");
     }
-    if ((*creator->env)->ExceptionOccurred(creator->env)) {
+    if ((*creator->env)->ExceptionCheck(creator->env)) {
         ERROR0("PORT_NewCompoundControl: ExceptionOccurred!\n");
     }
     TRACE0("PORT_NewCompoundControl succeeded\n");
@@ -327,7 +327,7 @@ void* PORT_NewFloatControl(void* creatorV, void* controlID, char* type,
     if (!ctrl) {
         ERROR0("PORT_NewFloatControl: ctrl is NULL!\n");
     }
-    if ((*creator->env)->ExceptionOccurred(creator->env)) {
+    if ((*creator->env)->ExceptionCheck(creator->env)) {
         ERROR0("PORT_NewFloatControl: ExceptionOccurred!\n");
     }
     TRACE1("PORT_NewFloatControl succeeded %p\n", (void*) ctrl);
@@ -339,7 +339,7 @@ int PORT_AddControl(void* creatorV, void* control) {
 
     TRACE1("PORT_AddControl %p\n", (void*) control);
     (*creator->env)->CallVoidMethod(creator->env, creator->vector, creator->vectorAddElement, (jobject) control);
-    if ((*creator->env)->ExceptionOccurred(creator->env)) {
+    if ((*creator->env)->ExceptionCheck(creator->env)) {
         ERROR0("PORT_AddControl: ExceptionOccurred!\n");
     }
     TRACE0("PORT_AddControl succeeded\n");

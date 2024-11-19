@@ -623,7 +623,10 @@ void CallGenerator::do_late_inline_helper() {
 
   // check for unreachable loop
   CallProjections callprojs;
-  call->extract_projections(&callprojs, true);
+  // Similar to incremental inlining, don't assert that all call
+  // projections are still there for post-parse call devirtualization.
+  bool do_asserts = !is_mh_late_inline() && !is_virtual_late_inline();
+  call->extract_projections(&callprojs, true, do_asserts);
   if ((callprojs.fallthrough_catchproj == call->in(0)) ||
       (callprojs.catchall_catchproj    == call->in(0)) ||
       (callprojs.fallthrough_memproj   == call->in(TypeFunc::Memory)) ||
@@ -647,7 +650,7 @@ void CallGenerator::do_late_inline_helper() {
 
   if (is_pure_call() && result_not_used) {
     GraphKit kit(call->jvms());
-    kit.replace_call(call, C->top(), true);
+    kit.replace_call(call, C->top(), true, do_asserts);
   } else {
     // Make a clone of the JVMState that appropriate to use for driving a parse
     JVMState* old_jvms = call->jvms();
@@ -729,7 +732,7 @@ void CallGenerator::do_late_inline_helper() {
     }
     C->set_inlining_progress(true);
     C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
-    kit.replace_call(call, result, true);
+    kit.replace_call(call, result, true, do_asserts);
   }
 }
 

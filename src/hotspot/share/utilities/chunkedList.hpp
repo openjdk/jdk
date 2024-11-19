@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
-template <class T, MEMFLAGS F> class ChunkedList : public CHeapObj<F> {
+template <class T, MemTag MT> class ChunkedList : public CHeapObj<MT> {
   template <class U> friend class TestChunkedList;
 
   static const size_t BufferSize = 64;
@@ -36,8 +36,8 @@ template <class T, MEMFLAGS F> class ChunkedList : public CHeapObj<F> {
   T  _values[BufferSize];
   T* _top;
 
-  ChunkedList<T, F>* _next_used;
-  ChunkedList<T, F>* _next_free;
+  ChunkedList<T, MT>* _next_used;
+  ChunkedList<T, MT>* _next_free;
 
   T const * end() const {
     return &_values[BufferSize];
@@ -62,11 +62,11 @@ template <class T, MEMFLAGS F> class ChunkedList : public CHeapObj<F> {
     _top++;
   }
 
-  void set_next_used(ChunkedList<T, F>* buffer) { _next_used = buffer; }
-  void set_next_free(ChunkedList<T, F>* buffer) { _next_free = buffer; }
+  void set_next_used(ChunkedList<T, MT>* buffer) { _next_used = buffer; }
+  void set_next_free(ChunkedList<T, MT>* buffer) { _next_free = buffer; }
 
-  ChunkedList<T, F>* next_used() const          { return _next_used; }
-  ChunkedList<T, F>* next_free() const          { return _next_free; }
+  ChunkedList<T, MT>* next_used() const          { return _next_used; }
+  ChunkedList<T, MT>* next_free() const          { return _next_free; }
 
   size_t size() const {
     return pointer_delta(_top, _values, sizeof(T));

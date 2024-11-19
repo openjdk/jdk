@@ -1019,7 +1019,7 @@ ZStatMutatorAllocRateStats ZStatMutatorAllocRate::stats() {
 // Stat thread
 //
 ZStat::ZStat()
-  : _metronome(sample_hz) {
+  : _metronome(SampleHz) {
   set_name("ZStat");
   create_and_start();
   ZStatMutatorAllocRate::initialize();
@@ -1098,11 +1098,11 @@ void ZStat::terminate() {
 //
 class ZStatTablePrinter {
 private:
-  static const size_t _buffer_size = 256;
+  static const size_t BufferSize = 256;
 
   const size_t _column0_width;
   const size_t _columnN_width;
-  char         _buffer[_buffer_size];
+  char         _buffer[BufferSize];
 
 public:
   class ZColumn {
@@ -1119,7 +1119,7 @@ public:
     }
 
     size_t print(size_t position, const char* fmt, va_list va) {
-      const int res = jio_vsnprintf(_buffer + position, _buffer_size - position, fmt, va);
+      const int res = jio_vsnprintf(_buffer + position, BufferSize - position, fmt, va);
       if (res < 0) {
         return 0;
       }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a local variable increment instruction in the {@code code} array of a
@@ -37,9 +37,8 @@ import jdk.internal.javac.PreviewFeature;
  * {@link Opcode.Kind#INCREMENT}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface IncrementInstruction extends Instruction
         permits AbstractInstruction.BoundIncrementInstruction,
                 AbstractInstruction.UnboundIncrementInstruction {
@@ -58,6 +57,7 @@ public sealed interface IncrementInstruction extends Instruction
      *
      * @param slot the local variable slot to increment
      * @param constant the value to increment by
+     * @throws IllegalArgumentException if {@code slot} or {@code constant} is out of range
      */
     static IncrementInstruction of(int slot, int constant) {
         return new AbstractInstruction.UnboundIncrementInstruction(slot, constant);

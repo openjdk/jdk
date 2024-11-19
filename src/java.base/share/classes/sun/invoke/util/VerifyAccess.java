@@ -311,8 +311,6 @@ public class VerifyAccess {
         // will use the result cached in the JVM system dictionary. Note that the JVM system dictionary
         // will record the first successful result. Unsuccessful results are not stored.
         //
-        // We use doPrivileged in order to allow an unprivileged caller to ask an arbitrary
-        // class loader about the binding of the proposed name (type.getName()).
         // The looked up type ("res") is compared for equality against the proposed
         // type ("type") and then is discarded.  Thus, the worst that can happen to
         // the "child" class loader is that it is bothered to load and report a class
@@ -320,17 +318,12 @@ public class VerifyAccess {
         // memoization.  And the caller never gets to look at the alternate type binding
         // ("res"), whether it exists or not.
         final String name = type.getName();
-        @SuppressWarnings("removal")
-        Class<?> res = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<>() {
-                    public Class<?> run() {
-                        try {
-                            return Class.forName(name, false, refcLoader);
-                        } catch (ClassNotFoundException | LinkageError e) {
-                            return null; // Assume the class is not found
-                        }
-                    }
-            });
+        Class<?> res = null;
+        try {
+            res = Class.forName(name, false, refcLoader);
+        } catch (ClassNotFoundException | LinkageError e) {
+            // Assume the class is not found
+        }
         return (type == res);
     }
 

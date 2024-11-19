@@ -70,7 +70,7 @@ jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, sockl
         jbyteArray name = (*env)->NewByteArray(env, namelen);
         if (namelen != 0) {
             (*env)->SetByteArrayRegion(env, name, 0, namelen, (jbyte*)sa->sun_path);
-            if ((*env)->ExceptionOccurred(env)) {
+            if ((*env)->ExceptionCheck(env)) {
                 return NULL;
             }
         }

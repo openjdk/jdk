@@ -110,6 +110,17 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
+  // Power7 and later.
+  if (PowerArchitecturePPC64 > 6) {
+    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+      FLAG_SET_ERGO(UsePopCountInstruction, true);
+    }
+  }
+
+  if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
+    FLAG_SET_ERGO(ConditionalMoveLimit, 0);
+  }
+
   if (PowerArchitecturePPC64 >= 8) {
     if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
@@ -168,6 +179,17 @@ void VM_Version::initialize() {
       warning("UseByteReverseInstructions specified, but needs at least Power10.");
       FLAG_SET_DEFAULT(UseByteReverseInstructions, false);
     }
+  }
+
+  if (OptimizeFill) {
+    warning("OptimizeFill is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptimizeFill, false);
+  }
+
+  if (OptoScheduling) {
+    // The OptoScheduling information is not maintained in ppd.ad.
+    warning("OptoScheduling is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptoScheduling, false);
   }
 #endif
 

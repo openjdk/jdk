@@ -59,7 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * However, note that because of the way SoftReferences are implemented in
  * HotSpot at the moment, this may not work perfectly as it clears them fairly
  * eagerly. Performance may be improved if the Java heap size is set to larger
- * value using e.g. java -ms64M -mx128M foo.Test
+ * value using e.g. java -Xms64M -Xmx128M foo.Test
  *
  * Cache sizing: the memory cache is implemented on top of a LinkedHashMap.
  * In its current implementation, the number of buckets (NOT entries) in

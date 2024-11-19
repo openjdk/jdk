@@ -42,10 +42,10 @@ class ZStoreBarrierBuffer : public CHeapObj<mtGC> {
   friend class ZVerify;
 
 private:
-  static const size_t _buffer_length     = 32;
-  static const size_t _buffer_size_bytes = _buffer_length * sizeof(ZStoreBarrierEntry);
+  static const size_t BufferLength    = 32;
+  static const size_t BufferSizeBytes = BufferLength * sizeof(ZStoreBarrierEntry);
 
-  ZStoreBarrierEntry _buffer[_buffer_length];
+  ZStoreBarrierEntry _buffer[BufferLength];
 
   // Color from previous phase this buffer was processed
   uintptr_t          _last_processed_color;
@@ -54,7 +54,7 @@ private:
   uintptr_t          _last_installed_color;
 
   ZLock              _base_pointer_lock;
-  zaddress_unsafe    _base_pointers[_buffer_length];
+  zaddress_unsafe    _base_pointers[BufferLength];
 
   // sizeof(ZStoreBarrierEntry) scaled index growing downwards
   size_t             _current;

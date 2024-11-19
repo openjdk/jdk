@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @library ../../../../java/security/testlibrary
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestECDH
- * @run main/othervm -Djava.security.manager=allow TestECDH sm policy
  */
 
 import java.security.KeyFactory;

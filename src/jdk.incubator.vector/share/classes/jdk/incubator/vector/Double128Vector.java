@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,9 +490,16 @@ final class Double128Vector extends DoubleVector {
                                    VectorMask<Double> m) {
         return (Double128Vector)
             super.selectFromTemplate((Double128Vector) v,
-                                     (Double128Mask) m);  // specialize
+                                     Double128Mask.class, (Double128Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Double128Vector selectFrom(Vector<Double> v1,
+                                   Vector<Double> v2) {
+        return (Double128Vector)
+            super.selectFromTemplate((Double128Vector) v1, (Double128Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -512,7 +519,7 @@ final class Double128Vector extends DoubleVector {
                      this, i,
                      (vec, ix) -> {
                      double[] vecarr = vec.vec();
-                     return (long)Double.doubleToLongBits(vecarr[ix]);
+                     return (long)Double.doubleToRawLongBits(vecarr[ix]);
                      });
     }
 
@@ -529,7 +536,7 @@ final class Double128Vector extends DoubleVector {
     public Double128Vector withLaneHelper(int i, double e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)Double.doubleToLongBits(e),
+                                this, i, (long)Double.doubleToRawLongBits(e),
                                 (v, ix, bits) -> {
                                     double[] res = v.vec().clone();
                                     res[ix] = Double.longBitsToDouble((long)bits);
@@ -819,6 +826,13 @@ final class Double128Vector extends DoubleVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Double128Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Double128Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Double128Shuffle)(((AbstractShuffle<Double>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

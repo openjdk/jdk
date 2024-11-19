@@ -32,8 +32,6 @@ import java.net.SocketAddress;
 import java.nio.channels.AlreadyBoundException;
 import java.util.Set;
 import java.util.HashSet;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import sun.net.util.IPAddressUtil;
 import sun.nio.ch.IOUtil;
 import sun.nio.ch.Net;
@@ -92,39 +90,12 @@ public class SctpNet {
         SocketAddress[] saa = getLocalAddresses0(fd);
 
         if (saa != null) {
-            set = getRevealedLocalAddressSet(saa);
+            set = new HashSet<>(saa.length);
+            for (SocketAddress sa : saa)
+                set.add(sa);
         }
 
         return set;
-    }
-
-    private static Set<SocketAddress> getRevealedLocalAddressSet(
-            SocketAddress[] saa)
-    {
-         @SuppressWarnings("removal")
-         SecurityManager sm = System.getSecurityManager();
-         Set<SocketAddress> set = new HashSet<>(saa.length);
-         for (SocketAddress sa : saa) {
-             set.add(getRevealedLocalAddress(sa, sm));
-         }
-         return set;
-    }
-
-    private static SocketAddress getRevealedLocalAddress(SocketAddress sa,
-                                                         @SuppressWarnings("removal") SecurityManager sm)
-    {
-        if (sm == null || sa == null)
-            return sa;
-        InetSocketAddress ia = (InetSocketAddress)sa;
-        try{
-            sm.checkConnect(ia.getAddress().getHostAddress(), -1);
-            // Security check passed
-        } catch (SecurityException e) {
-            // Return loopback address
-            return new InetSocketAddress(InetAddress.getLoopbackAddress(),
-                                         ia.getPort());
-        }
-        return sa;
     }
 
     static Set<SocketAddress> getRemoteAddresses(int fd, int assocId)
@@ -337,13 +308,7 @@ public class SctpNet {
     @SuppressWarnings({"removal", "restricted"})
     private static void loadSctpLibrary() {
         NIOUtil.load();   // loads nio & net native libraries
-        java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        System.loadLibrary("sctp");
-                        return null;
-                    }
-                });
+        System.loadLibrary("sctp");
         init();
     }
 }

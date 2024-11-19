@@ -103,9 +103,15 @@
 }
 
 class CgroupController: public CHeapObj<mtInternal> {
+  protected:
+    char* _cgroup_path;
+    char* _mount_point;
   public:
-    virtual char* subsystem_path() = 0;
+    virtual const char* subsystem_path() = 0;
     virtual bool is_read_only() = 0;
+    const char* cgroup_path() { return _cgroup_path; }
+    const char* mount_point() { return _mount_point; }
+    virtual bool needs_hierarchy_adjustment() { return false; }
 
     /* Read a numerical value as unsigned long
      *
@@ -202,7 +208,12 @@ class CgroupCpuController: public CHeapObj<mtInternal> {
     virtual int cpu_quota() = 0;
     virtual int cpu_period() = 0;
     virtual int cpu_shares() = 0;
+    virtual bool needs_hierarchy_adjustment() = 0;
     virtual bool is_read_only() = 0;
+    virtual const char* subsystem_path() = 0;
+    virtual void set_subsystem_path(const char* cgroup_path) = 0;
+    virtual const char* mount_point() = 0;
+    virtual const char* cgroup_path() = 0;
 };
 
 // Pure virtual class representing version agnostic memory controllers
@@ -217,7 +228,12 @@ class CgroupMemoryController: public CHeapObj<mtInternal> {
     virtual jlong rss_usage_in_bytes() = 0;
     virtual jlong cache_usage_in_bytes() = 0;
     virtual void print_version_specific_info(outputStream* st, julong host_mem) = 0;
+    virtual bool needs_hierarchy_adjustment() = 0;
     virtual bool is_read_only() = 0;
+    virtual const char* subsystem_path() = 0;
+    virtual void set_subsystem_path(const char* cgroup_path) = 0;
+    virtual const char* mount_point() = 0;
+    virtual const char* cgroup_path() = 0;
 };
 
 class CgroupSubsystem: public CHeapObj<mtInternal> {

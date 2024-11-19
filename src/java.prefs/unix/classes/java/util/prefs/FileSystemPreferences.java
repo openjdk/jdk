@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -450,7 +450,7 @@ class FileSystemPreferences extends AbstractPreferences {
             changeLog.get(i).replay();
     }
 
-    private static Timer syncTimer = new Timer(true); // Daemon Thread
+    private static final Timer syncTimer = new Timer(true); // Daemon Thread
 
     static {
         addShutdownHook();
@@ -540,7 +540,7 @@ class FileSystemPreferences extends AbstractPreferences {
             }
         });
         if (newNode) {
-            // These 2 things guarantee node will get wrtten at next flush/sync
+            // These 2 things guarantee node will get written at next flush/sync
             prefsCache = new TreeMap<>();
             nodeCreate = new NodeCreate();
             changeLog.add(nodeCreate);
@@ -957,6 +957,8 @@ class FileSystemPreferences extends AbstractPreferences {
             try {
                 Thread.sleep(sleepTime);
             } catch(InterruptedException e) {
+                // Don't lose the interrupt.
+                Thread.currentThread().interrupt();
                 checkLockFile0ErrorCode(errorCode);
                 return false;
             }
@@ -1006,12 +1008,12 @@ class FileSystemPreferences extends AbstractPreferences {
      * Initial time between lock attempts, in ms.  The time is doubled
      * after each failing attempt (except the first).
      */
-    private static int INIT_SLEEP_TIME = 50;
+    private static final int INIT_SLEEP_TIME = 50;
 
     /**
      * Maximum number of lock attempts.
      */
-    private static int MAX_ATTEMPTS = 5;
+    private static final int MAX_ATTEMPTS = 5;
 
     /**
      * Release the appropriate file lock (user or system).

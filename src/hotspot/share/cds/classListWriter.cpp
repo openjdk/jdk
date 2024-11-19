@@ -128,9 +128,15 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
     }
   }
 
-  // filter out java/lang/invoke/BoundMethodHandle$Species...
-  if (cfs != nullptr && cfs->source() != nullptr && strcmp(cfs->source(), "_ClassSpecializer_generateConcreteSpeciesCode") == 0) {
-    return;
+  if (cfs != nullptr && cfs->source() != nullptr) {
+    if (strcmp(cfs->source(), "_ClassSpecializer_generateConcreteSpeciesCode") == 0) {
+      return;
+    }
+
+    if (strncmp(cfs->source(), "__", 2) == 0) {
+      // generated class: __dynamic_proxy__, __JVM_LookupDefineClass__, etc
+      return;
+    }
   }
 
   {
@@ -174,6 +180,8 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
       }
     }
 
+    // NB: the string following "source: " is not really a proper file name, but rather
+    // a truncated URI referring to a file. It must be decoded after reading.
 #ifdef _WINDOWS
     // "file:/C:/dir/foo.jar" -> "C:/dir/foo.jar"
     stream->print(" source: %s", cfs->source() + 6);
@@ -254,6 +262,18 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
   }
 
   if (cp->cache() != nullptr) {
+    Array<ResolvedIndyEntry>* indy_entries = cp->cache()->resolved_indy_entries();
+    if (indy_entries != nullptr) {
+      for (int i = 0; i < indy_entries->length(); i++) {
+        ResolvedIndyEntry* rie = indy_entries->adr_at(i);
+        int cp_index = rie->constant_pool_index();
+        if (rie->is_resolved()) {
+          list.at_put(cp_index, true);
+          print = true;
+        }
+      }
+    }
+
     Array<ResolvedFieldEntry>* field_entries = cp->cache()->resolved_field_entries();
     if (field_entries != nullptr) {
       for (int i = 0; i < field_entries->length(); i++) {
@@ -272,7 +292,8 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
         ResolvedMethodEntry* rme = method_entries->adr_at(i);
         if (rme->is_resolved(Bytecodes::_invokevirtual) ||
             rme->is_resolved(Bytecodes::_invokespecial) ||
-            rme->is_resolved(Bytecodes::_invokeinterface)) {
+            rme->is_resolved(Bytecodes::_invokeinterface) ||
+            rme->is_resolved(Bytecodes::_invokehandle)) {
           list.at_put(rme->constant_pool_index(), true);
           print = true;
         }
@@ -289,7 +310,8 @@ void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
         assert(cp_tag.value() == JVM_CONSTANT_Class ||
                cp_tag.value() == JVM_CONSTANT_Fieldref ||
                cp_tag.value() == JVM_CONSTANT_Methodref||
-               cp_tag.value() == JVM_CONSTANT_InterfaceMethodref, "sanity");
+               cp_tag.value() == JVM_CONSTANT_InterfaceMethodref ||
+               cp_tag.value() == JVM_CONSTANT_InvokeDynamic, "sanity");
         stream->print(" %d", i);
       }
     }

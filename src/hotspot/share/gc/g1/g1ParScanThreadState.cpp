@@ -37,7 +37,6 @@
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -59,7 +58,6 @@
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            G1RedirtyCardsQueueSet* rdcqs,
-                                           PreservedMarks* preserved_marks,
                                            uint worker_id,
                                            uint num_workers,
                                            G1CollectionSet* collection_set,
@@ -90,7 +88,6 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _numa(g1h->numa()),
     _obj_alloc_stat(nullptr),
     ALLOCATION_FAILURE_INJECTOR_ONLY(_allocation_failure_inject_counter(0) COMMA)
-    _preserved_marks(preserved_marks),
     _evacuation_failed_info(),
     _evac_failure_regions(evac_failure_regions),
     _evac_failure_enqueued_cards(0)
@@ -216,7 +213,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
 
   markWord m = obj->mark();
   if (m.is_forwarded()) {
-    obj = m.forwardee();
+    obj = obj->forwardee(m);
   } else {
     obj = do_copy_to_survivor_space(region_attr, obj, m);
   }
@@ -232,7 +229,6 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state) {
 #ifdef ASSERT
   oop from_obj = state->source();
   assert(_g1h->is_in_reserved(from_obj), "must be in heap.");
-  assert(from_obj->is_objArray(), "must be obj array");
   assert(from_obj->is_forwarded(), "must be forwarded");
   assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
   assert(to_obj->is_objArray(), "must be obj array");
@@ -265,7 +261,6 @@ MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                                   oop from_obj,
                                                   oop to_obj) {
-  assert(from_obj->is_objArray(), "precondition");
   assert(from_obj->is_forwarded(), "precondition");
   assert(from_obj->forwardee() == to_obj, "precondition");
   assert(to_obj->is_objArray(), "precondition");
@@ -401,22 +396,22 @@ G1HeapRegionAttr G1ParScanThreadState::next_region_attr(G1HeapRegionAttr const r
 }
 
 void G1ParScanThreadState::report_promotion_event(G1HeapRegionAttr const dest_attr,
-                                                  oop const old, size_t word_sz, uint age,
+                                                  Klass* klass, size_t word_sz, uint age,
                                                   HeapWord * const obj_ptr, uint node_index) const {
   PLAB* alloc_buf = _plab_allocator->alloc_buffer(dest_attr, node_index);
   if (alloc_buf->contains(obj_ptr)) {
-    _g1h->gc_tracer_stw()->report_promotion_in_new_plab_event(old->klass(), word_sz * HeapWordSize, age,
+    _g1h->gc_tracer_stw()->report_promotion_in_new_plab_event(klass, word_sz * HeapWordSize, age,
                                                               dest_attr.type() == G1HeapRegionAttr::Old,
                                                               alloc_buf->word_sz() * HeapWordSize);
   } else {
-    _g1h->gc_tracer_stw()->report_promotion_outside_plab_event(old->klass(), word_sz * HeapWordSize, age,
+    _g1h->gc_tracer_stw()->report_promotion_outside_plab_event(klass, word_sz * HeapWordSize, age,
                                                                dest_attr.type() == G1HeapRegionAttr::Old);
   }
 }
 
 NOINLINE
 HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
-                                                   oop old,
+                                                   Klass* klass,
                                                    size_t word_sz,
                                                    uint age,
                                                    uint node_index) {
@@ -439,7 +434,7 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
     update_numa_stats(node_index);
     if (_g1h->gc_tracer_stw()->should_report_promotion_events()) {
       // The events are checked individually as part of the actual commit
-      report_promotion_event(*dest_attr, old, word_sz, age, obj_ptr, node_index);
+      report_promotion_event(*dest_attr, klass, word_sz, age, obj_ptr, node_index);
     }
   }
   return obj_ptr;
@@ -474,9 +469,17 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   assert(region_attr.is_in_cset(),
          "Unexpected region attr type: %s", region_attr.get_type_str());
 
-  // Get the klass once.  We'll need it again later, and this avoids
-  // re-decoding when it's compressed.
-  Klass* klass = old->klass();
+  // NOTE: With compact headers, it is not safe to load the Klass* from old, because
+  // that would access the mark-word, that might change at any time by concurrent
+  // workers.
+  // This mark word would refer to a forwardee, which may not yet have completed
+  // copying. Therefore we must load the Klass* from the mark-word that we already
+  // loaded. This is safe, because we only enter here if not yet forwarded.
+  assert(!old_mark.is_forwarded(), "precondition");
+  Klass* klass = UseCompactObjectHeaders
+      ? old_mark.klass()
+      : old->klass();
+
   const size_t word_sz = old->size_given_klass(klass);
 
   // JNI only allows pinning of typeArrays, so we only need to keep those in place.
@@ -494,7 +497,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   // PLAB allocations should succeed most of the time, so we'll
   // normally check against null once and that's it.
   if (obj_ptr == nullptr) {
-    obj_ptr = allocate_copy_slow(&dest_attr, old, word_sz, age, node_index);
+    obj_ptr = allocate_copy_slow(&dest_attr, klass, word_sz, age, node_index);
     if (obj_ptr == nullptr) {
       // This will either forward-to-self, or detect that someone else has
       // installed a forwarding pointer.
@@ -595,7 +598,6 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
   if (_states[worker_id] == nullptr) {
     _states[worker_id] =
       new G1ParScanThreadState(_g1h, rdcqs(),
-                               _preserved_marks_set.get(worker_id),
                                worker_id,
                                _num_workers,
                                _collection_set,
@@ -655,7 +657,7 @@ NOINLINE
 oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, size_t word_sz, bool cause_pinned) {
   assert(_g1h->is_in_cset(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
 
-  oop forward_ptr = old->forward_to_atomic(old, m, memory_order_relaxed);
+  oop forward_ptr = old->forward_to_self_atomic(m, memory_order_relaxed);
   if (forward_ptr == nullptr) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     G1HeapRegion* r = _g1h->heap_region_containing(old);
@@ -667,8 +669,6 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // Mark the failing object in the marking bitmap and later use the bitmap to handle
     // evacuation failure recovery.
     _g1h->mark_evac_failure_object(_worker_id, old, word_sz);
-
-    _preserved_marks->push_if_necessary(old, m);
 
     ContinuationGCSupport::transform_stack_chunk(old);
 
@@ -727,7 +727,6 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _g1h(g1h),
     _collection_set(collection_set),
     _rdcqs(G1BarrierSet::dirty_card_queue_set().allocator()),
-    _preserved_marks_set(true /* in_c_heap */),
     _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, num_workers, mtGC)),
     _rdc_buffers(NEW_C_HEAP_ARRAY(BufferNodeList, num_workers, mtGC)),
     _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, collection_set->young_region_length() + 1, mtGC)),
@@ -736,7 +735,6 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _evac_failure_regions(evac_failure_regions),
     _partial_array_state_allocator(num_workers)
 {
-  _preserved_marks_set.init(num_workers);
   for (uint i = 0; i < num_workers; ++i) {
     _states[i] = nullptr;
     _rdc_buffers[i] = BufferNodeList();
@@ -749,5 +747,4 @@ G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
   FREE_C_HEAP_ARRAY(BufferNodeList, _rdc_buffers);
-  _preserved_marks_set.reclaim();
 }

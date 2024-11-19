@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ public:
 // - Update Derived Pointers (s)
 // - Clear Retained Region Data (on evacuation failure)
 // - Redirty Logged Cards
-// - Restore Preserved Marks (on evacuation failure)
 // - Free Collection Set
 // - Resize TLABs
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
@@ -67,7 +66,6 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
 
   class ProcessEvacuationFailedRegionsTask;
   class RedirtyLoggedCardsTask;
-  class RestorePreservedMarksTask;
   class FreeCollectionSetTask;
   class ResizeTLABsTask;
 

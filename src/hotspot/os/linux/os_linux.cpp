@@ -817,7 +817,7 @@ static void *thread_native_entry(Thread *thread) {
   OSThread* osthread = thread->osthread();
   Monitor* sync = osthread->startThread_lock();
 
-  osthread->set_thread_id(checked_cast<OSThread::thread_id_t>(os::current_thread_id()));
+  osthread->set_thread_id(checked_cast<pid_t>(os::current_thread_id()));
 
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
@@ -973,9 +973,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   if (osthread == nullptr) {
     return false;
   }
-
-  // set the correct thread state
-  osthread->set_thread_type(thr_type);
 
   // Initial state is ALLOCATED but not INITIALIZED
   osthread->set_state(ALLOCATED);
@@ -2763,7 +2760,7 @@ void os::jvm_path(char *buf, jint buflen) {
   assert(ret, "cannot locate libjvm");
   char *rp = nullptr;
   if (ret && dli_fname[0] != '\0') {
-    rp = os::Posix::realpath(dli_fname, buf, buflen);
+    rp = os::realpath(dli_fname, buf, buflen);
   }
   if (rp == nullptr) {
     return;
@@ -2797,7 +2794,7 @@ void os::jvm_path(char *buf, jint buflen) {
         }
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-        rp = os::Posix::realpath(java_home_var, buf, buflen);
+        rp = os::realpath(java_home_var, buf, buflen);
         if (rp == nullptr) {
           return;
         }
@@ -2818,7 +2815,7 @@ void os::jvm_path(char *buf, jint buflen) {
           snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
         } else {
           // Go back to path of .so
-          rp = os::Posix::realpath(dli_fname, buf, buflen);
+          rp = os::realpath(dli_fname, buf, buflen);
           if (rp == nullptr) {
             return;
           }
@@ -4602,7 +4599,7 @@ static void workaround_expand_exec_shield_cs_limit() {
     return; // No matter, we tried, best effort.
   }
 
-  MemTracker::record_virtual_memory_type((address)codebuf, mtInternal);
+  MemTracker::record_virtual_memory_tag((address)codebuf, mtInternal);
 
   log_info(os)("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
 
@@ -5051,16 +5048,6 @@ int os::open(const char *path, int oflag, int mode) {
 #endif
 
   return fd;
-}
-
-// return current position of file pointer
-jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
-}
-
-// move file pointer to the specified offset
-jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time);

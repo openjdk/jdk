@@ -43,7 +43,7 @@ class ZCollectedHeap : public CollectedHeap {
 
 private:
   ZBarrierSet       _barrier_set;
-  ZInitialize       _initialize;
+  ZInitializer      _initializer;
   ZHeap             _heap;
   ZDriverMinor*     _driver_minor;
   ZDriverMajor*     _driver_major;

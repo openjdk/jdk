@@ -25,16 +25,23 @@
 #ifndef SHARE_CDS_ARCHIVEUTILS_HPP
 #define SHARE_CDS_ARCHIVEUTILS_HPP
 
+#include "cds/cds_globals.hpp"
 #include "cds/serializeClosure.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;
 class VirtualSpace;
+
+template<class E> class Array;
+template<class E> class GrowableArray;
 
 // ArchivePtrMarker is used to mark the location of pointers embedded in a CDS archive. E.g., when an
 // InstanceKlass k is dumped, we mark the location of the k->_name pointer by effectively calling
@@ -156,10 +163,11 @@ private:
 public:
   DumpRegion(const char* name, uintx max_delta = 0)
     : _name(name), _base(nullptr), _top(nullptr), _end(nullptr),
-      _max_delta(max_delta), _is_packed(false) {}
+      _max_delta(max_delta), _is_packed(false),
+      _rs(NULL), _vs(NULL) {}
 
   char* expand_top_to(char* newtop);
-  char* allocate(size_t num_bytes);
+  char* allocate(size_t num_bytes, size_t alignment = 0);
 
   void append_intptr_t(intptr_t n, bool need_to_mark = false) NOT_CDS_RETURN;
 
@@ -228,13 +236,14 @@ public:
 class ReadClosure : public SerializeClosure {
 private:
   intptr_t** _ptr_array;
-
+  intptr_t _base_address;
   inline intptr_t nextPtr() {
     return *(*_ptr_array)++;
   }
 
 public:
-  ReadClosure(intptr_t** ptr_array) { _ptr_array = ptr_array; }
+  ReadClosure(intptr_t** ptr_array, intptr_t base_address) :
+    _ptr_array(ptr_array), _base_address(base_address) {}
 
   void do_ptr(void** p);
   void do_u4(u4* p);
@@ -247,7 +256,160 @@ public:
 
 class ArchiveUtils {
 public:
+  static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
+  static bool has_aot_initialized_mirror(InstanceKlass* src_ik);
+  template <typename T> static Array<T>* archive_array(GrowableArray<T>* tmp_array);
+
+  // offset must represent an object of type T in the mapped shared space. Return
+  // a direct pointer to this object.
+  template <typename T> T static from_offset(u4 offset) {
+    T p = (T)(SharedBaseAddress + offset);
+    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    return p;
+  }
+
+  // p must be an archived object. Get its offset from SharedBaseAddress
+  template <typename T> static u4 to_offset(T p) {
+    uintx pn = (uintx)p;
+    uintx base = (uintx)SharedBaseAddress;
+    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    assert(pn > base, "sanity"); // No valid object is stored at 0 offset from SharedBaseAddress
+    uintx offset = pn - base;
+    assert(offset <= MAX_SHARED_DELTA, "range check");
+    return static_cast<u4>(offset);
+  }
+};
+
+class HeapRootSegments {
+private:
+  size_t _base_offset;
+  size_t _count;
+  int _roots_count;
+  int _max_size_in_bytes;
+  int _max_size_in_elems;
+
+public:
+  size_t base_offset() { return _base_offset; }
+  size_t count() { return _count; }
+  int roots_count() { return _roots_count; }
+  int max_size_in_bytes() { return _max_size_in_bytes; }
+  int max_size_in_elems() { return _max_size_in_elems; }
+
+  size_t size_in_bytes(size_t seg_idx);
+  int size_in_elems(size_t seg_idx);
+  size_t segment_offset(size_t seg_idx);
+
+  // Trivial copy assignments are allowed to copy the entire object representation.
+  // We also inline this class into archive header. Therefore, it is important to make
+  // sure any gaps in object representation are initialized to zeroes. This is why
+  // constructors memset before doing field assignments.
+  HeapRootSegments() {
+    memset(this, 0, sizeof(*this));
+  }
+  HeapRootSegments(size_t base_offset, int roots_count, int max_size_in_bytes, int max_size_in_elems) {
+    memset(this, 0, sizeof(*this));
+    _base_offset = base_offset;
+    _count = (roots_count + max_size_in_elems - 1) / max_size_in_elems;
+    _roots_count = roots_count;
+    _max_size_in_bytes = max_size_in_bytes;
+    _max_size_in_elems = max_size_in_elems;
+  }
+
+  // This class is trivially copyable and assignable.
+  HeapRootSegments(const HeapRootSegments&) = default;
+  HeapRootSegments& operator=(const HeapRootSegments&) = default;
+};
+
+class ArchiveWorkers;
+
+// A task to be worked on by worker threads
+class ArchiveWorkerTask : public CHeapObj<mtInternal> {
+  friend class ArchiveWorkers;
+  friend class ArchiveWorkerShutdownTask;
+private:
+  const char* _name;
+  int _max_chunks;
+  volatile int _chunk;
+
+  void run();
+
+  void configure_max_chunks(int max_chunks);
+
+public:
+  ArchiveWorkerTask(const char* name) :
+      _name(name), _max_chunks(0), _chunk(0) {}
+  const char* name() const { return _name; }
+  virtual void work(int chunk, int max_chunks) = 0;
+};
+
+class ArchiveWorkerThread : public NamedThread {
+  friend class ArchiveWorkers;
+private:
+  ArchiveWorkers* const _pool;
+
+public:
+  ArchiveWorkerThread(ArchiveWorkers* pool);
+  const char* type_name() const override { return "Archive Worker Thread"; }
+  void run() override;
+};
+
+class ArchiveWorkerShutdownTask : public ArchiveWorkerTask {
+public:
+  ArchiveWorkerShutdownTask() : ArchiveWorkerTask("Archive Worker Shutdown") {
+    // This task always have only one chunk.
+    configure_max_chunks(1);
+  }
+  void work(int chunk, int max_chunks) override {
+    // Do nothing.
+  }
+};
+
+// Special worker pool for archive workers. The goal for this pool is to
+// startup fast, distribute spiky workloads efficiently, and being able to
+// shutdown after use. This makes the implementation quite different from
+// the normal GC worker pool.
+class ArchiveWorkers {
+  friend class ArchiveWorkerThread;
+private:
+  // Target number of chunks per worker. This should be large enough to even
+  // out work imbalance, and small enough to keep bookkeeping overheads low.
+  static constexpr int CHUNKS_PER_WORKER = 4;
+  static int max_workers();
+
+  // Global shared instance. Can be uninitialized, can be shut down.
+  static ArchiveWorkers _workers;
+
+  ArchiveWorkerShutdownTask _shutdown_task;
+  Semaphore _start_semaphore;
+  Semaphore _end_semaphore;
+
+  int _num_workers;
+  int _started_workers;
+  int _waiting_workers;
+  int _running_workers;
+
+  typedef enum { NOT_READY, READY, SHUTDOWN } State;
+  volatile State _state;
+
+  ArchiveWorkerTask* _task;
+
+  bool run_as_worker();
+  void start_worker_if_needed();
+  void signal_worker_if_needed();
+
+  void run_task_single(ArchiveWorkerTask* task);
+  void run_task_multi(ArchiveWorkerTask* task);
+
+  bool is_parallel();
+
+  ArchiveWorkers();
+
+public:
+  static ArchiveWorkers* workers() { return &_workers; }
+  void initialize();
+  void shutdown();
+  void run_task(ArchiveWorkerTask* task);
 };
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP

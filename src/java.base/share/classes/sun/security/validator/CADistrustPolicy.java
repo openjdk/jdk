@@ -57,7 +57,7 @@ enum CADistrustPolicy {
 
     /**
      * Distrust TLS Server certificates anchored by an Entrust root CA and
-     * issued after October 31, 2024. If enabled, this policy is currently
+     * issued after November 11, 2024. If enabled, this policy is currently
      * enforced by the PKIX and SunX509 TrustManager implementations
      * of the SunJSSE provider implementation.
      */

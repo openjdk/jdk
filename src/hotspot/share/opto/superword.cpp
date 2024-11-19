@@ -657,9 +657,6 @@ void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail,
           // or need to run igvn.optimize() again before SLP
         } else if (out->is_memory_phi() && !_vloop.in_bb(out)) {
           // Ditto.  Not sure what else to check further.
-        } else if (out->Opcode() == Op_StoreCM && out->in(MemNode::OopStore) == n) {
-          // StoreCM has an input edge used as a precedence edge.
-          // Maybe an issue when oop stores are vectorized.
         } else {
           assert(out == prev || prev == nullptr, "no branches off of store slice");
         }

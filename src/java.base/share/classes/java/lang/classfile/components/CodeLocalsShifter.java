@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
  */
 package java.lang.classfile.components;
 
-import java.lang.constant.MethodTypeDesc;
-import java.lang.reflect.AccessFlag;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.TypeKind;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
+
 import jdk.internal.classfile.impl.CodeLocalsShifterImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * {@link CodeLocalsShifter} is a {@link CodeTransform} shifting locals to
@@ -38,9 +38,8 @@ import jdk.internal.javac.PreviewFeature;
  * Locals pointing to the receiver or to method arguments slots are never shifted.
  * All locals pointing beyond the method arguments are re-indexed in order of appearance.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeLocalsShifter extends CodeTransform permits CodeLocalsShifterImpl {
 
     /**

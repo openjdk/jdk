@@ -55,7 +55,7 @@ import sun.security.util.RawKeySpec;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 3, jvmArgsAppend = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED"})
+@Fork(value = 3, jvmArgs = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED"})
 
 // Tests 1-2 are from RFC 8554, Appendix F.
 

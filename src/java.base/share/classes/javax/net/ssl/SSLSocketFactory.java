@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,8 @@ public abstract class SSLSocketFactory extends SocketFactory {
      *         does not implement the operation
      * @throws NullPointerException if {@code s} is {@code null}
      *
+     * @spec https://www.rfc-editor.org/info/rfc6066
+     *      RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
      * @since 1.8
      */
     public Socket createSocket(Socket s, InputStream consumed,

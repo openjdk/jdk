@@ -424,7 +424,7 @@ bool DCmd::reorder_help_cmd(CmdLine line, stringStream &updated_line) {
   args.print("%s", line.args_addr());
   char* rest = args.as_string();
   char* token = strtok_r(rest, " ", &rest);
-  while (token != NULL) {
+  while (token != nullptr) {
     if (strcmp(token, "-h") == 0 || strcmp(token, "--help") == 0 ||
         strcmp(token, "-help") == 0) {
       updated_line.print("%s", "help ");
