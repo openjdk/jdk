@@ -40,21 +40,9 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stax.StAXResult;
 import jdk.jpackage.internal.IOUtils;
-import jdk.jpackage.internal.util.xml.PrettyPrintHandler;
-import jdk.jpackage.internal.util.xml.SkipDocumentHandler;
+
 
 public final class XmlUtils {
-
-    @FunctionalInterface
-    public interface XmlConsumerNoArg {
-
-        void accept() throws IOException, XMLStreamException;
-
-    }
-
-    public static XmlConsumer toXmlConsumer(XmlConsumerNoArg xmlConsumer) {
-        return xml -> xmlConsumer.accept();
-    }
 
     public static void createXml(Path dstFile, XmlConsumer xmlConsumer) throws
             IOException {

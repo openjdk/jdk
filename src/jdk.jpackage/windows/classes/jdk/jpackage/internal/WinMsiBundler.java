@@ -56,6 +56,7 @@ import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -207,7 +208,7 @@ public class WinMsiBundler  extends AbstractBundler {
 
         AppImageLayout appImageLayout;
 
-        // We either have an application image or need to build one.
+        // we either have an application image or need to build one
         if (pkg.app().runtimeBuilder() != null) {
             // Runtime builder is present, build app image.
             WinAppImageBuilder.build()

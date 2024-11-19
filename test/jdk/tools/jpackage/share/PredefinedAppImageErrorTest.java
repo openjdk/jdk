@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.List;
 
+import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.AppImageFile;

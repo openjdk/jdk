@@ -23,9 +23,9 @@
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Executor;

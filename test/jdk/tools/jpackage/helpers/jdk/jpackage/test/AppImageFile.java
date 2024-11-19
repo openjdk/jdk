@@ -25,10 +25,12 @@ package jdk.jpackage.test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -112,16 +114,13 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
     }
 
     private static String getPlatform() {
-        if (TKit.isLinux()) {
-            return "linux";
-        } else if (TKit.isOSX()) {
-            return "macOS";
-        } else if (TKit.isWindows()) {
-            return "windows";
-        } else {
-            throw new UnsupportedOperationException();
-        }
+        return PLATFORM_LABELS.get(OperatingSystem.current());
     }
 
     private static final String FILENAME = ".jpackage.xml";
+
+    private static final Map<OperatingSystem, String> PLATFORM_LABELS = Map.of(
+            OperatingSystem.LINUX, "linux",
+            OperatingSystem.WINDOWS, "windows",
+            OperatingSystem.MACOS, "macOS");
 }

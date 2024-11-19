@@ -24,18 +24,18 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameters;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import static java.util.stream.Collectors.joining;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.util.FileUtils.copyRecursive;
-import jdk.jpackage.test.Annotations.Parameters;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Functional.ThrowingFunction;
+import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.TKit;
 
 
 /**
@@ -148,7 +148,7 @@ public class AppContentTest {
             var srcPath = TKit.TEST_SRC_ROOT.resolve(appContentPath);
             var dstPath = appContentArg.resolve(srcPath.getFileName());
             Files.createDirectories(dstPath.getParent());
-            copyRecursive(srcPath, dstPath);
+            FileUtils.copyRecursive(srcPath, dstPath);
             return appContentArg;
         }
 

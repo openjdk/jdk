@@ -22,6 +22,7 @@
  */
 
 import java.nio.file.Path;
+import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
@@ -29,7 +30,6 @@ import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
-import jdk.jpackage.test.ApplicationLayout;
 
 /**
  * Note: Testing unsgined app image is done to verify support for per-user

@@ -46,10 +46,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingFunction;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 /**
  * jpackage command line with prerequisite actions. Prerequisite actions can be
@@ -74,6 +74,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
         appLayoutAsserts = cmd.appLayoutAsserts;
+        outputValidator = cmd.outputValidator;
         executeInDirectory = cmd.executeInDirectory;
     }
 
@@ -212,7 +213,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String name() {
-        String appImage = getArgumentValue("--app-image", () -> null);
+        String appImage = getArgumentValue("--app-image");
         if (appImage != null) {
             String name =  AppImageFile.load(Path.of(appImage)).mainLauncherName();
             // can be null if using foreign app-image
@@ -699,6 +700,24 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand validateOutput(TKit.TextStreamVerifier validator) {
+        return JPackageCommand.this.validateOutput(validator::apply);
+    }
+
+    public JPackageCommand validateOutput(Consumer<Stream<String>> validator) {
+        if (validator != null) {
+            saveConsoleOutput(true);
+            outputValidator = validator;
+        } else {
+            outputValidator = null;
+        }
+        return this;
+    }
+
+    public JPackageCommand validateOutput(CannedFormattedString str) {
+        return JPackageCommand.this.validateOutput(TKit.assertTextStream(str.getValue()));
+    }
+
     public boolean isWithToolProvider() {
         return Optional.ofNullable(withToolProvider).orElse(
                 defaultWithToolProvider);
@@ -776,6 +795,10 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .adjustArgumentsBeforeExecution()
                 .createExecutor()
                 .execute(expectedExitCode);
+
+        if (outputValidator != null) {
+            outputValidator.accept(result.getOutput().stream());
+        }
 
         if (result.exitCode == 0) {
             executeVerifyActions();
@@ -1151,6 +1174,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private final Actions verifyActions;
     private Path executeInDirectory;
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
+    private Consumer<Stream<String>> outputValidator;
     private static boolean defaultWithToolProvider;
 
     private static final Map<String, PackageType> PACKAGE_TYPES = Functional.identity(

@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import javax.imageio.ImageIO;
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 
 public final class LauncherIconVerifier {
     public LauncherIconVerifier() {
@@ -176,7 +177,7 @@ public final class LauncherIconVerifier {
                 iconSwap.setAccessible(true);
             } catch (ClassNotFoundException | NoSuchMethodException
                     | SecurityException ex) {
-                throw Functional.rethrowUnchecked(ex);
+                throw rethrowUnchecked(ex);
             }
         }
 
@@ -260,7 +261,7 @@ public final class LauncherIconVerifier {
                         }
                     }
                 } catch (IllegalAccessException | InvocationTargetException ex) {
-                    throw Functional.rethrowUnchecked(ex);
+                    throw rethrowUnchecked(ex);
                 }
             } finally {
                 launcherPath.toFile().setWritable(false, true);

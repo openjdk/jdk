@@ -26,7 +26,6 @@ import java.io.IOException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-
 @FunctionalInterface
 public interface XmlConsumer {
 

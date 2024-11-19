@@ -39,5 +39,4 @@ public interface ThrowingBiConsumer<T, U> {
             }
         };
     }
-
 }

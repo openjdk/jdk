@@ -39,12 +39,12 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamWriter;
+import jdk.jpackage.internal.util.XmlConsumer;
 import jdk.jpackage.internal.OverridableResource.Source;
 import jdk.internal.util.Architecture;
 import jdk.jpackage.internal.WixSourceConverter.ResourceGroup;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.util.XmlUtils;
-import jdk.jpackage.internal.util.XmlConsumer;
 
 /**
  * Creates WiX fragment.

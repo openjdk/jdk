@@ -36,7 +36,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PathUtils;
-import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.MAC_PKG;
 import static jdk.jpackage.test.PackageType.WINDOWS;
@@ -187,7 +189,7 @@ public final class LauncherAsServiceVerifier {
         }
 
         AdditionalLauncher.forEachAdditionalLauncher(cmd,
-                Functional.ThrowingBiConsumer.toBiConsumer(
+                ThrowingBiConsumer.toBiConsumer(
                         (launcherName, propFilePath) -> {
                             if (Files.readAllLines(propFilePath).stream().anyMatch(
                                     line -> {
@@ -342,7 +344,7 @@ public final class LauncherAsServiceVerifier {
 
     private static void delayInstallVerify() {
         // Sleep a bit to let system launch the service
-        Functional.ThrowingRunnable.toRunnable(() -> Thread.sleep(5 * 1000)).run();
+        ThrowingRunnable.toRunnable(() -> Thread.sleep(5 * 1000)).run();
     }
 
     private Path appOutputFilePathInitialize() {

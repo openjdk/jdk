@@ -32,6 +32,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+<<<<<<< HEAD
+=======
+import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
+import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+>>>>>>> SplitIOUtils.DecoupleAppImageFile
 import jdk.jpackage.internal.util.PathUtils;
 
 /**
