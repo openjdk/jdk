@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,18 +73,13 @@ final class SealedObjectForKeyProtector extends SealedObject {
         return params;
     }
 
-    @SuppressWarnings("removal")
     final Key getKey(Cipher c, int maxLength)
             throws IOException, ClassNotFoundException, IllegalBlockSizeException,
             BadPaddingException {
 
         try (ObjectInputStream ois = SharedSecrets.getJavaxCryptoSealedObjectAccess()
                 .getExtObjectInputStream(this, c)) {
-            AccessController.doPrivileged(
-                    (PrivilegedAction<Void>) () -> {
-                        ois.setObjectInputFilter(new DeserializationChecker(maxLength));
-                        return null;
-                    });
+                ois.setObjectInputFilter(new DeserializationChecker(maxLength));
             try {
                 @SuppressWarnings("unchecked")
                 Key t = (Key) ois.readObject();
@@ -113,16 +108,8 @@ final class SealedObjectForKeyProtector extends SealedObject {
         private static final ObjectInputFilter OWN_FILTER;
 
         static {
-            @SuppressWarnings("removal")
-            String prop = AccessController.doPrivileged(
-                    (PrivilegedAction<String>) () -> {
-                        String tmp = System.getProperty(KEY_SERIAL_FILTER);
-                        if (tmp != null) {
-                            return tmp;
-                        } else {
-                            return Security.getProperty(KEY_SERIAL_FILTER);
-                        }
-                    });
+            String prop = System.getProperty(
+                 KEY_SERIAL_FILTER, Security.getProperty(KEY_SERIAL_FILTER));
             OWN_FILTER = prop == null
                     ? null
                     : ObjectInputFilter.Config.createFilter(prop);

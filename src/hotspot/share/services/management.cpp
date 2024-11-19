@@ -160,7 +160,6 @@ void Management::initialize(TRAPS) {
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_agent_Agent(),
                                                    loader,
-                                                   Handle(),
                                                    THREAD);
     if (k == nullptr) {
       vm_exit_during_initialization("Management agent initialization failure: "

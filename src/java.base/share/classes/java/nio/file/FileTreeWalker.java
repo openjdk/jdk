@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,16 +198,12 @@ class FileTreeWalker implements Closeable {
      * the walk is following sym links is not. The {@code canUseCached}
      * argument determines whether this method can use cached attributes.
      */
-    @SuppressWarnings("removal")
     private BasicFileAttributes getAttributes(Path file, boolean canUseCached)
         throws IOException
     {
         // if attributes are cached then use them if possible
-        if (canUseCached &&
-            (file instanceof BasicFileAttributesHolder) &&
-            (System.getSecurityManager() == null))
-        {
-            BasicFileAttributes cached = ((BasicFileAttributesHolder)file).get();
+        if (canUseCached && (file instanceof BasicFileAttributesHolder bfah)) {
+            BasicFileAttributes cached = bfah.get();
             if (cached != null && (!followLinks || !cached.isSymbolicLink())) {
                 return cached;
             }
@@ -250,7 +246,7 @@ class FileTreeWalker implements Closeable {
                         // cycle detected
                         return true;
                     }
-                } catch (IOException | SecurityException x) {
+                } catch (IOException e) {
                     // ignore
                 }
             }
@@ -262,25 +258,16 @@ class FileTreeWalker implements Closeable {
      * Visits the given file, returning the {@code Event} corresponding to that
      * visit.
      *
-     * The {@code ignoreSecurityException} parameter determines whether
-     * any SecurityException should be ignored or not. If a SecurityException
-     * is thrown, and is ignored, then this method returns {@code null} to
-     * mean that there is no event corresponding to a visit to the file.
-     *
      * The {@code canUseCached} parameter determines whether cached attributes
      * for the file can be used or not.
      */
-    private Event visit(Path entry, boolean ignoreSecurityException, boolean canUseCached) {
+    private Event visit(Path entry, boolean canUseCached) {
         // need the file attributes
         BasicFileAttributes attrs;
         try {
             attrs = getAttributes(entry, canUseCached);
         } catch (IOException ioe) {
             return new Event(EventType.ENTRY, entry, ioe);
-        } catch (SecurityException se) {
-            if (ignoreSecurityException)
-                return null;
-            throw se;
         }
 
         // at maximum depth or file is not a directory
@@ -301,10 +288,6 @@ class FileTreeWalker implements Closeable {
             stream = Files.newDirectoryStream(entry);
         } catch (IOException ioe) {
             return new Event(EventType.ENTRY, entry, ioe);
-        } catch (SecurityException se) {
-            if (ignoreSecurityException)
-                return null;
-            throw se;
         }
 
         // push a directory node to the stack and return an event
@@ -321,7 +304,6 @@ class FileTreeWalker implements Closeable {
             throw new IllegalStateException("Closed");
 
         Event ev = visit(file,
-                         false,   // ignoreSecurityException
                          false);  // canUseCached
         assert ev != null;
         return ev;
@@ -372,7 +354,6 @@ class FileTreeWalker implements Closeable {
 
             // visit the entry
             ev = visit(entry,
-                       true,   // ignoreSecurityException
                        true);  // canUseCached
 
         } while (ev == null);

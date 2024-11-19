@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,6 @@ import java.net.StandardSocketOptions;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Set;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -61,14 +58,8 @@ class ServerSocketAdaptor                        // package-private
     // Timeout "option" value for accepts
     private volatile int timeout;
 
-    @SuppressWarnings("removal")
     static ServerSocket create(ServerSocketChannelImpl ssc) {
-        PrivilegedExceptionAction<ServerSocket> pa = () -> new ServerSocketAdaptor(ssc);
-        try {
-            return AccessController.doPrivileged(pa);
-        } catch (PrivilegedActionException pae) {
-            throw new InternalError("Should not reach here", pae);
-        }
+        return new ServerSocketAdaptor(ssc);
     }
 
     private ServerSocketAdaptor(ServerSocketChannelImpl ssc) {
@@ -98,7 +89,7 @@ class ServerSocketAdaptor                        // package-private
         if (local == null) {
             return null;
         } else {
-            return Net.getRevealedLocalAddress(local).getAddress();
+            return ((InetSocketAddress)local).getAddress();
         }
     }
 

@@ -169,7 +169,7 @@ public class EnclosingMethodTest extends TestResult {
                     // stop checking, attr is null. test case failed
                     return;
                 }
-                checkEquals(attr.attributeName(),
+                checkEquals(attr.attributeName().stringValue(),
                         "EnclosingMethod",
                         "attribute_name_index of EnclosingMethod attribute in the class : " + className);
                 checkEquals(((BoundAttribute<?>)attr).payloadLen(), 4,
