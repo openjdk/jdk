@@ -356,8 +356,8 @@
           "Enable reductions support in superword.")                        \
                                                                             \
   product_pd(uint, SuperWordStoreToLoadForwardingFailureDetection, DIAGNOSTIC, \
-          "if >0, auto-vectorization detects possible store-to-load"        \
-          "forwarding failures. The number specifies over how many"         \
+          "if >0, auto-vectorization detects possible store-to-load "       \
+          "forwarding failures. The number specifies over how many "        \
           "loop iterations this detection spans.")                          \
           range(0, 4096)                                                    \
                                                                             \

@@ -135,7 +135,6 @@ public abstract class VectorStoreToLoadForwarding {
     })
     public static class NoVectorization extends VectorStoreToLoadForwarding {}
 
-
     @Fork(value = 1, jvmArgs = {
         "-XX:+UseSuperWord", "-XX:+UnlockDiagnosticVMOptions", "-XX:SuperWordStoreToLoadForwardingFailureDetection=0"
     })

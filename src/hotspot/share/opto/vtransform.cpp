@@ -183,9 +183,9 @@ public:
     static int cmp_for_sort_by_group(VPointerRecord* r1, VPointerRecord* r2) {
       RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->base()->_idx, r2->base()->_idx);
       RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->scale(),      r2->scale());
-      int r1_inva_idx = r1->invar() == nullptr ? 0 : r1->invar()->_idx;
-      int r2_inva_idx = r2->invar() == nullptr ? 0 : r2->invar()->_idx;
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1_inva_idx,      r2_inva_idx);
+      int r1_invar_idx = r1->invar() == nullptr ? 0 : r1->invar()->_idx;
+      int r2_invar_idx = r2->invar() == nullptr ? 0 : r2->invar()->_idx;
+      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1_invar_idx,      r2_invar_idx);
       return 0; // equal
     }
 
@@ -231,11 +231,11 @@ public:
 // Store-to-load-forwarding is a CPU memory optimization, where a load can directly fetch
 // its value from the store-buffer, rather than from the L1 cache. This is many CPU cycles
 // faster. However, this optimization comes with some restrictions, depending on the CPU.
-// Generally, Store-to-load forwarding works if the load and store memory regions match
+// Generally, store-to-load-forwarding works if the load and store memory regions match
 // exactly (same start and width). Generally problematic are partial overlaps - though
 // some CPU's can handle even some subsets of these cases. We conservatively assume that
-// all such partial overlaps lead to a store-to-load-forwarding failure, which means the
-// load has to stall until the store goes from the store-buffer into the L1 cache, incuring
+// all such partial overlaps lead to a store-to-load-forwarding failures, which means the
+// load has to stall until the store goes from the store-buffer into the L1 cache, incurring
 // a penalty of many CPU cycles.
 //
 // Unfortunately, vectorization can introduce such store-to-load-forwarding failures.
@@ -244,7 +244,7 @@ public:
 //       aI[i] = aI[i - 3] + 1;
 //   }
 //
-// Assume we have a 2-element vectors (2*4 = 8 bytes). This gives us this machine code:
+// Assume we have 2-element vectors (2*4 = 8 bytes). This gives us this machine code:
 //   load_8_bytes( ptr + -12)
 //   store_8_bytes(ptr + 0)
 //   load_8_bytes( ptr + -4)
@@ -256,10 +256,11 @@ public:
 // We see that eventually all loads are dependent on earlier stores, but the values cannot
 // be forwarded because there is some partial overlap.
 //
-// Preferrably, we would have some latency-based cost-model that accounts for such forwarding
-// failures, and decides if vectorization with forwarding failures is still profitable. For
-// now we go with a simpler huristic: we simply forbid vectorization if we can PROVE that
+// Preferably, we would have some latency-based cost-model that accounts for such forwarding
+// failures, and decide if vectorization with forwarding failures is still profitable. For
+// now we go with a simpler heuristic: we simply forbid vectorization if we can PROVE that
 // there will be a forwarding failure. This approach has at least 2 possible weaknesses:
+//
 //  (1) There may be forwarding failures in cases where we cannot prove it.
 //      Example:
 //        for (int i = 10; i < SIZE; i++) {
@@ -268,7 +269,7 @@ public:
 //
 //      We do not know if aI and bI refer to the same array or not. However, it is reasonable
 //      to assume that if we have two different array references, that they most likely refer
-//      to different arrays, where we would have no forwarding failures.
+//      to different arrays (i.e. no aliasing), where we would have no forwarding failures.
 //  (2) There could be some loops where vectorization introduces forwarding failures, and thus
 //      the latency of the loop body is high, but this does not matter because it is dominated
 //      by other latency/throughput based costs in the loop body.
@@ -294,7 +295,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
   int unrolled_count = vloop_analyzer.vloop().cl()->unrolled_count();
   uint simulated_super_unrolling_count = MAX2(1, simulated_unrolling_count / unrolled_count);
   int iv_stride = vloop_analyzer.vloop().iv_stride();
-  int order = 0;
+  int schedule_order = 0;
   for (uint k = 0; k < simulated_super_unrolling_count; k++) {
     int iv_offset = k * iv_stride; // virtual super-unrolling
     for (int i = 0; i < _schedule.length(); i++) {
@@ -304,13 +305,13 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
         if (p.valid()) {
           VTransformVectorNode* vector = vtn->isa_Vector();
           uint vector_length = vector != nullptr ? vector->nodes().length() : 1;
-          records.push(VPointerRecord(p, iv_offset, vector_length, order++));
+          records.push(VPointerRecord(p, iv_offset, vector_length, schedule_order++));
         }
       }
     }
   }
 
-  // Sort the pointers by group (same base, invar and stride), and by offset.
+  // Sort the pointers by group (same base, invar and stride), and then by offset.
   records.sort(VPointerRecord::cmp_for_sort);
 
 #ifndef PRODUCT
@@ -325,11 +326,11 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
   }
 #endif
 
-  // For all pairs of pointers in the same group, check if they have partial overlap.
+  // For all pairs of pointers in the same group, check if they have a partial overlap.
   for (int i = 0; i < records.length(); i++) {
     VPointerRecord& record1 = records.at(i);
 
-    for(int j = i + 1; j < records.length(); j++) {
+    for (int j = i + 1; j < records.length(); j++) {
       VPointerRecord& record2 = records.at(j);
 
       const VPointerRecord::Aliasing aliasing = record1.aliasing(record2);
