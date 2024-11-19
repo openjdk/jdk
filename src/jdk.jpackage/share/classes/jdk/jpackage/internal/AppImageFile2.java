@@ -115,6 +115,13 @@ final class AppImageFile2 {
     }
 
     /**
+     * Returns additional properties. Never returns null.
+     */
+    Map<String, String> getExtra() {
+        return extra;
+    }
+
+    /**
      * Saves file with application image info in application image using values
      * from this instance.
      */
