@@ -527,7 +527,7 @@ public:
 #endif
 };
 
-// Class of Float-Constant Types.
+// Class of Half Float-Constant Types.
 class TypeH : public Type {
   TypeH( short f ) : Type(HalfFloatCon), _f(f) {};
 public:

@@ -331,7 +331,7 @@ public class ScalarFloat16OperationsTest {
     }
 
     @Test(dataProvider = "ternaryOpProvider")
-    public static void minTest(Object input1, Object input2, Object input3) {
+    public static void fmaTest(Object input1, Object input2, Object input3) {
         Float16 [] farr1 =  (Float16[])input1;
         Float16 [] farr2 =  (Float16[])input2;
         Float16 [] farr3 =  (Float16[])input2;

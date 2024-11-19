@@ -749,7 +749,7 @@ Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 //=============================================================================
 //------------------------------Value------------------------------------------
-// An DivFNode divides its inputs.  The third input is a Control input, used to
+// An DivHFNode divides its inputs.  The third input is a Control input, used to
 // prevent hoisting the divide above an unsafe test.
 const Type* DivHFNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP

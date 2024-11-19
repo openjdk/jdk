@@ -412,11 +412,11 @@ public:
 // Minimum of 2 floats.
 class MinFNode : public MaxNode {
 public:
-  MinFNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
+  MinFNode(Node* in1, Node* in2) : MaxNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *add_ring(const Type*, const Type*) const;
-  virtual const Type *add_id() const { return TypeF::POS_INF; }
-  virtual const Type *bottom_type() const { return Type::FLOAT; }
+  virtual const Type* add_ring(const Type*, const Type*) const;
+  virtual const Type* add_id() const { return TypeF::POS_INF; }
+  virtual const Type* bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   int max_opcode() const { return Op_MaxF; }
   int min_opcode() const { return Op_MinF; }
@@ -428,9 +428,9 @@ class MaxHFNode : public MaxNode {
 public:
   MaxHFNode(Node* in1, Node* in2) : MaxNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *add_ring(const Type*, const Type*) const;
-  virtual const Type *add_id() const { return TypeH::NEG_INF; }
-  virtual const Type *bottom_type() const { return Type::HALF_FLOAT; }
+  virtual const Type* add_ring(const Type*, const Type*) const;
+  virtual const Type* add_id() const { return TypeH::NEG_INF; }
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   int max_opcode() const { return Op_MaxHF; }
   int min_opcode() const { return Op_MinHF; }
@@ -442,9 +442,9 @@ class MinHFNode : public MaxNode {
 public:
   MinHFNode(Node* in1, Node* in2) : MaxNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *add_ring(const Type*, const Type*) const;
-  virtual const Type *add_id() const { return TypeH::POS_INF; }
-  virtual const Type *bottom_type() const { return Type::HALF_FLOAT; }
+  virtual const Type* add_ring(const Type*, const Type*) const;
+  virtual const Type* add_id() const { return TypeH::POS_INF; }
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   int max_opcode() const { return Op_MaxHF; }
   int min_opcode() const { return Op_MinHF; }
