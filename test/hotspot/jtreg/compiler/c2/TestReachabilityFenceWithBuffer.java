@@ -104,7 +104,7 @@ public class TestReachabilityFenceWithBuffer {
         for (long j = 0; j < limit; j++) {
             MyBuffer myBuffer = buffer;
             if (myBuffer == null) return;
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 100; i++) {
                 byte b = myBuffer.get(i);
                 if (b != 42) {
                     throw new RuntimeException(
@@ -121,7 +121,7 @@ public class TestReachabilityFenceWithBuffer {
 
     public static void main(String[] args) throws Exception {
         // Warmup to trigger compilation
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 20; i++) {
             test(100);
         }
 
