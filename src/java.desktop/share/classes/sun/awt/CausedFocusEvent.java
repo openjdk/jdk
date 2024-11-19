@@ -30,8 +30,6 @@ import java.awt.event.FocusEvent;
 import java.io.ObjectStreamException;
 import java.io.Serial;
 import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * This class exists for deserialization compatibility only.
@@ -71,7 +69,6 @@ class CausedFocusEvent extends FocusEvent {
         throw new IllegalStateException();
     }
 
-    @SuppressWarnings("removal")
     @Serial
     Object readResolve() throws ObjectStreamException {
         FocusEvent.Cause newCause;
@@ -118,17 +115,11 @@ class CausedFocusEvent extends FocusEvent {
         focusEvent.setSource(null);
         try {
             final Field consumedField = FocusEvent.class.getField("consumed");
-            AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                @Override
-                public Object run() {
-                    consumedField.setAccessible(true);
-                    try {
-                        consumedField.set(focusEvent, consumed);
-                    } catch (IllegalAccessException e) {
-                    }
-                    return null;
-                }
-            });
+            consumedField.setAccessible(true);
+            try {
+                consumedField.set(focusEvent, consumed);
+            } catch (IllegalAccessException e) {
+            }
         } catch (NoSuchFieldException e) {
         }
 

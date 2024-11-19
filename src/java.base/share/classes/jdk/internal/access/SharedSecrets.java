@@ -71,8 +71,6 @@ public class SharedSecrets {
     private static JavaLangRefAccess javaLangRefAccess;
     private static JavaLangReflectAccess javaLangReflectAccess;
     private static JavaIOAccess javaIOAccess;
-    private static JavaIOPrintStreamAccess javaIOPrintStreamAccess;
-    private static JavaIOPrintWriterAccess javaIOPrintWriterAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
     private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
@@ -284,32 +282,6 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(Console.class);
             access = javaIOAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaIOCPrintWriterAccess(JavaIOPrintWriterAccess a) {
-        javaIOPrintWriterAccess = a;
-    }
-
-    public static JavaIOPrintWriterAccess getJavaIOPrintWriterAccess() {
-        var access = javaIOPrintWriterAccess;
-        if (access == null) {
-            ensureClassInitialized(PrintWriter.class);
-            access = javaIOPrintWriterAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaIOCPrintStreamAccess(JavaIOPrintStreamAccess a) {
-        javaIOPrintStreamAccess = a;
-    }
-
-    public static JavaIOPrintStreamAccess getJavaIOPrintStreamAccess() {
-        var access = javaIOPrintStreamAccess;
-        if (access == null) {
-            ensureClassInitialized(PrintStream.class);
-            access = javaIOPrintStreamAccess;
         }
         return access;
     }

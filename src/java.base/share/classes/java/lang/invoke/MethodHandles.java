@@ -36,8 +36,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.Wrapper;
-import sun.reflect.misc.ReflectUtil;
-import sun.security.util.SecurityConstants;
 
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
@@ -243,9 +241,6 @@ public class MethodHandles {
             return new Lookup(targetClass);
         }
 
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) sm.checkPermission(SecurityConstants.ACCESS_PERMISSION);
         if (targetClass.isPrimitive())
             throw new IllegalArgumentException(targetClass + " is a primitive class");
         if (targetClass.isArray())
@@ -463,9 +458,6 @@ public class MethodHandles {
      * @since 1.8
      */
     public static <T extends Member> T reflectAs(Class<T> expected, MethodHandle target) {
-        @SuppressWarnings("removal")
-        SecurityManager smgr = System.getSecurityManager();
-        if (smgr != null)  smgr.checkPermission(SecurityConstants.ACCESS_PERMISSION);
         Lookup lookup = Lookup.IMPL_LOOKUP;  // use maximally privileged lookup
         return lookup.revealDirect(target).reflectAs(expected, lookup);
     }
@@ -741,8 +733,6 @@ public class MethodHandles {
      * <ul style="font-size:smaller;">
      * <li>access private fields, methods, and constructors of the lookup class and its nestmates
      * <li>create method handles which {@link Lookup#findSpecial emulate invokespecial} instructions
-     * <li>avoid <a href="MethodHandles.Lookup.html#secmgr">package access checks</a>
-     *     for classes accessible to the lookup class
      * <li>create {@link Lookup#in delegated lookup objects} which have private access to other classes
      *     within the same package member
      * </ul>
@@ -1759,21 +1749,9 @@ public class MethodHandles {
          * @see ClassLoader#defineClass(String,byte[],int,int,ProtectionDomain)
          */
         public Class<?> defineClass(byte[] bytes) throws IllegalAccessException {
-            ensureDefineClassPermission();
             if ((lookupModes() & PACKAGE) == 0)
                 throw new IllegalAccessException("Lookup does not have PACKAGE access");
             return makeClassDefiner(bytes.clone()).defineClass(false);
-        }
-
-        private void ensureDefineClassPermission() {
-            if (allowedModes == TRUSTED)  return;
-
-            if (!hasFullPrivilegeAccess()) {
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null)
-                    sm.checkPermission(new RuntimePermission("defineClass"));
-            }
         }
 
         /**
@@ -2042,7 +2020,6 @@ public class MethodHandles {
         {
             Objects.requireNonNull(bytes);
             int flags = ClassOption.optionsToFlag(options);
-            ensureDefineClassPermission();
             if (!hasFullPrivilegeAccess()) {
                 throw new IllegalAccessException(this + " does not have full privilege access");
             }
@@ -2128,7 +2105,6 @@ public class MethodHandles {
 
             int flags = ClassOption.optionsToFlag(options);
 
-            ensureDefineClassPermission();
             if (!hasFullPrivilegeAccess()) {
                 throw new IllegalAccessException(this + " does not have full privilege access");
             }
@@ -2768,7 +2744,6 @@ assertEquals("[x, y, z]", pb.command().toString());
             if (!VerifyAccess.isClassAccessible(targetClass, lookupClass, prevLookupClass, allowedModes)) {
                 throw makeAccessException(targetClass);
             }
-            checkSecurityManager(targetClass);
 
             // ensure class initialization
             Unsafe.getUnsafe().ensureClassInitialized(targetClass);
@@ -2872,7 +2847,6 @@ assertEquals("[x, y, z]", pb.command().toString());
             if (!isClassAccessible(targetClass)) {
                 throw makeAccessException(targetClass);
             }
-            checkSecurityManager(targetClass);
             return targetClass;
         }
 
@@ -3292,7 +3266,7 @@ return mh1;
             assert(method.isMethod());
             @SuppressWarnings("deprecation")
             Lookup lookup = m.isAccessible() ? IMPL_LOOKUP : this;
-            return lookup.getDirectMethodNoSecurityManager(refKind, method.getDeclaringClass(), method, findBoundCallerLookup(method));
+            return lookup.getDirectMethod(refKind, method.getDeclaringClass(), method, findBoundCallerLookup(method));
         }
         private MethodHandle unreflectForMH(Method m) {
             // these names require special lookups because they throw UnsupportedOperationException
@@ -3343,7 +3317,7 @@ return mh1;
             MemberName method = new MemberName(m, true);
             assert(method.isMethod());
             // ignore m.isAccessible:  this is a new kind of access
-            return specialLookup.getDirectMethodNoSecurityManager(REF_invokeSpecial, method.getDeclaringClass(), method, findBoundCallerLookup(method));
+            return specialLookup.getDirectMethod(REF_invokeSpecial, method.getDeclaringClass(), method, findBoundCallerLookup(method));
         }
 
         /**
@@ -3375,12 +3349,12 @@ return mh1;
             assert(ctor.isConstructor());
             @SuppressWarnings("deprecation")
             Lookup lookup = c.isAccessible() ? IMPL_LOOKUP : this;
-            return lookup.getDirectConstructorNoSecurityManager(ctor.getDeclaringClass(), ctor);
+            return lookup.getDirectConstructor(ctor.getDeclaringClass(), ctor);
         }
 
         /*
          * Produces a method handle that is capable of creating instances of the given class
-         * and instantiated by the given constructor.  No security manager check.
+         * and instantiated by the given constructor.
          *
          * This method should only be used by ReflectionFactory::newConstructorForSerialization.
          */
@@ -3473,7 +3447,7 @@ return mh1;
                     : MethodHandleNatives.refKindIsGetter(field.getReferenceKind()));
             @SuppressWarnings("deprecation")
             Lookup lookup = f.isAccessible() ? IMPL_LOOKUP : this;
-            return lookup.getDirectFieldNoSecurityManager(field.getReferenceKind(), f.getDeclaringClass(), field);
+            return lookup.getDirectField(field.getReferenceKind(), f.getDeclaringClass(), field);
         }
 
         /**
@@ -3550,8 +3524,8 @@ return mh1;
         public VarHandle unreflectVarHandle(Field f) throws IllegalAccessException {
             MemberName getField = new MemberName(f, false);
             MemberName putField = new MemberName(f, true);
-            return getFieldVarHandleNoSecurityManager(getField.getReferenceKind(), putField.getReferenceKind(),
-                                                      f.getDeclaringClass(), getField, putField);
+            return getFieldVarHandle(getField.getReferenceKind(), putField.getReferenceKind(),
+                                     f.getDeclaringClass(), getField, putField);
         }
 
         /**
@@ -3586,10 +3560,9 @@ return mh1;
             if (refKind == REF_invokeVirtual && defc.isInterface())
                 // Symbolic reference is through interface but resolves to Object method (toString, etc.)
                 refKind = REF_invokeInterface;
-            // Check SM permissions and member access before cracking.
+            // Check member access before cracking.
             try {
                 checkAccess(refKind, defc, member);
-                checkSecurityManager(defc, member);
             } catch (IllegalAccessException ex) {
                 throw new IllegalArgumentException(ex);
             }
@@ -3714,69 +3687,6 @@ return mh1;
          */
         public boolean hasFullPrivilegeAccess() {
             return (allowedModes & (PRIVATE|MODULE)) == (PRIVATE|MODULE);
-        }
-
-        /**
-         * Perform steps 1 and 2b <a href="MethodHandles.Lookup.html#secmgr">access checks</a>
-         * for ensureInitialized, findClass or accessClass.
-         */
-        void checkSecurityManager(Class<?> refc) {
-            if (allowedModes == TRUSTED)  return;
-
-            @SuppressWarnings("removal")
-            SecurityManager smgr = System.getSecurityManager();
-            if (smgr == null)  return;
-
-            // Step 1:
-            boolean fullPrivilegeLookup = hasFullPrivilegeAccess();
-            if (!fullPrivilegeLookup ||
-                !VerifyAccess.classLoaderIsAncestor(lookupClass, refc)) {
-                ReflectUtil.checkPackageAccess(refc);
-            }
-
-            // Step 2b:
-            if (!fullPrivilegeLookup) {
-                smgr.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-            }
-        }
-
-        /**
-         * Perform steps 1, 2a and 3 <a href="MethodHandles.Lookup.html#secmgr">access checks</a>.
-         * Determines a trustable caller class to compare with refc, the symbolic reference class.
-         * If this lookup object has full privilege access except original access,
-         * then the caller class is the lookupClass.
-         *
-         * Lookup object created by {@link MethodHandles#privateLookupIn(Class, Lookup)}
-         * from the same module skips the security permission check.
-         */
-        void checkSecurityManager(Class<?> refc, MemberName m) {
-            Objects.requireNonNull(refc);
-            Objects.requireNonNull(m);
-
-            if (allowedModes == TRUSTED)  return;
-
-            @SuppressWarnings("removal")
-            SecurityManager smgr = System.getSecurityManager();
-            if (smgr == null)  return;
-
-            // Step 1:
-            boolean fullPrivilegeLookup = hasFullPrivilegeAccess();
-            if (!fullPrivilegeLookup ||
-                !VerifyAccess.classLoaderIsAncestor(lookupClass, refc)) {
-                ReflectUtil.checkPackageAccess(refc);
-            }
-
-            // Step 2a:
-            if (m.isPublic()) return;
-            if (!fullPrivilegeLookup) {
-                smgr.checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
-            }
-
-            // Step 3:
-            Class<?> defc = m.getDeclaringClass();
-            if (!fullPrivilegeLookup && defc != refc) {
-                ReflectUtil.checkPackageAccess(defc);
-            }
         }
 
         void checkMethod(byte refKind, Class<?> refc, MemberName m) throws IllegalAccessException {
@@ -3918,30 +3828,18 @@ return mh1;
         /** Check access and get the requested method. */
         private MethodHandle getDirectMethod(byte refKind, Class<?> refc, MemberName method, Lookup callerLookup) throws IllegalAccessException {
             final boolean doRestrict    = true;
-            final boolean checkSecurity = true;
-            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, callerLookup);
+            return getDirectMethodCommon(refKind, refc, method, doRestrict, callerLookup);
         }
         /** Check access and get the requested method, for invokespecial with no restriction on the application of narrowing rules. */
         private MethodHandle getDirectMethodNoRestrictInvokeSpecial(Class<?> refc, MemberName method, Lookup callerLookup) throws IllegalAccessException {
             final boolean doRestrict    = false;
-            final boolean checkSecurity = true;
-            return getDirectMethodCommon(REF_invokeSpecial, refc, method, checkSecurity, doRestrict, callerLookup);
-        }
-        /** Check access and get the requested method, eliding security manager checks. */
-        private MethodHandle getDirectMethodNoSecurityManager(byte refKind, Class<?> refc, MemberName method, Lookup callerLookup) throws IllegalAccessException {
-            final boolean doRestrict    = true;
-            final boolean checkSecurity = false;  // not needed for reflection or for linking CONSTANT_MH constants
-            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, callerLookup);
+            return getDirectMethodCommon(REF_invokeSpecial, refc, method, doRestrict, callerLookup);
         }
         /** Common code for all methods; do not call directly except from immediately above. */
         private MethodHandle getDirectMethodCommon(byte refKind, Class<?> refc, MemberName method,
-                                                   boolean checkSecurity,
                                                    boolean doRestrict,
                                                    Lookup boundCaller) throws IllegalAccessException {
             checkMethod(refKind, refc, method);
-            // Optionally check with the security manager; this isn't needed for unreflect* calls.
-            if (checkSecurity)
-                checkSecurityManager(refc, method);
             assert(!method.isMethodHandleInvoke());
 
             if (refKind == REF_invokeSpecial &&
@@ -4010,21 +3908,11 @@ return mh1;
 
         /** Check access and get the requested field. */
         private MethodHandle getDirectField(byte refKind, Class<?> refc, MemberName field) throws IllegalAccessException {
-            final boolean checkSecurity = true;
-            return getDirectFieldCommon(refKind, refc, field, checkSecurity);
-        }
-        /** Check access and get the requested field, eliding security manager checks. */
-        private MethodHandle getDirectFieldNoSecurityManager(byte refKind, Class<?> refc, MemberName field) throws IllegalAccessException {
-            final boolean checkSecurity = false;  // not needed for reflection or for linking CONSTANT_MH constants
-            return getDirectFieldCommon(refKind, refc, field, checkSecurity);
+            return getDirectFieldCommon(refKind, refc, field);
         }
         /** Common code for all fields; do not call directly except from immediately above. */
-        private MethodHandle getDirectFieldCommon(byte refKind, Class<?> refc, MemberName field,
-                                                  boolean checkSecurity) throws IllegalAccessException {
+        private MethodHandle getDirectFieldCommon(byte refKind, Class<?> refc, MemberName field) throws IllegalAccessException {
             checkField(refKind, refc, field);
-            // Optionally check with the security manager; this isn't needed for unreflect* calls.
-            if (checkSecurity)
-                checkSecurityManager(refc, field);
             DirectMethodHandle dmh = DirectMethodHandle.make(refc, field);
             boolean doRestrict = (MethodHandleNatives.refKindHasReceiver(refKind) &&
                                     restrictProtectedReceiver(field));
@@ -4035,26 +3923,17 @@ return mh1;
         private VarHandle getFieldVarHandle(byte getRefKind, byte putRefKind,
                                             Class<?> refc, MemberName getField, MemberName putField)
                 throws IllegalAccessException {
-            final boolean checkSecurity = true;
-            return getFieldVarHandleCommon(getRefKind, putRefKind, refc, getField, putField, checkSecurity);
-        }
-        private VarHandle getFieldVarHandleNoSecurityManager(byte getRefKind, byte putRefKind,
-                                                             Class<?> refc, MemberName getField, MemberName putField)
-                throws IllegalAccessException {
-            final boolean checkSecurity = false;
-            return getFieldVarHandleCommon(getRefKind, putRefKind, refc, getField, putField, checkSecurity);
+            return getFieldVarHandleCommon(getRefKind, putRefKind, refc, getField, putField);
         }
         private VarHandle getFieldVarHandleCommon(byte getRefKind, byte putRefKind,
-                                                  Class<?> refc, MemberName getField, MemberName putField,
-                                                  boolean checkSecurity) throws IllegalAccessException {
+                                                  Class<?> refc, MemberName getField,
+                                                  MemberName putField) throws IllegalAccessException {
             assert getField.isStatic() == putField.isStatic();
             assert getField.isGetter() && putField.isSetter();
             assert MethodHandleNatives.refKindIsStatic(getRefKind) == MethodHandleNatives.refKindIsStatic(putRefKind);
             assert MethodHandleNatives.refKindIsGetter(getRefKind) && MethodHandleNatives.refKindIsSetter(putRefKind);
 
             checkField(getRefKind, refc, getField);
-            if (checkSecurity)
-                checkSecurityManager(refc, getField);
 
             if (!putField.isFinal()) {
                 // A VarHandle does not support updates to final fields, any
@@ -4062,8 +3941,6 @@ return mh1;
                 // therefore the following write-based accessibility checks are
                 // only required for non-final fields
                 checkField(putRefKind, refc, putField);
-                if (checkSecurity)
-                    checkSecurityManager(refc, putField);
             }
 
             boolean doRestrict = (MethodHandleNatives.refKindHasReceiver(getRefKind) &&
@@ -4081,22 +3958,12 @@ return mh1;
         }
         /** Check access and get the requested constructor. */
         private MethodHandle getDirectConstructor(Class<?> refc, MemberName ctor) throws IllegalAccessException {
-            final boolean checkSecurity = true;
-            return getDirectConstructorCommon(refc, ctor, checkSecurity);
-        }
-        /** Check access and get the requested constructor, eliding security manager checks. */
-        private MethodHandle getDirectConstructorNoSecurityManager(Class<?> refc, MemberName ctor) throws IllegalAccessException {
-            final boolean checkSecurity = false;  // not needed for reflection or for linking CONSTANT_MH constants
-            return getDirectConstructorCommon(refc, ctor, checkSecurity);
+            return getDirectConstructorCommon(refc, ctor);
         }
         /** Common code for all constructors; do not call directly except from immediately above. */
-        private MethodHandle getDirectConstructorCommon(Class<?> refc, MemberName ctor,
-                                                  boolean checkSecurity) throws IllegalAccessException {
+        private MethodHandle getDirectConstructorCommon(Class<?> refc, MemberName ctor) throws IllegalAccessException {
             assert(ctor.isConstructor());
             checkAccess(REF_newInvokeSpecial, refc, ctor);
-            // Optionally check with the security manager; this isn't needed for unreflect* calls.
-            if (checkSecurity)
-                checkSecurityManager(refc, ctor);
             assert(!MethodHandleNatives.isCallerSensitive(ctor));  // maybeBindCaller not relevant here
             return DirectMethodHandle.make(ctor).setVarargs(ctor);
         }
@@ -4163,14 +4030,9 @@ return mh1;
                     return false;
                 }
             }
-            try {
-                MemberName resolved2 = publicLookup().resolveOrNull(refKind,
+            MemberName resolved2 = publicLookup().resolveOrNull(refKind,
                     new MemberName(refKind, defc, member.getName(), member.getType()));
-                if (resolved2 == null) {
-                    return false;
-                }
-                checkSecurityManager(defc, resolved2);
-            } catch (SecurityException ex) {
+            if (resolved2 == null) {
                 return false;
             }
             return true;
@@ -4178,11 +4040,11 @@ return mh1;
         private MethodHandle getDirectMethodForConstant(byte refKind, Class<?> defc, MemberName member)
                 throws ReflectiveOperationException {
             if (MethodHandleNatives.refKindIsField(refKind)) {
-                return getDirectFieldNoSecurityManager(refKind, defc, member);
+                return getDirectField(refKind, defc, member);
             } else if (MethodHandleNatives.refKindIsMethod(refKind)) {
-                return getDirectMethodNoSecurityManager(refKind, defc, member, findBoundCallerLookup(member));
+                return getDirectMethod(refKind, defc, member, findBoundCallerLookup(member));
             } else if (refKind == REF_newInvokeSpecial) {
-                return getDirectConstructorNoSecurityManager(defc, member);
+                return getDirectConstructor(defc, member);
             }
             // oops
             throw newIllegalArgumentException("bad MethodHandle constant #"+member);
