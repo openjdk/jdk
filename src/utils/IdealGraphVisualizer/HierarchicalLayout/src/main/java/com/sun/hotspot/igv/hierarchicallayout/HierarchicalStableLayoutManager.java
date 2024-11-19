@@ -219,7 +219,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             // TODO
             LayoutLayer layer = graph.getLayer(layerNr);
             for (LayoutNode n : layer) {
-                int optimal = n.calculateOptimalXFromNeighbors();
+                //int optimal = n.calculateOptimalXFromNeighbors();
             }
         }
 

@@ -136,6 +136,28 @@ public class LayoutGraph {
     }
 
     /**
+     * Retrieves a collection of all layout nodes in the graph.
+     *
+     * @return A collection containing all LayoutNodes.
+     */
+    public List<LayoutNode> getLayoutNodes() {
+        return Collections.unmodifiableList(layoutNodes);
+    }
+
+    /**
+     * Retrieves a combined list of all nodes in the graph,
+     * including both layout nodes and dummy nodes.
+     *
+     * @return An unmodifiable list containing all nodes in the graph.
+     */
+    public List<LayoutNode> getAllNodes() {
+        List<LayoutNode> allNodes = new ArrayList<>();
+        allNodes.addAll(layoutNodes);
+        allNodes.addAll(dummyNodes);
+        return Collections.unmodifiableList(allNodes);
+    }
+
+    /**
      * Creates a new layer at the specified index in the layers list.
      * Adjusts the layer numbers of existing nodes in layers below the inserted layer.
      *
@@ -258,15 +280,6 @@ public class LayoutGraph {
      */
     public int getLayerCount() {
         return layers.size();
-    }
-
-    /**
-     * Retrieves a collection of all layout nodes in the graph.
-     *
-     * @return A collection containing all LayoutNodes.
-     */
-    public List<LayoutNode> getLayoutNodes() {
-        return layoutNodes;
     }
 
     /**
@@ -612,12 +625,12 @@ public class LayoutGraph {
             if (dummyNode.getSuccessors().isEmpty()) {
                 dummyNode.setLayer(layerNr + 1);
                 getLayer(layerNr + 1).add(dummyNode);
-                dummyNode.setX(dummyNode.calculateOptimalXFromPredecessors());
+                dummyNode.setX(dummyNode.calculateOptimalXFromPredecessors(true));
                 getLayer(layerNr + 1).sortNodesByX();
                 continue;
             } else if (dummyNode.getPredecessors().isEmpty()) {
                 dummyNode.setLayer(layerNr - 1);
-                dummyNode.setX(dummyNode.calculateOptimalXFromSuccessors());
+                dummyNode.setX(dummyNode.calculateOptimalXFromSuccessors(true));
                 getLayer(layerNr - 1).add(dummyNode);
                 getLayer(layerNr - 1).sortNodesByX();
                 continue;

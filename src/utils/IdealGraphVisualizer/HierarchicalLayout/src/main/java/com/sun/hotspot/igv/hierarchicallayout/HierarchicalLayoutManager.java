@@ -413,7 +413,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
     public static class AssignXCoordinates {
 
-        private static final int SWEEP_ITERATIONS = 1; // Example value
+        private static final int SWEEP_ITERATIONS = 10; // Example value
 
         static public void apply(LayoutGraph graph) {
 
@@ -421,55 +421,62 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 layer.initXPositions();
             }
             for (int k = 0; k < SWEEP_ITERATIONS; k++) {
-                for (int i = 1; i < graph.getLayerCount(); i++) {
-                    LayoutLayer layer = graph.getLayer(i);
-                    //processLayer(layer, true);
-                }
+
                 for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
                     LayoutLayer layer = graph.getLayer(i);
                     processLayerUp(layer);
-                    layer.updateMinXSpacing(false);
                 }
+                shiftToZero(graph);
 
-                //graph.optimizeBackEdgeCrossings();
-                //graph.straightenEdges();
+
+                for (int i = 0; i < graph.getLayerCount(); i++) {
+                    LayoutLayer layer = graph.getLayer(i);
+                    processLayerDown(layer);
+                }
+                shiftToZero(graph);
+
+                optimizeByNeighborhood(graph);
+                shiftToZero(graph);
+
+
+
             }
-
-            //removeUniformGaps(graph);
+            for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
+                LayoutLayer layer = graph.getLayer(i);
+                processLayerUp(layer);
+            }
+            shiftToZero(graph);
+            graph.optimizeBackEdgeCrossings();
+            graph.straightenEdges();
         }
 
-        /**
-         * Removes gaps that are consistent across all layers. This method identifies gap sizes that appear between the same relative positions
-         * in every layer and removes them by shifting nodes to the left, thereby reducing the overall width of the graph.
-         *
-         * @param graph The LayoutGraph to process.
-         */
-        /**
-         * Removes gaps that are consistent across all layers. This method identifies gap sizes that appear between the same relative positions
-         * in every layer and removes them by shifting nodes to the left, thereby reducing the overall width of the graph.
-         *
-         * @param graph The LayoutGraph to process.
-         */
-        static private void removeUniformGaps(LayoutGraph graph) {
-
-            List<LayoutNode> nodes = new ArrayList<>(graph.getLayoutNodes());
-            nodes.addAll(graph.getDummyNodes());
-            nodes.sort(Comparator.comparingInt(LayoutNode::getX));
-
-            int i = 1;
-            for (; i < nodes.size(); i++) {
-                int right = nodes.get(i - 1).getOuterRight() + NODE_OFFSET;
-                int gap = nodes.get(i).getOuterLeft() - right;
-                if (gap > 0) {
-                    for (; i < nodes.size(); i++) {
-                        nodes.get(i).shiftX(-gap);
-                    }
-                    System.out.println("  Between node " + (i - 1) + " and node " + i + ": Gap = " + gap);
-                    break;
-                }
+        static private void optimizeByNeighborhood(LayoutGraph graph) {
+            System.out.println("optimizeByNeighborhood");
+            List<LayoutNode> processNodes = new ArrayList<>(graph.getLayoutNodes());
+            for (LayoutNode layoutNode : processNodes) {
+                layoutNode.setOptimalX(layoutNode.calculateOptimalXFromNeighbors());
+            }
+            processNodes.sort(NODES_OPTIMAL_DIFFERENCE);
+            for (LayoutNode layoutNode : processNodes) {
+                layoutNode.setX(layoutNode.calculateOptimalXFromNeighbors());
+                graph.getLayer(layoutNode.getLayer()).updateMinXSpacing(false);
             }
         }
 
+        static private void shiftToZero(LayoutGraph graph) {
+            int minX = Integer.MAX_VALUE;
+            List<LayoutNode> allNodes = graph.getAllNodes();
+            Set<LayoutNode> uniqueNodes = new LinkedHashSet<>(allNodes);
+            assert uniqueNodes.size() == allNodes.size();
+            for (LayoutNode node : allNodes) {
+                minX = Math.min(node.getX(), minX);
+            }
+            if (0 < minX && minX < Integer.MAX_VALUE) {
+                for (LayoutNode node : allNodes) {
+                    node.shiftX(-minX);
+                }
+            }
+        }
 
         static private void processLayerUp(LayoutLayer layer) {
             layer.sort(NODE_PRIORITY.thenComparing(DUMMY_NODES_FIRST).thenComparingInt(LayoutNode::getInDegree));
@@ -477,7 +484,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             for (LayoutNode node : layer) {
                 int optimalX = Integer.MAX_VALUE;
                 if (node.hasSuccessors()) {
-                    optimalX = node.calculateOptimalXFromSuccessors();
+                    optimalX = node.calculateOptimalXFromSuccessors(true);
                 } else {
                     leaves.add(node);
                 }
@@ -491,7 +498,8 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 for (LayoutNode node : layer) {
                     int currLeft = node.getOuterLeft();
                     if (prevRight + leafWidth <= currLeft) {
-                        leaf.setX(prevRight + NODE_OFFSET);
+                        int x = prevRight + NODE_OFFSET;
+                        leaf.setX(x);
                         break;
                     }
                     prevRight = node.getOuterRight();
@@ -499,6 +507,23 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 layer.sort(NODE_X_COMPARATOR);
             }
         }
+
+        static private void processLayerDown(LayoutLayer layer) {
+            for (LayoutNode node : layer) {
+                if (node.isDummy()) {
+                    node.setX(node.calculateOptimalXFromPredecessors(true));
+                } else if (!node.hasSuccessors()) {
+                    node.setX(node.calculateOptimalXFromPredecessors(false));
+                } else if (!node.hasPredecessors()) {
+                    node.setX(node.calculateOptimalXFromSuccessors(false));
+                } else {
+                    node.setX(node.calculateOptimalXFromNeighbors());
+                }
+            }
+            layer.sort(NODE_X_COMPARATOR);
+            layer.updateMinXSpacing(false);
+        }
+
     }
 
     public static class WriteResult {

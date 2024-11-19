@@ -49,6 +49,8 @@ public class LayoutNode {
     public static final Comparator<LayoutNode> NODE_PROCESSING_UP_COMPARATOR = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOutDegree);
     public static final Comparator<LayoutNode> DUMMY_NODES_THEN_OPTIMAL_X = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOptimalX);
     public static final Comparator<LayoutNode> NODES_OPTIMAL_X = Comparator.comparingInt(LayoutNode::getOptimalX);
+    public static final Comparator<LayoutNode> NODES_OPTIMAL_DIFFERENCE = Comparator.comparingInt(LayoutNode::getOptimalDifference).reversed();
+
 
 
 
@@ -124,53 +126,103 @@ public class LayoutNode {
         }
     }
 
-    /**
-     * Calculates the optimal x-coordinate based on the positions of predecessor nodes.
-     * Useful when layering nodes from top to bottom.
-     *
-     * @return The calculated optimal x-coordinate.
-     */
-    public int calculateOptimalXFromPredecessors() {
+    public int calculateOptimalXFromPredecessors(boolean useMedian) {
         int numPreds = preds.size();
+
+        // If there are no predecessors, retain the current x position
         if (numPreds == 0) {
             return getX();
         }
 
+        // Collect the x positions from all predecessor edges
         List<Integer> positions = new ArrayList<>(numPreds);
         for (LayoutEdge edge : preds) {
             positions.add(edge.getStartX() - edge.getRelativeToX());
         }
 
-        Collections.sort(positions);
-        int midIndex = numPreds / 2;
-        return (numPreds % 2 == 0)
-                ? (positions.get(midIndex - 1) + positions.get(midIndex)) / 2
-                : positions.get(midIndex);
+        if (useMedian) {
+            // Calculate the median position
+            Collections.sort(positions);
+            int midIndex = numPreds / 2;
+
+            if (numPreds % 2 == 0) {
+                // Even number of predecessors: average the two middle values
+                return (positions.get(midIndex - 1) + positions.get(midIndex)) / 2;
+            } else {
+                // Odd number of predecessors: take the middle value
+                return positions.get(midIndex);
+            }
+        } else {
+            // Calculate the average position
+            long sum = 0;
+            for (int pos : positions) {
+                sum += pos;
+            }
+            // Integer division is used; adjust as needed for rounding
+            return (int) (sum / numPreds);
+        }
     }
 
-    /**
-     * Calculates the optimal x-coordinate based on the positions of successor nodes.
-     * Useful when layering nodes from bottom to top.
-     *
-     * @return The calculated optimal x-coordinate.
-     */
-    public int calculateOptimalXFromSuccessors() {
+
+    public int calculateOptimalXFromSuccessors(boolean useMedian) {
         int numSuccs = succs.size();
+
+        // If there are no successors, retain the current x position
         if (numSuccs == 0) {
             return getX();
         }
 
+        // Collect the x positions from all successor edges
         List<Integer> positions = new ArrayList<>(numSuccs);
         for (LayoutEdge edge : succs) {
             positions.add(edge.getEndX() - edge.getRelativeFromX());
         }
 
-        Collections.sort(positions);
-        int midIndex = numSuccs / 2;
-        return (numSuccs % 2 == 0)
-                ? (positions.get(midIndex - 1) + positions.get(midIndex)) / 2
-                : positions.get(midIndex);
+        if (useMedian) {
+            // Calculate the median position
+            Collections.sort(positions);
+            int midIndex = numSuccs / 2;
+
+            if (numSuccs % 2 == 0) {
+                // Even number of successors: average the two middle values
+                return (positions.get(midIndex - 1) + positions.get(midIndex)) / 2;
+            } else {
+                // Odd number of successors: take the middle value
+                return positions.get(midIndex);
+            }
+        } else {
+            // Calculate the average position
+            long sum = 0;
+            for (int pos : positions) {
+                sum += pos;
+            }
+            // Integer division is used; adjust as needed for rounding
+            return (int) (sum / numSuccs);
+        }
     }
+
+    public int calculateOptimalXFromNeighbors() {
+        int num = succs.size() + preds.size();
+        if (num == 0) {
+            return getX();
+        }
+
+        List<Integer> positions = new ArrayList<>(num);
+        for (LayoutEdge edge : succs) {
+            positions.add(edge.getEndX() - edge.getRelativeFromX());
+        }
+        for (LayoutEdge edge : preds) {
+            positions.add(edge.getEndX() - edge.getRelativeFromX());
+        }
+
+        int sum = 0;
+        for (int pos : positions) {
+            sum += pos;
+        }
+        return sum / num;
+
+    }
+
 
     /**
      * Calculates the node's out-degree (number of outgoing edges).
@@ -378,12 +430,21 @@ public class LayoutNode {
         return x;
     }
 
+    /**
+     * Calculates the absolute difference between the optimal X position and the current X position.
+     *
+     * @return The absolute difference as an integer.
+     */
+    public int getOptimalDifference() {
+        return Math.abs(getOptimalX() - getX());
+    }
+
     public void setX(int x) {
         this.x = x;
     }
 
     public void shiftX(int shift) {
-        this.x += x;
+        this.x += shift;
     }
 
     public int getY() {
@@ -635,34 +696,5 @@ public class LayoutNode {
 
         boolean hasReversedDown = computeReversedEdgeStartPoints();
         computeReversedEdgeEndPoints(hasReversedDown);
-    }
-
-    /**
-     * Calculates the optimal x-coordinate based on both predecessors and successors.
-     * Useful when balancing the node's position in the layer to minimize edge crossings.
-     *
-     * @return The calculated optimal x-coordinate.
-     */
-    public int calculateOptimalXFromNeighbors() {
-        if (preds.isEmpty() && succs.isEmpty()) {
-            return x;
-        }
-
-        int[] values = new int[preds.size() + succs.size()];
-        int i = 0;
-
-        for (LayoutEdge edge : preds) {
-            values[i] = edge.getFromX() - edge.getRelativeToX();
-            i++;
-        }
-
-        for (LayoutEdge edge : succs) {
-            values[i] = edge.getToX() - edge.getRelativeFromX();
-            i++;
-        }
-
-        Arrays.sort(values);
-        int middle = values.length / 2;
-        return (values.length % 2 == 0) ? (values[middle - 1] + values[middle]) / 2 : values[middle];
     }
 }
