@@ -59,15 +59,15 @@ class CipherBlockChaining extends FeedbackCipher  {
     // variables for save/restore calls
     private byte[] rSave = null;
 
-    // chunkSize is multiple of block size, but otherwise fairly arbitrary
-    // Should be large enough to provide intrinsic with optimization
-    // opportunities
-    private final int chunkSize = 1024*100;
+    // chunkSize is a multiple of block size and used to divide up
+    // input data to trigger the intrinsic.
+    private final int chunkSize;
 
     CipherBlockChaining(SymmetricCipher embeddedCipher) {
         super(embeddedCipher);
         k = new byte[blockSize];
         r = new byte[blockSize];
+        chunkSize = blockSize * 6400;
     }
 
     /**
