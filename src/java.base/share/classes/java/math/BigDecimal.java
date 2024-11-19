@@ -2223,8 +2223,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 long resultScale = normScale >> 1;
                 // Round sqrt with the specified settings
                 if (halfWay) { // half-way rounding
+                    BigInteger workingSqrt = workingInt.sqrt();
                     // remove the one-tenth digit
-                    BigInteger[] quotRem10 = workingInt.sqrt().divideAndRemainder(BigInteger.TEN);
+                    BigInteger[] quotRem10 = workingSqrt.divideAndRemainder(BigInteger.TEN);
                     sqrt = quotRem10[0];
                     resultScale--;
 
@@ -2236,7 +2237,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         if (mc.roundingMode == RoundingMode.HALF_UP
                                 || mc.roundingMode == RoundingMode.HALF_EVEN && sqrt.testBit(0)
                                 // Check if remainder is non-zero
-                                || !workingInt.equals(sqrt.multiply(sqrt))
+                                || !workingInt.equals(workingSqrt.multiply(workingSqrt))
                                 || working.compareTo(new BigDecimal(workingInt)) != 0) {
                             increment = true;
                         }
