@@ -393,7 +393,8 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
                 for (int i = 0; i < x500Issuers.length; i++) {
                     if (certIssuers.contains(issuers[i])) {
                         aliases.add(alias);
-                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
+                        if (SSLLogger.isOn &&
+                                SSLLogger.isOn("ssl,keymanager")) {
                             SSLLogger.fine("matching alias: " + alias);
                         }
                         break;

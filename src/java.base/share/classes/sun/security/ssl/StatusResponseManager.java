@@ -265,7 +265,8 @@ final class StatusResponseManager {
                             // that, otherwise just log the ExecutionException
                             Throwable cause = Optional.ofNullable(
                                     exc.getCause()).orElse(exc);
-                            if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
+                            if (SSLLogger.isOn &&
+                                    SSLLogger.isOn("ssl,respmgr")) {
                                 SSLLogger.fine("Exception during OCSP fetch: " +
                                         cause);
                             }

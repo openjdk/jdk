@@ -379,7 +379,8 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 if (results != null) {
                     for (EntryStatus status : results) {
                         if (status.checkResult == CheckResult.OK) {
-                            if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
+                            if (SSLLogger.isOn &&
+                                    SSLLogger.isOn("ssl,keymanager")) {
                                 SSLLogger.fine("KeyMgr: choosing key: " + status);
                             }
                             return makeAlias(status);

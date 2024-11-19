@@ -283,14 +283,16 @@ abstract class HandshakeContext implements ConnectionContext {
                         found = true;
                         break;
                     }
-                } else if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                } else if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine(
                         "Ignore unsupported cipher suite: " + suite +
                              " for " + protocol.name);
                 }
             }
 
-            if (!found && (SSLLogger.isOn) && SSLLogger.isOn("ssl,handshake")) {
+            if (!found && (SSLLogger.isOn) &&
+                    SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "No available cipher suite for " + protocol.name);
             }
@@ -334,7 +336,8 @@ abstract class HandshakeContext implements ConnectionContext {
                 }
 
                 if (!isSupported &&
-                        SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                        SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.finest(
                             "Ignore unsupported cipher suite: " + suite);
                 }
@@ -555,7 +558,8 @@ abstract class HandshakeContext implements ConnectionContext {
                         cachedStatus.put(groupType, groupAvailable);
 
                         if (!groupAvailable &&
-                                SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                                SSLLogger.isOn &&
+                                SSLLogger.isOn("ssl,handshake,verbose")) {
                             SSLLogger.fine(
                                     "No activated named group in " + groupType);
                         }
@@ -569,7 +573,8 @@ abstract class HandshakeContext implements ConnectionContext {
                 }
             }
 
-            if (!retval && SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+            if (!retval && SSLLogger.isOn &&
+                    SSLLogger.isOn("ssl,handshake,verbose")) {
                 SSLLogger.fine("No active named group(s), ignore " + suite);
             }
 

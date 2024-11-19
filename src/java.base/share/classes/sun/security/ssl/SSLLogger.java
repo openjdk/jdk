@@ -99,7 +99,7 @@ public final class SSLLogger {
     private static void help() {
         System.err.println();
         System.err.println("help           print this help message and exit");
-        System.err.println("expand         expand debugging information");
+        System.err.println("expand         expanded (less compact) output format");
         System.err.println();
         System.err.println("all            turn on all debugging");
         System.err.println("ssl            turn on ssl debugging");

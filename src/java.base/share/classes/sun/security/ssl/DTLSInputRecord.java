@@ -181,7 +181,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
                 packet.position(recLim);
 
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine("Premature record (epoch), discard it.");
                 }
 
@@ -241,7 +242,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             // Cleanup the handshake reassembler if necessary.
             if ((reassembler != null) &&
                     (reassembler.handshakeEpoch < recordEpoch)) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine("Cleanup the handshake reassembler");
                 }
 
@@ -273,7 +275,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
                 if (hsFrag == null) {
                     // invalid, discard this record
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.fine(
                                 "Invalid handshake message, discard it.");
                     }
@@ -748,7 +751,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 // It's OK to discard retransmission as the handshake hash
                 // is computed as if each handshake message had been sent
                 // as a single fragment.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine("Have got the full message, discard it.");
                 }
 
@@ -1026,7 +1030,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             int previousEpoch = nextRecordEpoch - 1;
             if (rf.recordEpoch < previousEpoch) {
                 // Too old to use, discard this record.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine(
                             "Too old epoch to use this record, discard it.");
                 }
@@ -1072,7 +1077,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
                 if (!isDesired) {
                     // Too old to use, discard this retransmitted record
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.fine(
                                 "Too old retransmission to use, discard it.");
                     }
@@ -1085,7 +1091,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 // Previously disordered record for the current epoch.
                 //
                 // Should have been retransmitted. Discard this record.
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine(
                             "Lagging behind record (sequence), discard it.");
                 }
@@ -1123,7 +1130,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
         Plaintext acquirePlaintext() throws SSLProtocolException {
             if (bufferedFragments.isEmpty()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine("No received handshake messages");
                 }
                 return null;
@@ -1144,7 +1152,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                         // Reset the next handshake flight.
                         resetHandshakeFlight(precedingFlight);
 
-                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                        if (SSLLogger.isOn &&
+                                SSLLogger.isOn("ssl,handshake,verbose")) {
                             SSLLogger.fine("Received a retransmission flight.");
                         }
 
@@ -1156,7 +1165,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             }
 
             if (!flightIsReady) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine(
                             "The handshake flight is not ready to use: " +
                             handshakeFlight.handshakeType);
@@ -1241,7 +1251,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             if (readEpoch != rFrag.recordEpoch) {
                 if (readEpoch > rFrag.recordEpoch) {
                     // discard old records
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.fine(
                                 "Discard old buffered ciphertext fragments.");
                     }
@@ -1253,7 +1264,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                     flightIsReady = false;
                 }
 
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine(
                             "Not yet ready to decrypt the cached fragments.");
                 }
@@ -1270,7 +1282,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 plaintextFragment = plaintext.fragment;
                 rFrag.contentType = plaintext.contentType;
             } catch (GeneralSecurityException gse) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine("Discard invalid record: ", gse);
                 }
 
@@ -1292,7 +1305,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
                     if (hsFrag == null) {
                         // invalid, discard this record
-                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                        if (SSLLogger.isOn &&
+                                SSLLogger.isOn("ssl,handshake,verbose")) {
                             SSLLogger.fine(
                                     "Invalid handshake fragment, discard it",
                                     plaintextFragment);
@@ -1443,7 +1457,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 if (expectCCSFlight) {
                     // Have the ChangeCipherSpec/Finished flight been received?
                     boolean isReady = hasFinishedMessage(bufferedFragments);
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.fine(
                             "Has the final flight been received? " + isReady);
                     }
@@ -1451,7 +1466,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                     return isReady;
                 }
 
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine("No flight is received yet.");
                 }
 
@@ -1464,7 +1480,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
                 // single handshake message flight
                 boolean isReady = hasCompleted(flightType);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine(
                             "Is the handshake message completed? " + isReady);
                 }
@@ -1478,7 +1495,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             if (flightType == SSLHandshake.SERVER_HELLO.id) {
                 // Firstly, check the first flight handshake message.
                 if (!hasCompleted(flightType)) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.fine(
                             "The ServerHello message is not completed yet.");
                     }
@@ -1490,7 +1508,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 // an abbreviated handshake
                 //
                 if (hasFinishedMessage(bufferedFragments)) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.fine("It's an abbreviated handshake.");
                     }
 
@@ -1504,7 +1523,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                         SSLHandshake.SERVER_HELLO_DONE.id);
                 if ((holes == null) || !holes.isEmpty()) {
                     // Not yet got the final message of the flight.
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.fine(
                                 "Not yet got the ServerHelloDone message");
                     }
@@ -1516,7 +1536,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 boolean isReady = hasCompleted(bufferedFragments,
                             handshakeFlight.minMessageSeq,
                             handshakeFlight.maxMessageSeq);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine(
                             "Is the ServerHello flight (message " +
                             handshakeFlight.minMessageSeq + "-" +
@@ -1539,7 +1560,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
                 // Firstly, check the first flight handshake message.
                 if (!hasCompleted(flightType)) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.fine(
                             "The ClientKeyExchange or client Certificate " +
                             "message is not completed yet.");
@@ -1553,7 +1575,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                     if (needClientVerify(bufferedFragments) &&
                         !hasCompleted(SSLHandshake.CERTIFICATE_VERIFY.id)) {
 
-                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                        if (SSLLogger.isOn &&
+                                SSLLogger.isOn("ssl,handshake,verbose")) {
                             SSLLogger.fine(
                                 "Not yet have the CertificateVerify message");
                         }
@@ -1564,7 +1587,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
                 if (!hasFinishedMessage(bufferedFragments)) {
                     // not yet have the ChangeCipherSpec/Finished messages
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.fine(
                             "Not yet have the ChangeCipherSpec and " +
                             "Finished messages");
@@ -1577,7 +1601,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 boolean isReady = hasCompleted(bufferedFragments,
                             handshakeFlight.minMessageSeq,
                             handshakeFlight.maxMessageSeq);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.fine(
                             "Is the ClientKeyExchange flight (message " +
                             handshakeFlight.minMessageSeq + "-" +
