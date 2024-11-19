@@ -24,16 +24,11 @@
 
 /*
  * @test
- * @bug 8298935
+ * @bug 8298935 8334431
  * @summary Writing forward on array creates cyclic dependency
  *          which leads to wrong result, when ignored.
  * @library /test/lib /
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-AlignVector
- *                   TestCyclicDependency
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlignVector
- *                   TestCyclicDependency
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlignVector -XX:+VerifyAlignVector
- *                   TestCyclicDependency
+ * @run driver TestCyclicDependency
  */
 
 import jdk.test.lib.Asserts;
@@ -78,7 +73,12 @@ public class TestCyclicDependency {
     float[] goldF9 = new float[RANGE];
 
     public static void main(String args[]) {
-        TestFramework.runWithFlags("-XX:CompileCommand=compileonly,TestCyclicDependency::test*");
+        TestFramework.runWithFlags("-XX:CompileCommand=compileonly,TestCyclicDependency::test*",
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector", "-XX:-VerifyAlignVector");
+        TestFramework.runWithFlags("-XX:CompileCommand=compileonly,TestCyclicDependency::test*",
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector", "-XX:-VerifyAlignVector");
+        TestFramework.runWithFlags("-XX:CompileCommand=compileonly,TestCyclicDependency::test*",
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector", "-XX:+VerifyAlignVector");
     }
 
     TestCyclicDependency() {

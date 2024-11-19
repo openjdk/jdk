@@ -239,7 +239,7 @@ public:
 // a penalty of many CPU cycles.
 //
 // Unfortunately, vectorization can introduce such store-to-load-forwarding failures.
-// Example:
+// Example (with "iteration distance" 3):
 //   for (int i = 10; i < SIZE; i++) {
 //       aI[i] = aI[i - 3] + 1;
 //   }
@@ -290,7 +290,13 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
 
   // To detect store-to-load-forwarding failures at the iteration threshold or below, we
   // simulate a super-unrolling to reach SuperWordStoreToLoadForwardingFailureDetection
-  // iterations at least.
+  // iterations at least. This is a heuristic, and we are not trying to be very precise
+  // with the iteration distance. If we have already unrolled more than the iteration
+  // threshold, i.e. if "SuperWordStoreToLoadForwardingFailureDetection < unrolled_count",
+  // then we simply check if there are any store-to-load-forwarding failures in the unrolled
+  // loop body, which may be at larger distance than the desired threshold. We cannot do any
+  // more fine-grained analysis, because the unrolling has lost the information about the
+  // iteration distance.
   int simulated_unrolling_count = SuperWordStoreToLoadForwardingFailureDetection;
   int unrolled_count = vloop_analyzer.vloop().cl()->unrolled_count();
   uint simulated_super_unrolling_count = MAX2(1, simulated_unrolling_count / unrolled_count);
