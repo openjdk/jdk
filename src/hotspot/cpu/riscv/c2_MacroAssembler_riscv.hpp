@@ -281,6 +281,4 @@
   void extract_v(Register dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
   void extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
 
-  void load_narrow_klass_compact_c2(Register dst, Address src);
-
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP
