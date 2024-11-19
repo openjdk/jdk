@@ -497,10 +497,10 @@ public class Socket implements java.io.Closeable {
             if (localAddr != null)
                 bind(localAddr);
             connect(address);
-        } catch (IOException | IllegalArgumentException | SecurityException error) {
+        } catch (Throwable throwable) {
             // `connect()` already closes the socket on failures, yet `bind()` doesn't, and hence:
-            closeQuietly(error);
-            throw error;
+            closeQuietly(throwable);
+            throw throwable;
         }
     }
 
@@ -599,6 +599,10 @@ public class Socket implements java.io.Closeable {
     /**
      * Connects this socket to the server.
      *
+     * <p> If the endpoint is an unresolved {@link InetSocketAddress}, or the
+     * connection cannot be established, then the socket is closed and an
+     * {@link IOException} is thrown.
+     *
      * <p> This method is {@linkplain Thread#interrupt() interruptible} in the
      * following circumstances:
      * <ol>
@@ -613,15 +617,12 @@ public class Socket implements java.io.Closeable {
      *        cause it to wakeup and close the socket. This method will then throw
      *        {@code SocketException} with the interrupt status set.
      * </ol>
-     * <p> Besides above noted cases, the socket will also be closed when a
-     * connection attempt fails with an {@link IOException}.
      *
      * @param   endpoint the {@code SocketAddress}
      * @throws  IOException if an error occurs during the connection, the socket
      *          is already connected or the socket is closed
-     * @throws  UnknownHostException if the endpoint address is
-     *          {@linkplain InetSocketAddress#isUnresolved() not resolved},
-     *          the socket is closed
+     * @throws  UnknownHostException if the endpoint is an unresolved
+     *          {@link InetSocketAddress}, the socket is closed
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
      *          and the channel is in non-blocking mode
@@ -637,6 +638,11 @@ public class Socket implements java.io.Closeable {
      * Connects this socket to the server with a specified timeout value.
      * A timeout of zero is interpreted as an infinite timeout. The connection
      * will then block until established or an error occurs.
+     *
+     * <p> If the endpoint is an unresolved {@link InetSocketAddress}, the
+     * connection cannot be established, or the timeout expires before the
+     * connection is established, then the socket is closed and an
+     * {@link IOException} is thrown.
      *
      * <p> This method is {@linkplain Thread#interrupt() interruptible} in the
      * following circumstances:
@@ -661,9 +667,8 @@ public class Socket implements java.io.Closeable {
      *          is already connected or the socket is closed
      * @throws  SocketTimeoutException if timeout expires before connecting,
      *          the socket is closed
-     * @throws  UnknownHostException if the endpoint address is
-     *          {@linkplain InetSocketAddress#isUnresolved() not resolved},
-     *          the socket is closed
+     * @throws  UnknownHostException if the endpoint is an unresolved
+     *          {@link InetSocketAddress}, the socket is closed
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
      *          and the channel is in non-blocking mode
