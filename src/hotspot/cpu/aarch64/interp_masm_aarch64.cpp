@@ -395,8 +395,8 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   if (VerifyActivationFrameSize) {
     Label L;
     sub(rscratch2, rfp, esp);
-    unsigned char min_frame_size = (frame::link_offset - frame::interpreter_frame_mirror_offset) * wordSize;
-    cmp(rscratch2, min_frame_size);
+    int min_frame_size = (frame::link_offset - frame::interpreter_frame_initial_sp_offset) * wordSize;
+    subs(rscratch2, rscratch2, min_frame_size);
     br(Assembler::GE, L);
     stop("broken stack frame");
     bind(L);
