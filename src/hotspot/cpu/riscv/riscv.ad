@@ -1944,7 +1944,7 @@ const RegMask* Matcher::predicate_reg_mask(void) {
 
 // Vector calling convention not yet implemented.
 bool Matcher::supports_vector_calling_convention(void) {
-  return EnableVectorSupport && UseVectorStubs;
+  return EnableVectorSupport;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
