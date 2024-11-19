@@ -778,18 +778,18 @@ public final class TKit {
             currentTest.notifyAssert();
 
             var comm = Comm.compare(content, expected);
-            if (!comm.unique1.isEmpty() && !comm.unique2.isEmpty()) {
+            if (!comm.unique1().isEmpty() && !comm.unique2().isEmpty()) {
                 error(String.format(
                         "assertDirectoryContentEquals(%s): Some expected %s. Unexpected %s. Missing %s",
-                        baseDir, format(comm.common), format(comm.unique1), format(comm.unique2)));
-            } else if (!comm.unique1.isEmpty()) {
+                        baseDir, format(comm.common()), format(comm.unique1()), format(comm.unique2())));
+            } else if (!comm.unique1().isEmpty()) {
                 error(String.format(
                         "assertDirectoryContentEquals(%s): Expected %s. Unexpected %s",
-                        baseDir, format(comm.common), format(comm.unique1)));
-            } else if (!comm.unique2.isEmpty()) {
+                        baseDir, format(comm.common()), format(comm.unique1())));
+            } else if (!comm.unique2().isEmpty()) {
                 error(String.format(
                         "assertDirectoryContentEquals(%s): Some expected %s. Missing %s",
-                        baseDir, format(comm.common), format(comm.unique2)));
+                        baseDir, format(comm.common()), format(comm.unique2())));
             } else {
                 traceAssert(String.format(
                         "assertDirectoryContentEquals(%s): Expected %s",
@@ -805,10 +805,10 @@ public final class TKit {
             currentTest.notifyAssert();
 
             var comm = Comm.compare(content, expected);
-            if (!comm.unique2.isEmpty()) {
+            if (!comm.unique2().isEmpty()) {
                 error(String.format(
                         "assertDirectoryContentContains(%s): Some expected %s. Missing %s",
-                        baseDir, format(comm.common), format(comm.unique2)));
+                        baseDir, format(comm.common()), format(comm.unique2())));
             } else {
                 traceAssert(String.format(
                         "assertDirectoryContentContains(%s): Expected %s",
@@ -833,21 +833,6 @@ public final class TKit {
         private DirectoryContentVerifier(Path baseDir, Set<Path> contents) {
             this.baseDir = baseDir;
             this.content = contents;
-        }
-
-        private static record Comm(Set<Path> common, Set<Path> unique1, Set<Path> unique2) {
-            static Comm compare(Set<Path> a, Set<Path> b) {
-                Set<Path> common = new HashSet<>(a);
-                common.retainAll(b);
-
-                Set<Path> unique1 = new HashSet<>(a);
-                unique1.removeAll(common);
-
-                Set<Path> unique2 = new HashSet<>(b);
-                unique2.removeAll(common);
-
-                return new Comm(common, unique1, unique2);
-            }
         }
 
         private static String format(Set<Path> paths) {
@@ -958,6 +943,16 @@ public final class TKit {
             return this;
         }
 
+        public TextStreamVerifier andThen(Consumer<? super Stream<String>> anotherVerifier) {
+            this.anotherVerifier = anotherVerifier;
+            return this;
+        }
+
+        public TextStreamVerifier andThen(TextStreamVerifier anotherVerifier) {
+            this.anotherVerifier = anotherVerifier::apply;
+            return this;
+        }
+
         public TextStreamVerifier orElseThrow(RuntimeException v) {
             return orElseThrow(() -> v);
         }
@@ -968,9 +963,22 @@ public final class TKit {
         }
 
         public void apply(Stream<String> lines) {
-            String matchedStr = lines.filter(line -> predicate.test(line, value)).findFirst().orElse(
-                    null);
-            String labelStr = Optional.ofNullable(label).orElse("output");
+            final String matchedStr;
+
+            lines = lines.dropWhile(line -> !predicate.test(line, value));
+            if (anotherVerifier == null) {
+                matchedStr = lines.findFirst().orElse(null);
+            } else {
+                var tail = lines.toList();
+                if (tail.isEmpty()) {
+                    matchedStr = null;
+                } else {
+                    matchedStr = tail.get(0);
+                }
+                lines = tail.stream().skip(1);
+            }
+
+            final String labelStr = Optional.ofNullable(label).orElse("output");
             if (negate) {
                 String msg = String.format(
                         "Check %s doesn't contain [%s] string", labelStr, value);
@@ -994,12 +1002,17 @@ public final class TKit {
                     }
                 }
             }
+
+            if (anotherVerifier != null) {
+                anotherVerifier.accept(lines);
+            }
         }
 
         private BiPredicate<String, String> predicate;
         private String label;
         private boolean negate;
         private Supplier<RuntimeException> createException;
+        private Consumer<? super Stream<String>> anotherVerifier;
         private final String value;
     }
 

@@ -74,6 +74,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
         appLayoutAsserts = cmd.appLayoutAsserts;
+        outputValidator = cmd.outputValidator;
         executeInDirectory = cmd.executeInDirectory;
     }
 
@@ -699,6 +700,24 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand validateOutput(TKit.TextStreamVerifier validator) {
+        return JPackageCommand.this.validateOutput(validator::apply);
+    }
+
+    public JPackageCommand validateOutput(Consumer<Stream<String>> validator) {
+        if (validator != null) {
+            saveConsoleOutput(true);
+            outputValidator = validator;
+        } else {
+            outputValidator = null;
+        }
+        return this;
+    }
+
+    public JPackageCommand validateOutput(CannedFormattedString str) {
+        return JPackageCommand.this.validateOutput(TKit.assertTextStream(str.getValue()));
+    }
+
     public boolean isWithToolProvider() {
         return Optional.ofNullable(withToolProvider).orElse(
                 defaultWithToolProvider);
@@ -776,6 +795,10 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .adjustArgumentsBeforeExecution()
                 .createExecutor()
                 .execute(expectedExitCode);
+
+        if (outputValidator != null) {
+            outputValidator.accept(result.getOutput().stream());
+        }
 
         if (result.exitCode == 0) {
             executeVerifyActions();
@@ -1146,6 +1169,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private final Actions verifyActions;
     private Path executeInDirectory;
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
+    private Consumer<Stream<String>> outputValidator;
     private static boolean defaultWithToolProvider;
 
     private static final Map<String, PackageType> PACKAGE_TYPES = Stream.of(

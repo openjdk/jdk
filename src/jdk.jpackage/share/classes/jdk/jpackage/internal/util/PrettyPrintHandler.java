@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.util.xml;
+package jdk.jpackage.internal.util;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.xml.stream.XMLStreamWriter;
 
-public class PrettyPrintHandler implements InvocationHandler {
+final class PrettyPrintHandler implements InvocationHandler {
 
     public PrettyPrintHandler(XMLStreamWriter target) {
         this.target = target;

@@ -822,7 +822,6 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
         interf = SystemDictionary::resolve_super_or_fail(_class_name,
                                                          unresolved_klass,
                                                          Handle(THREAD, _loader_data->class_loader()),
-                                                         _protection_domain,
                                                          false, CHECK);
       }
 
@@ -5691,7 +5690,6 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                        SystemDictionary::resolve_super_or_fail(_class_name,
                                                                super_class_name,
                                                                loader,
-                                                               _protection_domain,
                                                                true,
                                                                CHECK);
     }

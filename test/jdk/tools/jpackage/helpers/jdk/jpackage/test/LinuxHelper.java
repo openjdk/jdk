@@ -399,6 +399,15 @@ public final class LinuxHelper {
     private static void verifyDesktopFile(JPackageCommand cmd, Path desktopFile)
             throws IOException {
         TKit.trace(String.format("Check [%s] file BEGIN", desktopFile));
+
+        var launcherName = Stream.of(List.of(cmd.name()), cmd.addLauncherNames()).flatMap(List::stream).filter(name -> {
+            return getDesktopFile(cmd, name).equals(desktopFile);
+        }).findAny();
+        if (!cmd.hasArgument("--app-image")) {
+            TKit.assertTrue(launcherName.isPresent(),
+                    "Check the desktop file corresponds to one of app launchers");
+        }
+
         List<String> lines = Files.readAllLines(desktopFile);
         TKit.assertEquals("[Desktop Entry]", lines.get(0), "Check file header");
 
@@ -428,7 +437,7 @@ public final class LinuxHelper {
                     "Check value of [%s] key", key));
         }
 
-        // Verify value of `Exec` property in .desktop files are escaped if required
+        // Verify the value of `Exec` key is escaped if required
         String launcherPath = data.get("Exec");
         if (Pattern.compile("\\s").matcher(launcherPath).find()) {
             TKit.assertTrue(launcherPath.startsWith("\"")
@@ -437,10 +446,25 @@ public final class LinuxHelper {
             launcherPath = launcherPath.substring(1, launcherPath.length() - 1);
         }
 
-        Stream.of(launcherPath, data.get("Icon"))
-                .map(Path::of)
-                .map(cmd::pathToUnpackedPackageFile)
-                .forEach(TKit::assertFileExists);
+        if (launcherName.isPresent()) {
+            TKit.assertEquals(launcherPath, cmd.pathToPackageFile(
+                    cmd.appLauncherPath(launcherName.get())).toString(),
+                    String.format(
+                            "Check the value of [Exec] key references [%s] app launcher",
+                            launcherName.get()));
+        }
+
+        for (var e : List.<Map.Entry<Map.Entry<String, Optional<String>>, Function<ApplicationLayout, Path>>>of(
+                Map.entry(Map.entry("Exec", Optional.of(launcherPath)), ApplicationLayout::launchersDirectory),
+                Map.entry(Map.entry("Icon", Optional.empty()), ApplicationLayout::destktopIntegrationDirectory))) {
+            var path = e.getKey().getValue().or(() -> Optional.of(data.get(
+                    e.getKey().getKey()))).map(Path::of).get();
+            TKit.assertFileExists(cmd.pathToUnpackedPackageFile(path));
+            Path expectedDir = cmd.pathToPackageFile(e.getValue().apply(cmd.appLayout()));
+            TKit.assertTrue(path.getParent().equals(expectedDir), String.format(
+                    "Check the value of [%s] key references a file in [%s] folder",
+                    e.getKey().getKey(), expectedDir));
+        }
 
         TKit.trace(String.format("Check [%s] file END", desktopFile));
     }
