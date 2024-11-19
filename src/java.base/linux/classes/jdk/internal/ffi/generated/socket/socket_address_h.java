@@ -27,10 +27,9 @@
 
 package jdk.internal.ffi.generated.socket;
 
-@SuppressWarnings("restricted")
-public class socket_address_h {
+public final class socket_address_h {
 
-    socket_address_h() {
+    private socket_address_h() {
         // Should not be called directly
     }
 

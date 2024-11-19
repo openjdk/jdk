@@ -149,7 +149,11 @@ class NativeSocketAddress {
 
     @Override
     public int hashCode() {
-        return memory.hashCode();
+        int h = 0;
+        for (long offset = 0; offset < memory.byteSize(); offset++) {
+            h = 31 * h + memory.get(JAVA_BYTE, offset);
+        }
+        return h;
     }
 
     @Override
@@ -230,6 +234,8 @@ class NativeSocketAddress {
             throw new InternalError(e);
         }
     }
+    // IPv4 portion offset inside an IPv4-mapped IPv6 address
+    private static final long IPV4_MAPPED_IPV6_OFFSET = 12L;
 
     /**
      * Stores the given InetAddress in the sin_addr or sin6_addr/sin6_scope_id
@@ -245,10 +251,11 @@ class NativeSocketAddress {
             if (ia instanceof Inet4Address) {
                 // IPv4-mapped IPv6 address
                 var sin6addrMs = sockaddr_in6.sin6_addr(memory);
-                sin6addrMs.asSlice(0, 10).fill((byte) 0);
+                sin6addrMs.asSlice(0, IPV4_MAPPED_IPV6_OFFSET - 2).fill((byte) 0);
                 byte[] ipv4address = ia.getAddress();
-                sin6addrMs.asSlice(10, 2).fill((byte) 0xff);
-                MemorySegment.copy(ipv4address, 0, sin6addrMs, JAVA_BYTE, 12, 4);
+                sin6addrMs.asSlice(IPV4_MAPPED_IPV6_OFFSET - 2, 2).fill((byte) 0xff);
+                MemorySegment.copy(ipv4address, 0, sin6addrMs,
+                                   JAVA_BYTE, IPV4_MAPPED_IPV6_OFFSET, ipv4address.length);
                 scope_id = 0;
             } else {
                 // IPv6 address

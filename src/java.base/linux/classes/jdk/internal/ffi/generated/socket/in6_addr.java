@@ -48,9 +48,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  */
 
 @SuppressWarnings("restricted")
-public class in6_addr {
+public final class in6_addr {
 
-    in6_addr() {
+    private in6_addr() {
         // Should not be called directly
     }
 

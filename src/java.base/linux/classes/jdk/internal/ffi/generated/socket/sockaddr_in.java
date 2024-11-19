@@ -47,9 +47,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * }
  */
 @SuppressWarnings("restricted")
-public class sockaddr_in {
+public final class sockaddr_in {
 
-    sockaddr_in() {
+    private sockaddr_in() {
         // Should not be called directly
     }
 

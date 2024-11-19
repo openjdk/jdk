@@ -53,9 +53,9 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
  * }
  */
 @SuppressWarnings("restricted")
-public class SCOPE_ID {
+public final class SCOPE_ID {
 
-    SCOPE_ID() {
+    private SCOPE_ID() {
         // Should not be called directly
     }
 
