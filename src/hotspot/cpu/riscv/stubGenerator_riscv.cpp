@@ -2179,7 +2179,7 @@ class StubGenerator: public StubCodeGenerator {
     //*** jshort
     // Always need aligned and unaligned versions
     StubRoutines::_jshort_disjoint_arraycopy         = generate_disjoint_copy(StubGenStubId::jshort_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jshort_arraycopy                  = generate_conjoint_copy(StubGenStubId::jshort_arraycopy_id. entry, &entry_jshort_arraycopy);
+    StubRoutines::_jshort_arraycopy                  = generate_conjoint_copy(StubGenStubId::jshort_arraycopy_id, entry, &entry_jshort_arraycopy);
     StubRoutines::_arrayof_jshort_disjoint_arraycopy = generate_disjoint_copy(StubGenStubId::arrayof_jshort_disjoint_arraycopy_id, &entry);
     StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_copy(StubGenStubId::arrayof_jshort_arraycopy_id, entry, nullptr);
 
@@ -2215,7 +2215,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_oop_disjoint_arraycopy_uninit     = StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit;
     StubRoutines::_oop_arraycopy_uninit              = StubRoutines::_arrayof_oop_arraycopy_uninit;
 
-    StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubId::checkcast_arraycopy_id, &entry_checkcast_arraycopy);
+    StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubGenStubId::checkcast_arraycopy_id, &entry_checkcast_arraycopy);
     StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy(StubGenStubId::checkcast_arraycopy_uninit_id, nullptr);
 
 
