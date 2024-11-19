@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8331535
+ * @bug 8331535 8341631
  * @summary Test the JShell tool Console handling
  * @modules jdk.internal.le/jdk.internal.org.jline.reader
  *          jdk.jshell/jdk.internal.jshell.tool:+open
@@ -52,6 +52,40 @@ public class ConsoleToolTest extends ReplToolTesting {
                                                       """
                                                       \u0005System.console().readPassword(\"%%s\");
                                                       %s
+                                                      """);}
+            );
+    }
+
+    @Test //JDK-8341631
+    public void testIO() {
+        test(new String[] {"--enable-preview"},
+             a -> {assertCommandWithOutputAndTerminal(a,
+                                                      "java.io.IO.readln(\"%%s\");\ninput", //newline automatically appended
+                                                      "$1 ==> \"input\"",
+                                                      """
+                                                      \u0005java.io.IO.readln(\"%%s\");
+                                                      %%sinput
+                                                      """);},
+             a -> {assertCommandWithOutputAndTerminal(a,
+                                                      "java.io.IO.readln();\ninput!", //newline automatically appended
+                                                      "$2 ==> \"input!\"",
+                                                      """
+                                                      \u0005java.io.IO.readln();
+                                                      input!
+                                                      """);},
+             a -> {assertCommandWithOutputAndTerminal(a,
+                                                      "java.io.IO.println(\"Hello, World!\");",
+                                                      "",
+                                                      """
+                                                      \u0005java.io.IO.println(\"Hello, World!\");
+                                                      Hello, World!
+                                                      """);},
+             a -> {assertCommandWithOutputAndTerminal(a,
+                                                      "java.io.IO.println();",
+                                                      "",
+                                                      """
+                                                      \u0005java.io.IO.println();
+
                                                       """);}
             );
     }
