@@ -214,7 +214,8 @@ class FileSystemPreferences extends AbstractPreferences {
                 getLogger().warning("Chmod failed on " +
                        systemRootModFile.getCanonicalPath() +
                       " Unix error code " + result);
-        } catch (IOException e) { getLogger().warning(e.toString());
+        } catch (IOException e) {
+            getLogger().warning(e.toString());
         }
         systemRootModTime = systemRootModFile.lastModified();
     }
@@ -564,7 +565,6 @@ class FileSystemPreferences extends AbstractPreferences {
      * fails, a BackingStoreException is thrown and both prefsCache and
      * lastSyncTime are unaffected by the call.
      */
-//    @SuppressWarnings("removal")
     private void loadCache() throws BackingStoreException {
         Map<String, String> m = new TreeMap<>();
         long newLastSyncTime = 0;
