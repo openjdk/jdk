@@ -26,7 +26,7 @@
  * @test id=Xint_outer_inner
  * @requires vm.flagless
  * @summary Tests recursive locking in -Xint in outer then inner mode.
- * @library /testlibrary /test/lib /runtime/Monitor
+ * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -56,7 +56,7 @@
  * @test id=Xint_alternate_AB
  * @requires vm.flagless
  * @summary Tests recursive locking in -Xint in alternate A and B mode.
- * @library /testlibrary /test/lib /runtime/Monitor
+ * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -87,7 +87,7 @@
  * @requires vm.flagless
  * @requires vm.compiler1.enabled
  * @summary Tests recursive locking in C1 in outer then inner mode.
- * @library /testlibrary /test/lib /runtime/Monitor
+ * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -118,24 +118,27 @@
  * @requires vm.flagless
  * @requires vm.compiler1.enabled
  * @summary Tests recursive locking in C1 in alternate A and B mode.
- * @library /testlibrary /test/lib /runtime/Monitor
+ * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:TieredStopAtLevel=1
  *     -XX:LockingMode=0
  *     -ms256m -mx256m
  *     TestRecursiveLocking 120 2
  *
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:TieredStopAtLevel=1
  *     -XX:LockingMode=1
  *     -ms256m -mx256m
  *     TestRecursiveLocking 120 2
  *
  * @run main/othervm/timeout=240 -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:TieredStopAtLevel=1
  *     -XX:LockingMode=2
  *     -ms256m -mx256m
  *     TestRecursiveLocking 120 2
@@ -146,7 +149,7 @@
  * @requires vm.flagless
  * @requires vm.compiler2.enabled
  * @summary Tests recursive locking in C2 in outer then inner mode.
- * @library /testlibrary /test/lib /runtime/Monitor
+ * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -177,7 +180,7 @@
  * @requires vm.flagless
  * @requires vm.compiler2.enabled
  * @summary Tests recursive locking in C2 in alternate A and B mode.
- * @library /testlibrary /test/lib /runtime/Monitor
+ * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
