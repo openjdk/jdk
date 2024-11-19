@@ -239,6 +239,9 @@ bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result
       __ add(left, tmp, result);
       return true;
     }
+  } else if(c == -1) {
+    __ negate(left, result);
+    return true;
   }
   return false;
 }
