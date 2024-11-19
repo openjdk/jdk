@@ -39,10 +39,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-<<<<<<< HEAD
-=======
-import static jdk.jpackage.internal.OverridableResource.createResource;
->>>>>>> SplitIOUtils.DecoupleAppImageFile
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
