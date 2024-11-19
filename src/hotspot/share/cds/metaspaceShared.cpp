@@ -281,7 +281,7 @@ void MetaspaceShared::initialize_for_static_dump() {
   SharedBaseAddress = (size_t)_requested_base_address;
 
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
-  _symbol_rs = ReservedSpace(symbol_rs_size);
+  _symbol_rs = ReservedSpace(symbol_rs_size, mtClassShared);
   if (!_symbol_rs.is_reserved()) {
     log_error(cds)("Unable to reserve memory for symbols: " SIZE_FORMAT " bytes.", symbol_rs_size);
     MetaspaceShared::unrecoverable_writing_error();

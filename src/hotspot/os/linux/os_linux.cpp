@@ -4584,7 +4584,7 @@ static void workaround_expand_exec_shield_cs_limit() {
    */
   char* hint = (char*)(os::Linux::initial_thread_stack_bottom() -
                        (StackOverflow::stack_guard_zone_size() + page_size));
-  char* codebuf = os::attempt_reserve_memory_at(hint, page_size);
+  char* codebuf = os::attempt_reserve_memory_at(hint, page_size, false, mtInternal);
 
   if (codebuf == nullptr) {
     // JDK-8197429: There may be a stack gap of one megabyte between
@@ -4592,14 +4592,12 @@ static void workaround_expand_exec_shield_cs_limit() {
     // Linux kernel workaround for CVE-2017-1000364.  If we failed to
     // map our codebuf, try again at an address one megabyte lower.
     hint -= 1 * M;
-    codebuf = os::attempt_reserve_memory_at(hint, page_size);
+    codebuf = os::attempt_reserve_memory_at(hint, page_size, false, mtInternal);
   }
 
   if ((codebuf == nullptr) || (!os::commit_memory(codebuf, page_size, true))) {
     return; // No matter, we tried, best effort.
   }
-
-  MemTracker::record_virtual_memory_tag((address)codebuf, mtInternal);
 
   log_info(os)("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
 
