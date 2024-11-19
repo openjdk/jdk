@@ -588,7 +588,7 @@ public:
 struct ZStatHeapStats {
   size_t _live_at_mark_end;
   size_t _used_at_relocate_end;
-  size_t _reclaimed_avg;
+  double _reclaimed_avg;
 };
 
 //
@@ -699,7 +699,7 @@ public:
   size_t stalls_at_relocate_start() const;
   size_t stalls_at_relocate_end() const;
 
-  size_t reclaimed_avg();
+  double reclaimed_avg();
 
   ZStatHeapStats stats();
 

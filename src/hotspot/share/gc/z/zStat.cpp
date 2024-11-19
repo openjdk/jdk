@@ -46,6 +46,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 
+#include <limits>
+
 #define ZSIZE_FMT                       SIZE_FORMAT "M(%.0f%%)"
 #define ZSIZE_ARGS_WITH_MAX(size, max)  ((size) / M), (percent_of(size, max))
 #define ZSIZE_ARGS(size)                ZSIZE_ARGS_WITH_MAX(size, ZStatHeap::max_capacity())
@@ -1849,8 +1851,9 @@ void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats, bool record_st
   }
 }
 
-size_t ZStatHeap::reclaimed_avg() {
-  return (size_t)_reclaimed_bytes.davg();
+double ZStatHeap::reclaimed_avg() {
+  // Make sure the reclaimed average is greater than 0.0 to avoid division by zero.
+  return _reclaimed_bytes.davg() + std::numeric_limits<double>::denorm_min();
 }
 
 size_t ZStatHeap::max_capacity() {
