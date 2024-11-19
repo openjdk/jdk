@@ -2981,9 +2981,9 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_string_indexof_stubs()
   {
-    StubRoutines::riscv::_string_indexof_linear_ll = generate_string_indexof_linear(StubGenStubId::string_indexof_linear_ll);
-    StubRoutines::riscv::_string_indexof_linear_uu = generate_string_indexof_linear(StubGenStubId::string_indexof_linear_uu);
-    StubRoutines::riscv::_string_indexof_linear_ul = generate_string_indexof_linear(StubGenStubId::string_indexof_linear_ul);
+    StubRoutines::riscv::_string_indexof_linear_ll = generate_string_indexof_linear(StubGenStubId::string_indexof_linear_ll_id);
+    StubRoutines::riscv::_string_indexof_linear_uu = generate_string_indexof_linear(StubGenStubId::string_indexof_linear_uu_id);
+    StubRoutines::riscv::_string_indexof_linear_ul = generate_string_indexof_linear(StubGenStubId::string_indexof_linear_ul_id);
   }
 
 #ifdef COMPILER2
