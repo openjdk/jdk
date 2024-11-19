@@ -41,6 +41,7 @@ import jdk.test.whitebox.WhiteBox;
  * @summary Test jdk.jfr.consumer.RecordedFrame::getType()
  * @key jfr
  * @requires vm.hasJFR & vm.compiler1.enabled
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

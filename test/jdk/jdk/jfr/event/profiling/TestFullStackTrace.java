@@ -40,6 +40,7 @@ import jdk.test.lib.jfr.RecurseThread;
  * @test
  * @key jfr
  * @requires vm.hasJFR
+ * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.profiling.TestFullStackTrace
  */

@@ -30,4 +30,18 @@
 java/lang/invoke/MethodHandles/CatchExceptionTest.java          8146623 generic-all
 java/lang/reflect/callerCache/ReflectionCallerCacheTest.java    8332028 generic-all
 com/sun/jdi/InterruptHangTest.java                              8043571 generic-all
+
+jdk/jfr/jvm/TestDumpOnCrash.java                                8344442 generic-all
+jdk/jfr/event/runtime/TestDumpReason.java                       8344442 generic-all
+jdk/jfr/event/runtime/TestShutdownEvent.java                    8344442 generic-all
 jdk/jfr/jvm/TestVirtualThreadExclusion.java                     8344199 generic-all
+jdk/jfr/jvm/TestPrimitiveClasses.java                           8340964 generic-all
+jdk/jfr/event/gc/stacktrace/TestDefNewAllocationPendingStackTrace.java                 8340991 generic-all
+jdk/jfr/event/gc/stacktrace/TestG1HumongousAllocationPendingStackTrace.java            8340991 generic-all
+jdk/jfr/event/gc/stacktrace/TestG1OldAllocationPendingStackTrace.java                  8340991 generic-all
+jdk/jfr/event/gc/stacktrace/TestG1YoungAllocationPendingStackTrace.java                8340991 generic-all
+jdk/jfr/event/gc/stacktrace/TestMarkSweepCompactAllocationPendingStackTrace.java       8340991 generic-all
+jdk/jfr/event/gc/stacktrace/TestMetaspaceParallelGCAllocationPendingStackTrace.java    8340991 generic-all
+jdk/jfr/event/gc/stacktrace/TestMetaspaceSerialGCAllocationPendingStackTrace.java      8340991 generic-all
+jdk/jfr/event/gc/stacktrace/TestParallelMarkSweepAllocationPendingStackTrace.java      8340991 generic-all
+jdk/jfr/event/gc/stacktrace/TestParallelScavengeAllocationPendingStackTrace.java       8340991 generic-all

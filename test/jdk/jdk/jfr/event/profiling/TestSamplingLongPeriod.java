@@ -33,6 +33,7 @@ import jdk.test.lib.jfr.RecurseThread;
  * @test
  * @key jfr
  * @requires vm.hasJFR
+ * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  * @run main jdk.jfr.event.profiling.TestSamplingLongPeriod

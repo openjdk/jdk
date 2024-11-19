@@ -40,6 +40,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test TestSafepointEvents
  * @key jfr
  * @requires vm.hasJFR
+ * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

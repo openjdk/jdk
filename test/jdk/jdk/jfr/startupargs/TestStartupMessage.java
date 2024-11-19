@@ -34,6 +34,7 @@ import jdk.test.lib.process.ProcessTools;
  * @test
  * @key jfr
  * @requires vm.hasJFR
+ * @requires vm.flagless
  * @library /test/lib /test/jdk
  * @run main jdk.jfr.startupargs.TestStartupMessage
  */

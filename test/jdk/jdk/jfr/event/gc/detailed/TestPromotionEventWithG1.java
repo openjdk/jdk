@@ -29,6 +29,7 @@ package jdk.jfr.event.gc.detailed;
  * @summary Test that events are created when an object is aged or promoted during a GC and the copying of the object requires a new PLAB or direct heap allocation
  * @requires vm.hasJFR
  *
+ * @requires vm.compMode != "Xcomp"
  * @requires (vm.gc == "G1" | vm.gc == null)
  *           & vm.opt.ExplicitGCInvokesConcurrent != true
  * @library /test/lib /test/jdk
