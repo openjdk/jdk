@@ -3118,8 +3118,6 @@ The following items describe the syntax of `java` argument files:
 -   An open quote stops at end-of-line unless `\` is the last character, which
     then joins the next line by removing all leading white space characters.
 
--   Wildcards (\*) aren't allowed in these lists (such as specifying `*.java`).
-
 -   Use of the at sign (`@`) to recursively interpret files isn't supported.
 
 ### Example of Open or Partial Quotes in an Argument File
