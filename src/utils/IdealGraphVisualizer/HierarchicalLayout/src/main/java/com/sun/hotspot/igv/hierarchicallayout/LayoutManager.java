@@ -34,7 +34,7 @@ public abstract class LayoutManager {
     public abstract void setCutEdges(boolean enable);
 
     public static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
-    public static final int SWEEP_ITERATIONS = 1;
+    public static final int SWEEP_ITERATIONS = 10;
     public static final int CROSSING_ITERATIONS = 2;
     public static final int NODE_OFFSET = 8;
     public static final int LAYER_OFFSET = 8;
