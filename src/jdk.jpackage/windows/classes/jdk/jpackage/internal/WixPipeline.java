@@ -39,6 +39,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static jdk.jpackage.internal.ShortPathUtils.adjustPath;
 import jdk.jpackage.internal.util.PathUtils;
 
 /**

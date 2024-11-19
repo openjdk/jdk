@@ -37,8 +37,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
-import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 public class WindowsHelper {
@@ -605,7 +606,7 @@ public class WindowsHelper {
                 getShortPathWrapper.setAccessible(true);
             } catch (ClassNotFoundException | NoSuchMethodException
                     | SecurityException ex) {
-                throw Functional.rethrowUnchecked(ex);
+                throw rethrowUnchecked(ex);
             }
         }
 
