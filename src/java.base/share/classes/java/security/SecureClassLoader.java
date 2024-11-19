@@ -165,16 +165,8 @@ public class SecureClassLoader extends ClassLoader {
     }
 
     /**
-     * Returns the permissions for the given CodeSource object.
-     * <p>
-     * This method is invoked by the defineClass method which takes
-     * a CodeSource as an argument when it is constructing the
-     * ProtectionDomain for the class being defined.
-     *
-     * @param codesource the codesource.
-     *
-     * @return the permissions for the codesource.
-     *
+     * {@return an empty collection of {@link Permission} objects}
+     * @param codesource the CodeSource.
      */
     protected PermissionCollection getPermissions(CodeSource codesource)
     {
