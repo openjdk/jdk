@@ -119,7 +119,7 @@ void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
   }
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 void StubCodeGenerator::verify_stub(StubGenStubId stub_id) {
   assert(StubRoutines::stub_to_blob(stub_id) == blob_id(), "wrong blob %s for generation of stub %s", StubRoutines::get_blob_name(blob_id()), StubRoutines::get_stub_name(stub_id));
 }
@@ -136,7 +136,7 @@ StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, const char* group, const cha
 }
 
 StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubGenStubId stub_id) : StubCodeMark(cgen, "StubRoutines", StubRoutines::get_stub_name(stub_id)) {
-#ifndef PRODUCT
+#ifdef ASSERT
   cgen->verify_stub(stub_id);
 #endif
 }

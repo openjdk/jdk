@@ -160,7 +160,7 @@ const char* StubRoutines::get_stub_name(StubGenStubId id) {
   return _stub_names[id];
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 
 // array holding start and end indices for stub ids associated with a
 // given blob. Given a blob with id (StubGenBlobId) blob_id for any
@@ -232,7 +232,7 @@ StubGenBlobId StubRoutines::stub_to_blob(StubGenStubId stubId) {
   return blobId;
 }
 
-#endif // !PRODUCT
+#endif // ASSERT
 
 // Initialization
 //

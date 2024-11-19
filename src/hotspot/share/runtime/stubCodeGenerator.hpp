@@ -122,7 +122,7 @@ class StubCodeGenerator: public StackObj {
   virtual void stub_prolog(StubCodeDesc* cdesc); // called by StubCodeMark constructor
   virtual void stub_epilog(StubCodeDesc* cdesc); // called by StubCodeMark destructor
 
-#ifndef PRODUCT
+#ifdef ASSERT
   void verify_stub(StubGenStubId stub_id);
 #endif
 };

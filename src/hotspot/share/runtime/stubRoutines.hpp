@@ -329,7 +329,7 @@ public:
 
 #undef DEFINE_BLOB_GETTER
 
-#ifndef PRODUCT
+#ifdef ASSERT
   // provide a translation from stub id to its associated blob id
   static StubGenBlobId stub_to_blob(StubGenStubId stubId);
 #endif
