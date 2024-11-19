@@ -46,13 +46,6 @@ import jdk.jpackage.internal.util.xml.SkipDocumentHandler;
 public final class XmlUtils {
 
     @FunctionalInterface
-    public interface XmlConsumer {
-
-        void accept(XMLStreamWriter xml) throws IOException, XMLStreamException;
-
-    }
-
-    @FunctionalInterface
     public interface XmlConsumerNoArg {
 
         void accept() throws IOException, XMLStreamException;

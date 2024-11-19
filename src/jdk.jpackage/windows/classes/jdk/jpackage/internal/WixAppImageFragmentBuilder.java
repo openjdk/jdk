@@ -67,7 +67,7 @@ import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
-import jdk.jpackage.internal.util.XmlUtils.XmlConsumer;
+import jdk.jpackage.internal.util.XmlConsumer;
 import org.w3c.dom.NodeList;
 
 /**

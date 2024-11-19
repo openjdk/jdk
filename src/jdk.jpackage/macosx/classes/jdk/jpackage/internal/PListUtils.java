@@ -27,7 +27,7 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import jdk.jpackage.internal.util.XmlUtils.XmlConsumer;
+import jdk.jpackage.internal.util.XmlConsumer;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 
 final class PListUtils {

@@ -42,7 +42,7 @@ import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.WixAppImageFragmentBuilder.ShortcutsFolder;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.resources.ResourceLocator;
-import jdk.jpackage.internal.util.XmlUtils.XmlConsumer;
+import jdk.jpackage.internal.util.XmlConsumer;
 
 /**
  * Creates UI WiX fragment.
