@@ -49,19 +49,9 @@ import java.net.URLStreamHandlerFactory;
 public abstract class URLStreamHandlerProvider
     implements URLStreamHandlerFactory
 {
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("setFactory"));
-        return null;
-    }
-    private URLStreamHandlerProvider(Void ignore) { }
-
     /**
      * Initializes a new URL stream handler provider.
      */
     protected URLStreamHandlerProvider() {
-        this(checkPermission());
     }
 }

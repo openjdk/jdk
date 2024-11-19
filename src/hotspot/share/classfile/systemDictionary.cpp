@@ -38,7 +38,6 @@
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/placeholders.hpp"
-#include "classfile/protectionDomainCache.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -331,9 +330,9 @@ static void handle_resolution_exception(Symbol* class_name, bool throw_error, TR
 
 // Forwards to resolve_or_null
 
-Klass* SystemDictionary::resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain,
+Klass* SystemDictionary::resolve_or_fail(Symbol* class_name, Handle class_loader,
                                          bool throw_error, TRAPS) {
-  Klass* klass = resolve_or_null(class_name, class_loader, protection_domain, THREAD);
+  Klass* klass = resolve_or_null(class_name, class_loader, THREAD);
   // Check for pending exception or null klass, and throw exception
   if (HAS_PENDING_EXCEPTION || klass == nullptr) {
     handle_resolution_exception(class_name, throw_error, CHECK_NULL);
@@ -343,9 +342,9 @@ Klass* SystemDictionary::resolve_or_fail(Symbol* class_name, Handle class_loader
 
 // Forwards to resolve_array_class_or_null or resolve_instance_class_or_null
 
-Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS) {
+Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader, TRAPS) {
   if (Signature::is_array(class_name)) {
-    return resolve_array_class_or_null(class_name, class_loader, protection_domain, THREAD);
+    return resolve_array_class_or_null(class_name, class_loader, THREAD);
   } else {
     assert(class_name != nullptr && !Signature::is_array(class_name), "must be");
     if (Signature::has_envelope(class_name)) {
@@ -353,9 +352,9 @@ Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader
       // Ignore wrapping L and ;.
       TempNewSymbol name = SymbolTable::new_symbol(class_name->as_C_string() + 1,
                                                    class_name->utf8_length() - 2);
-      return resolve_instance_class_or_null(name, class_loader, protection_domain, THREAD);
+      return resolve_instance_class_or_null(name, class_loader, THREAD);
     } else {
-      return resolve_instance_class_or_null(class_name, class_loader, protection_domain, THREAD);
+      return resolve_instance_class_or_null(class_name, class_loader, THREAD);
     }
   }
 }
@@ -364,7 +363,6 @@ Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader
 
 Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
                                                      Handle class_loader,
-                                                     Handle protection_domain,
                                                      TRAPS) {
   assert(Signature::is_array(class_name), "must be array");
   ResourceMark rm(THREAD);
@@ -376,7 +374,6 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
     Symbol* obj_class = ss.as_symbol();
     k = SystemDictionary::resolve_instance_class_or_null(obj_class,
                                                          class_loader,
-                                                         protection_domain,
                                                          CHECK_NULL);
     if (k != nullptr) {
       k = k->array_klass(ndims, CHECK_NULL);
@@ -422,7 +419,6 @@ static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) 
 InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* class_name,
                                                                     Symbol* next_name,
                                                                     Handle class_loader,
-                                                                    Handle protection_domain,
                                                                     bool is_superclass,
                                                                     TRAPS) {
 
@@ -487,7 +483,6 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
   InstanceKlass* superk =
     SystemDictionary::resolve_instance_class_or_null(next_name,
                                                      class_loader,
-                                                     protection_domain,
                                                      THREAD);
 
   // Clean up placeholder entry.
@@ -514,7 +509,7 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
 static void handle_parallel_super_load(Symbol* name,
                                        Symbol* superclassname,
                                        Handle class_loader,
-                                       Handle protection_domain, TRAPS) {
+                                       TRAPS) {
 
   // The result superk is not used; resolve_with_circularity_detection is called for circularity check only.
   // This passes true to is_superclass even though it might not be the super class in order to perform the
@@ -522,7 +517,6 @@ static void handle_parallel_super_load(Symbol* name,
   Klass* superk = SystemDictionary::resolve_with_circularity_detection(name,
                                                                        superclassname,
                                                                        class_loader,
-                                                                       protection_domain,
                                                                        true,
                                                                        CHECK);
 }
@@ -588,7 +582,6 @@ void SystemDictionary::post_class_load_event(EventClassLoad* event, const Instan
 // This can return null, an exception or an InstanceKlass.
 InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
                                                                 Handle class_loader,
-                                                                Handle protection_domain,
                                                                 TRAPS) {
   // name must be in the form of "java/lang/Object" -- cannot be "Ljava/lang/Object;"
   DEBUG_ONLY(ResourceMark rm(THREAD));
@@ -602,12 +595,8 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   ClassLoaderData* loader_data = register_loader(class_loader);
   Dictionary* dictionary = loader_data->dictionary();
 
-  // Do lookup to see if class already exists and the protection domain
-  // has the right access.
-  // This call uses find which checks protection domain already matches
-  // All subsequent calls use find_class, and set loaded_class so that
-  // before we return a result, we call out to java to check for valid protection domain.
-  InstanceKlass* probe = dictionary->find(THREAD, name, protection_domain);
+  // Do lookup to see if class already exists.
+  InstanceKlass* probe = dictionary->find_class(THREAD, name);
   if (probe != nullptr) return probe;
 
   // Non-bootstrap class loaders will call out to class loader and
@@ -653,7 +642,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   if (circularity_detection_in_progress) {
     handle_parallel_super_load(name, superclassname,
                                class_loader,
-                               protection_domain,
                                CHECK_NULL);
   }
 
@@ -738,12 +726,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // Make sure we have the right class in the dictionary
   DEBUG_ONLY(verify_dictionary_entry(name, loaded_class));
 
-  if (protection_domain() != nullptr) {
-    // A SecurityManager (if installed) may prevent this protection_domain from accessing loaded_class
-    // by throwing a SecurityException.
-    dictionary->check_package_access(loaded_class, class_loader, protection_domain, CHECK_NULL);
-  }
-
   return loaded_class;
 }
 
@@ -761,8 +743,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
 
 InstanceKlass* SystemDictionary::find_instance_klass(Thread* current,
                                                      Symbol* class_name,
-                                                     Handle class_loader,
-                                                     Handle protection_domain) {
+                                                     Handle class_loader) {
 
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(class_loader());
   if (loader_data == nullptr) {
@@ -772,15 +753,14 @@ InstanceKlass* SystemDictionary::find_instance_klass(Thread* current,
   }
 
   Dictionary* dictionary = loader_data->dictionary();
-  return dictionary->find(current, class_name, protection_domain);
+  return dictionary->find_class(current, class_name);
 }
 
 // Look for a loaded instance or array klass by name.  Do not do any loading.
 // return null in case of error.
 Klass* SystemDictionary::find_instance_or_array_klass(Thread* current,
                                                       Symbol* class_name,
-                                                      Handle class_loader,
-                                                      Handle protection_domain) {
+                                                      Handle class_loader) {
   Klass* k = nullptr;
   assert(class_name != nullptr, "class name must be non nullptr");
 
@@ -794,13 +774,13 @@ Klass* SystemDictionary::find_instance_or_array_klass(Thread* current,
     if (t != T_OBJECT) {
       k = Universe::typeArrayKlass(t);
     } else {
-      k = SystemDictionary::find_instance_klass(current, ss.as_symbol(), class_loader, protection_domain);
+      k = SystemDictionary::find_instance_klass(current, ss.as_symbol(), class_loader);
     }
     if (k != nullptr) {
       k = k->array_klass_or_null(ndims);
     }
   } else {
-    k = find_instance_klass(current, class_name, class_loader, protection_domain);
+    k = find_instance_klass(current, class_name, class_loader);
   }
   return k;
 }
@@ -1044,8 +1024,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
 }
 
 bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, InstanceKlass* super_type,
-                                                     Handle class_loader,  Handle protection_domain,
-                                                     bool is_superclass, TRAPS) {
+                                                     Handle class_loader, bool is_superclass, TRAPS) {
   assert(super_type->is_shared(), "must be");
 
   // Quick check if the super type has been already loaded.
@@ -1055,14 +1034,14 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
   if (!super_type->is_shared_unregistered_class() && super_type->class_loader_data() != nullptr) {
     // Check if the superclass is loaded by the current class_loader
     Symbol* name = super_type->name();
-    InstanceKlass* check = find_instance_klass(THREAD, name, class_loader, protection_domain);
+    InstanceKlass* check = find_instance_klass(THREAD, name, class_loader);
     if (check == super_type) {
       return true;
     }
   }
 
   Klass *found = resolve_with_circularity_detection(klass->name(), super_type->name(),
-                                                    class_loader, protection_domain, is_superclass, CHECK_false);
+                                                    class_loader, is_superclass, CHECK_false);
   if (found == super_type) {
     return true;
   } else {
@@ -1072,8 +1051,7 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
   }
 }
 
-bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle class_loader,
-                                                      Handle protection_domain, TRAPS) {
+bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle class_loader, TRAPS) {
   // Check the superclass and interfaces. They must be the same
   // as in dump time, because the layout of <ik> depends on
   // the specific layout of ik->super() and ik->local_interfaces().
@@ -1083,7 +1061,7 @@ bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle 
 
   if (ik->super() != nullptr) {
     bool check_super = check_shared_class_super_type(ik, InstanceKlass::cast(ik->super()),
-                                                     class_loader, protection_domain, true,
+                                                     class_loader, true,
                                                      CHECK_false);
     if (!check_super) {
       return false;
@@ -1093,7 +1071,7 @@ bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle 
   Array<InstanceKlass*>* interfaces = ik->local_interfaces();
   int num_interfaces = interfaces->length();
   for (int index = 0; index < num_interfaces; index++) {
-    bool check_interface = check_shared_class_super_type(ik, interfaces->at(index), class_loader, protection_domain, false,
+    bool check_interface = check_shared_class_super_type(ik, interfaces->at(index), class_loader, false,
                                                          CHECK_false);
     if (!check_interface) {
       return false;
@@ -1111,7 +1089,7 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
   InstanceKlass* shared_nest_host = SystemDictionaryShared::get_shared_nest_host(ik);
   assert(shared_nest_host->is_shared(), "nest host must be in CDS archive");
   Symbol* cn = shared_nest_host->name();
-  Klass *s = resolve_or_fail(cn, class_loader, protection_domain, true, CHECK_NULL);
+  Klass *s = resolve_or_fail(cn, class_loader, true, CHECK_NULL);
   if (s != shared_nest_host) {
     // The dynamically resolved nest_host is not the same as the one we used during dump time,
     // so we cannot use ik.
@@ -1151,7 +1129,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     return nullptr;
   }
 
-  bool check = check_shared_class_super_types(ik, class_loader, protection_domain, CHECK_NULL);
+  bool check = check_shared_class_super_types(ik, class_loader, CHECK_NULL);
   if (!check) {
     ik->set_shared_loading_failed();
     return nullptr;
@@ -1579,17 +1557,6 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
   if (unloading_occurred) {
     SymbolTable::trigger_cleanup();
 
-    if (java_lang_System::allow_security_manager()) {
-      // Oops referenced by the protection domain cache table may get unreachable independently
-      // of the class loader (eg. cached protection domain oops). So we need to
-      // explicitly unlink them here.
-      // All protection domain oops are linked to the caller class, so if nothing
-      // unloads, this is not needed.
-      ProtectionDomainCacheTable::trigger_cleanup();
-    } else {
-      assert(ProtectionDomainCacheTable::number_of_entries() == 0, "should be empty");
-    }
-
     ConditionalMutexLocker ml(ClassInitError_lock, is_concurrent);
     InstanceKlass::clean_initialization_error_table();
   }
@@ -1627,7 +1594,6 @@ void SystemDictionary::initialize(TRAPS) {
   ResolutionErrorTable::initialize();
   LoaderConstraintTable::initialize();
   PlaceholderTable::initialize();
-  ProtectionDomainCacheTable::initialize();
 #if INCLUDE_CDS
   SystemDictionaryShared::initialize();
 #endif
@@ -1744,10 +1710,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
                     Thread* current, Symbol* class_name, Handle class_loader) {
 
   // First see if it has been loaded directly.
-  // Force the protection domain to be null.  (This removes protection checks.)
-  Handle no_protection_domain;
-  Klass* klass = find_instance_or_array_klass(current, class_name, class_loader,
-                                              no_protection_domain);
+  Klass* klass = find_instance_or_array_klass(current, class_name, class_loader);
   if (klass != nullptr)
     return klass;
 
@@ -2195,21 +2158,18 @@ static bool is_always_visible_class(oop mirror) {
 // N.B.  Code in reflection should use this entry point.
 Handle SystemDictionary::find_java_mirror_for_type(Symbol* signature,
                                                    Klass* accessing_klass,
-                                                   Handle class_loader,
-                                                   Handle protection_domain,
                                                    SignatureStream::FailureMode failure_mode,
                                                    TRAPS) {
-  assert(accessing_klass == nullptr || (class_loader.is_null() && protection_domain.is_null()),
-         "one or the other, or perhaps neither");
+
+  Handle class_loader;
 
   // What we have here must be a valid field descriptor,
   // and all valid field descriptors are supported.
   // Produce the same java.lang.Class that reflection reports.
   if (accessing_klass != nullptr) {
     class_loader      = Handle(THREAD, accessing_klass->class_loader());
-    protection_domain = Handle(THREAD, accessing_klass->protection_domain());
   }
-  ResolvingSignatureStream ss(signature, class_loader, protection_domain, false);
+  ResolvingSignatureStream ss(signature, class_loader, false);
   oop mirror_oop = ss.as_java_mirror(failure_mode, CHECK_NH);
   if (mirror_oop == nullptr) {
     return Handle();  // report failure this way
@@ -2250,10 +2210,9 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     return Handle();  // do not attempt from within compiler, unless it was cached
   }
 
-  Handle class_loader, protection_domain;
+  Handle class_loader;
   if (accessing_klass != nullptr) {
     class_loader      = Handle(THREAD, accessing_klass->class_loader());
-    protection_domain = Handle(THREAD, accessing_klass->protection_domain());
   }
   bool can_be_cached = true;
   int npts = ArgumentCount(signature).size();
@@ -2265,8 +2224,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     oop mirror = nullptr;
     if (can_be_cached) {
       // Use neutral class loader to lookup candidate classes to be placed in the cache.
-      mirror = ss.as_java_mirror(Handle(), Handle(),
-                                 SignatureStream::ReturnNull, CHECK_(empty));
+      mirror = ss.as_java_mirror(Handle(), SignatureStream::ReturnNull, CHECK_(empty));
       if (mirror == nullptr || (ss.is_reference() && !is_always_visible_class(mirror))) {
         // Fall back to accessing_klass context.
         can_be_cached = false;
@@ -2274,8 +2232,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     }
     if (!can_be_cached) {
       // Resolve, throwing a real error if it doesn't work.
-      mirror = ss.as_java_mirror(class_loader, protection_domain,
-                                 SignatureStream::NCDFError, CHECK_(empty));
+      mirror = ss.as_java_mirror(class_loader, SignatureStream::NCDFError, CHECK_(empty));
     }
     assert(mirror != nullptr, "%s", ss.as_symbol()->as_C_string());
     if (ss.at_return_type())
@@ -2328,12 +2285,11 @@ Handle SystemDictionary::find_field_handle_type(Symbol* signature,
   ResourceMark rm(THREAD);
   SignatureStream ss(signature, /*is_method=*/ false);
   if (!ss.is_done()) {
-    Handle class_loader, protection_domain;
+    Handle class_loader;
     if (accessing_klass != nullptr) {
       class_loader      = Handle(THREAD, accessing_klass->class_loader());
-      protection_domain = Handle(THREAD, accessing_klass->protection_domain());
     }
-    oop mirror = ss.as_java_mirror(class_loader, protection_domain, SignatureStream::NCDFError, CHECK_(empty));
+    oop mirror = ss.as_java_mirror(class_loader, SignatureStream::NCDFError, CHECK_(empty));
     ss.next();
     if (ss.is_done()) {
       return Handle(THREAD, mirror);
@@ -2471,9 +2427,6 @@ void SystemDictionary::print_on(outputStream *st) {
   // loader constraints - print under SD_lock
   LoaderConstraintTable::print_on(st);
   st->cr();
-
-  ProtectionDomainCacheTable::print_on(st);
-  st->cr();
 }
 
 void SystemDictionary::print() { print_on(tty); }
@@ -2487,9 +2440,6 @@ void SystemDictionary::verify() {
 
   // Verify constraint table
   LoaderConstraintTable::verify();
-
-  // Verify protection domain table
-  ProtectionDomainCacheTable::verify();
 }
 
 void SystemDictionary::dump(outputStream *st, bool verbose) {
@@ -2500,7 +2450,6 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
     CDS_ONLY(SystemDictionaryShared::print_table_statistics(st));
     ClassLoaderDataGraph::print_table_statistics(st);
     LoaderConstraintTable::print_table_statistics(st);
-    ProtectionDomainCacheTable::print_table_statistics(st);
   }
 }
 

@@ -35,7 +35,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.VolatileImage;
-import java.security.AccessController;
 import sun.awt.image.BufImgSurfaceData;
 import sun.java2d.DestSurfaceProvider;
 import sun.java2d.InvalidPipeException;
@@ -45,7 +44,6 @@ import sun.java2d.pipe.RenderQueue;
 import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.hw.AccelGraphicsConfig;
 import sun.java2d.pipe.hw.AccelSurface;
-import sun.security.action.GetPropertyAction;
 
 import static java.awt.image.VolatileImage.*;
 import static sun.java2d.pipe.hw.AccelSurface.*;
@@ -66,14 +64,10 @@ abstract class TranslucentWindowPainter {
     protected WWindowPeer peer;
 
     // REMIND: we probably would want to remove this later
-    @SuppressWarnings("removal")
-    private static final boolean forceOpt  =
-        Boolean.parseBoolean(AccessController.doPrivileged(
-            new GetPropertyAction("sun.java2d.twp.forceopt", "false")));
-    @SuppressWarnings("removal")
-    private static final boolean forceSW  =
-        Boolean.parseBoolean(AccessController.doPrivileged(
-            new GetPropertyAction("sun.java2d.twp.forcesw", "false")));
+    private static final boolean forceOpt =
+        Boolean.getBoolean("sun.java2d.twp.forceopt");
+    private static final boolean forceSW =
+        Boolean.getBoolean("sun.java2d.twp.forcesw");
 
     /**
      * Creates an instance of the painter for particular peer.

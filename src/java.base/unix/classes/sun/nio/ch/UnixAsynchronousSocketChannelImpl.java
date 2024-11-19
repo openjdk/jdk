@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.io.FileDescriptor;
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.util.SocketExceptions;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Unix implementation of AsynchronousSocketChannel
@@ -49,7 +48,7 @@ class UnixAsynchronousSocketChannelImpl
 
     private static final boolean disableSynchronousRead;
     static {
-        String propValue = GetPropertyAction.privilegedGetProperty(
+        String propValue = System.getProperty(
             "sun.nio.ch.disableSynchronousRead", "false");
         disableSynchronousRead = propValue.isEmpty() ?
             true : Boolean.parseBoolean(propValue);
@@ -308,12 +307,6 @@ class UnixAsynchronousSocketChannelImpl
         }
 
         InetSocketAddress isa = Net.checkAddress(remote);
-
-        // permission check
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());
 
         // check and set state
         boolean notifyBeforeTcpConnect;
