@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface Application {
 
@@ -82,6 +83,10 @@ public interface Application {
 
     default Map<String, String> extraAppImageFileData() {
         return Map.of();
+    }
+
+    default Stream<FileAssociation> fileAssociations() {
+        return launchers().stream().map(Launcher::fileAssociations).flatMap(List::stream);
     }
 
     record Stub(String name, String description, String version, String vendor,
