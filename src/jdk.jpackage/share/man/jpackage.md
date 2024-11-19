@@ -438,7 +438,7 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
 <a id="option-linux-app-category">`--linux-app-category` *category-value*</a>
 
-:   Group value of the RPM /<name/>.spec file or
+:   Group value of the RPM \<name\>.spec file or
     Section value of DEB control file
 
 <a id="option-linux-shortcut">`--linux-shortcut`</a>
