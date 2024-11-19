@@ -577,7 +577,7 @@ JNI_COCOA_ENTER(env);
         jstring jFontName = (jstring)NSStringToJavaString(env, fontname);
         CFRelease(fontname);
         (*env)->CallBooleanMethod(env, arrayListOfString, addMID, jFontName);
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             CFRelease(fds);
             return;
         }

@@ -41,7 +41,7 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g KeepPackagedModulesFailTest
+ * @run main/othervm -Xmx1400m KeepPackagedModulesFailTest
  */
 public class KeepPackagedModulesFailTest extends AbstractLinkableRuntimeTest {
 

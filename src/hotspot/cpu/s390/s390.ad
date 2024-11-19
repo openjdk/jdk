@@ -97,8 +97,9 @@ register %{
 // e.g. Z_R3_H, which is needed by the allocator, but is not used
 // for stores, loads, etc.
 
-  // Integer/Long Registers
-  // ----------------------------
+// ----------------------------
+// Integer/Long Registers
+// ----------------------------
 
   // z/Architecture has 16 64-bit integer registers.
 
@@ -136,7 +137,9 @@ register %{
   reg_def Z_R15  (NS,  NS,  Op_RegI, 15, Z_R15->as_VMReg());   // s  SP
   reg_def Z_R15_H(NS,  NS,  Op_RegI, 99, Z_R15->as_VMReg()->next());
 
-  // Float/Double Registers
+// ----------------------------
+// Float/Double Registers
+// ----------------------------
 
   // The rules of ADL require that double registers be defined in pairs.
   // Each pair must be two 32-bit values, but not necessarily a pair of
@@ -182,7 +185,169 @@ register %{
   reg_def Z_F15  (SOC, SOE, Op_RegF, 15, Z_F15->as_VMReg());
   reg_def Z_F15_H(SOC, SOE, Op_RegF, 99, Z_F15->as_VMReg()->next());
 
+// ----------------------------
+// Vector Registers
+// ----------------------------
+  // 1st 16 VRs are aliases for the FPRs which are already defined above.
+	reg_def Z_VR0   ( SOC, SOC, Op_RegF, 0, VMRegImpl::Bad());
+	reg_def Z_VR0_H ( SOC, SOC, Op_RegF, 0, VMRegImpl::Bad());
+	reg_def Z_VR0_J ( SOC, SOC, Op_RegF, 0, VMRegImpl::Bad());
+	reg_def Z_VR0_K ( SOC, SOC, Op_RegF, 0, VMRegImpl::Bad());
 
+	reg_def Z_VR1   ( SOC, SOC, Op_RegF, 1, VMRegImpl::Bad());
+	reg_def Z_VR1_H ( SOC, SOC, Op_RegF, 1, VMRegImpl::Bad());
+	reg_def Z_VR1_J ( SOC, SOC, Op_RegF, 1, VMRegImpl::Bad());
+	reg_def Z_VR1_K ( SOC, SOC, Op_RegF, 1, VMRegImpl::Bad());
+
+	reg_def Z_VR2   ( SOC, SOC, Op_RegF, 2, VMRegImpl::Bad());
+	reg_def Z_VR2_H ( SOC, SOC, Op_RegF, 2, VMRegImpl::Bad());
+	reg_def Z_VR2_J ( SOC, SOC, Op_RegF, 2, VMRegImpl::Bad());
+	reg_def Z_VR2_K ( SOC, SOC, Op_RegF, 2, VMRegImpl::Bad());
+
+	reg_def Z_VR3   ( SOC, SOC, Op_RegF, 3, VMRegImpl::Bad());
+	reg_def Z_VR3_H ( SOC, SOC, Op_RegF, 3, VMRegImpl::Bad());
+	reg_def Z_VR3_J ( SOC, SOC, Op_RegF, 3, VMRegImpl::Bad());
+	reg_def Z_VR3_K ( SOC, SOC, Op_RegF, 3, VMRegImpl::Bad());
+
+	reg_def Z_VR4   ( SOC, SOC, Op_RegF, 4, VMRegImpl::Bad());
+	reg_def Z_VR4_H ( SOC, SOC, Op_RegF, 4, VMRegImpl::Bad());
+	reg_def Z_VR4_J ( SOC, SOC, Op_RegF, 4, VMRegImpl::Bad());
+	reg_def Z_VR4_K ( SOC, SOC, Op_RegF, 4, VMRegImpl::Bad());
+
+	reg_def Z_VR5   ( SOC, SOC, Op_RegF, 5, VMRegImpl::Bad());
+	reg_def Z_VR5_H ( SOC, SOC, Op_RegF, 5, VMRegImpl::Bad());
+	reg_def Z_VR5_J ( SOC, SOC, Op_RegF, 5, VMRegImpl::Bad());
+	reg_def Z_VR5_K ( SOC, SOC, Op_RegF, 5, VMRegImpl::Bad());
+
+	reg_def Z_VR6   ( SOC, SOC, Op_RegF, 6, VMRegImpl::Bad());
+	reg_def Z_VR6_H ( SOC, SOC, Op_RegF, 6, VMRegImpl::Bad());
+	reg_def Z_VR6_J ( SOC, SOC, Op_RegF, 6, VMRegImpl::Bad());
+	reg_def Z_VR6_K ( SOC, SOC, Op_RegF, 6, VMRegImpl::Bad());
+
+	reg_def Z_VR7   ( SOC, SOC, Op_RegF, 7, VMRegImpl::Bad());
+	reg_def Z_VR7_H ( SOC, SOC, Op_RegF, 7, VMRegImpl::Bad());
+	reg_def Z_VR7_J ( SOC, SOC, Op_RegF, 7, VMRegImpl::Bad());
+	reg_def Z_VR7_K ( SOC, SOC, Op_RegF, 7, VMRegImpl::Bad());
+
+	reg_def Z_VR8   ( SOC, SOC, Op_RegF, 8, VMRegImpl::Bad());
+	reg_def Z_VR8_H ( SOC, SOC, Op_RegF, 8, VMRegImpl::Bad());
+	reg_def Z_VR8_J ( SOC, SOC, Op_RegF, 8, VMRegImpl::Bad());
+	reg_def Z_VR8_K ( SOC, SOC, Op_RegF, 8, VMRegImpl::Bad());
+
+	reg_def Z_VR9   ( SOC, SOC, Op_RegF, 9, VMRegImpl::Bad());
+	reg_def Z_VR9_H ( SOC, SOC, Op_RegF, 9, VMRegImpl::Bad());
+	reg_def Z_VR9_J ( SOC, SOC, Op_RegF, 9, VMRegImpl::Bad());
+	reg_def Z_VR9_K ( SOC, SOC, Op_RegF, 9, VMRegImpl::Bad());
+
+	reg_def Z_VR10   ( SOC, SOC, Op_RegF, 10, VMRegImpl::Bad());
+	reg_def Z_VR10_H ( SOC, SOC, Op_RegF, 10, VMRegImpl::Bad());
+	reg_def Z_VR10_J ( SOC, SOC, Op_RegF, 10, VMRegImpl::Bad());
+	reg_def Z_VR10_K ( SOC, SOC, Op_RegF, 10, VMRegImpl::Bad());
+
+	reg_def Z_VR11   ( SOC, SOC, Op_RegF, 11, VMRegImpl::Bad());
+	reg_def Z_VR11_H ( SOC, SOC, Op_RegF, 11, VMRegImpl::Bad());
+	reg_def Z_VR11_J ( SOC, SOC, Op_RegF, 11, VMRegImpl::Bad());
+	reg_def Z_VR11_K ( SOC, SOC, Op_RegF, 11, VMRegImpl::Bad());
+
+	reg_def Z_VR12   ( SOC, SOC, Op_RegF, 12, VMRegImpl::Bad());
+	reg_def Z_VR12_H ( SOC, SOC, Op_RegF, 12, VMRegImpl::Bad());
+	reg_def Z_VR12_J ( SOC, SOC, Op_RegF, 12, VMRegImpl::Bad());
+	reg_def Z_VR12_K ( SOC, SOC, Op_RegF, 12, VMRegImpl::Bad());
+
+	reg_def Z_VR13   ( SOC, SOC, Op_RegF, 13, VMRegImpl::Bad());
+	reg_def Z_VR13_H ( SOC, SOC, Op_RegF, 13, VMRegImpl::Bad());
+	reg_def Z_VR13_J ( SOC, SOC, Op_RegF, 13, VMRegImpl::Bad());
+	reg_def Z_VR13_K ( SOC, SOC, Op_RegF, 13, VMRegImpl::Bad());
+
+	reg_def Z_VR14   ( SOC, SOC, Op_RegF, 14, VMRegImpl::Bad());
+	reg_def Z_VR14_H ( SOC, SOC, Op_RegF, 14, VMRegImpl::Bad());
+	reg_def Z_VR14_J ( SOC, SOC, Op_RegF, 14, VMRegImpl::Bad());
+	reg_def Z_VR14_K ( SOC, SOC, Op_RegF, 14, VMRegImpl::Bad());
+
+	reg_def Z_VR15   ( SOC, SOC, Op_RegF, 15, VMRegImpl::Bad());
+	reg_def Z_VR15_H ( SOC, SOC, Op_RegF, 15, VMRegImpl::Bad());
+	reg_def Z_VR15_J ( SOC, SOC, Op_RegF, 15, VMRegImpl::Bad());
+	reg_def Z_VR15_K ( SOC, SOC, Op_RegF, 15, VMRegImpl::Bad());
+
+	reg_def Z_VR16   ( SOC, SOC, Op_RegF, 16, Z_V16->as_VMReg()          );
+	reg_def Z_VR16_H ( SOC, SOC, Op_RegF, 16, Z_V16->as_VMReg()->next()  );
+	reg_def Z_VR16_J ( SOC, SOC, Op_RegF, 16, Z_V16->as_VMReg()->next(2) );
+	reg_def Z_VR16_K ( SOC, SOC, Op_RegF, 16, Z_V16->as_VMReg()->next(3) );
+
+	reg_def Z_VR17   ( SOC, SOC, Op_RegF, 17, Z_V17->as_VMReg()          );
+	reg_def Z_VR17_H ( SOC, SOC, Op_RegF, 17, Z_V17->as_VMReg()->next()  );
+	reg_def Z_VR17_J ( SOC, SOC, Op_RegF, 17, Z_V17->as_VMReg()->next(2) );
+	reg_def Z_VR17_K ( SOC, SOC, Op_RegF, 17, Z_V17->as_VMReg()->next(3) );
+
+	reg_def Z_VR18   ( SOC, SOC, Op_RegF, 18, Z_V18->as_VMReg()          );
+	reg_def Z_VR18_H ( SOC, SOC, Op_RegF, 18, Z_V18->as_VMReg()->next()  );
+	reg_def Z_VR18_J ( SOC, SOC, Op_RegF, 18, Z_V18->as_VMReg()->next(2) );
+	reg_def Z_VR18_K ( SOC, SOC, Op_RegF, 18, Z_V18->as_VMReg()->next(3) );
+
+	reg_def Z_VR19   ( SOC, SOC, Op_RegF, 19, Z_V19->as_VMReg()          );
+	reg_def Z_VR19_H ( SOC, SOC, Op_RegF, 19, Z_V19->as_VMReg()->next()  );
+	reg_def Z_VR19_J ( SOC, SOC, Op_RegF, 19, Z_V19->as_VMReg()->next(2) );
+	reg_def Z_VR19_K ( SOC, SOC, Op_RegF, 19, Z_V19->as_VMReg()->next(3) );
+
+	reg_def Z_VR20   ( SOC, SOC, Op_RegF, 20, Z_V20->as_VMReg()          );
+	reg_def Z_VR20_H ( SOC, SOC, Op_RegF, 20, Z_V20->as_VMReg()->next()  );
+	reg_def Z_VR20_J ( SOC, SOC, Op_RegF, 20, Z_V20->as_VMReg()->next(2) );
+	reg_def Z_VR20_K ( SOC, SOC, Op_RegF, 20, Z_V20->as_VMReg()->next(3) );
+
+	reg_def Z_VR21   ( SOC, SOC, Op_RegF, 21, Z_V21->as_VMReg()          );
+	reg_def Z_VR21_H ( SOC, SOC, Op_RegF, 21, Z_V21->as_VMReg()->next()  );
+	reg_def Z_VR21_J ( SOC, SOC, Op_RegF, 21, Z_V21->as_VMReg()->next(2) );
+	reg_def Z_VR21_K ( SOC, SOC, Op_RegF, 21, Z_V21->as_VMReg()->next(3) );
+
+	reg_def Z_VR22   ( SOC, SOC, Op_RegF, 22, Z_V22->as_VMReg()          );
+	reg_def Z_VR22_H ( SOC, SOC, Op_RegF, 22, Z_V22->as_VMReg()->next()  );
+	reg_def Z_VR22_J ( SOC, SOC, Op_RegF, 22, Z_V22->as_VMReg()->next(2) );
+	reg_def Z_VR22_K ( SOC, SOC, Op_RegF, 22, Z_V22->as_VMReg()->next(3) );
+
+	reg_def Z_VR23   ( SOC, SOC, Op_RegF, 23, Z_V23->as_VMReg()          );
+	reg_def Z_VR23_H ( SOC, SOC, Op_RegF, 23, Z_V23->as_VMReg()->next()  );
+	reg_def Z_VR23_J ( SOC, SOC, Op_RegF, 23, Z_V23->as_VMReg()->next(2) );
+	reg_def Z_VR23_K ( SOC, SOC, Op_RegF, 23, Z_V23->as_VMReg()->next(3) );
+
+	reg_def Z_VR24   ( SOC, SOC, Op_RegF, 24, Z_V24->as_VMReg()          );
+	reg_def Z_VR24_H ( SOC, SOC, Op_RegF, 24, Z_V24->as_VMReg()->next()  );
+	reg_def Z_VR24_J ( SOC, SOC, Op_RegF, 24, Z_V24->as_VMReg()->next(2) );
+	reg_def Z_VR24_K ( SOC, SOC, Op_RegF, 24, Z_V24->as_VMReg()->next(3) );
+
+	reg_def Z_VR25   ( SOC, SOC, Op_RegF, 25, Z_V25->as_VMReg()          );
+	reg_def Z_VR25_H ( SOC, SOC, Op_RegF, 25, Z_V25->as_VMReg()->next()  );
+	reg_def Z_VR25_J ( SOC, SOC, Op_RegF, 25, Z_V25->as_VMReg()->next(2) );
+	reg_def Z_VR25_K ( SOC, SOC, Op_RegF, 25, Z_V25->as_VMReg()->next(3) );
+
+	reg_def Z_VR26   ( SOC, SOC, Op_RegF, 26, Z_V26->as_VMReg()          );
+	reg_def Z_VR26_H ( SOC, SOC, Op_RegF, 26, Z_V26->as_VMReg()->next()  );
+	reg_def Z_VR26_J ( SOC, SOC, Op_RegF, 26, Z_V26->as_VMReg()->next(2) );
+	reg_def Z_VR26_K ( SOC, SOC, Op_RegF, 26, Z_V26->as_VMReg()->next(3) );
+
+	reg_def Z_VR27   ( SOC, SOC, Op_RegF, 27, Z_V27->as_VMReg()          );
+	reg_def Z_VR27_H ( SOC, SOC, Op_RegF, 27, Z_V27->as_VMReg()->next()  );
+	reg_def Z_VR27_J ( SOC, SOC, Op_RegF, 27, Z_V27->as_VMReg()->next(2) );
+	reg_def Z_VR27_K ( SOC, SOC, Op_RegF, 27, Z_V27->as_VMReg()->next(3) );
+
+	reg_def Z_VR28   ( SOC, SOC, Op_RegF, 28, Z_V28->as_VMReg()          );
+	reg_def Z_VR28_H ( SOC, SOC, Op_RegF, 28, Z_V28->as_VMReg()->next()  );
+	reg_def Z_VR28_J ( SOC, SOC, Op_RegF, 28, Z_V28->as_VMReg()->next(2) );
+	reg_def Z_VR28_K ( SOC, SOC, Op_RegF, 28, Z_V28->as_VMReg()->next(3) );
+
+	reg_def Z_VR29   ( SOC, SOC, Op_RegF, 29, Z_V29->as_VMReg()          );
+	reg_def Z_VR29_H ( SOC, SOC, Op_RegF, 29, Z_V29->as_VMReg()->next()  );
+	reg_def Z_VR29_J ( SOC, SOC, Op_RegF, 29, Z_V29->as_VMReg()->next(2) );
+	reg_def Z_VR29_K ( SOC, SOC, Op_RegF, 29, Z_V29->as_VMReg()->next(3) );
+
+	reg_def Z_VR30   ( SOC, SOC, Op_RegF, 30, Z_V30->as_VMReg()          );
+	reg_def Z_VR30_H ( SOC, SOC, Op_RegF, 30, Z_V30->as_VMReg()->next()  );
+	reg_def Z_VR30_J ( SOC, SOC, Op_RegF, 30, Z_V30->as_VMReg()->next(2) );
+	reg_def Z_VR30_K ( SOC, SOC, Op_RegF, 30, Z_V30->as_VMReg()->next(3) );
+
+	reg_def Z_VR31   ( SOC, SOC, Op_RegF, 31, Z_V31->as_VMReg()          );
+	reg_def Z_VR31_H ( SOC, SOC, Op_RegF, 31, Z_V31->as_VMReg()->next()  );
+	reg_def Z_VR31_J ( SOC, SOC, Op_RegF, 31, Z_V31->as_VMReg()->next(2) );
+	reg_def Z_VR31_K ( SOC, SOC, Op_RegF, 31, Z_V31->as_VMReg()->next(3) );
   // Special Registers
 
   // Condition Codes Flag Registers
@@ -193,7 +358,6 @@ register %{
   // bits. Floating point instructions influence the same condition register CR.
 
   reg_def Z_CR(SOC, SOC, Op_RegFlags, 0, Z_CR->as_VMReg());   // volatile
-
 
 // Specify priority of register selection within phases of register
 // allocation. Highest priority is first. A useful heuristic is to
@@ -268,6 +432,41 @@ alloc_class chunk1(
 );
 
 alloc_class chunk2(
+	Z_VR0, Z_VR0_H, Z_VR0_J, Z_VR0_K,
+	Z_VR1, Z_VR1_H, Z_VR1_J, Z_VR1_K,
+	Z_VR2, Z_VR2_H, Z_VR2_J, Z_VR2_K,
+	Z_VR3, Z_VR3_H, Z_VR3_J, Z_VR3_K,
+	Z_VR4, Z_VR4_H, Z_VR4_J, Z_VR4_K,
+	Z_VR5, Z_VR5_H, Z_VR5_J, Z_VR5_K,
+	Z_VR6, Z_VR6_H, Z_VR6_J, Z_VR6_K,
+	Z_VR7, Z_VR7_H, Z_VR7_J, Z_VR7_K,
+	Z_VR8, Z_VR8_H, Z_VR8_J, Z_VR8_K,
+	Z_VR9, Z_VR9_H, Z_VR9_J, Z_VR9_K,
+	Z_VR10, Z_VR10_H, Z_VR10_J, Z_VR10_K,
+	Z_VR11, Z_VR11_H, Z_VR11_J, Z_VR11_K,
+	Z_VR12, Z_VR12_H, Z_VR12_J, Z_VR12_K,
+	Z_VR13, Z_VR13_H, Z_VR13_J, Z_VR13_K,
+	Z_VR14, Z_VR14_H, Z_VR14_J, Z_VR14_K,
+	Z_VR15, Z_VR15_H, Z_VR15_J, Z_VR15_K,
+	Z_VR16, Z_VR16_H, Z_VR16_J, Z_VR16_K,
+	Z_VR17, Z_VR17_H, Z_VR17_J, Z_VR17_K,
+	Z_VR18, Z_VR18_H, Z_VR18_J, Z_VR18_K,
+	Z_VR19, Z_VR19_H, Z_VR19_J, Z_VR19_K,
+	Z_VR20, Z_VR20_H, Z_VR20_J, Z_VR20_K,
+	Z_VR21, Z_VR21_H, Z_VR21_J, Z_VR21_K,
+	Z_VR22, Z_VR22_H, Z_VR22_J, Z_VR22_K,
+	Z_VR23, Z_VR23_H, Z_VR23_J, Z_VR23_K,
+	Z_VR24, Z_VR24_H, Z_VR24_J, Z_VR24_K,
+	Z_VR25, Z_VR25_H, Z_VR25_J, Z_VR25_K,
+	Z_VR26, Z_VR26_H, Z_VR26_J, Z_VR26_K,
+	Z_VR27, Z_VR27_H, Z_VR27_J, Z_VR27_K,
+	Z_VR28, Z_VR28_H, Z_VR28_J, Z_VR28_K,
+	Z_VR29, Z_VR29_H, Z_VR29_J, Z_VR29_K,
+	Z_VR30, Z_VR30_H, Z_VR30_J, Z_VR30_K,
+	Z_VR31, Z_VR31_H, Z_VR31_J, Z_VR31_K
+);
+
+alloc_class chunk3(
   Z_CR
 );
 
@@ -541,6 +740,27 @@ reg_class z_dbl_reg(
   Z_F15,Z_F15_H
 );
 reg_class z_rscratch1_dbl_reg(Z_F1,Z_F1_H);
+
+reg_class z_v_reg(
+  // Attention: Only these ones are saved & restored at safepoint by RegisterSaver.
+  //1st 16 VRs overlaps with 1st 16 FPRs.
+	Z_VR16, Z_VR16_H, Z_VR16_J, Z_VR16_K,
+	Z_VR17, Z_VR17_H, Z_VR17_J, Z_VR17_K,
+	Z_VR18, Z_VR18_H, Z_VR18_J, Z_VR18_K,
+	Z_VR19, Z_VR19_H, Z_VR19_J, Z_VR19_K,
+	Z_VR20, Z_VR20_H, Z_VR20_J, Z_VR20_K,
+	Z_VR21, Z_VR21_H, Z_VR21_J, Z_VR21_K,
+	Z_VR22, Z_VR22_H, Z_VR22_J, Z_VR22_K,
+	Z_VR23, Z_VR23_H, Z_VR23_J, Z_VR23_K,
+	Z_VR24, Z_VR24_H, Z_VR24_J, Z_VR24_K,
+	Z_VR25, Z_VR25_H, Z_VR25_J, Z_VR25_K,
+	Z_VR26, Z_VR26_H, Z_VR26_J, Z_VR26_K,
+	Z_VR27, Z_VR27_H, Z_VR27_J, Z_VR27_K,
+	Z_VR28, Z_VR28_H, Z_VR28_J, Z_VR28_K,
+	Z_VR29, Z_VR29_H, Z_VR29_J, Z_VR29_K,
+	Z_VR30, Z_VR30_H, Z_VR30_J, Z_VR30_K,
+	Z_VR31, Z_VR31_H, Z_VR31_J, Z_VR31_K
+);
 
 %}
 
@@ -953,8 +1173,8 @@ const Pipeline * MachEpilogNode::pipeline() const {
 
 //=============================================================================
 
-// Figure out which register class each belongs in: rc_int, rc_float, rc_stack.
-enum RC { rc_bad, rc_int, rc_float, rc_stack };
+// Figure out which register class each belongs in: rc_int, rc_float, rc_vector, rc_stack.
+enum RC { rc_bad, rc_int, rc_float, rc_vector, rc_stack };
 
 static enum RC rc_class(OptoReg::Name reg) {
   // Return the register class for the given register. The given register
@@ -975,8 +1195,13 @@ static enum RC rc_class(OptoReg::Name reg) {
     return rc_float;
   }
 
+  // we have 128 vector register halves at index 64
+  if (reg < 32+32+128) {
+    return rc_vector;
+  }
+
   // Between float regs & stack are the flags regs.
-  assert(reg >= OptoReg::stack0(), "blow up if spilling flags");
+  assert(OptoReg::is_stack(reg) || reg < 32+32+128, "blow up if spilling flags");
   return rc_stack;
 }
 
@@ -1035,7 +1260,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
          "expected aligned-adjacent pairs");
 
   // Generate spill code!
-
+  int size = 0;
   if (src_lo == dst_lo && src_hi == dst_hi) {
     return 0;            // Self copy, no move.
   }
@@ -1048,6 +1273,37 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
 
   const char   *mnemo = nullptr;
   unsigned long opc = 0;
+
+  if (bottom_type()->isa_vect() != nullptr && ideal_reg() == Op_VecX) {
+    if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
+      if (masm != nullptr) {
+        __ z_mvc(Address(Z_SP, 0,  dst_offset), Address(Z_SP, 0, src_offset), 16);
+      }
+      size += 6;
+    } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_stack) {
+      VectorRegister Rsrc = as_VectorRegister(Matcher::_regEncode[src_lo]);
+      if (masm != nullptr) {
+        __ z_vst(Rsrc, Address(Z_SP, 0, dst_offset));
+      }
+      size += 6;
+    } else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vector) {
+      VectorRegister Rdst = as_VectorRegister(Matcher::_regEncode[dst_lo]);
+      if (masm != nullptr) {
+        __ z_vl(Rdst, Address(Z_SP, 0, src_offset));
+      }
+      size += 6;
+    } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
+      VectorRegister Rsrc = as_VectorRegister(Matcher::_regEncode[src_lo]);
+      VectorRegister Rdst = as_VectorRegister(Matcher::_regEncode[dst_lo]);
+      if (masm != nullptr) {
+        __ z_vlr(Rdst, Rsrc);
+      }
+      size += 6;
+    } else {
+      ShouldNotReachHere();
+    }
+    return size;
+  }
 
   // Memory->Memory Spill. Use Z_R0 to hold the value.
   if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
@@ -1283,7 +1539,7 @@ source_hpp %{
 //
 // To keep related declarations/definitions/uses close together,
 // we switch between source %{ }% and source_hpp %{ }% freely as needed.
-
+#include "opto/convertnode.hpp"
 #include "oops/klass.inline.hpp"
 
 //--------------------------------------------------------------
@@ -1446,6 +1702,32 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_PopCountL:
       // PopCount supported by H/W from z/Architecture G5 (z196) on.
       return (UsePopCountInstruction && VM_Version::has_PopCount());
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVL:
+    case Op_AddVD:
+    case Op_SubVB:
+    case Op_SubVS:
+    case Op_SubVI:
+    case Op_SubVL:
+    case Op_SubVD:
+    case Op_MulVB:
+    case Op_MulVS:
+    case Op_MulVI:
+    case Op_MulVD:
+    case Op_DivVD:
+    case Op_SqrtVD:
+    case Op_RoundDoubleModeV:
+      return SuperwordUseVX;
+    case Op_AddVF:
+    case Op_SubVF:
+    case Op_MulVF:
+    case Op_DivVF:
+    case Op_SqrtVF:
+    //PopCountVI supported by z14 onwards.
+    case Op_PopCountVI:
+      return (SuperwordUseVX && UseSFPV);
     case Op_FmaF:
     case Op_FmaD:
       return UseFMA;
@@ -1491,14 +1773,24 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
 
 // Vector width in bytes.
 int Matcher::vector_width_in_bytes(BasicType bt) {
-  assert(MaxVectorSize == 8, "");
-  return 8;
+  if (SuperwordUseVX) {
+    assert(MaxVectorSize == 16, "");
+    return 16;
+  } else {
+    assert(MaxVectorSize == 8, "");
+    return 8;
+  }
 }
 
 // Vector ideal reg.
 uint Matcher::vector_ideal_reg(int size) {
-  assert(MaxVectorSize == 8 && size == 8, "");
-  return Op_RegL;
+  if (SuperwordUseVX) {
+    assert(MaxVectorSize == 16 && size == 16, "");
+    return Op_VecX;
+  } else {
+    assert(MaxVectorSize == 8 && size == 8, "");
+    return Op_RegL;
+  }
 }
 
 // Limits on vector size (number of elements) loaded into vector.
@@ -2391,6 +2683,14 @@ ins_attrib ins_should_rematerialize(false);
 // Immediate Operands
 // Please note:
 // Formats are generated automatically for constants and base registers.
+operand vecX() %{
+  constraint(ALLOC_IN_RC(z_v_reg));
+  match(VecX);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 
 //----------------------------------------------
 // SIGNED (shorter than INT) immediate operands
@@ -10534,6 +10834,45 @@ instruct Repl4S_immm1(iRegL dst, immS_minus1 src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+instruct repl8S_reg_Ex(vecX dst, iRegI src) %{
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
+
+  size(12);
+  ins_encode %{
+    __ z_vlvgh($dst$$VectorRegister, $src$$Register, 0);
+    __ z_vreph($dst$$VectorRegister, $dst$$VectorRegister, 0);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl8S_immIminus1(vecX dst, immI_minus1 src) %{
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
+
+  format %{ "VONE      $dst, $src \t// replicate8S" %}
+  size(6);
+  ins_encode %{
+     __ z_vone($dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl8S_immI0(vecX dst, immI_0 zero) %{
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
+
+  format %{ "VZERO      $dst, $zero \t// replicate8S" %}
+  size(6);
+  ins_encode %{
+     __ z_vzero($dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
 // Exploit rotate_then_insert, if available.
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
@@ -10586,7 +10925,44 @@ instruct Repl2I_immm1(iRegL dst, immI_minus1 src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-//
+instruct repl4I_reg_Ex(vecX dst, iRegI src) %{
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+
+  size(12);
+  ins_encode %{
+    __ z_vlvgf($dst$$VectorRegister, $src$$Register, 0);
+    __ z_vrepf($dst$$VectorRegister, $dst$$VectorRegister, 0);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl4I_immI0(vecX dst, immI_0 zero) %{
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+
+  format %{ "VZERO      $dst, $zero \t// replicate4I" %}
+  size(6);
+  ins_encode %{
+    __ z_vzero($dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl4I_immIminus1(vecX dst, immI_minus1 src) %{
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+
+  format %{ "VONE      $dst, $dst, $dst \t// replicate4I" %}
+  size(6);
+  ins_encode %{
+    __ z_vone($dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
 
 instruct Repl2F_reg_indirect(iRegL dst, regF src, flagsReg cr) %{
   match(Set dst (Replicate src));
@@ -10650,6 +11026,139 @@ instruct Repl2F_imm0(iRegL dst, immFp0 src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+instruct repl4F_reg_Ex(vecX dst, regF src) %{
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
+
+  format %{ "VREP  $dst, $src \t// replicate4F" %}
+  size(6);
+
+  ins_encode %{
+    __ z_vrepf($dst$$VectorRegister, $src$$FloatRegister->to_vr(), 0);
+  %}
+   ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl4F_immF0(vecX dst, immFp0 zero) %{
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
+
+  format %{ "VZERO      $dst, $zero \t// replicate4F" %}
+  size(6);
+  ins_encode %{
+     __ z_vzero($dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl2D_reg_Ex(vecX dst, regD src) %{
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
+
+  format %{ "VREP  $dst, $src \t// replicate2D" %}
+  size(6);
+
+  ins_encode %{
+    __ z_vrepg($dst$$VectorRegister, $src$$FloatRegister->to_vr(), 0);
+  %}
+   ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl2D_immD0(vecX dst, immDp0 zero) %{
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
+
+  format %{ "VZERO      $dst, $zero \t// replicate2D" %}
+  size(6);
+  ins_encode %{
+     __ z_vzero($dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl16B_reg_Ex(vecX dst, iRegI src) %{
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
+
+  size(12);
+  ins_encode %{
+    __ z_vlvgb($dst$$VectorRegister, $src$$Register, 0);
+    __ z_vrepb($dst$$VectorRegister, $dst$$VectorRegister, 0);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl16B_immIminus1(vecX dst, immI_minus1 src) %{
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
+
+  format %{ "VONE      $dst, $src \t// replicate16B" %}
+  size(6);
+  ins_encode %{
+     __ z_vone($dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl16B_immI0(vecX dst, immI_0 zero) %{
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
+
+  format %{ "VZERO      $dst, $zero \t// replicate16B" %}
+  size(6);
+  ins_encode %{
+     __ z_vzero($dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl2L_reg_Ex(vecX dst, iRegL src) %{
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_LONG);
+
+  size(12);
+  ins_encode %{
+    __ z_vlvgg($dst$$VectorRegister, $src$$Register, 0);
+    __ z_vrepg($dst$$VectorRegister, $dst$$VectorRegister, 0);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl2L_immIminus1(vecX dst, immI_minus1 src) %{
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_LONG);
+
+  format %{ "VONE      $dst, $src \t// replicate2L" %}
+  size(6);
+  ins_encode %{
+     __ z_vone($dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct repl2L_immI0(vecX dst, immI_0 zero) %{
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_LONG);
+
+  format %{ "VZERO      $dst, $zero \t// replicate16B" %}
+  size(6);
+  ins_encode %{
+     __ z_vzero($dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+
 // Load/Store vector
 
 // Store Aligned Packed Byte register to memory (8 Bytes).
@@ -10664,6 +11173,21 @@ instruct storeA8B(memory mem, iRegL src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+// Store Packed Byte long register to memory
+instruct storeV16(memoryRX mem, vecX src) %{
+  predicate(n->as_StoreVector()->memory_size() == 16);
+  match(Set mem (StoreVector mem src));
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "VST  $mem, $src \t// store 16-byte Vector" %}
+  size(6);
+  ins_encode %{
+    __ z_vst($src$$VectorRegister,
+              Address(reg_to_register_object($mem$$base), $mem$$index$$Register, $mem$$disp));
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
 instruct loadV8(iRegL dst, memory mem) %{
   match(Set dst (LoadVector mem));
   predicate(n->as_LoadVector()->memory_size() == 8);
@@ -10675,12 +11199,324 @@ instruct loadV8(iRegL dst, memory mem) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+// Load Aligned Packed Byte
+instruct loadV16(vecX dst, memoryRX mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 16);
+  match(Set dst (LoadVector mem));
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "VL  $dst, $mem \t// load 16-byte Vector" %}
+  size(6);
+  ins_encode %{
+     __ z_vl($dst$$VectorRegister,
+              Address(reg_to_register_object($mem$$base), $mem$$index$$Register, $mem$$disp));
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
 // Reinterpret: only one vector size used
 instruct reinterpret(iRegL dst) %{
   match(Set dst (VectorReinterpret dst));
   ins_cost(0);
   format %{ "reinterpret $dst" %}
   ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct reinterpretX(vecX dst) %{
+  match(Set dst (VectorReinterpret dst));
+  ins_cost(0);
+  format %{ "reinterpret $dst" %}
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_dummy);
+%}
+
+//----------Vector Arithmetic Instructions--------------------------------------
+
+// Vector Addition Instructions
+
+instruct vadd16B_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVB src1 src2));
+  predicate(n->as_Vector()->length() == 16);
+  format %{ "VAB  $dst,$src1,$src2\t// add packed16B" %}
+  size(6);
+  ins_encode %{
+    __ z_vab($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vadd8S_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVS src1 src2));
+  predicate(n->as_Vector()->length() == 8);
+  format %{ "VAH  $dst,$src1,$src2\t// add packed8S" %}
+  size(6);
+  ins_encode %{
+    __ z_vah($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vadd4I_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVI src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VAF  $dst,$src1,$src2\t// add packed4I" %}
+  size(6);
+  ins_encode %{
+    __ z_vaf($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vadd2L_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVL src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VAG  $dst,$src1,$src2\t// add packed2L" %}
+  size(6);
+  ins_encode %{
+    __ z_vag($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vmul16B_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MulVB src1 src2));
+  predicate(n->as_Vector()->length() == 16);
+  format %{ "VMLB  $dst,$src1,$src2\t// mul packed16B" %}
+  size(6);
+  ins_encode %{
+    __ z_vmlb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vmul8S_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MulVS src1 src2));
+  predicate(n->as_Vector()->length() == 8);
+  format %{ "VMLHW  $dst,$src1,$src2\t// mul packed8S" %}
+  size(6);
+  ins_encode %{
+    __ z_vmlhw($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vmul4I_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MulVI src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VMLF  $dst,$src1,$src2\t// mul packed4I" %}
+  size(6);
+  ins_encode %{
+    __ z_vmlf($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vsub16B_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVB src1 src2));
+  predicate(n->as_Vector()->length() == 16);
+  format %{ "VSB  $dst,$src1,$src2\t// sub packed16B" %}
+  size(6);
+  ins_encode %{
+    __ z_vsb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vsub8S_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVS src1 src2));
+  predicate(n->as_Vector()->length() == 8);
+  format %{ "VSH  $dst,$src1,$src2\t// sub packed8S" %}
+  size(6);
+  ins_encode %{
+    __ z_vsh($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vsub4I_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVI src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VSF  $dst,$src1,$src2\t// sub packed4I" %}
+  size(6);
+  ins_encode %{
+    __ z_vsf($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vsub2L_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVL src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VSG  $dst,$src1,$src2\t// sub packed2L" %}
+  size(6);
+  ins_encode %{
+    __ z_vsg($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vadd4F_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVF src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VFASB  $dst,$src1,$src2\t// add packed4F" %}
+  size(6);
+  ins_encode %{
+    __ z_vfasb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vadd2D_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVD src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VFADB  $dst,$src1,$src2\t// add packed2D" %}
+  size(6);
+  ins_encode %{
+    __ z_vfadb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vsub4F_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVF src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VFSSB  $dst,$src1,$src2\t// sub packed4F" %}
+  size(6);
+  ins_encode %{
+    __ z_vfssb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vsub2D_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVD src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VFSDB  $dst,$src1,$src2\t// sub packed2D" %}
+  size(6);
+  ins_encode %{
+    __ z_vfsdb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vmul4F_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MulVF src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VFMSB  $dst,$src1,$src2\t// mul packed4F" %}
+  size(6);
+  ins_encode %{
+    __ z_vfmsb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vmul2D_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MulVD src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VFMDB  $dst,$src1,$src2\t// mul packed2D" %}
+  size(6);
+  ins_encode %{
+    __ z_vfmdb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vdiv4F_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (DivVF src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VFDSB  $dst,$src1,$src2\t// div packed4F" %}
+  size(6);
+  ins_encode %{
+    __ z_vfdsb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vdiv2D_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (DivVD src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VFDDB  $dst,$src1,$src2\t// div packed2D" %}
+  size(6);
+  ins_encode %{
+    __ z_vfddb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// Vector Square Root Instructions
+
+instruct vsqrt4F_reg(vecX dst, vecX src) %{
+  match(Set dst (SqrtVF src));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VFSQSB $dst,$src\t// sqrt packed4F" %}
+  size(6);
+  ins_encode %{
+    __ z_vfsqsb($dst$$VectorRegister, $src$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vsqrt2D_reg(vecX dst, vecX src) %{
+  match(Set dst (SqrtVD src));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VFSQDB $dst,$src\t// sqrt packed2D" %}
+  size(6);
+  ins_encode %{
+    __ z_vfsqdb($dst$$VectorRegister, $src$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// Vector Population Count Instructions
+
+instruct vpopcnt_reg(vecX dst, vecX src) %{
+  match(Set dst (PopCountVI src));
+  format %{ "VPOPCT $dst,$src\t// pop count packed" %}
+  size(6);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ z_vpopctb($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      case T_SHORT:
+        __ z_vpopcth($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      case T_INT:
+        __ z_vpopctf($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      case T_LONG:
+        __ z_vpopctg($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// Vector Round Instructions
+instruct vround2D_reg(vecX dst, vecX src, immI8 rmode) %{
+  match(Set dst (RoundDoubleModeV src rmode));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "RoundDoubleModeV $src,$rmode" %}
+  size(6);
+  ins_encode %{
+    switch ($rmode$$constant) {
+      case RoundDoubleModeNode::rmode_rint:
+        __ z_vflrd($dst$$VectorRegister, $src$$VectorRegister, 0);
+        break;
+      case RoundDoubleModeNode::rmode_floor:
+        __ z_vflrd($dst$$VectorRegister, $src$$VectorRegister, 7);
+        break;
+      case RoundDoubleModeNode::rmode_ceil:
+        __ z_vflrd($dst$$VectorRegister, $src$$VectorRegister, 6);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
   ins_pipe(pipe_class_dummy);
 %}
 

@@ -1895,6 +1895,11 @@ public class CreateSymbols {
                     continue;
                 }
 
+                if (ed.packageName.equals("jdk/internal/javac")) {
+                    //keep jdk/internal/javac untouched. It is used to determine participates in preview:
+                    continue;
+                }
+
                 Set<String> usingModules = package2ModulesUsingIt.getOrDefault(ed.packageName(), Set.of());
 
                 ed.to.retainAll(usingModules);
