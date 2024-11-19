@@ -86,7 +86,7 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
   }
 }
 
-HeapWord* ShenandoahHeapRegion::allocate(size_t size, ShenandoahAllocRequest req) {
+HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocRequest& req) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
 

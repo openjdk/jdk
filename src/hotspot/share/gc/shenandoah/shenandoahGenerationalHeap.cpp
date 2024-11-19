@@ -640,24 +640,22 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
 
   // In the case that ShenandoahOldEvacRatioPercent equals 100, max_old_reserve is limited only by xfer_limit.
 
-  const size_t bound_on_old_reserve = old_available + old_xfer_limit + young_reserve;
-  const size_t max_old_reserve = (ShenandoahOldEvacRatioPercent == 100)?
-                                 bound_on_old_reserve: MIN2((young_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent),
+  const double bound_on_old_reserve = old_available + old_xfer_limit + young_reserve;
+  const double max_old_reserve = (ShenandoahOldEvacRatioPercent == 100)?
+                                 bound_on_old_reserve: MIN2(double(young_reserve * ShenandoahOldEvacRatioPercent) / double(100 - ShenandoahOldEvacRatioPercent),
                                                             bound_on_old_reserve);
 
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   // Decide how much old space we should reserve for a mixed collection
-  size_t reserve_for_mixed = 0;
+  double reserve_for_mixed = 0;
   if (old_generation()->has_unprocessed_collection_candidates()) {
     // We want this much memory to be unfragmented in order to reliably evacuate old.  This is conservative because we
     // may not evacuate the entirety of unprocessed candidates in a single mixed evacuation.
-    const size_t max_evac_need = (size_t)
-            (old_generation()->unprocessed_collection_candidates_live_memory() * ShenandoahOldEvacWaste);
+    const double max_evac_need = (double(old_generation()->unprocessed_collection_candidates_live_memory()) * ShenandoahOldEvacWaste);
     assert(old_available >= old_generation()->free_unaffiliated_regions() * region_size_bytes,
            "Unaffiliated available must be less than total available");
-    const size_t old_fragmented_available =
-            old_available - old_generation()->free_unaffiliated_regions() * region_size_bytes;
+    const double old_fragmented_available = double(old_available - old_generation()->free_unaffiliated_regions() * region_size_bytes);
     reserve_for_mixed = max_evac_need + old_fragmented_available;
     if (reserve_for_mixed > max_old_reserve) {
       reserve_for_mixed = max_old_reserve;

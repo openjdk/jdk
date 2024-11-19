@@ -377,7 +377,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   ShenandoahYoungGeneration* const young_generation = heap->young_generation();
 
   size_t old_evacuated = collection_set->get_old_bytes_reserved_for_evacuation();
-  size_t old_evacuated_committed = (size_t) (ShenandoahOldEvacWaste * old_evacuated);
+  size_t old_evacuated_committed = (size_t) (ShenandoahOldEvacWaste * double(old_evacuated));
   size_t old_evacuation_reserve = old_generation->get_evacuation_reserve();
 
   if (old_evacuated_committed > old_evacuation_reserve) {
@@ -394,10 +394,10 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   }
 
   size_t young_advance_promoted = collection_set->get_young_bytes_to_be_promoted();
-  size_t young_advance_promoted_reserve_used = (size_t) (ShenandoahPromoEvacWaste * young_advance_promoted);
+  size_t young_advance_promoted_reserve_used = (size_t) (ShenandoahPromoEvacWaste * double(young_advance_promoted));
 
   size_t young_evacuated = collection_set->get_young_bytes_reserved_for_evacuation();
-  size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * young_evacuated);
+  size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * double(young_evacuated));
 
   size_t total_young_available = young_generation->available_with_reserve();
   assert(young_evacuated_reserve_used <= total_young_available, "Cannot evacuate more than is available in young");

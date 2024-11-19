@@ -357,7 +357,7 @@ public:
   inline HeapWord* allocate_aligned(size_t word_size, ShenandoahAllocRequest &req, size_t alignment_in_bytes);
 
   // Allocation (return nullptr if full)
-  inline HeapWord* allocate(size_t word_size, ShenandoahAllocRequest req);
+  inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
   inline void clear_live_data();
   void set_live_data(size_t s);

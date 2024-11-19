@@ -96,7 +96,6 @@ private:
                       size_t num_regions,
                       size_t region_size, size_t protocolVersion);
 
-  uint _count = 0;
 public:
   ShenandoahHeapRegionCounters();
   ~ShenandoahHeapRegionCounters();
