@@ -38,7 +38,6 @@ import java.security.*;
 import java.io.*;
 import java.nio.*;
 import java.util.Arrays;
-
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
 

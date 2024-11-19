@@ -20,13 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-import jdk.test.lib.security.SecurityUtils;
-
 import java.util.Arrays;
-
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
+
+import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
