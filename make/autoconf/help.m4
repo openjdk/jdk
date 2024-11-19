@@ -240,6 +240,7 @@ AC_DEFUN_ONCE([HELP_PRINT_ADDITIONAL_HELP_AND_EXIT],
 
     # Print available JVM features
     $PRINTF "The following JVM features are valid as arguments to --with-jvm-features.\n"
+    $PRINTF "The flag --enable-jvm-feature-<name>=no can be used to disable a single JVM feature.\n"
     $PRINTF "Which are available to use depends on the environment and JVM variant.\n"
     m4_foreach(FEATURE, m4_split(jvm_features_valid), [
       # Create an m4 variable containing the description for FEATURE.
