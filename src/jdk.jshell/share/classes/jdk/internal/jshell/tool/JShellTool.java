@@ -4129,15 +4129,6 @@ public class JShellTool implements MessageHandler {
         }
 
         @Override
-        public String readLine() throws IOError {
-            try {
-                return input.readUserLine();
-            } catch (IOException ex) {
-                throw new IOError(ex);
-            }
-        }
-
-        @Override
         public char[] readPassword(String prompt) {
             try {
                 return input.readPassword(prompt);
