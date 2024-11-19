@@ -1638,24 +1638,28 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   if (iv_bt == T_INT && cmp->Opcode() == Op_CmpL && incr != nullptr && incr->Opcode() == Op_ConvI2L) {
     Node* ctrl = x->in(LoopNode::EntryControl);
 
-    // Optimistically assume limit in within int range, but add guards and traps to loop_limit_check
-    // Check if the long limit is less or equal to jint_max
-    Node* cmp_limit_max = new CmpLNode(limit, _igvn.longcon(max_jint));
-    Node* bol_max = new BoolNode(cmp_limit_max, BoolTest::le);
-    insert_loop_limit_check_predicate(ctrl->as_IfTrue(), cmp_limit_max, bol_max);
+    if (ctrl->is_IfTrue()) {
+      // Optimistically assume limit in within int range, but add guards and traps to loop_limit_check
+      // Check if the long limit is less or equal to jint_max
+      Node* cmp_limit_max = new CmpLNode(limit, _igvn.longcon(max_jint));
+      Node* bol_max = new BoolNode(cmp_limit_max, BoolTest::le);
+      insert_loop_limit_check_predicate((IfTrueNode*) ctrl, cmp_limit_max, bol_max);
 
-    // Check if the long limit is greater or equal to jint_min
-    Node* cmp_limit_min = new CmpLNode(limit, _igvn.longcon(min_jint));
-    Node* bol_min = new BoolNode(cmp_limit_min, BoolTest::ge);
-    insert_loop_limit_check_predicate(ctrl->as_IfTrue(), cmp_limit_min, bol_min);
+      // Check if the long limit is greater or equal to jint_min
+      Node* cmp_limit_min = new CmpLNode(limit, _igvn.longcon(min_jint));
+      Node* bol_min = new BoolNode(cmp_limit_min, BoolTest::ge);
+      insert_loop_limit_check_predicate((IfTrueNode*) ctrl, cmp_limit_min, bol_min);
 
-    incr = incr->in(1);
+      incr = incr->in(1);
 
-    limit = _igvn.register_new_node_with_optimizer(new ConvL2INode(limit), limit);
-    set_early_ctrl(limit, ctrl);
+      limit = _igvn.register_new_node_with_optimizer(new ConvL2INode(limit), limit);
+      set_early_ctrl(limit, ctrl);
 
-    cmp = _igvn.register_new_node_with_optimizer(new CmpINode(incr, limit), cmp);
-    set_early_ctrl(cmp, ctrl);
+      cmp = _igvn.register_new_node_with_optimizer(new CmpINode(incr, limit), cmp);
+      set_early_ctrl(cmp, ctrl);
+
+      // TODO: do we need to remove these nodes if later found it's not a counted loop?
+    }
   }
 
   if (cmp->Opcode() != Op_Cmp(iv_bt)) {
