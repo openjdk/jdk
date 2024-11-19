@@ -79,8 +79,8 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MemTag mem_tag) const
   const size_t count = c->count();
 
   if (mem_tag != mtNone) {
-    out->print("(%s" SIZE_FORMAT "%s type=%u", alloc_type,
-      amount_in_current_scale(amount), scale, (unsigned)mem_tag);
+    out->print("(%s" SIZE_FORMAT "%s type=%s", alloc_type,
+      amount_in_current_scale(amount), scale, NMTUtil::tag_to_name(mem_tag));
   } else {
     out->print("(%s" SIZE_FORMAT "%s", alloc_type,
       amount_in_current_scale(amount), scale);
@@ -249,7 +249,7 @@ void MemSummaryReporter::report_summary_of_type(MemTag mem_tag,
 
    // report malloc'd memory
   if (amount_in_current_scale(MAX2(malloc_memory->malloc_size(), pk_malloc)) > 0) {
-    print_malloc(malloc_memory->malloc_counter(), mtAllocated);
+    print_malloc(malloc_memory->malloc_counter());
     out->cr();
   }
 
@@ -500,7 +500,7 @@ void MemSummaryDiffReporter::report_diff() {
   const size_t current_count =
     _current_baseline.malloc_memory_snapshot()->total_count();
   print_malloc_diff(current_malloced_bytes, current_count, early_malloced_bytes,
-                    early_count, mtAllocated);
+                    early_count, mtNone);
   out->cr();
   out->cr();
 
@@ -697,7 +697,7 @@ void MemSummaryDiffReporter::diff_summary_of_type(MemTag mem_tag,
         diff_in_current_scale(current_malloc_amount, early_malloc_amount) != 0) {
       out->print("(");
       print_malloc_diff(current_malloc_amount, (mem_tag == mtChunk) ? 0 : current_malloc->malloc_count(),
-        early_malloc_amount, early_malloc->malloc_count(), mtAllocated);
+        early_malloc_amount, early_malloc->malloc_count(), mtNone);
       out->print_cr(")");
     }
 

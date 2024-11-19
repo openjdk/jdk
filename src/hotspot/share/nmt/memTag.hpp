@@ -58,7 +58,6 @@
   f(mtMetaspace,      "Metaspace")                                                   \
   f(mtStringDedup,    "String Deduplication")                                        \
   f(mtObjectMonitor,  "Object Monitors")                                             \
-  f(mtAllocated,      "Allocated") /* allocated but unassigned at the time */        \
   f(mtNone,           "Unknown")                                                     \
   //end
 

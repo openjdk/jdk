@@ -120,7 +120,7 @@ class MemTracker : AllStatic {
   //  (we do not do any reservations before that).
 
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
-    MemTag mem_tag) {
+    MemTag mem_tag = mtNone) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
@@ -146,7 +146,7 @@ class MemTracker : AllStatic {
   }
 
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
-    const NativeCallStack& stack, MemTag mem_tag) {
+    const NativeCallStack& stack, MemTag mem_tag = mtNone) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
@@ -211,6 +211,15 @@ class MemTracker : AllStatic {
     if (addr != nullptr) {
       NmtVirtualMemoryLocker ml;
       VirtualMemoryTracker::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
+    }
+  }
+
+  static inline void record_virtual_memory_tag(void* addr, MemTag mem_tag) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (addr != nullptr) {
+      NmtVirtualMemoryLocker ml;
+      VirtualMemoryTracker::set_reserved_region_type((address)addr, mem_tag);
     }
   }
 

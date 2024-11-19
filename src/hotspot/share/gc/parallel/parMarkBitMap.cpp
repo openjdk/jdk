@@ -46,10 +46,12 @@ ParMarkBitMap::initialize(MemRegion covered_region)
 
   const size_t rs_align = page_sz == os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
-  ReservedSpace rs(_reserved_byte_size, rs_align, page_sz, nullptr, mtGC);
+  ReservedSpace rs(_reserved_byte_size, rs_align, page_sz);
   const size_t used_page_sz = rs.page_size();
   os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes,
                        rs.base(), rs.size(), used_page_sz);
+
+  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
 
   _virtual_space = new PSVirtualSpace(rs, page_sz);
   if (_virtual_space != nullptr && _virtual_space->expand_by(_reserved_byte_size)) {

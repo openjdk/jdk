@@ -593,7 +593,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   if (result == nullptr) {
     // Fallback: reserve anywhere
     log_debug(metaspace, map)("Trying anywhere...");
-    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false, mtAllocated);
+    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
   }
 
   // Wrap resulting range in ReservedSpace
@@ -602,7 +602,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     log_debug(metaspace, map)("Mapped at " PTR_FORMAT, p2i(result));
     assert(is_aligned(result, Metaspace::reserve_alignment()), "Alignment too small for metaspace");
     rs = ReservedSpace::space_for_range(result, size, Metaspace::reserve_alignment(),
-                                                      os::vm_page_size(), false, false, mtMetaspace);
+                                                      os::vm_page_size(), false, false);
   } else {
     log_debug(metaspace, map)("Failed to map.");
     rs = ReservedSpace();
@@ -743,7 +743,7 @@ void Metaspace::global_initialize() {
                     CompressedClassSpaceBaseAddress, Metaspace::reserve_alignment()));
       }
       rs = ReservedSpace(size, Metaspace::reserve_alignment(),
-                         os::vm_page_size() /* large */, (char*)base, mtClass);
+                         os::vm_page_size() /* large */, (char*)base);
       if (rs.is_reserved()) {
         log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));
       } else {
@@ -770,6 +770,9 @@ void Metaspace::global_initialize() {
           err_msg("Could not allocate compressed class space: " SIZE_FORMAT " bytes",
                    CompressedClassSpaceSize));
     }
+
+    // Mark class space as such
+    MemTracker::record_virtual_memory_tag((address)rs.base(), mtClass);
 
     // Initialize space
     Metaspace::initialize_class_space(rs);

@@ -58,6 +58,8 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   // subsystem for mapping not-yet-written-to pages to a single physical backing page,
   // but this is not guaranteed, and would confuse NMT and other memory accounting tools.
 
+  MemTracker::record_virtual_memory_tag(_map_space.base(), mtGC);
+
   size_t page_size = os::vm_page_size();
 
   if (!_map_space.special()) {

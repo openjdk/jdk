@@ -2407,10 +2407,11 @@ static char* get_bad_address() {
   static char* bad_address = nullptr;
   if (bad_address == nullptr) {
     size_t size = os::vm_allocation_granularity();
-    bad_address = os::reserve_memory(size, false, mtInternal);
+    bad_address = os::reserve_memory(size);
     if (bad_address != nullptr) {
       os::protect_memory(bad_address, size, os::MEM_PROT_READ,
                          /*is_committed*/false);
+      MemTracker::record_virtual_memory_tag((void*)bad_address, mtInternal);
     }
   }
   return bad_address;

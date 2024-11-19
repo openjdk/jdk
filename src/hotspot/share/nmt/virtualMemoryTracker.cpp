@@ -395,21 +395,11 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
         return true;
       }
 
-      // Mapped GC region
-      if (reserved_rgn->mem_tag() == mtGC) {
-        log_debug(nmt)("GC reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
-                      reserved_rgn->mem_tag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
-        assert(reserved_rgn->contain_region(base_addr, size), "Reserved heap region should contain this mapping region");
-        return true;
-      }
-
       // Print some more details. Don't use UL here to avoid circularities.
-      tty->print_cr("Error: existing region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %s.\n"
-                    "       new region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %s.",
-                    p2i(reserved_rgn->base()), p2i(reserved_rgn->end()),
-                    NMTUtil::tag_to_name(reserved_rgn->mem_tag()),
-                    p2i(base_addr), p2i(base_addr + size),
-                    NMTUtil::tag_to_name(mem_tag));
+      tty->print_cr("Error: existing region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %u.\n"
+                    "       new region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %u.",
+                    p2i(reserved_rgn->base()), p2i(reserved_rgn->end()), (unsigned)reserved_rgn->mem_tag(),
+                    p2i(base_addr), p2i(base_addr + size), (unsigned)mem_tag);
       if (MemTracker::tracking_level() == NMT_detail) {
         tty->print_cr("Existing region allocated from:");
         reserved_rgn->call_stack()->print_on(tty);
@@ -422,69 +412,19 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   }
 }
 
+void VirtualMemoryTracker::set_reserved_region_type(address addr, MemTag mem_tag) {
+  assert(addr != nullptr, "Invalid address");
+  assert(_reserved_regions != nullptr, "Sanity check");
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <execinfo.h>
-#include <cxxabi.h>
-
-static inline void print_bt(FILE *out = stderr, unsigned int max_frames_count = 128)
-{
-  fprintf(out, "stack trace:\n");
-  
-  void* traces[max_frames_count+1];
-  int count = backtrace(traces, sizeof(traces) / sizeof(void*));
-  if (count > 0)
-  {
-    size_t max_str_size = 1024;
-    char* names = (char*)malloc(max_str_size);
-    char** symbols = backtrace_symbols(traces, count);
-    for (int i=1; i<count; i++)
-    {
-      // 1   hello                               0x0000000100003d7f _ZN1A7methodAEi + 31
-      char* frame = strtok(symbols[i], " ");
-      char* binary = strtok(NULL, " ");
-      char* address = strtok(NULL, " ");
-      char* mangled = strtok(NULL, " ");
-      char* plus = strtok(NULL, " ");
-      char* offset = strtok(NULL, " ");
-
-      if (frame != NULL)
-      {
-        fprintf(out, "%-5s", frame);
-      }
-      if (address != NULL)
-      {
-        fprintf(out, "%-20s", address);
-      }
-      if (mangled != NULL)
-      {
-        int status = 0;
-        char* demangled = abi::__cxa_demangle(mangled, NULL, NULL, &status);
-        if (demangled != NULL)
-        {
-          fprintf(out, "%s", demangled);
-        }
-        else
-        {
-          fprintf(out, "%s", mangled);
-        }
-        free((void *)demangled);
-      }
-      if (offset != NULL)
-      {
-        fprintf(out, " + %s", offset);
-      }
-      fprintf(out, "\n");
+  ReservedMemoryRegion   rgn(addr, 1);
+  ReservedMemoryRegion*  reserved_rgn = _reserved_regions->find(rgn);
+  if (reserved_rgn != nullptr) {
+    assert(reserved_rgn->contain_address(addr), "Containment");
+    if (reserved_rgn->mem_tag() != mem_tag) {
+      assert(reserved_rgn->mem_tag() == mtNone, "Overwrite memory tag (should be mtNone, is: \"%s\")",
+             NMTUtil::tag_to_name(reserved_rgn->mem_tag()));
+      reserved_rgn->set_mem_tag(mem_tag);
     }
-    
-    free(names);
-    free(symbols);
-  }
-  else
-  {
-    fprintf(out, "\n");
   }
 }
 

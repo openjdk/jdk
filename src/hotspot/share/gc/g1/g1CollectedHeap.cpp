@@ -1208,7 +1208,7 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
                                                                  size_t translation_factor) {
   size_t preferred_page_size = os::page_size_for_region_unaligned(size, 1);
   // Allocate a new reserved space, preferring to use large pages.
-  ReservedSpace rs(size, preferred_page_size, mtGC);
+  ReservedSpace rs(size, preferred_page_size);
   size_t page_size = rs.page_size();
   G1RegionToSpaceMapper* result  =
     G1RegionToSpaceMapper::create_mapper(rs,
@@ -1305,7 +1305,7 @@ jint G1CollectedHeap::initialize() {
                                          G1HeapRegion::GrainBytes,
                                          1,
                                          mtJavaHeap);
-  if (heap_storage == nullptr) {
+  if(heap_storage == nullptr) {
     vm_shutdown_during_initialization("Could not initialize G1 heap");
     return JNI_ERR;
   }

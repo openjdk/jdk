@@ -3235,7 +3235,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                 PAGE_READWRITE);
   // If reservation failed, return null
   if (p_buf == nullptr) return nullptr;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC, mtNone);
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -3296,7 +3296,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
         // need to create a dummy 'reserve' record to match
         // the release.
         MemTracker::record_virtual_memory_reserve((address)p_buf,
-                                                  bytes_to_release, CALLER_PC, mtNone);
+                                                  bytes_to_release, CALLER_PC);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -3314,9 +3314,9 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   // Although the memory is allocated individually, it is returned as one.
   // NMT records it as one block.
   if ((flags & MEM_COMMIT) != 0) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC, mtNone);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC);
   } else {
-    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC, mtNone);
+    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC);
   }
 
   // made it this far, success
@@ -3506,7 +3506,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   return aligned_base;
 }
 
-char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec, MemTag mem_tag) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   // exec can be ignored
   return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
@@ -5463,7 +5463,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     }
 
     // Record virtual memory allocation
-    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC, mtNone);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
 
     DWORD bytes_read;
     OVERLAPPED overlapped;

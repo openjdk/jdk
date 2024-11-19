@@ -2094,7 +2094,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     assert(is_aligned(result, alignment), "alignment invalid (" ERRFMT ")", ERRFMTARGS);
     log_trace(os, map)(ERRFMT, ERRFMTARGS);
     log_debug(os, map)("successfully attached at " PTR_FORMAT, p2i(result));
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, mtNone);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   } else {
     log_debug(os, map)("failed to attach anywhere in [" PTR_FORMAT "-" PTR_FORMAT ")", p2i(min), p2i(max));
   }
@@ -2260,8 +2260,9 @@ char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc,
   return result;
 }
 
-char* os::map_memory(int fd, const char* file_name, size_t file_offset, char *addr, size_t bytes,
-                           bool read_only, bool allow_exec, MemTag mem_tag) {
+char* os::map_memory(int fd, const char* file_name, size_t file_offset,
+                           char *addr, size_t bytes, bool read_only,
+                           bool allow_exec, MemTag mem_tag) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
@@ -2299,7 +2300,7 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
   char* result = pd_reserve_memory_special(size, alignment, page_size, addr, executable);
   if (result != nullptr) {
     // The memory is committed
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC, mtNone);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC);
     log_debug(os, map)("Reserved and committed " RANGEFMT, RANGEFMTARGS(result, size));
   } else {
     log_info(os, map)("Reserve and commit failed (%zu bytes)", size);
