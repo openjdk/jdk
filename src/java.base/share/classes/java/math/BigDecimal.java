@@ -2236,7 +2236,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         if (mc.roundingMode == RoundingMode.HALF_UP
                                 || mc.roundingMode == RoundingMode.HALF_EVEN && sqrt.testBit(0)
                                 // Check if remainder is non-zero
-                                || workingInt.subtract(sqrt.multiply(sqrt)).signum != 0
+                                || !workingInt.equals(sqrt.multiply(sqrt))
                                 || working.compareTo(new BigDecimal(workingInt)) != 0) {
                             increment = true;
                         }
