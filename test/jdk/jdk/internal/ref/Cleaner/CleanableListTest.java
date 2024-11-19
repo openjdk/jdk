@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8343704
+ * @key randomness
  * @library /test/lib
  * @compile/module=java.base jdk/internal/ref/CleanableListTestHelper.java jdk/internal/ref/TestCleanable.java
  * @modules java.base/jdk.internal.ref
@@ -34,8 +35,10 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Random;
+
 import jdk.internal.ref.CleanableListTestHelper;
 import jdk.internal.ref.TestCleanable;
+import jdk.test.lib.RandomFactory;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -46,6 +49,7 @@ public class CleanableListTest {
     static final int SINGLE_NODE_CAPACITY = CleanableListTestHelper.NODE_CAPACITY;
     static final int MULTI_NODE_CAPACITY = CleanableListTestHelper.NODE_CAPACITY * 4;
 
+    static final Random RND = RandomFactory.getRandom();
     static final int RANDOM_ITERATIONS = 10_000_000;
 
     @Test
@@ -99,7 +103,6 @@ public class CleanableListTest {
         CleanableListTestHelper list = new CleanableListTestHelper();
         Assert.assertTrue(list.isEmpty());
 
-        Random r = new Random(42);
         BitSet bs = new BitSet(size);
 
         List<TestCleanable> tcs = new ArrayList<>();
@@ -110,7 +113,7 @@ public class CleanableListTest {
         Assert.assertFalse(list.isEmpty());
 
         for (int t = 0; t < RANDOM_ITERATIONS; t++) {
-            int idx = r.nextInt(size);
+            int idx = RND.nextInt(size);
             TestCleanable tc = tcs.get(idx);
             if (bs.get(idx)) {
                 Assert.assertTrue(list.remove(tc));
