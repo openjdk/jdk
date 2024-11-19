@@ -40,9 +40,7 @@ public final class ML_KEM {
 
     private static final int ML_KEM_Q = 3329;
     private static final int ML_KEM_N = 256;
-
-    // XOF_BLOCK_LEN + XOF_PAD should be divisible by 192 as that is
-    // the granularity of what the intrinsics for twelve2Sixteen() can deal with
+    
     private static final int XOF_BLOCK_LEN = 168; // the block length for SHAKE128
     private static final int XOF_PAD = 24;
     private static final int MONT_R_BITS = 20;
@@ -354,32 +352,31 @@ public final class ML_KEM {
             958, -958, -1460, 1460, 1522, -1522, 1628, -1628
     };
 
-    private final int mlKem_size;
     private final int mlKem_k;
     private final int mlKem_eta1;
     private final int mlKem_eta2;
 
     private final int mlKem_du;
     private final int mlKem_dv;
-    final int encapsulationSize;
+    private final int encapsulationSize;
 
-    public ML_KEM(int size) {
-        switch (size) {
-            case 512 -> {
+    public ML_KEM(String name) {
+        switch (name) {
+            case "ML-KEM-512" -> {
                 mlKem_k = 2;
                 mlKem_eta1 = 3;
                 mlKem_eta2 = 2;
                 mlKem_du = 10;
                 mlKem_dv = 4;
             }
-            case 768 -> {
+            case "ML-KEM-768" -> {
                 mlKem_k = 3;
                 mlKem_eta1 = 2;
                 mlKem_eta2 = 2;
                 mlKem_du = 10;
                 mlKem_dv = 4;
             }
-            case 1024 -> {
+            case "ML-KEM-1024" -> {
                 mlKem_k = 4;
                 mlKem_eta1 = 2;
                 mlKem_eta2 = 2;
@@ -387,9 +384,9 @@ public final class ML_KEM {
                 mlKem_dv = 5;
             }
             default -> throw new IllegalArgumentException(
-                    "Invalid size for ML_KEM-" + size);
+                    // This should never happen.
+                    "Invalid algorithm name (" + name + ").");
         }
-        mlKem_size = size;
         encapsulationSize = (mlKem_k * mlKem_du + mlKem_dv) * 32;
     }
 
@@ -420,12 +417,17 @@ public final class ML_KEM {
     protected record ML_KEM_DecapsulationKey(byte[] keyBytes) {
     }
 
-    protected record ML_KEM_KeyPair(ML_KEM_EncapsulationKey encapsulationKey,
-                                 ML_KEM_DecapsulationKey decapsulationKey) {
+    protected record ML_KEM_KeyPair(
+            ML_KEM_EncapsulationKey encapsulationKey,
+            ML_KEM_DecapsulationKey decapsulationKey) {
     }
 
     protected record ML_KEM_EncapsulateResult(
             K_PKE_CipherText cipherText, byte[] sharedSecret) {
+    }
+
+    protected int getEncapsulationSize() {
+        return encapsulationSize;
     }
 
     // Encapsulation key checks from section 7.2 of spec
@@ -476,10 +478,14 @@ public final class ML_KEM {
     /*
     Main internal algorithms from Section 6 of specification
      */
-    protected ML_KEM_KeyPair generateKemKeyPair(
-        byte[] kem_d, byte[] kem_z)
-        throws NoSuchAlgorithmException, DigestException {
-        var mlKemH = MessageDigest.getInstance(HASH_H_NAME);
+    protected ML_KEM_KeyPair generateKemKeyPair(byte[] kem_d, byte[] kem_z) {
+        MessageDigest mlKemH;
+        try {
+            mlKemH = MessageDigest.getInstance(HASH_H_NAME);
+        } catch (NoSuchAlgorithmException e) {
+            // This should never happen.
+            throw new RuntimeException(e);
+        }
 
         //Generate K-PKE keys
         var kPkeKeyPair = generateK_PkeKeyPair(kem_d);
@@ -493,7 +499,12 @@ public final class ML_KEM {
         System.arraycopy(encapsKey, 0, decapsKey, kPkePrivateKey.length, encapsKey.length);
 
         mlKemH.update(encapsKey);
-        mlKemH.digest(decapsKey, kPkePrivateKey.length + encapsKey.length, 32);
+        try {
+            mlKemH.digest(decapsKey, kPkePrivateKey.length + encapsKey.length, 32);
+        } catch (DigestException e) {
+            // This should never happen.
+            throw new RuntimeException(e);
+        }
         System.arraycopy(kem_z, 0, decapsKey, kPkePrivateKey.length + encapsKey.length + 32, 32);
 
         return new ML_KEM_KeyPair(
@@ -502,10 +513,16 @@ public final class ML_KEM {
     }
 
     protected ML_KEM_EncapsulateResult encapsulate(
-            ML_KEM_EncapsulationKey encapsulationKey, byte[] randomMessage)
-            throws NoSuchAlgorithmException, InvalidKeyException {
-        var mlKemH = MessageDigest.getInstance(HASH_H_NAME);
-        var mlKemG = MessageDigest.getInstance(HASH_G_NAME);
+            ML_KEM_EncapsulationKey encapsulationKey, byte[] randomMessage) {
+        MessageDigest mlKemH;
+        MessageDigest mlKemG;
+        try {
+            mlKemH = MessageDigest.getInstance(HASH_H_NAME);
+            mlKemG = MessageDigest.getInstance(HASH_G_NAME);
+        } catch (NoSuchAlgorithmException e){
+            // This should never happen.
+            throw new RuntimeException(e);
+        }
 
         mlKemH.update(encapsulationKey.keyBytes);
         mlKemG.update(randomMessage);
@@ -523,8 +540,7 @@ public final class ML_KEM {
 
     protected byte[] decapsulate(ML_KEM_DecapsulationKey decapsulationKey,
                               K_PKE_CipherText cipherText)
-            throws NoSuchAlgorithmException,
-            InvalidKeyException, DecapsulateException {
+            throws DecapsulateException {
 
         //Check ciphertext validity
         if (!isValidCipherText(cipherText)) {
@@ -533,8 +549,14 @@ public final class ML_KEM {
 
         int encode12PolyLen = 12 * ML_KEM_N / 8;
         var decapsKeyBytes = decapsulationKey.keyBytes;
-        var mlKemG = MessageDigest.getInstance(HASH_G_NAME);
-        var mlKemJ = new SHAKE256(32);
+        MessageDigest mlKemG;
+        SHAKE256 mlKemJ;
+        try {
+            mlKemG = MessageDigest.getInstance(HASH_G_NAME);
+            mlKemJ = new SHAKE256(32);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
 
         byte[] kPkePrivateKeyBytes = new byte[mlKem_k * encode12PolyLen];
         System.arraycopy(decapsKeyBytes, 0, kPkePrivateKeyBytes, 0, kPkePrivateKeyBytes.length);
@@ -589,10 +611,17 @@ public final class ML_KEM {
     /*
     K-PKE subroutines defined in Section 5 of spec
      */
-    private K_PKE_KeyPair generateK_PkeKeyPair(byte[] seed)
-            throws NoSuchAlgorithmException {
-        var mlKemG = MessageDigest.getInstance(HASH_G_NAME);
-        var mlKemJ = new SHAKE256(64 * mlKem_eta1);
+    private K_PKE_KeyPair generateK_PkeKeyPair(byte[] seed) {
+
+        MessageDigest mlKemG;
+        SHAKE256 mlKemJ;
+        try {
+            mlKemG = MessageDigest.getInstance(HASH_G_NAME);
+            mlKemJ = new SHAKE256(64 * mlKem_eta1);
+        } catch (NoSuchAlgorithmException e) {
+            // This should never happen.
+            throw new RuntimeException(e);
+        }
 
         mlKemG.update(seed);
         mlKemG.update((byte)mlKem_k);
@@ -600,6 +629,7 @@ public final class ML_KEM {
         var rhoSigma = mlKemG.digest();
         var rho = Arrays.copyOfRange(rhoSigma, 0, 32);
         var sigma = Arrays.copyOfRange(rhoSigma, 32, 64);
+        Arrays.fill(rhoSigma, (byte)0);
 
         var keyGenA = generateA(rho, false);
 
@@ -621,9 +651,10 @@ public final class ML_KEM {
             cbdInput = mlKemJ.digest();
             keyGenE[i] = centeredBinomialDistribution(mlKem_eta1, cbdInput);
         }
+        Arrays.fill(sigma, (byte)0);
 
         short[][] keyGenSHat = mlKemVectorNTT(keyGenS);
-        keyGenSHat = mlKemVectorReduce(keyGenSHat);
+        mlKemVectorReduce(keyGenSHat);
         short[][] keyGenEHat = mlKemVectorNTT(keyGenE);
 
         short[][] keyGenTHat =
@@ -631,19 +662,14 @@ public final class ML_KEM {
 
         byte[] pkEncoded = new byte[(mlKem_k * ML_KEM_N * 12) / 8 + rho.length];
         byte[] skEncoded = new byte[(mlKem_k * ML_KEM_N * 12) / 8];
-        byte[] encodedPoly;
         for (int i = 0; i < mlKem_k; i++) {
-            encodedPoly = encodePoly(12, keyGenTHat[i]);
-            System.arraycopy(encodedPoly, 0,
-                    pkEncoded, i * ((ML_KEM_N * 12) / 8), (ML_KEM_N * 12) / 8);
-            encodedPoly = encodePoly(12, keyGenSHat[i]);
-            System.arraycopy(encodedPoly, 0,
-                    skEncoded, i * ((ML_KEM_N * 12) / 8), (ML_KEM_N * 12) / 8);
-            Arrays.fill(encodedPoly, (byte)0);
+            encodePoly12(keyGenTHat[i], pkEncoded, i * ((ML_KEM_N * 12) / 8));
+            encodePoly12(keyGenSHat[i], skEncoded, i * ((ML_KEM_N * 12) / 8));
+            Arrays.fill(keyGenEHat[i], (short) 0);
+            Arrays.fill(keyGenSHat[i], (short) 0);
         }
         System.arraycopy(rho, 0,
                 pkEncoded, (mlKem_k * ML_KEM_N * 12) / 8, rho.length);
-
 
         return new K_PKE_KeyPair(
             new K_PKE_EncryptionKey(pkEncoded),
@@ -718,7 +744,11 @@ public final class ML_KEM {
         var decryptSHat = decodeVector(12, privateKey.keyBytes);
         var decryptSU = mlKemInverseNTT(
                 mlKemVectorScalarMult(decryptSHat, mlKemVectorNTT(decryptU)));
+        for (int i = 0; i < mlKem_k; i++) {
+            Arrays.fill(decryptSHat[i], (short) 0);
+        }
         decryptV = mlKemSubtractPoly(decryptV, decryptSU);
+        Arrays.fill(decryptSU, (short) 0);
 
         return encodeCompress(decryptV);
     }
@@ -809,7 +839,7 @@ public final class ML_KEM {
                 }
             }
         } catch (InvalidAlgorithmParameterException e) {
-            // This cannot happen since xofBufArr is of the correct size
+            // This should never happen since xofBufArr is of the correct size
             throw new RuntimeException("Internal error.");
         }
 
@@ -876,8 +906,8 @@ public final class ML_KEM {
 
         for (int i = 0; i < input.length; i += 3) {
             // Every 3 bytes has 24 bits that produce 4 6-bit sequences.
-            // We'll calculate values for both halves of each sequence and
-            // do teh subtraction to get the sample
+            // We calculate values for both halves of each sequence and
+            // do the subtraction to get the sample
             int a1 = input[i];
             int a2 = input[i + 1];
             int a3 = input[i + 2];
@@ -933,10 +963,8 @@ public final class ML_KEM {
         return vector;
     }
 
-//    @IntrinsicCandidate
-    static int implMlKemNtt(short[] poly, short[] ntt_zetas) {
+    static void implMlKemNtt(short[] poly, short[] ntt_zetas) {
         implMlKemNttJava(poly);
-        return 1;
     }
 
     private static void implMlKemNttJava(short[] poly) {
@@ -957,10 +985,8 @@ public final class ML_KEM {
         mlKemBarrettReduce(poly);
     }
 
-//    @IntrinsicCandidate
-    static int implMlKemInverseNtt(short[] poly, short[] zetas) {
+    static void implMlKemInverseNtt(short[] poly, short[] zetas) {
         implMlKemInverseNttJava(poly);
-        return 1;
     }
 
     private static void implMlKemInverseNttJava(short[] poly) {
@@ -1072,11 +1098,9 @@ public final class ML_KEM {
         return result;
     }
 
-//    @IntrinsicCandidate
-    static int implMlKemNttMult(short[] result, short[] ntta, short[] nttb,
+    static void implMlKemNttMult(short[] result, short[] ntta, short[] nttb,
                                 short[] zetas) {
         implMlKemNttMultJava(result, ntta, nttb);
-        return 1;
     }
 
     private static void implMlKemNttMultJava(short[] result, short[] ntta, short[] nttb) {
@@ -1114,10 +1138,8 @@ public final class ML_KEM {
         return a;
     }
 
-//    @IntrinsicCandidate
-    static int implMlKemAddPoly(short[] result, short[] a, short[] b) {
+    static void implMlKemAddPoly(short[] result, short[] a, short[] b) {
         implMlKemAddPolyJava(result, a, b);
-        return 1;
     }
 
     private static void implMlKemAddPolyJava(short[] result, short[] a, short[] b) {
@@ -1136,10 +1158,8 @@ public final class ML_KEM {
         implMlKemAddPoly(a, a, b);
     }
 
-//    @IntrinsicCandidate
-    static int implMlKemAddPoly(short[] result, short[] a, short[] b, short[] c) {
+    static void implMlKemAddPoly(short[] result, short[] a, short[] b, short[] c) {
         implMlKemAddPolyJava(result, a, b, c);
-        return 1;
     }
 
     private static void implMlKemAddPolyJava(short[] result, short[] a, short[] b, short[] c) {
@@ -1191,7 +1211,7 @@ public final class ML_KEM {
         return result;
     }
 
-    private static void encodePoly12(short[] poly, byte[] result) {
+    private static void encodePoly12(short[] poly, byte[] result, int resultOffs) {
         int low;
         int high;
         for (int m = 0; m < ML_KEM_N / 2; m++) {
@@ -1202,9 +1222,9 @@ public final class ML_KEM {
             high += ((high >> 31) & ML_KEM_Q);
             high = high & 0xfff;
 
-            result[m * 3] = (byte) low;
-            result[m * 3 + 1] = (byte) ((high << 4) + (low >> 8));
-            result[m * 3 + 2] = (byte) (high >> 4);
+            result[resultOffs++] = (byte) low;
+            result[resultOffs++] = (byte) ((high << 4) + (low >> 8));
+            result[resultOffs++] = (byte) (high >> 4);
         }
     }
 
@@ -1220,9 +1240,7 @@ public final class ML_KEM {
     // between -ML_KEM_Q and ML_KEM_Q.
     private static byte[] encodePoly(int l, short[] poly) {
         byte[] result = new byte[ML_KEM_N / 8 * l];
-        if (l == 12) {
-            encodePoly12(poly, result);
-        } else if (l == 4) {
+        if (l == 4) {
             encodePoly4(poly, result);
         } else {
             int mask = (1 << l) - 1;
@@ -1280,10 +1298,8 @@ public final class ML_KEM {
         return result;
     }
 
-//    @IntrinsicCandidate
-    private static int implMlKem12To16(byte[] condensed, int index, short[] parsed, int parsedLength) {
+    private static void implMlKem12To16(byte[] condensed, int index, short[] parsed, int parsedLength) {
         implMlKem12To16Java(condensed, index, parsed, parsedLength);
-        return 1;
     }
 
     private static void implMlKem12To16Java(byte[] condensed, int index, short[] parsed, int parsedLength) {
@@ -1443,10 +1459,8 @@ public final class ML_KEM {
         return result;
     }
 
-//    @IntrinsicCandidate
-    static int implMlKemBarrettReduce(short[] coeffs) {
+    static void implMlKemBarrettReduce(short[] coeffs) {
         implMlKemBarrettReduceJava(coeffs);
-        return 1;
     }
 
     private static void implMlKemBarrettReduceJava(short[] coeffs) {

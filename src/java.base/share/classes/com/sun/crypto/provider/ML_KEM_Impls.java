@@ -68,12 +68,10 @@ public final class ML_KEM_Impls {
             byte[] z = new byte[32];
             r.nextBytes(z);
 
-            ML_KEM mlKem = new ML_KEM(name2int(name));
+            ML_KEM mlKem = new ML_KEM(name);
             ML_KEM.ML_KEM_KeyPair kp;
             try {
                 kp = mlKem.generateKemKeyPair(seed, z);
-            } catch (NoSuchAlgorithmException | DigestException e) {
-                throw new ProviderException("provider error", e);
             } finally {
                 Arrays.fill(seed, (byte)0);
                 Arrays.fill(z, (byte)0);
@@ -139,13 +137,11 @@ public final class ML_KEM_Impls {
             var r = secureRandom != null ? secureRandom : JCAUtil.getDefSecureRandom();
             r.nextBytes(randomBytes);
 
-            ML_KEM mlKem = new ML_KEM(name2int(name));
+            ML_KEM mlKem = new ML_KEM(name);
             ML_KEM.ML_KEM_EncapsulateResult mlKemEncapsulateResult = null;
             try {
                 mlKemEncapsulateResult = mlKem.encapsulate(
                         new ML_KEM.ML_KEM_EncapsulationKey(encapsulationKey), randomBytes);
-            } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-                throw new ProviderException("Provider error", e); // should not happen
             } finally {
                 Arrays.fill(randomBytes, (byte) 0);
             }
@@ -159,15 +155,13 @@ public final class ML_KEM_Impls {
         @Override
         protected byte[] implDecapsulate(String name, byte[] decapsulationKey, Object dk, byte[] cipherText)
                 throws DecapsulateException {
-            ML_KEM mlKem = new ML_KEM(name2int(name));
+            ML_KEM mlKem = new ML_KEM(name);
             var kpkeCipherText = new ML_KEM.K_PKE_CipherText(cipherText);
 
             byte[] decapsulateResult;
             try {
                 decapsulateResult = mlKem.decapsulate(
                         new ML_KEM.ML_KEM_DecapsulationKey(decapsulationKey), kpkeCipherText);
-            } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-                throw new ProviderException("Provider error", e); // should not happen
             } catch (DecapsulateException e) {
                 throw new DecapsulateException("Decapsulate error", e) ;
             }
@@ -182,19 +176,19 @@ public final class ML_KEM_Impls {
 
         @Override
         protected int implEncapsulationSize(String name) {
-            ML_KEM mlKem = new ML_KEM(name2int(name));
-            return mlKem.encapsulationSize;
+            ML_KEM mlKem = new ML_KEM(name);
+            return mlKem.getEncapsulationSize();
         }
 
         @Override
         protected Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
-            ML_KEM mlKem = new ML_KEM(name2int(name));
+            ML_KEM mlKem = new ML_KEM(name);
             return mlKem.checkPublicKey(pk);
         }
 
         @Override
         protected Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
-            ML_KEM mlKem = new ML_KEM(name2int(name));
+            ML_KEM mlKem = new ML_KEM(name);
             return mlKem.checkPrivateKey(sk);
         }
 
