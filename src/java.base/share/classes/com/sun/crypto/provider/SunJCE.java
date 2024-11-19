@@ -25,10 +25,8 @@
 
 package com.sun.crypto.provider;
 
-import java.security.AccessController;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.List;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
@@ -121,24 +119,12 @@ public final class SunJCE extends Provider {
                    attrs));
     }
 
-    @SuppressWarnings("removal")
     public SunJCE() {
         /* We are the "SunJCE" provider */
         super("SunJCE", PROVIDER_VER, info);
 
-        // if there is no security manager installed, put directly into
-        // the provider
-        if (System.getSecurityManager() == null) {
-            putEntries();
-        } else {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    putEntries();
-                    return null;
-                }
-            });
-        }
+        putEntries();
+
         if (instance == null) {
             instance = this;
         }
@@ -456,6 +442,16 @@ public final class SunJCE extends Provider {
         psA("KeyAgreement", "DiffieHellman",
                 "com.sun.crypto.provider.DHKeyAgreement",
                 attrs);
+
+        /*
+         * Key Derivation engines
+         */
+        ps("KDF", "HKDF-SHA256",
+                "com.sun.crypto.provider.HKDFKeyDerivation$HKDFSHA256");
+        ps("KDF", "HKDF-SHA384",
+                "com.sun.crypto.provider.HKDFKeyDerivation$HKDFSHA384");
+        ps("KDF", "HKDF-SHA512",
+                "com.sun.crypto.provider.HKDFKeyDerivation$HKDFSHA512");
 
         /*
          * Algorithm Parameter engines

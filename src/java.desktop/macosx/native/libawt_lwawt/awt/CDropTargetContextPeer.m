@@ -85,7 +85,7 @@ JNI_COCOA_ENTER(env);
 
     GET_DTCP_CLASS_RETURN(result);
     DECLARE_METHOD_RETURN(newDataMethod, jc_CDropTargetContextPeer, "newData", "(J[B)V", result);
-    if ((*env)->ExceptionOccurred(env) || !newDataMethod) {
+    if ((*env)->ExceptionCheck(env) || !newDataMethod) {
         DLog2(@"[CDropTargetContextPeer startTransfer]: couldn't get newData method for %d.\n", (NSInteger) jdroptarget);
         TransferFailed(env, jthis, jdroptarget, (jlong) 0L, jformat);
         return result;

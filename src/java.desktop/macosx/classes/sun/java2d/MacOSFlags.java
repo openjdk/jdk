@@ -25,7 +25,6 @@
 
 package sun.java2d;
 
-import java.security.PrivilegedAction;
 import sun.java2d.metal.MTLGraphicsConfig;
 import sun.java2d.opengl.CGLGraphicsConfig;
 
@@ -83,59 +82,53 @@ public class MacOSFlags {
         return false;
     }
 
-    @SuppressWarnings("removal")
     private static void initJavaFlags() {
-        java.security.AccessController.doPrivileged(
-                (PrivilegedAction<Object>) () -> {
-                    PropertyState oglState = getBooleanProp("sun.java2d.opengl", PropertyState.UNSPECIFIED);
-                    PropertyState metalState = getBooleanProp("sun.java2d.metal", PropertyState.UNSPECIFIED);
+        PropertyState oglState = getBooleanProp("sun.java2d.opengl", PropertyState.UNSPECIFIED);
+        PropertyState metalState = getBooleanProp("sun.java2d.metal", PropertyState.UNSPECIFIED);
 
-                    // Handle invalid combinations to use the default rendering pipeline
-                    // The default rendering pipeline is Metal
-                    if ((oglState == PropertyState.UNSPECIFIED && metalState == PropertyState.UNSPECIFIED) ||
-                        (oglState == PropertyState.DISABLED && metalState == PropertyState.DISABLED) ||
-                        (oglState == PropertyState.ENABLED && metalState == PropertyState.ENABLED)) {
-                        metalState = PropertyState.ENABLED; // Enable default pipeline
-                        oglState = PropertyState.DISABLED; // Disable non-default pipeline
-                    }
+        // Handle invalid combinations to use the default rendering pipeline
+        // The default rendering pipeline is Metal
+        if ((oglState == PropertyState.UNSPECIFIED && metalState == PropertyState.UNSPECIFIED) ||
+            (oglState == PropertyState.DISABLED && metalState == PropertyState.DISABLED) ||
+            (oglState == PropertyState.ENABLED && metalState == PropertyState.ENABLED)) {
+            metalState = PropertyState.ENABLED; // Enable default pipeline
+            oglState = PropertyState.DISABLED; // Disable non-default pipeline
+        }
 
-                    if (metalState == PropertyState.UNSPECIFIED) {
-                        if (oglState == PropertyState.DISABLED) {
-                            oglEnabled = false;
-                            metalEnabled = true;
-                        } else {
-                            oglEnabled = true;
-                            metalEnabled = false;
-                        }
-                    } else if (metalState == PropertyState.ENABLED) {
-                        oglEnabled = false;
-                        metalEnabled = true;
-                    } else if (metalState == PropertyState.DISABLED) {
-                        oglEnabled = true;
-                        metalEnabled = false;
-                    }
+        if (metalState == PropertyState.UNSPECIFIED) {
+            if (oglState == PropertyState.DISABLED) {
+                oglEnabled = false;
+                metalEnabled = true;
+            } else {
+                oglEnabled = true;
+                metalEnabled = false;
+            }
+        } else if (metalState == PropertyState.ENABLED) {
+            oglEnabled = false;
+            metalEnabled = true;
+        } else if (metalState == PropertyState.DISABLED) {
+            oglEnabled = true;
+            metalEnabled = false;
+        }
 
-                    oglVerbose = isBooleanPropTrueVerbose("sun.java2d.opengl");
-                    metalVerbose = isBooleanPropTrueVerbose("sun.java2d.metal");
+        oglVerbose = isBooleanPropTrueVerbose("sun.java2d.opengl");
+        metalVerbose = isBooleanPropTrueVerbose("sun.java2d.metal");
 
-                    if (oglEnabled && !metalEnabled) {
-                        // Check whether OGL is available
-                        if (!CGLGraphicsConfig.isCGLAvailable()) {
-                            if (oglVerbose) {
-                                System.out.println("Could not enable OpenGL pipeline (CGL not available)");
-                            }
-                            oglEnabled = false;
-                            metalEnabled = true;
-                        }
-                    }
+        if (oglEnabled && !metalEnabled) {
+            // Check whether OGL is available
+            if (!CGLGraphicsConfig.isCGLAvailable()) {
+                if (oglVerbose) {
+                    System.out.println("Could not enable OpenGL pipeline (CGL not available)");
+                }
+                oglEnabled = false;
+                metalEnabled = true;
+            }
+        }
 
-                    // At this point one of the rendering pipeline must be enabled.
-                    if (!metalEnabled && !oglEnabled) {
-                        throw new InternalError("Error - unable to initialize any rendering pipeline.");
-                    }
-
-                    return null;
-                });
+        // At this point one of the rendering pipeline must be enabled.
+        if (!metalEnabled && !oglEnabled) {
+            throw new InternalError("Error - unable to initialize any rendering pipeline.");
+        }
     }
 
     public static boolean isMetalEnabled() {

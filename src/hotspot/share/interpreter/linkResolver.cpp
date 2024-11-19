@@ -497,7 +497,6 @@ Method* LinkResolver::lookup_polymorphic_method(const LinkInfo& link_info,
         if (natives == nullptr || InstanceKlass::cast(natives)->is_not_initialized()) {
           SystemDictionary::resolve_or_fail(vmSymbols::java_lang_invoke_MethodHandleNatives(),
                                             Handle(),
-                                            Handle(),
                                             true,
                                             CHECK_NULL);
         }

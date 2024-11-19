@@ -124,6 +124,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageMatch desired="rn"	supported="en"	distance="30"	oneway="true"/>	<!-- Rundi: rn ⇒ en -->
 			<languageMatch desired="rw"	supported="fr"	distance="30"	oneway="true"/>	<!-- Kinyarwanda: rw ⇒ fr -->
 			<languageMatch desired="sa"	supported="hi"	distance="30"	oneway="true"/>	<!-- Sanskrit: sa ⇒ hi -->
+			<languageMatch desired="scn"	supported="it"	distance="20"	oneway="true"/> <!-- Sicilian: scn ⇒ it -->
 			<languageMatch desired="sd"	supported="en"	distance="30"	oneway="true"/>	<!-- Sindhi: sd ⇒ en -->
 			<languageMatch desired="si"	supported="en"	distance="30"	oneway="true"/>	<!-- Sinhalese: si ⇒ en -->
 			<languageMatch desired="sn"	supported="en"	distance="30"	oneway="true"/>	<!-- Shona: sn ⇒ en -->
@@ -143,7 +144,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageMatch desired="tt"	supported="ru"	distance="30"	oneway="true"/>	<!-- Tatar: tt ⇒ ru -->
 			<languageMatch desired="tum"	supported="en"	distance="30"	oneway="true"/>	<!-- Tumbuka: tum ⇒ en -->
 			<languageMatch desired="ug"	supported="zh"	distance="20"	oneway="true"/>	<!-- Uighur: ug ⇒ zh -->
-			<languageMatch desired="uk"	supported="ru"	distance="20"	oneway="true"/>	<!-- Ukrainian ⇒ Russian -->
+			
+			<!-- CLDR-17382: Ukrainian should not fall back to Russian -->
+			<!-- languageMatch desired="uk" supported="ru" distance="20" oneway="true"/--> <!-- Ukrainian ⇒ Russian -->
+
 			<languageMatch desired="ur"	supported="en"	distance="30"	oneway="true"/>	<!-- Urdu: ur ⇒ en -->
 			<languageMatch desired="uz"	supported="ru"	distance="30"	oneway="true"/>	<!-- Uzbek: uz ⇒ ru -->
 			<languageMatch desired="wo"	supported="fr"	distance="30"	oneway="true"/>	<!-- Wolof: wo ⇒ fr -->
@@ -213,7 +217,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageMatch desired="tec" supported="kln" distance="10" oneway="true"/>	<!-- Terik -->
 			<languageMatch desired="tuy" supported="kln" distance="10" oneway="true"/>	<!-- Tugen -->
 			<!-- Encompassed by Konkani -->
-			<languageMatch desired="gom" supported="kok" distance="10" oneway="true"/>	<!-- Goan Konkani -->
+			<languageMatch desired="knn" supported="kok" distance="10" oneway="true"/>	<!-- Maharashtrian Konkani -->
 			<!-- Encompassed by Kpelle -->
 			<languageMatch desired="gkp" supported="kpe" distance="10" oneway="true"/>	<!-- Guinea Kpelle -->
 			<!-- Encompassed by Luyia -->

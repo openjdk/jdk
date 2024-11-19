@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ class WindowsFileAttributeViews {
 
         @Override
         public WindowsFileAttributes readAttributes() throws IOException {
-            file.checkRead();
             try {
                 return WindowsFileAttributes.get(file, followLinks);
             } catch (WindowsException x) {
@@ -110,7 +109,7 @@ class WindowsFileAttributeViews {
                             // retry succeeded
                             x = null;
                         }
-                    } catch (SecurityException | WindowsException | IOException ignore) {
+                    } catch (WindowsException | IOException ignore) {
                         // ignore exceptions to let original exception be thrown
                     }
                 }
@@ -133,9 +132,6 @@ class WindowsFileAttributeViews {
                 // no effect
                 return;
             }
-
-            // permission check
-            file.checkWrite();
 
             // update times
             long t1 = (createTime == null) ? -1L :
@@ -219,8 +215,6 @@ class WindowsFileAttributeViews {
         private void updateAttributes(int flag, boolean enable)
             throws IOException
         {
-            file.checkWrite();
-
             // GetFileAttributes & SetFileAttributes do not follow links so when
             // following links we need the final target
             String path = WindowsLinkSupport.getFinalPath(file, followLinks);

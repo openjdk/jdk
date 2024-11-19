@@ -53,6 +53,7 @@ const char *IdealGraphPrinter::COMPILATION_OSR_PROPERTY = "osr";
 const char *IdealGraphPrinter::METHOD_NAME_PROPERTY = "name";
 const char *IdealGraphPrinter::METHOD_IS_PUBLIC_PROPERTY = "public";
 const char *IdealGraphPrinter::METHOD_IS_STATIC_PROPERTY = "static";
+const char *IdealGraphPrinter::FALSE_VALUE = "false";
 const char *IdealGraphPrinter::TRUE_VALUE = "true";
 const char *IdealGraphPrinter::NODE_NAME_PROPERTY = "name";
 const char *IdealGraphPrinter::EDGE_NAME_PROPERTY = "name";
@@ -68,6 +69,12 @@ const char *IdealGraphPrinter::BYTECODES_ELEMENT = "bytecodes";
 const char *IdealGraphPrinter::METHOD_BCI_PROPERTY = "bci";
 const char *IdealGraphPrinter::METHOD_SHORT_NAME_PROPERTY = "shortName";
 const char *IdealGraphPrinter::CONTROL_FLOW_ELEMENT = "controlFlow";
+const char *IdealGraphPrinter::GRAPH_STATES_ELEMENT = "graphStates";
+const char *IdealGraphPrinter::STATE_ELEMENT = "state";
+const char *IdealGraphPrinter::DIFFERENCE_ELEMENT = "difference";
+const char *IdealGraphPrinter::DIFFERENCE_VALUE_PROPERTY = "value";
+const char *IdealGraphPrinter::VISIBLE_NODES_ELEMENT = "visibleNodes";
+const char *IdealGraphPrinter::ALL_PROPERTY = "all";
 const char *IdealGraphPrinter::BLOCK_NAME_PROPERTY = "name";
 const char *IdealGraphPrinter::BLOCK_DOMINATOR_PROPERTY = "dom";
 const char *IdealGraphPrinter::BLOCK_ELEMENT = "block";
@@ -349,7 +356,7 @@ void IdealGraphPrinter::set_traverse_outs(bool b) {
   _traverse_outs = b;
 }
 
-void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
+void IdealGraphPrinter::visit_node(Node* n, bool edges) {
 
   if (edges) {
 
@@ -509,6 +516,10 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       print_prop("idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]);
     }
 
+    if (node->is_CountedLoop()) {
+      print_loop_kind(node->as_CountedLoop());
+    }
+
     print_field(node);
 
     buffer[0] = 0;
@@ -639,6 +650,20 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
   }
 }
 
+void IdealGraphPrinter::print_loop_kind(const CountedLoopNode* counted_loop) {
+  const char* loop_kind = nullptr;
+  if (counted_loop->is_pre_loop()) {
+    loop_kind = "pre";
+  } else if (counted_loop->is_main_loop()) {
+    loop_kind = "main";
+  } else if (counted_loop->is_post_loop()) {
+    loop_kind = "post";
+  }
+  if (loop_kind != nullptr) {
+    print_prop("loop_kind", loop_kind);
+  }
+}
+
 void IdealGraphPrinter::print_bci_and_line_number(JVMState* caller) {
   if (caller != nullptr) {
     ResourceMark rm;
@@ -757,7 +782,7 @@ Node* IdealGraphPrinter::get_load_node(const Node* node) {
   return load;
 }
 
-void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set) {
+void IdealGraphPrinter::walk_nodes(Node* start, bool edges) {
   VectorSet visited;
   GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, nullptr);
   nodeStack.push(start);
@@ -778,7 +803,7 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set)
       continue;
     }
 
-    visit_node(n, edges, temp_set);
+    visit_node(n, edges);
 
     if (_traverse_outs) {
       for (DUIterator i = n->outs(); n->has_out(i); i++) {
@@ -794,14 +819,14 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set)
   }
 }
 
-void IdealGraphPrinter::print_method(const char *name, int level) {
-  if (C->should_print_igv(level)) {
-    print(name, (Node *) C->root());
-  }
+void IdealGraphPrinter::print_graph(const char* name) {
+  ResourceMark rm;
+  GrowableArray<const Node*> empty_list;
+  print(name, (Node*) C->root(), empty_list);
 }
 
 // Print current ideal graph
-void IdealGraphPrinter::print(const char *name, Node *node) {
+void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes) {
 
   if (!_current_method || !_should_send_method || node == nullptr) return;
 
@@ -811,8 +836,6 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
   begin_head(GRAPH_ELEMENT);
   print_attr(GRAPH_NAME_PROPERTY, (const char *)name);
   end_head();
-
-  VectorSet temp_set;
 
   head(NODES_ELEMENT);
   if (C->cfg() != nullptr) {
@@ -825,11 +848,11 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
       }
     }
   }
-  walk_nodes(node, false, &temp_set);
+  walk_nodes(node, false);
   tail(NODES_ELEMENT);
 
   head(EDGES_ELEMENT);
-  walk_nodes(node, true, &temp_set);
+  walk_nodes(node, true);
   tail(EDGES_ELEMENT);
   if (C->cfg() != nullptr) {
     head(CONTROL_FLOW_ELEMENT);
@@ -858,6 +881,25 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
       tail(BLOCK_ELEMENT);
     }
     tail(CONTROL_FLOW_ELEMENT);
+  }
+  if (visible_nodes.is_nonempty()) {
+    head(GRAPH_STATES_ELEMENT);
+    head(STATE_ELEMENT);
+    begin_elem(DIFFERENCE_ELEMENT);
+    print_attr(DIFFERENCE_VALUE_PROPERTY, "0");
+    end_elem();
+
+    begin_head(VISIBLE_NODES_ELEMENT);
+    print_attr(ALL_PROPERTY, FALSE_VALUE);
+    end_head();
+    for (int i = 0; i < visible_nodes.length(); ++i) {
+      begin_elem(NODE_ELEMENT);
+      print_attr(NODE_ID_PROPERTY, visible_nodes.at(i)->_igv_idx);
+      end_elem();
+    }
+    tail(VISIBLE_NODES_ELEMENT);
+    tail(STATE_ELEMENT);
+    tail(GRAPH_STATES_ELEMENT);
   }
   tail(GRAPH_ELEMENT);
   _xml->flush();

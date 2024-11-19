@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,9 +144,6 @@ public class MBeanServerFactory {
      * <code>createMBeanServer</code> methods, or if
      * <code>releaseMBeanServer</code> was already called on it.
      *
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("releaseMBeanServer")</code>.
      */
     public static void releaseMBeanServer(MBeanServer mbeanServer) {
         checkPermission("releaseMBeanServer");
@@ -170,10 +167,6 @@ public class MBeanServerFactory {
      * <p>This method is equivalent to <code>createMBeanServer(null)</code>.
      *
      * @return the newly created MBeanServer.
-     *
-     * @exception SecurityException if there is a SecurityManager and the
-     * caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("createMBeanServer")</code>.
      *
      * @exception JMRuntimeException if the property
      * <code>javax.management.builder.initial</code> exists but the
@@ -207,10 +200,6 @@ public class MBeanServerFactory {
      * MBeanServer#getDefaultDomain}.
      *
      * @return the newly created MBeanServer.
-     *
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("createMBeanServer")</code>.
      *
      * @exception JMRuntimeException if the property
      * <code>javax.management.builder.initial</code> exists but the
@@ -252,10 +241,6 @@ public class MBeanServerFactory {
      *
      * @return the newly created MBeanServer.
      *
-     * @exception SecurityException if there is a SecurityManager and the
-     * caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("newMBeanServer")</code>.
-     *
      * @exception JMRuntimeException if the property
      * <code>javax.management.builder.initial</code> exists but the
      * class it names cannot be instantiated through a public
@@ -290,10 +275,6 @@ public class MBeanServerFactory {
      * MBeanServer#getDefaultDomain}.
      *
      * @return the newly created MBeanServer.
-     *
-     * @exception SecurityException if there is a SecurityManager and the
-     * caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("newMBeanServer")</code>.
      *
      * @exception JMRuntimeException if the property
      * <code>javax.management.builder.initial</code> exists but the
@@ -350,10 +331,6 @@ public class MBeanServerFactory {
      * <code>MBeanServerId</code> attribute of its delegate MBean.
      *
      * @return A list of MBeanServer objects.
-     *
-     * @exception SecurityException if there is a SecurityManager and the
-     * caller's permissions do not include or imply <code>{@link
-     * MBeanServerPermission}("findMBeanServer")</code>.
      */
     public static synchronized
             ArrayList<MBeanServer> findMBeanServer(String agentId) {
@@ -382,9 +359,6 @@ public class MBeanServerFactory {
      * was implemented in JMX 1.1 - where the possibility to use
      * <code>null</code> was deprecated.
      * @return The Class Loader Repository used by the given MBeanServer.
-     * @exception SecurityException if there is a SecurityManager and
-     * the caller's permissions do not include or imply <code>{@link
-     * MBeanPermission}("getClassLoaderRepository")</code>.
      *
      * @exception NullPointerException if <code>server</code> is null.
      *

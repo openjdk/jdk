@@ -46,6 +46,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -85,6 +86,7 @@ char** Arguments::_jvm_flags_array              = nullptr;
 int    Arguments::_num_jvm_flags                = 0;
 char** Arguments::_jvm_args_array               = nullptr;
 int    Arguments::_num_jvm_args                 = 0;
+unsigned int Arguments::_addmods_count          = 0;
 char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
@@ -336,6 +338,10 @@ bool Arguments::is_internal_module_property(const char* property) {
   return false;
 }
 
+bool Arguments::is_add_modules_property(const char* key) {
+  return (strcmp(key, MODULE_PROPERTY_PREFIX ADDMODS) == 0);
+}
+
 // Return true if the key matches the --module-path property name ("jdk.module.path").
 bool Arguments::is_module_path_property(const char* key) {
   return (strcmp(key, MODULE_PROPERTY_PREFIX PATH) == 0);
@@ -505,7 +511,6 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::undefined(), JDK_Version::undefined() },
   { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
@@ -521,7 +526,7 @@ static SpecialFlag const special_jvm_flags[] = {
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-
+  { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::undefined() },
   { "UseNotificationThread",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "PreserveAllAnnotations",       JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "UseEmptySlotsInSupers",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
@@ -1425,13 +1430,6 @@ void Arguments::set_use_compressed_oops() {
 #endif // _LP64
 }
 
-void Arguments::set_use_compressed_klass_ptrs() {
-#ifdef _LP64
-  assert(!UseCompressedClassPointers || CompressedClassSpaceSize <= KlassEncodingMetaspaceMax,
-         "CompressedClassSpaceSize is too large for UseCompressedClassPointers");
-#endif // _LP64
-}
-
 void Arguments::set_conservative_max_heap_alignment() {
   // The conservative maximum required alignment for the heap is the maximum of
   // the alignments imposed by several sources: any requirements from the heap
@@ -1450,7 +1448,6 @@ jint Arguments::set_ergonomics_flags() {
 
 #ifdef _LP64
   set_use_compressed_oops();
-  set_use_compressed_klass_ptrs();
 
   // Also checks that certain machines are slower with compressed oops
   // in vm_version initialization code.
@@ -1774,7 +1771,6 @@ bool Arguments::sun_java_launcher_is_altjvm() {
 unsigned int addreads_count = 0;
 unsigned int addexports_count = 0;
 unsigned int addopens_count = 0;
-unsigned int addmods_count = 0;
 unsigned int patch_mod_count = 0;
 unsigned int enable_native_access_count = 0;
 
@@ -1800,7 +1796,7 @@ bool Arguments::check_vm_args_consistency() {
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
     if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
-      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
+      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
         return false;
       }
     }
@@ -1809,7 +1805,7 @@ bool Arguments::check_vm_args_consistency() {
 
 #if INCLUDE_JFR
   if (status && (FlightRecorderOptions || StartFlightRecording)) {
-    if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", addmods_count++)) {
+    if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", _addmods_count++)) {
       return false;
     }
   }
@@ -1819,6 +1815,15 @@ bool Arguments::check_vm_args_consistency() {
   if (StackReservedPages != 0) {
     FLAG_SET_CMDLINE(StackReservedPages, 0);
     warning("Reserved Stack Area not supported on this platform");
+  }
+#endif
+
+#ifndef _LP64
+  if (LockingMode == LM_LEGACY) {
+    FLAG_SET_CMDLINE(LockingMode, LM_LIGHTWEIGHT);
+    // Self-forwarding in bit 3 of the mark-word conflicts
+    // with 4-byte-aligned stack-locks.
+    warning("Legacy locking not supported on this platform");
   }
 #endif
 
@@ -2236,7 +2241,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--add-modules=", &tail)) {
-      if (!create_numbered_module_property("jdk.module.addmods", tail, addmods_count++)) {
+      if (!create_numbered_module_property("jdk.module.addmods", tail, _addmods_count++)) {
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--enable-native-access=", &tail)) {
@@ -2323,7 +2328,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         FREE_C_HEAP_ARRAY(char, options);
 
         // java agents need module java.instrument
-        if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
+        if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", _addmods_count++)) {
           return JNI_ENOMEM;
         }
       }
@@ -2504,7 +2509,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_EINVAL;
         }
         // management agent in module jdk.management.agent
-        if (!create_numbered_module_property("jdk.module.addmods", "jdk.management.agent", addmods_count++)) {
+        if (!create_numbered_module_property("jdk.module.addmods", "jdk.management.agent", _addmods_count++)) {
           return JNI_ENOMEM;
         }
 #else
@@ -2529,19 +2534,23 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -Xshare:dump
     } else if (match_option(option, "-Xshare:dump")) {
       CDSConfig::enable_dumping_static_archive();
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:on
     } else if (match_option(option, "-Xshare:on")) {
       UseSharedSpaces = true;
       RequireSharedSpaces = true;
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:auto || -XX:ArchiveClassesAtExit=<archive file>
     } else if (match_option(option, "-Xshare:auto")) {
       UseSharedSpaces = true;
       RequireSharedSpaces = false;
       xshare_auto_cmd_line = true;
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:off
     } else if (match_option(option, "-Xshare:off")) {
       UseSharedSpaces = false;
       RequireSharedSpaces = false;
+      CDSConfig::set_old_cds_flags_used();
     // -Xverify
     } else if (match_option(option, "-Xverify", &tail)) {
       if (strcmp(tail, ":all") == 0 || strcmp(tail, "") == 0) {
@@ -3645,6 +3654,32 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     Arguments::print_on(&st);
   }
 
+#ifdef _LP64
+  if (UseCompactObjectHeaders && FLAG_IS_CMDLINE(UseCompressedClassPointers) && !UseCompressedClassPointers) {
+    warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
+    FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
+  }
+  if (UseCompactObjectHeaders && LockingMode != LM_LIGHTWEIGHT) {
+    FLAG_SET_DEFAULT(LockingMode, LM_LIGHTWEIGHT);
+  }
+  if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
+    // If UseCompactObjectHeaders is on the command line, turn on UseObjectMonitorTable.
+    if (FLAG_IS_CMDLINE(UseCompactObjectHeaders)) {
+      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
+
+    // If UseObjectMonitorTable is on the command line, turn off UseCompactObjectHeaders.
+    } else if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
+      FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
+    // If neither on the command line, the defaults are incompatible, but turn on UseObjectMonitorTable.
+    } else {
+      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
+    }
+  }
+  if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
+    FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
+  }
+#endif
+
   return JNI_OK;
 }
 
@@ -3657,6 +3692,10 @@ jint Arguments::apply_ergo() {
   set_heap_size();
 
   GCConfig::arguments()->initialize();
+
+  if (UseCompressedClassPointers) {
+    CompressedKlassPointers::pre_initialize();
+  }
 
   CDSConfig::initialize();
 

@@ -838,10 +838,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       __ decode_heap_oop(dest->as_register());
     }
 
-    if (!(UseZGC && !ZGenerational)) {
-      // Load barrier has not yet been applied, so ZGC can't verify the oop here
-      __ verify_oop(dest->as_register());
-    }
+    __ verify_oop(dest->as_register());
   }
 }
 
@@ -1349,7 +1346,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   address call = __ reloc_call(Address(op->addr(), rtype));
   if (call == nullptr) {
-    bailout("trampoline stub overflow");
+    bailout("reloc call address stub overflow");
     return;
   }
   add_call_info(code_offset(), op->info());
@@ -1359,7 +1356,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   address call = __ ic_call(op->addr());
   if (call == nullptr) {
-    bailout("trampoline stub overflow");
+    bailout("reloc call address stub overflow");
     return;
   }
   add_call_info(code_offset(), op->info());
@@ -1405,11 +1402,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   }
   int pc_for_athrow_offset = __ offset();
   InternalAddress pc_for_athrow(__ pc());
-  __ relocate(pc_for_athrow.rspec(), [&] {
-    int32_t offset;
-    __ la(exceptionPC->as_register(), pc_for_athrow.target(), offset);
-    __ addi(exceptionPC->as_register(), exceptionPC->as_register(), offset);
-  });
+  __ la(exceptionPC->as_register(), pc_for_athrow);
   add_call_info(pc_for_athrow_offset, info); // for exception handler
 
   __ verify_not_null_oop(x10);
@@ -1525,12 +1518,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     add_debug_info_for_null_check_here(info);
   }
 
-  if (UseCompressedClassPointers) {
-    __ lwu(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-    __ decode_klass_not_null(result);
-  } else {
-    __ ld(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-  }
+  __ load_klass(result, obj);
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
