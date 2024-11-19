@@ -424,11 +424,14 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     downProcessingOrder[i] = new LayoutNode[layer.size()];
                     upProcessingOrder[i] = new LayoutNode[layer.size()];
                     int curX = 0;
-                    for (int j = 0; j < layer.size(); j++) {
-                        space[i][j] = curX;
-                        LayoutNode node = layer.get(j);
+                    for (LayoutNode node : layer) {
                         node.setX(curX);
                         curX += node.getOuterWidth() + NODE_OFFSET;
+                    }
+
+                    for (int j = 0; j < layer.size(); j++) {
+                        LayoutNode node = layer.get(j);
+                        space[i][j] = node.getX();
                         downProcessingOrder[i][j] = node;
                         upProcessingOrder[i][j] = node;
                     }
