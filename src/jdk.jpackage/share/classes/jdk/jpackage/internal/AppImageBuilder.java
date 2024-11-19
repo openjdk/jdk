@@ -34,7 +34,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -48,8 +50,19 @@ final class AppImageBuilder {
 
     static final class Builder {
 
-        Builder launcherCallback(LauncherCallback v) {
-            launcherCallback = v;
+        Builder addItem(AppImageItem v) {
+            Objects.requireNonNull(v);
+            Optional.ofNullable(customAppImageItemGroups.get(curGroup)).orElseGet(() -> {
+                List<AppImageItem> items = new ArrayList<>();
+                customAppImageItemGroups.put(curGroup, items);
+                return items;
+            }).add(v);
+            return this;
+        }
+
+        Builder itemGroup(AppImageItemGroup v) {
+            Objects.requireNonNull(v);
+            curGroup = v;
             return this;
         }
 
@@ -64,43 +77,77 @@ final class AppImageBuilder {
         }
 
         AppImageBuilder create(Application app) {
-            return new AppImageBuilder(app, excludeCopyDirs, launcherCallback);
+            return new AppImageBuilder(app, excludeCopyDirs, customAppImageItemGroups);
         }
 
         AppImageBuilder create(Package pkg) {
-            return new AppImageBuilder(pkg, excludeCopyDirs, launcherCallback);
+            return new AppImageBuilder(pkg, excludeCopyDirs, customAppImageItemGroups);
         }
 
         private List<Path> excludeCopyDirs;
-        private LauncherCallback launcherCallback;
+        private AppImageItemGroup curGroup = AppImageItemGroup.END;
+        private Map<AppImageItemGroup, List<AppImageItem>> customAppImageItemGroups = new HashMap<>();
     }
 
     static Builder build() {
         return new Builder();
     }
 
-    private AppImageBuilder(Application app, ApplicationLayout appLayout,
-            List<Path> excludeCopyDirs, LauncherCallback launcherCallback,
-            boolean withAppImageFile) {
-        Objects.requireNonNull(app);
-        Objects.requireNonNull(appLayout);
+    enum AppImageItemGroup {
+        BEGIN,
+        RUNTIME,
+        CONTENT,
+        LAUNCHERS,
+        APP_IMAGE_FILE,
+        END
+    }
 
-        this.app = app;
-        this.appLayout = appLayout;
-        this.withAppImageFile = withAppImageFile;
-        this.launcherCallback = launcherCallback;
-        this.excludeCopyDirs = Optional.ofNullable(excludeCopyDirs).orElseGet(List::of);
+    @FunctionalInterface
+    interface AppImageItem {
+        void write(BuildEnv env, Application app, ApplicationLayout appLayout) throws IOException, PackagerException;
+    }
+
+    private AppImageBuilder(Application app, ApplicationLayout appLayout,
+            List<Path> excludeCopyDirs, boolean withAppImageFile,
+            Map<AppImageItemGroup, List<AppImageItem>> customAppImageItemGroups) {
+        this.app = Objects.requireNonNull(app);
+        this.appLayout = Objects.requireNonNull(appLayout);
+
+        appImageItemGroups = new HashMap<>();
+        appImageItemGroups.put(AppImageItemGroup.RUNTIME, List.of(
+                createRuntimeAppImageItem()));
+        appImageItemGroups.put(AppImageItemGroup.CONTENT, List.of(
+                createContentAppImageItem(
+                        Optional.ofNullable(excludeCopyDirs).orElseGet(List::of))));
+        appImageItemGroups.put(AppImageItemGroup.LAUNCHERS, List.of(
+                createLaunchersAppImageItem()));
+        if (withAppImageFile) {
+            appImageItemGroups.put(AppImageItemGroup.APP_IMAGE_FILE, List.of(
+                    createAppImageFileAppImageItem()));
+        }
+
+        for (var e : customAppImageItemGroups.entrySet()) {
+            var group = e.getKey();
+            var mutableItems = Optional.ofNullable(appImageItemGroups.get(group)).map(items -> {
+                return new ArrayList<>(items);
+            }).orElseGet(() -> {
+                return new ArrayList<>();
+            });
+            mutableItems.addAll(e.getValue());
+            appImageItemGroups.put(group, mutableItems);
+        }
     }
 
     private AppImageBuilder(Application app, List<Path> excludeCopyDirs,
-            LauncherCallback launcherCallback) {
-        this(app, app.asApplicationLayout(), excludeCopyDirs, launcherCallback, true);
+            Map<AppImageItemGroup, List<AppImageItem>> customAppImageItemGroups) {
+        this(app, app.asApplicationLayout(), excludeCopyDirs, true,
+                customAppImageItemGroups);
     }
 
     private AppImageBuilder(Package pkg, List<Path> excludeCopyDirs,
-            LauncherCallback launcherCallback) {
-        this(pkg.app(), pkg.asPackageApplicationLayout(), excludeCopyDirs,
-                launcherCallback, false);
+            Map<AppImageItemGroup, List<AppImageItem>> customAppImageItemGroups) {
+        this(pkg.app(), pkg.asPackageApplicationLayout(), excludeCopyDirs, false,
+                customAppImageItemGroups);
     }
 
     private static void copyRecursive(Path srcDir, Path dstDir,
@@ -122,49 +169,10 @@ final class AppImageBuilder {
 
     void execute(BuildEnv env) throws IOException, PackagerException {
         var resolvedAppLayout = appLayout.resolveAt(env.appImageDir());
-
-        app.runtimeBuilder().createRuntime(resolvedAppLayout);
-        if (app.isRuntime()) {
-            return;
-        }
-
-        var excludeCandidates = Stream.concat(
-                excludeCopyDirs.stream(),
-                Stream.of(env.buildRoot(), env.appImageDir())
-        ).map(Path::toAbsolutePath).toList();
-
-        if (app.srcDir() != null) {
-            copyRecursive(app.srcDir(), resolvedAppLayout.appDirectory(), excludeCandidates);
-        }
-
-        for (var srcDir : Optional.ofNullable(app.contentDirs()).orElseGet(List::of)) {
-            copyRecursive(srcDir,
-                    resolvedAppLayout.contentDirectory().resolve(srcDir.getFileName()),
-                    excludeCandidates);
-        }
-
-        if (withAppImageFile) {
-            new AppImageFile2(app).save(resolvedAppLayout);
-        }
-
-        for (var launcher : app.launchers()) {
-            // Create corresponding .cfg file
-            new CfgFile(app, launcher).create(appLayout, resolvedAppLayout);
-
-            // Copy executable to launchers folder
-            Path executableFile = resolvedAppLayout.launchersDirectory().resolve(
-                    launcher.executableNameWithSuffix());
-            try (var in = launcher.executableResource()) {
-                Files.createDirectories(executableFile.getParent());
-                Files.copy(in, executableFile);
+        for (var group : AppImageItemGroup.values()) {
+            for (var appImageItem : Optional.ofNullable(appImageItemGroups.get(group)).orElseGet(List::of)) {
+                appImageItem.write(env, app, resolvedAppLayout);
             }
-
-            if (launcherCallback != null) {
-                launcherCallback.onLauncher(app, new LauncherContext(launcher,
-                        env, resolvedAppLayout, executableFile));
-            }
-
-            executableFile.toFile().setExecutable(true);
         }
     }
 
@@ -200,23 +208,54 @@ final class AppImageBuilder {
         return resource;
     }
 
-    static interface LauncherCallback {
-        default public void onLauncher(Application app, LauncherContext ctx)
-                throws IOException, PackagerException {
-            var iconResource = createLauncherIconResource(app, ctx.launcher,
-                    ctx.env::createResource);
-            if (iconResource != null) {
-                onLauncher(app, ctx, iconResource);
-            }
-        }
-
-        default public void onLauncher(Application app, LauncherContext ctx,
-                OverridableResource launcherIcon) throws IOException, PackagerException {
-        }
+    private static AppImageItem createRuntimeAppImageItem() {
+        return (env, app, appLayout) -> {
+            app.runtimeBuilder().createRuntime(appLayout);
+        };
     }
 
-    static record LauncherContext(Launcher launcher, BuildEnv env,
-            ApplicationLayout resolvedAppLayout, Path launcherExecutable) {
+    private static AppImageItem createAppImageFileAppImageItem() {
+        return (env, app, appLayout) -> {
+            new AppImageFile2(app).save(appLayout);
+        };
+    }
+
+    private static AppImageItem createContentAppImageItem(List<Path> excludeCopyDirs) {
+        return (env, app, appLayout) -> {
+            var excludeCandidates = Stream.concat(
+                    excludeCopyDirs.stream(),
+                    Stream.of(env.buildRoot(), env.appImageDir())
+            ).map(Path::toAbsolutePath).toList();
+
+            if (app.srcDir() != null) {
+                copyRecursive(app.srcDir(), appLayout.appDirectory(), excludeCandidates);
+            }
+
+            for (var srcDir : Optional.ofNullable(app.contentDirs()).orElseGet(List::of)) {
+                copyRecursive(srcDir,
+                        appLayout.contentDirectory().resolve(srcDir.getFileName()),
+                        excludeCandidates);
+            }
+        };
+    }
+
+    private static AppImageItem createLaunchersAppImageItem() {
+        return (env, app, appLayout) -> {
+            for (var launcher : app.launchers()) {
+                // Create corresponding .cfg file
+                new CfgFile(app, launcher).create(appLayout, appLayout);
+
+                // Copy executable to launchers folder
+                Path executableFile = appLayout.launchersDirectory().resolve(
+                        launcher.executableNameWithSuffix());
+                try (var in = launcher.executableResource()) {
+                    Files.createDirectories(executableFile.getParent());
+                    Files.copy(in, executableFile);
+                }
+
+                executableFile.toFile().setExecutable(true);
+            }
+        };
     }
 
     private enum IconType {
@@ -233,9 +272,7 @@ final class AppImageBuilder {
         }
     }
 
-    private final boolean withAppImageFile;
     private final Application app;
     private final ApplicationLayout appLayout;
-    private final List<Path> excludeCopyDirs;
-    private final LauncherCallback launcherCallback;
+    private final Map<AppImageItemGroup, List<AppImageItem>> appImageItemGroups;
 }

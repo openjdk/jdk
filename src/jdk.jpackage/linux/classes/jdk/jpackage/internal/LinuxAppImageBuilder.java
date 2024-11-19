@@ -24,41 +24,42 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.Application;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import jdk.jpackage.internal.AppImageBuilder.AppImageItemGroup;
+import static jdk.jpackage.internal.AppImageBuilder.createLauncherIconResource;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 final class LinuxAppImageBuilder {
 
     static AppImageBuilder.Builder build() {
-        return new AppImageBuilder.Builder().launcherCallback(new LauncherCallbackImpl());
+        return new AppImageBuilder.Builder()
+                .itemGroup(AppImageItemGroup.LAUNCHERS)
+                .addItem(LinuxAppImageBuilder::writeLauncherLib)
+                .addItem(LinuxAppImageBuilder::writeLauncherIcons);
     }
 
-    private final static class LauncherCallbackImpl implements AppImageBuilder.LauncherCallback {
-
-        @Override
-        public void onLauncher(Application app,
-                AppImageBuilder.LauncherContext ctx) throws IOException, PackagerException {
-            if (ctx.launcher() == app.mainLauncher()) {
-                var launcherLib = ((LinuxApplicationLayout)ctx.resolvedAppLayout()).libAppLauncher();
-                try (var in = ResourceLocator.class.getResourceAsStream("libjpackageapplauncheraux.so")) {
-                    Files.createDirectories(launcherLib.getParent());
-                    Files.copy(in, launcherLib);
-                }
-            }
-            AppImageBuilder.LauncherCallback.super.onLauncher(app, ctx);
+    private static void writeLauncherLib(BuildEnv env, Application app,
+            ApplicationLayout appLayout) throws IOException {
+        var launcherLib = ((LinuxApplicationLayout)appLayout).libAppLauncher();
+        try (var in = ResourceLocator.class.getResourceAsStream("libjpackageapplauncheraux.so")) {
+            Files.createDirectories(launcherLib.getParent());
+            Files.copy(in, launcherLib);
         }
+    }    
 
-        @Override
-        public void onLauncher(Application app,
-                AppImageBuilder.LauncherContext ctx,
-                OverridableResource launcherIcon) throws IOException, PackagerException {
-            String iconFileName = ctx.launcher().executableName() + ".png";
-            Path iconTarget = ctx.resolvedAppLayout().destktopIntegrationDirectory().resolve(iconFileName);
-            launcherIcon.saveToFile(iconTarget);
+    private static void writeLauncherIcons(BuildEnv env, Application app,
+            ApplicationLayout appLayout) throws IOException {
+        for (var launcher : app.launchers()) {
+            var iconResource = createLauncherIconResource(app, launcher, env::createResource);
+            if (iconResource != null) {
+                String iconFileName = launcher.executableName() + ".png";
+                Path iconTarget = appLayout.destktopIntegrationDirectory().resolve(iconFileName);
+                iconResource.saveToFile(iconTarget);
+            }
         }
     }
 

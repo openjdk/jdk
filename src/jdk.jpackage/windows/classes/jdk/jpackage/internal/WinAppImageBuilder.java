@@ -30,37 +30,39 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.WinApplication;
 import java.io.IOException;
 import java.nio.file.Path;
+import jdk.jpackage.internal.AppImageBuilder.AppImageItemGroup;
 import static jdk.jpackage.internal.AppImageBuilder.createLauncherIconResource;
 import jdk.jpackage.internal.model.ApplicationLayout;
 
 final class WinAppImageBuilder {
 
     static AppImageBuilder.Builder build() {
-        return new AppImageBuilder.Builder().launcherCallback(new LauncherCallbackImpl());
+        return new AppImageBuilder.Builder()
+                .itemGroup(AppImageItemGroup.LAUNCHERS)
+                .addItem(WinAppImageBuilder::rebrandLaunchers);
     }
 
-    private final static class LauncherCallbackImpl implements
-            AppImageBuilder.LauncherCallback {
-
-        @Override
-        public void onLauncher(Application app,
-                AppImageBuilder.LauncherContext ctx) throws IOException, PackagerException {
+    private static void rebrandLaunchers(BuildEnv env, Application app,
+            ApplicationLayout appLayout) throws IOException, PackagerException {
+        for (var launcher : app.launchers()) {
             Path iconTarget = null;
-            var iconResource = createLauncherIconResource(app, ctx.launcher(),
-                    name -> ctx.env().createResource(name));
+            var iconResource = createLauncherIconResource(app, launcher,
+                    name -> env.createResource(name));
             if (iconResource != null) {
-                var iconDir = ctx.env().buildRoot().resolve("icons");
-                iconTarget = iconDir.resolve(ctx.launcher().executableName() + ".ico");
+                var iconDir = env.buildRoot().resolve("icons");
+                iconTarget = iconDir.resolve(launcher.executableName() + ".ico");
                 if (null == iconResource.saveToFile(iconTarget)) {
                     iconTarget = null;
                 }
             }
 
+            var launcherExecutable = appLayout.launchersDirectory().resolve(
+                    launcher.executableNameWithSuffix());
+
             // Update branding of launcher executable
             new ExecutableRebrander((WinApplication) app,
-                    (WinLauncher) ctx.launcher(),
-                    name -> ctx.env().createResource(name)).execute(
-                    ctx.env(), ctx.launcherExecutable(), iconTarget);
+                    (WinLauncher) launcher, name -> env.createResource(name)).execute(
+                    env, launcherExecutable, iconTarget);
         }
     }
 
