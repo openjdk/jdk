@@ -142,7 +142,7 @@ class LambdaFormEditor {
             return buf.toString();
         }
 
-        @SuppressWarnings({"rawtypes", "unchecked"})
+        @SuppressWarnings("unchecked")
         public LambdaForm get() {
             if (cache instanceof LambdaForm lf) {
                 return lf;
