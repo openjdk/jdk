@@ -3950,7 +3950,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * Maps from class name to Boolean indicating if
      * <code>processInputMethodEvent</code> has been overridden.
      */
-    @SuppressWarnings("removal")
     private static Cache<Class<?>,Boolean> METHOD_OVERRIDDEN
             = new Cache<Class<?>,Boolean>(Cache.Kind.WEAK, Cache.Kind.STRONG) {
         /**
