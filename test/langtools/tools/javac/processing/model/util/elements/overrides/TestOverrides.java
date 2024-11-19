@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8174840
- * @summary Test Elements.isAutomaticModule
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestOverrides
  * @compile -processor TestOverrides -proc:only S.java T1.java T2.java T3.java
@@ -38,8 +37,8 @@ import javax.lang.model.element.TypeElement;
 import static javax.lang.model.element.ElementKind.METHOD;
 
 /*
- * This test models a few cases where Elements.overrides produces "false
- * positives" which warrant @implNote.
+ * This test models a few cases where Elements.overrides produces a false
+ * positive which warrants @apiNote.
  */
 public class TestOverrides extends JavacTestingAbstractProcessor {
 
