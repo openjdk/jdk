@@ -34,13 +34,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
@@ -49,8 +43,6 @@ import jdk.internal.event.DeserializationEvent;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ByteArray;
 import sun.reflect.misc.ReflectUtil;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetIntegerAction;
 
 /**
  * An ObjectInputStream deserializes primitive data and objects previously
@@ -278,8 +270,8 @@ public class ObjectInputStream
          * have been read.
          * See {@link #setObjectInputFilter(ObjectInputFilter)}
          */
-        static final boolean SET_FILTER_AFTER_READ = GetBooleanAction
-                .privilegedGetProperty("jdk.serialSetFilterAfterRead");
+        static final boolean SET_FILTER_AFTER_READ =
+                Boolean.getBoolean("jdk.serialSetFilterAfterRead");
 
         /**
          * Property to control {@link GetField#get(String, Object)} conversion of
@@ -287,8 +279,8 @@ public class ObjectInputStream
          * {@link GetField#get(String, Object)} returns null otherwise
          * throwing {@link ClassNotFoundException}.
          */
-        private static final boolean GETFIELD_CNFE_RETURNS_NULL = GetBooleanAction
-                .privilegedGetProperty("jdk.serialGetFieldCnfeReturnsNull");
+        private static final boolean GETFIELD_CNFE_RETURNS_NULL =
+                Boolean.getBoolean("jdk.serialGetFieldCnfeReturnsNull");
 
         /**
          * Property to override the implementation limit on the number
@@ -296,8 +288,8 @@ public class ObjectInputStream
          * The maximum number of interfaces allowed for a proxy is limited to 65535 by
          * {@link java.lang.reflect.Proxy#newProxyInstance(ClassLoader, Class[], InvocationHandler)}.
          */
-        static final int PROXY_INTERFACE_LIMIT = Math.clamp(GetIntegerAction
-                .privilegedGetProperty("jdk.serialProxyInterfaceLimit", 65535), 0, 65535);
+        static final int PROXY_INTERFACE_LIMIT =
+                Math.clamp(Integer.getInteger("jdk.serialProxyInterfaceLimit", 65535), 0, 65535);
     }
 
     /*
@@ -386,7 +378,6 @@ public class ObjectInputStream
      */
     @SuppressWarnings("this-escape")
     public ObjectInputStream(InputStream in) throws IOException {
-        verifySubclass();
         bin = new BlockDataInputStream(in);
         handles = new HandleTable(10);
         vlist = new ValidationList();
@@ -416,11 +407,6 @@ public class ObjectInputStream
      *      fails due to invalid serial filter or serial filter factory properties.
      */
     protected ObjectInputStream() throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
-        }
         bin = null;
         handles = null;
         vlist = null;
@@ -907,13 +893,6 @@ public class ObjectInputStream
         if (enable == enableResolve) {
             return enable;
         }
-        if (enable) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(SUBSTITUTION_PERMISSION);
-            }
-        }
         enableResolve = enable;
         return !enableResolve;
     }
@@ -1309,11 +1288,6 @@ public class ObjectInputStream
      * @since 9
      */
     public final void setObjectInputFilter(ObjectInputFilter filter) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
-        }
         if (totalObjectRefs > 0 && !Caches.SET_FILTER_AFTER_READ) {
             throw new IllegalStateException(
                     "filter can not be set after an object has been read");
@@ -1572,57 +1546,28 @@ public class ObjectInputStream
     }
 
     /**
-     * Verifies that this (possibly subclass) instance can be constructed
-     * without violating security constraints: the subclass must not override
-     * security-sensitive non-final methods, or else the
-     * "enableSubclassImplementation" SerializablePermission is checked.
-     */
-    private void verifySubclass() {
-        Class<?> cl = getClass();
-        if (cl == ObjectInputStream.class) {
-            return;
-        }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            return;
-        }
-        boolean result = Caches.subclassAudits.get(cl);
-        if (!result) {
-            sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
-        }
-    }
-
-    /**
      * Performs reflective checks on given subclass to verify that it doesn't
      * override security-sensitive non-final methods.  Returns TRUE if subclass
      * is "safe", FALSE otherwise.
      */
-    @SuppressWarnings("removal")
     private static Boolean auditSubclass(Class<?> subcl) {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    for (Class<?> cl = subcl;
-                         cl != ObjectInputStream.class;
-                         cl = cl.getSuperclass())
-                    {
-                        try {
-                            cl.getDeclaredMethod(
-                                "readUnshared", (Class[]) null);
-                            return Boolean.FALSE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                        try {
-                            cl.getDeclaredMethod("readFields", (Class[]) null);
-                            return Boolean.FALSE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                    }
-                    return Boolean.TRUE;
-                }
+        for (Class<?> cl = subcl;
+             cl != ObjectInputStream.class;
+             cl = cl.getSuperclass())
+        {
+            try {
+                cl.getDeclaredMethod(
+                    "readUnshared", (Class[]) null);
+                return Boolean.FALSE;
+            } catch (NoSuchMethodException ex) {
             }
-        );
+            try {
+                cl.getDeclaredMethod("readFields", (Class[]) null);
+                return Boolean.FALSE;
+            } catch (NoSuchMethodException ex) {
+            }
+        }
+        return Boolean.TRUE;
     }
 
     /**
@@ -2702,16 +2647,11 @@ public class ObjectInputStream
             final ObjectInputValidation obj;
             final int priority;
             Callback next;
-            @SuppressWarnings("removal")
-            final AccessControlContext acc;
 
-            Callback(ObjectInputValidation obj, int priority, Callback next,
-                @SuppressWarnings("removal") AccessControlContext acc)
-            {
+            Callback(ObjectInputValidation obj, int priority, Callback next) {
                 this.obj = obj;
                 this.priority = priority;
                 this.next = next;
-                this.acc = acc;
             }
         }
 
@@ -2740,12 +2680,10 @@ public class ObjectInputStream
                 prev = cur;
                 cur = cur.next;
             }
-            @SuppressWarnings("removal")
-            AccessControlContext acc = AccessController.getContext();
             if (prev != null) {
-                prev.next = new Callback(obj, priority, cur, acc);
+                prev.next = new Callback(obj, priority, cur);
             } else {
-                list = new Callback(obj, priority, list, acc);
+                list = new Callback(obj, priority, list);
             }
         }
 
@@ -2756,23 +2694,15 @@ public class ObjectInputStream
          * throws an InvalidObjectException, the callback process is terminated
          * and the exception propagated upwards.
          */
-        @SuppressWarnings("removal")
         void doCallbacks() throws InvalidObjectException {
             try {
                 while (list != null) {
-                    AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<Void>()
-                    {
-                        public Void run() throws InvalidObjectException {
-                            list.obj.validateObject();
-                            return null;
-                        }
-                    }, list.acc);
+                    list.obj.validateObject();
                     list = list.next;
                 }
-            } catch (PrivilegedActionException ex) {
+            } catch (InvalidObjectException ex) {
                 list = null;
-                throw (InvalidObjectException) ex.getException();
+                throw ex;
             }
         }
 

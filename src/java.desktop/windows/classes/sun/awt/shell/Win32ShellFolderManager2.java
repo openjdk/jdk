@@ -31,8 +31,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -478,12 +476,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         if (dir != null && dir == getDrives()) {
             return true;
         } else {
-            @SuppressWarnings("removal")
-            String path = AccessController.doPrivileged(new PrivilegedAction<String>() {
-                public String run() {
-                    return dir.getAbsolutePath();
-                }
-            });
+            String path = dir.getAbsolutePath();
 
             return (path.startsWith("\\\\") && path.indexOf("\\", 2) < 0);      //Network path
         }
@@ -572,25 +565,17 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
     private static class ComInvoker extends ThreadPoolExecutor implements ThreadFactory, ShellFolder.Invoker {
         private static Thread comThread;
 
-        @SuppressWarnings("removal")
         private ComInvoker() {
             super(1, 1, 0, TimeUnit.DAYS, new LinkedBlockingQueue<>());
             allowCoreThreadTimeOut(false);
             setThreadFactory(this);
-            final Runnable shutdownHook = () -> AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                shutdownNow();
-                return null;
-            });
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                Thread t = new Thread(
-                        ThreadGroupUtils.getRootThreadGroup(), shutdownHook,
-                        "ShellFolder", 0, false);
-                Runtime.getRuntime().addShutdownHook(t);
-                return null;
-            });
+            final Runnable shutdownHook = () -> shutdownNow();
+            Thread t = new Thread(
+                    ThreadGroupUtils.getRootThreadGroup(), shutdownHook,
+                    "ShellFolder", 0, false);
+            Runtime.getRuntime().addShutdownHook(t);
         }
 
-        @SuppressWarnings("removal")
         public synchronized Thread newThread(final Runnable task) {
             final Runnable comRun = new Runnable() {
                 public void run() {
@@ -602,27 +587,22 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                     }
                 }
             };
-            comThread = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                String name = "Swing-Shell";
-                 /* The thread must be a member of a thread group
-                  * which will not get GCed before VM exit.
-                  * Make its parent the top-level thread group.
-                  */
-                Thread thread = new Thread(
-                        ThreadGroupUtils.getRootThreadGroup(), comRun, name,
-                        0, false);
-                thread.setDaemon(true);
-                /* This is important, since this thread running at lower priority
-                   leads to memory consumption when listDrives() function is called
-                   repeatedly.
-                 */
-                thread.setPriority(Thread.MAX_PRIORITY);
-                return thread;
-            });
+            /* The thread must be a member of a thread group
+             * which will not get GCed before VM exit.
+             * Make its parent the top-level thread group.
+             */
+            comThread = new Thread(
+                    ThreadGroupUtils.getRootThreadGroup(), comRun, "Swing-Shell",
+                    0, false);
+            comThread.setDaemon(true);
+            /* This is important, since this thread running at lower priority
+               leads to memory consumption when listDrives() function is called
+               repeatedly.
+             */
+            comThread.setPriority(Thread.MAX_PRIORITY);
             return comThread;
         }
 
-        @SuppressWarnings("removal")
         public <T> T invoke(Callable<T> task) throws Exception {
             if (Thread.currentThread() == comThread) {
                 // if it's already called from the COM
@@ -640,13 +620,8 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                 try {
                     return future.get();
                 } catch (InterruptedException e) {
-                    AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                        public Void run() {
-                            future.cancel(true);
+                    future.cancel(true);
 
-                            return null;
-                        }
-                    });
 
                     throw e;
                 } catch (ExecutionException e) {

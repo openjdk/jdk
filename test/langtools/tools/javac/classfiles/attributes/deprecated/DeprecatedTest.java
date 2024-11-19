@@ -302,7 +302,7 @@ public class DeprecatedTest extends TestResult {
         if (checkNotNull(attr, name + " must have deprecated attribute")) {
             checkEquals(0, ((BoundAttribute<?>)attr).payloadLen(),
                     "attribute_length should equal to 0");
-            checkEquals("Deprecated", attr.attributeName(),
+            checkEquals("Deprecated", attr.attributeName().stringValue(),
                     name + " attribute_name_index");
         }
     }

@@ -263,7 +263,6 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
      * Check that the caller has access to perform indicated operation.
      * The client must be on same the same host as this server.
      */
-    @SuppressWarnings("removal")
     public static void checkAccess(String op) throws AccessException {
 
         try {
