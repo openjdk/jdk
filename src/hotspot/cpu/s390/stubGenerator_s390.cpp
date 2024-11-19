@@ -2765,10 +2765,10 @@ class StubGenerator: public StubCodeGenerator {
     bool multiBlock;
     switch (stub_id) {
     case sha256_implCompress_id:
-      multi_block = false;
+      multiBlock = false;
       break;
     case sha256_implCompressMB_id:
-      multi_block = true;
+      multiBlock = true;
       break;
     default:
       ShouldNotReachHere();
