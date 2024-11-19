@@ -95,11 +95,8 @@ final class WPathGraphics extends PathGraphics {
     private static boolean useGDITextLayout = true;
     private static boolean preferGDITextLayout = false;
     static {
-        @SuppressWarnings("removal")
-        String textLayoutStr =
-            java.security.AccessController.doPrivileged(
-                   new sun.security.action.GetPropertyAction(
-                         "sun.java2d.print.enableGDITextLayout"));
+        String textLayoutStr = System.getProperty(
+                     "sun.java2d.print.enableGDITextLayout");
 
         if (textLayoutStr != null) {
             useGDITextLayout = Boolean.getBoolean(textLayoutStr);
