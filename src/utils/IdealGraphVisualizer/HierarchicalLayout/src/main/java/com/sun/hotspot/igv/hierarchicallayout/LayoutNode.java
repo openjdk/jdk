@@ -48,10 +48,8 @@ public class LayoutNode {
     public static final Comparator<LayoutNode> NODE_PROCESSING_DOWN_COMPARATOR = DUMMY_NODES_FIRST.thenComparingInt(LayoutNode::getInDegree);
     public static final Comparator<LayoutNode> NODE_PROCESSING_UP_COMPARATOR = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOutDegree);
     public static final Comparator<LayoutNode> DUMMY_NODES_THEN_OPTIMAL_X = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOptimalX);
-    public static final Comparator<LayoutNode> NODE_BARYCENTER_COMPARATOR = Comparator.comparingDouble(LayoutNode::getBarycenter);
+    public static final Comparator<LayoutNode> NODES_OPTIMAL_X = Comparator.comparingInt(LayoutNode::getOptimalX);
 
-    public LayoutNode alignNode;
-    public LayoutNode rootNode;
 
     // Default dimensions for dummy nodes
     public static final int DUMMY_HEIGHT = 1;
@@ -207,29 +205,6 @@ public class LayoutNode {
         SUCCESSORS,
         BOTH
     }
-
-    private float barycenter = 0; // Current barycenter value
-
-    /**
-     * Sets the barycenter value for the node.
-     *
-     * @param barycenter the calculated barycenter
-     */
-    public void setBarycenter(float barycenter) {
-        this.barycenter = barycenter;
-    }
-
-    /**
-     * Retrieves the barycenter value of the node.
-     *
-     * @return the barycenter
-     */
-    public float getBarycenter() {
-        return barycenter;
-    }
-
-
-
 
     public int getPredecessorMedian() {
         if (hasPredecessors()) {

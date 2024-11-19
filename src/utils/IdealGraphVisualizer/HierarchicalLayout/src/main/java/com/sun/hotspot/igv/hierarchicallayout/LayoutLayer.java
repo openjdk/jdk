@@ -295,22 +295,4 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
             layoutNode.setX(newX);
         }
     }
-
-    /**
-     * Updates the barycenter of each node in the layer based on the specified neighbor type.
-     *
-     * @param neighborType Specifies which neighbors to include in the calculation:
-     *                     - PREDECESSORS: Include only predecessor nodes.
-     *                     - SUCCESSORS: Include only successor nodes.
-     *                     - BOTH: Include both predecessors and successors.
-     * @param weighted     If true, weights each neighbor's x-coordinate by its degree;
-     *                     if false, all neighbors are weighted equally (weight of 1).
-     */
-    public void updateBarycenters(LayoutNode.NeighborType neighborType, boolean weighted) {
-        for (LayoutNode node : this) {
-            node.setBarycenter(node.computeBarycenterX(neighborType, weighted));
-        }
-    }
-
-
 }

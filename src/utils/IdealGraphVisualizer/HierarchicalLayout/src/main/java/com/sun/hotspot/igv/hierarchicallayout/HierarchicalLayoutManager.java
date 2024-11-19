@@ -338,17 +338,19 @@ public class HierarchicalLayoutManager extends LayoutManager {
             if (downwards) {
                 // Process layers from top to bottom
                 for (int i = 1; i < layers.size(); i++) {
-                    ArrayList<LayoutNode> layer = layers.get(i);
-                    Map<LayoutNode, Integer> barycenters = computeBarycenters(layer, true);
-                    sortLayer(layer, barycenters);
+                   LayoutLayer layer = layers.get(i);
+                   computeBarycenters(layer, true);
+                   layer.sort(NODES_OPTIMAL_X);
+                    layer.updateMinXSpacing(true);
                     transpose(layer, layers.get(i - 1), true);
                 }
             } else {
                 // Process layers from bottom to top
                 for (int i = layers.size() - 2; i >= 0; i--) {
-                    ArrayList<LayoutNode> layer = layers.get(i);
-                    Map<LayoutNode, Integer> barycenters = computeBarycenters(layer, false);
-                    sortLayer(layer, barycenters);
+                    LayoutLayer layer = layers.get(i);
+                    computeBarycenters(layer, false);
+                    layer.sort(NODES_OPTIMAL_X);
+                    layer.updateMinXSpacing(true);
                     transpose(layer, layers.get(i + 1), false);
                 }
             }
@@ -364,7 +366,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
          * @param downwards direction of the sweep
          * @return a map of nodes to their barycenter values
          */
-        private static Map<LayoutNode, Integer> computeBarycenters(ArrayList<LayoutNode> layer, boolean downwards) {
+        private static void computeBarycenters(ArrayList<LayoutNode> layer, boolean downwards) {
             Map<LayoutNode, Integer> barycenters = new HashMap<>();
 
             for (LayoutNode node : layer) {
@@ -377,10 +379,9 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 }
 
                 int barycenter = computeBarycenter(positions, node.getX());
-                barycenters.put(node, barycenter);
+                node.setOptimalX(barycenter);
+                //barycenters.put(node, barycenter);
             }
-
-            return barycenters;
         }
 
         /**
