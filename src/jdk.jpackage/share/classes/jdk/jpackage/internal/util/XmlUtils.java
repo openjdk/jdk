@@ -52,6 +52,17 @@ public final class XmlUtils {
 
     }
 
+    @FunctionalInterface
+    public interface XmlConsumerNoArg {
+
+        void accept() throws IOException, XMLStreamException;
+
+    }
+
+    public static XmlConsumer toXmlConsumer(XmlConsumerNoArg xmlConsumer) {
+        return xml -> xmlConsumer.accept();
+    }
+
     public static void createXml(Path dstFile, XmlConsumer xmlConsumer) throws
             IOException {
         XMLOutputFactory xmlFactory = XMLOutputFactory.newInstance();
