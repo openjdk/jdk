@@ -217,7 +217,6 @@ public abstract class Preferences {
 
     private static final PreferencesFactory factory = factory();
 
-    @SuppressWarnings("removal")
     private static PreferencesFactory factory() {
         // 1. Try user-specified system property
         String factoryName = System.getProperty("java.util.prefs.PreferencesFactory");
@@ -245,10 +244,6 @@ public abstract class Preferences {
                 }
             }
         }
-        return factory1();
-    }
-
-    private static PreferencesFactory factory1() {
         // 2. Try service provider interface
         Iterator<PreferencesFactory> itr = ServiceLoader
             .load(PreferencesFactory.class, ClassLoader.getSystemClassLoader())
