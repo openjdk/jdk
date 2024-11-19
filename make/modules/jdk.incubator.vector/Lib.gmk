@@ -74,4 +74,18 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64)+$(INCLUDE_COMPILER2
   TARGETS += $(BUILD_LIBSLEEF)
 endif
 
+ifeq ($(call isTargetOs, macosx)+$(call isTargetCpu, aarch64)+$(INCLUDE_COMPILER2), true+true+true)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBSLEEF, \
+      NAME := sleef, \
+      OPTIMIZATION := HIGH, \
+      SRC := libsleef/lib, \
+      EXTRA_SRC := libsleef/generated, \
+      DISABLED_WARNINGS_gcc := unused-function sign-compare tautological-compare ignored-qualifiers, \
+      DISABLED_WARNINGS_clang := unused-function sign-compare tautological-compare ignored-qualifiers, \
+      CFLAGS := $(NEON_CFLAGS), \
+  ))
+
+  TARGETS += $(BUILD_LIBSLEEF)
+endif
+
 ################################################################################
