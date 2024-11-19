@@ -33,8 +33,7 @@ import jdk.jpackage.internal.model.WinMsiPackage;
 final class WinExePackageBuilder {
 
     WinExePackageBuilder(WinMsiPackage pkg) {
-        Objects.requireNonNull(pkg);
-        this.pkg = pkg;
+        this.pkg = Objects.requireNonNull(pkg);
     }
 
     WinExePackage create() throws ConfigException {

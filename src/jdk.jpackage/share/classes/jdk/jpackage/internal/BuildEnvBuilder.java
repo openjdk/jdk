@@ -36,8 +36,7 @@ import jdk.jpackage.internal.resources.ResourceLocator;
 final class BuildEnvBuilder {
 
     BuildEnvBuilder(Path root) {
-        Objects.requireNonNull(root);
-        this.root = root;
+        this.root = Objects.requireNonNull(root);
     }
 
     BuildEnv create() throws ConfigException {

@@ -40,8 +40,7 @@ import jdk.jpackage.internal.model.WinMsiPackageMixin;
 final class WinMsiPackageBuilder {
 
     WinMsiPackageBuilder(PackageBuilder pkgBuilder) {
-        Objects.requireNonNull(pkgBuilder);
-        this.pkgBuilder = pkgBuilder;
+        this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
     WinMsiPackage create() throws ConfigException {

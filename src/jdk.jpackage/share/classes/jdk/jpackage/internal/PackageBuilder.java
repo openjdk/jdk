@@ -44,10 +44,8 @@ import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 final class PackageBuilder {
 
     PackageBuilder(Application app, PackageType type) {
-        Objects.requireNonNull(app);
-        Objects.requireNonNull(type);
-        this.app = app;
-        this.type = type;
+        this.app = Objects.requireNonNull(app);
+        this.type = Objects.requireNonNull(type);
     }
 
     Package create() throws ConfigException {

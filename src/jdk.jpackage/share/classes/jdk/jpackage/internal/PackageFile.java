@@ -42,8 +42,7 @@ final class PackageFile {
     }
 
     PackageFile(String packageName) {
-        Objects.requireNonNull(packageName);
-        this.packageName = packageName;
+        this.packageName = Objects.requireNonNull(packageName);
     }
 
     void save(ApplicationLayout appLayout) throws IOException {

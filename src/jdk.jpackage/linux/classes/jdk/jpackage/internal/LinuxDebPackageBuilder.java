@@ -33,8 +33,7 @@ import jdk.jpackage.internal.model.LinuxRpmPackageMixin;
 final class LinuxDebPackageBuilder {
 
     LinuxDebPackageBuilder(LinuxPackageBuilder pkgBuilder) {
-        Objects.requireNonNull(pkgBuilder);
-        this.pkgBuilder = pkgBuilder;
+        this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
     LinuxRpmPackage create() throws ConfigException {

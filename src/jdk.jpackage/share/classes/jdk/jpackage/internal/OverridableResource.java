@@ -78,10 +78,8 @@ final class OverridableResource {
 
     OverridableResource(String defaultName,
             Supplier<InputStream> defaultResourceSupplier) {
-        Objects.requireNonNull(defaultName);
-        Objects.requireNonNull(defaultResourceSupplier);
-        this.defaultName = defaultName;
-        this.defaultResourceSupplier = defaultResourceSupplier;
+        this.defaultName = Objects.requireNonNull(defaultName);
+        this.defaultResourceSupplier = Objects.requireNonNull(defaultResourceSupplier);
         setSourceOrder(Source.values());
     }
 

@@ -42,8 +42,7 @@ import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
 final class LinuxPackageBuilder {
 
     LinuxPackageBuilder(PackageBuilder pkgBuilder) {
-        Objects.requireNonNull(pkgBuilder);
-        this.pkgBuilder = pkgBuilder;
+        this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
     LinuxPackage create() throws ConfigException {

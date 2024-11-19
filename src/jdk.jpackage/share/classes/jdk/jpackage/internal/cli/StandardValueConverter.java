@@ -35,8 +35,7 @@ final class StandardValueConverter {
     final static ValueConverter<String> IDENTITY_CONV = new ValueConverter<>() {
         @Override
         public String convert(String value) {
-            Objects.requireNonNull(value);
-            return value;
+            return Objects.requireNonNull(value);
         }
 
         @Override
