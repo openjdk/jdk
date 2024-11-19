@@ -31,7 +31,6 @@ import java.util.List;
 import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 
@@ -115,4 +114,5 @@ public final class PredefinedAppImageErrorTest {
         cmd.addArguments("--app-image", dummyAppFolder.toString());
         new AppImageFile("PredefinedAppImageErrorTest", "Hello").save(dummyAppFolder);
     }
+
 }

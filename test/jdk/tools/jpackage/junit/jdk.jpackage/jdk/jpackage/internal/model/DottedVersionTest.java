@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.internal.model;
 
-import jdk.jpackage.internal.model.DottedVersion;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;

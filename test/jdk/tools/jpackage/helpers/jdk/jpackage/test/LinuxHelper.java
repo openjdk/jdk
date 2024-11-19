@@ -437,7 +437,7 @@ public final class LinuxHelper {
                     "Check value of [%s] key", key));
         }
 
-        // Verify the value of `Exec` key in is escaped if required
+        // Verify the value of `Exec` key is escaped if required
         String launcherPath = data.get("Exec");
         if (Pattern.compile("\\s").matcher(launcherPath).find()) {
             TKit.assertTrue(launcherPath.startsWith("\"")
