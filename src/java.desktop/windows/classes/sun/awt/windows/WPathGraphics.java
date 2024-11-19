@@ -877,7 +877,7 @@ final class WPathGraphics extends PathGraphics {
               */
              AffineTransform advanceTransform =
                 AffineTransform.getScaleInstance(scaleFactorX, scaleFactorY);
-             advanceTransform.rotate(iangle * Math.PI / 1800.0);
+             advanceTransform.rotate(rotation * Math.PI / 1800.0);
              float[] glyphAdvPos = new float[glyphPos.length];
 
              advanceTransform.transform(glyphPos, 0,         //source
