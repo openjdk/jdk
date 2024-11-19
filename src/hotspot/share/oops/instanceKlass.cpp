@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassInitializer.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsEnumKlass.hpp"
@@ -734,6 +735,18 @@ bool InstanceKlass::is_sealed() const {
          _permitted_subclasses != Universe::the_empty_short_array();
 }
 
+// JLS 8.9: An enum class is either implicitly final and derives
+// from java.lang.Enum, or else is implicitly sealed to its
+// anonymous subclasses. This query detects both kinds.
+// It does not validate the finality or
+// sealing conditions: it merely checks for a super of Enum.
+// This is sufficient for recognizing well-formed enums.
+bool InstanceKlass::is_enum_subclass() const {
+  InstanceKlass* s = java_super();
+  return (s == vmClasses::Enum_klass() ||
+          (s != nullptr && s->java_super() == vmClasses::Enum_klass()));
+}
+
 bool InstanceKlass::should_be_initialized() const {
   return !is_initialized();
 }
@@ -791,6 +804,68 @@ void InstanceKlass::initialize(TRAPS) {
   }
 }
 
+#ifdef ASSERT
+void InstanceKlass::assert_no_clinit_will_run_for_aot_initialized_class() const {
+  assert(has_aot_initialized_mirror(), "must be");
+
+  InstanceKlass* s = java_super();
+  if (s != nullptr) {
+    DEBUG_ONLY(ResourceMark rm);
+    assert(s->is_initialized(), "super class %s of aot-inited class %s must have been initialized",
+           s->external_name(), external_name());
+    s->assert_no_clinit_will_run_for_aot_initialized_class();
+  }
+
+  Array<InstanceKlass*>* interfaces = local_interfaces();
+  int len = interfaces->length();
+  for (int i = 0; i < len; i++) {
+    InstanceKlass* intf = interfaces->at(i);
+    if (!intf->is_initialized()) {
+      ResourceMark rm;
+      // Note: an interface needs to be marked as is_initialized() only if
+      // - it has a <clinit>
+      // - it has declared a default method.
+      assert(!intf->interface_needs_clinit_execution_as_super(/*also_check_supers*/false),
+             "uninitialized super interface %s of aot-inited class %s must not have <clinit>",
+             intf->external_name(), external_name());
+    }
+  }
+}
+#endif
+
+#if INCLUDE_CDS
+void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
+  assert(has_aot_initialized_mirror(), "must be");
+  assert(CDSConfig::is_loading_heap(), "must be");
+  assert(CDSConfig::is_using_aot_linked_classes(), "must be");
+  assert_no_clinit_will_run_for_aot_initialized_class();
+
+  if (is_initialized()) {
+    return;
+  }
+
+  if (log_is_enabled(Info, cds, init)) {
+    ResourceMark rm;
+    log_info(cds, init)("%s (aot-inited)", external_name());
+  }
+
+  link_class(CHECK);
+
+#ifdef ASSERT
+  {
+    Handle h_init_lock(THREAD, init_lock());
+    ObjectLocker ol(h_init_lock, THREAD);
+    assert(!is_initialized(), "sanity");
+    assert(!is_being_initialized(), "sanity");
+    assert(!is_in_error_state(), "sanity");
+  }
+#endif
+
+  set_init_thread(THREAD);
+  AOTClassInitializer::call_runtime_setup(THREAD, this);
+  set_initialization_state_and_notify(fully_initialized, CHECK);
+}
+#endif
 
 bool InstanceKlass::verify_code(TRAPS) {
   // 1) Verify the bytecodes
@@ -1578,7 +1653,10 @@ void InstanceKlass::call_class_initializer(TRAPS) {
 
 #if INCLUDE_CDS
   // This is needed to ensure the consistency of the archived heap objects.
-  if (has_archived_enum_objs()) {
+  if (has_aot_initialized_mirror() && CDSConfig::is_loading_heap()) {
+    AOTClassInitializer::call_runtime_setup(THREAD, this);
+    return;
+  } else if (has_archived_enum_objs()) {
     assert(is_shared(), "must be");
     bool initialized = CDSEnumKlass::initialize_enum_klass(this, CHECK);
     if (initialized) {
@@ -1607,6 +1685,47 @@ void InstanceKlass::call_class_initializer(TRAPS) {
   }
 }
 
+// If a class that implements this interface is initialized, is the JVM required
+// to first execute a <clinit> method declared in this interface,
+// or (if also_check_supers==true) any of the super types of this interface?
+//
+// JVMS 5.5. Initialization, step 7: Next, if C is a class rather than
+// an interface, then let SC be its superclass and let SI1, ..., SIn
+// be all superinterfaces of C (whether direct or indirect) that
+// declare at least one non-abstract, non-static method.
+//
+// So when an interface is initialized, it does not look at its
+// supers. But a proper class will ensure that all of its supers have
+// run their <clinit> methods, except that it disregards interfaces
+// that lack a non-static concrete method (i.e., a default method).
+// Therefore, you should probably call this method only when the
+// current class is a super of some proper class, not an interface.
+bool InstanceKlass::interface_needs_clinit_execution_as_super(bool also_check_supers) const {
+  assert(is_interface(), "must be");
+
+  if (!has_nonstatic_concrete_methods()) {
+    // quick check: no nonstatic concrete methods are declared by this or any super interfaces
+    return false;
+  }
+
+  // JVMS 5.5. Initialization
+  // ...If C is an interface that declares a non-abstract,
+  // non-static method, the initialization of a class that
+  // implements C directly or indirectly.
+  if (declares_nonstatic_concrete_methods() && class_initializer() != nullptr) {
+    return true;
+  }
+  if (also_check_supers) {
+    Array<InstanceKlass*>* all_ifs = transitive_interfaces();
+    for (int i = 0; i < all_ifs->length(); ++i) {
+      InstanceKlass* super_intf = all_ifs->at(i);
+      if (super_intf->declares_nonstatic_concrete_methods() && super_intf->class_initializer() != nullptr) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 void InstanceKlass::mask_for(const methodHandle& method, int bci,
   InterpreterOopMap* entry_for) {
@@ -2497,6 +2616,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
     }
   }
 
+  it->push(&_nest_host);
   it->push(&_nest_members);
   it->push(&_permitted_subclasses);
   it->push(&_record_components);
@@ -2560,8 +2680,12 @@ void InstanceKlass::remove_unshareable_info() {
   _methods_jmethod_ids = nullptr;
   _jni_ids = nullptr;
   _oop_map_cache = nullptr;
-  // clear _nest_host to ensure re-load at runtime
-  _nest_host = nullptr;
+  if (CDSConfig::is_dumping_invokedynamic() && HeapShared::is_lambda_proxy_klass(this)) {
+    // keep _nest_host
+  } else {
+    // clear _nest_host to ensure re-load at runtime
+    _nest_host = nullptr;
+  }
   init_shared_package_entry();
   _dep_context_last_cleaned = 0;
 
@@ -2699,6 +2823,18 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
     }
   }
   return true;
+}
+
+int InstanceKlass::shared_class_loader_type() const {
+  if (is_shared_boot_class()) {
+    return ClassLoader::BOOT_LOADER;
+  } else if (is_shared_platform_class()) {
+    return ClassLoader::PLATFORM_LOADER;
+  } else if (is_shared_app_class()) {
+    return ClassLoader::APP_LOADER;
+  } else {
+    return ClassLoader::OTHER;
+  }
 }
 #endif // INCLUDE_CDS
 
@@ -2905,6 +3041,10 @@ ModuleEntry* InstanceKlass::module() const {
 
   // Class is in an unnamed package, return its loader's unnamed module
   return class_loader_data()->unnamed_module();
+}
+
+bool InstanceKlass::in_javabase_module() const {
+  return module()->name() == vmSymbols::java_base();
 }
 
 void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_entry, TRAPS) {

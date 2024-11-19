@@ -173,6 +173,19 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
+     * Terminates the current line in this console's output stream using
+     * {@link System#lineSeparator()} and then flushes the console.
+     *
+     * @return  This console
+     *
+     * @since 24
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Console println() {
+        return println("");
+    }
+
+    /**
      * Writes a string representation of the specified object to this console's
      * output stream and then flushes the console.
      *
@@ -211,6 +224,24 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      */
     @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
     public String readln(String prompt) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Reads a single line of text from this console.
+     *
+     * @throws IOError
+     *         If an I/O error occurs.
+     *
+     * @return  A string containing the line read from the console, not
+     *          including any line-termination characters, or {@code null}
+     *          if an end of stream has been reached without having read
+     *          any characters.
+     *
+     * @since 24
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public String readln() {
         throw newUnsupportedOperationException();
     }
 
