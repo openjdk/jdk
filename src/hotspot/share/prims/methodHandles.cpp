@@ -239,7 +239,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   assert(m.not_null(), "null method handle");
   InstanceKlass* m_klass = m->method_holder();
   assert(m_klass != nullptr, "null holder for method handle");
-  int flags = (jushort)( m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
+  int flags = (m->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS );
   int vmindex = Method::invalid_vtable_index;
   LogTarget(Debug, methodhandles, indy) lt_indy;
 
@@ -352,7 +352,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
 
 oop MethodHandles::init_field_MemberName(Handle mname, fieldDescriptor& fd, bool is_setter) {
   InstanceKlass* ik = fd.field_holder();
-  int flags = (jushort)( fd.access_flags().as_short() & JVM_RECOGNIZED_FIELD_MODIFIERS );
+  int flags = ( fd.access_flags().as_int() & JVM_RECOGNIZED_FIELD_MODIFIERS );
   flags |= IS_FIELD | ((fd.is_static() ? JVM_REF_getStatic : JVM_REF_getField) << REFERENCE_KIND_SHIFT);
   if (fd.is_trusted_final()) flags |= TRUSTED_FINAL;
   if (is_setter)  flags += ((JVM_REF_putField - JVM_REF_getField) << REFERENCE_KIND_SHIFT);

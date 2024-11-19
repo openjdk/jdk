@@ -73,7 +73,7 @@ class TypeArrayKlass : public ArrayKlass {
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
 
-  jint compute_modifier_flags() const;
+  u2 compute_modifier_flags() const;
 
   // Oop iterators. Since there are no oops in TypeArrayKlasses,
   // these functions only return the size of the object.

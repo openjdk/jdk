@@ -1040,8 +1040,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
     // access
-    old_flags = old_fs.access_flags().as_short();
-    new_flags = new_fs.access_flags().as_short();
+    old_flags = old_fs.access_flags().as_int();
+    new_flags = new_fs.access_flags().as_int();
     if ((old_flags ^ new_flags) & JVM_RECOGNIZED_FIELD_MODIFIERS) {
       log_info(redefine, class, normalize)
           ("redefined class %s field %s change error: modifiers changed from %d to %d.",
@@ -1147,8 +1147,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
     switch (method_was) {
     case matched:
       // methods match, be sure modifiers do too
-      old_flags = (jushort) k_old_method->access_flags().get_flags();
-      new_flags = (jushort) k_new_method->access_flags().get_flags();
+      old_flags = k_old_method->access_flags().as_int();
+      new_flags = k_new_method->access_flags().as_int();
       if ((old_flags ^ new_flags) & ~(JVM_ACC_NATIVE)) {
         log_info(redefine, class, normalize)
           ("redefined class %s  method %s modifiers error: modifiers changed from %d to %d",

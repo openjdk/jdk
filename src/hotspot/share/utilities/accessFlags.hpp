@@ -47,11 +47,11 @@ enum {
 class AccessFlags {
   friend class VMStructs;
  private:
-  jint _flags;  // TODO: move 4 access flags above to Klass and change to u2
+  u2 _flags;
 
  public:
   AccessFlags() : _flags(0) {}
-  explicit AccessFlags(jint flags) : _flags(flags) {}
+  explicit AccessFlags(u2 flags) : _flags(flags) {}
 
   // Java access flags
   bool is_public      () const         { return (_flags & JVM_ACC_PUBLIC      ) != 0; }
@@ -71,14 +71,14 @@ class AccessFlags {
   bool is_synthetic   () const         { return (_flags & JVM_ACC_SYNTHETIC   ) != 0; }
 
   // get .class file flags
-  jint get_flags               () const { return (_flags & JVM_ACC_WRITTEN_FLAGS); }
+  u2 get_flags                () const { return (_flags & JVM_ACC_WRITTEN_FLAGS); }
 
   // Initialization
-  void set_field_flags(jint flags)      {
+  void set_field_flags(u2 flags)      {
     assert((flags & JVM_RECOGNIZED_FIELD_MODIFIERS) == flags, "only recognized flags");
     _flags = (flags & JVM_RECOGNIZED_FIELD_MODIFIERS);
   }
-  void set_flags(jint flags)            { _flags = (flags & JVM_ACC_WRITTEN_FLAGS); }
+  void set_flags(u2 flags)            { _flags = (flags & JVM_ACC_WRITTEN_FLAGS); }
 
  private:
   friend class Klass;
@@ -91,10 +91,9 @@ class AccessFlags {
 
  public:
   // Conversion
-  jshort as_short() const              { return (jshort)_flags; }
-  jint   as_int() const                { return _flags; }
+  u2   as_int() const                  { return _flags; }
 
-  inline friend AccessFlags accessFlags_from(jint flags);
+  inline friend AccessFlags accessFlags_from(u2 flags);
 
   // Printing/debugging
 #if INCLUDE_JVMTI
@@ -104,7 +103,7 @@ class AccessFlags {
 #endif
 };
 
-inline AccessFlags accessFlags_from(jint flags) {
+inline AccessFlags accessFlags_from(u2 flags) {
   AccessFlags af;
   af._flags = flags;
   return af;

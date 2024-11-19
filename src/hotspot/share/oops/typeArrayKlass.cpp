@@ -75,7 +75,7 @@ TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType
   return new (loader_data, size, THREAD) TypeArrayKlass(type, name);
 }
 
-jint TypeArrayKlass::compute_modifier_flags() const {
+u2 TypeArrayKlass::compute_modifier_flags() const {
   return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
 }
 

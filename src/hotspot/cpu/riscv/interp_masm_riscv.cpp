@@ -544,7 +544,7 @@ void InterpreterMacroAssembler::remove_activation(
 
   // get method access flags
   ld(x11, Address(fp, frame::interpreter_frame_method_offset * wordSize));
-  ld(x12, Address(x11, Method::access_flags_offset()));
+  load_unsigned_short(x12, Address(x11, Method::access_flags_offset()));
   test_bit(t0, x12, exact_log2(JVM_ACC_SYNCHRONIZED));
   beqz(t0, unlocked);
 

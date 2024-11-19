@@ -1652,7 +1652,7 @@ void Method::init_intrinsic_id(vmSymbolID klass_id) {
       && sig_id == vmSymbolID::NO_SID) {
     return;
   }
-  jshort flags = access_flags().as_short();
+  jshort flags = access_flags().as_int();
 
   vmIntrinsics::ID id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
   if (id != vmIntrinsics::_none) {

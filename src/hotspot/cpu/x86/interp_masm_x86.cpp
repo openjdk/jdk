@@ -1030,7 +1030,7 @@ void InterpreterMacroAssembler::remove_activation(
 
  // get method access flags
   movptr(rcx, Address(rbp, frame::interpreter_frame_method_offset * wordSize));
-  movl(rcx, Address(rcx, Method::access_flags_offset()));
+  load_unsigned_short(rcx, Address(rcx, Method::access_flags_offset()));
   testl(rcx, JVM_ACC_SYNCHRONIZED);
   jcc(Assembler::zero, unlocked);
 

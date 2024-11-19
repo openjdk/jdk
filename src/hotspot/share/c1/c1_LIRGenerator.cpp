@@ -1337,7 +1337,7 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
   __ cmove(lir_cond_equal, prim_klass, recv_klass, klass, T_ADDRESS);
 
   // Get the answer.
-  __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_INT), result);
+  __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_CHAR), result);
 }
 
 void LIRGenerator::do_getObjectSize(Intrinsic* x) {

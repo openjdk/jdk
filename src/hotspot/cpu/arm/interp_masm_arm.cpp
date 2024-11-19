@@ -736,7 +736,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state, Register ret_a
   ldrb(Rflag, do_not_unlock_if_synchronized);
 
   // get method access flags
-  ldr_u32(Raccess_flags, Address(Rmethod, Method::access_flags_offset()));
+  ldrh(Raccess_flags, Address(Rmethod, Method::access_flags_offset()));
 
   strb(zero_register(Rtemp), do_not_unlock_if_synchronized); // reset the flag
 
