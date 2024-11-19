@@ -37,30 +37,22 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders
- *                   -XX:-AlignVector
- *                   compiler.vectorization.runner.LoopCombinedOpTest
+ *                   compiler.vectorization.runner.LoopCombinedOpTest nCOH_nAV
  *
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders
- *                   -XX:+AlignVector
- *                   compiler.vectorization.runner.LoopCombinedOpTest
+ *                   compiler.vectorization.runner.LoopCombinedOpTest nCOH_yAV
  *
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders
- *                   -XX:-AlignVector
- *                   compiler.vectorization.runner.LoopCombinedOpTest
+ *                   compiler.vectorization.runner.LoopCombinedOpTest yCOH_nAV
  *
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders
- *                   -XX:+AlignVector
- *                   compiler.vectorization.runner.LoopCombinedOpTest
+ *                   compiler.vectorization.runner.LoopCombinedOpTest yCOH_yAV
  */
 
 package compiler.vectorization.runner;
@@ -70,6 +62,18 @@ import compiler.lib.ir_framework.*;
 import java.util.Random;
 
 public class LoopCombinedOpTest extends VectorizationTestRunner {
+
+    // We must pass the flags directly to the test-VM, and not the driver vm in the @run above.
+    @Override
+    protected String[] testVMFlags(String[] args) {
+        return switch (args[0]) {
+            case "nCOH_nAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"};
+            case "nCOH_yAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"};
+            case "yCOH_nAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"};
+            case "yCOH_yAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"};
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        };
+    }
 
     private static final int SIZE = 543;
 
