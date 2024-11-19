@@ -302,9 +302,9 @@ public class HierarchicalLayoutManager extends LayoutManager {
     }
 
 
-    public class CrossingReduction {
+    public static class CrossingReduction {
 
-        private static final int CROSSING_ITERATIONS = 24;
+        private static final int CROSSING_ITERATIONS = 20;
 
         /**
          * Applies the crossing reduction algorithm to the given graph.
@@ -339,19 +339,19 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 // Process layers from top to bottom
                 for (int i = 1; i < layers.size(); i++) {
                    LayoutLayer layer = layers.get(i);
-                   computeBarycenters(layer, true);
+                   computeBarycenters(layer, NeighborType.PREDECESSORS);
                    layer.sort(NODES_OPTIMAL_X);
                     layer.updateMinXSpacing(true);
-                    transpose(layer, layers.get(i - 1), true);
+                    transpose(layer, NeighborType.PREDECESSORS);
                 }
             } else {
                 // Process layers from bottom to top
                 for (int i = layers.size() - 2; i >= 0; i--) {
                     LayoutLayer layer = layers.get(i);
-                    computeBarycenters(layer, false);
+                    computeBarycenters(layer, NeighborType.SUCCESSORS);
                     layer.sort(NODES_OPTIMAL_X);
                     layer.updateMinXSpacing(true);
-                    transpose(layer, layers.get(i + 1), false);
+                    transpose(layer, NeighborType.SUCCESSORS);
                 }
             }
             for (LayoutLayer layer : layers) {
@@ -359,81 +359,33 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
         }
 
-        /**
-         * Computes the barycenter positions of neighboring nodes in adjacent layers.
-         *
-         * @param layer     the current layer
-         * @param downwards direction of the sweep
-         * @return a map of nodes to their barycenter values
-         */
-        private static void computeBarycenters(ArrayList<LayoutNode> layer, boolean downwards) {
-            Map<LayoutNode, Integer> barycenters = new HashMap<>();
-
+        private static void computeBarycenters(ArrayList<LayoutNode> layer, NeighborType neighborType) {
             for (LayoutNode node : layer) {
-                List<Integer> positions = new ArrayList<>();
-
-                List<LayoutEdge> edges = downwards ? node.getPredecessors() : node.getSuccessors();
-                for (LayoutEdge edge : edges) {
-                    LayoutNode neighbor = downwards ? edge.getFrom() : edge.getTo();
-                    positions.add(neighbor.getX());
+                int barycenter = 0;
+                if (node.hasNeighborsOfType(neighborType)) {
+                    barycenter = node.computeBarycenterX(neighborType, false);
+                } else {
+                    if (neighborType == NeighborType.SUCCESSORS) {
+                        barycenter = node.computeBarycenterX( NeighborType.PREDECESSORS, false);
+                    } else if (neighborType == NeighborType.PREDECESSORS) {
+                        barycenter = node.computeBarycenterX( NeighborType.SUCCESSORS, false);
+                    }
                 }
-
-                int barycenter = computeBarycenter(positions, node.getX());
                 node.setOptimalX(barycenter);
-                //barycenters.put(node, barycenter);
             }
         }
 
-        /**
-         * Computes the barycenter of a list of positions.
-         *
-         * @param positions list of neighbor positions
-         * @param defaultX  default position if positions list is empty
-         * @return the barycenter value
-         */
-        private static int computeBarycenter(List<Integer> positions, int defaultX) {
-            if (positions.isEmpty()) {
-                return defaultX;
-            } else {
-                double sum = 0;
-                for (double pos : positions) {
-                    sum += pos;
-                }
-                return (int) (sum / positions.size());
-            }
-        }
 
-        /**
-         * Sorts the nodes in a layer based on their barycenter values.
-         *
-         * @param layer       the current layer
-         * @param barycenters map of nodes to barycenter values
-         */
-        private static void sortLayer(ArrayList<LayoutNode> layer, Map<LayoutNode, Integer> barycenters) {
-            layer.sort(Comparator.comparingDouble(barycenters::get));
-            // Update positions
-            for (int j = 0; j < layer.size(); j++) {
-                layer.get(j).setX(j);
-            }
-        }
-
-        /**
-         * Applies the transpose heuristic to further reduce crossings.
-         *
-         * @param layer          the current layer
-         * @param adjacentLayer  the adjacent layer (above or below)
-         * @param downwards      direction of the sweep
-         */
-        private static void transpose(ArrayList<LayoutNode> layer, ArrayList<LayoutNode> adjacentLayer, boolean downwards) {
+        private static void transpose(ArrayList<LayoutNode> layer, LayoutNode.NeighborType neighborType) {
             boolean improved = true;
             while (improved) {
                 improved = false;
                 for (int i = 0; i < layer.size() - 1; i++) {
                     LayoutNode node1 = layer.get(i);
                     LayoutNode node2 = layer.get(i + 1);
-                    int crossingsBefore = countCrossings(node1, node2, adjacentLayer, downwards);
+                    int crossingsBefore = countCrossings(node1, node2, neighborType);
                     swapNodes(layer, i, i + 1);
-                    int crossingsAfter = countCrossings(node1, node2, adjacentLayer, downwards);
+                    int crossingsAfter = countCrossings(node1, node2, neighborType);
                     if (crossingsAfter >= crossingsBefore) {
                         // Swap back
                         swapNodes(layer, i, i + 1);
@@ -460,45 +412,17 @@ public class HierarchicalLayoutManager extends LayoutManager {
             layer.set(j, temp);
         }
 
-        /**
-         * Counts the number of crossings involving two nodes and the adjacent layer.
-         *
-         * @param node1         first node
-         * @param node2         second node
-         * @param adjacentLayer adjacent layer
-         * @param downwards     direction of the sweep
-         * @return the number of crossings
-         */
-        private static int countCrossings(LayoutNode node1, LayoutNode node2, ArrayList<LayoutNode> adjacentLayer, boolean downwards) {
-            List<Integer> positions1 = getAdjacentPositions(node1, downwards);
-            List<Integer> positions2 = getAdjacentPositions(node2, downwards);
 
+        private static int countCrossings(LayoutNode node1, LayoutNode node2, LayoutNode.NeighborType neighborType) {
             int crossings = 0;
-            for (double pos1 : positions1) {
-                for (double pos2 : positions2) {
-                    if (pos1 > pos2) {
+            for (int x1 : node1.getAdjacentX(neighborType)) {
+                for (int x2 : node2.getAdjacentX(neighborType)) {
+                    if (x1 > x2) {
                         crossings++;
                     }
                 }
             }
             return crossings;
-        }
-
-        /**
-         * Gets the positions of the nodes adjacent to the given node.
-         *
-         * @param node      the node
-         * @param downwards direction of the sweep
-         * @return list of positions of adjacent nodes
-         */
-        private static List<Integer> getAdjacentPositions(LayoutNode node, boolean downwards) {
-            List<Integer> positions = new ArrayList<>();
-            List<LayoutEdge> edges = downwards ? node.getPredecessors() : node.getSuccessors();
-            for (LayoutEdge edge : edges) {
-                LayoutNode neighbor = downwards ? edge.getFrom() : edge.getTo();
-                positions.add(neighbor.getX());
-            }
-            return positions;
         }
     }
 

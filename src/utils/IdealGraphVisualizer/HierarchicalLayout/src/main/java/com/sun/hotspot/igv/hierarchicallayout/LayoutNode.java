@@ -237,9 +237,9 @@ public class LayoutNode {
      *                     if false, all neighbors are weighted equally (weight of 1).
      * @return The computed barycenter x-coordinate. Returns 0 if there are no neighbors.
      */
-    public float computeBarycenterX(NeighborType neighborType, boolean weighted) {
-        float totalWeightedPosition = 0;
-        float totalWeight = 0;
+    public int computeBarycenterX(NeighborType neighborType, boolean weighted) {
+        int totalWeightedPosition = 0;
+        int totalWeight = 0;
 
         // Include predecessors if specified
         if (neighborType == NeighborType.PREDECESSORS || neighborType == NeighborType.BOTH) {
@@ -430,6 +430,23 @@ public class LayoutNode {
 
     public int getRightMargin() {
         return rightMargin;
+    }
+
+
+
+    public List<Integer> getAdjacentX(NeighborType neighborType) {
+        List<Integer> adjacentX = new ArrayList<>();
+        if (neighborType == NeighborType.PREDECESSORS || neighborType == NeighborType.BOTH) {
+            for (LayoutEdge predEdge : preds) {
+                adjacentX.add(predEdge.getFromX());
+            }
+        }
+        if (neighborType == NeighborType.SUCCESSORS || neighborType == NeighborType.BOTH) {
+            for (LayoutEdge succEdge : succs) {
+                adjacentX.add(succEdge.getToX());
+            }
+        }
+        return adjacentX;
     }
 
     public void setRightMargin(int rightMargin) {
