@@ -306,7 +306,7 @@ void AOTLinkedClassBulkLoader::load_hidden_class(ClassLoaderData* loader_data, I
       // use any special ClassLoaderData.
       Handle loader(THREAD, loader_data->class_loader());
       ResourceMark rm(THREAD);
-      assert(SystemDictionary::resolve_or_null(ik->name(), loader, pd, THREAD) == nullptr,
+      assert(SystemDictionary::resolve_or_null(ik->name(), loader, THREAD) == nullptr,
              "hidden classes cannot be accessible by name: %s", ik->external_name());
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION;

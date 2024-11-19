@@ -34,7 +34,6 @@ com/sun/jdi/InterruptHangTest.java                              8043571 generic-
 jdk/jfr/jvm/TestDumpOnCrash.java                                8344442 generic-all
 jdk/jfr/event/runtime/TestDumpReason.java                       8344442 generic-all
 jdk/jfr/event/runtime/TestShutdownEvent.java                    8344442 generic-all
-jdk/jfr/jvm/TestVirtualThreadExclusion.java                     8344199 generic-all
 jdk/jfr/jvm/TestPrimitiveClasses.java                           8340964 generic-all
 jdk/jfr/event/gc/stacktrace/TestDefNewAllocationPendingStackTrace.java                 8340991 generic-all
 jdk/jfr/event/gc/stacktrace/TestG1HumongousAllocationPendingStackTrace.java            8340991 generic-all
