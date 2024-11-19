@@ -240,10 +240,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
                 return null;
 
             IOUtil.configureBlocking(newfd, true);
-            InetSocketAddress isa = isaa[0];
-            sc = new SctpChannelImpl(provider(), newfd);
-
-            return sc;
+            return new SctpChannelImpl(provider(), newfd);
         }
     }
 
