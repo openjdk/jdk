@@ -191,7 +191,7 @@ public class ManagementFactoryHelper {
             Optional<Module> logging = ModuleLayer.boot().findModule("java.logging");
             if (logging.isPresent()) {
                 return Class.forName(logging.get(), className);
-            }  else {
+            } else {
                 return null;
             }
         }
