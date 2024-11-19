@@ -50,7 +50,7 @@ public class AESBench extends CryptoBase {
     @Param({"128", "192", "256"})
     private int keyLength;
 
-    @Param({"" + 16 * 16, "" + 16 * 128, "" + 16 * 1024, "" + 16 * 1024})
+    @Param({"" + 16 * 1024})
     private int dataSize;
 
     byte[][] data;
