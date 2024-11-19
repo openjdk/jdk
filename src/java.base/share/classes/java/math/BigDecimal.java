@@ -2211,7 +2211,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 // its integer part is sufficient to get the square root
                 // with the desired precision.
 
-                final boolean halfWay = mc.roundingMode.isHalfWay();
+                final boolean halfWay = isHalfWay(mc.roundingMode);
                 // To obtain a square root with N digits,
                 // the radicand must have at least 2*(N-1)+1 == 2*N-1 digits.
                 final long minWorkingPrec = ((mc.precision + (halfWay ? 1L : 0L)) << 1) - 1L;
@@ -2228,37 +2228,43 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                 BigInteger sqrt;
                 long resultScale = normScale >> 1;
-                if (mc.roundingMode == RoundingMode.DOWN || mc.roundingMode == RoundingMode.FLOOR) { // No need to round
-                    sqrt = workingInt.sqrt();
-                } else { // Round sqrt with the specified settings
-                    BigInteger[] sqrtRem = workingInt.sqrtAndRemainder();
-                    sqrt = sqrtRem[0];
+                // Round sqrt with the specified settings
+                if (halfWay) { // half-way rounding
+                    // remove the one-tenth digit
+                    BigInteger[] quotRem10 = workingInt.sqrt().divideAndRemainder(BigInteger.TEN);
+                    sqrt = quotRem10[0];
+                    resultScale--;
 
                     boolean increment = false;
-                    if (halfWay) { // half-way rounding
-                        // remove the one-tenth digit
-                        BigInteger[] quotRem10 = sqrt.divideAndRemainder(BigInteger.TEN);
-                        sqrt = quotRem10[0];
-                        resultScale--;
-
-                        int digit = quotRem10[1].intValue();
-                        if (digit > 5) {
+                    int digit = quotRem10[1].intValue();
+                    if (digit > 5) {
+                        increment = true;
+                    } else if (digit == 5) {
+                        if (mc.roundingMode == RoundingMode.HALF_UP
+                                || mc.roundingMode == RoundingMode.HALF_EVEN && sqrt.testBit(0)
+                                // Check if remainder is non-zero
+                                || workingInt.subtract(sqrt.multiply(sqrt)).signum != 0
+                                || working.compareTo(new BigDecimal(workingInt)) != 0) {
                             increment = true;
-                        } else if (digit == 5) {
-                            if (mc.roundingMode == RoundingMode.HALF_UP
-                                    || mc.roundingMode == RoundingMode.HALF_EVEN && sqrt.testBit(0)
-                                    // Check if remainder is non-zero
-                                    || sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0) {
-                                increment = true;
-                            }
                         }
-                    } else { // mc.roundingMode == RoundingMode.UP || mc.roundingMode == RoundingMode.CEILING
-                        // Check if remainder is non-zero
-                        if (sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0)
-                            increment = true;
                     }
+
                     if (increment)
                         sqrt = sqrt.add(1L);
+                } else {
+                    switch (mc.roundingMode) {
+                    case DOWN, FLOOR -> sqrt = workingInt.sqrt(); // No need to round
+
+                    case UP, CEILING -> {
+                        BigInteger[] sqrtRem = workingInt.sqrtAndRemainder();
+                        sqrt = sqrtRem[0];
+                        // Check if remainder is non-zero
+                        if (sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0)
+                            sqrt = sqrt.add(1L);
+                    }
+
+                    default -> throw new AssertionError("Unexpected value for RoundingMode: " + mc.roundingMode);
+                    }
                 }
 
                 result = new BigDecimal(sqrt, checkScale(sqrt, resultScale)).round(mc); // Ensure no increase of precision
@@ -2307,6 +2313,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             result = result.setScale(maxScale);
         }
         return result;
+    }
+
+    private static boolean isHalfWay(RoundingMode m) {
+        return switch (m) {
+            case HALF_DOWN, HALF_UP, HALF_EVEN -> true;
+            case FLOOR, CEILING, DOWN, UP, UNNECESSARY -> false;
+        };
     }
 
     private BigDecimal square() {

@@ -416,11 +416,4 @@ public enum RoundingMode {
             default -> throw new IllegalArgumentException("argument out of range");
         };
     }
-
-    boolean isHalfWay() {
-        return switch (this) {
-            case HALF_DOWN, HALF_UP, HALF_EVEN -> true;
-            default -> false;
-        };
-    }
 }
