@@ -1877,10 +1877,8 @@ public final class Unsafe {
      * Holder for StackWalker that retains class references.
      */
     private static class StackWalkerHolder {
-        static final StackWalker INSTANCE;
-        static {
-            INSTANCE = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-        }
+        static final StackWalker INSTANCE =
+                StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
     }
 
     /**
