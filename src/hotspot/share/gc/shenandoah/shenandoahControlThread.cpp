@@ -40,6 +40,19 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
 
+// Regions cannot be uncommitted when concurrent reset is zeroing out the bitmaps.
+// This CADR class enforces this by forbidding region uncommits while it is in scope.
+struct ShenandoahForbidRegionUncommit : public StackObj {
+  ShenandoahHeap* const _heap;
+  explicit ShenandoahForbidRegionUncommit(ShenandoahHeap* heap) : _heap(heap) {
+    _heap->forbid_uncommit();
+  }
+
+  ~ShenandoahForbidRegionUncommit() {
+    _heap->allow_uncommit();
+  }
+};
+
 ShenandoahControlThread::ShenandoahControlThread() :
   ShenandoahController(),
   _requested_gc_cause(GCCause::_no_cause_specified),
@@ -125,7 +138,8 @@ void ShenandoahControlThread::run_service() {
     assert (!gc_requested || cause != GCCause::_last_gc_cause, "GC cause should be set");
 
     if (gc_requested) {
-      heap->forbid_uncommit();
+      // Cannot uncommit bitmap slices during concurrent reset
+      ShenandoahForbidRegionUncommit forbid_region_uncommit(heap);
 
       // GC is starting, bump the internal ID
       update_gc_id();
@@ -250,7 +264,6 @@ void ShenandoahControlThread::run_service() {
       last_sleep_adjust_time = current;
     }
 
-    heap->allow_uncommit();
     os::naked_short_sleep(sleep);
   }
 

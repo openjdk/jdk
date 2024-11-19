@@ -43,7 +43,9 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   bool has_work(double shrink_before, size_t shrink_until) const;
   void uncommit(double shrink_before, size_t shrink_until);
 
-  bool is_uncommit_allowed();
+  // True if the control thread has allowed this thread to uncommit regions
+  bool is_uncommit_allowed() const;
+
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
 

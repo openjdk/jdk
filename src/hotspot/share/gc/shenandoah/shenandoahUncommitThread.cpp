@@ -78,7 +78,7 @@ void ShenandoahUncommitThread::run_service() {
 
 bool ShenandoahUncommitThread::should_uncommit(double shrink_before, size_t shrink_until) const {
   // Only start uncommit if the GC is idle, is not trying to run and there is work to do.
-  return _heap->is_idle() && _uncommit_allowed.is_set() && has_work(shrink_before, shrink_until);
+  return _heap->is_idle() && is_uncommit_allowed() && has_work(shrink_before, shrink_until);
 }
 
 bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_until) const {
@@ -101,6 +101,7 @@ bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_unti
 }
 
 void ShenandoahUncommitThread::notify_soft_max_changed() {
+  assert(is_uncommit_allowed(), "Only notify if uncommit is allowed");
   if (_soft_max_changed.try_set()) {
     MonitorLocker locker(&_stop_lock, Mutex::_no_safepoint_check_flag);
     locker.notify_all();
@@ -108,13 +109,14 @@ void ShenandoahUncommitThread::notify_soft_max_changed() {
 }
 
 void ShenandoahUncommitThread::notify_explicit_gc_requested() {
+  assert(is_uncommit_allowed(), "Only notify if uncommit is allowed");
   if (_explicit_gc_requested.try_set()) {
     MonitorLocker locker(&_stop_lock, Mutex::_no_safepoint_check_flag);
     locker.notify_all();
   }
 }
 
-bool ShenandoahUncommitThread::is_uncommit_allowed() {
+bool ShenandoahUncommitThread::is_uncommit_allowed() const {
   return _uncommit_allowed.is_set();
 }
 
