@@ -327,12 +327,6 @@ JNIEXPORT void JNICALL
 JVM_RegisterContinuationMethods(JNIEnv *env, jclass cls);
 
 /*
- * java.lang.SecurityManager
- */
-JNIEXPORT jobjectArray JNICALL
-JVM_GetClassContext(JNIEnv *env);
-
-/*
  * java.lang.Package
  */
 JNIEXPORT jstring JNICALL
@@ -1152,6 +1146,13 @@ JVM_GetClassFileVersion(JNIEnv *env, jclass current);
  */
 JNIEXPORT jboolean JNICALL
 JVM_PrintWarningAtDynamicAgentLoad(void);
+
+#define JNI_ONLOAD_SYMBOLS   {"JNI_OnLoad"}
+#define JNI_ONUNLOAD_SYMBOLS {"JNI_OnUnload"}
+#define JVM_ONLOAD_SYMBOLS      {"JVM_OnLoad"}
+#define AGENT_ONLOAD_SYMBOLS    {"Agent_OnLoad"}
+#define AGENT_ONUNLOAD_SYMBOLS  {"Agent_OnUnload"}
+#define AGENT_ONATTACH_SYMBOLS  {"Agent_OnAttach"}
 
 /*
  * This structure is used by the launcher to get the default thread

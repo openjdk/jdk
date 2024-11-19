@@ -2590,8 +2590,7 @@ public class Attr extends JCTree.Visitor {
                     } else if (methName == names._super) {
                         // qualifier omitted; check for existence
                         // of an appropriate implicit qualifier.
-                        rs.resolveImplicitThis(tree.meth.pos(),
-                                               localEnv, site, true);
+                        checkNewInnerClass(tree.meth.pos(), localEnv, site, true);
                     }
                 } else if (tree.meth.hasTag(SELECT)) {
                     log.error(tree.meth.pos(),
@@ -2798,11 +2797,9 @@ public class Attr extends JCTree.Visitor {
                     log.error(tree.encl.pos(), Errors.QualifiedNewOfStaticClass(clazztype.tsym));
                 }
             }
-        } else if (!clazztype.tsym.isInterface() &&
-                   (clazztype.tsym.flags_field & NOOUTERTHIS) == 0 &&
-                   clazztype.getEnclosingType().hasTag(CLASS)) {
+        } else {
             // Check for the existence of an apropos outer instance
-            rs.resolveImplicitThis(tree.pos(), env, clazztype);
+            checkNewInnerClass(tree.pos(), env, clazztype, false);
         }
 
         // Attribute constructor arguments.
@@ -3065,6 +3062,24 @@ public class Attr extends JCTree.Visitor {
                             diags.fragment(Fragments.CantApplyDiamond1(Fragments.Diamond(tsym), details)));
                 }
             };
+        }
+
+        void checkNewInnerClass(DiagnosticPosition pos, Env<AttrContext> env, Type type, boolean isSuper) {
+            boolean isLocal = type.tsym.owner.kind == MTH;
+            if ((type.tsym.flags() & (INTERFACE | ENUM | RECORD)) != 0 ||
+                    (!isLocal && !type.tsym.isInner()) ||
+                    (isSuper && env.enclClass.sym.isAnonymous())) {
+                // nothing to check
+                return;
+            }
+            Symbol res = isLocal ?
+                    rs.findLocalClassOwner(env, type.tsym) :
+                    rs.findSelfContaining(pos, env, type.getEnclosingType().tsym, isSuper);
+            if (res.exists()) {
+                rs.accessBase(res, pos, env.enclClass.sym.type, names._this, true);
+            } else {
+                log.error(pos, Errors.EnclClassRequired(type.tsym));
+            }
         }
 
     /** Make an attributed null check tree.
@@ -3639,7 +3654,6 @@ public class Attr extends JCTree.Visitor {
                 boolean targetError;
                 switch (refSym.kind) {
                     case ABSENT_MTH:
-                    case MISSING_ENCL:
                         targetError = false;
                         break;
                     case WRONG_MTH:
@@ -3690,11 +3704,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (!env.info.attributionMode.isSpeculative && that.getMode() == JCMemberReference.ReferenceMode.NEW) {
-                Type enclosingType = exprType.getEnclosingType();
-                if (enclosingType != null && enclosingType.hasTag(CLASS)) {
-                    // Check for the existence of an appropriate outer instance
-                    rs.resolveImplicitThis(that.pos(), env, exprType);
-                }
+                checkNewInnerClass(that.pos(), env, exprType, false);
             }
 
             if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {

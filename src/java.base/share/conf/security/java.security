@@ -729,7 +729,11 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # This is in addition to the jdk.certpath.disabledAlgorithms property above.
 #
 # See the specification of "jdk.certpath.disabledAlgorithms" for the
-# syntax of the disabled algorithm string.
+# syntax of the disabled algorithm string. Additionally, TLS cipher suites
+# can be disabled with this property using one or more "*" wildcard characters.
+# For example, "TLS_RSA_*" disables all cipher suites that start with
+# "TLS_RSA_". Only cipher suites starting with "TLS_" are allowed to have
+# wildcard characters.
 #
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
@@ -739,7 +743,7 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
-#       rsa_pkcs1_sha1, secp224r1
+#       rsa_pkcs1_sha1, secp224r1, TLS_RSA_*
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
     MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
     ECDH

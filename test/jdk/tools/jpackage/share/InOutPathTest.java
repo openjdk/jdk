@@ -29,12 +29,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
-import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.PackageFile;
-import jdk.jpackage.test.Annotations;
+import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.JPackageCommand;
@@ -55,47 +55,51 @@ import jdk.jpackage.test.TKit;
  */
 public final class InOutPathTest {
 
-    @Annotations.Parameters
+    @Parameters
     public static Collection input() {
         List<Object[]> data = new ArrayList<>();
 
-        for (var packageTypes : List.of(PackageType.IMAGE.toString(), ALL_NATIVE_PACKAGE_TYPES)) {
+        for (var packageTypeAlias : PackageTypeAlias.values()) {
             data.addAll(List.of(new Object[][]{
-                {packageTypes, wrap(InOutPathTest::outputDirInInputDir, "--dest in --input")},
-                {packageTypes, wrap(InOutPathTest::outputDirSameAsInputDir, "--dest same as --input")},
-                {packageTypes, wrap(InOutPathTest::tempDirInInputDir, "--temp in --input")},
-                {packageTypes, wrap(cmd -> {
+                {packageTypeAlias, wrap(InOutPathTest::outputDirInInputDir, "--dest in --input")},
+                {packageTypeAlias, wrap(InOutPathTest::outputDirSameAsInputDir, "--dest same as --input")},
+                {packageTypeAlias, wrap(InOutPathTest::tempDirInInputDir, "--temp in --input")},
+                {packageTypeAlias, wrap(cmd -> {
                     outputDirInInputDir(cmd);
                     tempDirInInputDir(cmd);
                 }, "--dest and --temp in --input")},
             }));
-            data.addAll(additionalContentInput(packageTypes, "--app-content"));
-        }
-
-        if (!TKit.isOSX()) {
-            data.addAll(List.of(new Object[][]{
-                {PackageType.IMAGE.toString(), wrap(cmd -> {
-                    additionalContent(cmd, "--app-content", cmd.outputBundle());
-                }, "--app-content same as output bundle")},
-            }));
-        } else {
-            var contentsFolder = "Contents/MacOS";
-            data.addAll(List.of(new Object[][]{
-                {PackageType.IMAGE.toString(), wrap(cmd -> {
-                    additionalContent(cmd, "--app-content", cmd.outputBundle().resolve(contentsFolder));
-                }, String.format("--app-content same as the \"%s\" folder in the output bundle", contentsFolder))},
-            }));
-        }
-
-        if (TKit.isOSX()) {
-            data.addAll(additionalContentInput(PackageType.MAC_DMG.toString(),
-                    "--mac-dmg-content"));
+            data.addAll(additionalContentInput(packageTypeAlias, "--app-content"));
         }
 
         return data;
     }
 
-    private static List<Object[]> additionalContentInput(String packageTypes, String argName) {
+    @Parameters(ifNotOS = OperatingSystem.MACOS)
+    public static Collection<Object[]> appContentInputOther() {
+        return List.of(new Object[][]{
+            {PackageTypeAlias.IMAGE, wrap(cmd -> {
+                additionalContent(cmd, "--app-content", cmd.outputBundle());
+            }, "--app-content same as output bundle")},
+        });
+    }
+
+    @Parameters(ifOS = OperatingSystem.MACOS)
+    public static Collection<Object[]> appContentInputOSX() {
+        var contentsFolder = "Contents/MacOS";
+        return List.of(new Object[][]{
+            {PackageTypeAlias.IMAGE, wrap(cmd -> {
+                additionalContent(cmd, "--app-content", cmd.outputBundle().resolve(contentsFolder));
+            }, String.format("--app-content same as the \"%s\" folder in the output bundle", contentsFolder))},
+        });
+    }
+
+    @Parameters(ifOS = OperatingSystem.MACOS)
+    public static Collection<Object[]> inputOSX() {
+        return List.of(additionalContentInput(PackageType.MAC_DMG, "--mac-dmg-content").toArray(Object[][]::new));
+    }
+
+    private static List<Object[]> additionalContentInput(Object packageTypes, String argName) {
         List<Object[]> data = new ArrayList<>();
 
         data.addAll(List.of(new Object[][]{
@@ -127,13 +131,16 @@ public final class InOutPathTest {
         return data;
     }
 
-    public InOutPathTest(String packageTypes, Envelope configure) {
-        if (ALL_NATIVE_PACKAGE_TYPES.equals(packageTypes)) {
-            this.packageTypes = PackageType.NATIVE;
-        } else {
-            this.packageTypes = Stream.of(packageTypes.split(",")).map(
-                    PackageType::valueOf).collect(toSet());
-        }
+    public InOutPathTest(PackageTypeAlias packageTypeAlias, Envelope configure) {
+        this(packageTypeAlias.packageTypes, configure);
+    }
+
+    public InOutPathTest(PackageType packageType, Envelope configure) {
+        this(Set.of(packageType), configure);
+    }
+
+    public InOutPathTest(Set<PackageType> packageTypes, Envelope configure) {
+        this.packageTypes = packageTypes;
         this.configure = configure.value;
     }
 
@@ -271,6 +278,18 @@ public final class InOutPathTest {
         }
     }
 
+    private enum PackageTypeAlias {
+        IMAGE(Set.of(PackageType.IMAGE)),
+        NATIVE(PackageType.NATIVE),
+        ;
+
+        PackageTypeAlias(Set<PackageType> packageTypes) {
+            this.packageTypes = packageTypes;
+        }
+
+        private final Set<PackageType> packageTypes;
+    }
+
     private final Set<PackageType> packageTypes;
     private final ThrowingConsumer<JPackageCommand> configure;
 
@@ -279,6 +298,4 @@ public final class InOutPathTest {
     // For other platforms it doesn't matter. Keep it the same across
     // all platforms for simplicity.
     private static final Path JAR_PATH = Path.of("Resources/duke.jar");
-
-    private static final String ALL_NATIVE_PACKAGE_TYPES = "NATIVE";
 }

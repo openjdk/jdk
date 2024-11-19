@@ -195,7 +195,12 @@ private:
     _has_archived_enum_objs                = 1 << 4,
     // This class was not loaded from a classfile in the module image
     // or classpath.
-    _is_generated_shared_class             = 1 << 5
+    _is_generated_shared_class             = 1 << 5,
+    // archived mirror already initialized by AOT-cache assembly: no further need to call <clinit>
+    _has_aot_initialized_mirror            = 1 << 6,
+    // If this class has been aot-inititalized, do we need to call its runtimeSetup()
+    // method during the production run?
+    _is_runtime_setup_required             = 1 << 7,
   };
 #endif
 
@@ -374,6 +379,23 @@ protected:
   }
   bool is_generated_shared_class() const {
     CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_has_aot_initialized_mirror() {
+    CDS_ONLY(_shared_class_flags |= _has_aot_initialized_mirror;)
+  }
+  bool has_aot_initialized_mirror() const {
+    CDS_ONLY(return (_shared_class_flags & _has_aot_initialized_mirror) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_is_runtime_setup_required() {
+    assert(has_aot_initialized_mirror(), "sanity");
+    CDS_ONLY(_shared_class_flags |= _is_runtime_setup_required;)
+  }
+  bool is_runtime_setup_required() const {
+    CDS_ONLY(return (_shared_class_flags & _is_runtime_setup_required) != 0;)
     NOT_CDS(return false;)
   }
 

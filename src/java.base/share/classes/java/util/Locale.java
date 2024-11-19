@@ -1216,10 +1216,6 @@ public final class Locale implements Cloneable, Serializable {
         if (newLocale == null)
             throw new NullPointerException("Can't set default locale to NULL");
 
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) sm.checkPermission(new PropertyPermission
-                        ("user.language", "write"));
         switch (category) {
         case DISPLAY:
             defaultDisplayLocale = newLocale;
