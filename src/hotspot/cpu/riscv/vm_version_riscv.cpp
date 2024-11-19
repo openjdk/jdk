@@ -171,7 +171,7 @@ void VM_Version::common_initialize() {
   }
 
   if (FLAG_IS_DEFAULT(AlignVector)) {
-    AlignVector = AvoidUnalignedAccesses;
+    FLAG_SET_DEFAULT(AlignVector, AvoidUnalignedAccesses);
   }
 
   // See JDK-8026049
