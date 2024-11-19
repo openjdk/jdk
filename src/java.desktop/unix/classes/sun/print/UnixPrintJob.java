@@ -524,6 +524,7 @@ public class UnixPrintJob implements CancelablePrintJob {
 
         // now spool the print data.
         PrinterOpener po = new PrinterOpener();
+        po.run();
         if (po.pex != null) {
             throw po.pex;
         }
@@ -596,6 +597,7 @@ public class UnixPrintJob implements CancelablePrintJob {
 
         if (mDestType == UnixPrintJob.DESTPRINTER) {
             PrinterSpooler spooler = new PrinterSpooler();
+            spooler.run();
             if (spooler.pex != null) {
                 throw spooler.pex;
             }
@@ -906,9 +908,7 @@ public class UnixPrintJob implements CancelablePrintJob {
     private String mDestination, mOptions="";
     private boolean mNoJobSheet = false;
 
-    // Inner class to run "privileged" to open the printer output stream.
-
-    private class PrinterOpener implements java.security.PrivilegedAction<OutputStream> {
+    private class PrinterOpener {
         PrintException pex;
         OutputStream result;
 
@@ -936,9 +936,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
-    // Inner class to run "privileged" to invoke the system print command
-
-    private class PrinterSpooler implements java.security.PrivilegedAction<Object> {
+    private class PrinterSpooler {
         PrintException pex;
 
         private void handleProcessFailure(final Process failedProcess,
