@@ -60,12 +60,10 @@ class MethodCounters : public MetaspaceObj {
 
   void metaspace_pointers_do(MetaspaceClosure* it) { return; }
 
-  static int method_counters_size() {
+  static int size() {
     return align_up((int)sizeof(MethodCounters), wordSize) / wordSize;
   }
-  int size() const {
-    return method_counters_size();
-  }
+
   MetaspaceObj::Type type() const { return MethodCountersType; }
   void clear_counters();
 
