@@ -1295,7 +1295,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         case Form::idealF: type = "Type::FLOAT";    break;
         case Form::idealD: type = "Type::DOUBLE";   break;
         case Form::idealL: type = "TypeLong::LONG"; break;
-        case Form::idealH: type = "Type::HALF_LONG"; break;
+        case Form::idealH: type = "Type::HALF_FLOAT"; break;
         case Form::none: // fall through
         default:
           assert( false, "No support for this type of stackSlot");
