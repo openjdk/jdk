@@ -37,9 +37,6 @@ GENSRC_AWT_ICONS_SRC += \
     $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon32.png \
     $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon48.png
 
-
-AWT_ICONPATH := $(MODULE_SRC)/share/classes/sun/awt/resources
-
 GENSRC_AWT_ICONS_FILES := $(notdir $(GENSRC_AWT_ICONS_SRC))
 
 GENSRC_AWT_ICONS_SHORT_NAME = $(subst .,_,$(subst -,_,$(1)))
