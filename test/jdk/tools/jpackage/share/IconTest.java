@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,20 +41,18 @@ import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.AdditionalLauncher;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 
 /*
  * @test
  * @summary jpackage create image and package with custom icons for the main and additional launcher
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile IconTest.java
  * @run main/othervm/timeout=540 -Xmx512m
- *  --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
  *  jdk.jpackage.test.Main
  *  --jpt-run=IconTest
  */
@@ -430,7 +428,7 @@ public class IconTest {
         private final Path cmdlineIcon;
         private final Path resourceDirIcon;
 
-        private final static Set<Launcher> PRIMARY = Set.of(Main, Additional);
+        private static final Set<Launcher> PRIMARY = Set.of(Main, Additional);
     }
 
     private final boolean appImage;
@@ -442,7 +440,7 @@ public class IconTest {
                 + TKit.ICON_SUFFIX));
     }
 
-    private final static Path[] ICONS = Stream.of("icon", "icon2", "icon3",
+    private static final Path[] ICONS = Stream.of("icon", "icon2", "icon3",
             "icon4")
             .map(IconTest::iconPath)
             .collect(Collectors.toList()).toArray(Path[]::new);

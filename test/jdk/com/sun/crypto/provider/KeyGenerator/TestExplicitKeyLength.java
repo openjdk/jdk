@@ -35,10 +35,10 @@ import java.util.*;
 
 public class TestExplicitKeyLength {
 
-    private static final String ALGOS[] = { "RC2", "ARCFOUR" };
+    private static final String ALGOS[] = { "RC2", "ARCFOUR", "AES", "AES", "AES" };
 
     private static final int KEY_SIZES[] =
-        { 64, 80 }; // in bits
+        { 64, 80, 128, 192, 256 }; // in bits
 
     public static void runTest(String algo, int keysize) throws Exception {
         KeyGenerator kg = KeyGenerator.getInstance(algo,

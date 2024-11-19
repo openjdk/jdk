@@ -28,6 +28,8 @@
  * @summary Test the error conditions of
  * EncryptedPrivateKeyInfo.getKeySpec(...) methods.
  * @author Valerie Peng
+ * @run main/othervm -DcipherAlg=PBEWithMD5AndDES GetKeySpecException
+ * @run main/othervm -DcipherAlg=PBEWithSHA1AndDESede GetKeySpecException
  */
 import java.security.*;
 import java.util.Arrays;
@@ -37,7 +39,7 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 public class GetKeySpecException {
-    private static final String cipherAlg = "PBEWithMD5AndDES";
+    private static String cipherAlg;
     private static final char[] passwd = { 'p','a','s','s','w','d' };
     private static SecretKey cipherKey;
     private static Cipher cipher = null;
@@ -50,6 +52,7 @@ public class GetKeySpecException {
 
     static {
         try {
+            cipherAlg = System.getProperty("cipherAlg");
             sunjce = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
             PBEParameterSpec badParamSpec =
                 new PBEParameterSpec(new byte[10], 10);

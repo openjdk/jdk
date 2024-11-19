@@ -1996,16 +1996,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible.
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays.
-      if (UseCompressedClassPointers) {
-        // We don't need decode because we just need to compare.
-        __ lwz(tmp, oopDesc::klass_offset_in_bytes(), src);
-        __ lwz(tmp2, oopDesc::klass_offset_in_bytes(), dst);
-        __ cmpw(CCR0, tmp, tmp2);
-      } else {
-        __ ld(tmp, oopDesc::klass_offset_in_bytes(), src);
-        __ ld(tmp2, oopDesc::klass_offset_in_bytes(), dst);
-        __ cmpd(CCR0, tmp, tmp2);
-      }
+      __ cmp_klasses_from_objects(CCR0, src, dst, tmp, tmp2);
       __ beq(CCR0, cont);
     } else {
       // For object arrays, if src is a sub class of dst then we can
@@ -2128,39 +2119,15 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // but not necessarily exactly of type default_type.
     Label known_ok, halt;
     metadata2reg(default_type->constant_encoding(), tmp);
-    if (UseCompressedClassPointers) {
-      // Tmp holds the default type. It currently comes uncompressed after the
-      // load of a constant, so encode it.
-      __ encode_klass_not_null(tmp);
-      // Load the raw value of the dst klass, since we will be comparing
-      // uncompressed values directly.
-      __ lwz(tmp2, oopDesc::klass_offset_in_bytes(), dst);
-      __ cmpw(CCR0, tmp, tmp2);
-      if (basic_type != T_OBJECT) {
-        __ bne(CCR0, halt);
-        // Load the raw value of the src klass.
-        __ lwz(tmp2, oopDesc::klass_offset_in_bytes(), src);
-        __ cmpw(CCR0, tmp, tmp2);
-        __ beq(CCR0, known_ok);
-      } else {
-        __ beq(CCR0, known_ok);
-        __ cmpw(CCR0, src, dst);
-        __ beq(CCR0, known_ok);
-      }
+    __ cmp_klass(CCR0, dst, tmp, R11_scratch1, R12_scratch2);
+    if (basic_type != T_OBJECT) {
+      __ bne(CCR0, halt);
+      __ cmp_klass(CCR0, src, tmp, R11_scratch1, R12_scratch2);
+      __ beq(CCR0, known_ok);
     } else {
-      __ ld(tmp2, oopDesc::klass_offset_in_bytes(), dst);
-      __ cmpd(CCR0, tmp, tmp2);
-      if (basic_type != T_OBJECT) {
-        __ bne(CCR0, halt);
-        // Load the raw value of the src klass.
-        __ ld(tmp2, oopDesc::klass_offset_in_bytes(), src);
-        __ cmpd(CCR0, tmp, tmp2);
-        __ beq(CCR0, known_ok);
-      } else {
-        __ beq(CCR0, known_ok);
-        __ cmpd(CCR0, src, dst);
-        __ beq(CCR0, known_ok);
-      }
+      __ beq(CCR0, known_ok);
+      __ cmpw(CCR0, src, dst);
+      __ beq(CCR0, known_ok);
     }
     __ bind(halt);
     __ stop("incorrect type information in arraycopy");
@@ -2738,12 +2705,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     }
   }
 
-  if (UseCompressedClassPointers) {
-    __ lwz(result, oopDesc::klass_offset_in_bytes(), obj);
-    __ decode_klass_not_null(result);
-  } else {
-    __ ld(result, oopDesc::klass_offset_in_bytes(), obj);
-  }
+  __ load_klass(result, obj);
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {

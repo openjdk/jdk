@@ -176,65 +176,57 @@ public class WindowsFlags {
         return (propString != null) ? true : false;
     }
 
-    @SuppressWarnings("removal")
     private static void initJavaFlags() {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Object>()
-        {
-            public Object run() {
-                magPresent = getBooleanProp(
-                    "javax.accessibility.screen_magnifier_present", false);
-                boolean ddEnabled =
-                    !getBooleanProp("sun.java2d.noddraw", magPresent);
-                boolean ddOffscreenEnabled =
-                    getBooleanProp("sun.java2d.ddoffscreen", ddEnabled);
-                d3dEnabled = getBooleanProp("sun.java2d.d3d",
-                    ddEnabled && ddOffscreenEnabled);
-                d3dOnScreenEnabled =
-                    getBooleanProp("sun.java2d.d3d.onscreen", d3dEnabled);
-                oglEnabled = getBooleanProp("sun.java2d.opengl", false);
-                if (oglEnabled) {
-                    oglVerbose = isBooleanPropTrueVerbose("sun.java2d.opengl");
-                    if (WGLGraphicsConfig.isWGLAvailable()) {
-                        d3dEnabled = false;
-                    } else {
-                        if (oglVerbose) {
-                            System.out.println(
-                                "Could not enable OpenGL pipeline " +
-                                "(WGL not available)");
-                        }
-                        oglEnabled = false;
-                    }
-                }
-                gdiBlitEnabled = getBooleanProp("sun.java2d.gdiBlit", true);
-                d3dSet = getPropertySet("sun.java2d.d3d");
-                if (d3dSet) {
-                    d3dVerbose = isBooleanPropTrueVerbose("sun.java2d.d3d");
-                }
-                offscreenSharingEnabled =
-                    getBooleanProp("sun.java2d.offscreenSharing", false);
-                String dpiOverride = System.getProperty("sun.java2d.dpiaware");
-                if (dpiOverride != null) {
-                    setHighDPIAware = dpiOverride.equalsIgnoreCase("true");
-                } else {
-                    String sunLauncherProperty =
-                        System.getProperty("sun.java.launcher", "unknown");
-                    setHighDPIAware =
-                        sunLauncherProperty.equalsIgnoreCase("SUN_STANDARD");
-                }
-                /*
-                // Output info based on some non-default flags:
-                if (offscreenSharingEnabled) {
+        magPresent = getBooleanProp(
+                "javax.accessibility.screen_magnifier_present", false);
+        boolean ddEnabled =
+                !getBooleanProp("sun.java2d.noddraw", magPresent);
+        boolean ddOffscreenEnabled =
+                getBooleanProp("sun.java2d.ddoffscreen", ddEnabled);
+        d3dEnabled = getBooleanProp("sun.java2d.d3d",
+                ddEnabled && ddOffscreenEnabled);
+        d3dOnScreenEnabled =
+                getBooleanProp("sun.java2d.d3d.onscreen", d3dEnabled);
+        oglEnabled = getBooleanProp("sun.java2d.opengl", false);
+        if (oglEnabled) {
+            oglVerbose = isBooleanPropTrueVerbose("sun.java2d.opengl");
+            if (WGLGraphicsConfig.isWGLAvailable()) {
+                d3dEnabled = false;
+            } else {
+                if (oglVerbose) {
                     System.out.println(
-                        "Warning: offscreenSharing has been enabled. " +
-                        "The use of this capability will change in future " +
-                        "releases and applications that depend on it " +
-                        "may not work correctly");
+                        "Could not enable OpenGL pipeline " +
+                        "(WGL not available)");
                 }
-                */
-                return null;
+                oglEnabled = false;
             }
-        });
+        }
+        gdiBlitEnabled = getBooleanProp("sun.java2d.gdiBlit", true);
+        d3dSet = getPropertySet("sun.java2d.d3d");
+        if (d3dSet) {
+            d3dVerbose = isBooleanPropTrueVerbose("sun.java2d.d3d");
+        }
+        offscreenSharingEnabled =
+            getBooleanProp("sun.java2d.offscreenSharing", false);
+        String dpiOverride = System.getProperty("sun.java2d.dpiaware");
+        if (dpiOverride != null) {
+            setHighDPIAware = dpiOverride.equalsIgnoreCase("true");
+        } else {
+            String sunLauncherProperty =
+                System.getProperty("sun.java.launcher", "unknown");
+            setHighDPIAware =
+                sunLauncherProperty.equalsIgnoreCase("SUN_STANDARD");
+        }
+        /*
+            // Output info based on some non-default flags:
+            if (offscreenSharingEnabled) {
+                System.out.println(
+                    "Warning: offscreenSharing has been enabled. " +
+                    "The use of this capability will change in future " +
+                    "releases and applications that depend on it " +
+                    "may not work correctly");
+            }
+        */
         /*
         System.out.println("WindowsFlags (Java):");
         System.out.println("  ddEnabled: " + ddEnabled + "\n" +

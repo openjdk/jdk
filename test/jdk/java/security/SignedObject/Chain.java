@@ -165,6 +165,8 @@ public class Chain {
         new Test(SigAlg.SHA1withDSA, KeyAlg.DSA, Provider.Default, 1024),
         new Test(SigAlg.MD2withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.MD5withRSA, KeyAlg.RSA, Provider.Default),
+        new Test(SigAlg.SHA224withRSA, KeyAlg.RSA, Provider.Default),
+        new Test(SigAlg.SHA256withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.SHA3_224withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.SHA3_256withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.SHA3_384withRSA, KeyAlg.RSA, Provider.Default),

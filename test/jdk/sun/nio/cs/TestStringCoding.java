@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 6636323 6636319 7040220 7096080 7183053 8080248 8054307
  * @summary Test if StringCoding and NIO result have the same de/encoding result
  * @modules java.base/sun.nio.cs
- * @run main/othervm/timeout=2000 -Djava.security.manager=allow TestStringCoding
+ * @run main/othervm/timeout=2000 TestStringCoding
  * @key randomness
  */
 
@@ -50,50 +50,46 @@ public class TestStringCoding {
         }
         byte[] asciiBA =  Arrays.copyOf(latinBA, 0x80);
 
-        for (Boolean hasSM: new boolean[] { false, true }) {
-            if (hasSM) {
-                System.setSecurityManager(new PermissiveSecurityManger());
-            }
-            for (Charset cs:  Charset.availableCharsets().values()) {
-                if ("ISO-2022-CN".equals(cs.name()) ||
-                    "x-COMPOUND_TEXT".equals(cs.name()) ||
-                    "x-JISAutoDetect".equals(cs.name()))
-                    continue;
-                System.out.printf("Testing(sm=%b) " + cs.name() + "....", hasSM);
 
-                testNewString(cs, testGetBytes(cs, new String(bmp)));
-                testNewString(cs, testGetBytes(cs, new String(latin)));
-                testNewString(cs, testGetBytes(cs, new String(ascii)));
-                testGetBytes(cs, testNewString(cs, latinBA));
-                testGetBytes(cs, testNewString(cs, asciiBA));
+        for (Charset cs:  Charset.availableCharsets().values()) {
+            if ("ISO-2022-CN".equals(cs.name()) ||
+                "x-COMPOUND_TEXT".equals(cs.name()) ||
+                "x-JISAutoDetect".equals(cs.name()))
+                continue;
+            System.out.println("Testing " + cs.name() + "....");
 
-                // "randomed" sizes
-                Random rnd = new Random();
-                for (int i = 0; i < 10; i++) {
-                    //System.out.printf("    blen=%d, clen=%d%n", blen, clen);
-                    char[] bmp0 = Arrays.copyOf(bmp, rnd.nextInt(0x10000));
-                    testNewString(cs, testGetBytes(cs, new String(bmp0)));
-                    //add a pair of surrogates
-                    int pos = bmp0.length / 2;
-                    if ((pos + 1) < bmp0.length) {
-                        bmp0[pos] = '\uD800';
-                        bmp0[pos+1] = '\uDC00';
-                    }
-                    testNewString(cs, testGetBytes(cs, new String(bmp0)));
+            testNewString(cs, testGetBytes(cs, new String(bmp)));
+            testNewString(cs, testGetBytes(cs, new String(latin)));
+            testNewString(cs, testGetBytes(cs, new String(ascii)));
+            testGetBytes(cs, testNewString(cs, latinBA));
+            testGetBytes(cs, testNewString(cs, asciiBA));
 
-                    char[] latin0 = Arrays.copyOf(latin, rnd.nextInt(0x100));
-                    char[] ascii0 = Arrays.copyOf(ascii, rnd.nextInt(0x80));
-                    byte[] latinBA0 = Arrays.copyOf(latinBA, rnd.nextInt(0x100));
-                    byte[] asciiBA0 = Arrays.copyOf(asciiBA, rnd.nextInt(0x80));
-                    testNewString(cs, testGetBytes(cs, new String(latin0)));
-                    testNewString(cs, testGetBytes(cs, new String(ascii0)));
-                    testGetBytes(cs, testNewString(cs, latinBA0));
-                    testGetBytes(cs, testNewString(cs, asciiBA0));
+            // "randomed" sizes
+            Random rnd = new Random();
+            for (int i = 0; i < 10; i++) {
+                //System.out.printf("    blen=%d, clen=%d%n", blen, clen);
+                char[] bmp0 = Arrays.copyOf(bmp, rnd.nextInt(0x10000));
+                testNewString(cs, testGetBytes(cs, new String(bmp0)));
+                //add a pair of surrogates
+                int pos = bmp0.length / 2;
+                if ((pos + 1) < bmp0.length) {
+                    bmp0[pos] = '\uD800';
+                    bmp0[pos+1] = '\uDC00';
                 }
-                testSurrogates(cs);
-                testMixed(cs);
-                System.out.println("done!");
+                testNewString(cs, testGetBytes(cs, new String(bmp0)));
+
+                char[] latin0 = Arrays.copyOf(latin, rnd.nextInt(0x100));
+                char[] ascii0 = Arrays.copyOf(ascii, rnd.nextInt(0x80));
+                byte[] latinBA0 = Arrays.copyOf(latinBA, rnd.nextInt(0x100));
+                byte[] asciiBA0 = Arrays.copyOf(asciiBA, rnd.nextInt(0x80));
+                testNewString(cs, testGetBytes(cs, new String(latin0)));
+                testNewString(cs, testGetBytes(cs, new String(ascii0)));
+                testGetBytes(cs, testNewString(cs, latinBA0));
+                testGetBytes(cs, testNewString(cs, asciiBA0));
             }
+            testSurrogates(cs);
+            testMixed(cs);
+            System.out.println("done!");
         }
     }
 
@@ -245,9 +241,5 @@ public class TestStringCoding {
                                            + cs.name());
             }
         }
-    }
-
-    static class PermissiveSecurityManger extends SecurityManager {
-        @Override public void checkPermission(java.security.Permission p) {}
     }
 }

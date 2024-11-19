@@ -836,25 +836,11 @@ public abstract class Graphics2D extends Graphics {
      * and {@code fill}.  It specifies how new pixels are to be combined
      * with the existing pixels on the graphics device during the rendering
      * process.
-     * <p>If this {@code Graphics2D} context is drawing to a
-     * {@code Component} on the display screen and the
-     * {@code Composite} is a custom object rather than an
-     * instance of the {@code AlphaComposite} class, and if
-     * there is a security manager, its {@code checkPermission}
-     * method is called with an {@code AWTPermission("readDisplayPixels")}
-     * permission.
-     * @throws SecurityException
-     *         if a custom {@code Composite} object is being
-     *         used to render to the screen and a security manager
-     *         is set and its {@code checkPermission} method
-     *         does not allow the operation.
      * @param comp the {@code Composite} object to be used for rendering
      * @see java.awt.Graphics#setXORMode
      * @see java.awt.Graphics#setPaintMode
      * @see #getComposite
      * @see AlphaComposite
-     * @see SecurityManager#checkPermission
-     * @see java.awt.AWTPermission
      */
     public abstract void setComposite(Composite comp);
 
