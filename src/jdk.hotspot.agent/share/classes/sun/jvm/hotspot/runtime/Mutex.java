@@ -35,7 +35,7 @@ public class Mutex extends VMObject {
   private static long          nameFieldOffset;
   private static long          ownerFieldOffset;
 
-  private static AddressField mutex_array;
+  private static AddressField  mutex_array;
   private static int           maxNum;
 
   private static final long addrSize = VM.getVM().getAddressSize();
@@ -49,7 +49,7 @@ public class Mutex extends VMObject {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type  = db.lookupType("Mutex");
+    Type type = db.lookupType("Mutex");
 
     sun.jvm.hotspot.types.Field f = type.getField("_name");
     nameFieldOffset = f.getOffset();
@@ -57,7 +57,7 @@ public class Mutex extends VMObject {
     f = type.getField("_owner");
     ownerFieldOffset = f.getOffset();
     mutex_array = type.getAddressField("_mutex_array");
-    maxNum =  type.getCIntegerField("_num_mutex").getJInt();
+    maxNum = type.getCIntegerField("_num_mutex").getJInt();
 
   }
 
