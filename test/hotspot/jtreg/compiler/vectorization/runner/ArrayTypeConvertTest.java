@@ -104,6 +104,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Integer Extension ----------------
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
     public int[] signExtension() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -113,6 +115,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
     public int[] zeroExtension() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -122,6 +126,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
     public int[] signExtensionFromByte() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -132,6 +138,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Integer Narrow ----------------
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
     public short[] narrowToSigned() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -141,6 +149,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
     public char[] narrowToUnsigned() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -150,6 +160,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
     public byte[] NarrowToByte() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -236,6 +248,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
     public float[] convertCharToFloat() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -245,6 +259,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
     public double[] convertCharToDouble() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
