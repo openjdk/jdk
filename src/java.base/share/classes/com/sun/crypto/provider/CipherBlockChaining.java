@@ -159,6 +159,9 @@ class CipherBlockChaining extends FeedbackCipher  {
             processed +=
                implEncrypt(plain, plainOffset, chunkSize, cipher, cipherOffset);
         }
+        // note: above loop always leaves some data to process (more then zero,
+        // less then or equal to chunkSize) so this last call can be
+        // unconditional
         processed +=
             implEncrypt(plain, plainOffset, plainLen, cipher, cipherOffset);
         return processed;
@@ -217,6 +220,9 @@ class CipherBlockChaining extends FeedbackCipher  {
             processed +=
                implDecrypt(cipher, cipherOffset, chunkSize, plain, plainOffset);
         }
+        // note: above loop always leaves some data to process (more then zero,
+        // less then or equal to chunkSize) so this last call can be
+        // unconditional
         processed +=
             implDecrypt(cipher, cipherOffset, cipherLen, plain, plainOffset);
         return processed;
