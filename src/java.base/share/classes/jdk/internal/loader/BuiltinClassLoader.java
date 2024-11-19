@@ -384,7 +384,7 @@ public class BuiltinClassLoader
         // class path
         Enumeration<URL> e = findResourcesOnClassPath(name);
 
-        // concat the resources from the modules and the class path
+        // concat the URLs of the resource in the modules and the class path
         return new Enumeration<>() {
             final Iterator<URL> iterator = resources.iterator();
             URL next;
