@@ -92,11 +92,12 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p> A {@code Locale} is composed of the bolded fields described below; note that a
  * {@code Locale} need not have all such fields. For example, {@link
  * Locale#ENGLISH Locale.ENGLISH} is only comprised of the <em>language</em> field.
- * Contrarily, a {@code Locale} such as the one returned by {@code
+ * In contrast, a {@code Locale} such as the one returned by {@code
  * Locale.forLanguageTag("en-Latn-US-POSIX-u-nu-latn")} would be comprised of all
  * the fields below. This particular {@code Locale} would represent English in
  * the United States using the Latin alphabet and numerics for use in POSIX
  * environments.
+ * <p>
  * {@code Locale} implements IETF BCP 47 and any deviations should be observed
  * by the comments prefixed by <em>"BCP 47 deviation:"</em>.
  * <a href="https://tools.ietf.org/html/rfc5646">RFC 5646</a>
@@ -116,8 +117,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dd> <em>Case convention:</em> {@code language} is case insensitive, but
  *   {@code Locale} always canonicalizes to lower case.</dd>
  *
- *   <dd> <em>Syntax:</em> Well-formed {@code language} values have the form {@code [a-zA-Z]{2,8}}.
- *   BCP 47 deviation: this is not the full BCP 47 language production, since it excludes
+ *   <dd> <em>Syntax:</em> Well-formed {@code language} values have the form {@code [a-zA-Z]{2,8}}.</dd>
+ *   <dd> <em> BCP 47 deviation:</em> this is not the full BCP 47 language production, since it excludes
  *   <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.2">extlang</a>
  *   (as modern three-letter language codes are preferred).</dd>
  *
@@ -154,8 +155,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  *   <dd> Any arbitrary value used to indicate a variation of a
  *   {@code Locale}. When multiple variants exist, they should be ordered with
- *   higher importance values preceding the others. BCP 47 deviation:
- *   BCP 47 subtags are strictly used to indicate
+ *   higher importance values preceding the others.</dd>
+ *   <dd> <em>BCP 47 deviation:</em> BCP 47 subtags are strictly used to indicate
  *   additional variations that define a language or its dialects that
  *   are not covered by any combinations of language, script and
  *   region subtags. However, the variant field in {@code Locale} has
@@ -172,7 +173,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  *   <dd> <em>Syntax:</em> Well-formed {@code variant} values have the form {@code
  *   SUBTAG (('_'|'-') SUBTAG)*} where {@code SUBTAG =
- *   [0-9][0-9a-zA-Z]{3} | [0-9a-zA-Z]{5,8}}. BCP 47 deviation: BCP 47 only
+ *   [0-9][0-9a-zA-Z]{3} | [0-9a-zA-Z]{5,8}}.</dd>
+ *   <dd> <em>BCP 47 deviation:</em> BCP 47 only
  *   uses hyphen ('-') as a delimiter, {@code Locale} is more lenient.</dd>
  *
  *   <dd> <em>Example:</em> "polyton" (Polytonic Greek), "POSIX"</dd>
@@ -180,7 +182,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dt><a id="def_extensions"><b>extensions</b></a></dt>
  *
  *   <dd> A map from single character keys to string values, indicating
- *   extensions apart from language identification. BCP 47 deviation: The {@code
+ *   extensions apart from language identification.</dd>
+ *   <dd> <em> BCP 47 deviation:</em> The {@code
  *   extensions} in {@code Locale} implement the semantics and syntax of BCP 47
  *   extension subtags <em>and</em> private use subtags. The {@code extensions}
  *   field cannot have empty values. </dd>
@@ -207,8 +210,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * the IANA Language Subtag Registry. The {@link Builder}
  * only checks if an individual field satisfies the syntactic
  * requirement (is well-formed), but does not validate the value
- * itself. Conversely, {@link #of(String, String, String)} and its overloads do not
- * make any syntactic checks on the input.
+ * itself. Conversely, {@link #of(String, String, String) Locale::of} and its
+ * overloads do not make any syntactic checks on the input.
  *
  * <h3><a id="def_locale_extension">Unicode locale/language extension</a></h3>
  *
@@ -229,7 +232,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * String representing this information, for example, "nu-thai".  The
  * {@code Locale} class also provides {@link
  * #getUnicodeLocaleAttributes}, {@link #getUnicodeLocaleKeys}, and
- * {@link #getUnicodeLocaleType} which provides access to the Unicode
+ * {@link #getUnicodeLocaleType(String)} which provides access to the Unicode
  * locale attributes and key/type pairs directly.  When represented as
  * a string, the Unicode Locale Extension lists attributes
  * alphabetically, followed by key/type sequences with keys listed
@@ -326,21 +329,20 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <dl>
  *  <dt><b>Locale Constants</b></dt>
- *  <dd>The {@code Locale} class provides a number of convenient constants
- *  that return {@code Locale} objects for commonly used locales. For example,
- *  {@link Locale#US Locale.US} is the {@code Locale} object for the United States.</dd>
+ *  <dd>A number of convenient constants are provided that return {@code Locale}
+ *  objects for commonly used locales. For example, {@link #US Locale.US} is the
+ *  {@code Locale} object for the United States.</dd>
  *  <dt><b>Factory Methods</b></dt>
- *  <dd>The method {@link #of(String, String, String)} and its overloads obtain a
+ *  <dd>{@link #of(String, String, String) Locale::of} and its overloads obtain a
  *  {@code Locale} object from the given {@code language}, {@code country},
- *  and/or {@code variant}. The method {@link #forLanguageTag} obtains a {@code Locale}
+ *  and/or {@code variant}. {@link #forLanguageTag(String)} obtains a {@code Locale}
  *  object for a well-formed BCP 47 language tag.</dd>
  *  <dt><b>Builder</b></dt>
  *  <dd>{@link Builder} is used to construct a {@code Locale} object that conforms
  *  to BCP 47 syntax. Use a builder to enforce syntactic restrictions on the input.</dd>
  * </dl>
- *
+ * <p>The following are all equivalent:
  * {@snippet lang=java :
- *     // The following are all equivalent
  *     Locale.US;
  *     Locale.of("en", "US");
  *     Locale.forLanguageTag("en-US");
@@ -358,9 +360,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * the language suitable for displaying to the user. The {@code getDisplayXXX}
  * methods are themselves <em>locale-sensitive</em> and have two variants; one with an explicit
  * locale parameter, and one without. The latter uses the default {@link
- * Locale.Category#DISPLAY DISPLAY} locale :
+ * Locale.Category#DISPLAY DISPLAY} locale, so the following are equivalent :
  * {@snippet lang=java :
- *     // The following are equivalent
  *     Locale.getDefault().getDisplayCountry();
  *     Locale.getDefault().getDisplayCountry(Locale.getDefault(Locale.Category.DISPLAY));
  * }
@@ -371,21 +372,19 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * as {@code NumberFormat} have several factory methods for creating a default object
  * of that type. These methods generally have two variants; one with an explicit
  * locale parameter, and one without. The latter uses the default {@link
- * Locale.Category#FORMAT FORMAT} locale :
+ * Locale.Category#FORMAT FORMAT} locale, so the following are equivalent :
  * {@snippet lang=java :
- *     // The following are equivalent
  *     NumberFormat.getCurrencyInstance();
  *     NumberFormat.getCurrencyInstance(Locale.getDefault(Locale.Category.FORMAT));
  * }
  *
  * <p>
- * The following example demonstrates <em>locale-sensitive</em> operations with different locales :
+ * The following example demonstrates <em>locale-sensitive</em> currency and
+ * date related operations under different locales :
  * {@snippet lang = java:
- *     // Localized currency format
  *     var number = 1000;
  *     NumberFormat.getCurrencyInstance(Locale.US).format(number); // returns "$1,000.00"
  *     NumberFormat.getCurrencyInstance(Locale.JAPAN).format(number); // returns "\u00A51,000""
- *     // Localized date format
  *     var date = LocalDate.of(2024, 1, 1);
  *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.US).format(date); // returns "January 1, 2024"
  *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.JAPAN).format(date); // returns "2024\u5e741\u67081\u65e5"
@@ -396,8 +395,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>If an application is internationalized and provides localized
  * resources for multiple locales, it sometimes needs to find one or more
  * locales (or language tags) which meet each user's specific preferences. Note
- * that the term "language tag" is used interchangeably with "locale" in the following
- * locale matching documentation.
+ * that the term "<dfn>{@index "language tag"}</dfn>" is used interchangeably
+ * with "locale" in the following locale matching documentation.
  *
  * <p>In order to match a user's preferred locales to a set of language
  * tags, <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
@@ -472,8 +471,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * in {@linkplain ##special_cases_constructor Special Cases}, only
  * for the two cases th_TH_TH and ja_JP_JP.
  *
- * <h2>Compatibility</h2>
  * @implNote
+ * <h2>Compatibility</h2>
  * <p> The following commentary is provided for apps that want to ensure
  * interoperability with older releases of {@code Locale} provided by the
  * reference implementation.
@@ -497,7 +496,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <p>Because of these issues, it is recommended that apps migrate
  * away from constructing non-conforming locales and use the
- * {@link #forLanguageTag} and {@link Locale.Builder} APIs instead.
+ * {@link #forLanguageTag(String)} and {@link Locale.Builder} APIs instead.
  * Apps desiring a string representation of the complete locale can
  * then always rely on {@link #toLanguageTag} for this purpose.
  *
@@ -1257,8 +1256,8 @@ public final class Locale implements Cloneable, Serializable {
      * by the Java runtime environment and by installed
      * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
      * implementations. At a minimum, the returned array must contain a
-     * {@code Locale} instance equal to {@link Locale#ROOT Locale.ROOT} and
-     * a {@code Locale} instance equal to {@link Locale#US Locale.US}.
+     * {@code Locale} instance equal to {@link #ROOT Locale.ROOT} and
+     * a {@code Locale} instance equal to {@link #US Locale.US}.
      */
     public static Locale[] getAvailableLocales() {
         return LocaleServiceProviderPool.getAllAvailableLocales();
@@ -1271,8 +1270,8 @@ public final class Locale implements Cloneable, Serializable {
      * by the Java runtime environment and by installed
      * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
      * implementations. At a minimum, the returned stream must contain a
-     * {@code Locale} instance equal to {@link Locale#ROOT Locale.ROOT} and
-     * a {@code Locale} instance equal to {@link Locale#US Locale.US}.
+     * {@code Locale} instance equal to {@link #ROOT Locale.ROOT} and
+     * a {@code Locale} instance equal to {@link #US Locale.US}.
      *
      * @implNote Unlike {@code getAvailableLocales()}, this method does
      * not create a defensive copy of the Locale array.
@@ -1796,7 +1795,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * <p>If the specified language tag contains any ill-formed subtags,
      * the first such subtag and all following subtags are ignored.  Compare
-     * to {@link Locale.Builder#setLanguageTag} which throws an exception
+     * to {@link Locale.Builder#setLanguageTag(String)} which throws an exception
      * in this case.
      *
      * <p>The following <b>conversions</b> are performed:<ul>
@@ -2103,7 +2102,7 @@ public final class Locale implements Cloneable, Serializable {
      * For example, if the locale is fr_FR and inLocale
      * is en_US, getDisplayCountry() will return "France"; if the locale is en_US and
      * inLocale is fr_FR, getDisplayCountry() will return "Etats-Unis".
-     * If the name returned cannot be localized according to inLocale.
+     * If the name returned cannot be localized according to inLocale,
      * this function falls back on the English name, and finally
      * on the ISO code as a last-resort value.  If the locale doesn't specify a country,
      * this function returns the empty string.
@@ -2715,7 +2714,7 @@ public final class Locale implements Cloneable, Serializable {
      * alphanumerics.  The method {@code setVariant} throws
      * {@code IllformedLocaleException} for a variant that does not satisfy
      * this restriction. If it is necessary to support such a variant, use
-     * {@link Locale#of(String, String, String)}.  However, keep in mind that a {@code Locale}
+     * {@link #of(String, String, String)}.  However, keep in mind that a {@code Locale}
      * object obtained this way might lose the variant information when
      * transformed to a BCP 47 language tag.
      *
@@ -2728,7 +2727,7 @@ public final class Locale implements Cloneable, Serializable {
      * <p>Builders can be reused; {@code clear()} resets all
      * fields to their default values.
      *
-     * @see Locale#forLanguageTag
+     * @see Locale#forLanguageTag(String)
      * @see Locale#of(String, String, String)
      * @since 1.7
      */
@@ -2778,7 +2777,7 @@ public final class Locale implements Cloneable, Serializable {
          * language tag.  Discards the existing state.  Null and the
          * empty string cause the builder to be reset, like {@link
          * #clear}.  Legacy tags (see {@link
-         * Locale#forLanguageTag}) are converted to their canonical
+         * Locale#forLanguageTag(String)}) are converted to their canonical
          * form before being processed.  Otherwise, the language tag
          * must be well-formed (see {@link Locale}) or an exception is
          * thrown (unlike {@code Locale.forLanguageTag}, which
@@ -2880,7 +2879,7 @@ public final class Locale implements Cloneable, Serializable {
          * the {@code Locale} class does not impose any syntactic
          * restriction on variant, and the variant value in
          * {@code Locale} is case sensitive.  To set such a variant,
-         * use {@link Locale#of(String, String, String)}.
+         * use {@link #of(String, String, String)}.
          *
          * @param variant the variant
          * @return This builder.
@@ -2902,12 +2901,12 @@ public final class Locale implements Cloneable, Serializable {
          * must be {@linkplain Locale##def_extensions well-formed} or an exception
          * is thrown.
          *
-         * <p><b>Note:</b> The key {@link Locale#UNICODE_LOCALE_EXTENSION
+         * <p><b>Note:</b> The key {@link #UNICODE_LOCALE_EXTENSION
          * UNICODE_LOCALE_EXTENSION} ('u') is used for the Unicode locale extension.
          * Setting a value for this key replaces any existing Unicode locale key/type
          * pairs with those defined in the extension.
          *
-         * <p><b>Note:</b> The key {@link Locale#PRIVATE_USE_EXTENSION
+         * <p><b>Note:</b> The key {@link #PRIVATE_USE_EXTENSION
          * PRIVATE_USE_EXTENSION} ('x') is used for the private use code. To be
          * well-formed, the value for this key needs only to have subtags of one to
          * eight alphanumeric characters, not two to eight as in the general case.
@@ -2936,7 +2935,7 @@ public final class Locale implements Cloneable, Serializable {
          *
          * <p>Keys and types are converted to lower case.
          *
-         * <p><b>Note</b>:Setting the 'u' extension via {@link #setExtension}
+         * <p><b>Note</b>:Setting the 'u' extension via {@link #setExtension(char, String)}
          * replaces all Unicode locale keywords with those defined in the
          * extension.
          *
@@ -3028,9 +3027,9 @@ public final class Locale implements Cloneable, Serializable {
          * Returns an instance of {@code Locale} obtained from the fields set
          * on this builder.
          *
-         * <p>This applies the conversions listed in {@link Locale#forLanguageTag}
+         * <p>This applies the conversions listed in {@link #forLanguageTag(String)}
          * when constructing a Locale. (Legacy tags are handled in
-         * {@link #setLanguageTag}.)
+         * {@link #setLanguageTag(String)}.)
          *
          * @return A Locale.
          */
@@ -3211,10 +3210,10 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @spec https://www.rfc-editor.org/info/rfc4234 RFC 4234: Augmented BNF for Syntax Specifications: ABNF
      * @spec https://www.rfc-editor.org/info/rfc4647 RFC 4647: Matching of Language Tags
-     * @see #filter
-     * @see #filterTags
-     * @see #lookup
-     * @see #lookupTag
+     * @see #filter(List, Collection, FilteringMode)
+     * @see #filterTags(List, Collection, FilteringMode)
+     * @see #lookup(List, Collection)
+     * @see #lookupTag(List, Collection)
      *
      * @since 1.8
      */
@@ -3431,7 +3430,7 @@ public final class Locale implements Cloneable, Serializable {
          *     found in the given {@code ranges} is ill-formed
          * @spec https://www.rfc-editor.org/info/rfc2616 RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
          * @see #parse(String)
-         * @see #mapEquivalents
+         * @see #mapEquivalents(List, Map)
          */
         public static List<LanguageRange> parse(String ranges,
                                                 Map<String, List<String>> map) {
