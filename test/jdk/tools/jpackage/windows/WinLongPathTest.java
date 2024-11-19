@@ -23,6 +23,7 @@
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.jpackage.test.Annotations.Parameters;
@@ -78,7 +79,7 @@ public record WinLongPathTest(Boolean appImage, String optionName) {
 
     private static void setOptionLongPath(JPackageCommand cmd, String option) throws IOException {
         var root = TKit.createTempDirectory("long-path");
-        var longPath = root.resolve("a".repeat(70), "b".repeat(70), "c".repeat(70));
+        var longPath = root.resolve(Path.of("a".repeat(70), "b".repeat(70), "c".repeat(70)));
         Files.createDirectories(longPath);
         cmd.setArgumentValue(option, longPath);
     }
