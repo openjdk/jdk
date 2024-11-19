@@ -415,19 +415,19 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
         static public void apply(LayoutGraph graph) {
             for (int k = 0; k < SWEEP_ITERATIONS; k++) {
+                for (LayoutLayer layer : graph.getLayers()) {
+                    layer.initXPositions();
+                }
+
                 int[][] space = new int[graph.getLayerCount()][];
                 LayoutNode[][] downProcessingOrder = new LayoutNode[graph.getLayerCount()][];
                 LayoutNode[][] upProcessingOrder = new LayoutNode[graph.getLayerCount()][];
                 for (int i = 0; i < graph.getLayerCount(); i++) {
                     LayoutLayer layer = graph.getLayer(i);
+
                     space[i] = new int[layer.size()];
                     downProcessingOrder[i] = new LayoutNode[layer.size()];
                     upProcessingOrder[i] = new LayoutNode[layer.size()];
-                    int curX = 0;
-                    for (LayoutNode node : layer) {
-                        node.setX(curX);
-                        curX += node.getOuterWidth() + NODE_OFFSET;
-                    }
 
                     for (int j = 0; j < layer.size(); j++) {
                         LayoutNode node = layer.get(j);
@@ -440,24 +440,23 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 }
 
                 for (int i = 1; i < graph.getLayerCount(); i++) {
-                    for (LayoutNode node : downProcessingOrder[i]) {
-                        node.setOptimalX(node.calculateOptimalXFromPredecessors());
-                    }
-                    processRow(space[i], downProcessingOrder[i]);
+                    processRow(space[i], downProcessingOrder[i], true);
                 }
 
                 for (int i = graph.getLayerCount() - 2; i >= 0; i--) {
-                    for (LayoutNode node : upProcessingOrder[i]) {
-                        node.setOptimalX(node.calculateOptimalXFromSuccessors());
-                    }
-                    processRow(space[i], upProcessingOrder[i]);
+                    processRow(space[i], upProcessingOrder[i], false);
                 }
             }
             graph.optimizeBackEdgeCrossings();
             graph.straightenEdges();
         }
 
-        static private void processRow(int[] space, LayoutNode[] processingOrder) {
+        static private void processRow(int[] space, LayoutNode[] processingOrder, boolean down) {
+            for (LayoutNode node : processingOrder) {
+                int optimalX = down ? node.calculateOptimalXFromPredecessors() : node.calculateOptimalXFromSuccessors();
+                node.setOptimalX(optimalX);
+            }
+
             Arrays.sort(processingOrder, DUMMY_NODES_THEN_OPTIMAL_X);
             TreeSet<LayoutNode> treeSet = new TreeSet<>(NODE_POS_COMPARATOR);
             for (LayoutNode node : processingOrder) {

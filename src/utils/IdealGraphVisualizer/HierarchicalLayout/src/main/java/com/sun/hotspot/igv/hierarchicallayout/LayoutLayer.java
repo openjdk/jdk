@@ -229,6 +229,17 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
     }
 
     /**
+     * Initializes nodes' X positions with spacing.
+     */
+    public void initXPositions() {
+        int curX = 0;
+        for (LayoutNode node : this) {
+            node.setX(curX);
+            curX += node.getOuterWidth() + NODE_OFFSET;
+        }
+    }
+
+    /**
      * Updates the position indices of the nodes in this layer based on their order in the list.
      * Useful after nodes have been added or removed to ensure position indices are consistent.
      */
