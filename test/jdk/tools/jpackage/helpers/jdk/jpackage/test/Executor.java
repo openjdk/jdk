@@ -54,7 +54,7 @@ public final class Executor extends CommandArguments<Executor> {
     public Executor() {
         saveOutputType = new HashSet<>(Set.of(SaveOutputType.NONE));
         removePath = false;
-        winEnableUTF8 = false;
+        winEnglishOutput = false;
     }
 
     public Executor setExecutable(String v) {
@@ -91,12 +91,12 @@ public final class Executor extends CommandArguments<Executor> {
         return this;
     }
 
-    public Executor setWinEnableUTF8(boolean value) {
+    public Executor setWinRunWithEnglishOutput(boolean value) {
         if (!TKit.isWindows()) {
             throw new UnsupportedOperationException(
-                    "setWinEnableUTF8 is only valid on Windows platform");
+                    "setWinRunWithEnglishOutput is only valid on Windows platform");
         }
-        winEnableUTF8 = value;
+        winEnglishOutput = value;
         return this;
     }
 
@@ -337,7 +337,7 @@ public final class Executor extends CommandArguments<Executor> {
     private Result runExecutable() throws IOException, InterruptedException {
         List<String> command = new ArrayList<>();
 
-        if (winEnableUTF8) {
+        if (winEnglishOutput) {
             // run chcp to change the code page to UTF-8 on Windows
             command.add("cmd.exe");
             command.add("/c");
@@ -476,7 +476,7 @@ public final class Executor extends CommandArguments<Executor> {
             exec = executablePath().toString();
         }
 
-        String chcpCmdLine = winEnableUTF8 ? "cmd.exe /c chcp 65001 && " : "";
+        String chcpCmdLine = winEnglishOutput ? "cmd.exe /c chcp 65001 && " : "";
         int chcpTokenNum = chcpCmdLine.isEmpty() ? 0 : chcpCmdLine.split(" ").length;
 
         return String.format(format, chcpCmdLine + printCommandLine(exec, args),
@@ -501,7 +501,7 @@ public final class Executor extends CommandArguments<Executor> {
     private Set<SaveOutputType> saveOutputType;
     private Path directory;
     private boolean removePath;
-    private boolean winEnableUTF8;
+    private boolean winEnglishOutput;
     private String winTmpDir = null;
 
     private static enum SaveOutputType {
