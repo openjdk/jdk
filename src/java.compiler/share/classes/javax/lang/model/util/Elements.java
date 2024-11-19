@@ -778,6 +778,16 @@ public interface Elements {
      *                           elements.getTypeElement("I"));
      * }
      *
+     * @apiNote The notion of overriding, by itself, does not involve the
+     * method's return type, listed exceptions, or, to some extent, access
+     * modifiers. These are additional requirements checked by the compiler
+     * (see {@jls 8.4.8.3}).
+     *
+     * If the source being reflected upon has not been sufficiently compiled
+     * &mdash; such as when processing annotations &mdash; the additional
+     * requirements might not be checked, potentially causing this method
+     * to return a false positive.
+     *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden
      * @param type   the class or interface of which the first method is a member
