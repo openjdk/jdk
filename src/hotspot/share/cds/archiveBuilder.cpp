@@ -897,7 +897,7 @@ void ArchiveBuilder::make_klasses_shareable() {
           assert(HeapShared::is_archivable_hidden_klass(ik), "sanity");
         } else {
           // Legacy CDS support for lambda proxies
-          assert(HeapShared::is_lambda_proxy_klass(ik), "sanity");
+          CDS_JAVA_HEAP_ONLY(assert(HeapShared::is_lambda_proxy_klass(ik), "sanity");)
         }
       } else if (ik->is_shared_boot_class()) {
         type = "boot";

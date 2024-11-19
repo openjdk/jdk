@@ -220,6 +220,14 @@ inline oop java_lang_VirtualThread::vthread_scope() {
   return base->obj_field(static_vthread_scope_offset);
 }
 
+inline ObjectWaiter* java_lang_VirtualThread::objectWaiter(oop vthread) {
+  return (ObjectWaiter*)vthread->address_field(_objectWaiter_offset);
+}
+
+inline void java_lang_VirtualThread::set_objectWaiter(oop vthread, ObjectWaiter* value) {
+  vthread->address_field_put(_objectWaiter_offset, (address)value);
+}
+
 #if INCLUDE_JFR
 inline u2 java_lang_Thread::jfr_epoch(oop ref) {
   return ref->short_field(_jfr_epoch_offset);

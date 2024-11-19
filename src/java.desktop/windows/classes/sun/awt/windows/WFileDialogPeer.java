@@ -30,8 +30,6 @@ import java.awt.dnd.DropTarget;
 import java.awt.peer.*;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ResourceBundle;
 import java.util.MissingResourceException;
 import java.util.Vector;
@@ -197,19 +195,13 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
     //This whole static block is a part of 4152317 fix
     static {
-        @SuppressWarnings("removal")
-        String filterString = AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    try {
-                        ResourceBundle rb = ResourceBundle.getBundle("sun.awt.windows.awtLocalization");
-                        return rb.getString("allFiles");
-                    } catch (MissingResourceException e) {
-                        return "All Files";
-                    }
-                }
-            });
+        String filterString;
+        try {
+            ResourceBundle rb = ResourceBundle.getBundle("sun.awt.windows.awtLocalization");
+            filterString = rb.getString("allFiles");
+        } catch (MissingResourceException e) {
+            filterString = "All Files";
+        }
         setFilterString(filterString);
     }
 
