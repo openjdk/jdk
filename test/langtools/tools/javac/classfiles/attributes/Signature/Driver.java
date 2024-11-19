@@ -219,7 +219,7 @@ public class Driver extends TestResult {
 
         SignatureAttribute attribute = sup.get();
         if (expectedSignature != null && checkNotNull(attribute, memberName + " must have attribute")) {
-            checkEquals(attribute.attributeName(),
+            checkEquals(attribute.attributeName().stringValue(),
                     "Signature", "Attribute's name : " + memberName);
             checkEquals(((BoundAttribute<?>)attribute).payloadLen(), 2, "Attribute's length : " + memberName);
             checkEquals(attribute.signature().stringValue(),

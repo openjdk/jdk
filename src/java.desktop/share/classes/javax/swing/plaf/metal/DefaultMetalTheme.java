@@ -30,7 +30,6 @@ import javax.swing.*;
 import java.awt.*;
 
 import sun.awt.AppContext;
-import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -182,9 +181,7 @@ public class DefaultMetalTheme extends MetalTheme {
     }
 
     static {
-        @SuppressWarnings("removal")
-        Object boldProperty = java.security.AccessController.doPrivileged(
-            new GetPropertyAction("swing.boldMetal"));
+        Object boldProperty = System.getProperty("swing.boldMetal");
         if (boldProperty == null || !"false".equals(boldProperty)) {
             PLAIN_FONTS = false;
         }
@@ -371,7 +368,7 @@ public class DefaultMetalTheme extends MetalTheme {
         public FontUIResource getFont(int type) {
             int mappedType = defaultMapping[type];
             if (fonts[type] == null) {
-                Font f = getPrivilegedFont(mappedType);
+                Font f = getFontForType(mappedType);
 
                 if (f == null) {
                     f = new Font(getDefaultFontName(type),
@@ -385,18 +382,10 @@ public class DefaultMetalTheme extends MetalTheme {
 
         /**
          * This is the same as invoking
-         * <code>Font.getFont(key)</code>, with the exception
-         * that it is wrapped inside a <code>doPrivileged</code> call.
+         * <code>Font.getFont(key)</code>
          */
-        @SuppressWarnings("removal")
-        protected Font getPrivilegedFont(final int key) {
-            return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Font>() {
-                    public Font run() {
-                        return Font.getFont(getDefaultPropertyName(key));
-                    }
-                }
-                );
+        protected Font getFontForType(final int key) {
+            return Font.getFont(getDefaultPropertyName(key));
         }
     }
 
@@ -405,21 +394,21 @@ public class DefaultMetalTheme extends MetalTheme {
      */
     private static class WindowsFontDelegate extends FontDelegate {
         private MetalFontDesktopProperty[] props;
-        private boolean[] checkedPrivileged;
+        private boolean[] checked;
 
         public WindowsFontDelegate() {
             props = new MetalFontDesktopProperty[6];
-            checkedPrivileged = new boolean[6];
+            checked = new boolean[6];
         }
 
         public FontUIResource getFont(int type) {
             if (fonts[type] != null) {
                 return fonts[type];
             }
-            if (!checkedPrivileged[type]) {
-                Font f = getPrivilegedFont(type);
+            if (!checked[type]) {
+                Font f = getFontForType(type);
 
-                checkedPrivileged[type] = true;
+                checked[type] = true;
                 if (f != null) {
                     fonts[type] = new FontUIResource(f);
                     return fonts[type];

@@ -327,12 +327,6 @@ JNIEXPORT void JNICALL
 JVM_RegisterContinuationMethods(JNIEnv *env, jclass cls);
 
 /*
- * java.lang.SecurityManager
- */
-JNIEXPORT jobjectArray JNICALL
-JVM_GetClassContext(JNIEnv *env);
-
-/*
  * java.lang.Package
  */
 JNIEXPORT jstring JNICALL

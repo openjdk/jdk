@@ -92,9 +92,6 @@ inline void stackChunkOopDesc::set_max_thawing_size(int value)  {
 inline uint8_t stackChunkOopDesc::lockstack_size() const         { return jdk_internal_vm_StackChunk::lockStackSize(as_oop()); }
 inline void stackChunkOopDesc::set_lockstack_size(uint8_t value) { jdk_internal_vm_StackChunk::set_lockStackSize(this, value); }
 
-inline ObjectWaiter* stackChunkOopDesc::object_waiter() const       { return (ObjectWaiter*)jdk_internal_vm_StackChunk::objectWaiter(as_oop()); }
-inline void stackChunkOopDesc::set_object_waiter(ObjectWaiter* obj) { jdk_internal_vm_StackChunk::set_objectWaiter(this, (address)obj); }
-
 inline oop stackChunkOopDesc::cont() const                { return jdk_internal_vm_StackChunk::cont(as_oop()); }
 inline void stackChunkOopDesc::set_cont(oop value)        { jdk_internal_vm_StackChunk::set_cont(this, value); }
 template<typename P>
@@ -169,22 +166,6 @@ inline bool stackChunkOopDesc::preempted() const { return is_flag(FLAG_PREEMPTED
 inline void stackChunkOopDesc::set_preempted(bool value) {
   assert(preempted() != value, "");
   set_flag(FLAG_PREEMPTED, value);
-}
-
-inline ObjectMonitor* stackChunkOopDesc::current_pending_monitor() const {
-  ObjectWaiter* waiter = object_waiter();
-  if (waiter != nullptr && waiter->at_monitorenter()) {
-    return waiter->monitor();
-  }
-  return nullptr;
-}
-
-inline ObjectMonitor* stackChunkOopDesc::current_waiting_monitor() const {
-  ObjectWaiter* waiter = object_waiter();
-  if (waiter != nullptr && waiter->is_wait()) {
-    return waiter->monitor();
-  }
-  return nullptr;
 }
 
 inline bool stackChunkOopDesc::has_lockstack() const         { return is_flag(FLAG_HAS_LOCKSTACK); }
