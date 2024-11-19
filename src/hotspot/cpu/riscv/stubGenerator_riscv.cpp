@@ -6502,7 +6502,7 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
     }
 
-    if (UseRVVForBigIntegerShiftIntrinsics) {
+    if (UseRVV) {
       StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     }
