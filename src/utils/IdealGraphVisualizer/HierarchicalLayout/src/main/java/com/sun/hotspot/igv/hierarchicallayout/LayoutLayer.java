@@ -312,39 +312,5 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         }
     }
 
-    /**
-     * Updates barycenters for nodes without specified neighbors by averaging adjacent nodes' barycenters.
-     *
-     * @param neighborType the type of neighbors to check for
-     */
-    public void updateBarycentersForIsolatedNodes(LayoutNode.NeighborType neighborType) {
-        for (int j = 0; j < size(); j++) {
-            LayoutNode current = get(j);
-            LayoutNode prev = (j > 0) ? get(j - 1) : null;
-            LayoutNode next = (j < size() - 1) ? get(j + 1) : null;
 
-            // If the current node lacks the specified neighbors
-            if (!current.hasNeighborsOfType(neighborType)) {
-                float barycenterSum = 0;
-                int count = 0;
-
-                // Include previous node's barycenter if it has the neighbors
-                if (prev != null && prev.hasNeighborsOfType(neighborType)) {
-                    barycenterSum += prev.getBarycenter();
-                    count++;
-                }
-
-                // Include next node's barycenter if it has the neighbors
-                if (next != null && next.hasNeighborsOfType(neighborType)) {
-                    barycenterSum += next.getBarycenter();
-                    count++;
-                }
-
-                // Set average barycenter if any neighbors were considered
-                if (count > 0) {
-                    current.setBarycenter(barycenterSum / count);
-                }
-            }
-        }
-    }
 }

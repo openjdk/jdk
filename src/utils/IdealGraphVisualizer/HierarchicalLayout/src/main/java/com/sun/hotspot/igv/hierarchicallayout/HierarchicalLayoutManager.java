@@ -301,91 +301,203 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
     }
 
-    private static class CrossingReduction {
 
-        static final boolean LEGACY_MODE = true;
+    public class CrossingReduction {
+
+        private static final int CROSSING_ITERATIONS = 24;
 
         /**
          * Applies the crossing reduction algorithm to the given graph.
          *
-         * @param graph the layout graph to optimize
+         * @param hierarchicalGraph the layout graph to optimize
          */
-        public static void apply(LayoutGraph graph) {
-            if (!LEGACY_MODE) {
-                graph.updatePositions();
-                graph.updateSpacings(true);
-            }
+        public static void apply(LayoutGraph hierarchicalGraph) {
+            hierarchicalGraph.updateSpacings(true);
 
             for (int i = 0; i < CROSSING_ITERATIONS; i++) {
-                sweep(graph, true);  // Downwards sweep
-                sweep(graph, false); // Upwards sweep
-            }
-            sweep(graph, true); // Final downwards sweep
-            graph.updatePositions();
-        }
-
-        /**
-         * Performs a sweep over the graph layers to reduce crossings.
-         *
-         * @param graph the layout graph
-         * @param down  true for downwards sweep, false for upwards sweep
-         */
-        private static void sweep(LayoutGraph graph, boolean down) {
-            int start, end, step;
-            NeighborType neighborType;
-            if (down) {
-                start = 0;
-                end = graph.getLayerCount();
-                step = 1;
-                neighborType =  NeighborType.PREDECESSORS;
-            } else {
-                start = graph.getLayerCount() - 1;
-                end = -1;
-                step = -1;
-                neighborType =  NeighborType.SUCCESSORS;
-            }
-            if (!LEGACY_MODE) {
-                for (int i = start; i != end; i += step) {
-                    LayoutLayer layer = graph.getLayer(i);
-                    for (LayoutNode node : layer) {
-                        node.setBarycenter(node.computeBarycenterX(NeighborType.BOTH, true));
-                    }
-                    layer.sort(NODE_BARYCENTER_COMPARATOR);
-                    layer.updateMinXSpacing(true);
-                }
+                sweep(hierarchicalGraph, true);  // Downwards sweep
+                sweep(hierarchicalGraph, false); // Upwards sweep
             }
 
-            for (int i = start + step; i != end; i += step) {
-                LayoutLayer layer = graph.getLayer(i);
-                if (LEGACY_MODE) {
-                    layer.updateBarycenters(neighborType, false);
-                } else {
-                    doMedianPositions(layer, neighborType);
-                }
-                layer.updateBarycentersForIsolatedNodes(neighborType);
-                layer.sort(NODE_BARYCENTER_COMPARATOR);
+            for (LayoutLayer layer : hierarchicalGraph.getLayers()) {
+                layer.sort(NODE_X_COMPARATOR);
                 layer.updateMinXSpacing(true);
                 layer.updateNodeIndices();
             }
         }
 
-        private static void doMedianPositions(LayoutLayer layer,  NeighborType neighborType) {
-            boolean usePred = neighborType == NeighborType.PREDECESSORS;
-            for (LayoutNode node : layer) {
-                int size = usePred ? node.getPredecessors().size() : node.getSuccessors().size();
-                if (size == 0) continue;
-                float[] values = new float[size];
-                for (int j = 0; j < size; j++) {
-                    LayoutNode predNode = usePred ? node.getPredecessors().get(j).getFrom() : node.getSuccessors().get(j).getTo();
-                    values[j] = predNode.getBarycenter();
+        /**
+         * Performs a sweep over the layers to reorder nodes and reduce crossings.
+         *
+         * @param hierarchicalGraph the layout graph
+         * @param downwards         direction of the sweep
+         */
+        private static void sweep(LayoutGraph hierarchicalGraph, boolean downwards) {
+            List<LayoutLayer> layers = hierarchicalGraph.getLayers();
+
+            if (downwards) {
+                // Process layers from top to bottom
+                for (int i = 1; i < layers.size(); i++) {
+                    ArrayList<LayoutNode> layer = layers.get(i);
+                    Map<LayoutNode, Integer> barycenters = computeBarycenters(layer, true);
+                    sortLayer(layer, barycenters);
+                    transpose(layer, layers.get(i - 1), true);
                 }
-                Arrays.sort(values);
-                if (values.length % 2 == 0) {
-                    node.setBarycenter((values[size / 2 - 1] + values[size / 2]) / 2);
-                } else {
-                    node.setBarycenter(values[size / 2]);
+            } else {
+                // Process layers from bottom to top
+                for (int i = layers.size() - 2; i >= 0; i--) {
+                    ArrayList<LayoutNode> layer = layers.get(i);
+                    Map<LayoutNode, Integer> barycenters = computeBarycenters(layer, false);
+                    sortLayer(layer, barycenters);
+                    transpose(layer, layers.get(i + 1), false);
                 }
             }
+            for (LayoutLayer layer : layers) {
+                layer.updateMinXSpacing(false);
+            }
+        }
+
+        /**
+         * Computes the barycenter positions of neighboring nodes in adjacent layers.
+         *
+         * @param layer     the current layer
+         * @param downwards direction of the sweep
+         * @return a map of nodes to their barycenter values
+         */
+        private static Map<LayoutNode, Integer> computeBarycenters(ArrayList<LayoutNode> layer, boolean downwards) {
+            Map<LayoutNode, Integer> barycenters = new HashMap<>();
+
+            for (LayoutNode node : layer) {
+                List<Integer> positions = new ArrayList<>();
+
+                List<LayoutEdge> edges = downwards ? node.getPredecessors() : node.getSuccessors();
+                for (LayoutEdge edge : edges) {
+                    LayoutNode neighbor = downwards ? edge.getFrom() : edge.getTo();
+                    positions.add(neighbor.getX());
+                }
+
+                int barycenter = computeBarycenter(positions, node.getX());
+                barycenters.put(node, barycenter);
+            }
+
+            return barycenters;
+        }
+
+        /**
+         * Computes the barycenter of a list of positions.
+         *
+         * @param positions list of neighbor positions
+         * @param defaultX  default position if positions list is empty
+         * @return the barycenter value
+         */
+        private static int computeBarycenter(List<Integer> positions, int defaultX) {
+            if (positions.isEmpty()) {
+                return defaultX;
+            } else {
+                double sum = 0;
+                for (double pos : positions) {
+                    sum += pos;
+                }
+                return (int) (sum / positions.size());
+            }
+        }
+
+        /**
+         * Sorts the nodes in a layer based on their barycenter values.
+         *
+         * @param layer       the current layer
+         * @param barycenters map of nodes to barycenter values
+         */
+        private static void sortLayer(ArrayList<LayoutNode> layer, Map<LayoutNode, Integer> barycenters) {
+            layer.sort(Comparator.comparingDouble(barycenters::get));
+            // Update positions
+            for (int j = 0; j < layer.size(); j++) {
+                layer.get(j).setX(j);
+            }
+        }
+
+        /**
+         * Applies the transpose heuristic to further reduce crossings.
+         *
+         * @param layer          the current layer
+         * @param adjacentLayer  the adjacent layer (above or below)
+         * @param downwards      direction of the sweep
+         */
+        private static void transpose(ArrayList<LayoutNode> layer, ArrayList<LayoutNode> adjacentLayer, boolean downwards) {
+            boolean improved = true;
+            while (improved) {
+                improved = false;
+                for (int i = 0; i < layer.size() - 1; i++) {
+                    LayoutNode node1 = layer.get(i);
+                    LayoutNode node2 = layer.get(i + 1);
+                    int crossingsBefore = countCrossings(node1, node2, adjacentLayer, downwards);
+                    swapNodes(layer, i, i + 1);
+                    int crossingsAfter = countCrossings(node1, node2, adjacentLayer, downwards);
+                    if (crossingsAfter >= crossingsBefore) {
+                        // Swap back
+                        swapNodes(layer, i, i + 1);
+                    } else {
+                        improved = true;
+                        // Update positions
+                        node1.setX(i);
+                        node2.setX(i + 1);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Swaps two nodes in a layer.
+         *
+         * @param layer the layer
+         * @param i     index of the first node
+         * @param j     index of the second node
+         */
+        private static void swapNodes(ArrayList<LayoutNode> layer, int i, int j) {
+            LayoutNode temp = layer.get(i);
+            layer.set(i, layer.get(j));
+            layer.set(j, temp);
+        }
+
+        /**
+         * Counts the number of crossings involving two nodes and the adjacent layer.
+         *
+         * @param node1         first node
+         * @param node2         second node
+         * @param adjacentLayer adjacent layer
+         * @param downwards     direction of the sweep
+         * @return the number of crossings
+         */
+        private static int countCrossings(LayoutNode node1, LayoutNode node2, ArrayList<LayoutNode> adjacentLayer, boolean downwards) {
+            List<Integer> positions1 = getAdjacentPositions(node1, downwards);
+            List<Integer> positions2 = getAdjacentPositions(node2, downwards);
+
+            int crossings = 0;
+            for (double pos1 : positions1) {
+                for (double pos2 : positions2) {
+                    if (pos1 > pos2) {
+                        crossings++;
+                    }
+                }
+            }
+            return crossings;
+        }
+
+        /**
+         * Gets the positions of the nodes adjacent to the given node.
+         *
+         * @param node      the node
+         * @param downwards direction of the sweep
+         * @return list of positions of adjacent nodes
+         */
+        private static List<Integer> getAdjacentPositions(LayoutNode node, boolean downwards) {
+            List<Integer> positions = new ArrayList<>();
+            List<LayoutEdge> edges = downwards ? node.getPredecessors() : node.getSuccessors();
+            for (LayoutEdge edge : edges) {
+                LayoutNode neighbor = downwards ? edge.getFrom() : edge.getTo();
+                positions.add(neighbor.getX());
+            }
+            return positions;
         }
     }
 
