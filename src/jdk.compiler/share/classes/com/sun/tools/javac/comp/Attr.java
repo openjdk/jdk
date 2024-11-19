@@ -4198,6 +4198,7 @@ public class Attr extends JCTree.Visitor {
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
             chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
+        chk.validate(tree.var.vartype, env, true);
         if (tree.var.isImplicitlyTyped()) {
             setSyntheticVariableType(tree.var, type == Type.noType ? syms.errType
                                                                    : type);
@@ -4207,7 +4208,6 @@ public class Attr extends JCTree.Visitor {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
         }
         annotate.flush();
-        chk.validate(tree.var.vartype, env, true);
         result = tree.type;
         if (v.isUnnamedVariable()) {
             matchBindings = MatchBindingsComputer.EMPTY;
