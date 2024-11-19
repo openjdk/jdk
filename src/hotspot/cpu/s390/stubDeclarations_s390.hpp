@@ -49,7 +49,7 @@
                                        do_arch_entry_init)              \
   do_arch_blob(compiler, 20000 )                                        \
   do_stub(compiler, partial_subtype_check)                              \
-  do_arch_entry(zarch, partial_subtype_check,                           \
+  do_arch_entry(zarch, compiler, partial_subtype_check,                 \
                 partial_subtype_check, partial_subtype_check)           \
 
 
@@ -58,7 +58,7 @@
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
                                     do_arch_entry_init)                 \
-  do_arch_blob(final, 20000 )                                           \
+  do_arch_blob(final, 20000)                                            \
 
 
 #endif // CPU_S390_STUBDECLARATIONS_HPP
