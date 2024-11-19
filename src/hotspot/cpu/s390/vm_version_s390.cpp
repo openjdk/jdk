@@ -320,6 +320,12 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
   }
+
+  // The OptoScheduling information is not maintained in s390.ad.
+  if (OptoScheduling) {
+    warning("OptoScheduling is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptoScheduling, false);
+  }
 }
 
 
