@@ -2050,7 +2050,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (!rescan) {
                     if (((phase = deactivate(w, phase)) & IDLE) != 0)
                         break;
-                    src = -1;
+                    src = -1;                            // re-enable propagation
                 }
             }
         }
@@ -2777,6 +2777,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             if (quiescent() > 0)
                 now = true;
         }
+
         if (now) {
             releaseWaiters();
             for (;;) {
@@ -2835,7 +2836,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                         } catch (Throwable ignore) {
                         }
                     }
-                    else if ((q.phase & (IDLE|1)) == 0 ||
+                    else if ((q.phase & (IDLE|1)) == 0 || // externally locked
                              q.top - q.base > 0)
                         return false;             // incomplete
                     else
