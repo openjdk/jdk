@@ -4477,23 +4477,19 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
 }
 
 // TODO desc
-// TODO maybe refactor to policy ?
 void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new) {
   CountedLoopNode* cl = lpt->_head->as_CountedLoop();
   LoopNode* outer_loop = cl->skip_strip_mined();
   Node* entry = outer_loop->in(LoopNode::EntryControl);
 
-  // Check we are not already multiversioned.
-  if (cl->is_multiversion()) { return; }
+  // Check we have multiversioning enabled, and are not already multiversioned.
+  if (!LoopMultiversioning || cl->is_multiversion()) { return; }
 
   // Check that we do not have a parse-predicate where we can add the runtime checks
   // during auto-vectorization.
   const Predicates predicates(entry);
   const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
   if (predicate_block->has_parse_predicate()) { return; }
-
-  // TODO check we are not on the slow-path of a multi-versioning.
-  // TODO maybe check unswitching coung???
 
   // TODO check for no control flow - only then are we reasonably sure SuperWord will work.
   // TODO node budget
