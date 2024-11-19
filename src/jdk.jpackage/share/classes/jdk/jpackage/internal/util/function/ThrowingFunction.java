@@ -34,7 +34,7 @@ public interface ThrowingFunction<T, R> {
             try {
                 return v.apply(t);
             } catch (Throwable ex) {
-                throw ExceptionWrapper.rethrowUnchecked(ex);
+                throw ExceptionBox.rethrowUnchecked(ex);
             }
         };
     }

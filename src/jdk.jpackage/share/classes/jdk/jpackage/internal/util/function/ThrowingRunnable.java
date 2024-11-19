@@ -32,7 +32,7 @@ public interface ThrowingRunnable {
             try {
                 v.run();
             } catch (Throwable ex) {
-                throw ExceptionWrapper.rethrowUnchecked(ex);
+                throw ExceptionBox.rethrowUnchecked(ex);
             }
         };
     }

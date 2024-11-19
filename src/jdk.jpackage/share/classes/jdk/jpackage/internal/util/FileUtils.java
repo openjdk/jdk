@@ -34,7 +34,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.util.function.ExceptionWrapper;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 public final class FileUtils {
@@ -146,7 +146,7 @@ public final class FileUtils {
                     this.ex = ex;
                 }
             } catch (Throwable t) {
-                throw ExceptionWrapper.rethrowUnchecked(t);
+                throw ExceptionBox.rethrowUnchecked(t);
             }
         }
 

@@ -34,7 +34,7 @@ public interface ThrowingConsumer<T> {
             try {
                 v.accept(o);
             } catch (Throwable ex) {
-                throw ExceptionWrapper.rethrowUnchecked(ex);
+                throw ExceptionBox.rethrowUnchecked(ex);
             }
         };
     }

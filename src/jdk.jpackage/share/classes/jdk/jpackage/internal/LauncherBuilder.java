@@ -42,8 +42,8 @@ import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.Launcher.Stub;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
-import jdk.jpackage.internal.util.function.ExceptionWrapper;
-import static jdk.jpackage.internal.util.function.ExceptionWrapper.rethrowUnchecked;
+import jdk.jpackage.internal.util.function.ExceptionBox;
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.model.ConfigException.rethrowConfigException;
@@ -139,7 +139,7 @@ final class LauncherBuilder {
                 } else {
                     return Map.entry(entry.getKey(), faGroup);
                 }
-            } catch (ExceptionWrapper ex) {
+            } catch (ExceptionBox ex) {
                 if (ex.getCause() instanceof ConfigException cfgException) {
                     throw rethrowUnchecked(buildConfigException()
                             .cause(cfgException.getCause())

@@ -44,7 +44,7 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jdk.jpackage.internal.util.function.ExceptionWrapper;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 
 /**
  * Arguments
@@ -719,7 +719,7 @@ public class Arguments {
                 Log.verbose(MessageFormat.format(
                         I18N.getString("message.bundle-created"),
                         bundler.getName()));
-            } catch (ExceptionWrapper ex) {
+            } catch (ExceptionBox ex) {
                 if (ex.getCause() instanceof ConfigException cfgEx) {
                     throw cfgEx;
                 } else if (ex.getCause() instanceof PackagerException pkgEx) {

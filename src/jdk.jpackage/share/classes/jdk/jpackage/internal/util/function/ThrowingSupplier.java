@@ -34,7 +34,7 @@ public interface ThrowingSupplier<T> {
             try {
                 return v.get();
             } catch (Throwable ex) {
-                throw ExceptionWrapper.rethrowUnchecked(ex);
+                throw ExceptionBox.rethrowUnchecked(ex);
             }
         };
     }

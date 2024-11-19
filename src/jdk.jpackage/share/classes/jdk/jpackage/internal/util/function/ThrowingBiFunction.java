@@ -35,7 +35,7 @@ public interface ThrowingBiFunction<T, U, R> {
             try {
                 return v.apply(t, u);
             } catch (Throwable ex) {
-                throw ExceptionWrapper.rethrowUnchecked(ex);
+                throw ExceptionBox.rethrowUnchecked(ex);
             }
         };
     }

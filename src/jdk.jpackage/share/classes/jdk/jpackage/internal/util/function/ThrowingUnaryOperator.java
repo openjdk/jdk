@@ -35,7 +35,7 @@ public interface ThrowingUnaryOperator<T> {
             try {
                 return v.apply(t);
             } catch (Throwable ex) {
-                throw ExceptionWrapper.rethrowUnchecked(ex);
+                throw ExceptionBox.rethrowUnchecked(ex);
             }
         };
     }
