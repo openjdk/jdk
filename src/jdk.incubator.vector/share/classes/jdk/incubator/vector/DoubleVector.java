@@ -677,6 +677,11 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         if (opKind(op, VO_SPECIAL)) {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
+            } else {
+                int opc = opCode(op);
+                if (opc >= VECTOR_OP_TAN && opc <= VECTOR_OP_EXPM1) {
+                    return UN_IMPL.find(op, opc, DoubleVector::unaryOperations).apply(this, null);
+                }
             }
         }
         int opc = opCode(op);
@@ -702,6 +707,11 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         if (opKind(op, VO_SPECIAL)) {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
+            } else {
+                int opc = opCode(op);
+                if (opc >= VECTOR_OP_TAN && opc <= VECTOR_OP_EXPM1) {
+                    return UN_IMPL.find(op, opc, DoubleVector::unaryOperations).apply(this, m);
+                }
             }
         }
         int opc = opCode(op);
@@ -780,6 +790,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                 VectorMask<Long> mask
                     = this.viewAsIntegralLanes().compare(EQ, (long) 0);
                 return this.blend(that, mask.cast(vspecies()));
+            } else if (op == ATAN2 || op == POW || op == HYPOT) {
+                int opc = opCode(op);
+                return BIN_IMPL.find(op, opc, DoubleVector::binaryOperations).apply(this, that, null);
             }
         }
 
@@ -814,6 +827,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                 VectorMask<Long> mask
                     = bits.compare(EQ, (long) 0, m.cast(bits.vspecies()));
                 return this.blend(that, mask.cast(vspecies()));
+            } else if (op == ATAN2 || op == POW || op == HYPOT) {
+                int opc = opCode(op);
+                return BIN_IMPL.find(op, opc, DoubleVector::binaryOperations).apply(this, that, m);
             }
         }
 

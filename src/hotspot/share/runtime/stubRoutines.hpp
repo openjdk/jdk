@@ -294,10 +294,6 @@ class StubRoutines: AllStatic {
   static address _cont_returnBarrierExc;
   static address _cont_preempt_stub;
 
-  // Vector Math Routines
-  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
-  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
-
   static address _upcall_stub_exception_handler;
   static address _upcall_stub_load_target;
 
