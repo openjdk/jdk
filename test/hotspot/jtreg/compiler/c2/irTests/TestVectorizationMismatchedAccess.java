@@ -240,6 +240,7 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
@@ -247,17 +248,28 @@ public class TestVectorizationMismatchedAccess {
     public static void testByteLong2a(byte[] dest, long[] src) {
         for (int i = 1; i < src.length; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                      UseCompactObjectHeaders=true
+            // B_adr = base + 16 + 8*(i-1)  ->  always            B_adr = base + 12 + 8*(i-1)  ->  never
+            // L_adr = base + 16 + 8*i      ->  always            L_adr = base + 16 + 8*i      ->  always
+            // -> vectorize                                       -> no vectorization
         }
     }
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
     public static void testByteLong2b(byte[] dest, long[] src) {
         for (int i = 1; i < src.length; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i - 1), handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                      UseCompactObjectHeaders=true
+            // B_adr = base + 16 + 8*(i-1)  ->  always            B_adr = base + 12 + 8*(i-1)  ->  never
+            // L_adr = base + 16 + 8*i      ->  always            L_adr = base + 16 + 8*i      ->  always
+            // -> vectorize                                       -> no vectorization
         }
     }
 
