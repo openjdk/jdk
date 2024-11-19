@@ -4152,6 +4152,17 @@ void StubGenerator::generate_final_stubs() {
     StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
   }
 
+#ifdef COMPILER2
+  if (UseSecondarySupersTable) {
+    StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+    if (! InlineSecondarySupersTest) {
+      for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+        StubRoutines::_lookup_secondary_supers_table_stubs[slot] = generate_lookup_secondary_supers_table_stub(slot);
+      }
+    }
+  }
+#endif // COMPILER2
+
   if (UseVectorizedMismatchIntrinsic) {
     StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
   }
@@ -4305,14 +4316,6 @@ void StubGenerator::generate_compiler_stubs() {
   if (VM_Version::supports_avx512_vbmi2()) {
     StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
-  }
-  if (UseSecondarySupersTable) {
-    StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
-    if (! InlineSecondarySupersTest) {
-      for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
-        StubRoutines::_lookup_secondary_supers_table_stubs[slot] = generate_lookup_secondary_supers_table_stub(slot);
-      }
-    }
   }
   if (UseMontgomeryMultiplyIntrinsic) {
     StubRoutines::_montgomeryMultiply

@@ -3223,6 +3223,17 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
 
+#ifdef COMPILER2
+    if (UseSecondarySupersTable) {
+      StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+      if (!InlineSecondarySupersTest) {
+        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+          StubRoutines::_lookup_secondary_supers_table_stubs[slot] = generate_lookup_secondary_supers_table_stub(slot);
+        }
+      }
+    }
+#endif // COMPILER2
+
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
     StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
   }
@@ -3286,14 +3297,6 @@ class StubGenerator: public StubCodeGenerator {
     if (UseMontgomerySquareIntrinsic) {
       StubRoutines::_montgomerySquare
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
-    }
-    if (UseSecondarySupersTable) {
-      StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
-      if (!InlineSecondarySupersTest) {
-        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
-          StubRoutines::_lookup_secondary_supers_table_stubs[slot] = generate_lookup_secondary_supers_table_stub(slot);
-        }
-      }
     }
 #endif
 #endif // COMPILER2_OR_JVMCI
