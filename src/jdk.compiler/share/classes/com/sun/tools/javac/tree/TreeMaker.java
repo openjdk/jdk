@@ -738,12 +738,18 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     /** Create a qualified identifier from a symbol, adding enough qualifications
-     *  to make the reference unique.
+     *  to make the reference unique. The types in the AST nodes will be erased.
      */
     public JCExpression QualIdent(Symbol sym) {
-        return isUnqualifiable(sym)
+        JCExpression result = isUnqualifiable(sym)
             ? Ident(sym)
             : Select(QualIdent(sym.owner), sym);
+
+        if (sym.kind == TYP) {
+            result.setType(types.erasure(sym.type));
+        }
+
+        return result;
     }
 
     /** Create an identifier that refers to the variable declared in given variable
