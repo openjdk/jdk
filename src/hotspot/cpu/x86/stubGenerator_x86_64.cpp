@@ -4412,7 +4412,7 @@ void StubGenerator::generate_compiler_stubs() {
 #endif // COMPILER2_OR_JVMCI
 }
 
-StubGenerator::StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code) {
+StubGenerator::StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
   switch(blob_id) {
   case initial_id:
     generate_initial_stubs();

@@ -221,13 +221,13 @@ bool _verified_stub_ids = verifyStubIds();
 // translate a global stub id to an associated blob id based on the
 // computed blob limits
 
-StubGenBlobId stub_to_blob(StubGenStubId stubId) {
+StubGenBlobId StubRoutines::stub_to_blob(StubGenStubId stubId) {
   int id = (int)stubId;
-  assert(id > ((int)StubGenStubId::NO_STUBID) && id < ((int)StubGenStubId::NUM_STUBIDS), "stub id out of range");
+  assert(id > ((int)StubGenStubId::NO_STUBID) && id < ((int)StubGenStubId::NUM_STUBIDS), "stub id out of range!");
   // start with no blob to catch stub id == -1
   StubGenBlobId blobId = StubGenBlobId::NO_BLOBID;
   STUBGEN_BLOBS_DO(BLOB_CHECK_OFFSET);
-  // if we reach here we should have the lats blob id
+  // if we reach here we should have the last blob id
   assert(blobId == StubGenBlobId::NUM_BLOBIDS - 1, "unexpected blob id");
   return blobId;
 }

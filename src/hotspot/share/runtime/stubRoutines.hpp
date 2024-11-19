@@ -329,6 +329,11 @@ public:
 
 #undef DEFINE_BLOB_GETTER
 
+#ifndef PRODUCT
+  // provide a translation from stub id to its associated blob id
+  static StubGenBlobId stub_to_blob(StubGenStubId stubId);
+#endif
+
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }
   static jint*   verify_oop_count_addr()                   { return &_verify_oop_count; }

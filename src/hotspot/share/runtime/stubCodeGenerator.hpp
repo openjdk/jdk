@@ -96,29 +96,36 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   void        print() const;
 };
 
+// forward declare blob and stub id enums
+
+enum StubGenBlobId : int;
+enum StubGenStubId : int;
+
 // The base class for all stub-generating code generators.
 // Provides utility functions.
 
 class StubCodeGenerator: public StackObj {
  private:
   bool _print_code;
-
+  StubGenBlobId _blob_id;
  protected:
   MacroAssembler*  _masm;
 
  public:
   StubCodeGenerator(CodeBuffer* code, bool print_code = false);
+  StubCodeGenerator(CodeBuffer* code, StubGenBlobId blob_id, bool print_code = false);
   ~StubCodeGenerator();
 
   MacroAssembler* assembler() const              { return _masm; }
+  StubGenBlobId blob_id()                        { return _blob_id; }
 
   virtual void stub_prolog(StubCodeDesc* cdesc); // called by StubCodeMark constructor
   virtual void stub_epilog(StubCodeDesc* cdesc); // called by StubCodeMark destructor
+
+#ifndef PRODUCT
+  void verify_stub(StubGenStubId stub_id);
+#endif
 };
-
-// forward declare stub id enum
-
-enum StubGenStubId : int;
 
 // Stack-allocated helper class used to associate a stub code with a name.
 // All stub code generating functions that use a StubCodeMark will be registered

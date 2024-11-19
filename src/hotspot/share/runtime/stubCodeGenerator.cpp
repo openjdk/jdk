@@ -70,6 +70,13 @@ void StubCodeDesc::print() const { print_on(tty); }
 
 StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, bool print_code) {
   _masm = new MacroAssembler(code);
+  _blob_id = StubGenBlobId::NO_BLOBID;
+  _print_code = PrintStubCode || print_code;
+}
+
+StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, StubGenBlobId blob_id, bool print_code) {
+  _masm = new MacroAssembler(code);
+  _blob_id = blob_id;
   _print_code = PrintStubCode || print_code;
 }
 
@@ -112,6 +119,11 @@ void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
   }
 }
 
+#ifndef PRODUCT
+void StubCodeGenerator::verify_stub(StubGenStubId stub_id) {
+  assert(StubRoutines::stub_to_blob(stub_id) == blob_id(), "wrong blob being used to generate stub");
+}
+#endif
 
 // Implementation of CodeMark
 
@@ -123,7 +135,11 @@ StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, const char* group, const cha
   _cdesc->set_begin(_cgen->assembler()->pc());
 }
 
-StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubGenStubId stub_id) : StubCodeMark(cgen, "StubRoutines", StubRoutines::get_stub_name(stub_id)) { }
+StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubGenStubId stub_id) : StubCodeMark(cgen, "StubRoutines", StubRoutines::get_stub_name(stub_id)) {
+#ifndef PRODUCT
+  cgen->verify_stub(stub_id);
+#endif
+}
 
 StubCodeMark::~StubCodeMark() {
   _cgen->assembler()->flush();

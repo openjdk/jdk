@@ -213,7 +213,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code) {
+  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
     case initial_id:
       generate_initial_stubs();

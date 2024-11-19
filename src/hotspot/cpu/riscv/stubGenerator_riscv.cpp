@@ -6610,7 +6610,7 @@ static const int64_t right_3_bits = right_n_bits(3);
   }
 
  public:
-  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code) {
+  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
     case initial_id:
       generate_initial_stubs();

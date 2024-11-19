@@ -5023,7 +5023,7 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code) {
+  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
     case initial_id:
       generate_initial_stubs();
