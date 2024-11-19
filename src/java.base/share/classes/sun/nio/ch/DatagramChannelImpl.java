@@ -599,8 +599,7 @@ class DatagramChannelImpl
      * @throws SocketTimeoutException if the timeout elapses
      */
     void blockingReceive(DatagramPacket p, long nanos) throws IOException {
-        Objects.requireNonNull(p);
-        assert nanos >= 0;
+        assert Thread.holdsLock(p) && nanos >= 0;
 
         readLock.lock();
         try {
@@ -620,22 +619,20 @@ class DatagramChannelImpl
                 SocketAddress remote = beginRead(true, false);
                 boolean connected = (remote != null);
 
-                synchronized (p) {
-                    // p.bufLength is the maximum size of the datagram that can be received
-                    int bufLength = DatagramPackets.getBufLength(p);
-                    ByteBuffer dst = tryBlockingReceive(connected, bufLength, nanos);
-                    if (dst != null) {
-                        // copy to DatagramPacket, set length and sender
-                        try {
-                            int len = dst.limit();
-                            dst.get(p.getData(), p.getOffset(), len);
-                            DatagramPackets.setLength(p, len);
-                            p.setSocketAddress(sourceSocketAddress());
-                        } finally {
-                            Util.offerFirstTemporaryDirectBuffer(dst);
-                        }
-                        completed = true;
+                // p.bufLength is the maximum size of the datagram that can be received
+                int bufLength = DatagramPackets.getBufLength(p);
+                ByteBuffer dst = tryBlockingReceive(connected, bufLength, nanos);
+                if (dst != null) {
+                    // copy to DatagramPacket, set length and sender
+                    try {
+                        int len = dst.limit();
+                        dst.get(p.getData(), p.getOffset(), len);
+                        DatagramPackets.setLength(p, len);
+                        p.setSocketAddress(sourceSocketAddress());
+                    } finally {
+                        Util.offerFirstTemporaryDirectBuffer(dst);
                     }
+                    completed = true;
                 }
 
             } finally {
@@ -831,7 +828,7 @@ class DatagramChannelImpl
      * @throws IllegalBlockingModeException if the channel is non-blocking
      */
     void blockingSend(DatagramPacket p) throws IOException {
-        Objects.requireNonNull(p);
+        assert Thread.holdsLock(p);
 
         writeLock.lock();
         try {
@@ -839,34 +836,32 @@ class DatagramChannelImpl
             if (!isBlocking())
                 throw new IllegalBlockingModeException();
 
-            synchronized (p) {
-                int len = p.getLength();
-                ByteBuffer src = Util.getTemporaryDirectBuffer(len);
-                try {
-                    // copy bytes to temporary direct buffer
-                    src.put(p.getData(), p.getOffset(), len);
-                    src.flip();
+            int len = p.getLength();
+            ByteBuffer src = Util.getTemporaryDirectBuffer(len);
+            try {
+                // copy bytes to temporary direct buffer
+                src.put(p.getData(), p.getOffset(), len);
+                src.flip();
 
-                    // target address
-                    InetSocketAddress target;
-                    if (p.getAddress() == null) {
-                        InetSocketAddress remote = remoteAddress();
-                        if (remote == null) {
-                            throw new IllegalArgumentException("Address not set");
-                        }
-                        // set address/port to be compatible with long-standing behavior
-                        p.setAddress(remote.getAddress());
-                        p.setPort(remote.getPort());
-                        target = remote;
-                    } else {
-                        target = (InetSocketAddress) p.getSocketAddress();
+                // target address
+                InetSocketAddress target;
+                if (p.getAddress() == null) {
+                    InetSocketAddress remote = remoteAddress();
+                    if (remote == null) {
+                        throw new IllegalArgumentException("Address not set");
                     }
-
-                    // send the datagram (does not block)
-                    send(src, target);
-                } finally {
-                    Util.offerFirstTemporaryDirectBuffer(src);
+                    // set address/port to be compatible with long-standing behavior
+                    p.setAddress(remote.getAddress());
+                    p.setPort(remote.getPort());
+                    target = remote;
+                } else {
+                    target = (InetSocketAddress) p.getSocketAddress();
                 }
+
+                // send the datagram (does not block)
+                send(src, target);
+            } finally {
+                Util.offerFirstTemporaryDirectBuffer(src);
             }
 
         } finally {
