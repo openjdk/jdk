@@ -288,8 +288,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
             //              = 16 (or 12 if UseCompactObjectHeaders=true)
             // If UseCompactObjectHeaders=false: iter % 8 = 0
             // If UseCompactObjectHeaders=true:  iter % 8 = 4
-	    //
-	    // -> we cannot align both if UseCompactObjectHeaders=true.
+            //
+            // -> we cannot align both if UseCompactObjectHeaders=true.
         }
         return res2;
     }
