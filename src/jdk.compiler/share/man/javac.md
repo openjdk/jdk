@@ -336,10 +336,15 @@ file system locations may be directories, JAR files or JMOD files.
 
 <a id="option-proc">`-proc:`\[`none`, `only`, `full`\]</a>
 :   Controls whether annotation processing and compilation are done.
-    `-proc:none` means that compilation takes place without annotation
-    processing. `-proc:only` means that only annotation processing is done,
-    without any subsequent compilation. and
-    `-proc:full` means annotation processing and compilation are done.
+
+    -   `-proc:none` means that compilation takes place without annotation
+    processing
+
+    -   `-proc:only` means that only annotation processing is done,
+    without any subsequent compilation.
+
+    -   `-proc:full` means annotation processing and compilation are done.
+
     If this option is not used, annotation processing and compilation
     are done if at least one other option is used to explicitly
     configure annotation processing.
