@@ -79,7 +79,7 @@ final record FileAssociationGroup(List<FileAssociation> items) {
             if (extensions.isEmpty()) {
                 faStream = forExtension.apply(null);
             } else {
-                faStream = extensions.stream().map(forExtension).flatMap(x -> x);
+                faStream = extensions.stream().flatMap(forExtension);
             }
 
             return new FileAssociationGroup(faStream.toList());
