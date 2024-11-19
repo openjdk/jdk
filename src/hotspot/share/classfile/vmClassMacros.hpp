@@ -60,10 +60,7 @@
   do_klass(Error_klass,                                 java_lang_Error                                       ) \
   do_klass(Exception_klass,                             java_lang_Exception                                   ) \
   do_klass(RuntimeException_klass,                      java_lang_RuntimeException                            ) \
-  do_klass(SecurityManager_klass,                       java_lang_SecurityManager                             ) \
   do_klass(ProtectionDomain_klass,                      java_security_ProtectionDomain                        ) \
-  do_klass(AccessControlContext_klass,                  java_security_AccessControlContext                    ) \
-  do_klass(AccessController_klass,                      java_security_AccessController                        ) \
   do_klass(SecureClassLoader_klass,                     java_security_SecureClassLoader                       ) \
   do_klass(ClassNotFoundException_klass,                java_lang_ClassNotFoundException                      ) \
   do_klass(Record_klass,                                java_lang_Record                                      ) \

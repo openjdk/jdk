@@ -70,8 +70,7 @@ public class CheckCSMs {
     // The goal is to remove this list of Non-final instance @CS methods
     // over time.  Do not add any new one to this list.
     private static final Set<String> KNOWN_NON_FINAL_CSMS =
-        Set.of("java/io/ObjectStreamField#getType ()Ljava/lang/Class;",
-               "java/lang/Runtime#load (Ljava/lang/String;)V",
+        Set.of("java/lang/Runtime#load (Ljava/lang/String;)V",
                "java/lang/Runtime#loadLibrary (Ljava/lang/String;)V",
                "javax/sql/rowset/serial/SerialJavaObject#getFields ()[Ljava/lang/reflect/Field;"
         );

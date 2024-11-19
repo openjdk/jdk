@@ -3678,7 +3678,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
     FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
   }
-  ObjLayout::initialize();
 #endif
 
   return JNI_OK;

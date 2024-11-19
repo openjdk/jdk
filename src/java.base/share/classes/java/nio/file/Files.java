@@ -58,8 +58,6 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.spi.FileSystemProvider;
 import java.nio.file.spi.FileTypeDetector;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -696,14 +694,8 @@ public final class Files {
         } catch (IOException x) {
             // parent may not exist or other reason
         }
-        SecurityException se = null;
-        Path absDir = dir;
-        try {
-            absDir = dir.toAbsolutePath();
-        } catch (SecurityException x) {
-            // don't have permission to get absolute path
-            se = x;
-        }
+        Path absDir = dir.toAbsolutePath();
+
         // find a descendant that exists
         Path parent = absDir.getParent();
         while (parent != null) {
@@ -717,12 +709,8 @@ public final class Files {
         }
         if (parent == null) {
             // unable to find existing parent
-            if (se == null) {
-                throw new FileSystemException(absDir.toString(), null,
-                    "Unable to determine if root directory exists");
-            } else {
-                throw se;
-            }
+            throw new FileSystemException(absDir.toString(), null,
+                "Unable to determine if root directory exists");
         }
 
         // create directories
@@ -1525,29 +1513,19 @@ public final class Files {
             loadInstalledDetectors();
 
         // creates the default file type detector
-        @SuppressWarnings("removal")
         private static FileTypeDetector createDefaultFileTypeDetector() {
-            return AccessController
-                .doPrivileged(new PrivilegedAction<>() {
-                    @Override public FileTypeDetector run() {
-                        return sun.nio.fs.DefaultFileTypeDetector.create();
-                }});
+            return sun.nio.fs.DefaultFileTypeDetector.create();
         }
 
         // loads all installed file type detectors
-        @SuppressWarnings("removal")
         private static List<FileTypeDetector> loadInstalledDetectors() {
-            return AccessController
-                .doPrivileged(new PrivilegedAction<>() {
-                    @Override public List<FileTypeDetector> run() {
-                        List<FileTypeDetector> list = new ArrayList<>();
-                        ServiceLoader<FileTypeDetector> loader = ServiceLoader
-                            .load(FileTypeDetector.class, ClassLoader.getSystemClassLoader());
-                        for (FileTypeDetector detector: loader) {
-                            list.add(detector);
-                        }
-                        return list;
-                }});
+            List<FileTypeDetector> list = new ArrayList<>();
+            ServiceLoader<FileTypeDetector> loader = ServiceLoader
+                .load(FileTypeDetector.class, ClassLoader.getSystemClassLoader());
+            for (FileTypeDetector detector: loader) {
+                list.add(detector);
+            }
+            return list;
         }
     }
 
@@ -2863,26 +2841,16 @@ public final class Files {
         }
 
         // attempt to delete an existing file
-        SecurityException se = null;
         if (replaceExisting) {
-            try {
-                deleteIfExists(target);
-            } catch (SecurityException x) {
-                se = x;
-            }
+            deleteIfExists(target);
         }
 
-        // attempt to create target file. If it fails with
-        // FileAlreadyExistsException then it may be because the security
-        // manager prevented us from deleting the file, in which case we just
-        // throw the SecurityException.
+        // attempt to create target file.
         OutputStream ostream;
         try {
             ostream = newOutputStream(target, StandardOpenOption.CREATE_NEW,
                                               StandardOpenOption.WRITE);
         } catch (FileAlreadyExistsException x) {
-            if (se != null)
-                throw se;
             // someone else won the race and created the file
             throw x;
         }

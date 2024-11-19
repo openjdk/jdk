@@ -3073,7 +3073,9 @@ The following items describe the syntax of `java` argument files:
 -   The argument file size must not exceed MAXINT (2,147,483,647) bytes.
 
 -   The launcher doesn't expand wildcards that are present within an argument
-    file.
+    file. That means, an asterisk  `*` is passed on as-is to the starting VM.
+    For example `*.java` stays `*.java` and is not expanded to `Foo.java`,
+    `Bar.java`, etc. like on some command line shell.
 
 -   Use white space or new line characters to separate arguments included in
     the file.
