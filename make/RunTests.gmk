@@ -1034,23 +1034,94 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
+
+# Read Jtreg documentation to learn more about Jtreg report categories:
+# https://github.com/openjdk/jtreg/blob/master/src/share/doc/javatest/regtest/faq.md#what-do-all-those-numbers-in-the-test-results-line-mean
+# In Jtreg's report, the tests "skipped:" at runtime still contribute to the "passed:" number.
+# In here we treat those "skipped:" tests similar to the ones which were filtered out (for various reasons).
+
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
-	  $$(eval $1_PASSED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
+	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "passed:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
-	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
+	  $$(if $$($1_PASSED_AND_RUNTIME_SKIPPED), , $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := 0)) \
 	  $$(eval $1_FAILED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "failed:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
+	  $$(eval $1_RUNTIME_SKIPPED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
+	      for (i=1; i<=NF; i++) { if ($$$$i == "skipped:") \
+	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_RUNTIME_SKIPPED), , $$(eval $1_RUNTIME_SKIPPED := 0)) \
+	  $$(eval $1_SKIPPED_EXCLUDED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
+	      for (i=1; i<=NF; i++) { if ($$$$i == "excluded:") \
+	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_SKIPPED_EXCLUDED), , $$(eval $1_SKIPPED_EXCLUDED := 0)) \
+	  $$(eval $1_SKIPPED_NOT_IN_MATCH_LIST := $$(shell \
+	      $$(AWK) \
+	        '{ match($$$$0, /not in match-list: ([0-9]+)/, arr); print arr[1] }' \
+	        $$($1_RESULT_FILE) \
+	  )) \
+	  $$(if $$($1_SKIPPED_NOT_IN_MATCH_LIST), , $$(eval $1_SKIPPED_NOT_IN_MATCH_LIST := 0)) \
+	  $$(eval $1_SKIPPED_NOT_MATCHED_KEYWORD := $$(shell \
+	      $$(AWK) \
+	        '{ match($$$$0, /did not match keywords: ([0-9]+)/, arr); print arr[1] }' \
+	        $$($1_RESULT_FILE) \
+	  )) \
+	  $$(if $$($1_SKIPPED_NOT_MATCHED_KEYWORD), , $$(eval $1_SKIPPED_NOT_MATCHED_KEYWORD := 0)) \
+	  $$(eval $1_SKIPPED_BAD_MODULE := $$(shell \
+	      $$(AWK) \
+	        '{ match($$$$0, /did not meet module requirements: ([0-9]+)/, arr); print arr[1] }' \
+	        $$($1_RESULT_FILE) \
+	  )) \
+	  $$(if $$($1_SKIPPED_BAD_MODULE), , $$(eval $1_SKIPPED_BAD_MODULE := 0)) \
+	  $$(eval $1_SKIPPED_BAD_PLATFORM := $$(shell \
+	      $$(AWK) \
+	        '{ match($$$$0, /did not meet platform requirements: ([0-9]+)/, arr); print arr[1] }' \
+	        $$($1_RESULT_FILE) \
+	  )) \
+	  $$(if $$($1_SKIPPED_BAD_PLATFORM), , $$(eval $1_SKIPPED_BAD_PLATFORM := 0)) \
+	  $$(eval $1_SKIPPED_BAD_PRIOR_STATUS := $$(shell \
+	      $$(AWK) \
+	        '{ match($$$$0, /did not match prior status: ([0-9]+)/, arr); print arr[1] }' \
+	        $$($1_RESULT_FILE) \
+	  )) \
+	  $$(if $$($1_SKIPPED_BAD_PRIOR_STATUS), , $$(eval $1_SKIPPED_BAD_PRIOR_STATUS := 0)) \
+	  $$(eval $1_SKIPPED_BAD_TIME_LIMIT := $$(shell \
+	      $$(AWK) \
+	        '{ match($$$$0, /did not meet time-limit requirements: ([0-9]+)/, arr); print arr[1] }' \
+	        $$($1_RESULT_FILE) \
+	  )) \
+	  $$(if $$($1_SKIPPED_BAD_TIME_LIMIT), , $$(eval $1_SKIPPED_BAD_TIME_LIMIT := 0)) \
 	  $$(eval $1_ERROR := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "error:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_ERROR), , $$(eval $1_ERROR := 0)) \
+	  \
+	  $$(eval $1_PASSED := $$(shell \
+	      $$(EXPR) $$($1_PASSED_AND_RUNTIME_SKIPPED) - $$($1_RUNTIME_SKIPPED))) \
+	  $$(eval $1_SKIPPED := $$(shell \
+	      $$(EXPR) $$($1_RUNTIME_SKIPPED) \
+	          + $$($1_SKIPPED_EXCLUDED) \
+	          + $$($1_SKIPPED_NOT_IN_MATCH_LIST) \
+	          + $$($1_SKIPPED_NOT_MATCHED_KEYWORD) \
+	          + $$($1_SKIPPED_BAD_MODULE) \
+	          + $$($1_SKIPPED_BAD_PLATFORM) \
+	          + $$($1_SKIPPED_BAD_PRIOR_STATUS) \
+	          + $$($1_SKIPPED_BAD_TIME_LIMIT) \
+	  )) \
 	  $$(eval $1_TOTAL := $$(shell \
-	      $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR))) \
+	      $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR) + $$($1_SKIPPED))) \
 	, \
-	  $$(eval $1_PASSED := 0) \
+	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := 0) \
+	  $$(eval $1_RUNTIME_SKIPPED := 0) \
+	  $$(eval $1_SKIPPED_EXCLUDED := 0) \
+	  $$(eval $1_SKIPPED_NOT_IN_MATCH_LIST := 0) \
+	  $$(eval $1_SKIPPED_NOT_MATCHED_KEYWORD := 0) \
+	  $$(eval $1_SKIPPED_BAD_MODULE := 0) \
+	  $$(eval $1_SKIPPED_BAD_PLATFORM := 0) \
+	  $$(eval $1_SKIPPED_BAD_PRIOR_STATUS := 0) \
+	  $$(eval $1_SKIPPED_BAD_TIME_LIMIT := 0) \
 	  $$(eval $1_FAILED := 0) \
 	  $$(eval $1_ERROR := 1) \
 	  $$(eval $1_TOTAL := 1) \
@@ -1229,8 +1300,8 @@ run-test-report: post-run-test
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
 	$(ECHO) >> $(TEST_SUMMARY) Test summary
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
-	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %2s\n" "  " \
-	    TEST TOTAL PASS FAIL ERROR " "
+	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %5s %2s\n" "  " \
+	    TEST TOTAL PASS FAIL ERROR SKIP " "
 	$(foreach test, $(TESTS_TO_RUN), \
 	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
 	      $(TR) -cs '[a-z][A-Z][0-9]\n' '[_*1000]')) \
@@ -1243,13 +1314,13 @@ run-test-report: post-run-test
 	    $(eval TEST_NAME := $(test)) \
 	  ) \
 	  $(if $(filter $($(TEST_ID)_PASSED), $($(TEST_ID)_TOTAL)), \
-	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %5d %2s\n" \
 	        "  " "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
-	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "  " $(NEWLINE) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) $($(TEST_ID)_SKIPPED) "  " $(NEWLINE) \
 	  , \
-	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %5d %2s\n" \
 	         ">>" "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
-	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "<<" $(NEWLINE) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) $($(TEST_ID)_SKIPPED) "<<" $(NEWLINE) \
 	    $(eval TEST_FAILURE := true) \
 	  ) \
 	)
