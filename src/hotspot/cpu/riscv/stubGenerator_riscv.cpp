@@ -734,6 +734,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   void generate_copy_longs(StubGenStubId stub_id, Label &start,
                            Register s, Register d, Register count) {
+    BasicType type;
     copy_direction direction;
     switch (stub_id) {
     case copy_byte_f_id:
@@ -2170,25 +2171,25 @@ class StubGenerator: public StubCodeGenerator {
 
     //*** jbyte
     // Always need aligned and unaligned versions
-    StubRoutines::_jbyte_disjoint_arraycopy          = generate_disjoint_byte_copy(StubGenStubId::jbyte_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jbyte_arraycopy                   = generate_conjoint_byte_copy(StubGenStubId::jbyte_arraycopy_id, entry, &entry_jbyte_arraycopy);
-    StubRoutines::_arrayof_jbyte_disjoint_arraycopy  = generate_disjoint_byte_copy(StubGenStubId::arrayof_jbyte_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jbyte_arraycopy           = generate_conjoint_byte_copy(StubGenStubId::arrayof_jbyte_arraycopy_id, entry, nullptr);
+    StubRoutines::_jbyte_disjoint_arraycopy          = generate_disjoint_copy(StubGenStubId::jbyte_disjoint_arraycopy_id, &entry);
+    StubRoutines::_jbyte_arraycopy                   = generate_conjoint_copy(StubGenStubId::jbyte_arraycopy_id, entry, &entry_jbyte_arraycopy);
+    StubRoutines::_arrayof_jbyte_disjoint_arraycopy  = generate_disjoint_copy(StubGenStubId::arrayof_jbyte_disjoint_arraycopy_id, &entry);
+    StubRoutines::_arrayof_jbyte_arraycopy           = generate_conjoint_copy(StubGenStubId::arrayof_jbyte_arraycopy_id, entry, nullptr);
 
     //*** jshort
     // Always need aligned and unaligned versions
-    StubRoutines::_jshort_disjoint_arraycopy         = generate_disjoint_short_copy(StubGenStubId::jshort_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jshort_arraycopy                  = generate_conjoint_short_copy(StubGenStubId::jshort_arraycopy_id. entry, &entry_jshort_arraycopy);
-    StubRoutines::_arrayof_jshort_disjoint_arraycopy = generate_disjoint_short_copy(StubGenStubId::arrayof_jshort_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_short_copy(StubGenStubId::arrayof_jshort_arraycopy_id, entry, nullptr);
+    StubRoutines::_jshort_disjoint_arraycopy         = generate_disjoint_copy(StubGenStubId::jshort_disjoint_arraycopy_id, &entry);
+    StubRoutines::_jshort_arraycopy                  = generate_conjoint_copy(StubGenStubId::jshort_arraycopy_id. entry, &entry_jshort_arraycopy);
+    StubRoutines::_arrayof_jshort_disjoint_arraycopy = generate_disjoint_copy(StubGenStubId::arrayof_jshort_disjoint_arraycopy_id, &entry);
+    StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_copy(StubGenStubId::arrayof_jshort_arraycopy_id, entry, nullptr);
 
     //*** jint
     // Aligned versions
-    StubRoutines::_arrayof_jint_disjoint_arraycopy   = generate_disjoint_int_copy(StubGenStubId::arrayof_jint_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jint_arraycopy            = generate_conjoint_int_copy(StubGenStubId::arrayof_jint_arraycopy_id, entry, &entry_jint_arraycopy);
+    StubRoutines::_arrayof_jint_disjoint_arraycopy   = generate_disjoint_copy(StubGenStubId::arrayof_jint_disjoint_arraycopy_id, &entry);
+    StubRoutines::_arrayof_jint_arraycopy            = generate_conjoint_copy(StubGenStubId::arrayof_jint_arraycopy_id, entry, &entry_jint_arraycopy);
     // In 64 bit we need both aligned and unaligned versions of jint arraycopy.
     // entry_jint_arraycopy always points to the unaligned version
-    StubRoutines::_jint_disjoint_arraycopy           = generate_disjoint_int_copy(StubGenStubId::jint_disjoint_arraycopy_id, &entry);
+    StubRoutines::_jint_disjoint_arraycopy           = generate_disjoint_copy(StubGenStubId::jint_disjoint_arraycopy_id, &entry);
     StubRoutines::_jint_arraycopy                  = generate_conjoint_copy(StubGenStubId::jint_arraycopy_id, entry, &entry_jint_arraycopy);
 
     //*** jlong
@@ -4650,6 +4651,7 @@ class StubGenerator: public StubCodeGenerator {
   //   x31     t6  buf7
   address generate_md5_implCompress(StubGenStubId stub_id) {
     __ align(CodeEntryAlignment);
+    bool multi_block;
     switch (stub_id) {
     case md5_implCompress_id:
       multi_block = false;
@@ -6565,14 +6567,14 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if (UseSHA256Intrinsics) {
       Sha2Generator sha2(_masm, this);
-      StubRoutines::_sha256_implCompress   = sha2.generate_sha256_implCompress(false);
-      StubRoutines::_sha256_implCompressMB = sha2.generate_sha256_implCompress(true);
+      StubRoutines::_sha256_implCompress   = sha2.generate_sha256_implCompress(StubGenStubId::sha256_implCompress_id);
+      StubRoutines::_sha256_implCompressMB = sha2.generate_sha256_implCompress(StubGenStubId::sha256_implCompressMB_id);
     }
 
     if (UseSHA512Intrinsics) {
       Sha2Generator sha2(_masm, this);
-      StubRoutines::_sha512_implCompress   = sha2.generate_sha512_implCompress(false);
-      StubRoutines::_sha512_implCompressMB = sha2.generate_sha512_implCompress(true);
+      StubRoutines::_sha512_implCompress   = sha2.generate_sha512_implCompress(StubGenStubId::sha512_implCompress_id);
+      StubRoutines::_sha512_implCompressMB = sha2.generate_sha512_implCompress(StubGenStubId::sha512_implCompressMB_id);
     }
 
     if (UseMD5Intrinsics) {
