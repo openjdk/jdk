@@ -108,7 +108,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] opWithConstant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -119,7 +120,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] opWithLoopInvariant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -130,7 +132,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] opWithConstantAndLoopInvariant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -141,7 +144,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] multipleOps() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -152,7 +156,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] multipleOpsWithMultipleConstants() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -163,7 +168,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] multipleStores() {
         int[] res1 = new int[SIZE];
         int[] res2 = new int[SIZE];
@@ -178,7 +184,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] multipleStoresWithCommonSubExpression() {
         int[] res1 = new int[SIZE];
         int[] res2 = new int[SIZE];
@@ -193,7 +200,9 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] multipleOpsWith2DifferentTypes() {
         short[] res1 = new short[SIZE];
         int[] res2 = new int[SIZE];
@@ -206,7 +215,10 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.LOAD_VECTOR_L, "> 0"})
     public long[] multipleOpsWith3DifferentTypes() {
         short[] res1 = new short[SIZE];
         int[] res2 = new int[SIZE];
@@ -221,7 +233,9 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_L, "> 0"})
     public long[] multipleOpsWith2NonAdjacentTypes() {
         short[] res1 = new short[SIZE];
         long[] res2 = new long[SIZE];
@@ -234,7 +248,9 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] multipleOpsWith2DifferentTypesAndConstant() {
         short[] res1 = new short[SIZE];
         int[] res2 = new int[SIZE];
@@ -248,7 +264,9 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] multipleOpsWith2DifferentTypesAndInvariant() {
         short[] res1 = new short[SIZE];
         int[] res2 = new int[SIZE];
@@ -279,7 +297,9 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] multipleOpsWith2DifferentTypesAndComplexExpression() {
         short[] res1 = new short[SIZE];
         int[] res2 = new int[SIZE];
@@ -293,7 +313,9 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse3", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int[] multipleOpsWith2DifferentTypesAndSharedOp() {
         int i = 0, sum = 0;
         int[] res1 = new int[SIZE];
@@ -306,6 +328,7 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // POPULATE_INDEX seems to mess with vectorization, see JDK-8332878.
     public int[] fillIndexPlusStride() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -315,6 +338,7 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // POPULATE_INDEX seems to mess with vectorization, see JDK-8332878.
     public int[] addArrayWithIndex() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -324,6 +348,7 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // POPULATE_INDEX seems to mess with vectorization, see JDK-8332878.
     public short[] multiplyAddShortIndex() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -333,6 +358,7 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // POPULATE_INDEX seems to mess with vectorization, see JDK-8332878.
     public int[] multiplyBySumOfIndexAndInvariant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -365,7 +391,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0",
+                  IRNode.LOAD_VECTOR_I, "> 0"})
     public int partialVectorizableLoop() {
         int[] res = new int[SIZE];
         int k = 9;
