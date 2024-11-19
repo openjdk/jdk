@@ -82,9 +82,9 @@ bool ShenandoahUncommitThread::should_uncommit(double shrink_before, size_t shri
 }
 
 bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_until) const {
-  // Determine if there is work to do. This avoids taking heap lock if there is
+  // Determine if there is work to do. This avoids locking the heap if there is
   // no work available, avoids spamming logs with superfluous logging messages,
-  // and minimises the amount of work while locks are taken.
+  // and minimises the amount of work while locks are held.
 
   if (_heap->committed() <= shrink_until) {
     return false;

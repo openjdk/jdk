@@ -211,8 +211,13 @@ public:
 // ---------- Periodic Tasks
 //
 public:
+  // Notify heuristics and region state change logger that the state of the heap has changed
   void notify_heap_changed();
+
+  // Force counters to update
   void set_forced_counters_update(bool value);
+
+  // Update counters if forced flag is set
   void handle_force_counters_update();
 
 // ---------- Workers handling
@@ -401,13 +406,19 @@ public:
   void notify_gc_no_progress();
   size_t get_gc_no_progress_count() const;
 
+  // The uncommit thread targets soft max heap, notify this thread when that value has changed.
   void notify_soft_max_changed();
+
+  // An explicit GC request may have freed regions, notify the uncommit thread.
   void notify_explicit_gc_requested();
 
 //
 // Mark support
 private:
+  // The control thread presides over concurrent collection cycles
   ShenandoahControlThread*   _control_thread;
+
+  // The uncommit thread periodically attempts to uncommit regions that have been empty for longer than ShenandoahUncommitDelay
   ShenandoahUncommitThread*  _uncommit_thread;
   ShenandoahCollectorPolicy* _shenandoah_policy;
   ShenandoahMode*            _gc_mode;
@@ -620,7 +631,15 @@ public:
   bool uncommit_bitmap_slice(ShenandoahHeapRegion *r);
   bool is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self = false);
 
+  // During concurrent reset, the control thread will zero out the mark bitmaps for committed regions.
+  // This cannot happen when the uncommit thread is simultaneously trying to uncommit regions and their bitmaps.
+  // To prevent these threads from working at the same time, we provide these methods for the control thread to
+  // prevent the uncommit thread from working while a collection cycle is in progress.
+
+  // Forbid uncommits (will stop and wait if regions are being uncommitted)
   void forbid_uncommit();
+
+  // Allow the uncommit thread to process regions
   void allow_uncommit();
 #ifdef ASSERT
   bool is_uncommit_in_progress();

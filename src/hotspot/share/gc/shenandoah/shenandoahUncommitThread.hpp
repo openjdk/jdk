@@ -31,16 +31,36 @@ class ShenandoahHeap;
 
 class ShenandoahUncommitThread : public ConcurrentGCThread {
   ShenandoahHeap* const _heap;
+
+  // Indicates that `SoftMaxHeapSize` has changed
   ShenandoahSharedFlag _soft_max_changed;
+
+  // Indicates that an explicit gc has been requested
   ShenandoahSharedFlag _explicit_gc_requested;
+
+  // Indicates that the thread should stop and terminate
   ShenandoahSharedFlag _stop_requested;
+
+  // Indicates whether it is safe to uncommit regions
   ShenandoahSharedFlag _uncommit_allowed;
+
+  // Indicates that regions are being actively uncommitted
   ShenandoahSharedFlag _uncommit_in_progress;
+
+  // This lock is used to coordinate stopping and terminating this thread
   Monitor _stop_lock;
+
+  // This lock is used to coordinate allowing or forbidding regions to be uncommitted
   Monitor _uncommit_lock;
 
+  // True if there are regions to uncommit and uncommits are allowed
   bool should_uncommit(double shrink_before, size_t shrink_until) const;
+
+  // True if there are regions that have been empty for longer than ShenandoahUncommitDelay and the committed
+  // memory is higher than soft max capacity or minimum capacity
   bool has_work(double shrink_before, size_t shrink_until) const;
+
+  // Perform the work of uncommitting empty regions
   void uncommit(double shrink_before, size_t shrink_until);
 
   // True if the control thread has allowed this thread to uncommit regions
@@ -49,7 +69,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
 
-  // Periodically check for regions to uncommit.
+  // Periodically check for regions to uncommit
   void run_service() override;
 
   // Wake up this thread and try to uncommit for changed soft max size
@@ -61,14 +81,15 @@ public:
   // Wait for uncommit operations to stop, returns immediately if uncommit thread is idle
   void forbid_uncommit();
 
-  // Allows uncommit operations to happen, does not block.
+  // Allows uncommit operations to happen, does not block
   void allow_uncommit();
 
-  // True if uncommit is in progress.
+  // True if uncommit is in progress
   bool is_uncommit_in_progress() {
     return _uncommit_in_progress.is_set();
   }
 protected:
+  // Interrupt and stop this thread
   void stop_service() override;
 };
 
