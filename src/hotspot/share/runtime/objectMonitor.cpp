@@ -1134,11 +1134,9 @@ bool ObjectMonitor::VThreadMonitorEnter(JavaThread* current, ObjectWaiter* waite
   java_lang_VirtualThread::set_state(vthread, java_lang_VirtualThread::BLOCKING);
 
   // We didn't succeed in acquiring the monitor so increment _contentions and
-  // save ObjectWaiter* in the chunk since we will need it when resuming execution.
+  // save ObjectWaiter* in the vthread since we will need it when resuming execution.
   add_to_contentions(1);
-  oop cont = java_lang_VirtualThread::continuation(vthread);
-  stackChunkOop chunk  = jdk_internal_vm_Continuation::tail(cont);
-  chunk->set_object_waiter(node);
+  java_lang_VirtualThread::set_objectWaiter(vthread, node);
   return false;
 }
 
@@ -1202,11 +1200,8 @@ void ObjectMonitor::VThreadEpilog(JavaThread* current, ObjectWaiter* node) {
   UnlinkAfterAcquire(current, node);
   delete node;
 
-  // Remove the ObjectWaiter* from the stackChunk.
-  oop vthread = current->vthread();
-  oop cont = java_lang_VirtualThread::continuation(vthread);
-  stackChunkOop chunk  = jdk_internal_vm_Continuation::tail(cont);
-  chunk->set_object_waiter(nullptr);
+  // Clear the ObjectWaiter* from the vthread.
+  java_lang_VirtualThread::set_objectWaiter(current->vthread(), nullptr);
 
   if (JvmtiExport::should_post_monitor_contended_entered()) {
     // We are going to call thaw again after this and finish the VMTS
@@ -2030,10 +2025,8 @@ void ObjectMonitor::VThreadWait(JavaThread* current, jlong millis) {
   java_lang_VirtualThread::set_state(vthread, millis == 0 ? java_lang_VirtualThread::WAITING : java_lang_VirtualThread::TIMED_WAITING);
   java_lang_VirtualThread::set_timeout(vthread, millis);
 
-  // Save the ObjectWaiter* in the chunk since we will need it when resuming execution.
-  oop cont = java_lang_VirtualThread::continuation(vthread);
-  stackChunkOop chunk  = jdk_internal_vm_Continuation::tail(cont);
-  chunk->set_object_waiter(node);
+  // Save the ObjectWaiter* in the vthread since we will need it when resuming execution.
+  java_lang_VirtualThread::set_objectWaiter(vthread, node);
 }
 
 bool ObjectMonitor::VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont) {
@@ -2079,8 +2072,8 @@ bool ObjectMonitor::VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, 
       }
 
       delete node;
-      stackChunkOop chunk  = cont.tail();
-      chunk->set_object_waiter(nullptr);
+      // Clear the ObjectWaiter* from the vthread.
+      java_lang_VirtualThread::set_objectWaiter(current->vthread(), nullptr);
       return true;
     }
   } else {

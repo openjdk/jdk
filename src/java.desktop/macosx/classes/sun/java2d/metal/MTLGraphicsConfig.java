@@ -58,8 +58,6 @@ import java.awt.image.DirectColorModel;
 import java.awt.image.VolatileImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import static sun.java2d.metal.MTLContext.MTLContextCaps.CAPS_EXT_GRAD_SHADER;
 import static sun.java2d.pipe.hw.AccelSurface.TEXTURE;
@@ -73,11 +71,10 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
 {
     private static ImageCapabilities imageCaps = new MTLImageCaps();
 
-    @SuppressWarnings("removal")
-    private static final String mtlShadersLib = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () ->
+
+    private static final String mtlShadersLib =
                     System.getProperty("java.home", "") + File.separator +
-                            "lib" + File.separator + "shaders.metallib");
+                            "lib" + File.separator + "shaders.metallib";
 
 
     private BufferCapabilities bufferCaps;
