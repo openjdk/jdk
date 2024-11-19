@@ -1080,12 +1080,7 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
       ObjectMonitor *mon = target->current_waiting_monitor();
       if (mon != nullptr) wait_obj = mon->object();
     } else {
-      assert(vthread != nullptr, "no vthread oop");
-      oop cont = java_lang_VirtualThread::continuation(vthread);
-      assert(cont != nullptr, "vthread with no continuation");
-      stackChunkOop chunk = jdk_internal_vm_Continuation::tail(cont);
-      assert(chunk != nullptr, "unmounted vthread should have a chunk");
-      ObjectMonitor *mon = chunk->current_waiting_monitor();
+      ObjectMonitor *mon = java_lang_VirtualThread::current_waiting_monitor(vthread);
       if (mon != nullptr) wait_obj = mon->object();
     }
   }
@@ -1099,12 +1094,7 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
       ObjectMonitor *mon = target->current_pending_monitor();
       if (mon != nullptr) pending_obj = mon->object();
     } else {
-      assert(vthread != nullptr, "no vthread oop");
-      oop cont = java_lang_VirtualThread::continuation(vthread);
-      assert(cont != nullptr, "vthread with no continuation");
-      stackChunkOop chunk = jdk_internal_vm_Continuation::tail(cont);
-      assert(chunk != nullptr, "unmounted vthread should have a chunk");
-      ObjectMonitor *mon = chunk->current_pending_monitor();
+      ObjectMonitor *mon = java_lang_VirtualThread::current_pending_monitor(vthread);
       if (mon != nullptr) pending_obj = mon->object();
     }
   }
@@ -2569,12 +2559,9 @@ GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
 void
 GetCurrentContendedMonitorClosure::do_vthread(Handle target_h) {
   if (_target_jt == nullptr) {
-    oop cont = java_lang_VirtualThread::continuation(target_h());
-    assert(cont != nullptr, "vthread with no continuation");
-    stackChunkOop chunk = jdk_internal_vm_Continuation::tail(cont);
-    assert(chunk != nullptr, "unmounted vthread should have a chunk");
-    if (chunk->current_pending_monitor() != nullptr) {
-      *_owned_monitor_ptr = JNIHandles::make_local(_calling_thread, chunk->current_pending_monitor()->object());
+    ObjectMonitor *mon = java_lang_VirtualThread::current_pending_monitor(target_h());
+    if (mon != nullptr) {
+      *_owned_monitor_ptr = JNIHandles::make_local(_calling_thread, mon->object());
     }
     _result = JVMTI_ERROR_NONE; // target virtual thread is unmounted
     return;

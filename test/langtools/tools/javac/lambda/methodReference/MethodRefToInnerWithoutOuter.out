@@ -1,2 +1,2 @@
-MethodRefToInnerWithoutOuter.java:22:31: compiler.err.invalid.mref: kindname.constructor, (compiler.misc.cant.access.inner.cls.constr: TestString, java.lang.String, MethodRefToInnerBase)
+MethodRefToInnerWithoutOuter.java:22:31: compiler.err.non-static.cant.be.ref: kindname.variable, this
 1 error

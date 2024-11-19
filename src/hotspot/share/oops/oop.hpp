@@ -31,6 +31,7 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
+#include "oops/objLayout.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -324,7 +325,9 @@ class oopDesc {
   inline bool mark_must_be_preserved() const;
   inline bool mark_must_be_preserved(markWord m) const;
 
-  static bool has_klass_gap();
+  inline static bool has_klass_gap() {
+    return ObjLayout::oop_has_klass_gap();
+  }
 
   // for code generation
   static int mark_offset_in_bytes()      { return (int)offset_of(oopDesc, _mark); }
@@ -332,12 +335,8 @@ class oopDesc {
 #ifdef _LP64
     if (UseCompactObjectHeaders) {
       // NOTE: The only places where this is used with compact headers are the C2
-      // compiler and JVMCI, and even there we don't use it to access the (narrow)Klass*
-      // directly. It is used only as a placeholder to identify the special memory slice
-      // containing Klass* info. This value could be any value that is not a valid
-      // field offset. Use an offset halfway into the markWord, as the markWord is never
-      // partially loaded from C2 and JVMCI.
-      return mark_offset_in_bytes() + 4;
+      // compiler and JVMCI.
+      return mark_offset_in_bytes() + markWord::klass_offset_in_bytes;
     } else
 #endif
     {
@@ -350,15 +349,7 @@ class oopDesc {
   }
 
   static int base_offset_in_bytes() {
-    if (UseCompactObjectHeaders) {
-      // With compact headers, the Klass* field is not used for the Klass*
-      // and is used for the object fields instead.
-      return sizeof(markWord);
-    } else if (UseCompressedClassPointers) {
-      return sizeof(markWord) + sizeof(narrowKlass);
-    } else {
-      return sizeof(markWord) + sizeof(Klass*);
-    }
+    return ObjLayout::oop_base_offset_in_bytes();
   }
 
   // for error reporting

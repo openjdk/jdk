@@ -25,10 +25,6 @@
 
 package jdk.internal.misc;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.ProtectionDomain;
-import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -69,18 +65,8 @@ public final class InnocuousThread extends Thread {
      * set to the given priority.
      */
     public static Thread newThread(String name, Runnable target, int priority) {
-        if (System.getSecurityManager() == null) {
-            return createThread(name, target, 0L,
-                    ClassLoader.getSystemClassLoader(), priority);
-        }
-        return AccessController.doPrivileged(
-                new PrivilegedAction<Thread>() {
-                    @Override
-                    public Thread run() {
-                        return createThread(name, target, 0L,
-                                ClassLoader.getSystemClassLoader(), priority);
-                    }
-                });
+        return createThread(name, target, 0L,
+                ClassLoader.getSystemClassLoader(), priority);
     }
 
     /**
@@ -103,17 +89,7 @@ public final class InnocuousThread extends Thread {
      * Thread priority is set to the given priority.
      */
     public static Thread newSystemThread(String name, Runnable target, int priority) {
-        if (System.getSecurityManager() == null) {
-            return createThread(name, target, 0L, null, priority);
-        }
-        return AccessController.doPrivileged(
-                new PrivilegedAction<Thread>() {
-                    @Override
-                    public Thread run() {
-                        return createThread(name, target, 0L,
-                                null, priority);
-                    }
-                });
+        return createThread(name, target, 0L, null, priority);
     }
 
     /**
@@ -122,17 +98,7 @@ public final class InnocuousThread extends Thread {
      */
     public static Thread newSystemThread(String name, Runnable target,
                                          long stackSize, int priority) {
-        if (System.getSecurityManager() == null) {
-            return createThread(name, target, stackSize, null, priority);
-        }
-        return AccessController.doPrivileged(
-                new PrivilegedAction<Thread>() {
-                    @Override
-                    public Thread run() {
-                        return createThread(name, target, 0L,
-                                null, priority);
-                    }
-                });
+        return createThread(name, target, stackSize, null, priority);
     }
 
     private static Thread createThread(String name, Runnable target, long stackSize,
@@ -207,18 +173,7 @@ public final class InnocuousThread extends Thread {
                     break;
                 group = parent;
             }
-            final ThreadGroup root = group;
-            if (System.getSecurityManager() == null) {
-                INNOCUOUSTHREADGROUP = new ThreadGroup(root, "InnocuousThreadGroup");
-            } else {
-                INNOCUOUSTHREADGROUP = AccessController.doPrivileged(
-                    new PrivilegedAction<ThreadGroup>() {
-                        @Override
-                        public ThreadGroup run() {
-                            return new ThreadGroup(root, "InnocuousThreadGroup");
-                        }
-                    });
-            }
+            INNOCUOUSTHREADGROUP = new ThreadGroup(group, "InnocuousThreadGroup");
         } catch (Exception e) {
             throw new Error(e);
         }
