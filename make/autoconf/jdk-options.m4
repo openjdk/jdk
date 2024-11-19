@@ -705,9 +705,9 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 #
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
 [
-  UTIL_ARG_ENABLE(NAME: cds-archive-coh, DEFAULT: false, RESULT: BUILD_CDS_ARCHIVE_COH,
+  UTIL_ARG_ENABLE(NAME: cds-archive-coh, DEFAULT: auto, RESULT: BUILD_CDS_ARCHIVE_COH,
       DESC: [enable generation of default CDS archives for compact object headers (requires --enable-cds-archive)],
-      DEFAULT_DESC: [false],
+      DEFAULT_DESC: [auto],
       CHECKING_MSG: [if default CDS archives for compact object headers should be generated],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if CDS archive with compact object headers is available])
@@ -722,12 +722,9 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
              test "x$OPENJDK_TARGET_CPU" != "xs390x"; then
           AC_MSG_RESULT([no (compact object headers not supported for this platform)])
           AVAILABLE=false
-        elif test "x$enable_cds_archive_coh" = "xyes"; then
-          AC_MSG_RESULT([yes])
-          AVAILABLE=true
         else
           AC_MSG_RESULT([yes])
-          AVAILABLE=false
+          AVAILABLE=true
         fi
       ])
   AC_SUBST(BUILD_CDS_ARCHIVE_COH)
