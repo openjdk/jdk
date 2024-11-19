@@ -62,10 +62,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -985,7 +981,6 @@ search:
 
     @SuppressWarnings("removal")
     private String removeSuspectedData(DataFlavor flavor, final Transferable contents, final String str)
-            throws IOException
     {
         if (null == System.getSecurityManager()
             || !flavor.isMimeTypeEqual("text/uri-list"))
@@ -994,34 +989,25 @@ search:
         }
 
         final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
+        StringBuilder allowedFiles = new StringBuilder(str.length());
+        String [] uriArray = str.split("(\\s)+");
 
-        try {
-            return AccessController.doPrivileged((PrivilegedExceptionAction<String>) () -> {
-
-                StringBuilder allowedFiles = new StringBuilder(str.length());
-                String [] uriArray = str.split("(\\s)+");
-
-                for (String fileName : uriArray)
+        for (String fileName : uriArray)
+        {
+            File file = new File(fileName);
+            if (file.exists() &&
+                !(isFileInWebstartedCache(file) ||
+                isForbiddenToRead(file, userProtectionDomain)))
+            {
+                if (0 != allowedFiles.length())
                 {
-                    File file = new File(fileName);
-                    if (file.exists() &&
-                        !(isFileInWebstartedCache(file) ||
-                        isForbiddenToRead(file, userProtectionDomain)))
-                    {
-                        if (0 != allowedFiles.length())
-                        {
-                            allowedFiles.append("\\r\\n");
-                        }
-
-                        allowedFiles.append(fileName);
-                    }
+                    allowedFiles.append("\\r\\n");
                 }
 
-                return allowedFiles.toString();
-            });
-        } catch (PrivilegedActionException pae) {
-            throw new IOException(pae.getMessage(), pae);
+                allowedFiles.append(fileName);
+            }
         }
+        return allowedFiles.toString();
     }
 
     private static ProtectionDomain getUserProtectionDomain(Transferable contents) {
@@ -1047,25 +1033,19 @@ search:
     @SuppressWarnings("removal")
     private ArrayList<String> castToFiles(final List<?> files,
                                           final ProtectionDomain userProtectionDomain) throws IOException {
-        try {
-            return AccessController.doPrivileged((PrivilegedExceptionAction<ArrayList<String>>) () -> {
-                ArrayList<String> fileList = new ArrayList<>();
-                for (Object fileObject : files)
-                {
-                    File file = castToFile(fileObject);
-                    if (file != null &&
-                        (null == System.getSecurityManager() ||
-                        !(isFileInWebstartedCache(file) ||
-                        isForbiddenToRead(file, userProtectionDomain))))
-                    {
-                        fileList.add(file.getCanonicalPath());
-                    }
-                }
-                return fileList;
-            });
-        } catch (PrivilegedActionException pae) {
-            throw new IOException(pae.getMessage());
+        ArrayList<String> fileList = new ArrayList<>();
+        for (Object fileObject : files)
+        {
+            File file = castToFile(fileObject);
+            if (file != null &&
+                (null == System.getSecurityManager() ||
+                !(isFileInWebstartedCache(file) ||
+                isForbiddenToRead(file, userProtectionDomain))))
+            {
+                fileList.add(file.getCanonicalPath());
+            }
         }
+        return fileList;
     }
 
     // It is important do not use user's successors
@@ -1419,7 +1399,6 @@ search:
      * and also arbitrary Objects which have a constructor which takes an
      * instance of the Class as its sole parameter.
      */
-    @SuppressWarnings("removal")
     private Object constructFlavoredObject(Object arg, DataFlavor flavor,
                                            Class<?> clazz)
         throws IOException
@@ -1429,15 +1408,7 @@ search:
         if (clazz.equals(dfrc)) {
             return arg; // simple case
         } else {
-            Constructor<?>[] constructors;
-
-            try {
-                constructors = AccessController.doPrivileged(
-                        (PrivilegedAction<Constructor<?>[]>) dfrc::getConstructors);
-            } catch (SecurityException se) {
-                throw new IOException(se.getMessage());
-            }
-
+            Constructor<?>[] constructors = dfrc.getConstructors();
             Constructor<?> constructor = Stream.of(constructors)
                     .filter(c -> Modifier.isPublic(c.getModifiers()))
                     .filter(c -> {
