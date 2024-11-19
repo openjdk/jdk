@@ -51,6 +51,8 @@ public class LayoutNode {
     public static final Comparator<LayoutNode> NODES_OPTIMAL_X = Comparator.comparingInt(LayoutNode::getOptimalX);
 
 
+
+
     // Default dimensions for dummy nodes
     public static final int DUMMY_HEIGHT = 1;
     public static final int DUMMY_WIDTH = 1;
@@ -378,6 +380,10 @@ public class LayoutNode {
 
     public void setX(int x) {
         this.x = x;
+    }
+
+    public void shiftX(int shift) {
+        this.x += x;
     }
 
     public int getY() {
