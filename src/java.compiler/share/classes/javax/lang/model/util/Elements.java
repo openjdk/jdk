@@ -81,8 +81,8 @@ public interface Elements {
      * @implSpec The default implementation of this method returns
      * {@code null}.
      *
-     * @param name  fully qualified package name, or an empty string for an unnamed package
      * @param module module relative to which the lookup should happen
+     * @param name  fully qualified package name, or an empty string for an unnamed package
      * @return the specified package, or {@code null} if it cannot be found
      * @see #getAllPackageElements
      * @since 9
@@ -167,8 +167,8 @@ public interface Elements {
      * @implSpec The default implementation of this method returns
      * {@code null}.
      *
-     * @param name  the canonical name
      * @param module module relative to which the lookup should happen
+     * @param name  the canonical name
      * @return the named type element, or {@code null} if it cannot be found
      * @see #getAllTypeElements
      * @since 9

@@ -267,8 +267,8 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   __ push_cont_fastpath(xthread);
 
-  __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
-  __ jalr(t0);
+  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ jalr(t1);
 
   __ pop_cont_fastpath(xthread);
 

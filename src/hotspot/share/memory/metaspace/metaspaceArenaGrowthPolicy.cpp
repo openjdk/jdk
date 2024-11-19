@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,17 +61,6 @@ static const chunklevel_t g_sequ_anon_class[] = {
     // .. repeat last
 };
 
-static const chunklevel_t g_sequ_refl_non_class[] = {
-    chunklevel::CHUNK_LEVEL_2K,
-    chunklevel::CHUNK_LEVEL_1K
-    // .. repeat last
-};
-
-static const chunklevel_t g_sequ_refl_class[] = {
-    chunklevel::CHUNK_LEVEL_1K,
-    // .. repeat last
-};
-
 // Boot class loader: give it large chunks: beyond commit granule size
 // (typically 64K) the costs for large chunks largely diminishes since
 // they are committed on the fly.
@@ -95,15 +84,12 @@ const ArenaGrowthPolicy* ArenaGrowthPolicy::policy_for_space_type(Metaspace::Met
   DEFINE_CLASS_FOR_ARRAY(standard_class)
   DEFINE_CLASS_FOR_ARRAY(anon_non_class)
   DEFINE_CLASS_FOR_ARRAY(anon_class)
-  DEFINE_CLASS_FOR_ARRAY(refl_non_class)
-  DEFINE_CLASS_FOR_ARRAY(refl_class)
   DEFINE_CLASS_FOR_ARRAY(boot_non_class)
   DEFINE_CLASS_FOR_ARRAY(boot_class)
 
   if (is_class) {
     switch(space_type) {
     case Metaspace::StandardMetaspaceType:          return &chunk_alloc_sequence_standard_class;
-    case Metaspace::ReflectionMetaspaceType:        return &chunk_alloc_sequence_refl_class;
     case Metaspace::ClassMirrorHolderMetaspaceType: return &chunk_alloc_sequence_anon_class;
     case Metaspace::BootMetaspaceType:              return &chunk_alloc_sequence_boot_class;
     default: ShouldNotReachHere();
@@ -111,7 +97,6 @@ const ArenaGrowthPolicy* ArenaGrowthPolicy::policy_for_space_type(Metaspace::Met
   } else {
     switch(space_type) {
     case Metaspace::StandardMetaspaceType:          return &chunk_alloc_sequence_standard_non_class;
-    case Metaspace::ReflectionMetaspaceType:        return &chunk_alloc_sequence_refl_non_class;
     case Metaspace::ClassMirrorHolderMetaspaceType: return &chunk_alloc_sequence_anon_non_class;
     case Metaspace::BootMetaspaceType:              return &chunk_alloc_sequence_boot_non_class;
     default: ShouldNotReachHere();

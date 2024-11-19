@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,7 +75,6 @@ class MetaspaceTestContext : public CHeapObj<mtInternal> {
 
   MetaspaceContext* _context;
   CommitLimiter _commit_limiter;
-  SizeAtomicCounter _used_words_counter;
 
   // For non-expandable contexts we keep track of the space
   // and delete it at destruction time.
@@ -98,15 +97,16 @@ public:
   const CommitLimiter& commit_limiter() const { return _commit_limiter; }
   const VirtualSpaceList& vslist() const      { return *(_context->vslist()); }
   ChunkManager& cm()                          { return *(_context->cm()); }
+  MetaspaceContext* context() const           { return _context; }
 
   // Returns reserve- and commit limit we run the test with (in the real world,
   // these would be equivalent to CompressedClassSpaceSize resp MaxMetaspaceSize)
   size_t reserve_limit() const    { return _reserve_limit == 0 ? max_uintx : 0; }
   size_t commit_limit() const     { return _commit_limit == 0 ? max_uintx : 0; }
 
-  // Convenience function to retrieve total committed/used words
-  size_t used_words() const       { return _used_words_counter.get(); }
-  size_t committed_words() const  { return _commit_limiter.committed_words(); }
+  size_t used_words() const;
+  size_t committed_words() const;
+  size_t reserved_words() const;
 
   DEBUG_ONLY(void verify() const;)
 

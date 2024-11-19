@@ -42,7 +42,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.constant.ReferenceClassDescImpl;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -134,8 +134,8 @@ public class Util {
     }
 
     public static String toInternalName(ClassDesc cd) {
-        if (cd instanceof ReferenceClassDescImpl rcd) {
-            return rcd.internalName();
+        if (cd instanceof ClassOrInterfaceDescImpl coi) {
+            return coi.internalName();
         }
         throw new IllegalArgumentException(cd.descriptorString());
     }
@@ -280,6 +280,11 @@ public class Util {
                                     b.writeInt(bytecode.length());
                                     b.writeBytes(bytecode.array(), 0, bytecode.length());
                                     b.writeU2U2(0, 0);//exception handlers & attributes
+                                }
+
+                                @Override
+                                public Utf8Entry attributeName() {
+                                    return cp.utf8Entry(Attributes.NAME_CODE);
                                 }
                     }))));
             ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);

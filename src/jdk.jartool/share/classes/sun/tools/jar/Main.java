@@ -155,8 +155,9 @@ public class Main {
      * nflag: Perform jar normalization at the end
      * pflag: preserve/don't strip leading slash and .. component from file name
      * dflag: print module descriptor
+     * kflag: keep existing file
      */
-    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, pflag, dflag, validate;
+    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, pflag, dflag, kflag, validate;
 
     boolean suppressDeprecateMsg = false;
 
@@ -594,6 +595,9 @@ public class Main {
                         case '0':
                             flag0 = true;
                             break;
+                        case 'k':
+                            kflag = true;
+                            break;
                         case 'i':
                             if (cflag || uflag || xflag || tflag) {
                                 usageError(getMsg("error.multiple.main.operations"));
@@ -623,6 +627,9 @@ public class Main {
         if (!cflag && !tflag && !xflag && !uflag && !iflag && !dflag && !validate) {
             usageError(getMsg("error.bad.option"));
             return false;
+        }
+        if (kflag && !xflag) {
+            warn(formatMsg("warn.option.is.ignored", "--keep-old-files/-k/k"));
         }
 
         /* parse file arguments */
@@ -1493,6 +1500,12 @@ public class Main {
                 output(formatMsg("out.create", name));
             }
         } else {
+            if (f.exists() && kflag) {
+                if (vflag) {
+                    output(formatMsg("out.kept", name));
+                }
+                return rc;
+            }
             if (f.getParent() != null) {
                 File d = new File(f.getParent());
                 if (!d.exists() && !d.mkdirs() || !d.isDirectory()) {

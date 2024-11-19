@@ -175,7 +175,9 @@ public class JColorChooser extends JComponent implements Accessible {
      * @return the selected color or <code>null</code> if the user opted out
      * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
+     *
      * @see java.awt.GraphicsEnvironment#isHeadless
+     * @since 9
      */
     @SuppressWarnings("deprecation")
     public static Color showDialog(Component component, String title,

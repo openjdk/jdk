@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,11 +171,8 @@ public abstract class Handler {
      * {@code Handler}.   After close has been called this {@code Handler}
      * should no longer be used.  Method calls may either be silently
      * ignored or may throw runtime exceptions.
-     *
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      */
-    public abstract void close() throws SecurityException;
+    public abstract void close();
 
     /**
      * Set a {@code Formatter}.  This {@code Formatter} will be used
@@ -185,10 +182,8 @@ public abstract class Handler {
      * which case the {@code Formatter} will be remembered, but not used.
      *
      * @param newFormatter the {@code Formatter} to use (may not be null)
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      */
-    public void setFormatter(Formatter newFormatter) throws SecurityException {
+    public void setFormatter(Formatter newFormatter) {
         if (tryUseLock()) {
             try {
                 setFormatter0(newFormatter);
@@ -223,13 +218,11 @@ public abstract class Handler {
      *
      * @param encoding  The name of a supported character encoding.
      *        May be null, to indicate the default platform encoding.
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      * @throws  UnsupportedEncodingException if the named encoding is
      *          not supported.
      */
     public void setEncoding(String encoding)
-            throws SecurityException, java.io.UnsupportedEncodingException {
+            throws java.io.UnsupportedEncodingException {
         if (tryUseLock()) {
             try {
                 setEncoding0(encoding);
@@ -276,10 +269,8 @@ public abstract class Handler {
      * {@code LogRecord} should be published or discarded.
      *
      * @param   newFilter  a {@code Filter} object (may be null)
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      */
-    public void setFilter(Filter newFilter) throws SecurityException {
+    public void setFilter(Filter newFilter) {
         if (tryUseLock()) {
             try {
                 setFilter0(newFilter);
@@ -314,8 +305,6 @@ public abstract class Handler {
      * errors occur while using this Handler.
      *
      * @param em  the new ErrorManager
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      */
     public void setErrorManager(ErrorManager em) {
         if (tryUseLock()) {
@@ -343,8 +332,6 @@ public abstract class Handler {
      * Retrieves the ErrorManager for this Handler.
      *
      * @return the ErrorManager for this Handler
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      */
     public ErrorManager getErrorManager() {
         checkPermission();
@@ -353,9 +340,7 @@ public abstract class Handler {
 
    /**
      * Protected convenience method to report an error to this Handler's
-     * ErrorManager.  Note that this method retrieves and uses the ErrorManager
-     * without doing a security check.  It can therefore be used in
-     * environments where the caller may be non-privileged.
+     * ErrorManager.
      *
      * @param msg    a descriptive string (may be null)
      * @param ex     an exception (may be null)
@@ -380,10 +365,8 @@ public abstract class Handler {
      * {@code Handlers}.
      *
      * @param newLevel   the new value for the log level
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      */
-    public void setLevel(Level newLevel) throws SecurityException {
+    public void setLevel(Level newLevel) {
         if (tryUseLock()) {
             try {
                 setLevel0(newLevel);

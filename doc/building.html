@@ -2016,10 +2016,18 @@ some directory names have spaces. Usually, it assumes those directories
 have <a
 href="https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name">short
 paths</a>. You can run <code>fsutil file setshortname</code> in
-<code>cmd</code> on certain directories, such as
-<code>Microsoft Visual Studio</code> or <code>Windows Kits</code>, to
-assign arbitrary short paths so <code>configure</code> can access
-them.</p>
+<code>cmd</code> on directories to assign arbitrary short paths so
+<code>configure</code> can access them. If the result says "Access
+denied", it may be that there are processes running in that directory;
+in this case, you can reboot Windows in safe mode and run the command on
+those directories again.</p>
+<p>The only directories required to have short paths are
+<code>Microsoft Visual Studio</code> and <code>Windows Kits</code>; the
+rest of the "contains space" warnings from <code>configure</code>, such
+as <code>IntelliJ IDEA</code>, can be ignored. You can choose any short
+name; once it is set, <code>configure</code>'s tools like
+<code>cygpath</code> can convert the directory with spaces to your
+chosen short name and pass it to the build system.</p>
 <h3 id="getting-help">Getting Help</h3>
 <p>If none of the suggestions in this document helps you, or if you find
 what you believe is a bug in the build system, please contact the Build

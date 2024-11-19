@@ -44,10 +44,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.net.URL;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.Locale;
 
 import javax.accessibility.Accessible;
@@ -105,27 +101,19 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * It is left for backward compatibility only.
      * @deprecated since 1.8
      */
-    @SuppressWarnings("removal")
     @Deprecated
-    protected static final Component component
-            = AccessController.doPrivileged(new PrivilegedAction<Component>() {
-        public Component run() {
-            try {
-                final Component component = createNoPermsComponent();
+    protected static final Component component = createComponent();
 
-                // 6482575 - clear the appContext field so as not to leak it
-                AWTAccessor.getComponentAccessor().
-                        setAppContext(component, null);
-
-                return component;
-            } catch (Throwable e) {
-                // We don't care about component.
-                // So don't prevent class initialisation.
-                e.printStackTrace();
-                return null;
-            }
+    private static final Component createComponent() {
+        try {
+            Component component = new Component() {};
+            // 6482575 - clear the appContext field so as not to leak it
+            AWTAccessor.getComponentAccessor().setAppContext(component, null);
+            return component;
+        } catch (Throwable t) {
+            return null;
         }
-    });
+    }
 
     /**
      * Do not use this shared media tracker, which is used to load images.
@@ -134,23 +122,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      */
     @Deprecated
     protected static final MediaTracker tracker = new MediaTracker(component);
-
-    @SuppressWarnings("removal")
-    private static Component createNoPermsComponent() {
-        // 7020198 - set acc field to no permissions and no subject
-        // Note, will have appContext set.
-        return AccessController.doPrivileged(
-                new PrivilegedAction<Component>() {
-                    public Component run() {
-                        return new Component() {
-                        };
-                    }
-                },
-                new AccessControlContext(new ProtectionDomain[]{
-                        new ProtectionDomain(null, null)
-                })
-        );
-    }
 
     /**
      * Id used in loading images from MediaTracker.

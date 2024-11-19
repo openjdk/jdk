@@ -216,7 +216,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
   , _scratch_int_pressure(0, Matcher::int_pressure_limit())
   , _scratch_float_pressure(0, Matcher::float_pressure_limit())
 {
-  Compile::TracePhase tp("ctorChaitin", &timers[_t_ctorChaitin]);
+  Compile::TracePhase tp(_t_ctorChaitin);
 
   _high_frequency_lrg = MIN2(double(OPTO_LRG_HIGH_FREQ), _cfg.get_outer_loop_frequency());
 
@@ -321,7 +321,7 @@ int PhaseChaitin::clone_projs(Block* b, uint idx, Node* orig, Node* copy, uint& 
 
 // Renumber the live ranges to compact them.  Makes the IFG smaller.
 void PhaseChaitin::compact() {
-  Compile::TracePhase tp("chaitinCompact", &timers[_t_chaitinCompact]);
+  Compile::TracePhase tp(_t_chaitinCompact);
 
   // Current the _uf_map contains a series of short chains which are headed
   // by a self-cycle.  All the chains run from big numbers to little numbers.
@@ -397,7 +397,7 @@ void PhaseChaitin::Register_Allocate() {
 #endif
 
   {
-    Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
+    Compile::TracePhase tp(_t_computeLive);
     _live = nullptr;              // Mark live as being not available
     rm.reset_to_mark();           // Reclaim working storage
     IndexSet::reset_memory(C, &live_arena);
@@ -414,7 +414,7 @@ void PhaseChaitin::Register_Allocate() {
   // at all the GC points, and "stretches" the live range of any base pointer
   // to the GC point.
   if (stretch_base_pointer_live_ranges(&live_arena)) {
-    Compile::TracePhase tp("computeLive (sbplr)", &timers[_t_computeLive]);
+    Compile::TracePhase tp("computeLive (sbplr)", _t_computeLive);
     // Since some live range stretched, I need to recompute live
     _live = nullptr;
     rm.reset_to_mark();         // Reclaim working storage
@@ -424,6 +424,9 @@ void PhaseChaitin::Register_Allocate() {
     live.compute(_lrg_map.max_lrg_id());
     _live = &live;
   }
+
+  C->print_method(PHASE_INITIAL_LIVENESS, 4);
+
   // Create the interference graph using virtual copies
   build_ifg_virtual();  // Include stack slots this time
 
@@ -439,7 +442,7 @@ void PhaseChaitin::Register_Allocate() {
   // This pass works on virtual copies.  Any virtual copies which are not
   // coalesced get manifested as actual copies
   {
-    Compile::TracePhase tp("chaitinCoalesce1", &timers[_t_chaitinCoalesce1]);
+    Compile::TracePhase tp(_t_chaitinCoalesce1);
 
     PhaseAggressiveCoalesce coalesce(*this);
     coalesce.coalesce_driver();
@@ -454,7 +457,7 @@ void PhaseChaitin::Register_Allocate() {
   // After aggressive coalesce, attempt a first cut at coloring.
   // To color, we need the IFG and for that we need LIVE.
   {
-    Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
+    Compile::TracePhase tp(_t_computeLive);
     _live = nullptr;
     rm.reset_to_mark();           // Reclaim working storage
     IndexSet::reset_memory(C, &live_arena);
@@ -463,6 +466,8 @@ void PhaseChaitin::Register_Allocate() {
     live.compute(_lrg_map.max_lrg_id());
     _live = &live;
   }
+
+  C->print_method(PHASE_AGGRESSIVE_COALESCING, 4);
 
   // Build physical interference graph
   uint must_spill = 0;
@@ -495,7 +500,7 @@ void PhaseChaitin::Register_Allocate() {
     compact();                  // Compact LRGs; return new lower max lrg
 
     {
-      Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
+      Compile::TracePhase tp(_t_computeLive);
       _live = nullptr;
       rm.reset_to_mark();         // Reclaim working storage
       IndexSet::reset_memory(C, &live_arena);
@@ -504,12 +509,15 @@ void PhaseChaitin::Register_Allocate() {
       live.compute(_lrg_map.max_lrg_id()); // Compute LIVE
       _live = &live;
     }
+
+    C->print_method(PHASE_INITIAL_SPILLING, 4);
+
     build_ifg_physical(&live_arena);
     _ifg->SquareUp();
     _ifg->Compute_Effective_Degree();
     // Only do conservative coalescing if requested
     if (OptoCoalesce) {
-      Compile::TracePhase tp("chaitinCoalesce2", &timers[_t_chaitinCoalesce2]);
+      Compile::TracePhase tp(_t_chaitinCoalesce2);
       // Conservative (and pessimistic) copy coalescing of those spills
       PhaseConservativeCoalesce coalesce(*this);
       // If max live ranges greater than cutoff, don't color the stack.
@@ -517,6 +525,10 @@ void PhaseChaitin::Register_Allocate() {
       coalesce.coalesce_driver();
     }
     _lrg_map.compress_uf_map_for_nodes();
+
+    if (OptoCoalesce) {
+      C->print_method(PHASE_CONSERVATIVE_COALESCING, 4);
+    }
 
 #ifdef ASSERT
     verify(&live_arena, true);
@@ -568,7 +580,7 @@ void PhaseChaitin::Register_Allocate() {
 
     // Nuke the live-ness and interference graph and LiveRanGe info
     {
-      Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
+      Compile::TracePhase tp(_t_computeLive);
       _live = nullptr;
       rm.reset_to_mark();         // Reclaim working storage
       IndexSet::reset_memory(C, &live_arena);
@@ -580,19 +592,27 @@ void PhaseChaitin::Register_Allocate() {
       live.compute(_lrg_map.max_lrg_id());
       _live = &live;
     }
+
+    C->print_method(PHASE_ITERATIVE_SPILLING, 4);
+
     must_spill = build_ifg_physical(&live_arena);
     _ifg->SquareUp();
     _ifg->Compute_Effective_Degree();
 
     // Only do conservative coalescing if requested
     if (OptoCoalesce) {
-      Compile::TracePhase tp("chaitinCoalesce3", &timers[_t_chaitinCoalesce3]);
+      Compile::TracePhase tp(_t_chaitinCoalesce3);
       // Conservative (and pessimistic) copy coalescing
       PhaseConservativeCoalesce coalesce(*this);
       // Check for few live ranges determines how aggressive coalesce is.
       coalesce.coalesce_driver();
     }
     _lrg_map.compress_uf_map_for_nodes();
+
+    if (OptoCoalesce) {
+      C->print_method(PHASE_CONSERVATIVE_COALESCING, 4);
+    }
+
 #ifdef ASSERT
     verify(&live_arena, true);
 #endif
@@ -607,6 +627,8 @@ void PhaseChaitin::Register_Allocate() {
     spills = Select();
   }
 
+  C->print_method(PHASE_AFTER_ITERATIVE_SPILLING, 4);
+
   // Count number of Simplify-Select trips per coloring success.
   _allocator_attempts += _trip_cnt + 1;
   _allocator_successes += 1;
@@ -614,8 +636,12 @@ void PhaseChaitin::Register_Allocate() {
   // Peephole remove copies
   post_allocate_copy_removal();
 
+  C->print_method(PHASE_POST_ALLOCATION_COPY_REMOVAL, 4);
+
   // Merge multidefs if multiple defs representing the same value are used in a single block.
   merge_multidefs();
+
+  C->print_method(PHASE_MERGE_MULTI_DEFS, 4);
 
 #ifdef ASSERT
   // Verify the graph after RA.
@@ -644,6 +670,8 @@ void PhaseChaitin::Register_Allocate() {
 
   // Convert CISC spills
   fixup_spills();
+
+  C->print_method(PHASE_FIX_UP_SPILLS, 4);
 
   // Log regalloc results
   CompileLog* log = Compile::current()->log();
@@ -1183,7 +1211,7 @@ void PhaseChaitin::set_was_low() {
 
 // Compute cost/area ratio, in case we spill.  Build the lo-degree list.
 void PhaseChaitin::cache_lrg_info( ) {
-  Compile::TracePhase tp("chaitinCacheLRG", &timers[_t_chaitinCacheLRG]);
+  Compile::TracePhase tp(_t_chaitinCacheLRG);
 
   for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
     LRG &lrg = lrgs(i);
@@ -1217,7 +1245,7 @@ void PhaseChaitin::cache_lrg_info( ) {
 
 // Simplify the IFG by removing LRGs of low degree.
 void PhaseChaitin::Simplify( ) {
-  Compile::TracePhase tp("chaitinSimplify", &timers[_t_chaitinSimplify]);
+  Compile::TracePhase tp(_t_chaitinSimplify);
 
   while( 1 ) {                  // Repeat till simplified it all
     // May want to explore simplifying lo_degree before _lo_stk_degree.
@@ -1516,7 +1544,7 @@ OptoReg::Name PhaseChaitin::choose_color( LRG &lrg, int chunk ) {
 // everything going back is guaranteed a color.  Select that color.  If some
 // hi-degree LRG cannot get a color then we record that we must spill.
 uint PhaseChaitin::Select( ) {
-  Compile::TracePhase tp("chaitinSelect", &timers[_t_chaitinSelect]);
+  Compile::TracePhase tp(_t_chaitinSelect);
 
   uint spill_reg = LRG::SPILL_REG;
   _max_reg = OptoReg::Name(0);  // Past max register used
@@ -1704,7 +1732,7 @@ void PhaseChaitin::fixup_spills() {
   // This function does only cisc spill work.
   if( !UseCISCSpill ) return;
 
-  Compile::TracePhase tp("fixupSpills", &timers[_t_fixupSpills]);
+  Compile::TracePhase tp(_t_fixupSpills);
 
   // Grab the Frame Pointer
   Node *fp = _cfg.get_root_block()->head()->in(1)->in(TypeFunc::FramePtr);

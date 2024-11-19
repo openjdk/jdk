@@ -22,7 +22,6 @@
  */
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
@@ -37,17 +36,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Executor;
 
-import static jdk.jpackage.test.WindowsHelper.getTempDirectory;
-
 /*
  * @test
  * @summary Custom l10n of msi installers in jpackage
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinL10nTest.java
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinL10nTest
@@ -183,9 +179,8 @@ public class WinL10nTest {
             }
 
             // Preserve config dir to check the set of copied l10n files.
-            Path tempDir = getTempDirectory(cmd, tempRoot);
-            Files.createDirectories(tempDir.getParent());
-            cmd.addArguments("--temp", tempDir.toString());
+            Path tempDir = tempRoot.resolve(cmd.packageType().name());
+            cmd.addArguments("--temp", tempDir);
         })
         .addBundleVerifier((cmd, result) -> {
             if (expectedCultures != null) {
@@ -214,7 +209,7 @@ public class WinL10nTest {
                             v.createCmdOutputVerifier(wixSrcDir).apply(getBuildCommandLine(result));
                         }
                     }
-                    Path tempDir = getTempDirectory(cmd, tempRoot).toAbsolutePath();
+                    var tempDir = Path.of(cmd.getArgumentValue("--temp")).toAbsolutePath();
                     for (var v : createDefaultL10nFilesLocVerifiers(tempDir)) {
                         v.apply(getBuildCommandLine(result));
                     }

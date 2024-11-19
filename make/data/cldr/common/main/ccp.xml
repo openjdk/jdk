@@ -1931,6 +1931,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat>{0} 𑄃𑄧𑄇𑄴𑄖𑄧</regionFormat>
 			<regionFormat type="daylight">{0} 𑄘𑄨𑄝𑄪𑄌𑄴𑄎𑄳𑄠 𑄃𑄧𑄇𑄴𑄖𑄧𑄖𑄴</regionFormat>
 			<regionFormat type="standard">{0} 𑄟𑄚𑄧𑄇𑄴 𑄃𑄧𑄇𑄴𑄖𑄧𑄖𑄴</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>𑄦𑄧𑄚𑄮𑄣𑄪𑄣𑄪</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>𑄘𑄇𑄴𑄘𑄨𑄠 𑄛𑄨𑄖𑄴𑄗𑄨𑄟𑄨𑄢𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</standard>
@@ -2653,9 +2656,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>𑄃𑄪𑄣𑄚𑄴𑄝𑄖𑄢𑄴</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>𑄌𑄰𑄱𑄝𑄣𑄴𑄥𑄳𑄠𑄚𑄴</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>𑄟𑄳𑄠𑄇𑄃𑄮</exemplarCity>
 			</zone>
@@ -3049,9 +3049,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Nome">
 				<exemplarCity>𑄚𑄮𑄟𑄴</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>𑄦𑄧𑄚𑄮𑄣𑄪𑄣𑄪</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>𑄃𑄬𑄚𑄴𑄇𑄮𑄢𑄬𑄌𑄴</exemplarCity>
 			</zone>
@@ -3422,13 +3419,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>𑄌𑄨𑄚𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</generic>
 					<standard>𑄌𑄨𑄚𑄴 𑄟𑄚𑄧𑄇𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</standard>
 					<daylight>𑄌𑄨𑄚𑄴 𑄘𑄨𑄚𑄮𑄃𑄣𑄮𑄢𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>𑄌𑄧𑄠𑄴𑄝𑄣𑄴𑄥𑄧𑄚𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</generic>
-					<standard>𑄌𑄧𑄠𑄴𑄝𑄣𑄴𑄥𑄧𑄚𑄴 𑄟𑄚𑄧𑄇𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</standard>
-					<daylight>𑄌𑄧𑄠𑄴𑄝𑄣𑄴𑄥𑄧𑄚𑄴 𑄉𑄧𑄢𑄧𑄟𑄴𑄇𑄣𑄧𑄢𑄴 𑄃𑄧𑄇𑄴𑄖𑄧</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">

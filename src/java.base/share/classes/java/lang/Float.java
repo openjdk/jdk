@@ -93,9 +93,9 @@ public final class Float extends Number
     public static final float NEGATIVE_INFINITY = -1.0f / 0.0f;
 
     /**
-     * A constant holding a Not-a-Number (NaN) value of type
-     * {@code float}.  It is equivalent to the value returned by
-     * {@code Float.intBitsToFloat(0x7fc00000)}.
+     * A constant holding a Not-a-Number (NaN) value of type {@code float}.
+     * It is {@linkplain Double##equivalenceRelation equivalent}
+     * to the value returned by{@code Float.intBitsToFloat(0x7fc00000)}.
      */
     public static final float NaN = 0.0f / 0.0f;
 
@@ -175,8 +175,7 @@ public final class Float extends Number
      *
      * @since 1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Float> TYPE = (Class<Float>) Class.getPrimitiveClass("float");
+    public static final Class<Float> TYPE = Class.getPrimitiveClass("float");
 
     /**
      * Returns a string representation of the {@code float}
@@ -889,8 +888,8 @@ public final class Float extends Number
      * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public boolean equals(Object obj) {
-        return (obj instanceof Float)
-               && (floatToIntBits(((Float)obj).value) == floatToIntBits(value));
+        return (obj instanceof Float f) &&
+            (floatToIntBits(f.value) == floatToIntBits(value));
     }
 
     /**

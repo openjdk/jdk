@@ -83,6 +83,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bjn">Banjaresisch</language>
 			<language type="bkm">Kom</language>
 			<language type="bla">Blackfoot</language>
+			<language type="blo">Anii</language>
 			<language type="bm">Bambara</language>
 			<language type="bn">Bengalisch</language>
 			<language type="bo">Tibetisch</language>
@@ -214,7 +215,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gmh">Mittelhochdeutsch</language>
 			<language type="gn">Guaraní</language>
 			<language type="goh">Althochdeutsch</language>
-			<language type="gom">Goa-Konkani</language>
 			<language type="gon">Gondi</language>
 			<language type="gor">Mongondou</language>
 			<language type="got">Gotisch</language>
@@ -234,6 +234,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">Süd-Haida</language>
 			<language type="he">Hebräisch</language>
 			<language type="hi">Hindi</language>
+			<language type="hi_Latn">Hindi (lateinisch)</language>
 			<language type="hi_Latn" alt="variant">Hinglish</language>
 			<language type="hif">Fidschi-Hindi</language>
 			<language type="hil">Hiligaynon</language>
@@ -325,6 +326,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">Komi</language>
 			<language type="kw">Kornisch</language>
 			<language type="kwk">Kwakʼwala</language>
+			<language type="kxv">Kuvi</language>
 			<language type="ky">Kirgisisch</language>
 			<language type="la">Latein</language>
 			<language type="lad">Ladino</language>
@@ -619,6 +621,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="vi">Vietnamesisch</language>
 			<language type="vls">Westflämisch</language>
 			<language type="vmf">Mainfränkisch</language>
+			<language type="vmw">Makua</language>
 			<language type="vo">Volapük</language>
 			<language type="vot">Wotisch</language>
 			<language type="vro">Võro</language>
@@ -634,6 +637,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="xal">Kalmückisch</language>
 			<language type="xh">Xhosa</language>
 			<language type="xmf">Mingrelisch</language>
+			<language type="xnr">Kangri</language>
 			<language type="xog">Soga</language>
 			<language type="yao">Yao</language>
 			<language type="yap">Yapesisch</language>
@@ -668,6 +672,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Arab">Arabisch</script>
 			<script type="Arab" alt="variant">Persisch</script>
 			<script type="Aran">Nastaliq</script>
+			<script type="Armi" draft="unconfirmed">Aramäisch</script>
 			<script type="Armn">Armenisch</script>
 			<script type="Avst">Avestisch</script>
 			<script type="Bali">Balinesisch</script>
@@ -683,12 +688,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Bugi">Buginesisch</script>
 			<script type="Buhd">Buhid</script>
 			<script type="Cakm">Chakma</script>
-			<script type="Cans">UCAS</script>
+			<script type="Cans">Kanadische Aborigine-Silbenschrift</script>
 			<script type="Cari">Karisch</script>
-			<script type="Cham" draft="contributed">Cham</script>
 			<script type="Cher">Cherokee</script>
+			<script type="Chrs" draft="unconfirmed">Choresmisch</script>
 			<script type="Cirt">Cirth</script>
 			<script type="Copt">Koptisch</script>
+			<script type="Cpmn" draft="unconfirmed">Minoisch</script>
 			<script type="Cprt">Zypriotisch</script>
 			<script type="Cyrl">Kyrillisch</script>
 			<script type="Cyrs">Altkirchenslawisch</script>
@@ -730,7 +736,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hung">Altungarisch</script>
 			<script type="Inds">Indus-Schrift</script>
 			<script type="Ital">Altitalisch</script>
-			<script type="Jamo">Jamo</script>
 			<script type="Java">Javanesisch</script>
 			<script type="Jpan">Japanisch</script>
 			<script type="Jurc" draft="contributed">Jurchen</script>
@@ -739,6 +744,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Khar">Kharoshthi</script>
 			<script type="Khmr">Khmer</script>
 			<script type="Khoj" draft="contributed">Khojki</script>
+			<script type="Kits" draft="unconfirmed">Chitan</script>
 			<script type="Knda">Kannada</script>
 			<script type="Kore">Koreanisch</script>
 			<script type="Kpel" draft="contributed">Kpelle</script>
@@ -767,7 +773,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Merc" draft="contributed">Meroitisch kursiv</script>
 			<script type="Mero">Meroitisch</script>
 			<script type="Mlym">Malayalam</script>
-			<script type="Modi" draft="contributed">Modi</script>
 			<script type="Mong">Mongolisch</script>
 			<script type="Moon">Moon</script>
 			<script type="Mroo" draft="contributed">Mro</script>
@@ -786,6 +791,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Orya">Oriya</script>
 			<script type="Osge" draft="unconfirmed">Osage</script>
 			<script type="Osma">Osmanisch</script>
+			<script type="Ougr" draft="unconfirmed">Altuigurisch</script>
 			<script type="Palm" draft="contributed">Palmyrenisch</script>
 			<script type="Pauc" draft="contributed">Pau Cin Hau</script>
 			<script type="Perm">Altpermisch</script>
@@ -833,7 +839,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Tfng">Tifinagh</script>
 			<script type="Tglg">Tagalog</script>
 			<script type="Thaa">Thaana</script>
-			<script type="Thai">Thai</script>
 			<script type="Tibt">Tibetisch</script>
 			<script type="Tirh" draft="contributed">Tirhuta</script>
 			<script type="Ugar">Ugaritisch</script>
@@ -844,6 +849,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Wole" draft="contributed">Woleaianisch</script>
 			<script type="Xpeo">Altpersisch</script>
 			<script type="Xsux">Sumerisch-akkadische Keilschrift</script>
+			<script type="Yezi" draft="unconfirmed">Jesidisch</script>
 			<script type="Yiii">Yi</script>
 			<script type="Zanb" draft="unconfirmed">Dsanabadsar-Quadratschrift</script>
 			<script type="Zinh">Geerbter Schriftwert</script>
@@ -851,7 +857,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Zsye">Emoji</script>
 			<script type="Zsym">Symbole</script>
 			<script type="Zxxx">Schriftlos</script>
-			<script type="Zyyy">Verbreitet</script>
+			<script type="Zyyy">Unbestimmt</script>
 			<script type="Zzzz">Unbekannte Schrift</script>
 		</scripts>
 		<territories>
@@ -1202,6 +1208,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="TARASK">Taraskievica-Orthographie</variant>
 			<variant type="UCCOR" draft="contributed">Vereinheitlichte Rechtschreibung</variant>
 			<variant type="UCRCOR" draft="contributed">Vereinheitlichte überarbeitete Rechtschreibung</variant>
+			<variant type="UNIFON" draft="unconfirmed">Unifon (phonetisch)</variant>
 			<variant type="VALENCIA">Valencianisch</variant>
 			<variant type="WADEGILE">Wade-Giles</variant>
 		</variants>
@@ -1220,7 +1227,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="hc">Stundenformat (12h/24h)</key>
 			<key type="lb">Zeilenumbruchstil</key>
 			<key type="ms">Maßsystem</key>
-			<key type="numbers">Zahlen</key>
+			<key type="numbers">Ziffern</key>
 			<key type="timezone">Zeitzone</key>
 			<key type="va">Lokale Variante</key>
 			<key type="x">Privatnutzung</key>
@@ -1243,7 +1250,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="iso8601">ISO-8601-Kalender</type>
 			<type key="calendar" type="japanese">Japanischer Kalender</type>
 			<type key="calendar" type="persian">Persischer Kalender</type>
-			<type key="calendar" type="roc">Kalender der Republik China</type>
+			<type key="calendar" type="roc">Minguo-Kalender</type>
 			<type key="cf" type="account">Währungsformat (Buchhaltung)</type>
 			<type key="cf" type="standard">Währungsformat (Standard)</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">Symbole sortieren</type>
@@ -1281,10 +1288,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colStrength" type="quaternary" draft="contributed">Akzente/Fall/Breite/Kana sortieren</type>
 			<type key="colStrength" type="secondary" draft="contributed">Akzente sortieren</type>
 			<type key="colStrength" type="tertiary" draft="contributed">Akzente/Fall/Breite sortieren</type>
-			<type key="d0" type="fwidth">Breit</type>
-			<type key="d0" type="hwidth">Halbe Breite</type>
+			<type key="d0" type="fwidth">Vollbreit</type>
+			<type key="d0" type="hwidth">Halbbreit</type>
 			<type key="d0" type="npinyin" draft="contributed">Numerisch</type>
-			<type key="hc" type="h11">12-Stunden-Format (0-11)</type>
+			<type key="hc" type="h11">12-Stunden-Format (0–11)</type>
 			<type key="hc" type="h12">12-Stunden-Format (1-12)</type>
 			<type key="hc" type="h23">24-Stunden-Format (0-23)</type>
 			<type key="hc" type="h24">24-Stunden-Format (1-24)</type>
@@ -1306,7 +1313,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="brah" draft="contributed">Brahmi-Ziffern</type>
 			<type key="numbers" type="cakm">Chakma-Ziffern</type>
 			<type key="numbers" type="cham" draft="contributed">Cham-Ziffern</type>
-			<type key="numbers" type="cyrl" draft="unconfirmed">Kyrillische Ziffern</type>
+			<type key="numbers" type="cyrl" draft="unconfirmed">Kyrillische Zahlzeichen</type>
 			<type key="numbers" type="deva">Devanagari-Ziffern</type>
 			<type key="numbers" type="ethi">Äthiopische Ziffern</type>
 			<type key="numbers" type="finance" draft="contributed">Finanzzahlen</type>
@@ -1403,7 +1410,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
 			<parseLenient sample="’">['＇’ ՚ ᾽᾿ ʼ ߴ]</parseLenient>
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1429,7 +1436,464 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</eras>
 			</calendar>
 			<calendar type="chinese">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Erster</month>
+							<month type="2" draft="unconfirmed">Zweiter</month>
+							<month type="3" draft="unconfirmed">Dritter</month>
+							<month type="4" draft="unconfirmed">Vierter</month>
+							<month type="5" draft="unconfirmed">Fünfter</month>
+							<month type="6" draft="unconfirmed">Sechster</month>
+							<month type="7" draft="unconfirmed">Siebter</month>
+							<month type="8" draft="unconfirmed">Achter</month>
+							<month type="9" draft="unconfirmed">Neunter</month>
+							<month type="10" draft="unconfirmed">Zehnter</month>
+							<month type="11" draft="unconfirmed">Elfter</month>
+							<month type="12" draft="unconfirmed">Zwölfter</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Erster</month>
+							<month type="2" draft="unconfirmed">Zweiter</month>
+							<month type="3" draft="unconfirmed">Dritter</month>
+							<month type="4" draft="unconfirmed">Vierter</month>
+							<month type="5" draft="unconfirmed">Fünfter</month>
+							<month type="6" draft="unconfirmed">Sechster</month>
+							<month type="7" draft="unconfirmed">Siebter</month>
+							<month type="8" draft="unconfirmed">Achter</month>
+							<month type="9" draft="unconfirmed">Neunter</month>
+							<month type="10" draft="unconfirmed">Zehnter</month>
+							<month type="11" draft="unconfirmed">Elfter</month>
+							<month type="12" draft="unconfirmed">Zwölfter</month>
+						</monthWidth>
+					</monthContext>
+				</months>
 				<cyclicNameSets>
+					<cyclicNameSet type="dayParts">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="abbreviated">
+								<cyclicName type="1" draft="unconfirmed">Mäusezeit</cyclicName>
+								<cyclicName type="2" draft="unconfirmed">Büffelzeit</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">Tigerzeit</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">Katzenzeit</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">Drachenzeit</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">Schlangenzeit</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">Pferdezeit</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">Ziegenzeit</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">Affenzeit</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">Hühnerzeit</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">Hundezeit</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">Schweinezeit</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="narrow">
+								<cyclicName type="1" draft="unconfirmed">🐭</cyclicName>
+								<cyclicName type="2" draft="unconfirmed">🐮</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">🐯</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">🐱</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">🐲</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">🐍</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">🐴</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">🐏</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">🐵</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">🐔</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">🐶</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">🐷</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="wide">
+								<cyclicName type="2" draft="unconfirmed">Büffelstunden</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">Tigerstunden</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">Katzenstunden</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">Drachenstunden</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">Schlangenstunden</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">Pferdestunden</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">Ziegenstunden</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">Affenstunden</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">Hühnerstunden</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">Hundestunden</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">Schweinestunden</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+					<cyclicNameSet type="days">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="abbreviated">
+								<cyclicName type="1" draft="unconfirmed">Holzratte</cyclicName>
+								<cyclicName type="2" draft="unconfirmed">Holzbüffel</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">Feuertiger</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">Feuerhase</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">Erddrache</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">Erdschlange</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">Metallpferd</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">Metallziege</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">Wasseraffe</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">Wasserhuhn</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">Holzhund</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">Holzschwein</cyclicName>
+								<cyclicName type="13" draft="unconfirmed">Feuerratte</cyclicName>
+								<cyclicName type="14" draft="unconfirmed">Feuerbüffel</cyclicName>
+								<cyclicName type="15" draft="unconfirmed">Erdtiger</cyclicName>
+								<cyclicName type="16" draft="unconfirmed">Erdhase</cyclicName>
+								<cyclicName type="17" draft="unconfirmed">Metalldrache</cyclicName>
+								<cyclicName type="18" draft="unconfirmed">Metallschlange</cyclicName>
+								<cyclicName type="19" draft="unconfirmed">Wasserpferd</cyclicName>
+								<cyclicName type="20" draft="unconfirmed">Wasserziege</cyclicName>
+								<cyclicName type="21" draft="unconfirmed">Holzaffe</cyclicName>
+								<cyclicName type="22" draft="unconfirmed">Holzhuhn</cyclicName>
+								<cyclicName type="23" draft="unconfirmed">Feuerhund</cyclicName>
+								<cyclicName type="24" draft="unconfirmed">Feuerschwein</cyclicName>
+								<cyclicName type="25" draft="unconfirmed">Erdratte</cyclicName>
+								<cyclicName type="26" draft="unconfirmed">Erdbüffel</cyclicName>
+								<cyclicName type="27" draft="unconfirmed">Metalltiger</cyclicName>
+								<cyclicName type="28" draft="unconfirmed">Metallhase</cyclicName>
+								<cyclicName type="29" draft="unconfirmed">Wasserdrache</cyclicName>
+								<cyclicName type="30" draft="unconfirmed">Wasserschlange</cyclicName>
+								<cyclicName type="31" draft="unconfirmed">Holzpferd</cyclicName>
+								<cyclicName type="32" draft="unconfirmed">Holzziege</cyclicName>
+								<cyclicName type="33" draft="unconfirmed">Feueraffe</cyclicName>
+								<cyclicName type="34" draft="unconfirmed">Feuerhuhn</cyclicName>
+								<cyclicName type="35" draft="unconfirmed">Erdhund</cyclicName>
+								<cyclicName type="36" draft="unconfirmed">Erdschwein</cyclicName>
+								<cyclicName type="37" draft="unconfirmed">Metallratte</cyclicName>
+								<cyclicName type="38" draft="unconfirmed">Metallbüffel</cyclicName>
+								<cyclicName type="39" draft="unconfirmed">Wassertiger</cyclicName>
+								<cyclicName type="40" draft="unconfirmed">Wasserhase</cyclicName>
+								<cyclicName type="41" draft="unconfirmed">Holzdrache</cyclicName>
+								<cyclicName type="42" draft="unconfirmed">Holzschlange</cyclicName>
+								<cyclicName type="43" draft="unconfirmed">Feuerpferd</cyclicName>
+								<cyclicName type="44" draft="unconfirmed">Feuerziege</cyclicName>
+								<cyclicName type="45" draft="unconfirmed">Erdaffe</cyclicName>
+								<cyclicName type="46" draft="unconfirmed">Erdhuhn</cyclicName>
+								<cyclicName type="47" draft="unconfirmed">Metallhund</cyclicName>
+								<cyclicName type="48" draft="unconfirmed">Metallschwein</cyclicName>
+								<cyclicName type="49" draft="unconfirmed">Wasserratte</cyclicName>
+								<cyclicName type="50" draft="unconfirmed">Wasserbüffel</cyclicName>
+								<cyclicName type="51" draft="unconfirmed">Holztiger</cyclicName>
+								<cyclicName type="52" draft="unconfirmed">Holzhase</cyclicName>
+								<cyclicName type="53" draft="unconfirmed">Feuerdrache</cyclicName>
+								<cyclicName type="54" draft="unconfirmed">Feuerschlange</cyclicName>
+								<cyclicName type="55" draft="unconfirmed">Erdpferd</cyclicName>
+								<cyclicName type="56" draft="unconfirmed">Erdziege</cyclicName>
+								<cyclicName type="57" draft="unconfirmed">Metallaffe</cyclicName>
+								<cyclicName type="58" draft="unconfirmed">Metallhuhn</cyclicName>
+								<cyclicName type="59" draft="unconfirmed">Wasserhund</cyclicName>
+								<cyclicName type="60" draft="unconfirmed">Wasserschwein</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="narrow">
+								<cyclicName type="1" draft="unconfirmed">🌲🐭</cyclicName>
+								<cyclicName type="2" draft="unconfirmed">🌲🐮</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">🔥🐯</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">🔥🐱</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">🌱🐲</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">🌱🐍</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">⚡🐴</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">⚡🐏</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">💧🐵</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">💧🐔</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">🌲🐶</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">🌲🐷</cyclicName>
+								<cyclicName type="13" draft="unconfirmed">🔥🐭</cyclicName>
+								<cyclicName type="14" draft="unconfirmed">🔥🐮</cyclicName>
+								<cyclicName type="15" draft="unconfirmed">🌱🐯</cyclicName>
+								<cyclicName type="16" draft="unconfirmed">🌱🐱</cyclicName>
+								<cyclicName type="17" draft="unconfirmed">⚡🐲</cyclicName>
+								<cyclicName type="18" draft="unconfirmed">⚡🐍</cyclicName>
+								<cyclicName type="19" draft="unconfirmed">💧🐴</cyclicName>
+								<cyclicName type="20" draft="unconfirmed">💧🐏</cyclicName>
+								<cyclicName type="21" draft="unconfirmed">🌲🐵</cyclicName>
+								<cyclicName type="22" draft="unconfirmed">🌲🐔</cyclicName>
+								<cyclicName type="23" draft="unconfirmed">🔥🐶</cyclicName>
+								<cyclicName type="24" draft="unconfirmed">🔥🐷</cyclicName>
+								<cyclicName type="25" draft="unconfirmed">🌱🐭</cyclicName>
+								<cyclicName type="26" draft="unconfirmed">🌱🐮</cyclicName>
+								<cyclicName type="27" draft="unconfirmed">⚡🐯</cyclicName>
+								<cyclicName type="28" draft="unconfirmed">⚡🐱</cyclicName>
+								<cyclicName type="29" draft="unconfirmed">💧🐲</cyclicName>
+								<cyclicName type="30" draft="unconfirmed">💧🐍</cyclicName>
+								<cyclicName type="31" draft="unconfirmed">🌲🐴</cyclicName>
+								<cyclicName type="32" draft="unconfirmed">🌲🐏</cyclicName>
+								<cyclicName type="33" draft="unconfirmed">🔥🐵</cyclicName>
+								<cyclicName type="34" draft="unconfirmed">🔥🐔</cyclicName>
+								<cyclicName type="35" draft="unconfirmed">🌱🐶</cyclicName>
+								<cyclicName type="36" draft="unconfirmed">🌱🐷</cyclicName>
+								<cyclicName type="37" draft="unconfirmed">⚡🐭</cyclicName>
+								<cyclicName type="38" draft="unconfirmed">⚡🐮</cyclicName>
+								<cyclicName type="39" draft="unconfirmed">💧🐯</cyclicName>
+								<cyclicName type="40" draft="unconfirmed">💧🐱</cyclicName>
+								<cyclicName type="41" draft="unconfirmed">🌲🐲</cyclicName>
+								<cyclicName type="42" draft="unconfirmed">🌲🐍</cyclicName>
+								<cyclicName type="43" draft="unconfirmed">🔥🐴</cyclicName>
+								<cyclicName type="44" draft="unconfirmed">🔥🐏</cyclicName>
+								<cyclicName type="45" draft="unconfirmed">🌱🐵</cyclicName>
+								<cyclicName type="46" draft="unconfirmed">🌱🐔</cyclicName>
+								<cyclicName type="47" draft="unconfirmed">⚡🐶</cyclicName>
+								<cyclicName type="48" draft="unconfirmed">⚡🐷</cyclicName>
+								<cyclicName type="49" draft="unconfirmed">💧🐭</cyclicName>
+								<cyclicName type="50" draft="unconfirmed">💧🐮</cyclicName>
+								<cyclicName type="51" draft="unconfirmed">🌲🐯</cyclicName>
+								<cyclicName type="52" draft="unconfirmed">🌲🐱</cyclicName>
+								<cyclicName type="53" draft="unconfirmed">🔥🐲</cyclicName>
+								<cyclicName type="54" draft="unconfirmed">🔥🐍</cyclicName>
+								<cyclicName type="55" draft="unconfirmed">🌱🐴</cyclicName>
+								<cyclicName type="56" draft="unconfirmed">🌱🐏</cyclicName>
+								<cyclicName type="57" draft="unconfirmed">⚡🐵</cyclicName>
+								<cyclicName type="58" draft="unconfirmed">⚡🐔</cyclicName>
+								<cyclicName type="59" draft="unconfirmed">💧🐶</cyclicName>
+								<cyclicName type="60" draft="unconfirmed">💧🐷</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="wide">
+								<cyclicName type="1" draft="unconfirmed">Yang-Holzratte</cyclicName>
+								<cyclicName type="2" draft="unconfirmed">Yin-Holzbüffel</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">Yang-Feuertiger</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">Yin-Feuerhase</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">Yang-Erddrache</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">Yin-Erdschlange</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">Yang-Metallpferd</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">Yin-Metallziege</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">Yang-Wasseraffe</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">Yin-Wasserhuhn</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">Yang-Holzhund</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">Yin-Holzschwein</cyclicName>
+								<cyclicName type="13" draft="unconfirmed">Yang-Feuerratte</cyclicName>
+								<cyclicName type="14" draft="unconfirmed">Yin-Feuerbüffel</cyclicName>
+								<cyclicName type="15" draft="unconfirmed">Yang-Erdtiger</cyclicName>
+								<cyclicName type="16" draft="unconfirmed">Yin-Erdhase</cyclicName>
+								<cyclicName type="17" draft="unconfirmed">Yang-Metalldrache</cyclicName>
+								<cyclicName type="18" draft="unconfirmed">Yin-Metallschlange</cyclicName>
+								<cyclicName type="19" draft="unconfirmed">Yang-Wasserpferd</cyclicName>
+								<cyclicName type="20" draft="unconfirmed">Yin-Wasserziege</cyclicName>
+								<cyclicName type="21" draft="unconfirmed">Yang-Holzaffe</cyclicName>
+								<cyclicName type="22" draft="unconfirmed">Yin-Holzhuhn</cyclicName>
+								<cyclicName type="23" draft="unconfirmed">Yang-Feuerhund</cyclicName>
+								<cyclicName type="24" draft="unconfirmed">Yin-Feuerschwein</cyclicName>
+								<cyclicName type="25" draft="unconfirmed">Yang-Erdratte</cyclicName>
+								<cyclicName type="26" draft="unconfirmed">Yin-Erdbüffel</cyclicName>
+								<cyclicName type="27" draft="unconfirmed">Yang-Metalltiger</cyclicName>
+								<cyclicName type="28" draft="unconfirmed">Yin-Metallhase</cyclicName>
+								<cyclicName type="29" draft="unconfirmed">Yang-Wasserdrache</cyclicName>
+								<cyclicName type="30" draft="unconfirmed">Yin-Wasserschlange</cyclicName>
+								<cyclicName type="31" draft="unconfirmed">Yang-Holzpferd</cyclicName>
+								<cyclicName type="32" draft="unconfirmed">Yin-Holzziege</cyclicName>
+								<cyclicName type="33" draft="unconfirmed">Yang-Feueraffe</cyclicName>
+								<cyclicName type="34" draft="unconfirmed">Yin-Feuerhuhn</cyclicName>
+								<cyclicName type="35" draft="unconfirmed">Yang-Erdhund</cyclicName>
+								<cyclicName type="36" draft="unconfirmed">Yin-Erdschwein</cyclicName>
+								<cyclicName type="37" draft="unconfirmed">Yang-Metallratte</cyclicName>
+								<cyclicName type="38" draft="unconfirmed">Yin-Metallbüffel</cyclicName>
+								<cyclicName type="39" draft="unconfirmed">Yang-Wassertiger</cyclicName>
+								<cyclicName type="40" draft="unconfirmed">Yin-Wasserhase</cyclicName>
+								<cyclicName type="41" draft="unconfirmed">Yang-Holzdrache</cyclicName>
+								<cyclicName type="42" draft="unconfirmed">Yin-Holzschlange</cyclicName>
+								<cyclicName type="43" draft="unconfirmed">Yang-Feuerpferd</cyclicName>
+								<cyclicName type="44" draft="unconfirmed">Yin-Feuerziege</cyclicName>
+								<cyclicName type="45" draft="unconfirmed">Yang-Erdaffe</cyclicName>
+								<cyclicName type="46" draft="unconfirmed">Yin-Erdhuhn</cyclicName>
+								<cyclicName type="47" draft="unconfirmed">Yang-Metallhund</cyclicName>
+								<cyclicName type="48" draft="unconfirmed">Yin-Metallschwein</cyclicName>
+								<cyclicName type="49" draft="unconfirmed">Yang-Wasserratte</cyclicName>
+								<cyclicName type="50" draft="unconfirmed">Yin-Wasserbüffel</cyclicName>
+								<cyclicName type="51" draft="unconfirmed">Yang-Holztiger</cyclicName>
+								<cyclicName type="52" draft="unconfirmed">Yin-Holzhase</cyclicName>
+								<cyclicName type="53" draft="unconfirmed">Yang-Feuerdrache</cyclicName>
+								<cyclicName type="54" draft="unconfirmed">Yin-Feuerschlange</cyclicName>
+								<cyclicName type="55" draft="unconfirmed">Yang-Erdpferd</cyclicName>
+								<cyclicName type="56" draft="unconfirmed">Yin-Erdziege</cyclicName>
+								<cyclicName type="57" draft="unconfirmed">Yang-Metallaffe</cyclicName>
+								<cyclicName type="58" draft="unconfirmed">Yin-Metallhuhn</cyclicName>
+								<cyclicName type="59" draft="unconfirmed">Yang-Wasserhund</cyclicName>
+								<cyclicName type="60" draft="unconfirmed">Yin-Wasserschwein</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+					<cyclicNameSet type="months">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="wide">
+								<cyclicName type="1" draft="unconfirmed">Yang-Holzratte</cyclicName>
+								<cyclicName type="2" draft="unconfirmed">Yin-Holzbüffel</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">Yang-Feuertiger</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">Yin-Feuerhase</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">Yang-Erddrache</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">Yin-Erdschlange</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">Yang-Metallpferd</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">Yin-Metallziege</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">Yang-Wasseraffe</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">Yin-Wasserhuhn</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">Yang-Holzhund</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">Yin-Holzschwein</cyclicName>
+								<cyclicName type="13" draft="unconfirmed">Yang-Feuerratte</cyclicName>
+								<cyclicName type="14" draft="unconfirmed">Yin-Feuerbüffel</cyclicName>
+								<cyclicName type="15" draft="unconfirmed">Yang-Erdtiger</cyclicName>
+								<cyclicName type="16" draft="unconfirmed">Yin-Erdhase</cyclicName>
+								<cyclicName type="17" draft="unconfirmed">Yang-Metalldrache</cyclicName>
+								<cyclicName type="18" draft="unconfirmed">Yin-Metallschlange</cyclicName>
+								<cyclicName type="19" draft="unconfirmed">Yang-Wasserpferd</cyclicName>
+								<cyclicName type="20" draft="unconfirmed">Yin-Wasserziege</cyclicName>
+								<cyclicName type="21" draft="unconfirmed">Yang-Holzaffe</cyclicName>
+								<cyclicName type="22" draft="unconfirmed">Yin-Holzhuhn</cyclicName>
+								<cyclicName type="23" draft="unconfirmed">Yang-Feuerhund</cyclicName>
+								<cyclicName type="24" draft="unconfirmed">Yin-Feuerschwein</cyclicName>
+								<cyclicName type="25" draft="unconfirmed">Yang-Erdratte</cyclicName>
+								<cyclicName type="26" draft="unconfirmed">Yin-Erdbüffel</cyclicName>
+								<cyclicName type="27" draft="unconfirmed">Yang-Metalltiger</cyclicName>
+								<cyclicName type="28" draft="unconfirmed">Yin-Metallhase</cyclicName>
+								<cyclicName type="29" draft="unconfirmed">Yang-Wasserdrache</cyclicName>
+								<cyclicName type="30" draft="unconfirmed">Yin-Wasserschlange</cyclicName>
+								<cyclicName type="31" draft="unconfirmed">Yang-Holzpferd</cyclicName>
+								<cyclicName type="32" draft="unconfirmed">Yin-Holzziege</cyclicName>
+								<cyclicName type="33" draft="unconfirmed">Yang-Feueraffe</cyclicName>
+								<cyclicName type="34" draft="unconfirmed">Yin-Feuerhuhn</cyclicName>
+								<cyclicName type="35" draft="unconfirmed">Yang-Erdhund</cyclicName>
+								<cyclicName type="36" draft="unconfirmed">Yin-Erdschwein</cyclicName>
+								<cyclicName type="37" draft="unconfirmed">Yang-Metallratte</cyclicName>
+								<cyclicName type="38" draft="unconfirmed">Yin-Metallbüffel</cyclicName>
+								<cyclicName type="39" draft="unconfirmed">Yang-Wassertiger</cyclicName>
+								<cyclicName type="40" draft="unconfirmed">Yin-Wasserhase</cyclicName>
+								<cyclicName type="41" draft="unconfirmed">Yang-Holzdrache</cyclicName>
+								<cyclicName type="42" draft="unconfirmed">Yin-Holzschlange</cyclicName>
+								<cyclicName type="43" draft="unconfirmed">Yang-Feuerpferd</cyclicName>
+								<cyclicName type="44" draft="unconfirmed">Yin-Feuerziege</cyclicName>
+								<cyclicName type="45" draft="unconfirmed">Yang-Erdaffe</cyclicName>
+								<cyclicName type="46" draft="unconfirmed">Yin-Erdhuhn</cyclicName>
+								<cyclicName type="47" draft="unconfirmed">Yang-Metallhund</cyclicName>
+								<cyclicName type="48" draft="unconfirmed">Yin-Metallschwein</cyclicName>
+								<cyclicName type="49" draft="unconfirmed">Yang-Wasserratte</cyclicName>
+								<cyclicName type="50" draft="unconfirmed">Yin-Wasserbüffel</cyclicName>
+								<cyclicName type="51" draft="unconfirmed">Yang-Holztiger</cyclicName>
+								<cyclicName type="52" draft="unconfirmed">Yin-Holzhase</cyclicName>
+								<cyclicName type="53" draft="unconfirmed">Yang-Feuerdrache</cyclicName>
+								<cyclicName type="54" draft="unconfirmed">Yin-Feuerschlange</cyclicName>
+								<cyclicName type="55" draft="unconfirmed">Yang-Erdpferd</cyclicName>
+								<cyclicName type="56" draft="unconfirmed">Yin-Erdziege</cyclicName>
+								<cyclicName type="57" draft="unconfirmed">Yang-Metallaffe</cyclicName>
+								<cyclicName type="58" draft="unconfirmed">Yin-Metallhuhn</cyclicName>
+								<cyclicName type="59" draft="unconfirmed">Yang-Wasserhund</cyclicName>
+								<cyclicName type="60" draft="unconfirmed">Yin-Wasserschwein</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+					<cyclicNameSet type="solarTerms">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="narrow">
+								<cyclicName type="1" draft="unconfirmed">🐯♒</cyclicName>
+								<cyclicName type="2" draft="unconfirmed">🐯♓</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">🐰♓</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">🐰♈</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">🐲♈</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">🐲♉</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">🐍♉</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">🐍♊</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">🐴♊</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">🐴♋</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">🐏♋</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">🐏♌</cyclicName>
+								<cyclicName type="13" draft="unconfirmed">🐵♌</cyclicName>
+								<cyclicName type="14" draft="unconfirmed">🐵♍</cyclicName>
+								<cyclicName type="15" draft="unconfirmed">🐔♍</cyclicName>
+								<cyclicName type="16" draft="unconfirmed">🐔♎</cyclicName>
+								<cyclicName type="17" draft="unconfirmed">🐶♎</cyclicName>
+								<cyclicName type="18" draft="unconfirmed">🐶♏</cyclicName>
+								<cyclicName type="19" draft="unconfirmed">🐷♏</cyclicName>
+								<cyclicName type="20" draft="unconfirmed">🐷♐</cyclicName>
+								<cyclicName type="21" draft="unconfirmed">🐭♐</cyclicName>
+								<cyclicName type="22" draft="unconfirmed">🐭♑</cyclicName>
+								<cyclicName type="23" draft="unconfirmed">🐮♑</cyclicName>
+								<cyclicName type="24" draft="unconfirmed">🐮♒</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="wide">
+								<cyclicName type="1" draft="unconfirmed">Neufrühling</cyclicName>
+								<cyclicName type="2" draft="unconfirmed">Wässer</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">Schlüpfen</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">Vollfrühling</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">Flügge</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">Sprosskorn</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">Neusommer</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">Halmkorn</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">Ährenkorn</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">Vollsommer</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">Vorhitze</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">Haupthitze</cyclicName>
+								<cyclicName type="13" draft="unconfirmed">Neuherbst</cyclicName>
+								<cyclicName type="14" draft="unconfirmed">Endhitze</cyclicName>
+								<cyclicName type="15" draft="unconfirmed">Morgentau</cyclicName>
+								<cyclicName type="16" draft="unconfirmed">Vollherbst</cyclicName>
+								<cyclicName type="17" draft="unconfirmed">Morgenreif</cyclicName>
+								<cyclicName type="18" draft="unconfirmed">Morgenfrost</cyclicName>
+								<cyclicName type="19" draft="unconfirmed">Neuwinter</cyclicName>
+								<cyclicName type="20" draft="unconfirmed">Vorschnee</cyclicName>
+								<cyclicName type="21" draft="unconfirmed">Hauptschnee</cyclicName>
+								<cyclicName type="22" draft="unconfirmed">Vollwinter</cyclicName>
+								<cyclicName type="23" draft="unconfirmed">Vorkälte</cyclicName>
+								<cyclicName type="24" draft="unconfirmed">Hauptkälte</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+					<cyclicNameSet type="years">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="wide">
+								<cyclicName type="1" draft="unconfirmed">Yang-Holzratte</cyclicName>
+								<cyclicName type="2" draft="unconfirmed">Yin-Holzbüffel</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">Yang-Feuertiger</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">Yin-Feuerhase</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">Yang-Erddrache</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">Yin-Erdschlange</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">Yang-Metallpferd</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">Yin-Metallziege</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">Yang-Wasseraffe</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">Yin-Wasserhuhn</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">Yang-Holzhund</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">Yin-Holzschwein</cyclicName>
+								<cyclicName type="13" draft="unconfirmed">Yang-Feuerratte</cyclicName>
+								<cyclicName type="14" draft="unconfirmed">Yin-Feuerbüffel</cyclicName>
+								<cyclicName type="15" draft="unconfirmed">Yang-Erdtiger</cyclicName>
+								<cyclicName type="16" draft="unconfirmed">Yin-Erdhase</cyclicName>
+								<cyclicName type="17" draft="unconfirmed">Yang-Metalldrache</cyclicName>
+								<cyclicName type="18" draft="unconfirmed">Yin-Metallschlange</cyclicName>
+								<cyclicName type="19" draft="unconfirmed">Yang-Wasserpferd</cyclicName>
+								<cyclicName type="20" draft="unconfirmed">Yin-Wasserziege</cyclicName>
+								<cyclicName type="21" draft="unconfirmed">Yang-Holzaffe</cyclicName>
+								<cyclicName type="22" draft="unconfirmed">Yin-Holzhuhn</cyclicName>
+								<cyclicName type="23" draft="unconfirmed">Yang-Feuerhund</cyclicName>
+								<cyclicName type="24" draft="unconfirmed">Yin-Feuerschwein</cyclicName>
+								<cyclicName type="25" draft="unconfirmed">Yang-Erdratte</cyclicName>
+								<cyclicName type="26" draft="unconfirmed">Yin-Erdbüffel</cyclicName>
+								<cyclicName type="27" draft="unconfirmed">Yang-Metalltiger</cyclicName>
+								<cyclicName type="28" draft="unconfirmed">Yin-Metallhase</cyclicName>
+								<cyclicName type="29" draft="unconfirmed">Yang-Wasserdrache</cyclicName>
+								<cyclicName type="30" draft="unconfirmed">Yin-Wasserschlange</cyclicName>
+								<cyclicName type="31" draft="unconfirmed">Yang-Holzpferd</cyclicName>
+								<cyclicName type="32" draft="unconfirmed">Yin-Holzziege</cyclicName>
+								<cyclicName type="33" draft="unconfirmed">Yang-Feueraffe</cyclicName>
+								<cyclicName type="34" draft="unconfirmed">Yin-Feuerhuhn</cyclicName>
+								<cyclicName type="35" draft="unconfirmed">Yang-Erdhund</cyclicName>
+								<cyclicName type="36" draft="unconfirmed">Yin-Erdschwein</cyclicName>
+								<cyclicName type="37" draft="unconfirmed">Yang-Metallratte</cyclicName>
+								<cyclicName type="38" draft="unconfirmed">Yin-Metallbüffel</cyclicName>
+								<cyclicName type="39" draft="unconfirmed">Yang-Wassertiger</cyclicName>
+								<cyclicName type="40" draft="unconfirmed">Yin-Wasserhase</cyclicName>
+								<cyclicName type="41" draft="unconfirmed">Yang-Holzdrache</cyclicName>
+								<cyclicName type="42" draft="unconfirmed">Yin-Holzschlange</cyclicName>
+								<cyclicName type="43" draft="unconfirmed">Yang-Feuerpferd</cyclicName>
+								<cyclicName type="44" draft="unconfirmed">Yin-Feuerziege</cyclicName>
+								<cyclicName type="45" draft="unconfirmed">Yang-Erdaffe</cyclicName>
+								<cyclicName type="46" draft="unconfirmed">Yin-Erdhuhn</cyclicName>
+								<cyclicName type="47" draft="unconfirmed">Yang-Metallhund</cyclicName>
+								<cyclicName type="48" draft="unconfirmed">Yin-Metallschwein</cyclicName>
+								<cyclicName type="49" draft="unconfirmed">Yang-Wasserratte</cyclicName>
+								<cyclicName type="50" draft="unconfirmed">Yin-Wasserbüffel</cyclicName>
+								<cyclicName type="51" draft="unconfirmed">Yang-Holztiger</cyclicName>
+								<cyclicName type="52" draft="unconfirmed">Yin-Holzhase</cyclicName>
+								<cyclicName type="53" draft="unconfirmed">Yang-Feuerdrache</cyclicName>
+								<cyclicName type="54" draft="unconfirmed">Yin-Feuerschlange</cyclicName>
+								<cyclicName type="55" draft="unconfirmed">Yang-Erdpferd</cyclicName>
+								<cyclicName type="56" draft="unconfirmed">Yin-Erdziege</cyclicName>
+								<cyclicName type="57" draft="unconfirmed">Yang-Metallaffe</cyclicName>
+								<cyclicName type="58" draft="unconfirmed">Yin-Metallhuhn</cyclicName>
+								<cyclicName type="59" draft="unconfirmed">Yang-Wasserhund</cyclicName>
+								<cyclicName type="60" draft="unconfirmed">Yin-Wasserschwein</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
 					<cyclicNameSet type="zodiacs">
 						<cyclicNameContext type="format">
 							<cyclicNameWidth type="abbreviated">
@@ -1445,6 +1909,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 								<cyclicName type="10" draft="contributed">Hahn</cyclicName>
 								<cyclicName type="11" draft="contributed">Hund</cyclicName>
 								<cyclicName type="12" draft="contributed">Schwein</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="narrow">
+								<cyclicName type="1" draft="unconfirmed">🐭</cyclicName>
+								<cyclicName type="2" draft="unconfirmed">🐮</cyclicName>
+								<cyclicName type="3" draft="unconfirmed">🐯</cyclicName>
+								<cyclicName type="4" draft="unconfirmed">🐰</cyclicName>
+								<cyclicName type="5" draft="unconfirmed">🐲</cyclicName>
+								<cyclicName type="6" draft="unconfirmed">🐍</cyclicName>
+								<cyclicName type="7" draft="unconfirmed">🐴</cyclicName>
+								<cyclicName type="8" draft="unconfirmed">🐏</cyclicName>
+								<cyclicName type="9" draft="unconfirmed">🐵</cyclicName>
+								<cyclicName type="10" draft="unconfirmed">🐔</cyclicName>
+								<cyclicName type="11" draft="unconfirmed">🐶</cyclicName>
+								<cyclicName type="12" draft="unconfirmed">🐷</cyclicName>
 							</cyclicNameWidth>
 						</cyclicNameContext>
 					</cyclicNameSet>
@@ -1476,6 +1954,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'um' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'um' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'um' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'um' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Ed">E, d.</dateFormatItem>
 						<dateFormatItem id="Gy">U</dateFormatItem>
@@ -1604,6 +2114,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h 'Uhr' B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d.</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
@@ -1612,7 +2123,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d. MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h 'Uhr' B</dateFormatItem>
 						<dateFormatItem id="H">HH 'Uhr'</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
@@ -2236,7 +2747,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="roc">
 				<eras>
 					<eraNames>
-						<era type="0" draft="contributed">vor Volksrepublik China</era>
+						<era type="0">vor Volksrepublik China</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="1">Minguo</era>
@@ -2250,6 +2761,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<fields>
 			<field type="era">
 				<displayName>Epoche</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>Ep.</displayName>
 			</field>
 			<field type="era-narrow">
 				<displayName>E</displayName>
@@ -2322,6 +2836,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="month-short">
+				<displayName>Mon.</displayName>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">vor {0} Monat</relativeTimePattern>
 					<relativeTimePattern count="other">vor {0} Monaten</relativeTimePattern>
@@ -2365,9 +2880,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="weekOfMonth-short">
 				<displayName>W/M</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
-				<displayName>Wo. des Monats</displayName>
 			</field>
 			<field type="day">
 				<displayName>Tag</displayName>
@@ -2760,6 +3272,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} (Ortszeit)</regionFormat>
 			<regionFormat type="daylight">{0} (Sommerzeit)</regionFormat>
 			<regionFormat type="standard">{0} (Normalzeit)</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Koordinierte Weltzeit</standard>
@@ -2815,9 +3330,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Cabo Verde</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Weihnachtsinsel</exemplarCity>
@@ -2937,9 +3449,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Hovd">
 				<exemplarCity>Chowd</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Tschoibalsan</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Macau</exemplarCity>
 			</zone>
@@ -2970,14 +3479,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lissabon</exemplarCity>
 			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
 			<zone type="Asia/Qatar">
 				<exemplarCity>Katar</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>Bukarest</exemplarCity>
@@ -3045,9 +3548,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Mogadishu">
 				<exemplarCity>Mogadischu</exemplarCity>
 			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
-			</zone>
 			<zone type="Asia/Damascus">
 				<exemplarCity>Damaskus</exemplarCity>
 			</zone>
@@ -3071,9 +3571,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiew</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Asia/Tashkent">
 				<exemplarCity>Taschkent</exemplarCity>
@@ -3155,9 +3652,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>Rocky-Mountain-Zeit</generic>
-					<standard>Rocky-Mountain-Normalzeit</standard>
-					<daylight>Rocky-Mountain-Sommerzeit</daylight>
+					<generic>Rocky-Mountains-Zeit</generic>
+					<standard>Rocky-Mountains-Normalzeit</standard>
+					<daylight>Rocky-Mountains-Sommerzeit</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
@@ -3337,13 +3834,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Chinesische Zeit</generic>
 					<standard>Chinesische Normalzeit</standard>
 					<daylight>Chinesische Sommerzeit</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Tschoibalsan-Zeit</generic>
-					<standard>Tschoibalsan-Normalzeit</standard>
-					<daylight>Tschoibalsan-Sommerzeit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -3611,6 +4101,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="contributed">Kamtschatka-Sommerzeit</daylight>
 				</long>
 			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Kasachische Zeit</standard>
+				</long>
+			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
 					<standard>Ostkasachische Zeit</standard>
@@ -3642,7 +4137,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kyrgystan">
 				<long>
-					<standard>Kirgisistan-Zeit</standard>
+					<standard>Kirgisische Zeit</standard>
 				</long>
 			</metazone>
 			<metazone type="Lanka">
@@ -3950,7 +4445,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Tajikistan">
 				<long>
-					<standard>Tadschikistan-Zeit</standard>
+					<standard>Tadschikische Zeit</standard>
 				</long>
 			</metazone>
 			<metazone type="Tokelau">
@@ -3973,8 +4468,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Turkmenistan-Zeit</generic>
-					<standard>Turkmenistan-Normalzeit</standard>
-					<daylight>Turkmenistan-Sommerzeit</daylight>
+					<standard>Turkmenische Normalzeit</standard>
+					<daylight>Turkmenische Sommerzeit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tuvalu">
@@ -3991,9 +4486,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
-					<generic>Usbekistan-Zeit</generic>
-					<standard>Usbekistan-Normalzeit</standard>
-					<daylight>Usbekistan-Sommerzeit</daylight>
+					<generic>Usbekische Zeit</generic>
+					<standard>Usbekische Normalzeit</standard>
+					<daylight>Usbekische Sommerzeit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vanuatu">
@@ -4164,8 +4659,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 Bio'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -5182,9 +5675,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">Sierra-leonische Leones</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>Sierra-leonischer Leone (1964—2022)</displayName>
-				<displayName count="one">Sierra-leonischer Leone (1964—2022)</displayName>
-				<displayName count="other">Sierra-leonische Leones (1964—2022)</displayName>
+				<displayName>Sierra-leonischer Leone (1964–2022)</displayName>
+				<displayName count="one">Sierra-leonischer Leone (1964–2022)</displayName>
+				<displayName count="other">Sierra-leonische Leones (1964–2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somalia-Schilling</displayName>
@@ -5876,21 +6369,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} Karat</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>neuter</gender>
 				<displayName>Milligramm pro Deziliter</displayName>
 				<unitPattern count="one">{0} Milligramm pro Deziliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Milligramm pro Deziliter</unitPattern>
+				<unitPattern count="one" case="dative">{0} Milligramm pro Deziliter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Milligramm pro Deziliter</unitPattern>
 				<unitPattern count="other">{0} Milligramm pro Deziliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Milligramm pro Deziliter</unitPattern>
+				<unitPattern count="other" case="dative">{0} Milligramm pro Deziliter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Milligramm pro Deziliter</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Millimol pro Liter</displayName>
 				<unitPattern count="one">{0} Millimol pro Liter</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Millimol pro Liter</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Millimol pro Liter</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Millimol pro Liter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Millimol pro Liter</unitPattern>
+				<unitPattern count="one" case="dative">{0} Millimol pro Liter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Millimol pro Liter</unitPattern>
 				<unitPattern count="other">{0} Millimol pro Liter</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Millimol pro Liter</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Millimol pro Liter</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Millimol pro Liter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Millimol pro Liter</unitPattern>
+				<unitPattern count="other" case="dative">{0} Millimol pro Liter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Millimol pro Liter</unitPattern>
 			</unit>
 			<unit type="concentr-item">
 				<gender draft="contributed">neuter</gender>
@@ -5965,16 +6465,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} Mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>Liter pro Kilometer</displayName>
 				<unitPattern count="one">{0} Liter pro Kilometer</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Liter pro Kilometer</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Liter pro Kilometer</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Liters pro Kilometer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Liter pro Kilometer</unitPattern>
+				<unitPattern count="one" case="dative">{0} Liter pro Kilometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Liters pro Kilometer</unitPattern>
 				<unitPattern count="other">{0} Liter pro Kilometer</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Liter pro Kilometer</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Litern pro Kilometer</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Liter pro Kilometer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Liter pro Kilometer</unitPattern>
+				<unitPattern count="other" case="dative">{0} Litern pro Kilometer</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Liter pro Kilometer</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<gender>masculine</gender>
@@ -6016,11 +6516,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender draft="contributed">neuter</gender>
 				<displayName>Petabytes</displayName>
 				<unitPattern count="one">{0} Petabyte</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Petabyte</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Petabyte</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Petabyte</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Petabyte</unitPattern>
+				<unitPattern count="one" case="dative">{0} Petabyte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Petabyte</unitPattern>
 				<unitPattern count="other">{0} Petabyte</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Petabyte</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Petabyte</unitPattern>
 				<unitPattern count="other" case="dative" draft="contributed">{0} Petabyte</unitPattern>
 				<unitPattern count="other" case="genitive" draft="contributed">{0} Petabyte</unitPattern>
 			</unit>
@@ -6037,16 +6537,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} Terabyte</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Terabits</displayName>
 				<unitPattern count="one">{0} Terabit</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Terabit</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Terabit</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Terabit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Terabit</unitPattern>
+				<unitPattern count="one" case="dative">{0} Terabit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Terabit</unitPattern>
 				<unitPattern count="other">{0} Terabit</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Terabit</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Terabit</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Terabit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Terabit</unitPattern>
+				<unitPattern count="other" case="dative">{0} Terabit</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Terabit</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<gender>neuter</gender>
@@ -6174,7 +6674,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Jahr</unitPattern>
 				<unitPattern count="one" case="accusative">{0} Jahr</unitPattern>
 				<unitPattern count="one" case="dative">{0} Jahr</unitPattern>
-				<unitPattern count="one" case="genitive">{0} Jahrs</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Jahres</unitPattern>
 				<unitPattern count="other">{0} Jahre</unitPattern>
 				<unitPattern count="other" case="accusative">{0} Jahre</unitPattern>
 				<unitPattern count="other" case="dative">{0} Jahren</unitPattern>
@@ -6320,38 +6820,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} Nanosekunden</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<unitPattern count="one">{0} Ampere</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Ampere</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Ampere</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Ampere</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Ampere</unitPattern>
+				<unitPattern count="one" case="dative">{0} Ampere</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Ampere</unitPattern>
 				<unitPattern count="other">{0} Ampere</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Ampere</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Ampere</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Ampere</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Ampere</unitPattern>
+				<unitPattern count="other" case="dative">{0} Ampere</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Ampere</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Milliampere</displayName>
 				<unitPattern count="one">{0} Milliampere</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Milliampere</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Milliampere</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Milliampere</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Milliampere</unitPattern>
+				<unitPattern count="one" case="dative">{0} Milliampere</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Milliampere</unitPattern>
 				<unitPattern count="other">{0} Milliampere</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Milliampere</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Milliampere</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Milliampere</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Milliampere</unitPattern>
+				<unitPattern count="other" case="dative">{0} Milliampere</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Milliampere</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<unitPattern count="one">{0} Ohm</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Ohm</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Ohm</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Ohms</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Ohm</unitPattern>
+				<unitPattern count="one" case="dative">{0} Ohm</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Ohms</unitPattern>
 				<unitPattern count="other">{0} Ohm</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Ohm</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Ohm</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Ohm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Ohm</unitPattern>
+				<unitPattern count="other" case="dative">{0} Ohm</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Ohm</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<gender>neuter</gender>
@@ -6467,64 +6967,64 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} Newton</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>Kilowattstunde pro 100 Kilometer</displayName>
 				<unitPattern count="one">{0} Kilowattstunde pro 100 Kilometer</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Kilowattstunde pro 100 Kilometer</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Kilowattstunde pro 100 Kilometer</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Kilowattstunde pro 100 Kilometer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Kilowattstunde pro 100 Kilometer</unitPattern>
+				<unitPattern count="one" case="dative">{0} Kilowattstunde pro 100 Kilometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Kilowattstunde pro 100 Kilometer</unitPattern>
 				<unitPattern count="other">{0} Kilowattstunden pro 100 Kilometer</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Kilowattstunden pro 100 Kilometer</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Kilowattstunden pro 100 Kilometer</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Kilowattstunden pro 100 Kilometer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Kilowattstunden pro 100 Kilometer</unitPattern>
+				<unitPattern count="other" case="dative">{0} Kilowattstunden pro 100 Kilometer</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Kilowattstunden pro 100 Kilometer</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Gigahertz</displayName>
 				<unitPattern count="one">{0} Gigahertz</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Gigahertz</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Gigahertz</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Gigahertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Gigahertz</unitPattern>
+				<unitPattern count="one" case="dative">{0} Gigahertz</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Gigahertz</unitPattern>
 				<unitPattern count="other">{0} Gigahertz</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Gigahertz</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Gigahertz</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Gigahertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Gigahertz</unitPattern>
+				<unitPattern count="other" case="dative">{0} Gigahertz</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Gigahertz</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Megahertz</displayName>
 				<unitPattern count="one">{0} Megahertz</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Megahertz</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Megahertz</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Megahertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Megahertz</unitPattern>
+				<unitPattern count="one" case="dative">{0} Megahertz</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Megahertz</unitPattern>
 				<unitPattern count="other">{0} Megahertz</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Megahertz</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Megahertz</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Megahertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Megahertz</unitPattern>
+				<unitPattern count="other" case="dative">{0} Megahertz</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Megahertz</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Kilohertz</displayName>
 				<unitPattern count="one">{0} Kilohertz</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Kilohertz</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Kilohertz</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Kilohertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Kilohertz</unitPattern>
+				<unitPattern count="one" case="dative">{0} Kilohertz</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Kilohertz</unitPattern>
 				<unitPattern count="other">{0} Kilohertz</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Kilohertz</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Kilohertz</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Kilohertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Kilohertz</unitPattern>
+				<unitPattern count="other" case="dative">{0} Kilohertz</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Kilohertz</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Hertz</displayName>
 				<unitPattern count="one">{0} Hertz</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Hertz</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Hertz</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Hertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Hertz</unitPattern>
+				<unitPattern count="one" case="dative">{0} Hertz</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Hertz</unitPattern>
 				<unitPattern count="other">{0} Hertz</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Hertz</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Hertz</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Hertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Hertz</unitPattern>
+				<unitPattern count="other" case="dative">{0} Hertz</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Hertz</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<gender>neuter</gender>
@@ -6615,16 +7115,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} pro Meter</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>Dezimeter</displayName>
 				<unitPattern count="one">{0} Dezimeter</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Dezimeter</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Dezimeter</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Dezimeters</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Dezimeter</unitPattern>
+				<unitPattern count="one" case="dative">{0} Dezimeter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Dezimeters</unitPattern>
 				<unitPattern count="other">{0} Dezimeter</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Dezimeter</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Dezimetern</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Dezimeter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Dezimeter</unitPattern>
+				<unitPattern count="other" case="dative">{0} Dezimetern</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Dezimeter</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<gender>masculine</gender>
@@ -6652,28 +7152,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} Millimeter</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>Mikrometer</displayName>
 				<unitPattern count="one">{0} Mikrometer</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Mikrometer</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Mikrometer</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Mikrometers</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Mikrometer</unitPattern>
+				<unitPattern count="one" case="dative">{0} Mikrometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Mikrometers</unitPattern>
 				<unitPattern count="other">{0} Mikrometer</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Mikrometer</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Mikrometern</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Mikrometer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Mikrometer</unitPattern>
+				<unitPattern count="other" case="dative">{0} Mikrometern</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Mikrometer</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>Nanometer</displayName>
 				<unitPattern count="one">{0} Nanometer</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Nanometer</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Nanometer</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Nanometers</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Nanometer</unitPattern>
+				<unitPattern count="one" case="dative">{0} Nanometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Nanometers</unitPattern>
 				<unitPattern count="other">{0} Nanometer</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Nanometer</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Nanometern</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Nanometer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Nanometer</unitPattern>
+				<unitPattern count="other" case="dative">{0} Nanometern</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Nanometer</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<gender>masculine</gender>
@@ -6783,9 +7283,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} skandinavischen Meilen</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<gender>masculine</gender>
 				<displayName>DTP-Punkte</displayName>
 				<unitPattern count="one">{0} DTP-Punkt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} DTP-Punkt</unitPattern>
+				<unitPattern count="one" case="dative">{0} DTP-Punkt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} DTP-Punkts</unitPattern>
 				<unitPattern count="other">{0} DTP-Punkte</unitPattern>
+				<unitPattern count="other" case="accusative">{0} DTP-Punkte</unitPattern>
+				<unitPattern count="other" case="dative">{0} DTP-Punkten</unitPattern>
+				<unitPattern count="other" case="genitive">{0} DTP-Punkte</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<gender>masculine</gender>
@@ -6847,16 +7354,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} Sonnenleuchtkräfte</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>Tonnen</displayName>
 				<unitPattern count="one">{0} Tonne</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Tonne</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Tonne</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Tonne</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Tonne</unitPattern>
+				<unitPattern count="one" case="dative">{0} Tonne</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Tonne</unitPattern>
 				<unitPattern count="other">{0} Tonnen</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Tonnen</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Tonnen</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Tonnen</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Tonnen</unitPattern>
+				<unitPattern count="other" case="dative">{0} Tonnen</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Tonnen</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<gender>neuter</gender>
@@ -6896,16 +7403,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} Milligramm</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Mikrogramm</displayName>
 				<unitPattern count="one">{0} Mikrogramm</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Mikrogramm</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Mikrogramm</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Mikrogramms</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Mikrogramm</unitPattern>
+				<unitPattern count="one" case="dative">{0} Mikrogramm</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Mikrogramms</unitPattern>
 				<unitPattern count="other">{0} Mikrogramm</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Mikrogramm</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Mikrogramm</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Mikrogramm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Mikrogramm</unitPattern>
+				<unitPattern count="other" case="dative">{0} Mikrogramm</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Mikrogramm</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>Short Tons</displayName>
@@ -6948,16 +7455,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} Feinunzen</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Karat</displayName>
 				<unitPattern count="one">{0} Karat</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Karat</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Karat</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Karats</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Karat</unitPattern>
+				<unitPattern count="one" case="dative">{0} Karat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Karats</unitPattern>
 				<unitPattern count="other">{0} Karat</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Karat</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Karat</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Karat</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Karat</unitPattern>
+				<unitPattern count="other" case="dative">{0} Karat</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Karat</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<gender>neuter</gender>
@@ -7071,9 +7578,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} Pferdestärken</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>masculine</gender>
 				<displayName>Millimeter Quecksilbersäule</displayName>
 				<unitPattern count="one">{0} Millimeter Quecksilbersäule</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Millimeter Quecksilbersäule</unitPattern>
+				<unitPattern count="one" case="dative">{0} Millimeter Quecksilbersäule</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Millimeter Quecksilbersäule</unitPattern>
 				<unitPattern count="other">{0} Millimeter Quecksilbersäule</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Millimeter Quecksilbersäule</unitPattern>
+				<unitPattern count="other" case="dative">{0} Millimeter Quecksilbersäule</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Millimeter Quecksilbersäule</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>Pfund pro Quadratzoll</displayName>
@@ -7086,63 +7600,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} Zoll Quecksilbersäule</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Bar</displayName>
 				<unitPattern count="one">{0} Bar</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Bar</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Bar</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Bars</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Bar</unitPattern>
+				<unitPattern count="one" case="dative">{0} Bar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Bars</unitPattern>
 				<unitPattern count="other">{0} Bar</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Bar</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Bar</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Bar</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Bar</unitPattern>
+				<unitPattern count="other" case="dative">{0} Bar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Bar</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<unitPattern count="one">{0} Millibar</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Millibar</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Millibar</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Millibars</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Millibar</unitPattern>
+				<unitPattern count="one" case="dative">{0} Millibar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Millibars</unitPattern>
 				<unitPattern count="other">{0} Millibar</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Millibar</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Millibar</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Millibar</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Millibar</unitPattern>
+				<unitPattern count="other" case="dative">{0} Millibar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Millibar</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>Atmosphären</displayName>
 				<unitPattern count="one">{0} Atmosphäre</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Atmosphäre</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Atmosphäre</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Atmosphäre</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Atmosphäre</unitPattern>
+				<unitPattern count="one" case="dative">{0} Atmosphäre</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Atmosphäre</unitPattern>
 				<unitPattern count="other">{0} Atmosphären</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Atmosphären</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Atmosphären</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Atmosphären</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Atmosphären</unitPattern>
+				<unitPattern count="other" case="dative">{0} Atmosphären</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Atmosphären</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Pascal</displayName>
 				<unitPattern count="one">{0} Pascal</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Pascal</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Pascal</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Pascals</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Pascal</unitPattern>
+				<unitPattern count="one" case="dative">{0} Pascal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Pascals</unitPattern>
 				<unitPattern count="other">{0} Pascal</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Pascal</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Pascal</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Pascal</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Pascal</unitPattern>
+				<unitPattern count="other" case="dative">{0} Pascal</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Pascal</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Hektopascal</displayName>
 				<unitPattern count="one">{0} Hektopascal</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Hektopascal</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Hektopascal</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Hektopascals</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Hektopascal</unitPattern>
+				<unitPattern count="one" case="dative">{0} Hektopascal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Hektopascals</unitPattern>
 				<unitPattern count="other">{0} Hektopascal</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Hektopascal</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Hektopascal</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Hektopascal</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Hektopascal</unitPattern>
+				<unitPattern count="other" case="dative">{0} Hektopascal</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Hektopascal</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<gender>neuter</gender>
@@ -7157,16 +7671,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} Kilopascal</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Megapascal</displayName>
 				<unitPattern count="one">{0} Megapascal</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Megapascal</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Megapascal</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Megapascals</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Megapascal</unitPattern>
+				<unitPattern count="one" case="dative">{0} Megapascal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Megapascals</unitPattern>
 				<unitPattern count="other">{0} Megapascal</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Megapascal</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Megapascal</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Megapascal</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Megapascal</unitPattern>
+				<unitPattern count="other" case="dative">{0} Megapascal</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Megapascal</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<gender>masculine</gender>
@@ -7210,9 +7724,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} Knoten</unitPattern>
 			</unit>
 			<unit type="speed-beaufort">
+				<gender>neuter</gender>
 				<displayName>Beaufort</displayName>
 				<unitPattern count="one">Beaufort {0}</unitPattern>
+				<unitPattern count="one" case="accusative">Beaufort {0}</unitPattern>
+				<unitPattern count="one" case="dative">Beaufort {0}</unitPattern>
+				<unitPattern count="one" case="genitive">Beaufort {0}</unitPattern>
 				<unitPattern count="other">Beaufort {0}</unitPattern>
+				<unitPattern count="other" case="accusative">Beaufort {0}</unitPattern>
+				<unitPattern count="other" case="dative">Beaufort {0}</unitPattern>
+				<unitPattern count="other" case="genitive">Beaufort {0}</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<gender>neuter</gender>
@@ -7279,16 +7800,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive" draft="contributed">{0} Newtonmeter</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>Kubikkilometer</displayName>
 				<unitPattern count="one">{0} Kubikkilometer</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Kubikkilometer</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Kubikkilometer</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Kubikkilometers</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Kubikkilometer</unitPattern>
+				<unitPattern count="one" case="dative">{0} Kubikkilometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Kubikkilometers</unitPattern>
 				<unitPattern count="other">{0} Kubikkilometer</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Kubikkilometer</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Kubikkilometern</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Kubikkilometer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Kubikkilometer</unitPattern>
+				<unitPattern count="other" case="dative">{0} Kubikkilometern</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Kubikkilometer</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
 				<gender>masculine</gender>
@@ -7351,28 +7872,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} Kubikzoll</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>Megaliter</displayName>
 				<unitPattern count="one">{0} Megaliter</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Megaliter</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Megaliter</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Megaliters</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Megaliter</unitPattern>
+				<unitPattern count="one" case="dative">{0} Megaliter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Megaliters</unitPattern>
 				<unitPattern count="other">{0} Megaliter</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Megaliter</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Megalitern</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Megaliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Megaliter</unitPattern>
+				<unitPattern count="other" case="dative">{0} Megalitern</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Megaliter</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>Hektoliter</displayName>
 				<unitPattern count="one">{0} Hektoliter</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} Hektoliter</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} Hektoliter</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Hektoliters</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Hektoliter</unitPattern>
+				<unitPattern count="one" case="dative">{0} Hektoliter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Hektoliters</unitPattern>
 				<unitPattern count="other">{0} Hektoliter</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} Hektoliter</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Hektolitern</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} Hektoliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Hektoliter</unitPattern>
+				<unitPattern count="other" case="dative">{0} Hektolitern</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Hektoliter</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<gender>masculine</gender>
@@ -7423,28 +7944,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} Milliliter</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>metrische Pints</displayName>
 				<unitPattern count="one">{0} metrisches Pint</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} metrische Pint</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} metrischen Pint</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} metrischen Pints</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metrische Pint</unitPattern>
+				<unitPattern count="one" case="dative">{0} metrischen Pint</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metrischen Pints</unitPattern>
 				<unitPattern count="other">{0} metrische Pints</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} metrischen Pints</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} metrischen Pints</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} metrischen Pints</unitPattern>
+				<unitPattern count="other" case="accusative">{0} metrischen Pints</unitPattern>
+				<unitPattern count="other" case="dative">{0} metrischen Pints</unitPattern>
+				<unitPattern count="other" case="genitive">{0} metrischen Pints</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>metrische Tassen</displayName>
 				<unitPattern count="one">{0} metrische Tasse</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} metrische Tasse</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} metrischen Tasse</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} metrischen Tasse</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metrische Tasse</unitPattern>
+				<unitPattern count="one" case="dative">{0} metrischen Tasse</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metrischen Tasse</unitPattern>
 				<unitPattern count="other">{0} metrische Tassen</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} metrischen Tassen</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} metrischen Tassen</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} metrischen Tassen</unitPattern>
+				<unitPattern count="other" case="accusative">{0} metrischen Tassen</unitPattern>
+				<unitPattern count="other" case="dative">{0} metrischen Tassen</unitPattern>
+				<unitPattern count="other" case="genitive">{0} metrischen Tassen</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<unitPattern count="one">{0} Acre-Foot</unitPattern>
@@ -7650,6 +8171,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} Imp. Quart</unitPattern>
 				<unitPattern count="other" case="dative">{0} Imp. Quart</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Imp. Quart</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>neuter</gender>
+				<displayName>Milliardstel</displayName>
+				<unitPattern count="one">{0} Milliardstel</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Milliardstel</unitPattern>
+				<unitPattern count="one" case="dative">{0} Milliardstel</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Milliardstels</unitPattern>
+				<unitPattern count="other">{0} Milliardstel</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Milliardstel</unitPattern>
+				<unitPattern count="other" case="dative">{0} Milliardsteln</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Milliardstel</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>feminine</gender>
+				<displayName>Übernachtungen</displayName>
+				<unitPattern count="one">{0} Übernachtung</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Übernachtung</unitPattern>
+				<unitPattern count="one" case="dative">{0} Übernachtung</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Übernachtung</unitPattern>
+				<unitPattern count="other">{0} Übernachtungen</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Übernachtungen</unitPattern>
+				<unitPattern count="other" case="dative">{0} Übernachtungen</unitPattern>
+				<unitPattern count="other" case="genitive">{0} Übernachtungen</unitPattern>
+				<perUnitPattern>{0} pro Übernachtung</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>Himmelsrichtung</displayName>
@@ -8068,6 +8614,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Imp.qt.</unitPattern>
 				<unitPattern count="other">{0} Imp.qt.</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>Milliardstel</displayName>
+				<unitPattern count="one">{0} Milliardstel</unitPattern>
+				<unitPattern count="other">{0} Milliardstel</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>Nächte</displayName>
+				<unitPattern count="one">{0} Nacht</unitPattern>
+				<unitPattern count="other">{0} Nächte</unitPattern>
+				<perUnitPattern>{0}/Nacht</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>Richtung</displayName>
 				<coordinateUnitPattern type="east">{0} O</coordinateUnitPattern>
@@ -8101,10 +8658,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>″</displayName>
 			</unit>
 			<unit type="area-hectare">
-				<displayName draft="contributed">ha</displayName>
+				<displayName>ha</displayName>
 			</unit>
 			<unit type="area-dunam">
-				<displayName draft="contributed">Dunam</displayName>
+				<displayName>Dunam</displayName>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>kt</displayName>
@@ -8152,30 +8709,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mpg UK</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
-				<displayName draft="contributed">GB</displayName>
+				<displayName>GB</displayName>
 			</unit>
 			<unit type="digital-gigabit">
-				<displayName draft="contributed">Gb</displayName>
+				<displayName>Gb</displayName>
 			</unit>
 			<unit type="digital-megabyte">
-				<displayName draft="contributed">MB</displayName>
+				<displayName>MB</displayName>
 			</unit>
 			<unit type="digital-megabit">
-				<displayName draft="contributed">Mb</displayName>
+				<displayName>Mb</displayName>
 			</unit>
 			<unit type="digital-kilobyte">
-				<displayName draft="contributed">kB</displayName>
+				<displayName>kB</displayName>
 			</unit>
 			<unit type="digital-kilobit">
-				<displayName draft="contributed">kb</displayName>
+				<displayName>kb</displayName>
 			</unit>
 			<unit type="digital-byte">
-				<displayName draft="contributed">B</displayName>
+				<displayName>B</displayName>
 				<unitPattern count="one">{0} B</unitPattern>
 				<unitPattern count="other">{0} B</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<displayName draft="contributed">b</displayName>
+				<displayName>b</displayName>
 				<unitPattern count="one">{0} b</unitPattern>
 				<unitPattern count="other">{0} b</unitPattern>
 			</unit>
@@ -8201,7 +8758,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} T</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<displayName draft="contributed">A</displayName>
+				<displayName>A</displayName>
 				<unitPattern count="one">{0}A</unitPattern>
 				<unitPattern count="other">{0}A</unitPattern>
 			</unit>
@@ -8210,12 +8767,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName draft="contributed">Ω</displayName>
+				<displayName>Ω</displayName>
 				<unitPattern count="one">{0}Ω</unitPattern>
 				<unitPattern count="other">{0}Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<displayName draft="contributed">V</displayName>
+				<displayName>V</displayName>
 				<unitPattern count="one">{0}V</unitPattern>
 				<unitPattern count="other">{0}V</unitPattern>
 			</unit>
@@ -8260,16 +8817,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>d</displayName>
 			</unit>
 			<unit type="length-picometer">
-				<displayName draft="contributed">pm</displayName>
+				<displayName>pm</displayName>
 			</unit>
 			<unit type="length-mile">
-				<displayName draft="contributed">mi</displayName>
+				<displayName>mi</displayName>
 			</unit>
 			<unit type="length-yard">
-				<displayName draft="contributed">yd</displayName>
+				<displayName>yd</displayName>
 			</unit>
 			<unit type="length-foot">
-				<displayName draft="contributed">ft</displayName>
+				<displayName>ft</displayName>
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="one">{0}Lj</unitPattern>
@@ -8317,25 +8874,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName draft="contributed">Tons</displayName>
-				<unitPattern count="one" draft="contributed">{0} tn</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} tn</unitPattern>
+				<displayName>Tons</displayName>
+				<unitPattern count="one">{0} tn</unitPattern>
+				<unitPattern count="other">{0} tn</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName draft="contributed">Pfund</displayName>
+				<displayName>Pfund</displayName>
 			</unit>
 			<unit type="mass-ounce">
-				<displayName draft="contributed">Unzen</displayName>
+				<displayName>Unzen</displayName>
 			</unit>
 			<unit type="mass-ounce-troy">
-				<unitPattern count="one" draft="contributed">{0} oz.tr.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} oz.tr.</unitPattern>
+				<unitPattern count="one">{0} oz.tr.</unitPattern>
+				<unitPattern count="other">{0} oz.tr.</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName draft="contributed">Karat</displayName>
+				<displayName>Karat</displayName>
 			</unit>
 			<unit type="mass-grain">
-				<displayName draft="contributed">gr</displayName>
+				<displayName>gr</displayName>
 			</unit>
 			<unit type="power-watt">
 				<displayName>W</displayName>
@@ -8356,13 +8913,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>l</displayName>
 			</unit>
 			<unit type="volume-acre-foot">
-				<displayName draft="contributed">ac ft</displayName>
+				<displayName>ac ft</displayName>
 			</unit>
 			<unit type="volume-gallon-imperial">
-				<displayName draft="contributed">Imp.gal</displayName>
-				<unitPattern count="one" draft="contributed">{0} Imp.gal</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} Imp.gal</unitPattern>
-				<perUnitPattern draft="contributed">{0}/Imp.gal</perUnitPattern>
+				<displayName>Imp.gal</displayName>
+				<unitPattern count="one">{0} Imp.gal</unitPattern>
+				<unitPattern count="other">{0} Imp.gal</unitPattern>
+				<perUnitPattern>{0}/Imp.gal</perUnitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>Im.fl.oz</displayName>
@@ -8396,6 +8953,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Imp.qt</displayName>
 				<unitPattern count="one">{0} Imp.qt</unitPattern>
 				<unitPattern count="other">{0} Imp.qt</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>Nächte</displayName>
+				<unitPattern count="one">{0}Nacht</unitPattern>
+				<unitPattern count="other">{0}Nächte</unitPattern>
+				<perUnitPattern>{0}/Nacht</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>NOSW</displayName>
