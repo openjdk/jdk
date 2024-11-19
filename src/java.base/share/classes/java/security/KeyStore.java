@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,8 +213,8 @@ public class KeyStore {
      */
     private static final String KEYSTORE_TYPE = "keystore.type";
 
-    //The keystore full path
-    private static String keystorePath = null;
+    // The keystore full path
+    private static String keystorePath;
 
     // The keystore type
     private final String type;
@@ -808,7 +808,7 @@ public class KeyStore {
         }
     }
 
-    // Set up JavaIOInputStreamAccess in SharedSecrets
+    // Set up JavaSecurityKeyStoreAccess in SharedSecrets
     static {
         SharedSecrets.setJavaSecurityKeyStoreAccess(
                 new JavaSecurityKeyStoreAccess() {

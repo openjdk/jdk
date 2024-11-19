@@ -105,17 +105,19 @@ public class LogKeyStorePathVerifier {
             // the keystore name in debug logs
             output.shouldContain("PKCS12KeyStore: loading " +
                                     "\"" + fisKeyStoreName +"\" keystore")
-                .shouldContain("SunJSSE: using \"" + fisKeyStoreName + "\"" +
-                                    " keystore in pkcs12 format")
+                .shouldContain("Initializing with the keystore: \""
+                                + fisKeyStoreName + "\""
+                                + " in pkcs12 format from SunJSSE provider")
                 .shouldContain("PKCS12KeyStore: loading " +
                                      "\"" + bisKeyStoreName +"\" keystore")
-                .shouldContain("SunJSSE: using \"" + bisKeyStoreName + "\"" +
-                                    " keystore in pkcs12 format")
+                .shouldContain("Initializing with the keystore: \""
+                                + bisKeyStoreName + "\""
+                                + " in pkcs12 format from SunJSSE provider")
                 .shouldContain("PKCS12KeyStore: loading " +
                         "\"" + bbisKeyStoreName +"\" keystore")
-                .shouldContain("SunJSSE: using " +
-                        "\"" + bbisKeyStoreName +"\" keystore in" +
-                        " pkcs12 format");
+                .shouldContain("Initializing with the keystore: \""
+                                + bbisKeyStoreName +"\""
+                                + " in pkcs12 format from SunJSSE provider");
         }
     }
 }

@@ -697,7 +697,7 @@ public final class JceKeyStore extends KeyStoreSpi {
             ByteArrayInputStream bais;
             byte[] encoded;
             int trustedKeyCount = 0, privateKeyCount = 0, secretKeyCount = 0;
-            String storeName = "";
+            String storeName = null;
             if (stream == null)
                 return;
 
@@ -708,7 +708,8 @@ public final class JceKeyStore extends KeyStoreSpi {
                 if (keystorePath != null) {
                     storeName = Path.of(keystorePath).getFileName()
                                 .toString();
-                    debug.println("JceKeyStore: loading \"" + storeName
+                    debug.println("JceKeyStore: loading \""
+                        + ((storeName != null) ? storeName : "")
                         + "\" keystore");
                 }
             }
@@ -879,11 +880,12 @@ public final class JceKeyStore extends KeyStoreSpi {
                 }
 
                 if (debug != null) {
-                    debug.println("JceKeyStore loaded: \"" + storeName +
-                        "\" keystore with private key count: " +
-                        privateKeyCount + ". trusted key count: " +
-                        trustedKeyCount + ". secret key count: " +
-                        secretKeyCount);
+                    debug.println("JceKeyStore loaded: \""
+                        + ((storeName != null) ? storeName : "")
+                        + "\" keystore with private key count: "
+                        + privateKeyCount + ". trusted key count: "
+                        + trustedKeyCount + ". secret key count: "
+                        + secretKeyCount);
                 }
 
                 /*

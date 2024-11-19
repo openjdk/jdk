@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,9 +283,10 @@ public class TrustManagerFactory {
                     .getJavaSecurityKeyStoreAccess()
                     .getPath(ks);
             if (keystorePath != null) {
-                SSLLogger.fine(provider.getName() + ": using \"" + Path.of(
-                                keystorePath).getFileName().toString() +
-                                "\" keystore in " + ks.getType() + " format");
+                SSLLogger.fine("Initializing with the keystore: \"" + Path.of(
+                                keystorePath).getFileName().toString()
+                                + "\" in " + ks.getType() + " format from "
+                                + provider.getName() + " provider");
             }
         }
     }

@@ -1959,7 +1959,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         certPbeIterationCount = -1;
         macAlgorithm = null;
         macIterationCount = -1;
-        String storeName = "";
+        String storeName = null;
 
         if (stream == null)
            return;
@@ -1970,8 +1970,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     .getPath(stream);
             if (keystorePath != null) {
                 storeName = Path.of(keystorePath).getFileName().toString();
-                debug.println("PKCS12KeyStore: loading \"" + storeName
-                        + "\" keystore");
+                debug.println("PKCS12KeyStore: loading \""
+                    + ((storeName != null) ? storeName : "")
+                    + "\" keystore");
             }
         }
         // reset the counter
@@ -2235,10 +2236,11 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         if (debug != null) {
-            debug.println("PKCS12KeyStore loaded: \"" + storeName +
-                    "\" keystore with private key count: " + privateKeyCount +
-                    ". secret key count: " + secretKeyCount +
-                    ". certificate count: " + certificateCount);
+            debug.println("PKCS12KeyStore loaded: \""
+                    + ((storeName != null) ? storeName : "")
+                    + "\" keystore with private key count: " + privateKeyCount
+                    + ". secret key count: " + secretKeyCount
+                    + ". certificate count: " + certificateCount);
         }
         certEntries.clear();
         allCerts.clear();

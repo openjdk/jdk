@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -660,7 +660,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             ByteArrayInputStream bais;
             byte[] encoded;
             int trustedKeyCount = 0, privateKeyCount = 0;
-            String storeName = "";
+            String storeName = null;
 
             if (stream == null)
                 return;
@@ -679,8 +679,8 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
                 if (keystorePath != null) {
                     storeName = Path.of(keystorePath).getFileName()
                                 .toString();
-                    debug.println("JavaKeyStore: loading \"" + storeName
-                        + "\" keystore");
+                    debug.println("JavaKeyStore: loading \""
+                        + ((storeName != null) ? storeName : ""));
                 }
             }
             // Body format: see store method
@@ -800,9 +800,10 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             }
 
             if (debug != null) {
-                debug.println("JavaKeyStore loaded: \"" + storeName +
-                    "\" keystore with private key count: " + privateKeyCount +
-                    ". trusted key count: " + trustedKeyCount);
+                debug.println("JavaKeyStore loaded: \""
+                    + ((storeName != null) ? storeName : "")
+                    + "\" keystore with private key count: " + privateKeyCount
+                    + ". trusted key count: " + trustedKeyCount);
             }
 
             /*
