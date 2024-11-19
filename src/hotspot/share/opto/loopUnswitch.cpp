@@ -397,17 +397,15 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree* loop, Node_List& old_new) {
 
 void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) {
 #ifndef PRODUCT
-  if (TraceLoopOpts) {
+  if (TraceLoopOpts || TraceLoopMultiversioning) {
     tty->print("Multiversion ");
     lpt->dump_head();
   }
 #endif
-  // TODO assert Multiversion
+  assert(LoopMultiversioning, "LoopMultiversioning must be enabled");
 
-  // TODO fix all code here
-
-  //NOT_PRODUCT(trace_loop_unswitching_count(loop, original_head);)
-  //C->print_method(PHASE_BEFORE_LOOP_UNSWITCHING, 4, original_head);
+  CountedLoopNode* original_head = lpt->_head->as_CountedLoop();
+  C->print_method(PHASE_BEFORE_LOOP_MULTIVERSIONING, 4, original_head);
 
   Node* one = _igvn.intcon(1);
   set_ctrl(one, C->root());
@@ -421,13 +419,12 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
 
   add_unswitched_loop_version_bodies_to_igvn(lpt, old_new);
 
-  CountedLoopNode* original_head = lpt->_head->as_CountedLoop();
   CountedLoopNode* new_head = old_new[original_head->_idx]->as_CountedLoop();
   original_head->set_multiversion_fast_loop();
   new_head->set_multiversion_stalled_slow_loop();
 
-  //NOT_PRODUCT(trace_loop_unswitching_result(unswitched_loop_selector, original_head, new_head);)
-  //C->print_method(PHASE_AFTER_LOOP_UNSWITCHING, 4, new_head);
+  NOT_PRODUCT(trace_loop_multiversioning_result(loop_selector, original_head, new_head);)
+  C->print_method(PHASE_AFTER_LOOP_MULTIVERSIONING, 4, new_head);
   C->set_major_progress();
 }
 
@@ -564,6 +561,17 @@ void PhaseIdealLoop::trace_loop_unswitching_result(const UnswitchedLoopSelector&
     tty->print_cr("- Loop-Selector-If: %d %s", loop_selector->_idx, loop_selector->Name());
     tty->print_cr("- True-Path-Loop (=Orig): %d %s", original_head->_idx, original_head->Name());
     tty->print_cr("- False-Path-Loop (=Clone): %d %s", new_head->_idx, new_head->Name());
+  }
+}
+
+void PhaseIdealLoop::trace_loop_multiversioning_result(const LoopSelector& loop_selector,
+                                                       const LoopNode* original_head, const LoopNode* new_head) {
+  if (TraceLoopMultiversioning) {
+    IfNode* selector_if = loop_selector.selector();
+    tty->print_cr("Loop Multiversioning:");
+    tty->print_cr("- Loop-Selector-If: %d %s", selector_if->_idx, selector_if->Name());
+    tty->print_cr("- True-Path-Loop (=Orig / Fast): %d %s", original_head->_idx, original_head->Name());
+    tty->print_cr("- False-Path-Loop (=Clone / Slow): %d %s", new_head->_idx, new_head->Name());
   }
 }
 #endif

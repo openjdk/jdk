@@ -64,6 +64,8 @@
   flags(AFTER_LOOP_PEELING,             "After Loop Peeling") \
   flags(BEFORE_LOOP_UNSWITCHING,        "Before Loop Unswitching") \
   flags(AFTER_LOOP_UNSWITCHING,         "After Loop Unswitching") \
+  flags(BEFORE_LOOP_MULTIVERSIONING,    "Before Loop Multiversioning") \
+  flags(AFTER_LOOP_MULTIVERSIONING,     "After Loop Multiversioning") \
   flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before Range Check Elimination") \
   flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
   flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \

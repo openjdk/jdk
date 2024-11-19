@@ -43,6 +43,7 @@ class OuterStripMinedLoopEndNode;
 class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
+class LoopSelector;
 class UnswitchedLoopSelector;
 class VectorSet;
 class VSharedData;
@@ -1471,6 +1472,8 @@ public:
   static void trace_loop_unswitching_impossible(const LoopNode* original_head);
   static void trace_loop_unswitching_result(const UnswitchedLoopSelector& unswitched_loop_selector,
                                             const LoopNode* original_head, const LoopNode* new_head);
+  static void trace_loop_multiversioning_result(const LoopSelector& loop_selector,
+                                                const LoopNode* original_head, const LoopNode* new_head);
 #endif
 
  public:
