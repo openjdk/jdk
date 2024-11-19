@@ -32,15 +32,11 @@
  * @run main/othervm ProtocolFilter
  */
 
+import java.io.*;
+import java.net.*;
+import javax.net.ssl.*;
+
 import jdk.test.lib.security.SecurityUtils;
-
-import java.io.InputStream;
-import java.io.OutputStream;
-
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 
 public class ProtocolFilter {
 

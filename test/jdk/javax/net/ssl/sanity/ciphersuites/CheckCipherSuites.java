@@ -25,12 +25,9 @@
  * @test
  * @bug 4750141 4895631 8217579 8163326 8279164
  * @summary Check enabled and supported ciphersuites are correct
- * @library /test/lib
  * @run main/othervm CheckCipherSuites default
  * @run main/othervm CheckCipherSuites limited
  */
-
-import jdk.test.lib.security.SecurityUtils;
 
 import java.util.*;
 import java.security.Security;
@@ -102,12 +99,6 @@ public class CheckCipherSuites {
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
 
         // deprecated
-        "TLS_RSA_WITH_AES_256_GCM_SHA384",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
@@ -127,9 +118,6 @@ public class CheckCipherSuites {
         "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
@@ -197,12 +185,6 @@ public class CheckCipherSuites {
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
 
         // deprecated
-        "TLS_RSA_WITH_AES_256_GCM_SHA384",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
@@ -222,9 +204,6 @@ public class CheckCipherSuites {
         "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
@@ -238,7 +217,6 @@ public class CheckCipherSuites {
     }
 
     public static void main(String[] args) throws Exception {
-        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         long start = System.currentTimeMillis();
 
         if (args.length != 1) {

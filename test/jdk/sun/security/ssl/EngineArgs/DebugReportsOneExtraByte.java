@@ -26,7 +26,7 @@
  * @bug 7126889
  * @summary Incorrect SSLEngine debug output
  * @library /test/lib /javax/net/ssl/templates
- * @run main/othervm DebugReportsOneExtraByte
+ * @run main DebugReportsOneExtraByte
  */
 /*
  * Debug output was reporting n+1 bytes of data was written when it was
@@ -91,7 +91,6 @@ public class DebugReportsOneExtraByte extends SSLEngineTemplate {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
-        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
 
         if (args.length == 0) {
             OutputAnalyzer output = ProcessTools.executeTestJava(
@@ -102,7 +101,7 @@ public class DebugReportsOneExtraByte extends SSLEngineTemplate {
             System.out.println("Test Passed.");
         } else {
             // Re-enable TLSv1 since test depends on it
-            SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
+            SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLS_RSA_*");
 
             DebugReportsOneExtraByte test = new DebugReportsOneExtraByte();
             test.runTest();

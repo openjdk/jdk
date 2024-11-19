@@ -68,19 +68,15 @@
  *      unwrap()        ...             Finished
  */
 
-import jdk.test.lib.security.SecurityUtils;
-
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
+import javax.net.ssl.*;
+import javax.net.ssl.SSLEngineResult.*;
+import java.security.*;
+import java.nio.*;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
-import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLEngineResult.HandshakeStatus;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLProtocolException;
-import javax.net.ssl.SSLSession;
+import jdk.test.lib.security.SecurityUtils;
 
 public class LengthCheckTest extends SSLEngineTemplate {
 
@@ -275,8 +271,7 @@ public class LengthCheckTest extends SSLEngineTemplate {
      */
     public static void main(String args[]) throws Exception {
         // Re-enable TLSv1 since test depends on it.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
-        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLS_RSA_*");
 
         List<LengthCheckTest> ccsTests = new ArrayList<>();
 

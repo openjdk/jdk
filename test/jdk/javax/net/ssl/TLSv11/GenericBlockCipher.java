@@ -42,15 +42,14 @@
  * @author Xuelei Fan
  */
 
-import jdk.test.lib.security.SecurityUtils;
-
 import java.io.InputStream;
 import java.io.OutputStream;
-
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class GenericBlockCipher {
 
@@ -174,8 +173,7 @@ public class GenericBlockCipher {
 
     public static void main(String[] args) throws Exception {
         // Re-enable TLSv1.1 since test depends on it.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
-        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1", "TLS_RSA_*");
 
         String keyFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores +

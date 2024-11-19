@@ -30,28 +30,14 @@
  * @run main/othervm EngineCloseOnAlert
  */
 
-import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_TASK;
-import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_UNWRAP;
-import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_WRAP;
-import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
-
-import jdk.test.lib.security.SecurityUtils;
-
 import java.io.FileInputStream;
 import java.io.IOException;
+import javax.net.ssl.*;
 import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.util.LinkedList;
-import java.util.List;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLProtocolException;
-import javax.net.ssl.TrustManagerFactory;
+import java.util.*;
+import java.security.*;
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class EngineCloseOnAlert {
 

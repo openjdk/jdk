@@ -21,12 +21,13 @@
  * questions.
  */
 
-import jdk.test.lib.security.SecurityUtils;
-
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
+
+import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
@@ -83,7 +84,6 @@ public class SystemPropCipherSuitesOrder extends SSLSocketTemplate {
     private static String[] clientcipherSuites;
 
     public static void main(String[] args) {
-        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         servercipherSuites
                 = toArray(System.getProperty("jdk.tls.server.cipherSuites"));
         clientcipherSuites
@@ -91,6 +91,20 @@ public class SystemPropCipherSuitesOrder extends SSLSocketTemplate {
         System.out.printf("SYSTEM PROPERTIES: ServerProp:%s - ClientProp:%s%n",
                 Arrays.deepToString(servercipherSuites),
                 Arrays.deepToString(clientcipherSuites));
+
+        // Re-enable TLS_RSA_* cipher suites if needed.
+        for (String p : Stream.concat(
+                        Arrays.stream(
+                                servercipherSuites == null
+                                        ? new String[0] : servercipherSuites),
+                        Arrays.stream(
+                                clientcipherSuites == null
+                                        ? new String[0] : clientcipherSuites))
+                .toArray(String[]::new)) {
+            if (p.startsWith("TLS_RSA_")) {
+                SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
+            }
+        }
 
         try {
             new SystemPropCipherSuitesOrder(args[0]).run();
