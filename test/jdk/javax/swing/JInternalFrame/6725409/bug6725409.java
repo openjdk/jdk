@@ -41,7 +41,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import com.sun.java.swing.plaf.windows;
+import com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel;
+import com.sun.java.swing.plaf.windows.WindowsInternalFrameTitlePane;
 
 public class bug6725409 {
     private JFrame frame;
