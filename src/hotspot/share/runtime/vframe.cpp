@@ -532,8 +532,7 @@ vframeStream::vframeStream(oop continuation, Handle continuation_scope)
 
 
 // Step back n frames, skip any pseudo frames in between.
-// This function is used in Class.forName, Class.newInstance, Method.Invoke,
-// AccessController.doPrivileged.
+// This function is used in Class.forName, Class.newInstance, and Method.Invoke.
 void vframeStreamCommon::security_get_caller_frame(int depth) {
   assert(depth >= 0, "invalid depth: %d", depth);
   for (int n = 0; !at_end(); security_next()) {

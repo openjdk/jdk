@@ -40,9 +40,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingFunction;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 public final class HelloApp {
 

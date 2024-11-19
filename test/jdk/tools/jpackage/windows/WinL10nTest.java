@@ -139,6 +139,8 @@ public class WinL10nTest {
 
     @Test
     public void test() throws IOException {
+        final Path tempRoot = TKit.createTempDirectory("tmp");
+
         final boolean allWxlFilesValid;
         if (wxlFileInitializers != null) {
             allWxlFilesValid = Stream.of(wxlFileInitializers).allMatch(
@@ -180,8 +182,7 @@ public class WinL10nTest {
             }
 
             // Preserve config dir to check the set of copied l10n files.
-            Path tempDir = TKit.createTempDirectory("tmp" + IOUtils.getSuffix(
-                    cmd.outputBundle()));
+            Path tempDir = tempRoot.resolve(cmd.packageType().name());
             cmd.addArguments("--temp", tempDir);
         })
         .addBundleVerifier((cmd, result) -> {

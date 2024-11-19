@@ -39,7 +39,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.ShortPathUtils.adjustPath;
+import jdk.jpackage.internal.util.PathUtils;
 
 /**
  * WiX pipeline. Compiles and links WiX sources.
@@ -245,7 +245,7 @@ final class WixPipeline {
     }
 
     private Path compileWix3(WixSource wixSource) throws IOException {
-        Path wixObj = wixObjDir.resolve(IOUtils.replaceSuffix(
+        Path wixObj = wixObjDir.toAbsolutePath().resolve(PathUtils.replaceSuffix(
                 wixSource.path.getFileName(), ".wixobj"));
 
         List<String> cmdline = new ArrayList<>(List.of(

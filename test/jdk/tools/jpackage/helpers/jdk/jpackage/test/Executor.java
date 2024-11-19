@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 public final class Executor extends CommandArguments<Executor> {
 

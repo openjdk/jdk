@@ -37,13 +37,14 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamWriter;
-import jdk.jpackage.internal.IOUtils.XmlConsumer;
+import jdk.jpackage.internal.util.XmlConsumer;
 import jdk.jpackage.internal.OverridableResource.Source;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import jdk.internal.util.Architecture;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import jdk.jpackage.internal.WixSourceConverter.ResourceGroup;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.util.XmlUtils;
 
 /**
  * Creates WiX fragment.
@@ -159,7 +160,7 @@ abstract class WixFragmentBuilder {
     }
 
     private void createWixSource(Path file, XmlConsumer xmlConsumer) throws IOException {
-        IOUtils.createXml(file, xml -> {
+        XmlUtils.createXml(file, xml -> {
             xml.writeStartElement("Wix");
             for (var ns : getWixNamespaces().entrySet()) {
                 switch (ns.getKey()) {
