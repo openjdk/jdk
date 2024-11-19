@@ -1304,7 +1304,7 @@ class StubGenerator: public StubCodeGenerator {
       element_size = 1;
       break;
     default:
-      ShouldNotReachHere()
+      ShouldNotReachHere();
     }
     StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
@@ -1333,7 +1333,7 @@ class StubGenerator: public StubCodeGenerator {
       dest_uninitialized = true;
       break;
     default:
-      ShouldNotReachHere()
+      ShouldNotReachHere();
     }
     StubCodeMark mark(this, stub_id);
     // This is the zarch specific stub generator for oop array copy.
@@ -1405,7 +1405,7 @@ class StubGenerator: public StubCodeGenerator {
       nooverlap_target = StubRoutines::arrayof_jlong_disjoint_arraycopy();
       break;
     default:
-      ShouldNotReachHere()
+      ShouldNotReachHere();
     }
     StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
@@ -1439,7 +1439,7 @@ class StubGenerator: public StubCodeGenerator {
       nooverlap_target = StubRoutines::arrayof_oop_disjoint_arraycopy(dest_uninitialized);
       break;
     default:
-      ShouldNotReachHere()
+      ShouldNotReachHere();
     }
     StubCodeMark mark(this, stub_id);
     // This is the zarch specific stub generator for overlapping oop array copy.
@@ -2672,10 +2672,10 @@ class StubGenerator: public StubCodeGenerator {
     bool multiBlock;
     switch (stub_id) {
     case sha1_implCompress_id:
-      multi_block = false;
+      multiBlock = false;
       break;
     case sha1_implCompressMB_id:
-      multi_block = true;
+      multiBlock = true;
       break;
     default:
       ShouldNotReachHere();
@@ -2856,10 +2856,10 @@ class StubGenerator: public StubCodeGenerator {
     bool multiBlock;
     switch (stub_id) {
     case sha512_implCompress_id:
-      multi_block = false;
+      multiBlock = false;
       break;
     case sha512_implCompressMB_id:
-      multi_block = true;
+      multiBlock = true;
       break;
     default:
       ShouldNotReachHere();
@@ -2992,7 +2992,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
-    assert(UseCRC32Intrinsics, "should not generate this stub (%s) with CRC32 intrinsics disabled", name);
+    assert(UseCRC32Intrinsics, "should not generate this stub (%s) with CRC32 intrinsics disabled", StubRoutines::get_stub_name(stub_id));
 
     BLOCK_COMMENT("CRC32_updateBytes {");
     Register       table   = Z_ARG4;  // crc32 table address.
@@ -3012,7 +3012,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
-    assert(UseCRC32CIntrinsics, "should not generate this stub (%s) with CRC32C intrinsics disabled", name);
+    assert(UseCRC32CIntrinsics, "should not generate this stub (%s) with CRC32C intrinsics disabled", StubRoutines::get_stub_name(stub_id));
 
     BLOCK_COMMENT("CRC32C_updateBytes {");
     Register       table   = Z_ARG4;  // crc32c table address.

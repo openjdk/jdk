@@ -31,13 +31,16 @@
 
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
-enum { // Platform dependent constants.
-  // simply increase sizes if too small (assembler will crash if too small)
-  _initial_stubs_code_size      = 20000,
-  _continuation_stubs_code_size =  2000,
-  _compiler_stubs_code_size     = 20000,
-  _final_stubs_code_size        = 20000
+// emit enum used to size per-blob code buffers
+
+#define DEFINE_BLOB_SIZE(blob_name, size) \
+  _ ## blob_name ## _code_size = size,
+
+enum platform_dependent_constants {
+  STUBGEN_ARCH_BLOBS_DO(DEFINE_BLOB_SIZE)
 };
+
+#undef DEFINE_BLOB_SIZE
 
 // MethodHandles adapters
 enum method_handles_platform_dependent_constants {
