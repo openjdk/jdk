@@ -24,7 +24,7 @@ package jdk.jpackage.test;
 
 import java.nio.file.Path;
 
-public class PackageFile {
+public final class PackageFile {
 
     public static Path getPathInAppImage(Path appImageDir) {
         return ApplicationLayout.platformAppImage()
