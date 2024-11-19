@@ -338,3 +338,11 @@ TEST(power_of_2, ceil_log2) {
   test_ceil_log2<uint32_t>();
   test_ceil_log2<uint64_t>();
 }
+
+#ifdef ASSERT
+TEST_VM_ASSERT_MSG(power_of_2, ceil_log2_invalid,
+    ".*Invalid value") {
+  ceil_log2(0);
+}
+
+#endif // ASSERT
