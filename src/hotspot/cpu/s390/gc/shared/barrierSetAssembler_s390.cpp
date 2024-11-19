@@ -240,6 +240,7 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
   int reg_save_index = 0;
   RegMaskIterator live_regs_iterator(_reg_mask);
 
+  // Going to preserve the volatile registers which can be used by Register Allocator.
   while(live_regs_iterator.has_next()) {
     const OptoReg::Name opto_reg = live_regs_iterator.next();
 
@@ -251,8 +252,11 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
     const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
     if (vm_reg->is_Register()) {
       Register std_reg = vm_reg->as_Register();
-
-      if (std_reg->encoding() >= Z_R2->encoding() && std_reg->encoding() <= Z_R15->encoding()) {
+      // Z_R0 and Z_R1 will not be allocated by the register allocator, see s390.ad (Integer Register Classes)
+      // Z_R6 to Z_R15 are saved registers, except Z_R14 (see Z-Abi)
+      if (std_reg->encoding() == Z_R14->encoding() ||
+         (std_reg->encoding() >= Z_R2->encoding()  &&
+          std_reg->encoding() <= Z_R5->encoding())) {
         reg_save_index++;
 
         if (action == ACTION_SAVE) {
@@ -265,8 +269,10 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
       }
     } else if (vm_reg->is_FloatRegister()) {
       FloatRegister fp_reg = vm_reg->as_FloatRegister();
-      if (fp_reg->encoding() >= Z_F0->encoding() && fp_reg->encoding() <= Z_F15->encoding()
-          && fp_reg->encoding() != Z_F1->encoding()) {
+      // Z_R1 will not be allocated by the register allocator, see s390.ad (Float Register Classes)
+      if (fp_reg->encoding() >= Z_F0->encoding() &&
+          fp_reg->encoding() <= Z_F7->encoding() &&
+          fp_reg->encoding() != Z_F1->encoding()) {
         reg_save_index++;
 
         if (action == ACTION_SAVE) {
@@ -279,7 +285,9 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
       }
     } else if (vm_reg->is_VectorRegister()) {
       VectorRegister vs_reg = vm_reg->as_VectorRegister();
-      if (vs_reg->encoding() >= Z_V2->encoding() && vs_reg->encoding() <= Z_V31->encoding()) {
+      // Z_V0 to Z_V15 will not be allocated by the register allocator, see s390.ad (reg class z_v_reg)
+      if (vs_reg->encoding() >= Z_V16->encoding() &&
+          vs_reg->encoding() <= Z_V31->encoding()) {
         reg_save_index += 2;
         if (action == ACTION_SAVE) {
           __ z_vst(vs_reg, Address(Z_SP, offset - reg_save_index * BytesPerWord));
