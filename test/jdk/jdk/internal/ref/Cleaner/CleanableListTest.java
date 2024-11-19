@@ -43,7 +43,7 @@ import org.testng.annotations.Ignore;
 
 public class CleanableListTest {
 
-    static final int SINGLE_NODE_CAPACITY = CleanableListTestHelper.NODE_CAPACITY - 1;
+    static final int SINGLE_NODE_CAPACITY = CleanableListTestHelper.NODE_CAPACITY;
     static final int MULTI_NODE_CAPACITY = CleanableListTestHelper.NODE_CAPACITY * 4;
 
     static final int RANDOM_ITERATIONS = 10_000_000;

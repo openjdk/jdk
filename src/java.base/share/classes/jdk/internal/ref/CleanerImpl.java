@@ -235,8 +235,9 @@ public final class CleanerImpl implements Runnable {
         static final int NODE_CAPACITY = 4096;
 
         /**
-         * Head node. This is the only node with variable size.
-         * All nodes linked from the head are always at full capacity.
+         * Head node. This is the only node where PhantomCleanables are
+         * added to or removed from. This is the only node with variable size,
+         * all other nodes linked from the head are always at full capacity.
          */
         private Node head;
 
