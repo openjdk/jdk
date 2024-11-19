@@ -74,7 +74,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
             Class<?> cl = Class.forName("com.sun.management.GcInfo");
             Field f = cl.getDeclaredField("builder");
             f.setAccessible(true);
-            builder =  (GcInfoBuilder)f.get(info);
+            builder = (GcInfoBuilder)f.get(info);
         } catch(ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
             // ignore
         }
