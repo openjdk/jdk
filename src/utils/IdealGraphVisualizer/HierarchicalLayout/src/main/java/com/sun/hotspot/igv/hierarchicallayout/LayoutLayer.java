@@ -295,4 +295,16 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
             layoutNode.setX(newX);
         }
     }
+
+    /**
+     * Swaps two nodes
+     *
+     * @param i     index of the first node
+     * @param j     index of the second node
+     */
+    public void swapNodes(int i, int j) {
+        LayoutNode temp = get(i);
+        set(i, get(j));
+        set(j, temp);
+    }
 }
