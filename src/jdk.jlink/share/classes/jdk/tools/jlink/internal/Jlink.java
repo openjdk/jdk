@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package jdk.tools.jlink.internal;
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.nio.ByteOrder;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -148,6 +147,9 @@ public final class Jlink {
         private final Path output;
         private final Set<String> modules;
         private final ModuleFinder finder;
+        private final boolean linkFromRuntimeImage;
+        private final boolean ignoreModifiedRuntime;
+        private final boolean generateRuntimeImage;
 
         /**
          * jlink configuration,
@@ -158,10 +160,16 @@ public final class Jlink {
          */
         public JlinkConfiguration(Path output,
                                   Set<String> modules,
-                                  ModuleFinder finder) {
+                                  ModuleFinder finder,
+                                  boolean linkFromRuntimeImage,
+                                  boolean ignoreModifiedRuntime,
+                                  boolean generateRuntimeImage) {
             this.output = output;
             this.modules = Objects.requireNonNull(modules);
             this.finder = finder;
+            this.linkFromRuntimeImage = linkFromRuntimeImage;
+            this.ignoreModifiedRuntime = ignoreModifiedRuntime;
+            this.generateRuntimeImage = generateRuntimeImage;
         }
 
         /**
@@ -184,6 +192,18 @@ public final class Jlink {
          */
         public ModuleFinder finder() {
             return finder;
+        }
+
+        public boolean linkFromRuntimeImage() {
+            return linkFromRuntimeImage;
+        }
+
+        public boolean ignoreModifiedRuntime() {
+            return ignoreModifiedRuntime;
+        }
+
+        public boolean isGenerateRuntimeImage() {
+            return generateRuntimeImage;
         }
 
         /**

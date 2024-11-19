@@ -32,12 +32,11 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage test app can run after changing executable's extension
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build WinRenameTest
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinRenameTest
  */

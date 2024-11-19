@@ -18,7 +18,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bho" draft="contributed">bhojpuri</language>
 			<language type="eu" draft="contributed">euskera</language>
 			<language type="grc" draft="contributed">griego antiguo</language>
-			<language type="lo" draft="contributed">lao</language>
 			<language type="nso" draft="contributed">sotho septentrional</language>
 			<language type="pa" draft="contributed">punyabí</language>
 			<language type="ss" draft="contributed">siswati</language>
@@ -260,8 +259,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000" count="other" alt="alphaNextToNumber" draft="contributed">¤ 000MRD</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one" draft="contributed">{0} {1}</unitPattern>
-			<unitPattern count="other" draft="contributed">{1} {0}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="GTQ">

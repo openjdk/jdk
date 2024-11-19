@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6552961 6558429
  * @summary Test privilegedCallable, privilegedCallableUsingCurrentClassLoader
- * @run main/othervm -Djava.security.manager=allow PrivilegedCallables
+ * @run main PrivilegedCallables
  * @author Martin Buchholz
  */
 
@@ -33,12 +33,6 @@ import static java.util.concurrent.Executors.privilegedCallable;
 import static java.util.concurrent.Executors.privilegedCallableUsingCurrentClassLoader;
 import static java.util.concurrent.Executors.privilegedThreadFactory;
 
-import java.security.AccessControlException;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.ProtectionDomain;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
@@ -66,59 +60,7 @@ public class PrivilegedCallables {
         throw (Exception) t;
     }
 
-    //----------------------------------------------------------------
-    // A Policy class designed to make permissions fiddling very easy.
-    //----------------------------------------------------------------
-    static class Policy extends java.security.Policy {
-        static final java.security.Policy DEFAULT_POLICY = java.security.Policy.getPolicy();
-
-        private Permissions perms;
-
-        public void setPermissions(Permission...permissions) {
-            perms = new Permissions();
-            for (Permission permission : permissions)
-                perms.add(permission);
-        }
-
-        public Policy() { setPermissions(/* Nothing */); }
-
-        public PermissionCollection getPermissions(CodeSource cs) {
-            return perms;
-        }
-
-        public PermissionCollection getPermissions(ProtectionDomain pd) {
-            return perms;
-        }
-
-        public boolean implies(ProtectionDomain pd, Permission p) {
-            return perms.implies(p) || DEFAULT_POLICY.implies(pd, p);
-        }
-
-        public void refresh() {}
-    }
-
     void test(String[] args) {
-        testPrivileged();
-
-        final Policy policy = new Policy();
-        Policy.setPolicy(policy);
-        policy.setPermissions(new RuntimePermission("getClassLoader"),
-                              new RuntimePermission("setContextClassLoader"));
-        System.setSecurityManager(new SecurityManager());
-
-        testPrivileged();
-
-        policy.setPermissions(/* Nothing */);
-
-        THROWS(AccessControlException.class,
-               new F() {void f(){ privilegedCallableUsingCurrentClassLoader(realCaller); }},
-               new F() {void f(){ privilegedThreadFactory(); }});
-
-        policy.setPermissions(new RuntimePermission("setSecurityManager"));
-        System.setSecurityManager(null);
-    }
-
-    void testPrivileged() {
         try { test(privilegedCallable(realCaller)); }
         catch (Throwable t) { unexpected(t); }
 

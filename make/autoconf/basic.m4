@@ -76,6 +76,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   fi
 
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
+      AC_MSG_ERROR([32-bit Windows builds are not supported])
+    fi
     BASIC_SETUP_PATHS_WINDOWS
   fi
 

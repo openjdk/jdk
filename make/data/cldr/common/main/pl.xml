@@ -84,6 +84,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bjn">banjar</language>
 			<language type="bkm">kom</language>
 			<language type="bla">siksika</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengalski</language>
 			<language type="bo">tybetański</language>
@@ -225,7 +226,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gmh">średnio-wysoko-niemiecki</language>
 			<language type="gn">guarani</language>
 			<language type="goh">staro-wysoko-niemiecki</language>
-			<language type="gom">konkani (Goa)</language>
 			<language type="gon">gondi</language>
 			<language type="gor">gorontalo</language>
 			<language type="got">gocki</language>
@@ -337,6 +337,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komi</language>
 			<language type="kw">kornijski</language>
 			<language type="kwk">kwakiutl</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirgiski</language>
 			<language type="la">łaciński</language>
 			<language type="lad">ladyński</language>
@@ -366,7 +367,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lua">luba-lulua</language>
 			<language type="lui">luiseno</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">mizo</language>
 			<language type="luy">luhya</language>
 			<language type="lv">łotewski</language>
@@ -387,7 +387,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mfe">kreolski Mauritiusa</language>
 			<language type="mg">malgaski</language>
 			<language type="mga">średnioirlandzki</language>
-			<language type="mgh">makua</language>
+			<language type="mgh">makua-meetto</language>
 			<language type="mgo">meta</language>
 			<language type="mh">marszalski</language>
 			<language type="mi">maoryjski</language>
@@ -634,6 +634,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="vi">wietnamski</language>
 			<language type="vls">zachodnioflamandzki</language>
 			<language type="vmf">meński frankoński</language>
+			<language type="vmw">makua</language>
 			<language type="vo">wolapik</language>
 			<language type="vot">wotiacki</language>
 			<language type="vro">võro</language>
@@ -649,6 +650,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="xal">kałmucki</language>
 			<language type="xh">khosa</language>
 			<language type="xmf">megrelski</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">soga</language>
 			<language type="yao">yao</language>
 			<language type="yap">japski</language>
@@ -1228,8 +1230,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="indian">narodowy kalendarz hinduski</type>
 			<type key="calendar" type="islamic">kalendarz muzułmański</type>
 			<type key="calendar" type="islamic-civil">kalendarz muzułmański (metoda obliczeniowa)</type>
-			<type key="calendar" type="islamic-rgsa" draft="provisional">kalendarz islamski (Arabia Saudyjska, metoda wzrokowa)</type>
-			<type key="calendar" type="islamic-tbla" draft="provisional">kalendarz islamski (metoda obliczeniowa, epoka astronomiczna)</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">kalendarz islamski (Arabia Saudyjska, metoda wzrokowa)</type>
+			<type key="calendar" type="islamic-tbla" draft="contributed">kalendarz islamski (metoda obliczeniowa, epoka astronomiczna)</type>
 			<type key="calendar" type="islamic-umalqura">kalendarz muzułmański (Umm al-Kura)</type>
 			<type key="calendar" type="iso8601">kalendarz ISO-8601</type>
 			<type key="calendar" type="japanese">kalendarz japoński</type>
@@ -1376,7 +1378,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2336,6 +2338,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="many">{0} tyg. temu</relativeTimePattern>
 					<relativeTimePattern count="other">{0} tyg. temu</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>tydz. {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<relativePeriod>tydz. {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>tydzień miesiąca</displayName>
@@ -2661,6 +2667,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>czas: {0}</regionFormat>
 			<regionFormat type="daylight">{0} (czas letni)</regionFormat>
 			<regionFormat type="standard">{0} (czas standardowy)</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>uniwersalny czas koordynowany</standard>
@@ -2767,9 +2776,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Republika Zielonego Przylądka</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Wyspa Bożego Narodzenia</exemplarCity>
@@ -2986,9 +2992,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ułan Bator</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Czojbalsan</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Makau</exemplarCity>
 			</zone>
@@ -3049,14 +3052,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lizbona</exemplarCity>
 			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
 			<zone type="Asia/Qatar">
 				<exemplarCity>Katar</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>Bukareszt</exemplarCity>
@@ -3154,9 +3151,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Juba">
 				<exemplarCity>Dżuba</exemplarCity>
 			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
-			</zone>
 			<zone type="America/El_Salvador">
 				<exemplarCity>Salwador</exemplarCity>
 			</zone>
@@ -3193,9 +3187,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Symferopol</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beulah, Dakota Północna</exemplarCity>
 			</zone>
@@ -3204,9 +3195,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/North_Dakota/Center">
 				<exemplarCity>Center, Dakota Północna</exemplarCity>
-			</zone>
-			<zone type="America/Kentucky/Monticello">
-				<exemplarCity>Monticello</exemplarCity>
 			</zone>
 			<zone type="America/New_York">
 				<exemplarCity>Nowy Jork</exemplarCity>
@@ -3472,13 +3460,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Chiny (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>czas Czojbalsan</generic>
-					<standard>Czojbalsan (czas standardowy)</standard>
-					<daylight>Czojbalsan (czas letni)</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>czas Wyspa Bożego Narodzenia</standard>
@@ -3737,6 +3718,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">czas Pietropawłowsk Kamczacki</generic>
 					<standard draft="contributed">czas standardowy Pietropawłowsk Kamczacki</standard>
 					<daylight draft="contributed">czas Pietropawłowsk Kamczacki letni</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>czas Kazachstan</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4319,10 +4305,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 bln ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="few">{0} {1}</unitPattern>
-			<unitPattern count="many">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -5108,11 +5090,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">dolara liberyjskiego</displayName>
 			</currency>
 			<currency type="LSL">
-				<displayName>loti lesotyjskie</displayName>
-				<displayName count="one">loti lesotyjskie</displayName>
-				<displayName count="few">loti lesotyjskie</displayName>
-				<displayName count="many">loti lesotyjskich</displayName>
-				<displayName count="other">loti lesotyjskiego</displayName>
+				<displayName>loti sotyjskie</displayName>
+				<displayName count="one">loti sotyjskie</displayName>
+				<displayName count="few">loti sotyjskie</displayName>
+				<displayName count="many">loti sotyjskich</displayName>
+				<displayName count="other">loti sotyjskiego</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>lit litewski</displayName>
@@ -6147,7 +6129,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender>neuter</gender>
-				<displayName>stała grawitacji</displayName>
+				<displayName>przyspieszenie ziemskie</displayName>
+				<unitPattern count="one">przyspieszenie ziemskie</unitPattern>
+				<unitPattern count="one" case="accusative">przyspieszenie ziemskie</unitPattern>
+				<unitPattern count="one" case="dative">przyspieszeniu ziemskiemu</unitPattern>
+				<unitPattern count="one" case="genitive">przyspieszenia ziemskiego</unitPattern>
+				<unitPattern count="one" case="instrumental">przyspieszeniem ziemskim</unitPattern>
+				<unitPattern count="one" case="locative">przyspieszeniu ziemskim</unitPattern>
+				<unitPattern count="one" case="vocative">przyspieszenie ziemskie</unitPattern>
+				<unitPattern count="few">{0} przyspieszenia ziemskie</unitPattern>
+				<unitPattern count="few" case="accusative">{0} przyspieszenia ziemskie</unitPattern>
+				<unitPattern count="few" case="dative">{0} przyspieszeniom ziemskim</unitPattern>
+				<unitPattern count="few" case="genitive">{0} przyspieszeń ziemskich</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} przyspieszeniami ziemskimi</unitPattern>
+				<unitPattern count="few" case="locative">{0} przyspieszeniach ziemskich</unitPattern>
+				<unitPattern count="few" case="vocative">{0} przyspieszenia ziemskie</unitPattern>
+				<unitPattern count="many">{0} przyspieszeń ziemskich</unitPattern>
+				<unitPattern count="many" case="accusative">{0} przyspieszeń ziemskich</unitPattern>
+				<unitPattern count="many" case="dative">{0} przyspieszeniami ziemskimi</unitPattern>
+				<unitPattern count="many" case="genitive">{0} przyspieszeń ziemskich</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} przyspieszeniami ziemskimi</unitPattern>
+				<unitPattern count="many" case="locative">{0} przyspieszeniach ziemskich</unitPattern>
+				<unitPattern count="many" case="vocative">{0} przyspieszeń ziemskich</unitPattern>
+				<unitPattern count="other">{0} przyspieszenia ziemskiego</unitPattern>
+				<unitPattern count="other" case="accusative">{0} przyspieszenia ziemskiego</unitPattern>
+				<unitPattern count="other" case="dative">{0} przyspieszenia ziemskiego</unitPattern>
+				<unitPattern count="other" case="genitive">{0} przyspieszenia ziemskiego</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} przyspieszenia ziemskiego</unitPattern>
+				<unitPattern count="other" case="locative">{0} przyspieszenia ziemskiego</unitPattern>
+				<unitPattern count="other" case="vocative">{0} przyspieszenia ziemskiego</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<gender>inanimate</gender>
@@ -6460,11 +6470,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} karata</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>inanimate</gender>
 				<displayName>miligramy na decylitr</displayName>
 				<unitPattern count="one">{0} miligram na decylitr</unitPattern>
+				<unitPattern count="one" case="accusative">{0} miligram na decylitr</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miligrama na decylitr</unitPattern>
 				<unitPattern count="few">{0} miligramy na decylitr</unitPattern>
+				<unitPattern count="few" case="accusative">{0} miligramy na decylitr</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miligramów na decylitr</unitPattern>
 				<unitPattern count="many">{0} miligramów na decylitr</unitPattern>
+				<unitPattern count="many" case="accusative">{0} miligramów na decylitr</unitPattern>
+				<unitPattern count="many" case="genitive">{0} miligramów na decylitr</unitPattern>
 				<unitPattern count="other">{0} miligrama na decylitr</unitPattern>
+				<unitPattern count="other" case="accusative">{0} miligrama na decylitr</unitPattern>
+				<unitPattern count="other" case="genitive">{0} miligrama na decylitr</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>inanimate</gender>
@@ -6814,7 +6833,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>kilobity</displayName>
 				<unitPattern count="one">{0} kilobit</unitPattern>
 				<unitPattern count="one" case="accusative">{0} kilobit</unitPattern>
-				<unitPattern count="one" case="genitive">{0} kilobita</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilobitu</unitPattern>
 				<unitPattern count="few">{0} kilobity</unitPattern>
 				<unitPattern count="few" case="accusative">{0} kilobity</unitPattern>
 				<unitPattern count="few" case="genitive">{0} kilobitów</unitPattern>
@@ -6985,45 +7004,45 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} na tydzień</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<gender>feminine</gender>
-				<unitPattern count="one">{0} doba</unitPattern>
-				<unitPattern count="one" case="accusative">{0} dobę</unitPattern>
-				<unitPattern count="one" case="dative">{0} dobie</unitPattern>
-				<unitPattern count="one" case="genitive">{0} doby</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} dobą</unitPattern>
-				<unitPattern count="one" case="locative">{0} dobie</unitPattern>
-				<unitPattern count="one" case="vocative">{0} dobo</unitPattern>
-				<unitPattern count="few">{0} doby</unitPattern>
-				<unitPattern count="few" case="accusative">{0} doby</unitPattern>
-				<unitPattern count="few" case="dative">{0} dobom</unitPattern>
-				<unitPattern count="few" case="genitive">{0} dób</unitPattern>
-				<unitPattern count="few" case="instrumental">{0} dobami</unitPattern>
-				<unitPattern count="few" case="locative">{0} dobach</unitPattern>
-				<unitPattern count="many">{0} dób</unitPattern>
-				<unitPattern count="many" case="accusative">{0} dób</unitPattern>
-				<unitPattern count="many" case="dative">{0} dobom</unitPattern>
-				<unitPattern count="many" case="genitive">{0} dób</unitPattern>
-				<unitPattern count="many" case="instrumental">{0} dobami</unitPattern>
-				<unitPattern count="many" case="locative">{0} dobach</unitPattern>
-				<unitPattern count="other">{0} doby</unitPattern>
-				<unitPattern count="other" case="accusative">{0} doby</unitPattern>
-				<unitPattern count="other" case="genitive">{0} doby</unitPattern>
+				<gender>inanimate</gender>
+				<unitPattern count="one">{0} dzień</unitPattern>
+				<unitPattern count="one" case="accusative">{0} dzień</unitPattern>
+				<unitPattern count="one" case="dative">{0} dniowi</unitPattern>
+				<unitPattern count="one" case="genitive">{0} dnia</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} dniem</unitPattern>
+				<unitPattern count="one" case="locative">{0} dniu</unitPattern>
+				<unitPattern count="one" case="vocative">{0} dniu</unitPattern>
+				<unitPattern count="few">{0} dni</unitPattern>
+				<unitPattern count="few" case="accusative">{0} dni</unitPattern>
+				<unitPattern count="few" case="dative">{0} dniom</unitPattern>
+				<unitPattern count="few" case="genitive">{0} dni</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} dniami</unitPattern>
+				<unitPattern count="few" case="locative">{0} dniach</unitPattern>
+				<unitPattern count="many">{0} dni</unitPattern>
+				<unitPattern count="many" case="accusative">{0} dni</unitPattern>
+				<unitPattern count="many" case="dative">{0} dniom</unitPattern>
+				<unitPattern count="many" case="genitive">{0} dni</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} dniami</unitPattern>
+				<unitPattern count="many" case="locative">{0} dniach</unitPattern>
+				<unitPattern count="other">{0} dnia</unitPattern>
+				<unitPattern count="other" case="accusative">{0} dnia</unitPattern>
+				<unitPattern count="other" case="genitive">{0} dnia</unitPattern>
 				<perUnitPattern>{0} na dobę</perUnitPattern>
 			</unit>
 			<unit type="duration-day-person">
-				<gender>feminine</gender>
-				<unitPattern count="one">{0} doba</unitPattern>
-				<unitPattern count="one" case="accusative">{0} dobę</unitPattern>
-				<unitPattern count="one" case="genitive">{0} doby</unitPattern>
-				<unitPattern count="few">{0} doby</unitPattern>
-				<unitPattern count="few" case="accusative">{0} doby</unitPattern>
-				<unitPattern count="few" case="genitive">{0} dób</unitPattern>
-				<unitPattern count="many">{0} dób</unitPattern>
-				<unitPattern count="many" case="accusative">{0} dób</unitPattern>
-				<unitPattern count="many" case="genitive">{0} dób</unitPattern>
-				<unitPattern count="other">{0} doby</unitPattern>
-				<unitPattern count="other" case="accusative">{0} doby</unitPattern>
-				<unitPattern count="other" case="genitive">{0} doby</unitPattern>
+				<gender>inanimate</gender>
+				<unitPattern count="one">{0} dzień</unitPattern>
+				<unitPattern count="one" case="accusative">{0} dzień</unitPattern>
+				<unitPattern count="one" case="genitive">{0} dnia</unitPattern>
+				<unitPattern count="few">{0} dni</unitPattern>
+				<unitPattern count="few" case="accusative">{0} dni</unitPattern>
+				<unitPattern count="few" case="genitive">{0} dni</unitPattern>
+				<unitPattern count="many">{0} dni</unitPattern>
+				<unitPattern count="many" case="accusative">{0} dni</unitPattern>
+				<unitPattern count="many" case="genitive">{0} dni</unitPattern>
+				<unitPattern count="other">{0} dnia</unitPattern>
+				<unitPattern count="other" case="accusative">{0} dnia</unitPattern>
+				<unitPattern count="other" case="genitive">{0} dnia</unitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<gender>feminine</gender>
@@ -7911,11 +7930,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} mili skandynawskiej</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<gender>inanimate</gender>
 				<displayName>punkty</displayName>
 				<unitPattern count="one">{0} punkt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} punkt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} punktu</unitPattern>
 				<unitPattern count="few">{0} punkty</unitPattern>
+				<unitPattern count="few" case="accusative">{0} punkty</unitPattern>
+				<unitPattern count="few" case="genitive">{0} punktów</unitPattern>
 				<unitPattern count="many">{0} punktów</unitPattern>
+				<unitPattern count="many" case="accusative">{0} punktów</unitPattern>
+				<unitPattern count="many" case="genitive">{0} punktów</unitPattern>
 				<unitPattern count="other">{0} punktu</unitPattern>
+				<unitPattern count="other" case="accusative">{0} punktu</unitPattern>
+				<unitPattern count="other" case="genitive">{0} punktu</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<gender>inanimate</gender>
@@ -8402,11 +8430,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} konia mechanicznego</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>inanimate</gender>
 				<displayName>milimetry słupa rtęci</displayName>
 				<unitPattern count="one">{0} milimetr słupa rtęci</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milimetr słupa rtęci</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milimetra słupa rtęci</unitPattern>
 				<unitPattern count="few">{0} milimetry słupa rtęci</unitPattern>
+				<unitPattern count="few" case="accusative">{0} milimetry słupa rtęci</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milimetrów słupa rtęci</unitPattern>
 				<unitPattern count="many">{0} milimetrów słupa rtęci</unitPattern>
+				<unitPattern count="many" case="accusative">{0} milimetrów słupa rtęci</unitPattern>
+				<unitPattern count="many" case="genitive">{0} milimetrów słupa rtęci</unitPattern>
 				<unitPattern count="other">{0} milimetra słupa rtęci</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milimetra słupa rtęci</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milimetra słupa rtęci</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>funty na cal kwadratowy</displayName>
@@ -8441,18 +8478,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-millibar">
 				<gender>inanimate</gender>
 				<displayName>milibary</displayName>
-				<unitPattern count="one">{0} millibar</unitPattern>
-				<unitPattern count="one" case="accusative">{0} millibar</unitPattern>
+				<unitPattern count="one">{0} milibar</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milibar</unitPattern>
 				<unitPattern count="one" case="genitive">{0} milibara</unitPattern>
-				<unitPattern count="few">{0} millibary</unitPattern>
-				<unitPattern count="few" case="accusative">{0} millibary</unitPattern>
+				<unitPattern count="few">{0} milibary</unitPattern>
+				<unitPattern count="few" case="accusative">{0} milibary</unitPattern>
 				<unitPattern count="few" case="genitive">{0} milibarów</unitPattern>
-				<unitPattern count="many">{0} millibarów</unitPattern>
-				<unitPattern count="many" case="accusative">{0} millibarów</unitPattern>
-				<unitPattern count="many" case="genitive">{0} millibarów</unitPattern>
-				<unitPattern count="other">{0} millibara</unitPattern>
-				<unitPattern count="other" case="accusative">{0} millibara</unitPattern>
-				<unitPattern count="other" case="genitive">{0} millibara</unitPattern>
+				<unitPattern count="many">{0} milibarów</unitPattern>
+				<unitPattern count="many" case="accusative">{0} milibarów</unitPattern>
+				<unitPattern count="many" case="genitive">{0} milibarów</unitPattern>
+				<unitPattern count="other">{0} milibara</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milibara</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milibara</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<gender>feminine</gender>
@@ -9279,7 +9316,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>feminine</gender>
 				<unitPattern count="one">{0} łyżeczka</unitPattern>
 				<unitPattern count="one" case="accusative">{0} łyżeczkę</unitPattern>
-				<unitPattern count="one" case="dative">{0} łyżeczkce</unitPattern>
+				<unitPattern count="one" case="dative">łyżeczce</unitPattern>
 				<unitPattern count="one" case="genitive">{0} łyżeczki</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} łyżeczką</unitPattern>
 				<unitPattern count="one" case="locative">{0} łyżeczce</unitPattern>
@@ -9337,7 +9374,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>imperialna łyżeczka deserowa</displayName>
 				<unitPattern count="one">{0} imperialna łyżeczka deserowa</unitPattern>
 				<unitPattern count="one" case="accusative">{0} imperialną łyżeczkę deserową</unitPattern>
-				<unitPattern count="one" case="dative">{0} imperialnej łyżeczkce deserowej</unitPattern>
+				<unitPattern count="one" case="dative">{0} imperialnej łyżeczce deserowej</unitPattern>
 				<unitPattern count="one" case="genitive">{0} imperialnej łyżeczki deserowej</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} imperialną łyżeczką deserową</unitPattern>
 				<unitPattern count="one" case="locative">{0} imperialnej łyżeczce deserowej</unitPattern>
@@ -9376,7 +9413,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} kropli</unitPattern>
 				<unitPattern count="many" case="accusative">{0} kropli</unitPattern>
 				<unitPattern count="many" case="dative">{0} kroplom</unitPattern>
-				<unitPattern count="many" case="genitive">{0} kropel</unitPattern>
+				<unitPattern count="many" case="genitive">{0} kropli</unitPattern>
 				<unitPattern count="many" case="instrumental">{0} kroplami</unitPattern>
 				<unitPattern count="many" case="locative">{0} kroplach</unitPattern>
 				<unitPattern count="other">{0} kropli</unitPattern>
@@ -9485,6 +9522,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kwarty angielskiej</unitPattern>
 				<unitPattern count="other" case="accusative">{0} kwarty angielskiej</unitPattern>
 				<unitPattern count="other" case="genitive">{0} kwarty angielskiej</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<gender>neuter</gender>
+				<displayName>światło</displayName>
+				<unitPattern count="one">{0} światło</unitPattern>
+				<unitPattern count="one" case="accusative">{0} światło</unitPattern>
+				<unitPattern count="one" case="genitive">{0} światła</unitPattern>
+				<unitPattern count="few">{0} światła</unitPattern>
+				<unitPattern count="few" case="accusative">{0} światła</unitPattern>
+				<unitPattern count="few" case="genitive">{0} świateł</unitPattern>
+				<unitPattern count="many">{0} świateł</unitPattern>
+				<unitPattern count="many" case="accusative">{0} świateł</unitPattern>
+				<unitPattern count="many" case="genitive">{0} świateł</unitPattern>
+				<unitPattern count="other">{0} światła</unitPattern>
+				<unitPattern count="other" case="accusative">{0} światła</unitPattern>
+				<unitPattern count="other" case="genitive">{0} światła</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>feminine</gender>
+				<displayName>części na miliard</displayName>
+				<unitPattern count="one">{0} część na miliard</unitPattern>
+				<unitPattern count="one" case="accusative">{0} część na miliard</unitPattern>
+				<unitPattern count="one" case="genitive">{0} części na miliard</unitPattern>
+				<unitPattern count="few">{0} części na miliard</unitPattern>
+				<unitPattern count="few" case="accusative">{0} części na miliard</unitPattern>
+				<unitPattern count="few" case="genitive">{0} części na miliard</unitPattern>
+				<unitPattern count="many">{0} części na miliard</unitPattern>
+				<unitPattern count="many" case="accusative">{0} części na miliard</unitPattern>
+				<unitPattern count="many" case="genitive">{0} części na miliard</unitPattern>
+				<unitPattern count="other">{0} części na miliard</unitPattern>
+				<unitPattern count="other" case="accusative">{0} części na miliard</unitPattern>
+				<unitPattern count="other" case="genitive">{0} części na miliard</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>feminine</gender>
+				<displayName>noce</displayName>
+				<unitPattern count="one">{0} noc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} noc</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nocy</unitPattern>
+				<unitPattern count="few">{0} noce</unitPattern>
+				<unitPattern count="few" case="accusative">{0} noce</unitPattern>
+				<unitPattern count="few" case="genitive">{0} nocy</unitPattern>
+				<unitPattern count="many">{0} nocy</unitPattern>
+				<unitPattern count="many" case="accusative">{0} nocy</unitPattern>
+				<unitPattern count="many" case="genitive">{0} nocy</unitPattern>
+				<unitPattern count="other">{0} nocy</unitPattern>
+				<unitPattern count="other" case="accusative">{0} nocy</unitPattern>
+				<unitPattern count="other" case="genitive">{0} nocy</unitPattern>
+				<perUnitPattern>{0}/noc</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>kierunek świata</displayName>
@@ -9680,11 +9766,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/tydz.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>doby</displayName>
-				<unitPattern count="one">{0} doba</unitPattern>
-				<unitPattern count="few">{0} doby</unitPattern>
-				<unitPattern count="many">{0} dób</unitPattern>
-				<unitPattern count="other">{0} doby</unitPattern>
+				<displayName>dzień</displayName>
+				<unitPattern count="one">{0} dzień</unitPattern>
+				<unitPattern count="few">{0} dni</unitPattern>
+				<unitPattern count="many">{0} dni</unitPattern>
+				<unitPattern count="other">{0} dnia</unitPattern>
 				<perUnitPattern>{0}/dobę</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
@@ -10072,6 +10158,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} kwart ang.</unitPattern>
 				<unitPattern count="other">{0} kwarty ang.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>św.</displayName>
+				<unitPattern count="one">{0} św.</unitPattern>
+				<unitPattern count="few">{0} św.</unitPattern>
+				<unitPattern count="many">{0} św.</unitPattern>
+				<unitPattern count="other">{0} św.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noce</displayName>
+				<unitPattern count="one">{0} noc</unitPattern>
+				<unitPattern count="few">{0} noce</unitPattern>
+				<unitPattern count="many">{0} nocy</unitPattern>
+				<unitPattern count="other">{0} nocy</unitPattern>
+				<perUnitPattern>{0}/noc</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>kierunek</displayName>
 				<coordinateUnitPattern type="east">{0}°E</coordinateUnitPattern>
@@ -10135,7 +10236,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/t.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>doba</displayName>
 				<unitPattern count="one">{0} d.</unitPattern>
 				<unitPattern count="few">{0} d.</unitPattern>
 				<unitPattern count="many">{0} d.</unitPattern>
@@ -10185,6 +10285,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} u</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<displayName>km/h</displayName>
 				<unitPattern count="one">{0} km/h</unitPattern>
 				<unitPattern count="few">{0} km/h</unitPattern>
 				<unitPattern count="many">{0} km/h</unitPattern>
@@ -10237,6 +10338,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>bbl</displayName>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>św.</displayName>
+				<unitPattern count="one">{0} św.</unitPattern>
+				<unitPattern count="few">{0} św.</unitPattern>
+				<unitPattern count="many">{0} św.</unitPattern>
+				<unitPattern count="other">{0} św.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noce</displayName>
+				<unitPattern count="one">{0} noc</unitPattern>
+				<unitPattern count="few">{0} noce</unitPattern>
+				<unitPattern count="many">{0} nocy</unitPattern>
+				<unitPattern count="other">{0} nocy</unitPattern>
+				<perUnitPattern>{0}/noc</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>
