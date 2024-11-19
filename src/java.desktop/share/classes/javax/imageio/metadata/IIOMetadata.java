@@ -398,7 +398,7 @@ public abstract class IIOMetadata {
         try {
             // Try to load from the module of the IIOMetadata implementation
             // for this plugin since the IIOMetadataImpl is part of the plugin
-            Class<?> cls =  getMetadataFormatClass(formatClassName);
+            Class<?> cls = getMetadataFormatClass(formatClassName);
             Method meth = cls.getMethod("getInstance");
             return (IIOMetadataFormat) meth.invoke(null);
         } catch (Exception e) {
