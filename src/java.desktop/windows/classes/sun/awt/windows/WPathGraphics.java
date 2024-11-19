@@ -631,22 +631,11 @@ final class WPathGraphics extends PathGraphics {
          */
         Point2D.Float userpos = new Point2D.Float(x, y);
         /* Add the position of the first glyph - its not always 0,0 */
+        /* This glyph position includes the font's transform translation, if any */
         Point2D g0pos = gv.getGlyphPosition(0);
         userpos.x += (float)g0pos.getX();
         userpos.y += (float)g0pos.getY();
         Point2D.Float devpos = new Point2D.Float();
-
-        /* Already have the translate from the deviceTransform,
-         * but the font may have a translation component too.
-         */
-        if (font.isTransformed()) {
-            AffineTransform fontTx = font.getTransform();
-            float translateX = (float)(fontTx.getTranslateX());
-            float translateY = (float)(fontTx.getTranslateY());
-            if (Math.abs(translateX) < 0.00001) translateX = 0f;
-            if (Math.abs(translateY) < 0.00001) translateY = 0f;
-            userpos.x += translateX; userpos.y += translateY;
-        }
         deviceTransform.transform(userpos, devpos);
 
         if (getClip() != null) {
