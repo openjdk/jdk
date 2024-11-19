@@ -88,7 +88,7 @@ public abstract class VectorStoreToLoadForwarding {
         MUTABLE_CONSTANT.setTarget(constant);
     }
 
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    @CompilerControl(CompilerControl.Mode.INLINE)
     private int offset_con() throws Throwable {
         return (int) MUTABLE_CONSTANT_HANDLE.invokeExact();
     }
