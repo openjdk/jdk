@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,47 +20,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.test;
+package jdk.jpackage.internal.util.function;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 
+public class ExceptionBox extends RuntimeException {
 
-public class Functional {
+    private static final long serialVersionUID = 1L;
 
-    public static <T> Supplier<T> identity(Supplier<T> v) {
-        return v;
+    public static RuntimeException rethrowUnchecked(Throwable throwable) {
+        if (throwable instanceof RuntimeException err) {
+            throw err;
+        }
+
+        if (throwable instanceof Error err) {
+            throw err;
+        }
+
+        if (throwable instanceof InvocationTargetException err) {
+            throw rethrowUnchecked(err.getCause());
+        }
+
+        throw new ExceptionBox(throwable);
     }
 
-    public static <T> Consumer<T> identity(Consumer<T> v) {
-        return v;
-    }
-
-    public static <T, U> BiConsumer<T, U> identity(BiConsumer<T, U> v) {
-        return v;
-    }
-
-    public static Runnable identity(Runnable v) {
-        return v;
-    }
-
-    public static <T, R> Function<T, R> identity(Function<T, R> v) {
-        return v;
-    }
-
-    public static <T, R> Function<T, R> identityFunction(Function<T, R> v) {
-        return v;
-    }
-
-    public static <T> Predicate<T> identity(Predicate<T> v) {
-        return v;
-    }
-
-    public static <T> Predicate<T> identityPredicate(Predicate<T> v) {
-        return v;
+    private ExceptionBox(Throwable throwable) {
+        super(throwable);
     }
 }

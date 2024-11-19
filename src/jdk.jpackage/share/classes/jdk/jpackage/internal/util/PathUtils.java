@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,44 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jpackage.internal.util;
 
-package jdk.jpackage.internal;
-
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
-import jdk.jpackage.internal.util.FileUtils;
+import java.util.Optional;
+import jdk.jpackage.internal.IOUtils;
 
+public final class PathUtils {
 
-/**
- * AbstractBundler
- *
- * This is the base class all bundlers extend from.
- * It contains methods and parameters common to all bundlers.
- * The concrete implementations are in the platform specific bundlers.
- */
-abstract class AbstractBundler implements Bundler {
-
-    static final BundlerParamInfo<Path> IMAGES_ROOT =
-            new StandardBundlerParam<>(
-            "imagesRoot",
-            Path.class,
-            params ->
-                StandardBundlerParam.TEMP_ROOT.fetchFrom(params).resolve("images"),
-            (s, p) -> null);
-
-    @Override
-    public String toString() {
-        return getName();
+    public static String getSuffix(Path path) {
+        String filename = replaceSuffix(IOUtils.getFileName(path), null).toString();
+        return IOUtils.getFileName(path).toString().substring(filename.length());
     }
 
-    @Override
-    public void cleanup(Map<String, ? super Object> params) {
-        try {
-            FileUtils.deleteRecursive(
-                    StandardBundlerParam.TEMP_ROOT.fetchFrom(params));
-        } catch (IOException e) {
-            Log.verbose(e.getMessage());
-        }
+    public static Path addSuffix(Path path, String suffix) {
+        Path parent = path.getParent();
+        String filename = IOUtils.getFileName(path).toString() + suffix;
+        return parent != null ? parent.resolve(filename) : Path.of(filename);
+    }
+
+    public static Path replaceSuffix(Path path, String suffix) {
+        Path parent = path.getParent();
+        String filename = IOUtils.getFileName(path).toString().replaceAll("\\.[^.]*$",
+                "") + Optional.ofNullable(suffix).orElse("");
+        return parent != null ? parent.resolve(filename) : Path.of(filename);
+    }
+
+    public static Path resolveNullablePath(Path base, Path path) {
+        return Optional.ofNullable(path).map(base::resolve).orElse(null);
     }
 }

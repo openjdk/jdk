@@ -45,15 +45,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.PackageFile;
+import jdk.jpackage.internal.util.XmlUtils;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingFunction;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 /**
  * jpackage command line with prerequisite actions. Prerequisite actions can be
@@ -315,7 +315,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                                     "Error: --app-image expected");
                         }));
 
-        IOUtils.createXml(jpackageXMLFile, xml -> {
+        XmlUtils.createXml(jpackageXMLFile, xml -> {
                 xml.writeStartElement("jpackage-state");
                 xml.writeAttribute("version", AppImageFile.getVersion());
                 xml.writeAttribute("platform", AppImageFile.getPlatform());
