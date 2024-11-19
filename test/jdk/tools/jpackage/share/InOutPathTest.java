@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.AppImageFile;
