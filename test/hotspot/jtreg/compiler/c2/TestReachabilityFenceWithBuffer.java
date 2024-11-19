@@ -21,11 +21,12 @@
  * questions.
  */
 
+package compiler.c2;
+
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.lang.reflect.*;
 import jdk.internal.misc.Unsafe;
-
 
 
 /*
@@ -33,7 +34,7 @@ import jdk.internal.misc.Unsafe;
  * @bug 8290892
  * @summary Tests to ensure that reachabilityFence() correctly keeps objects from being collected prematurely.
  * @modules java.base/jdk.internal.misc
-
+ * @library /test/lib /
  * @run main/othervm -XX:CompileCommand=compileonly,*TestReachabilityFenceWithBuffer::* -Xbatch compiler.c2.TestReachabilityFenceWithBuffer
  */
 
