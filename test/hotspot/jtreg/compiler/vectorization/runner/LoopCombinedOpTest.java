@@ -239,9 +239,9 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0",
-                  IRNode.LOAD_VECTOR_S, "> 0",
-                  IRNode.LOAD_VECTOR_I, "> 0",
-                  IRNode.LOAD_VECTOR_L, "> 0"})
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_ANY, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, "> 0",
+                  IRNode.LOAD_VECTOR_L,                         "> 0"})
     public long[] multipleOpsWith3DifferentTypes() {
         short[] res1 = new short[SIZE];
         int[] res2 = new int[SIZE];
@@ -274,8 +274,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0",
-                  IRNode.LOAD_VECTOR_S, "> 0",
-                  IRNode.LOAD_VECTOR_L, "> 0"})
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_ANY, "> 0",
+                  IRNode.LOAD_VECTOR_L,                         "> 0"})
     public long[] multipleOpsWith2NonAdjacentTypes() {
         short[] res1 = new short[SIZE];
         long[] res2 = new long[SIZE];
