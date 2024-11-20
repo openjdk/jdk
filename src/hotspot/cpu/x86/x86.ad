@@ -2512,11 +2512,12 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     address_visited.test_set(m->_idx); // Flag as address_visited
     Node *adr = m->in(AddPNode::Address);
 
-    // Intel can handle 2 adds in addressing mode
+    // Intel can handle 2 adds in addressing mode, with one of them using an immediate offset.
     // AtomicAdd is not an addressing expression.
     // Cheap to find it by looking for screwy base.
     if (adr->is_AddP() &&
         !adr->in(AddPNode::Base)->is_top() &&
+        !adr->in(AddPNode::Offset)->is_Con() &&
         LP64_ONLY( off->get_long() == (int) (off->get_long()) && ) // immL32
         // Are there other uses besides address expressions?
         !is_visited(adr)) {

@@ -115,11 +115,7 @@ public final class ArrayClassDescImpl implements ClassDesc {
     }
 
     private String computeDescriptor() {
-        var componentDesc = elementType.descriptorString();
-        StringBuilder sb = new StringBuilder(rank + componentDesc.length());
-        sb.repeat('[', rank);
-        sb.append(componentDesc);
-        return sb.toString();
+        return "[".repeat(rank).concat(elementType.descriptorString());
     }
 
     @Override

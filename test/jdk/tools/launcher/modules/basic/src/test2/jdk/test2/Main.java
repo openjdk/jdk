@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,6 @@ package jdk.test2;
 
 public class Main {
     public static void main(String... args) {
-        try {
-            System.out.println("Hello world");
-        } catch (Exception e) {
-            // verifier loads SunJCE class
-            java.security.Provider p = new com.sun.crypto.provider.SunJCE();
-            System.out.println(p.toString());
-        }
+        System.out.println("Hello world");
     }
 }

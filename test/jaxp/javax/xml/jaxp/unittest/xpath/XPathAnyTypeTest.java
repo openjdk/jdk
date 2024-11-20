@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.xml.xpath.XPathExpressionException;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -41,12 +40,10 @@ import org.w3c.dom.Node;
  * @test
  * @bug 8054196
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow xpath.XPathAnyTypeTest
  * @run testng/othervm xpath.XPathAnyTypeTest
  * @summary Test for the project XPath: support any type. This test covers the new
  * evaluateExpression methods of XPath, as well as XPathNodes and XPathEvaluationResult.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class XPathAnyTypeTest extends XPathTestBase {
     /*
      Test for resolveFunction(QName functionName,int arity); evaluate throws

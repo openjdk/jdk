@@ -100,7 +100,7 @@ final class MBeanServerDelegateImpl
         super();
         delegateInfo =
             new MBeanInfo("javax.management.MBeanServerDelegate",
-                          "Represents  the MBean server from the management "+
+                          "Represents the MBean server from the management "+
                           "point of view.",
                           MBeanServerDelegateImpl.attributeInfos, null,
                           null,getNotificationInfo());

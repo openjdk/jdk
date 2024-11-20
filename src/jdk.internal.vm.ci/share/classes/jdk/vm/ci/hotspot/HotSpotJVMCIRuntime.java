@@ -959,7 +959,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return Collections.unmodifiableMap(backends);
     }
 
-    @SuppressWarnings("try")
     @VMEntryPoint
     private HotSpotCompilationRequestResult compileMethod(HotSpotResolvedJavaMethod method, int entryBCI, long compileState, int id) {
         HotSpotCompilationRequest request = new HotSpotCompilationRequest(method, entryBCI, compileState, id);
@@ -981,13 +980,11 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return hsResult;
     }
 
-    @SuppressWarnings("try")
     @VMEntryPoint
     private boolean isGCSupported(int gcIdentifier) {
         return getCompiler().isGCSupported(gcIdentifier);
     }
 
-    @SuppressWarnings("try")
     @VMEntryPoint
     private boolean isIntrinsicSupported(int intrinsicIdentifier) {
         return getCompiler().isIntrinsicSupported(intrinsicIdentifier);

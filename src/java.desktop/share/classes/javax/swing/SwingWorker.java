@@ -31,8 +31,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -797,7 +795,6 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
             final ExecutorService es = executorService;
             appContext.addPropertyChangeListener(AppContext.DISPOSED_PROPERTY_NAME,
                 new PropertyChangeListener() {
-                    @SuppressWarnings("removal")
                     @Override
                     public void propertyChange(PropertyChangeEvent pce) {
                         boolean disposed = (Boolean)pce.getNewValue();
@@ -807,14 +804,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                             final ExecutorService executorService =
                                 executorServiceRef.get();
                             if (executorService != null) {
-                                AccessController.doPrivileged(
-                                    new PrivilegedAction<Void>() {
-                                        public Void run() {
-                                            executorService.shutdown();
-                                            return null;
-                                        }
-                                    }
-                                );
+                                executorService.shutdown();
                             }
                         }
                     }

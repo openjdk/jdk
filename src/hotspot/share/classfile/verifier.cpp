@@ -105,8 +105,8 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
 
 // Methods in Verifier
 
-bool Verifier::should_verify_for(oop class_loader, bool should_verify_class) {
-  return (class_loader == nullptr || !should_verify_class) ?
+bool Verifier::should_verify_for(oop class_loader) {
+  return class_loader == nullptr ?
     BytecodeVerificationLocal : BytecodeVerificationRemote;
 }
 
@@ -276,7 +276,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
 bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
   Symbol* name = klass->name();
 
-  return (should_verify_for(klass->class_loader(), should_verify_class) &&
+  return (should_verify_class &&
     // return if the class is a bootstrapping class
     // or defineClass specified not to verify by default (flags override passed arg)
     // We need to skip the following four for bootstraping
@@ -2092,15 +2092,13 @@ void ClassVerifier::class_format_error(const char* msg, ...) {
 
 Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
   HandleMark hm(THREAD);
-  // Get current loader and protection domain first.
+  // Get current loader first.
   oop loader = current_class()->class_loader();
-  oop protection_domain = current_class()->protection_domain();
 
   assert(name_in_supers(name, current_class()), "name should be a super class");
 
   Klass* kls = SystemDictionary::resolve_or_fail(
-    name, Handle(THREAD, loader), Handle(THREAD, protection_domain),
-    true, THREAD);
+    name, Handle(THREAD, loader), true, THREAD);
 
   if (kls != nullptr) {
     if (log_is_enabled(Debug, class, resolve)) {

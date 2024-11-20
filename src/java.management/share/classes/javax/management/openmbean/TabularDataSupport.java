@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -612,7 +612,6 @@ public class TabularDataSupport
      * @return a collection view ({@code Collection<CompositeData>}) of
      * the values contained in this {@code TabularDataSupport} instance.
      */
-    @SuppressWarnings("unchecked")  // historical confusion about the return type
     public Collection<Object> values() {
 
         return Util.cast(dataMap.values());
@@ -648,7 +647,6 @@ public class TabularDataSupport
      * of the mappings contained in this map.
      * @see java.util.Map.Entry
      */
-    @SuppressWarnings("unchecked")  // historical confusion about the return type
     public Set<Map.Entry<Object,Object>> entrySet() {
 
         return Util.cast(dataMap.entrySet());

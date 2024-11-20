@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,6 @@ public class ProcessCommunicator {
     {
         StringBuilder commandBuilder = new StringBuilder();
         commandBuilder.append(javaPath).append(" ");
-        commandBuilder.append("-Djava.security.manager=allow ");
         commandBuilder.append("-cp ").append(System.getProperty("test.classes", ".")).append(File.pathSeparatorChar);
 
         if (classPathArguments.trim().length() > 0) {

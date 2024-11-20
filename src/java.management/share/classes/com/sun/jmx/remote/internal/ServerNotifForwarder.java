@@ -162,14 +162,26 @@ public class ServerNotifForwarder {
                 connectionId, name, getSubject());
         }
 
+        // 6238731: set the default domain if no domain is set.
+        ObjectName nn = name;
+        if (name.getDomain() == null || name.getDomain().isEmpty()) {
+            try {
+                nn = ObjectName.getInstance(mbeanServer.getDefaultDomain(),
+                                            name.getKeyPropertyList());
+            } catch (MalformedObjectNameException mfoe) {
+                // impossible, but...
+                throw new IOException(mfoe.getMessage(), mfoe);
+            }
+        }
+
         Exception re = null;
         for (int i = 0 ; i < listenerIDs.length ; i++) {
             try {
-                removeNotificationListener(name, listenerIDs[i]);
+                removeNotificationListener(nn, listenerIDs[i]);
             } catch (Exception e) {
                 // Give back the first exception
                 //
-                if (re != null) {
+                if (re == null) {
                     re = e;
                 }
             }
@@ -343,7 +355,6 @@ public class ServerNotifForwarder {
     //----------------
     // PRIVATE METHODS
     //----------------
-    @SuppressWarnings("removal")
     private Subject getSubject() {
         return Subject.current();
     }
