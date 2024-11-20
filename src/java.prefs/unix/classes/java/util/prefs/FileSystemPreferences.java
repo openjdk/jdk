@@ -123,10 +123,10 @@ class FileSystemPreferences extends AbstractPreferences {
                         " on userRoot directory. ");
                 }
                 getLogger().info("Created user preferences directory.");
-            }
-            else
+            } else {
                 getLogger().warning("Couldn't create user preferences" +
-                " directory. User preferences are unusable.");
+                        " directory. User preferences are unusable.");
+            }
         }
         isUserRootWritable = userRootDir.canWrite();
         String USER_NAME = System.getProperty("user.name");
@@ -583,8 +583,8 @@ class FileSystemPreferences extends AbstractPreferences {
                                       "IncorrectFormatPrefs.xml"));
                 m = new TreeMap<>();
             } else if (e instanceof FileNotFoundException) {
-            getLogger().warning("Prefs file removed in background "
-                               + prefsFile.getPath());
+                getLogger().warning("Prefs file removed in background "
+                        + prefsFile.getPath());
             } else {
                 throw new BackingStoreException(e);
             }
