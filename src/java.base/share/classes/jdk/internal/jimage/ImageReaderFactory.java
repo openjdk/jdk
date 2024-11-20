@@ -25,8 +25,6 @@
 
 package jdk.internal.jimage;
 
-import jdk.internal.util.StaticProperty;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -47,9 +45,9 @@ import java.util.function.Function;
  */
 public class ImageReaderFactory {
     private ImageReaderFactory() {}
-
+    private static final String JAVA_HOME = System.getProperty("java.home");
     private static final Path BOOT_MODULES_JIMAGE =
-        Paths.get(StaticProperty.javaHome(),"lib", "modules");
+        Paths.get(JAVA_HOME, "lib", "modules");
 
     private static final Map<Path, ImageReader> readers = new ConcurrentHashMap<>();
 
