@@ -36,10 +36,10 @@ import static jdk.test.lib.Asserts.fail;
 import static jdk.test.lib.security.SecurityUtils.inspectTlsBuffer;
 
 import java.io.InputStream;
+import java.lang.Override;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.security.GeneralSecurityException;
-
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.Status;
@@ -104,6 +104,7 @@ public class SSLSocketNoServerHelloClientShutdown
             }
         } finally {
             if (serverException != null) {
+                serverException.printStackTrace();
                 assertEquals(
                     SSLProtocolException.class, serverException.getClass());
                 assertEquals(GeneralSecurityException.class,
