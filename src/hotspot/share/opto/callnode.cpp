@@ -1081,6 +1081,7 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (fcg != nullptr) {
     if (!late_inline_added()) {
       phase->C->prepend_late_inline(fcg);
+      phase->C->inc_number_of_mh_late_inlines();
       set_late_inline_added(true);
     }
   } else if (can_reshape && cg != nullptr) {
