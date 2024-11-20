@@ -498,7 +498,7 @@ public class Socket implements java.io.Closeable {
             try {
                     bind(localAddr);
             } catch (Throwable throwable) {
-                closeQuietly(throwable);
+                closeSuppressingExceptions(throwable);
                 throw throwable;
             }
         }
@@ -689,8 +689,9 @@ public class Socket implements java.io.Closeable {
             throw new IllegalArgumentException("Unsupported address type");
 
         if (epoint.isUnresolved()) {
-            close();
-            throw new UnknownHostException(epoint.getHostName() + " is unresolved");
+            UnknownHostException exception = new UnknownHostException(epoint.getHostName() + " is unresolved");
+            closeSuppressingExceptions(exception);
+            throw exception;
         }
 
         InetAddress addr = epoint.getAddress();
@@ -709,7 +710,7 @@ public class Socket implements java.io.Closeable {
         try {
             getImpl().connect(epoint, timeout);
         } catch (IOException error) {
-            closeQuietly(error);
+            closeSuppressingExceptions(error);
             throw error;
         }
 
@@ -1647,12 +1648,12 @@ public class Socket implements java.io.Closeable {
         return ((Boolean) (getImpl().getOption(SocketOptions.SO_REUSEADDR))).booleanValue();
     }
 
-    private void closeQuietly(Throwable parentError) {
+    private void closeSuppressingExceptions(Throwable parentException) {
         try {
             close();
-        } catch (IOException error) {
-            if (error != parentError) {
-                parentError.addSuppressed(error);
+        } catch (IOException exception) {
+            if (exception != parentException) {
+                parentException.addSuppressed(exception);
             }
         }
     }
