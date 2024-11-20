@@ -408,15 +408,20 @@ ArchiveWorkers::ArchiveWorkers() :
         _started_workers(0),
         _waiting_workers(0),
         _running_workers(0),
-        _state(NOT_READY),
+        _state(SHUTDOWN),
         _task(nullptr) {
 }
 
 void ArchiveWorkers::initialize() {
-  assert(Atomic::load(&_state) == NOT_READY, "Should be");
+  assert(Atomic::load(&_state) == SHUTDOWN, "Should be shutdown");
 
   Atomic::store(&_num_workers, max_workers());
-  Atomic::store(&_state, READY);
+  Atomic::store(&_started_workers, 0);
+  Atomic::store(&_waiting_workers, 0);
+  Atomic::store(&_running_workers, 0);
+
+  State prev_state = Atomic::cmpxchg(&_state, SHUTDOWN, READY, memory_order_relaxed);
+  assert(prev_state == SHUTDOWN, "Should be");
 
   // Kick off pool startup by creating a single worker.
   start_worker_if_needed();
@@ -479,7 +484,7 @@ void ArchiveWorkers::signal_worker_if_needed() {
 void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
   assert((Atomic::load(&_state) == READY) ||
          ((Atomic::load(&_state) == SHUTDOWN) && (task == &_shutdown_task)),
-         "Should be in correct state");
+         "Should be ready");
   assert(Atomic::load(&_task) == nullptr, "Should not have running tasks");
 
   if (is_parallel()) {

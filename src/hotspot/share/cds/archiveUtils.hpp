@@ -371,13 +371,14 @@ public:
 // the normal GC worker pool.
 class ArchiveWorkers {
   friend class ArchiveWorkerThread;
+  friend class ArchiveWorkersUseMark;
 private:
   // Target number of chunks per worker. This should be large enough to even
   // out work imbalance, and small enough to keep bookkeeping overheads low.
   static constexpr int CHUNKS_PER_WORKER = 4;
   static int max_workers();
 
-  // Global shared instance. Can be uninitialized, can be shut down.
+  // Global shared instance. Can be ready to use, can be shut down.
   static ArchiveWorkers _workers;
 
   ArchiveWorkerShutdownTask _shutdown_task;
@@ -389,7 +390,7 @@ private:
   int _waiting_workers;
   int _running_workers;
 
-  typedef enum { NOT_READY, READY, SHUTDOWN } State;
+  typedef enum { READY, SHUTDOWN } State;
   volatile State _state;
 
   ArchiveWorkerTask* _task;
@@ -404,12 +405,26 @@ private:
   bool is_parallel();
 
   ArchiveWorkers();
+  void initialize();
+  void shutdown();
 
 public:
   static ArchiveWorkers* workers() { return &_workers; }
-  void initialize();
-  void shutdown();
   void run_task(ArchiveWorkerTask* task);
 };
+
+// Marks the code that wants to use ArchiveWorkers.
+// Makes sure the workers are properly initialized before use
+// and shut down after use.
+class ArchiveWorkersUseMark : public StackObj {
+public:
+  ArchiveWorkersUseMark() {
+    ArchiveWorkers::workers()->initialize();
+  }
+  ~ArchiveWorkersUseMark() {
+    ArchiveWorkers::workers()->shutdown();
+  }
+};
+
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP
