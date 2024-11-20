@@ -612,7 +612,7 @@ public:
         //   false means termination on the application shutdown;
         // wrongThread is used as reInit parameter for action cleanup.
         bool Terminate(bool wrongThread);
-        bool InvokeAndTerminate(void(_cdecl *fn)(void *), void *param);
+        bool InvokeAndTerminate(void(*fn)(void *), void *param);
 
         // waits for the thread completion;
         // use the method after Terminate() only if Terminate() returned true
@@ -664,7 +664,7 @@ public:
 
         // function/param to invoke (InvokeAndTerminate)
         // if execFunc == NULL => just terminate
-        void(_cdecl *execFunc)(void *);
+        void(*execFunc)(void *);
         void *execParam;
 
         // action chain

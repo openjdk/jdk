@@ -668,6 +668,13 @@ class os: AllStatic {
   static void flockfile(FILE* fp);
   static void funlockfile(FILE* fp);
 
+  // A safe implementation of realpath which will not cause a buffer overflow if the resolved path
+  // is longer than PATH_MAX.
+  // On success, returns 'outbuf', which now contains the path.
+  // On error, it will return null and set errno. The content of 'outbuf' is undefined.
+  // On truncation error ('outbuf' too small), it will return null and set errno to ENAMETOOLONG.
+  static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
+
   static int compare_file_modified_times(const char* file1, const char* file2);
 
   static bool same_files(const char* file1, const char* file2);
@@ -875,10 +882,6 @@ class os: AllStatic {
   // Fills in path to jvm.dll/libjvm.so (used by the Disassembler)
   static void     jvm_path(char *buf, jint buflen);
 
-  // JNI names
-  static void     print_jni_name_prefix_on(outputStream* st, int args_size);
-  static void     print_jni_name_suffix_on(outputStream* st, int args_size);
-
   // Init os specific system properties values
   static void init_system_properties_values();
 
@@ -939,7 +942,7 @@ class os: AllStatic {
   // provided buffer as a scratch buffer. The status message which will be written
   // into the error log either is file location or a short error message, depending
   // on the checking result.
-  static void check_dump_limit(char* buffer, size_t bufferSize);
+  static void check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool check_only = false);
 
   // Get the default path to the core file
   // Returns the length of the string
@@ -1038,8 +1041,6 @@ class os: AllStatic {
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
-
-  static bool dont_yield();                     // when true, JVM_Yield() is nop
 
   // Thread priority helpers (implemented in OS-specific part)
   static OSReturn set_native_priority(Thread* thread, int native_prio);

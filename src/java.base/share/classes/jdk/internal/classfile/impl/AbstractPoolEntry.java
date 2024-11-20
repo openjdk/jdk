@@ -24,37 +24,18 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.constantpool.ConstantPoolException;
+import java.lang.classfile.constantpool.*;
 import java.lang.constant.*;
 import java.lang.invoke.TypeDescriptor;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ConstantDynamicEntry;
-import java.lang.classfile.constantpool.ConstantPool;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.constantpool.DoubleEntry;
-import java.lang.classfile.constantpool.FieldRefEntry;
-import java.lang.classfile.constantpool.FloatEntry;
-import java.lang.classfile.constantpool.IntegerEntry;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
-import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.LongEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodHandleEntry;
-import java.lang.classfile.constantpool.MethodRefEntry;
-import java.lang.classfile.constantpool.MethodTypeEntry;
-import java.lang.classfile.constantpool.ModuleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.classfile.constantpool.PackageEntry;
-import java.lang.classfile.constantpool.PoolEntry;
-import java.lang.classfile.constantpool.StringEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.Stable;
+
+import static java.util.Objects.requireNonNull;
 
 public abstract sealed class AbstractPoolEntry {
     /*
@@ -401,45 +382,13 @@ public abstract sealed class AbstractPoolEntry {
                 return stringValue().equals(u.stringValue());
         }
 
-        /**
-         * Returns if this utf8 entry's content equals a substring
-         * of {@code s} obtained as {@code s.substring(start, end - start)}.
-         * This check avoids a substring allocation.
-         */
-        public boolean equalsRegion(String s, int start, int end) {
-            // start and end values trusted
-            if (state == State.RAW)
-                inflate();
-            int len = charLen;
-            if (len != end - start)
-                return false;
-
-            var sv = stringValue;
-            if (sv != null) {
-                return sv.regionMatches(0, s, start, len);
-            }
-
-            var chars = this.chars;
-            if (chars != null) {
-                for (int i = 0; i < len; i++)
-                    if (chars[i] != s.charAt(start + i))
-                        return false;
-            } else {
-                var bytes = this.rawBytes;
-                for (int i = 0; i < len; i++)
-                    if (bytes[offset + i] != s.charAt(start + i))
-                        return false;
-            }
-            return true;
-        }
-
         @Override
         public boolean equalsString(String s) {
             if (state == State.RAW)
                 inflate();
             switch (state) {
                 case STRING:
-                    return stringValue.equals(s);
+                    return stringValue.equals(requireNonNull(s));
                 case CHAR:
                     if (charLen != s.length() || contentHash != s.hashCode())
                         return false;

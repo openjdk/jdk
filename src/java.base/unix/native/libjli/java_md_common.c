@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ TruncatePath(char *buf, jboolean pathisdll)
 }
 
 /*
- * Retrieves the path to the JRE home by locating the executable file
+ * Retrieves the path to the JDK home by locating the executable file
  * of the current process and then truncating the path to the executable
  */
 jboolean
@@ -93,7 +93,7 @@ GetApplicationHome(char *buf, jint bufsize)
 }
 
 /*
- * Retrieves the path to the JRE home by locating the
+ * Retrieves the path to the JDK home by locating the
  * shared library and then truncating the path to it.
  */
 jboolean
@@ -124,7 +124,7 @@ LibjavaExists(const char *path)
 }
 
 /*
- * Retrieves the path to the JRE home by locating libjava.so in
+ * Retrieves the path to the JDK home by locating libjava.so in
  * LIBPATH and then truncating the path to it.
  */
 jboolean
@@ -262,7 +262,7 @@ JLI_ReportExceptionDescription(JNIEnv * env) {
 /*
  *      Since using the file system as a registry is a bit risky, perform
  *      additional sanity checks on the identified directory to validate
- *      it as a valid jre/sdk.
+ *      it as a valid JDK.
  *
  *      Return 0 if the tests fail; otherwise return non-zero (true).
  *

@@ -36,7 +36,6 @@
 
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
 
-Mutex*   Patching_lock                = nullptr;
 Mutex*   NMethodState_lock            = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
 Mutex*   InvokeMethodTypeTable_lock   = nullptr;
@@ -233,7 +232,6 @@ void mutex_init() {
   MUTEX_DEFN(Metaspace_lock                  , PaddedMutex  , nosafepoint-3);
   MUTEX_DEFN(MetaspaceCritical_lock          , PaddedMonitor, nosafepoint-1);
 
-  MUTEX_DEFN(Patching_lock                   , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
   MUTEX_DEFN(MonitorDeflation_lock           , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations
   MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);          // used for service thread operations
   MUTEX_DEFN(Notification_lock               , PaddedMonitor, service);          // used for notification thread operations

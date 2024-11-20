@@ -114,6 +114,13 @@ public class VectorSupport {
     public static final int VECTOR_OP_EXPM1 = 117;
     public static final int VECTOR_OP_HYPOT = 118;
 
+    public static final int VECTOR_OP_SADD  = 119;
+    public static final int VECTOR_OP_SSUB  = 120;
+    public static final int VECTOR_OP_SUADD = 121;
+    public static final int VECTOR_OP_SUSUB = 122;
+    public static final int VECTOR_OP_UMIN  = 123;
+    public static final int VECTOR_OP_UMAX  = 124;
+
     // See src/hotspot/share/opto/subnode.hpp
     //     struct BoolTest, and enclosed enum mask
     public static final int BT_eq = 0;  // 0000
@@ -395,6 +402,24 @@ public class VectorSupport {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v1, v2, m);
     }
+    /* ============================================================================ */
+
+    public interface SelectFromTwoVector<V extends Vector<?>> {
+        V apply(V v1, V v2, V v3);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     E>
+    V selectFromTwoVectorOp(Class<? extends V> vClass, Class<E> eClass, int length,
+                            V v1, V v2, V v3,
+                            SelectFromTwoVector<V> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v1, v2, v3);
+    }
+
+    /* ============================================================================ */
 
     /* ============================================================================ */
 

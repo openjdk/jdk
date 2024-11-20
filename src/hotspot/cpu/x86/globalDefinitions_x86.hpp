@@ -34,7 +34,9 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
+#ifdef _LP64
 #define SUPPORT_MONITOR_COUNT
+#endif
 
 #define CPU_MULTI_COPY_ATOMIC
 

@@ -53,9 +53,9 @@
  */
 
 /**
- * @test id=custom-cl-zgc-singlegen
+ * @test id=custom-cl-zgc
  * @requires vm.cds.custom.loaders
- * @requires vm.gc.ZSinglegen
+ * @requires vm.gc.Z
  * @summary Test dumptime_table entries are removed with zgc eager class unloading
  * @bug 8274935
  * @library /test/lib
@@ -67,23 +67,6 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=180 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest custom-zgc
- */
-
-/**
- * @test id=custom-cl-zgc-generational
- * @requires vm.cds.custom.loaders
- * @requires vm.gc.ZGenerational
- * @summary Test dumptime_table entries are removed with zgc eager class unloading
- * @bug 8274935
- * @library /test/lib
- *          /test/hotspot/jtreg/runtime/cds/appcds
- *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive
- * @modules java.base/jdk.internal.misc
- *          jdk.httpserver
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=180 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest custom-zgc-generational
  */
 
 import com.sun.net.httpserver.HttpExchange;
@@ -118,12 +101,10 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
      */
     static boolean useCustomLoader;
     static boolean useZGC;
-    static boolean useZGenerational;
 
     public static void main(String[] args) throws Exception {
         useCustomLoader = (args.length != 0);
-        useZGenerational = (args.length != 0 && args[0].equals("custom-zgc-generational"));
-        useZGC = useZGenerational || (args.length != 0 && args[0].equals("custom-zgc"));
+        useZGC = (args.length != 0 && args[0].equals("custom-zgc"));
         runTest(DynamicLoaderConstraintsTest::doTest);
     }
 
@@ -150,7 +131,7 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
         for (int i = 1; i <= 3; i++) {
             System.out.println("========================================");
             System.out.println("errorInDump: " + errorInDump + ", useCustomLoader: " + useCustomLoader +
-                               ", useZGC: " + useZGC + ", ZGenerational: " + useZGenerational + ", case: " + i);
+                               ", useZGC: " + useZGC + ", case: " + i);
             System.out.println("========================================");
             String topArchiveName = getNewArchiveName();
             String testCase = Integer.toString(i);
@@ -164,10 +145,9 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
 
             if (useCustomLoader) {
                 if (useZGC) {
-                    String zGenerational = "-XX:" + (useZGenerational ? "+" : "-") + "ZGenerational";
                     // Add options to force eager class unloading.
                     cmdLine = TestCommon.concat(cmdLine, "-cp", loaderJar,
-                                                "-XX:+UseZGC", zGenerational, "-XX:ZCollectionInterval=0.01",
+                                                "-XX:+UseZGC", "-XX:ZCollectionInterval=0.01",
                                                 loaderMainClass, appJar);
                     setBaseArchiveOptions("-XX:+UseZGC", "-Xlog:cds");
                 } else {

@@ -64,10 +64,13 @@ public class DnDRemoveFocusOwnerCrashTest {
     public static Frame frame;
     public static Robot robot;
     public static DragSourceButton dragSourceButton;
+    static volatile Point p;
 
     public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
+            robot.setAutoWaitForIdle(true);
+            robot.delay(FRAME_ACTIVATION_TIMEOUT);
             EventQueue.invokeAndWait(() -> {
                 frame = new Frame();
                 dragSourceButton = new DragSourceButton();
@@ -79,37 +82,33 @@ public class DnDRemoveFocusOwnerCrashTest {
                 frame.add(dropTargetPanel);
                 frame.pack();
                 frame.setVisible(true);
+            });
 
-                try {
-                    robot.delay(FRAME_ACTIVATION_TIMEOUT);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw new RuntimeException("The test failed.");
-                }
+            robot.waitForIdle();
+            robot.delay(FRAME_ACTIVATION_TIMEOUT);
 
-                Point p = dragSourceButton.getLocationOnScreen();
+            EventQueue.invokeAndWait(() -> {
+                p = dragSourceButton.getLocationOnScreen();
                 p.translate(10, 10);
+            });
 
-                try {
-                    Robot robot = new Robot();
-                    robot.mouseMove(p.x, p.y);
-                    robot.keyPress(KeyEvent.VK_CONTROL);
-                    robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                    for (int dy = 0; dy < 50; dy++) {
-                        robot.mouseMove(p.x, p.y + dy);
-                        robot.delay(10);
-                    }
-                    robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-                    robot.keyRelease(KeyEvent.VK_CONTROL);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw new RuntimeException("The test failed.");
+            robot.delay(FRAME_ACTIVATION_TIMEOUT);
+            robot.mouseMove(p.x, p.y);
+            robot.delay(FRAME_ACTIVATION_TIMEOUT);
+            robot.keyPress(KeyEvent.VK_CONTROL);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            for (int dy = 0; dy < 50; dy++) {
+                robot.mouseMove(p.x, p.y + dy);
+                robot.delay(10);
+            }
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.keyRelease(KeyEvent.VK_CONTROL);
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
                 }
             });
-        } finally {
-            if (frame != null) {
-                EventQueue.invokeAndWait(() -> frame.dispose());
-            }
         }
     }
 

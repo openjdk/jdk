@@ -46,7 +46,7 @@ import static jdk.incubator.vector.VectorOperators.*;
 @State(Scope.Benchmark)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 3, jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Fork(value = 3, jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class EqualsIgnoreCaseBenchmark {
     static final VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_PREFERRED;
     private byte[] a;

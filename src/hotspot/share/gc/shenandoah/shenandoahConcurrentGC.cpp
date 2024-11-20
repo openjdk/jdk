@@ -29,13 +29,13 @@
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
@@ -931,7 +931,10 @@ void ShenandoahConcurrentGC::op_updaterefs() {
 
 class ShenandoahUpdateThreadClosure : public HandshakeClosure {
 private:
-  ShenandoahUpdateRefsClosure _cl;
+  // This closure runs when thread is stopped for handshake, which means
+  // we can use non-concurrent closure here, as long as it only updates
+  // locations modified by the thread itself, i.e. stack locations.
+  ShenandoahNonConcUpdateRefsClosure _cl;
 public:
   ShenandoahUpdateThreadClosure();
   void do_thread(Thread* thread);

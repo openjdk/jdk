@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8182270
+ * @bug 8182270 8341176
  * @summary test non-eval Snippet analysis
  * @build KullaTesting TestingInputStream
  * @run testng AnalyzeSnippetTest
@@ -32,8 +32,10 @@
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.List;
+import java.util.stream.Stream;
 import jdk.jshell.Snippet;
 import jdk.jshell.DeclarationSnippet;
+import jdk.jshell.Diag;
 import org.testng.annotations.Test;
 
 import jdk.jshell.JShell;
@@ -52,6 +54,7 @@ import jdk.jshell.StatementSnippet;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
 import static jdk.jshell.Snippet.SubKind.*;
+import jdk.jshell.SourceCodeAnalysis.SnippetWrapper;
 
 @Test
 public class AnalyzeSnippetTest {
@@ -141,6 +144,49 @@ public class AnalyzeSnippetTest {
                 SubKind.UNKNOWN_SUBKIND);
     }
 
+    public void testDiagnosticsForSourceSnippet() {
+        Snippet sn;
+        sn = assertSnippet("unknown()", UNKNOWN_SUBKIND);
+        assertDiagnostics(sn, "0-7:compiler.err.cant.resolve.location.args");
+        sn = assertSnippet("new String(null, )", UNKNOWN_SUBKIND);
+        assertDiagnostics(sn, "17-17:compiler.err.illegal.start.of.expr");
+        sn = assertSnippet("1 + ", UNKNOWN_SUBKIND);
+        assertDiagnostics(sn, "3-3:compiler.err.premature.eof");
+        sn = assertSnippet("class C {", UNKNOWN_SUBKIND);
+        assertDiagnostics(sn, "9-9:compiler.err.premature.eof");
+        sn = assertSnippet("class C {}", CLASS_SUBKIND);
+        assertDiagnostics(sn);
+        sn = assertSnippet("void t() { throw new java.io.IOException(); }", METHOD_SUBKIND);
+        assertDiagnostics(sn, "11-43:compiler.err.unreported.exception.need.to.catch.or.throw");
+        sn = assertSnippet("void t() { unknown(); }", METHOD_SUBKIND);
+        assertDiagnostics(sn, "11-18:compiler.err.cant.resolve.location.args");
+        sn = assertSnippet("import unknown.unknown;", SINGLE_TYPE_IMPORT_SUBKIND);
+        assertDiagnostics(sn, "7-22:compiler.err.doesnt.exist");
+    }
+
+    public void testSnippetWrapper() {
+        SourceCodeAnalysis analysis = state.sourceCodeAnalysis();
+        Snippet sn;
+        String code = "unknown()";
+        sn = assertSnippet(code, UNKNOWN_SUBKIND);
+        SnippetWrapper wrapper = analysis.wrapper(sn);
+        String wrapped = wrapper.wrapped();
+        assertEquals(wrapped, """
+                              package REPL;
+
+                              class $JShell$DOESNOTMATTER {
+                                  public static java.lang.Object do_it$() throws java.lang.Throwable {
+                                      return unknown();
+                                  }
+                              }
+                              """);
+        for (int pos = 0; pos < code.length(); pos++) {
+            int wrappedPos = wrapper.sourceToWrappedPosition(pos);
+            assertEquals(wrapped.charAt(wrappedPos), code.charAt(pos));
+            assertEquals(wrapper.wrappedToSourcePosition(wrappedPos), pos);
+        }
+    }
+
     public void testNoStateChange() {
         assertSnippet("int a = 5;", SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND);
         assertSnippet("a", SubKind.UNKNOWN_SUBKIND);
@@ -158,5 +204,15 @@ public class AnalyzeSnippetTest {
         assertEquals(sn.id(), "*UNASSOCIATED*");
         assertEquals(sn.subKind(), sk);
         return sn;
+    }
+
+    private String diagToString(Diag d) {
+        return d.getStartPosition() + "-" + d.getEndPosition() + ":" + d.getCode();
+    }
+
+    private void assertDiagnostics(Snippet s, String... expectedDiags) {
+        List<String> actual = state.diagnostics(s).map(this::diagToString).toList();
+        List<String> expected = List.of(expectedDiags);
+        assertEquals(actual, expected);
     }
 }

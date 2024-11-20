@@ -74,7 +74,7 @@
 #define   RISCV_HWPROBE_EXT_ZFHMIN              (1 << 28)
 #define   RISCV_HWPROBE_EXT_ZIHINTNTL           (1 << 29)
 #define   RISCV_HWPROBE_EXT_ZVFH                (1 << 30)
-#define   RISCV_HWPROBE_EXT_ZVFHMIN             (1 << 31)
+#define   RISCV_HWPROBE_EXT_ZVFHMIN             (1ULL << 31)
 #define   RISCV_HWPROBE_EXT_ZFA                 (1ULL << 32)
 #define   RISCV_HWPROBE_EXT_ZTSO                (1ULL << 33)
 #define   RISCV_HWPROBE_EXT_ZACAS               (1ULL << 34)
@@ -177,6 +177,9 @@ void RiscvHwprobe::add_features_from_query_result() {
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFH)) {
     VM_Version::ext_Zfh.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFH)) {
+    VM_Version::ext_Zvfh.enable_feature();
   }
   if (is_valid(RISCV_HWPROBE_KEY_CPUPERF_0)) {
     VM_Version::unaligned_access.enable_feature(
