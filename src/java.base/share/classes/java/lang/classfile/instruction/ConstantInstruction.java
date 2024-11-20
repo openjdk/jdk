@@ -89,7 +89,7 @@ public sealed interface ConstantInstruction extends Instruction {
      * </dl>
      *
      * @see Opcode.Kind#CONSTANT
-     * @see ConstantInstruction#ofIntrinsic ConstantInstructioN::ofIntrinsic
+     * @see ConstantInstruction#ofIntrinsic ConstantInstruction::ofIntrinsic
      * @since 24
      */
     sealed interface IntrinsicConstantInstruction extends ConstantInstruction
