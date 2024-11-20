@@ -341,7 +341,7 @@ public final class Executor extends CommandArguments<Executor> {
 
     private List<String> prefixCommandLineArgs() {
         if (winEnglishOutput) {
-            return List.of("cmd.exe", "/c", "chcp", "65001", ">nul", "2>&1", "&&");
+            return List.of("cmd.exe", "/c", "chcp", "437", ">nul", "2>&1", "&&");
         } else {
             return List.of();
         }
