@@ -133,20 +133,21 @@ class FileSystemPreferences extends AbstractPreferences {
         userLockFile = new File (userRootDir,".user.lock." + USER_NAME);
         userRootModFile = new File (userRootDir,
                                        ".userRootModFile." + USER_NAME);
-        if (!userRootModFile.exists())
-        try {
-            // create if does not exist.
-            userRootModFile.createNewFile();
-            // Only user can read/write userRootModFile.
-            int result = chmod(userRootModFile.getCanonicalPath(),
-                                                       USER_READ_WRITE);
-            if (result !=0)
-                getLogger().warning("Problem creating userRoot " +
-                    "mod file. Chmod failed on " +
-                     userRootModFile.getCanonicalPath() +
-                     " Unix error code " + result);
-        } catch (IOException e) {
-            getLogger().warning(e.toString());
+        if (!userRootModFile.exists()) {
+            try {
+                // create if does not exist.
+                userRootModFile.createNewFile();
+                // Only user can read/write userRootModFile.
+                int result = chmod(userRootModFile.getCanonicalPath(),
+                        USER_READ_WRITE);
+                if (result != 0)
+                    getLogger().warning("Problem creating userRoot " +
+                            "mod file. Chmod failed on " +
+                            userRootModFile.getCanonicalPath() +
+                            " Unix error code " + result);
+            } catch (IOException e) {
+                getLogger().warning(e.toString());
+            }
         }
         userRootModTime = userRootModFile.lastModified();
     }
