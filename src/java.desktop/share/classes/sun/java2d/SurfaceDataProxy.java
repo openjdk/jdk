@@ -38,9 +38,6 @@ import sun.java2d.loops.Blit;
 import sun.java2d.loops.BlitBg;
 import sun.awt.image.SurfaceManager;
 
-import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
-
 /**
  * The proxy class encapsulates the logic for managing alternate
  * SurfaceData representations of a primary SurfaceData.
@@ -70,18 +67,14 @@ public abstract class SurfaceDataProxy
 
     static {
         cachingAllowed = true;
-        @SuppressWarnings("removal")
-        String manimg = AccessController.doPrivileged(
-            new GetPropertyAction("sun.java2d.managedimages"));
+        String manimg = System.getProperty("sun.java2d.managedimages");
         if ("false".equals(manimg)) {
             cachingAllowed = false;
             System.out.println("Disabling managed images");
         }
 
         defaultThreshold = 1;
-        @SuppressWarnings("removal")
-        String num = AccessController.doPrivileged(
-            new GetPropertyAction("sun.java2d.accthreshold"));
+        String num = System.getProperty("sun.java2d.accthreshold");
         if (num != null) {
             try {
                 int parsed = Integer.parseInt(num);

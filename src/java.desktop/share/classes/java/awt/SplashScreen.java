@@ -121,7 +121,7 @@ public final class SplashScreen {
      * @return the {@link SplashScreen} instance, or {@code null} if there is
      *         none or it has already been closed
      */
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     public static  SplashScreen getSplashScreen() {
         synchronized (SplashScreen.class) {
             if (GraphicsEnvironment.isHeadless()) {
