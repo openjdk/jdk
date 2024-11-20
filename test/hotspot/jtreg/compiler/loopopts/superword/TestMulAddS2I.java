@@ -179,7 +179,7 @@ public class TestMulAddS2I {
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
             out[i+1] += ((sArr1[2*i+2] * sArr2[2*i+2]) + (sArr1[2*i+3] * sArr2[2*i+3]));
             // Hand-unrolling can mess with AlignVector and UseCompactObjectHeaders.
-            // We need all addresses 8-aligned.
+            // We need all addresses 8-byte aligned.
             //
             // out:
             //   adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 8*iter
@@ -206,7 +206,7 @@ public class TestMulAddS2I {
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
             out[i+1] += ((sArr2[2*i+2] * sArr1[2*i+2]) + (sArr1[2*i+3] * sArr2[2*i+3])); // swap(1 2)
             // Hand-unrolling can mess with AlignVector and UseCompactObjectHeaders.
-            // We need all addresses 8-aligned.
+            // We need all addresses 8-byte aligned.
             //
             // out:
             //   adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 8*iter
@@ -233,7 +233,7 @@ public class TestMulAddS2I {
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
             out[i+1] += ((sArr2[2*i+2] * sArr1[2*i+2]) + (sArr2[2*i+3] * sArr1[2*i+3])); // swap(1 2), swap(3 4)
             // Hand-unrolling can mess with AlignVector and UseCompactObjectHeaders.
-            // We need all addresses 8-aligned.
+            // We need all addresses 8-byte aligned.
             //
             // out:
             //   adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 8*iter
@@ -260,7 +260,7 @@ public class TestMulAddS2I {
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
             out[i+1] += ((sArr1[2*i+3] * sArr2[2*i+3]) + (sArr1[2*i+2] * sArr2[2*i+2])); // swap(1 3), swap(2 4)
             // Hand-unrolling can mess with AlignVector and UseCompactObjectHeaders.
-            // We need all addresses 8-aligned.
+            // We need all addresses 8-byte aligned.
             //
             // out:
             //   adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 8*iter
@@ -287,7 +287,7 @@ public class TestMulAddS2I {
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
             out[i+1] += ((sArr2[2*i+3] * sArr1[2*i+3]) + (sArr2[2*i+2] * sArr1[2*i+2])); // swap(1 4), swap(2 3)
             // Hand-unrolling can mess with AlignVector and UseCompactObjectHeaders.
-            // We need all addresses 8-aligned.
+            // We need all addresses 8-byte aligned.
             //
             // out:
             //   adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 8*iter
