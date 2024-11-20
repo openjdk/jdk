@@ -84,9 +84,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * Tags"</a> and <a href="https://tools.ietf.org/html/rfc5646">RFC 5646 "Tags
  * for Identifying Languages"</a> with support for the LDML (UTS#35, "Unicode
  * Locale Data Markup Language") BCP 47-compatible extensions for locale data
- * exchange. Each {@code Locale} is associated with locale data which is retrieved
- * by the installed {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
- * implementations. Depending on the implementation, such data may vary by release.
+ * exchange. Each {@code Locale} is associated with locale data which is provided
+ * by the Java runtime environment or any deployed {@link
+ * java.util.spi.LocaleServiceProvider LocaleServiceProvider} implementations.
+ * The locale data provided by the Java runtime environment may vary by release.
  *
  * <h2 id="loc_comp">Locale Composition</h2>
  * <p> A {@code Locale} is composed of the bolded fields described below; note that a
@@ -95,7 +96,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * In contrast, a {@code Locale} such as the one returned by {@code
  * Locale.forLanguageTag("en-Latn-US-POSIX-u-nu-latn")} would be comprised of all
  * the fields below. This particular {@code Locale} would represent English in
- * the United States using the Latin alphabet and numerics for use in POSIX
+ * the United States using the Latin script and numerics for use in POSIX
  * environments.
  * <p>
  * {@code Locale} implements IETF BCP 47 and any deviations should be observed
@@ -213,7 +214,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * itself. Conversely, {@link #of(String, String, String) Locale::of} and its
  * overloads do not make any syntactic checks on the input.
  *
- * <h3><a id="def_locale_extension">Unicode locale/language extension</a></h3>
+ * <h3><a id="def_locale_extension">Unicode BCP 47 U Extension</a></h3>
  *
  * <p>UTS#35, "Unicode Locale Data Markup Language" defines optional
  * attributes and keywords to override or refine the default behavior
@@ -341,7 +342,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *  <dd>{@link Builder} is used to construct a {@code Locale} object that conforms
  *  to BCP 47 syntax. Use a builder to enforce syntactic restrictions on the input.</dd>
  * </dl>
- * <p>The following are all equivalent:
+ * <p>The following invocations produce Locale objects that are all equivalent:
  * {@snippet lang=java :
  *     Locale.US;
  *     Locale.of("en", "US");
@@ -557,6 +558,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *      RFC 4647: Matching of Language Tags
  * @spec https://www.rfc-editor.org/info/rfc5646
  *      RFC 5646: Tags for Identifying Languages
+ * @spec https://unicode.org/reports/tr35/
+ *      Unicode Locale Data Markup Language
  * @see Builder
  * @see ResourceBundle
  * @see java.text.Format
@@ -1250,10 +1253,10 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * {@return an array of installed locales}
+     * {@return an array of deployed locales}
      *
      * The returned array represents the union of locales supported
-     * by the Java runtime environment and by installed
+     * by the Java runtime environment and by deployed
      * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
      * implementations. At a minimum, the returned array must contain a
      * {@code Locale} instance equal to {@link #ROOT Locale.ROOT} and
@@ -1264,10 +1267,10 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * {@return a stream of installed locales}
+     * {@return a stream of deployed locales}
      *
      * The returned stream represents the union of locales supported
-     * by the Java runtime environment and by installed
+     * by the Java runtime environment and by deployed
      * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
      * implementations. At a minimum, the returned stream must contain a
      * {@code Locale} instance equal to {@link #ROOT Locale.ROOT} and
