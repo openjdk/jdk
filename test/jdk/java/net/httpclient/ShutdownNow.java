@@ -72,6 +72,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.RandomFactory;
+import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -211,7 +212,7 @@ public class ShutdownNow implements HttpServerAdapters {
             }
             CompletableFuture.allOf(responses.toArray(new CompletableFuture<?>[0])).get();
         } finally {
-            if (client.awaitTermination(Duration.ofMillis(2500))) {
+            if (client.awaitTermination(Duration.ofMillis(Utils.adjustTimeout(1000)))) {
                 out.println("Client terminated within expected delay");
                 assertTrue(client.isTerminated());
             } else {
@@ -277,7 +278,7 @@ public class ShutdownNow implements HttpServerAdapters {
                 }).thenCompose((c) -> c).get();
             }
        } finally {
-            if (client.awaitTermination(Duration.ofMillis(2500))) {
+            if (client.awaitTermination(Duration.ofMillis(Utils.adjustTimeout(1000)))) {
                 out.println("Client terminated within expected delay");
                 assertTrue(client.isTerminated());
             } else {
