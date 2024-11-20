@@ -81,8 +81,12 @@ public class PStack extends Tool {
             out.println("can't print deadlock information: " + exp);
          }
 
-         VMLocksPrinter vmLocksPrinter = new VMLocksPrinter(out);
-         vmLocksPrinter.printVMLocks();
+         try {
+             VMLocksPrinter vmLocksPrinter = new VMLocksPrinter(out);
+             vmLocksPrinter.printVMLocks();
+         } catch (Exception e) {
+             out.println("can't print VM locks information: " + e);
+         }
 
          List<ThreadProxy> l = cdbg.getThreadList();
          if (l.isEmpty() && PlatformInfo.getOS().equals("darwin")) {

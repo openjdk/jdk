@@ -47,14 +47,14 @@ public class VMLocksPrinter {
     }
 
     private String ownerThreadName(Address addr) {
-        for (int i = 0; i < threads.getNumberOfThreads(); i++) {
-            JavaThread thread = threads.getJavaThreadAt(i);
-            if (thread.getAddress().equals(addr)) {
-                return thread.getThreadName();
-            }
+        try {
+            JavaThread thread = VM.getVM().getThreads().createJavaThreadWrapper(addr);
+            return thread.getThreadName();
+        } catch (Exception e) {
+            return "Unknown thread";
         }
-        return "Unknown thread";
     }
+
     public void printVMLocks() {
          int maxNum = Mutex.maxNum();
          for (int i = 0; i < maxNum; i++) {
