@@ -23,30 +23,49 @@
 
 package jdk.jpackage.internal;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
+import java.util.stream.Stream;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 
 public class EnquoterTest {
 
-    @Test
-    public void testForShellLiterals() {
-        var enquoter = Enquoter.forShellLiterals();
-
-        assertEquals(null, "''", enquoter.applyTo(""));
-        assertEquals(null, "'foo'", enquoter.applyTo("foo"));
-        assertEquals(null, "' foo '", enquoter.applyTo(" foo "));
-        assertEquals(null, "'foo bar'", enquoter.applyTo("foo bar"));
-        assertEquals(null, "'foo\\' bar'", enquoter.applyTo("foo' bar"));
+    @ParameterizedTest
+    @MethodSource("shellLiteralsData")
+    public void testForShellLiterals(String expected, String input) {
+        var actual = Enquoter.forShellLiterals().applyTo(input);
+        assertEquals(expected, actual);
     }
 
-    @Test
-    public void testForPropertyValues() {
-        var enquoter = Enquoter.forPropertyValues();
+    @ParameterizedTest
+    @MethodSource("propertyValuesData")
+    public void testForPropertyValues(String expected, String input) {
+        var actual = Enquoter.forPropertyValues().applyTo(input);
+        assertEquals(expected, actual);
+    }
 
-        assertEquals(null, "", enquoter.applyTo(""));
-        assertEquals(null, "foo", enquoter.applyTo("foo"));
-        assertEquals(null, "\" foo \"", enquoter.applyTo(" foo "));
-        assertEquals(null, "\"foo bar\"", enquoter.applyTo("foo bar"));
-        assertEquals(null, "\"foo' bar\"", enquoter.applyTo("foo' bar"));
+    private static Stream<org.junit.jupiter.params.provider.Arguments> shellLiteralsData() {
+        return Stream.of(
+                makeArguments("''", ""),
+                makeArguments("'foo'", "foo"),
+                makeArguments("' foo '", " foo "),
+                makeArguments("'foo bar'", "foo bar"),
+                makeArguments("'foo\\' bar'", "foo' bar")
+        );
+    }
+
+    private static Stream<org.junit.jupiter.params.provider.Arguments> propertyValuesData() {
+        return Stream.of(
+                makeArguments("", ""),
+                makeArguments("foo", "foo"),
+                makeArguments("\" foo \"", " foo "),
+                makeArguments("\"foo bar\"", "foo bar"),
+                makeArguments("\"foo' bar\"", "foo' bar")
+        );
+    }
+
+    static org.junit.jupiter.params.provider.Arguments makeArguments(Object ... args) {
+        return org.junit.jupiter.params.provider.Arguments.of(args);
     }
 }

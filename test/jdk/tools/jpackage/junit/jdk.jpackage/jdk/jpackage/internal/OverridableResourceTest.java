@@ -37,23 +37,22 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertThat;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
 
 public class OverridableResourceTest {
 
-    @Rule
-    public final TemporaryFolder tempFolder = new TemporaryFolder();
-
     @Test
-    public void testDefault() throws IOException {
-        byte[] actualBytes = saveToFile(new OverridableResource(DEFAULT_NAME));
+    public void testDefault(@TempDir Path tempFolder) throws IOException {
+        byte[] actualBytes = saveToFile(tempFolder, new OverridableResource(DEFAULT_NAME));
 
         try (InputStream is = ResourceLocator.class.getResourceAsStream(
                 DEFAULT_NAME)) {
@@ -62,11 +61,10 @@ public class OverridableResourceTest {
     }
 
     @Test
-    public void testDefaultWithSubstitution() throws IOException {
+    public void testDefaultWithSubstitution(@TempDir Path tempFolder) throws IOException {
         OverridableResource resource = new OverridableResource(DEFAULT_NAME);
 
-        List<String> linesBeforeSubstitution = convertToStringList(saveToFile(
-                resource));
+        List<String> linesBeforeSubstitution = convertToStringList(saveToFile(tempFolder, resource));
 
         if (SUBSTITUTION_DATA.size() != 1) {
             // Test setup issue
@@ -75,8 +73,7 @@ public class OverridableResourceTest {
         }
 
         resource.setSubstitutionData(SUBSTITUTION_DATA);
-        List<String> linesAfterSubstitution = convertToStringList(saveToFile(
-                resource));
+        List<String> linesAfterSubstitution = convertToStringList(saveToFile(tempFolder, resource));
 
         assertEquals(linesBeforeSubstitution.size(), linesAfterSubstitution.size());
 
@@ -103,23 +100,15 @@ public class OverridableResourceTest {
         assertTrue(linesMismatch);
     }
 
-    @Test
-    public void testCustom() throws IOException {
-        testCustom(DEFAULT_NAME);
-    }
-
-    @Test
-    public void testCustomNoDefault() throws IOException {
-        testCustom(null);
-    }
-
-    private void testCustom(String defaultName) throws IOException {
+    @ParameterizedTest
+    @EnumSource(ResourceName.class)
+    public void testCustom(@TempDir Path tempFolder, ResourceName defaultName) throws IOException {
         List<String> expectedResourceData = List.of("A", "B", "C");
 
-        Path customFile = createCustomFile("foo", expectedResourceData);
+        Path customFile = createCustomFile(tempFolder, "foo", expectedResourceData);
 
-        List<String> actualResourceData = convertToStringList(saveToFile(
-                new OverridableResource(defaultName)
+        List<String> actualResourceData = convertToStringList(saveToFile(tempFolder,
+                new OverridableResource(defaultName.value)
                         .setPublicName(customFile.getFileName())
                         .setResourceDir(customFile.getParent())));
 
@@ -127,30 +116,22 @@ public class OverridableResourceTest {
                 actualResourceData.toArray(String[]::new));
     }
 
-    @Test
-    public void testCustomtWithSubstitution() throws IOException {
-        testCustomtWithSubstitution(DEFAULT_NAME);
-    }
-
-    @Test
-    public void testCustomtWithSubstitutionNoDefault() throws IOException {
-        testCustomtWithSubstitution(null);
-    }
-
-    private void testCustomtWithSubstitution(String defaultName) throws IOException {
+    @ParameterizedTest
+    @EnumSource(ResourceName.class)
+    public void testCustomtWithSubstitution(@TempDir Path tempFolder, ResourceName defaultName) throws IOException {
         final List<String> resourceData = List.of("A", "[BB]", "C", "Foo", "Foo",
                 "GoodbyeHello", "_B");
-        final Path customFile = createCustomFile("foo", resourceData);
+        final Path customFile = createCustomFile(tempFolder, "foo", resourceData);
 
-        final Map<String, String> substitutionData = new HashMap(Map.of("B",
+        final Map<String, String> substitutionData = new HashMap<>(Map.of("B",
                 "Bar", "Foo", "B", "_B", "JJ"));
         substitutionData.put("Hello", null);
 
         final List<String> expectedResourceData = List.of("A", "[BarBar]", "C",
                 "Bar", "Bar", "Goodbye", "JJ");
 
-        final List<String> actualResourceData = convertToStringList(saveToFile(
-                new OverridableResource(defaultName)
+        final List<String> actualResourceData = convertToStringList(saveToFile(tempFolder,
+                new OverridableResource(defaultName.value)
                         .setPublicName(customFile.getFileName())
                         .setSubstitutionData(substitutionData)
                         .setResourceDir(customFile.getParent())));
@@ -158,8 +139,8 @@ public class OverridableResourceTest {
                 actualResourceData.toArray(String[]::new));
 
         // Don't call setPublicName()
-        final Path dstFile = tempFolder.newFolder().toPath().resolve(customFile.getFileName());
-        new OverridableResource(defaultName)
+        final Path dstFile = tempFolder.resolve(customFile.getFileName());
+        new OverridableResource(defaultName.value)
                 .setSubstitutionData(substitutionData)
                 .setResourceDir(customFile.getParent())
                 .saveToFile(dstFile);
@@ -168,8 +149,8 @@ public class OverridableResourceTest {
                         String[]::new));
 
         // Verify setSubstitutionData() stores a copy of passed in data
-        Map<String, String> substitutionData2 = new HashMap(substitutionData);
-        var resource = new OverridableResource(defaultName)
+        Map<String, String> substitutionData2 = new HashMap<>(substitutionData);
+        var resource = new OverridableResource(defaultName.value)
                 .setResourceDir(customFile.getParent());
 
         resource.setSubstitutionData(substitutionData2);
@@ -182,13 +163,23 @@ public class OverridableResourceTest {
     }
 
     @Test
-    public void testNoDefault() throws IOException {
-        Path dstFolder = tempFolder.newFolder().toPath();
-        Path dstFile = dstFolder.resolve(Path.of("foo", "bar"));
+    public void testNoDefault(@TempDir Path tempFolder) throws IOException {
+        Path dstFile = tempFolder.resolve(Path.of("foo", "bar"));
 
         new OverridableResource(null).saveToFile(dstFile);
 
         assertFalse(dstFile.toFile().exists());
+    }
+
+    enum ResourceName {
+        DEFAULT_NAME(OverridableResourceTest.DEFAULT_NAME),
+        NULL_NAME(null);
+
+        ResourceName(String value) {
+            this.value = value;
+        }
+
+        private final String value;
     }
 
     private final static String DEFAULT_NAME;
@@ -208,18 +199,17 @@ public class OverridableResourceTest {
         }
     }
 
-    private byte[] saveToFile(OverridableResource resource) throws IOException {
-        Path dstFile = tempFolder.newFile().toPath();
+    private byte[] saveToFile(Path tempFolder, OverridableResource resource) throws IOException {
+        Path dstFile = Files.createTempFile(tempFolder, null, null);
         resource.saveToFile(dstFile);
         assertThat(0, is(not(dstFile.toFile().length())));
 
         return Files.readAllBytes(dstFile);
     }
 
-    private Path createCustomFile(String publicName, List<String> data) throws
+    private Path createCustomFile(Path tempFolder, String publicName, List<String> data) throws
             IOException {
-        Path resourceFolder = tempFolder.newFolder().toPath();
-        Path customFile = resourceFolder.resolve(publicName);
+        Path customFile = tempFolder.resolve(publicName);
 
         Files.write(customFile, data);
 

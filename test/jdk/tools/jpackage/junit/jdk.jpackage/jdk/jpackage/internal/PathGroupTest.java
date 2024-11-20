@@ -36,25 +36,22 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertThat;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
 
 
 public class PathGroupTest {
 
-    @Rule
-    public final TemporaryFolder tempFolder = new TemporaryFolder();
-
-    @Test(expected = NullPointerException.class)
     public void testNullId() {
-         new PathGroup(Map.of()).getPath(null);
+        assertThrowsExactly(NullPointerException.class, () -> new PathGroup(Map.of()).getPath(null));
     }
 
     @Test
@@ -139,29 +136,14 @@ public class PathGroupTest {
         assertEquals(aPath, pg2.roots().get(0));
     }
 
-    @Test
-    public void testTransform() throws IOException {
-        for (var transform : TransformType.values()) {
-            testTransform(false, transform);
-        }
-    }
-
-    @Test
-    public void testTransformWithExcludes() throws IOException {
-        for (var transform : TransformType.values()) {
-            testTransform(true, transform);
-        }
-    }
-
     enum TransformType { Copy, Move, Handler };
 
-    private void testTransform(boolean withExcludes, TransformType transform)
-            throws IOException {
+    @ParameterizedTest
+    public void testTransform(boolean withExcludes, TransformType transform,
+            @TempDir Path srcDir, @TempDir Path dstDir) throws IOException {
+
         final PathGroup pg = new PathGroup(Map.of(0, PATH_FOO, 1, PATH_BAR, 2,
                 PATH_EMPTY, 3, PATH_BAZ));
-
-        final Path srcDir = tempFolder.newFolder().toPath();
-        final Path dstDir = tempFolder.newFolder().toPath();
 
         Files.createDirectories(srcDir.resolve(PATH_FOO).resolve("a/b/c/d"));
         Files.createFile(srcDir.resolve(PATH_FOO).resolve("a/b/c/file1"));
@@ -265,8 +247,7 @@ public class PathGroupTest {
 
     private static Path[] walkFiles(Path root) throws IOException {
         try (var files = Files.walk(root)) {
-            return files.map(root::relativize).sorted().collect(
-                    Collectors.toList()).toArray(Path[]::new);
+            return files.map(root::relativize).sorted().toArray(Path[]::new);
         }
     }
 

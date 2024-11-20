@@ -29,26 +29,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.lang.reflect.Method;
-import static org.junit.Assert.assertEquals;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class PlatformVersionTest {
 
-    public PlatformVersionTest(Function<String, DottedVersion> parser,
-            String version, boolean valid) {
-        this.parser = parser;
-        this.version = version;
-        this.valid = valid;
-    }
-
-    @Parameters
-    public static List<Object[]> data() {
+    private static Stream<org.junit.jupiter.params.provider.Arguments> data() {
         List<Object[]> data = new ArrayList<>();
         addTo(data, WIN_MSI_PRODUCT_VERSION_PARSER, true,
             "0.0",
@@ -79,7 +67,7 @@ public class PlatformVersionTest {
             "1.2.3.4"
         );
 
-        return data;
+        return data.stream().map(org.junit.jupiter.params.provider.Arguments::of);
     }
 
     private static void addTo(List<Object[]> data,
@@ -91,22 +79,15 @@ public class PlatformVersionTest {
         }
     }
 
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
-
-    @Test
-    public void testIt() {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testIt(Function<String, DottedVersion> parser, String version, boolean valid) {
         if (valid) {
             assertEquals(parser.apply(version).toString(), version);
         } else {
-            exceptionRule.expect(IllegalArgumentException.class);
-            parser.apply(version);
+            assertThrowsExactly(IllegalArgumentException.class, () -> parser.apply(version));
         }
     }
-
-    private final Function<String, DottedVersion> parser;
-    private final String version;
-    private final boolean valid;
 
     private final static Function<String, DottedVersion> MAC_CFBUNDLE_VERSION_PARSER = findParser(
             "jdk.jpackage.internal.CFBundleVersion");
