@@ -97,7 +97,7 @@ public class PatchedJDKModuleJlinkTest extends AbstractLinkableRuntimeTest {
         if (analyzer.getExitValue() == 0) {
             throw new AssertionError("Expected jlink to fail due to patched module!");
         }
-        analyzer.stdoutShouldContain("The current runtime includes module patches.");
+        analyzer.stdoutShouldContain("The current runtime has been patched with --patch-module.");
         analyzer.stdoutShouldContain("--patch-module is not supported");
         // Verify the error message is reasonable
         analyzer.stdoutShouldNotContain("jdk.tools.jlink.internal.RunImageLinkException");

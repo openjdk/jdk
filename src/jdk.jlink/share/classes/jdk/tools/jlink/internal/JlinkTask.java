@@ -621,8 +621,9 @@ public class JlinkTask {
                 throw new IllegalArgumentException(msg);
             }
             // Do not permit linking from run-time image when the current image
-            // is being patched
-            if (jdk.internal.misc.VM.getSavedProperties().get("jdk.module.patch.0") != null) {
+            // is being patched. In that case, the 'jdk.patched' property will be
+            // set to 'true'.
+            if (Boolean.getBoolean("jdk.patched")) {
                 String msg = taskHelper.getMessage("err.runtime.link.patched.module");
                 throw new IllegalArgumentException(msg);
             }
