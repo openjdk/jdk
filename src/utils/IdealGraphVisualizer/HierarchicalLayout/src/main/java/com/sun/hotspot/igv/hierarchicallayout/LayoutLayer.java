@@ -86,9 +86,7 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         for (LayoutNode layoutNode : this) {
             if (!layoutNode.isDummy()) {
                 // Center the node by setting equal top and bottom margins
-                int offset = Math.max(layoutNode.getTopMargin(), layoutNode.getBottomMargin());
-                layoutNode.setTopMargin(offset);
-                layoutNode.setBottomMargin(offset);
+                layoutNode.centerNode();
             }
             maxLayerHeight = Math.max(maxLayerHeight, layoutNode.getOuterHeight());
         }

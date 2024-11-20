@@ -44,10 +44,6 @@ public class LayoutNode {
     public static final Comparator<LayoutNode> NODE_POS_COMPARATOR = Comparator.comparingInt(LayoutNode::getPos);
     public static final Comparator<LayoutNode> NODE_X_COMPARATOR = Comparator.comparingInt(LayoutNode::getX);
     public static final Comparator<LayoutNode> DUMMY_NODES_FIRST = Comparator.comparing(LayoutNode::isDummy).reversed();
-    public static final Comparator<LayoutNode> DUMMY_NODES_LAST = Comparator.comparing(LayoutNode::isDummy);
-    public static final Comparator<LayoutNode> NODE_PROCESSING_DOWN_COMPARATOR = DUMMY_NODES_FIRST.thenComparingInt(LayoutNode::getInDegree);
-    public static final Comparator<LayoutNode> NODE_PROCESSING_UP_COMPARATOR = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOutDegree);
-    public static final Comparator<LayoutNode> DUMMY_NODES_THEN_OPTIMAL_X = DUMMY_NODES_FIRST.thenComparing(LayoutNode::getOptimalX);
     public static final Comparator<LayoutNode> NODES_OPTIMAL_X = Comparator.comparingInt(LayoutNode::getOptimalX);
     public static final Comparator<LayoutNode> NODES_OPTIMAL_DIFFERENCE = Comparator.comparingInt(LayoutNode::getOptimalDifference).reversed();
 
@@ -108,10 +104,10 @@ public class LayoutNode {
             height = size.height;
             width = size.width;
         }
-        setTopMargin(0);
-        setBottomMargin(0);
-        setLeftMargin(0);
-        setRightMargin(0);
+        topMargin = 0;
+        bottomMargin = 0;
+        leftMargin = 0;
+        rightMargin = 0;
     }
 
     public int getPriority() {
@@ -256,23 +252,6 @@ public class LayoutNode {
         BOTH
     }
 
-    public int getPredecessorMedian() {
-        if (hasPredecessors()) {
-            int size = getInDegree();
-            int[] values = new int[size];
-            for (int j = 0; j < getInDegree(); j++) {
-                values[j] = getPredecessorEdge(j).getFromX() - getPredecessorEdge(j).getRelativeToX();
-            }
-            Arrays.sort(values);
-            if (values.length % 2 == 0) {
-                return (values[size / 2 - 1] + values[size / 2]) / 2;
-            } else {
-                return values[size / 2];
-            }
-        } else {
-            return getX();
-        }
-    }
     /**
      * Computes the barycenter (average x-coordinate) of this node based on its neighboring nodes.
      * The calculation can include predecessors, successors, or both, depending on the specified
@@ -455,18 +434,6 @@ public class LayoutNode {
         return width;
     }
 
-    public void setWidth(int width) {
-        this.width = width;
-    }
-
-    public int getHeight() {
-        return height;
-    }
-
-    public void setHeight(int height) {
-        this.height = height;
-    }
-
     public int getLayer() {
         return layer;
     }
@@ -475,27 +442,15 @@ public class LayoutNode {
         this.layer = layer;
     }
 
-    public int getLeftMargin() {
-        return leftMargin;
+    /**
+     * Centers the node by setting equal top and bottom margins.
+     * The larger of the two margins is applied to both.
+     */
+    public void centerNode() {
+        int offset = Math.max(topMargin, bottomMargin);
+        topMargin = offset;
+        bottomMargin = offset;
     }
-
-    public void setLeftMargin(int leftMargin) {
-        this.leftMargin = leftMargin;
-    }
-
-    public int getTopMargin() {
-        return topMargin;
-    }
-
-    public void setTopMargin(int topMargin) {
-        this.topMargin = topMargin;
-    }
-
-    public int getRightMargin() {
-        return rightMargin;
-    }
-
-
 
     public List<Integer> getAdjacentX(NeighborType neighborType) {
         List<Integer> adjacentX = new ArrayList<>();
@@ -512,28 +467,8 @@ public class LayoutNode {
         return adjacentX;
     }
 
-    public void setRightMargin(int rightMargin) {
-        this.rightMargin = rightMargin;
-    }
-
-    public int getBottomMargin() {
-        return bottomMargin;
-    }
-
-    public void setBottomMargin(int bottomMargin) {
-        this.bottomMargin = bottomMargin;
-    }
-
     public Vertex getVertex() {
         return vertex;
-    }
-
-    public LayoutEdge getPredecessorEdge(int i) {
-        return preds.get(i);
-    }
-
-    public LayoutEdge getSuccessorEdge(int i) {
-        return succs.get(i);
     }
 
     public boolean hasPredecessors() {
@@ -569,7 +504,6 @@ public class LayoutNode {
     }
 
 
-
     /**
      * Determines if the node has neighbors of the specified type.
      *
@@ -588,12 +522,12 @@ public class LayoutNode {
         }
     }
 
-    public HashMap<Link, List<Point>> getReversedLinkStartPoints() {
-        return reversedLinkStartPoints;
+    public Map<Link, List<Point>> getReversedLinkStartPoints() {
+        return Collections.unmodifiableMap(reversedLinkStartPoints);
     }
 
-    public HashMap<Link, List<Point>> getReversedLinkEndPoints() {
-        return reversedLinkEndPoints;
+    public Map<Link, List<Point>> getReversedLinkEndPoints() {
+        return Collections.unmodifiableMap(reversedLinkEndPoints);
     }
 
     public int getPos() {
@@ -623,6 +557,7 @@ public class LayoutNode {
      * Adjusts the node's margins and records the necessary points for edge routing.
      */
     private boolean computeReversedEdgeStartPoints() {
+        reversedLinkStartPoints.clear();
         TreeMap<Integer, ArrayList<LayoutEdge>> sortedDownMap = new TreeMap<>(Collections.reverseOrder());
         for (LayoutEdge succEdge : getSuccessors()) {
             if (succEdge.isReversed()) {
@@ -633,7 +568,7 @@ public class LayoutNode {
         }
 
         int offset = NODE_OFFSET + LayoutNode.DUMMY_WIDTH;
-        int currentX = getWidth();
+        int currentX = width;
         int startY = 0;
         int currentY = 0;
         for (Map.Entry<Integer, ArrayList<LayoutEdge>> entry : sortedDownMap.entrySet()) {
@@ -642,7 +577,7 @@ public class LayoutNode {
 
             currentX += offset;
             currentY -= offset;
-            setTopMargin(getTopMargin() + offset);
+            topMargin += offset;
 
             ArrayList<Point> startPoints = new ArrayList<>();
             startPoints.add(new Point(currentX, currentY));
@@ -650,11 +585,10 @@ public class LayoutNode {
             startPoints.add(new Point(startX, startY));
             for (LayoutEdge revEdge : reversedSuccs) {
                 revEdge.setRelativeFromX(currentX);
-                getReversedLinkStartPoints().put(revEdge.getLink(), startPoints);
+                reversedLinkStartPoints.put(revEdge.getLink(), startPoints);
             }
         }
-        setLeftMargin(getLeftMargin());
-        setRightMargin(getRightMargin() + (sortedDownMap.size() * offset));
+        rightMargin += sortedDownMap.size() * offset;
         return !sortedDownMap.isEmpty();
     }
 
@@ -663,6 +597,7 @@ public class LayoutNode {
      * Adjusts the node's margins and records the necessary points for edge routing.
      */
     private void computeReversedEdgeEndPoints(boolean reverseLeft) {
+        reversedLinkEndPoints.clear();
         TreeMap<Integer, ArrayList<LayoutEdge>> sortedUpMap = reverseLeft ? new TreeMap<>() : new TreeMap<>(Collections.reverseOrder());
         for (LayoutEdge predEdge : getPredecessors()) {
             if (predEdge.isReversed()) {
@@ -675,15 +610,15 @@ public class LayoutNode {
         int offset = NODE_OFFSET + LayoutNode.DUMMY_WIDTH;
         int offsetX = reverseLeft ? -offset : offset;
         int currentX = reverseLeft ? 0 : getWidth();
-        int startY = getHeight();
-        int currentY = getHeight();
+        int startY = height;
+        int currentY = height;
         for (Map.Entry<Integer, ArrayList<LayoutEdge>> entry : sortedUpMap.entrySet()) {
             int startX = entry.getKey();
             ArrayList<LayoutEdge> reversedPreds = entry.getValue();
 
             currentX += offsetX;
             currentY += offset;
-            setBottomMargin(getBottomMargin() + offset);
+            bottomMargin += offset;
 
             ArrayList<Point> endPoints = new ArrayList<>();
             endPoints.add(new Point(currentX, currentY));
@@ -691,12 +626,14 @@ public class LayoutNode {
             endPoints.add(new Point(startX, startY));
             for (LayoutEdge revEdge : reversedPreds) {
                 revEdge.setRelativeToX(currentX);
-                getReversedLinkEndPoints().put(revEdge.getLink(), endPoints);
+                reversedLinkEndPoints.put(revEdge.getLink(), endPoints);
             }
         }
-        setLeftMargin(getLeftMargin() + (reverseLeft ? sortedUpMap.size() * offset : 0));
-        setRightMargin(getRightMargin() + (reverseLeft ? 0 : sortedUpMap.size() * offset));
-
+        if (reverseLeft) {
+            leftMargin += sortedUpMap.size() * offset;
+        } else {
+            rightMargin += sortedUpMap.size() * offset;
+        }
     }
 
     /**
@@ -705,9 +642,6 @@ public class LayoutNode {
      */
     public void computeReversedLinkPoints() {
         initSize();
-        getReversedLinkStartPoints().clear();
-        getReversedLinkEndPoints().clear();
-
         boolean hasReversedDown = computeReversedEdgeStartPoints();
         computeReversedEdgeEndPoints(hasReversedDown);
     }
