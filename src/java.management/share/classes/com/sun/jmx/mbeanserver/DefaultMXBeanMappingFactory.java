@@ -74,7 +74,6 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 import sun.reflect.misc.MethodUtil;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  *   <p>A converter between Java types and the limited set of classes
@@ -301,7 +300,6 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
 
     private static <T extends Enum<T>> MXBeanMapping
             makeEnumMapping(Class<?> enumClass, Class<T> fake) {
-        ReflectUtil.checkPackageAccess(enumClass);
         return new EnumMapping<>(Util.<Class<T>>cast(enumClass));
     }
 
@@ -426,7 +424,6 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             (c.getName().equals("com.sun.management.GcInfo") &&
                 c.getClassLoader() == null);
 
-        ReflectUtil.checkPackageAccess(c);
         final List<Method> methods =
                 MBeanAnalyzer.eliminateCovariantMethods(Arrays.asList(c.getMethods()));
         final SortedMap<String,Method> getterMap = newSortedMap();
@@ -1119,7 +1116,6 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             Object o;
             try {
                 final Class<?> targetClass = getTargetClass();
-                ReflectUtil.checkPackageAccess(targetClass);
                 @SuppressWarnings("deprecation")
                 Object tmp = targetClass.newInstance();
                 o = tmp;
@@ -1375,7 +1371,6 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             }
 
             try {
-                ReflectUtil.checkPackageAccess(max.constructor.getDeclaringClass());
                 return max.constructor.newInstance(params);
             } catch (Exception e) {
                 final String msg =

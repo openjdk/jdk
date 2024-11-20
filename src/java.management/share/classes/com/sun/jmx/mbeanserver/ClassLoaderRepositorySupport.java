@@ -36,7 +36,6 @@ import java.lang.System.Logger.Level;
 
 import javax.management.ObjectName;
 import javax.management.loading.PrivateClassLoader;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * This class keeps the list of Class Loaders registered in the MBean Server.
@@ -190,7 +189,6 @@ final class ClassLoaderRepositorySupport
                                final ClassLoader without,
                                final ClassLoader stop)
             throws ClassNotFoundException {
-        ReflectUtil.checkPackageAccess(className);
         final int size = list.length;
         for(int i=0; i<size; i++) {
             try {
