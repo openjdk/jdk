@@ -67,9 +67,6 @@ public class GetLine {
         }
         try {
             l = AudioSystem.getLine(infos[0]);
-        } catch(SecurityException lue) {
-            log.println("SecurityException");
-            return STATUS_PASSED;
         } catch (LineUnavailableException e1) {
             log.println("LUE");
             return STATUS_PASSED;
