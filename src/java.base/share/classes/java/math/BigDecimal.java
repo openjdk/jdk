@@ -2137,150 +2137,149 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  9
      */
     public BigDecimal sqrt(MathContext mc) {
-        int signum = signum();
-        if (signum == 1) {
-            /*
-             * The main steps of the algorithm below are as follows,
-             * first argument reduce the value to an integer
-             * using the following relations:
-             *
-             * x = y * 10 ^ exp
-             * sqrt(x) = sqrt(y) * 10^(exp / 2) if exp is even
-             * sqrt(x) = sqrt(y*10) * 10^((exp-1)/2) is exp is odd
-             *
-             * Then use BigInteger.sqrt() on the reduced value to compute
-             * the numerical digits of the desired result.
-             *
-             * Finally, scale back to the desired exponent range and
-             * perform any adjustment to get the preferred scale in the
-             * representation.
-             */
-
-            // The code below favors relative simplicity over checking
-            // for special cases that could run faster.
-            final int preferredScale = this.scale/2;
-
-            BigDecimal result;
-            if (mc.roundingMode == RoundingMode.UNNECESSARY || mc.precision == 0) { // Exact result requested
-                // To avoid trailing zeros in the result, strip trailing zeros.
-                final BigDecimal stripped = this.stripTrailingZeros();
-                final int strippedScale = stripped.scale;
-
-                if ((strippedScale & 1) != 0) // 10*stripped.unscaledValue() can't be an exact square
-                    throw new ArithmeticException("Computed square root not exact.");
-
-                // Check for even powers of 10. Numerically sqrt(10^2N) = 10^N
-                if (stripped.isPowerOfTen()) {
-                    result = valueOf(1L, strippedScale >> 1);
-                    // Adjust to requested precision and preferred
-                    // scale as appropriate.
-                    return result.adjustToPreferredScale(preferredScale, mc.precision);
-                }
-
-                // After stripTrailingZeros, the representation is normalized as
-                //
-                // unscaledValue * 10^(-scale)
-                //
-                // where unscaledValue is an integer with the minimum
-                // precision for the cohort of the numerical value and the scale is even.
-                BigInteger[] sqrtRem = stripped.unscaledValue().sqrtAndRemainder();
-                result = new BigDecimal(sqrtRem[0], strippedScale >> 1);
-
-                // If result*result != this numerically or requires too high precision,
-                // the square root isn't exact
-                if (sqrtRem[1].signum != 0 || mc.precision != 0 && result.precision() > mc.precision)
-                    throw new ArithmeticException("Computed square root not exact.");
-
-                // Test numerical properties at full precision before any
-                // scale adjustments.
+        final int signum = signum();
+        if (signum != 1) {
+            switch (signum) {
+            case -1 -> throw new ArithmeticException("Attempted square root of negative BigDecimal");
+            case 0 -> {
+                BigDecimal result = valueOf(0L, scale/2);
                 assert squareRootResultAssertions(result, mc);
+                return result;
+            }
+            default -> throw new AssertionError("Bad value from signum");
+            }
+        }
+        /*
+         * The main steps of the algorithm below are as follows,
+         * first argument reduce the value to an integer
+         * using the following relations:
+         *
+         * x = y * 10 ^ exp
+         * sqrt(x) = sqrt(y) * 10^(exp / 2) if exp is even
+         * sqrt(x) = sqrt(y*10) * 10^((exp-1)/2) is exp is odd
+         *
+         * Then use BigInteger.sqrt() on the reduced value to compute
+         * the numerical digits of the desired result.
+         *
+         * Finally, scale back to the desired exponent range and
+         * perform any adjustment to get the preferred scale in the
+         * representation.
+         */
+
+        // The code below favors relative simplicity over checking
+        // for special cases that could run faster.
+        final int preferredScale = this.scale/2;
+
+        BigDecimal result;
+        if (mc.roundingMode == RoundingMode.UNNECESSARY || mc.precision == 0) { // Exact result requested
+            // To avoid trailing zeros in the result, strip trailing zeros.
+            final BigDecimal stripped = this.stripTrailingZeros();
+            final int strippedScale = stripped.scale;
+
+            if ((strippedScale & 1) != 0) // 10*stripped.unscaledValue() can't be an exact square
+                throw new ArithmeticException("Computed square root not exact.");
+
+            // Check for even powers of 10. Numerically sqrt(10^2N) = 10^N
+            if (stripped.isPowerOfTen()) {
+                result = valueOf(1L, strippedScale >> 1);
                 // Adjust to requested precision and preferred
                 // scale as appropriate.
                 return result.adjustToPreferredScale(preferredScale, mc.precision);
             }
-            // To allow BigInteger.sqrt() to be used to get the square
-            // root, it is necessary to normalize the input so that
-            // its integer part is sufficient to get the square root
-            // with the desired precision.
 
-            final boolean halfWay = isHalfWay(mc.roundingMode);
-            // To obtain a square root with N digits,
-            // the radicand must have at least 2*(N-1)+1 == 2*N-1 digits.
-            final long minWorkingPrec = ((mc.precision + (halfWay ? 1L : 0L)) << 1) - 1L;
-            // normScale is the number of digits to take from the fraction of the input
-            long normScale = minWorkingPrec - this.precision() + this.scale;
-            normScale += normScale & 1L; // the scale for normalizing must be even
+            // After stripTrailingZeros, the representation is normalized as
+            //
+            // unscaledValue * 10^(-scale)
+            //
+            // where unscaledValue is an integer with the minimum
+            // precision for the cohort of the numerical value and the scale is even.
+            BigInteger[] sqrtRem = stripped.unscaledValue().sqrtAndRemainder();
+            result = new BigDecimal(sqrtRem[0], strippedScale >> 1);
 
-            final long workingScale = this.scale - normScale;
-            if (workingScale != (int) workingScale)
-                throw new ArithmeticException("Overflow");
+            // If result*result != this numerically or requires too high precision,
+            // the square root isn't exact
+            if (sqrtRem[1].signum != 0 || mc.precision != 0 && result.precision() > mc.precision)
+                throw new ArithmeticException("Computed square root not exact.");
 
-            BigDecimal working = new BigDecimal(this.intVal, this.intCompact, (int) workingScale, this.precision);
-            BigInteger workingInt = working.toBigInteger();
-
-            BigInteger sqrt;
-            long resultScale = normScale >> 1;
-            // Round sqrt with the specified settings
-            if (halfWay) { // half-way rounding
-                BigInteger workingSqrt = workingInt.sqrt();
-                // remove the one-tenth digit
-                BigInteger[] quotRem10 = workingSqrt.divideAndRemainder(BigInteger.TEN);
-                sqrt = quotRem10[0];
-                resultScale--;
-
-                boolean increment = false;
-                int digit = quotRem10[1].intValue();
-                if (digit > 5) {
-                    increment = true;
-                } else if (digit == 5) {
-                    if (mc.roundingMode == RoundingMode.HALF_UP
-                            || mc.roundingMode == RoundingMode.HALF_EVEN && sqrt.testBit(0)
-                            // Check if remainder is non-zero
-                            || !workingInt.equals(workingSqrt.multiply(workingSqrt))
-                            || working.compareTo(new BigDecimal(workingInt)) != 0) {
-                        increment = true;
-                    }
-                }
-
-                if (increment)
-                    sqrt = sqrt.add(1L);
-            } else {
-                switch (mc.roundingMode) {
-                case DOWN, FLOOR -> sqrt = workingInt.sqrt(); // No need to round
-
-                case UP, CEILING -> {
-                    BigInteger[] sqrtRem = workingInt.sqrtAndRemainder();
-                    sqrt = sqrtRem[0];
-                    // Check if remainder is non-zero
-                    if (sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0)
-                        sqrt = sqrt.add(1L);
-                }
-
-                default -> throw new AssertionError("Unexpected value for RoundingMode: " + mc.roundingMode);
-                }
-            }
-
-            result = new BigDecimal(sqrt, checkScale(sqrt, resultScale), mc); // mc ensures no increase of precision
             // Test numerical properties at full precision before any
             // scale adjustments.
             assert squareRootResultAssertions(result, mc);
             // Adjust to requested precision and preferred
             // scale as appropriate.
-            if (result.scale > preferredScale) // else can't increase the result's precision to fit the preferred scale
-                result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
+            return result.adjustToPreferredScale(preferredScale, mc.precision);
+        }
+        // To allow BigInteger.sqrt() to be used to get the square
+        // root, it is necessary to normalize the input so that
+        // its integer part is sufficient to get the square root
+        // with the desired precision.
 
-            return result;
+        final boolean halfWay = isHalfWay(mc.roundingMode);
+        // To obtain a square root with N digits,
+        // the radicand must have at least 2*(N-1)+1 == 2*N-1 digits.
+        final long minWorkingPrec = ((mc.precision + (halfWay ? 1L : 0L)) << 1) - 1L;
+        // normScale is the number of digits to take from the fraction of the input
+        long normScale = minWorkingPrec - this.precision() + this.scale;
+        normScale += normScale & 1L; // the scale for normalizing must be even
+
+        final long workingScale = this.scale - normScale;
+        if (workingScale != (int) workingScale)
+            throw new ArithmeticException("Overflow");
+
+        BigDecimal working = new BigDecimal(this.intVal, this.intCompact, (int) workingScale, this.precision);
+        BigInteger workingInt = working.toBigInteger();
+
+        BigInteger sqrt;
+        long resultScale = normScale >> 1;
+        // Round sqrt with the specified settings
+        if (halfWay) { // half-way rounding
+            BigInteger workingSqrt = workingInt.sqrt();
+            // remove the one-tenth digit
+            BigInteger[] quotRem10 = workingSqrt.divideAndRemainder(BigInteger.TEN);
+            sqrt = quotRem10[0];
+            resultScale--;
+
+            boolean increment = false;
+            int digit = quotRem10[1].intValue();
+            if (digit > 5) {
+                increment = true;
+            } else if (digit == 5) {
+                if (mc.roundingMode == RoundingMode.HALF_UP
+                        || mc.roundingMode == RoundingMode.HALF_EVEN && sqrt.testBit(0)
+                        // Check if remainder is non-zero
+                        || !workingInt.equals(workingSqrt.multiply(workingSqrt))
+                        || working.compareTo(new BigDecimal(workingInt)) != 0) {
+                    increment = true;
+                }
+            }
+
+            if (increment)
+                sqrt = sqrt.add(1L);
+        } else {
+            switch (mc.roundingMode) {
+            case DOWN, FLOOR -> sqrt = workingInt.sqrt(); // No need to round
+
+            case UP, CEILING -> {
+                BigInteger[] sqrtRem = workingInt.sqrtAndRemainder();
+                sqrt = sqrtRem[0];
+                // Check if remainder is non-zero
+                if (sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0)
+                    sqrt = sqrt.add(1L);
+            }
+
+            default -> throw new AssertionError("Unexpected value for RoundingMode: " + mc.roundingMode);
+            }
         }
 
-        switch (signum) {
-        case -1 -> throw new ArithmeticException("Attempted square root of negative BigDecimal");
-        case 0 -> {
-            BigDecimal result = valueOf(0L, scale/2);
-            assert squareRootResultAssertions(result, mc);
-            return result;
-        }
-        default -> throw new AssertionError("Bad value from signum");
-        }
+        result = new BigDecimal(sqrt, checkScale(sqrt, resultScale), mc); // mc ensures no increase of precision
+        // Test numerical properties at full precision before any
+        // scale adjustments.
+        assert squareRootResultAssertions(result, mc);
+        // Adjust to requested precision and preferred
+        // scale as appropriate.
+        if (result.scale > preferredScale) // else can't increase the result's precision to fit the preferred scale
+            result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
+
+        return result;
     }
 
     /**
