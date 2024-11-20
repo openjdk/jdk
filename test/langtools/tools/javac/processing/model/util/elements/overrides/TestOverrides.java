@@ -26,7 +26,7 @@
  * @bug 8174840
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestOverrides
- * @compile -processor TestOverrides -proc:only S.java T1.java T2.java T3.java
+ * @compile -processor TestOverrides -proc:only S.java
  */
 
 import java.util.Set;

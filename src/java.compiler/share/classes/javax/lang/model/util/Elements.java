@@ -780,13 +780,9 @@ public interface Elements {
      *
      * @apiNote The notion of overriding, by itself, does not involve the
      * method's return type, listed exceptions, or, to some extent, access
-     * modifiers. These are additional requirements checked by the compiler
-     * (see {@jls 8.4.8.3}).
-     *
-     * If the source being reflected upon has not been sufficiently compiled
-     * &mdash; such as when processing annotations &mdash; the additional
-     * requirements might not be checked, potentially causing this method
-     * to return a false positive.
+     * modifiers. These are additional requirements checked by the compiler;
+     * see JLS {@jls 8.4.8.3} for details. An implementation may choose not
+     * to check the additional requirements under some conditions.
      *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden

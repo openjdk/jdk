@@ -21,7 +21,22 @@
  * questions.
  */
 
-public class S {
+class S {
 
     public void m() { }
+}
+
+class T1 extends S {
+
+    protected void m() { }
+}
+
+class T2 extends S {
+
+    public int m() { return 0; }
+}
+
+class T3 extends S {
+
+    public void m() throws Exception { }
 }
