@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahUncommitThread.hpp"
@@ -37,6 +36,9 @@ ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
     _uncommit_lock(Mutex::safepoint - 2, "ShenandoahUncommitCancel_lock", true) {
   set_name("Shenandoah Uncommit Thread");
   create_and_start();
+
+  // Allow uncommits. This is managed by the control thread during a GC.
+  _uncommit_allowed.set();
 }
 
 void ShenandoahUncommitThread::run_service() {
@@ -124,13 +126,12 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
   assert(ShenandoahUncommit, "should be enabled");
   assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
 
-  EventMark em("Concurrent uncommit");
-  double start = os::elapsedTime();
-
   if (!is_uncommit_allowed()) {
     return;
   }
 
+  EventMark em("Concurrent uncommit");
+  double start = os::elapsedTime();
   _uncommit_in_progress.set();
 
   // Application allocates from the beginning of the heap, and GC allocates at
