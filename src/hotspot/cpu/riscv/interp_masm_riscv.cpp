@@ -443,7 +443,6 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   if (VerifyActivationFrameSize) {
     Label L;
     sub(t1, fp, esp);
-    // Exclude 2 frame metadata words
     int min_frame_size =
       (frame::link_offset - frame::interpreter_frame_initial_sp_offset + frame::metadata_words) * wordSize;
     sub(t1, t1, min_frame_size);
