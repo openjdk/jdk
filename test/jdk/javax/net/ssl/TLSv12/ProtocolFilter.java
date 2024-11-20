@@ -159,6 +159,7 @@ public class ProtocolFilter {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        // Re-enable TLS_RSA_* since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         String keyFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores +

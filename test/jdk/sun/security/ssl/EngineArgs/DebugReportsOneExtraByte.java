@@ -100,7 +100,7 @@ public class DebugReportsOneExtraByte extends SSLEngineTemplate {
 
             System.out.println("Test Passed.");
         } else {
-            // Re-enable TLSv1 since test depends on it
+            // Re-enable TLSv1 and TLS_RSA_* since test depends on it
             SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLS_RSA_*");
 
             DebugReportsOneExtraByte test = new DebugReportsOneExtraByte();

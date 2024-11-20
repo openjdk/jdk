@@ -82,6 +82,7 @@ public final class FipsModeTLS12 extends SecmodTest {
     private static PublicKey publicKey;
 
     public static void main(String[] args) throws Exception {
+        // Re-enable TLS_RSA_* since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
 
         try {

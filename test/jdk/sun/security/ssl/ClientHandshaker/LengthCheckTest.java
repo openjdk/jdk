@@ -270,7 +270,7 @@ public class LengthCheckTest extends SSLEngineTemplate {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
-        // Re-enable TLSv1 since test depends on it.
+        // Re-enable TLSv1 and TLS_RSA_* since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLS_RSA_*");
 
         List<LengthCheckTest> ccsTests = new ArrayList<>();

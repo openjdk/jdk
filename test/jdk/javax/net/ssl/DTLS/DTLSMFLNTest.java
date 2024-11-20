@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,12 @@
  *      -Dtest.mode=krb DTLSMFLNTest
  */
 
-import jdk.test.lib.security.SecurityUtils;
-
 /**
  * Testing DTLS engines handshake using each of the supported cipher suites with
  * different maximum fragment length. Testing of MFLN extension.
  */
 public class DTLSMFLNTest {
     public static void main(String[] args) {
-        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         MFLNTest.main(args);
     }
 }

@@ -172,7 +172,7 @@ public class GenericBlockCipher {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
-        // Re-enable TLSv1.1 since test depends on it.
+        // Re-enable TLSv1.1 and TLS_RSA_* since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1", "TLS_RSA_*");
 
         String keyFilename =

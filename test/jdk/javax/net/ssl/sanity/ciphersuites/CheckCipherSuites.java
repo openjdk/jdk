@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4750141 4895631 8217579 8163326 8279164
+ * @bug 4750141 4895631 8217579 8163326 8279164 8245545
  * @summary Check enabled and supported ciphersuites are correct
  * @run main/othervm CheckCipherSuites default
  * @run main/othervm CheckCipherSuites limited
