@@ -71,6 +71,7 @@ public class ExternalTerminal extends LineDisciplineTerminal {
         this(provider, name, type, masterInput, masterOutput, encoding, signalHandler, paused, null, null);
     }
 
+    @SuppressWarnings("this-escape")
     public ExternalTerminal(
             TerminalProvider provider,
             String name,

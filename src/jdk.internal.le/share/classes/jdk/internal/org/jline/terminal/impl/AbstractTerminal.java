@@ -52,6 +52,7 @@ public abstract class AbstractTerminal implements TerminalExt {
         this(name, type, null, SignalHandler.SIG_DFL);
     }
 
+    @SuppressWarnings("this-escape")
     public AbstractTerminal(String name, String type, Charset encoding, SignalHandler signalHandler)
             throws IOException {
         this.name = name;

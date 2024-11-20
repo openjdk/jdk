@@ -89,6 +89,7 @@ public abstract class AbstractWindowsTerminal<Console> extends AbstractTerminal 
     private volatile boolean closing;
     protected boolean skipNextLf;
 
+    @SuppressWarnings("this-escape")
     public AbstractWindowsTerminal(
             TerminalProvider provider,
             SystemStream systemStream,

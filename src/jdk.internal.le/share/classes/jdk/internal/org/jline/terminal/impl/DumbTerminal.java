@@ -46,6 +46,7 @@ public class DumbTerminal extends AbstractTerminal {
         this(null, null, name, type, in, out, encoding, SignalHandler.SIG_DFL, inputStreamWrapper);
     }
 
+    @SuppressWarnings("this-escape")
     public DumbTerminal(
             TerminalProvider provider,
             SystemStream systemStream,

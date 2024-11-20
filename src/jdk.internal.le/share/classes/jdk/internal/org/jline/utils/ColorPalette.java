@@ -42,6 +42,7 @@ public class ColorPalette {
         this(terminal, null);
     }
 
+    @SuppressWarnings("this-escape")
     public ColorPalette(Terminal terminal, String distance) throws IOException {
         this.terminal = terminal;
         this.distanceName = distance;
