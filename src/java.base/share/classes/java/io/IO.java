@@ -64,6 +64,21 @@ public final class IO {
     }
 
     /**
+     * Terminates the current line on the system console and then flushes
+     * that console.
+     *
+     * <p> The effect is as if {@link Console#println() println()}
+     * had been called on {@code System.console()}.
+     *
+     * @throws IOError if {@code System.console()} returns {@code null},
+     *                 or if an I/O error occurs
+     * @since 24
+     */
+    public static void println() {
+        con().println();
+    }
+
+    /**
      * Writes a string representation of the specified object to the system
      * console and then flushes that console.
      *
@@ -97,6 +112,24 @@ public final class IO {
      */
     public static String readln(String prompt) {
         return con().readln(prompt);
+    }
+
+    /**
+     * Reads a single line of text from the system console.
+     *
+     * <p> The effect is as if {@link Console#readln() readln()}
+     * had been called on {@code System.console()}.
+     *
+     * @return a string containing the line read from the system console, not
+     * including any line-termination characters. Returns {@code null} if an
+     * end of stream has been reached without having read any characters.
+     *
+     * @throws IOError if {@code System.console()} returns {@code null},
+     *                 or if an I/O error occurs
+     * @since 24
+     */
+    public static String readln() {
+        return con().readln();
     }
 
     private static Console con() {

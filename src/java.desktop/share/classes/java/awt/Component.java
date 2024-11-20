@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -627,14 +627,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
             initIDs();
         }
 
-        @SuppressWarnings("removal")
-        String s = java.security.AccessController.doPrivileged(
-                                                               new GetPropertyAction("awt.image.incrementaldraw"));
+        String s = System.getProperty("awt.image.incrementaldraw");
         isInc = (s == null || s.equals("true"));
 
-        @SuppressWarnings("removal")
-        String s2 = java.security.AccessController.doPrivileged(
-                                                        new GetPropertyAction("awt.image.redrawrate"));
+        String s2 = System.getProperty("awt.image.redrawrate");
         incRate = (s2 != null) ? Integer.parseInt(s2) : 100;
     }
 
@@ -1431,15 +1427,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             throw new HeadlessException();
         }
 
-        @SuppressWarnings("removal")
-        PointerInfo pi = java.security.AccessController.doPrivileged(
-                                                                     new java.security.PrivilegedAction<PointerInfo>() {
-                                                                         public PointerInfo run() {
-                                                                             return MouseInfo.getPointerInfo();
-                                                                         }
-                                                                     }
-                                                                     );
-
+        PointerInfo pi = MouseInfo.getPointerInfo();
         synchronized (getTreeLock()) {
             Component inTheSameWindow = findUnderMouseInWindow(pi);
             if (!isSameOrAncestorOf(inTheSameWindow, true)) {
@@ -6253,14 +6241,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
              }
 
              // Need to check non-bootstraps.
-             @SuppressWarnings("removal")
-             Boolean enabled = java.security.AccessController.doPrivileged(
-                 new java.security.PrivilegedAction<Boolean>() {
-                     public Boolean run() {
-                         return isCoalesceEventsOverriden(clazz);
-                     }
-                 }
-                 );
+             Boolean enabled = isCoalesceEventsOverriden(clazz);
              coalesceMap.put(clazz, enabled);
              return enabled;
          }
@@ -7434,7 +7415,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
     final Set<AWTKeyStroke> getFocusTraversalKeys_NoIDCheck(int id) {
         // Okay to return Set directly because it is an unmodifiable view
-        @SuppressWarnings("unchecked")
         Set<AWTKeyStroke> keystrokes = (focusTraversalKeys != null)
             ? focusTraversalKeys[id]
             : null;
@@ -8381,7 +8361,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see       #add(PopupMenu)
      * @since     1.1
      */
-    @SuppressWarnings("unchecked")
     public void remove(MenuComponent popup) {
         synchronized (getTreeLock()) {
             if (popups == null) {

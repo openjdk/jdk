@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,7 +296,6 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * Performs Cancel when Esc key is pressed.
      */
     private void handleEscKey(JButton btnCancel) {
-        @SuppressWarnings("serial") // anonymous class
         Action cancelKeyAction = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 dispose(CANCEL);
