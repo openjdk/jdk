@@ -494,15 +494,15 @@ public class Socket implements java.io.Closeable {
         this.impl = impl;
         this.state = SOCKET_CREATED;
 
-        if (localAddr != null) {
-            try {
-                    bind(localAddr);
-            } catch (Throwable throwable) {
-                closeSuppressingExceptions(throwable);
-                throw throwable;
+        try {
+            if (localAddr != null) {
+                bind(localAddr);
             }
+            connect(address);
+        } catch (Throwable throwable) {
+            closeSuppressingExceptions(throwable);
+            throw throwable;
         }
-        connect(address);   // `connect()` closes the socket if it throws
     }
 
     /**

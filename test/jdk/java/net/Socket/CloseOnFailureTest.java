@@ -148,7 +148,10 @@ class CloseOnFailureTest {
     }
 
     static List<TestCase> ctor_should_close_on_failures() {
-        return List.of(TestCase.ForBindFailure.ofIOException());
+        return List.of(
+                TestCase.ForBindFailure.ofIOException(),
+                TestCase.ForConnectFailure.ofIOException(),
+                TestCase.ForConnectFailure.ofIllegalArgumentException(1));
     }
 
     @Test
@@ -192,7 +195,7 @@ class CloseOnFailureTest {
     static List<TestCase> connect_should_close_on_failures() {
         return List.of(
                 TestCase.ForConnectFailure.ofIOException(),
-                TestCase.ForConnectFailure.ofIllegalArgumentException());
+                TestCase.ForConnectFailure.ofIllegalArgumentException(0));
     }
 
     private record TestCase(
@@ -240,7 +243,7 @@ class CloseOnFailureTest {
                         _ -> {});
             }
 
-            private static TestCase ofIllegalArgumentException() {
+            private static TestCase ofIllegalArgumentException(int expectedCloseInvocationCount) {
                 Exception connectError = new IllegalArgumentException(ERROR_MESSAGE);
                 MockSocketImpl socketImpl = new MockSocketImpl(null, connectError);
                 String description = String.format(
@@ -251,7 +254,7 @@ class CloseOnFailureTest {
                         description,
                         socketImpl,
                         caughtError -> assertSame(connectError, caughtError),
-                        () -> assertEquals(0, socketImpl.closeInvocationCounter.get()),
+                        () -> assertEquals(expectedCloseInvocationCount, socketImpl.closeInvocationCounter.get()),
                         _ -> {
                         });
             }
