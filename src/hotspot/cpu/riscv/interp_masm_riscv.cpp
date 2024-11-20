@@ -444,7 +444,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     Label L;
     sub(t1, fp, esp);
     int min_frame_size = (frame::link_offset - frame::interpreter_frame_initial_sp_offset) * wordSize;
-    add(t1, t1, -min_frame_size);
+    sub(t1, t1, min_frame_size);
     bgez(t1, L);
     stop("broken stack frame");
     bind(L);
