@@ -264,7 +264,6 @@ void ShenandoahControlThread::run_service() {
       sleep = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
       last_sleep_adjust_time = current;
     }
-
     os::naked_short_sleep(sleep);
   }
 

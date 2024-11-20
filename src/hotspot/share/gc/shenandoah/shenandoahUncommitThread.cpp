@@ -130,8 +130,12 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
     return;
   }
 
-  EventMark em("Concurrent uncommit");
+  const char* msg = "Concurrent uncommit";
+  EventMark em("%s", msg);
   double start = os::elapsedTime();
+  size_t committed_start = _heap->committed();
+  log_info(gc, start)("%s", msg);
+
   _uncommit_in_progress.set();
 
   // Application allocates from the beginning of the heap, and GC allocates at
@@ -168,9 +172,13 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
 
   if (count > 0) {
     _heap->notify_heap_changed();
-    double elapsed = os::elapsedTime() - start;
-    log_info(gc)("Uncommitted " SIZE_FORMAT " regions, in %.3fs", count, elapsed);
   }
+
+  size_t committed_end = _heap->committed();
+  double elapsed = os::elapsedTime() - start;
+  log_info(gc)("%s " PROPERFMT "->" PROPERFMT "(" PROPERFMT ") %.3fms",
+               msg, PROPERFMTARGS(committed_start), PROPERFMTARGS(committed_end), PROPERFMTARGS(_heap->capacity()),
+               elapsed * MILLIUNITS);
 }
 
 void ShenandoahUncommitThread::stop_service() {
