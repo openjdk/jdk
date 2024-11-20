@@ -44,6 +44,7 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
 
     @Override
     public void setCutEdges(boolean enable) {
+        System.out.println("HierarchicalClusterLayoutManager: " + enable);
         subManager.setCutEdges(enable);
         manager.setCutEdges(enable);
     }
@@ -88,21 +89,6 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
             clusterNodes.put(c, cn);
             clusterNodeSet.add(cn);
             z++;
-        }
-
-        // Add cluster edges
-        for (Cluster c : clusters) {
-
-            ClusterNode start = clusterNodes.get(c);
-
-            for (Cluster succ : c.getSuccessors()) {
-                ClusterNode end = clusterNodes.get(succ);
-                if (end != null && start != end) {
-                    ClusterEdge e = new ClusterEdge(start, end);
-                    clusterEdges.add(e);
-                    interClusterEdges.add(e);
-                }
-            }
         }
 
         for (Vertex v : graph.getVertices()) {
