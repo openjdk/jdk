@@ -466,12 +466,6 @@ public class RegistryContext implements Context, Referenceable {
                         ? ((RemoteReference)r).getReference()
                         : (Object)r;
 
-            /*
-             * Downloading a factory class from a location specified in the reference
-             * is not supported out of the box. A custom "ObjectFactoryBuilder"
-             * may be used if a different policy is desired.
-             */
-
             // Use reference if possible
             Reference ref = null;
             if (obj instanceof Reference) {
@@ -480,6 +474,10 @@ public class RegistryContext implements Context, Referenceable {
                 ref = ((Referenceable)(obj)).getReference();
             }
 
+            /*
+             * Downloading a factory class from a location specified in the reference
+             * can be supported by a custom implementation of "ObjectFactoryBuilder".
+             */
             if (NamingManagerHelper.getObjectFactoryBuilder() == null
                 && ref != null && ref.getFactoryClassLocation() != null) {
                 throw new ConfigurationException(

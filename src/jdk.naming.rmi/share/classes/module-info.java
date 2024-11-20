@@ -58,8 +58,9 @@
  *          implementation.
  *     </li>
  * </ul>
- * <p> Factory class names associated with a {@linkplain javax.naming.Reference#getFactoryClassLocation() factory
- * class location} are not supported out of the box. Unless an {@link javax.naming.spi.ObjectFactoryBuilder
+ * <p> Downloading a factory class from a {@linkplain javax.naming.Reference#getFactoryClassLocation()
+ * location} specified in the reference can be supported by a custom implementation of {@link
+ * javax.naming.spi.ObjectFactoryBuilder}. Unless an {@link javax.naming.spi.ObjectFactoryBuilder
  * ObjectFactoryBuilder} is installed a {@link javax.naming.ConfigurationException} is thrown.
  * @provides javax.naming.spi.InitialContextFactory
  * @moduleGraph

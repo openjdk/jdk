@@ -124,7 +124,7 @@ public class NamingManager {
      *    use the named factory to create the object.
      *    Return {@code refInfo} if the factory cannot be created.
      *    Downloading a factory class from a location specified in the reference
-     *    is not supported out of the box.
+     *    can be supported by a custom implementation of {@link ObjectFactoryBuilder}.
      *    The {@linkplain Reference#getFactoryClassLocation() factory class
      *    location}, if present, is ignored. A custom {@link ObjectFactoryBuilder}
      *    {@linkplain #setObjectFactoryBuilder(ObjectFactoryBuilder) may be used}
