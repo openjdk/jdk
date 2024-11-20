@@ -122,10 +122,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
             removeSelfEdges(graph);
             reverseRootInputs(graph);
             depthFirstSearch(graph);
-
-            for (LayoutNode node : graph.getLayoutNodes()) {
-                node.computeReversedLinkPoints();
-            }
         }
 
         private static void removeSelfEdges(LayoutGraph graph) {
@@ -173,6 +169,9 @@ public class HierarchicalLayoutManager extends LayoutManager {
             fromNode.addPredecessor(edge);
             toNode.removePredecessor(edge);
             toNode.addSuccessor(edge);
+
+            fromNode.computeReversedLinkPoints();
+            toNode.computeReversedLinkPoints();
         }
 
         private static void depthFirstSearch(LayoutGraph graph) {
