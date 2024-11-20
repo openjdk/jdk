@@ -148,6 +148,7 @@
   do_klass(CodeSource_klass,                            java_security_CodeSource                              ) \
   do_klass(ConcurrentHashMap_klass,                     java_util_concurrent_ConcurrentHashMap                ) \
   do_klass(ArrayList_klass,                             java_util_ArrayList                                   ) \
+  do_klass(InputStream_klass,                           java_io_InputStream                                   ) \
                                                                                                                 \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement                           ) \
                                                                                                                 \
