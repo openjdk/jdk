@@ -469,9 +469,8 @@ class MacroAssembler: public Assembler {
     return false;
   }
 
-  address emit_address_stub(int insts_call_instruction_offset, address target);
-  address emit_trampoline_stub(int insts_call_instruction_offset, address target);
-  static int max_reloc_call_stub_size();
+  address emit_reloc_call_address_stub(int insts_call_instruction_offset, address target);
+  static int max_reloc_call_address_stub_size();
 
   void emit_static_call_stub();
   static int static_call_stub_size();
@@ -627,9 +626,6 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
- private:
-  void load_link_jump(const address source, Register temp);
-  void jump_link(const address dest, Register temp);
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
@@ -812,8 +808,11 @@ public:
   void push_CPU_state(bool save_vectors = false, int vector_size_in_bytes = 0);
   void pop_CPU_state(bool restore_vectors = false, int vector_size_in_bytes = 0);
 
-  void push_cont_fastpath(Register java_thread);
-  void pop_cont_fastpath(Register java_thread);
+  void push_cont_fastpath(Register java_thread = xthread);
+  void pop_cont_fastpath(Register java_thread = xthread);
+
+  void inc_held_monitor_count(Register tmp);
+  void dec_held_monitor_count(Register tmp);
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
@@ -1228,92 +1227,50 @@ public:
   void get_polling_page(Register dest, relocInfo::relocType rtype);
   void read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 
-  // RISCV64 OpenJDK uses four different types of calls:
-  //   - direct call: jal pc_relative_offset
-  //     This is the shortest and the fastest, but the offset has the range: +/-1MB.
+  // RISCV64 OpenJDK uses three different types of calls:
   //
   //   - far call: auipc reg, pc_relative_offset; jalr ra, reg, offset
-  //     This is longer than a direct call. The offset has
-  //     the range [-(2G + 2K), 2G - 2K). Addresses out of the range in the code cache
-  //     requires indirect call.
-  //     If a jump is needed rather than a call, a far jump 'jalr x0, reg, offset' can
-  //     be used instead.
+  //     The offset has the range [-(2G + 2K), 2G - 2K). Addresses out of the
+  //     range in the code cache requires indirect call.
+  //     If a jump is needed rather than a call, a far jump 'jalr x0, reg, offset'
+  //     can be used instead.
   //     All instructions are embedded at a call site.
   //
   //   - indirect call: movptr + jalr
-  //     This too can reach anywhere in the address space, but it cannot be
-  //     patched while code is running, so it must only be modified at a safepoint.
-  //     This form of call is most suitable for targets at fixed addresses, which
-  //     will never be patched.
+  //     This can reach anywhere in the address space, but it cannot be patched
+  //     while code is running, so it must only be modified at a safepoint.
+  //     This form of call is most suitable for targets at fixed addresses,
+  //     which will never be patched.
   //
   //   - reloc call:
-  //     This is only available in C1/C2-generated code (nmethod).
+  //     This too can reach anywhere in the address space but is only available
+  //     in C1/C2-generated code (nmethod).
   //
   //     [Main code section]
   //       auipc
   //       ld <address_from_stub_section>
   //       jalr
+  //
   //     [Stub section]
-  //     trampoline:
+  //     address stub:
   //       <64-bit destination address>
   //
   //    To change the destination we simply atomically store the new
   //    address in the stub section.
-  //
-  // - trampoline call (old reloc call / -XX:+UseTrampolines):
-  //     This is only available in C1/C2-generated code (nmethod). It is a combination
-  //     of a direct call, which is used if the destination of a call is in range,
-  //     and a register-indirect call. It has the advantages of reaching anywhere in
-  //     the RISCV address space and being patchable at runtime when the generated
-  //     code is being executed by other threads.
-  //
-  //     [Main code section]
-  //       jal trampoline
-  //     [Stub code section]
-  //     trampoline:
-  //       ld    reg, pc + 8 (auipc + ld)
-  //       jr    reg
-  //       <64-bit destination address>
-  //
-  //     If the destination is in range when the generated code is moved to the code
-  //     cache, 'jal trampoline' is replaced with 'jal destination' and the trampoline
-  //     is not used.
-  //     The optimization does not remove the trampoline from the stub section.
-  //
-  //     This is necessary because the trampoline may well be redirected later when
-  //     code is patched, and the new destination may not be reachable by a simple JAL
-  //     instruction.
-  //
-  // To patch a trampoline call when the JAL can't reach, we first modify
-  // the 64-bit destination address in the trampoline, then modify the
-  // JAL to point to the trampoline, then flush the instruction cache to
-  // broadcast the change to all executing threads. See
-  // NativeCall::set_destination_mt_safe for the details.
-  //
-  // There is a benign race in that the other thread might observe the
-  // modified JAL before it observes the modified 64-bit destination
-  // address. That does not matter because the destination method has been
-  // invalidated, so there will be a trap at its start.
-  // For this to work, the destination address in the trampoline is
-  // always updated, even if we're not using the trampoline.
-  // --
+  //    There is a benign race in that the other thread might observe the old
+  //    64-bit destination address before it observes the new address. That does
+  //    not matter because the destination method has been invalidated, so there
+  //    will be a trap at its start.
 
-  // Emit a direct call if the entry address will always be in range,
-  // otherwise a reloc call.
+  // Emit a reloc call and create a stub to hold the entry point address.
   // Supported entry.rspec():
   // - relocInfo::runtime_call_type
   // - relocInfo::opt_virtual_call_type
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
   //
-  // Return: the call PC or null if CodeCache is full.
-  address reloc_call(Address entry) {
-    return UseTrampolines ? trampoline_call(entry) : load_and_call(entry);
-  }
- private:
-  address trampoline_call(Address entry);
-  address load_and_call(Address entry);
- public:
+  // Return: the call PC or nullptr if CodeCache is full.
+  address reloc_call(Address entry, Register tmp = t1);
 
   address ic_call(address entry, jint method_index = 0);
   static int ic_check_size();
@@ -1635,11 +1592,6 @@ public:
     movptr1_instruction_size = 6 * instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
     movptr2_instruction_size = 5 * instruction_size, // lui, lui, slli, add, addi.  See movptr2().
     load_pc_relative_instruction_size = 2 * instruction_size // auipc, ld
-  };
-
-  enum NativeShortCall {
-    trampoline_size        = 3 * instruction_size + wordSize,
-    trampoline_data_offset = 3 * instruction_size
   };
 
   static bool is_load_pc_relative_at(address branch);

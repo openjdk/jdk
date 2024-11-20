@@ -84,7 +84,7 @@ public class AttributeWriter extends BasicWriter {
                 int i = 0;
                 int j = 0;
                 print("  ");
-                print(attr.attributeName());
+                print(attr.attributeName().stringValue());
                 print(": ");
                 print("length = 0x" + toHex(data.length));
                 print(" (unknown attribute)");

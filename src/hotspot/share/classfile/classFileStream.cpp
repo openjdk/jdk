@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 
-const bool ClassFileStream::verify = true;
-
 void ClassFileStream::truncated_file_error(TRAPS) const {
   THROW_MSG(vmSymbols::java_lang_ClassFormatError(), "Truncated class file");
 }
@@ -37,13 +35,12 @@ void ClassFileStream::truncated_file_error(TRAPS) const {
 ClassFileStream::ClassFileStream(const u1* buffer,
                                  int length,
                                  const char* source,
-                                 bool verify_stream,
                                  bool from_boot_loader_modules_image) :
   _buffer_start(buffer),
   _buffer_end(buffer + length),
   _current(buffer),
   _source(source),
-  _need_verify(verify_stream),
+  _need_verify(true),  // may be reset by ClassFileParser when this stream is parsed.
   _from_boot_loader_modules_image(from_boot_loader_modules_image) {
     assert(buffer != nullptr, "caller should throw NPE");
 }
@@ -72,6 +69,5 @@ const ClassFileStream* ClassFileStream::clone() const {
   return new ClassFileStream(new_buffer_start,
                              length(),
                              clone_source(),
-                             need_verify(),
                              from_boot_loader_modules_image());
 }

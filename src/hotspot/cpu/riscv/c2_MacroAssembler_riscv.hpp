@@ -44,11 +44,15 @@
 
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  void fast_lock(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
+  void fast_lock(Register object, Register box,
+                 Register tmp1, Register tmp2, Register tmp3, Register tmp4);
   void fast_unlock(Register object, Register box, Register tmp1, Register tmp2);
+
   // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
-  void fast_lock_lightweight(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
-  void fast_unlock_lightweight(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
+  void fast_lock_lightweight(Register object, Register box,
+                             Register tmp1, Register tmp2, Register tmp3, Register tmp4);
+  void fast_unlock_lightweight(Register object, Register box,
+                               Register tmp1, Register tmp2, Register tmp3);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,

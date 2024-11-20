@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,25 +92,13 @@ public abstract class FocusManager extends DefaultKeyboardFocusManager {
      * specified, then the current <code>KeyboardFocusManager</code>
      * is replaced with a new instance of
      * <code>DefaultKeyboardFocusManager</code>.
-     * <p>
-     * If a <code>SecurityManager</code> is installed,
-     * the calling thread must be granted the <code>AWTPermission</code>
-     * "replaceKeyboardFocusManager" in order to replace
-     * the current <code>KeyboardFocusManager</code>.
-     * If this permission is not granted,
-     * this method will throw a <code>SecurityException</code>,
-     * and the current <code>KeyboardFocusManager</code> will be unchanged.
      *
      * @param aFocusManager the new <code>KeyboardFocusManager</code>
      *     for this thread's context
      * @see #getCurrentManager
      * @see java.awt.DefaultKeyboardFocusManager
-     * @throws SecurityException if the calling thread does not have permission
-     *         to replace the current <code>KeyboardFocusManager</code>
      */
-    public static void setCurrentManager(FocusManager aFocusManager)
-        throws SecurityException
-    {
+    public static void setCurrentManager(FocusManager aFocusManager) {
         // Note: This method is not backward-compatible with 1.3 and earlier
         // releases. It now throws a SecurityException in an applet, whereas
         // in previous releases, it did not. This issue was discussed at

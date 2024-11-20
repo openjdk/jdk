@@ -154,8 +154,6 @@ void CompressedKlassPointers::calc_lowest_highest_narrow_klass_id() {
 // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
 // archived heap objects.
 void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t len, address requested_base, int requested_shift) {
-  address const end = addr + len;
-
   if (len > max_klass_range_size()) {
     stringStream ss;
     ss.print("Class space size and CDS archive size combined (%zu) "
