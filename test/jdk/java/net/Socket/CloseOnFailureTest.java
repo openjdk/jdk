@@ -23,6 +23,7 @@
 
 import jdk.test.lib.Utils;
 import org.junit.function.ThrowingRunnable;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -32,15 +33,18 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketImplFactory;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -144,11 +148,20 @@ class CloseOnFailureTest {
     }
 
     static List<TestCase> ctor_should_close_on_failures() {
-        return List.of(
-                TestCase.ForBindFailure.ofIOException(),
-                TestCase.ForConnectFailure.ofIOException(),
-                TestCase.ForConnectFailure.ofIllegalArgumentException(1),
-                TestCase.ForConnectFailure.ofSecurityException(1));
+        return List.of(TestCase.ForBindFailure.ofIOException());
+    }
+
+    @Test
+    void connect_should_close_on_unresolved_address() throws IOException {
+        MockSocketImpl socketImpl = new MockSocketImpl(null, null);
+        try (Socket socket = new Socket(socketImpl) {}) {
+            InetSocketAddress address = InetSocketAddress.createUnresolved("no.such.host", 0xBEEF);
+            assertTrue(address.isUnresolved());
+            assertThrows(
+                    UnknownHostException.class,
+                    () -> socket.connect(address, 10_000),
+                    () -> address.getHostName() + " is unresolved");
+        }
     }
 
     @ParameterizedTest
@@ -179,8 +192,7 @@ class CloseOnFailureTest {
     static List<TestCase> connect_should_close_on_failures() {
         return List.of(
                 TestCase.ForConnectFailure.ofIOException(),
-                TestCase.ForConnectFailure.ofIllegalArgumentException(0),
-                TestCase.ForConnectFailure.ofSecurityException(0));
+                TestCase.ForConnectFailure.ofIllegalArgumentException());
     }
 
     private record TestCase(
@@ -228,7 +240,7 @@ class CloseOnFailureTest {
                         _ -> {});
             }
 
-            private static TestCase ofIllegalArgumentException(int expectedCloseInvocationCount) {
+            private static TestCase ofIllegalArgumentException() {
                 Exception connectError = new IllegalArgumentException(ERROR_MESSAGE);
                 MockSocketImpl socketImpl = new MockSocketImpl(null, connectError);
                 String description = String.format(
@@ -239,28 +251,9 @@ class CloseOnFailureTest {
                         description,
                         socketImpl,
                         caughtError -> assertSame(connectError, caughtError),
-                        () -> assertEquals(
-                                expectedCloseInvocationCount,
-                                socketImpl.closeInvocationCounter.get()),
+                        () -> assertEquals(0, socketImpl.closeInvocationCounter.get()),
                         _ -> {
                         });
-            }
-
-            private static TestCase ofSecurityException(int expectedCloseInvocationCount) {
-                Exception connectError = new SecurityException(ERROR_MESSAGE);
-                MockSocketImpl socketImpl = new MockSocketImpl(null, connectError);
-                String description = String.format(
-                        "%s.%s",
-                        ForConnectFailure.class.getSimpleName(),
-                        connectError.getClass().getSimpleName());
-                return new TestCase(
-                        description,
-                        socketImpl,
-                        caughtError -> assertSame(connectError, caughtError),
-                        () -> assertEquals(
-                                expectedCloseInvocationCount,
-                                socketImpl.closeInvocationCounter.get()),
-                        _ -> {});
             }
 
         }
