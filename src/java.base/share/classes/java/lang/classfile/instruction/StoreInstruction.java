@@ -52,9 +52,10 @@ import jdk.internal.classfile.impl.Util;
  * where {@code TypeKind} is {@linkplain TypeKind##computational-type
  * computational}, and {@code slot} is within {@code [0, 65535]}.
  * <p>
- * {@code astore} series of instructions can operate on the {@code returnAddress}
- * type from {@linkplain DiscontinuedInstruction.JsrInstruction jump subroutine
- * instructions}.
+ * {@code astore} series of instructions, or {@code reference} type store
+ * instructions, can also operate on the {@link TypeKind##returnAddress
+ * returnAddress} type from discontinued {@linkplain
+ * DiscontinuedInstruction.JsrInstruction jump subroutine instructions}.
  *
  * @see Opcode.Kind#STORE
  * @see CodeBuilder#storeLocal CodeBuilder::storeLocal

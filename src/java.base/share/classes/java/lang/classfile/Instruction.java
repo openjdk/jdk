@@ -34,10 +34,9 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * Models an executable instruction in the {@code code} array of the {@link
  * CodeAttribute Code} attribute of a method.
  * <p>
- * Physically, instructions are discriminated unions identified by thier {@link
- * #opcode() opcode()}.  The exact type of the instruction can be identified
- * from {@link Opcode#kind() Opcode::kind}.  {@link #sizeInBytes() sizeInBytes()}
- * indicates the exact size of such a discriminated union.
+ * The {@link #opcode() opcode} identifies the operation of an instruction.
+ * Each {@linkplain Opcode#kind() kind} of opcode has its own modeling interface
+ * for instructions.
  *
  * @sealedGraph
  * @since 24
@@ -54,7 +53,7 @@ public sealed interface Instruction extends CodeElement
                 ThrowInstruction, TypeCheckInstruction, AbstractInstruction {
 
     /**
-     * {@return the opcode of this instruction}
+     * {@return the operation of this instruction}
      */
     Opcode opcode();
 

@@ -35,8 +35,8 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 /**
  * A pseudo-instruction which models a single entry in the {@link
- * LocalVariableTypeTableAttribute LocalVariableTypeTable}.  Delivered as a
- * {@link CodeElement} during traversal of the elements of a {@link CodeModel},
+ * LocalVariableTypeTableAttribute LocalVariableTypeTable} attribute.  Delivered
+ * as a {@link CodeElement} during traversal of the elements of a {@link CodeModel},
  * according to the setting of the {@link ClassFile.DebugElementsOption} option.
  * <p>
  * A local variable type entry can be viewed as a record:

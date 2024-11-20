@@ -66,8 +66,10 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * the {@link ClassFile.ShortJumpsOption} controls how an invalid {@code jsr}
      * instruction model is written by a {@link CodeBuilder}.
      * <p>
-     * {@link StoreInstruction astore} series of instructions can operate on the
-     * {@code returnAddress} type from jump subroutine instructions.
+     * Jump subroutine instructions push a {@link TypeKind##returnAddress
+     * returnAddress} value to the operand stack, and {@link StoreInstruction
+     * astore} series of instructions can then store this value to a local
+     * variable slot.
      *
      * @see Opcode.Kind#DISCONTINUED_JSR
      * @since 24
@@ -123,7 +125,12 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * RetInstruction(int slot) // @link substring="slot" target="#slot()"
      * }
      * where {@code slot} must be within {@code [0, 65535]}.
+     * <p>
+     * {@link StoreInstruction astore} series of instructions store a {@link
+     * TypeKind##returnAddress returnAddress} value to a local variable slot,
+     * making the slot usable by a return from subroutine instruction.
      *
+     * @jvms 6.5.ret <em>ret</em>
      * @see Opcode.Kind#DISCONTINUED_RET
      * @since 24
      */

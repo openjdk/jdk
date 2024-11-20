@@ -68,7 +68,7 @@ import jdk.internal.classfile.impl.LabelImpl;
  * A label must be bound exactly once in the {@code CodeBuilder} where it is
  * used; otherwise, writing fails.  To bind an unbound label:
  * <ul>
- * <li>Send a {@link LabelTarget} to a {@code CodeBuilder}.
+ * <li>Send a read {@link LabelTarget} to a {@code CodeBuilder}.
  * <li>Use {@link CodeBuilder#labelBinding CodeBuilder::labelBinding}.
  * </ul>
  * Note that a label read from another model is not automatically bound in a
@@ -76,12 +76,8 @@ import jdk.internal.classfile.impl.LabelImpl;
  * different positions in them.
  *
  * @see CodeAttribute#labelToBci CodeAttribute::labelToBci
- * @see LabelTarget
  * @see CodeBuilder#newLabel CodeBuilder::newLabel
- * @see CodeBuilder#newBoundLabel CodeBuilder::newBoundLabel
- * @see CodeBuilder#startLabel CodeBuilder::startLabel
- * @see CodeBuilder#endLabel CodeBuilder::endLabel
- * @see CodeBuilder.BlockCodeBuilder#breakLabel BlockCodeBuilder::breakLabel
+ * @see CodeBuilder#labelBinding CodeBuilder::labelBinding
  * @since 24
  */
 public sealed interface Label
