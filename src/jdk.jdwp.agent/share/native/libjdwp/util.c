@@ -413,8 +413,20 @@ writeStaticFieldValue(JNIEnv *env, PacketOutputStream *out, jclass clazz,
                       jfieldID field)
 {
     jvmtiError error;
+    jint modifiers;
     char *signature = NULL;
     jbyte typeKey;
+
+    error = fieldModifiers(clazz, field, &modifiers);
+    if (error != JVMTI_ERROR_NONE) {
+        outStream_setError(out, map2jdwpError(error));
+        return;
+    }
+
+    if (!(modifiers & JVM_ACC_STATIC)) {
+        outStream_setError(out, JDWP_ERROR(INVALID_FIELDID));
+        return;
+    }
 
     error = fieldSignature(clazz, field, NULL, &signature, NULL);
     if (error != JVMTI_ERROR_NONE) {
