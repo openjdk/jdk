@@ -87,21 +87,19 @@ public class SystemPropCipherSuitesOrder extends SSLSocketTemplate {
         clientcipherSuites
                 = toArray(System.getProperty("jdk.tls.client.cipherSuites"));
         System.out.printf("SYSTEM PROPERTIES: ServerProp:%s - ClientProp:%s%n",
-                Arrays.deepToString(servercipherSuites),
-                Arrays.deepToString(clientcipherSuites));
+                          Arrays.deepToString(servercipherSuites),
+                          Arrays.deepToString(clientcipherSuites));
 
-        // Re-enable TLS_RSA_* cipher suites if needed.
-        for (String p : Stream.concat(
+        // Re-enable TLS_RSA_* cipher suites if needed since test depends on it.
+        if (Stream.concat(
                         Arrays.stream(
                                 servercipherSuites == null
                                         ? new String[0] : servercipherSuites),
                         Arrays.stream(
                                 clientcipherSuites == null
                                         ? new String[0] : clientcipherSuites))
-                .toArray(String[]::new)) {
-            if (p.startsWith("TLS_RSA_")) {
-                SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
-            }
+                .anyMatch(s -> s.startsWith("TLS_RSA_"))) {
+            SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         }
 
         try {
