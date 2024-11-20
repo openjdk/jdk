@@ -86,7 +86,7 @@ final class NamingEventNotifier implements Runnable {
         namingListeners = new Vector<>();
         namingListeners.addElement(firstListener);
 
-        worker = new Thread(this);
+        worker = Obj.helper.createThread(this);
         worker.setDaemon(true);  // not a user thread
         worker.start();
     }

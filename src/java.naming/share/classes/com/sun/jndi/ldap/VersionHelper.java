@@ -65,4 +65,8 @@ public final class VersionHelper {
         return Class.forName(className, true,
                              Thread.currentThread().getContextClassLoader());
     }
+
+    Thread createThread(Runnable r) {
+        return new Thread(r);
+    }
 }

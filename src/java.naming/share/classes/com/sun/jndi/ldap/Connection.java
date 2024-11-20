@@ -259,7 +259,7 @@ public final class Connection implements Runnable {
             throw ce;
         }
 
-        worker = new Thread(this);
+        worker = Obj.helper.createThread(this);
         worker.setDaemon(true);
         worker.start();
     }
