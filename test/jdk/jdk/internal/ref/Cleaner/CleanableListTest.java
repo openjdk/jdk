@@ -124,6 +124,13 @@ public class CleanableListTest {
                 bs.set(idx, true);
             }
         }
+
+        for (int c = 0; c < size; c++) {
+            if (bs.get(c)) {
+                TestCleanable tc = tcs.get(c);
+                Assert.assertTrue(list.remove(tc));
+            }
+        }
     }
 
 }
