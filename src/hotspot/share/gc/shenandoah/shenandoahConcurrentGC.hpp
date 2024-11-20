@@ -47,14 +47,12 @@ class ShenandoahConcurrentGC : public ShenandoahGC {
 
 protected:
   ShenandoahConcurrentMark    _mark;
+  ShenandoahGeneration* const _generation;
 
 private:
   ShenandoahDegenPoint        _degen_point;
   bool                        _abbreviated;
   const bool                  _do_old_gc_bootstrap;
-
-protected:
-  ShenandoahGeneration* const _generation;
 
 public:
   ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap);
@@ -64,18 +62,14 @@ public:
   // Return true if this cycle found enough immediate garbage to skip evacuation
   bool abbreviated() const { return _abbreviated; }
 
-private:
+protected:
   // Entry points to STW GC operations, these cause a related safepoint, that then
   // call the entry method below
   void vmop_entry_init_mark();
-
-protected:
   void vmop_entry_final_mark();
-  void vmop_entry_final_roots();
-
-private:
   void vmop_entry_init_updaterefs();
   void vmop_entry_final_updaterefs();
+  void vmop_entry_final_roots();
 
   // Entry methods to normally STW GC operations. These set up logging, monitoring
   // and workers for net VM operation
@@ -90,8 +84,6 @@ private:
   void entry_reset();
   void entry_mark_roots();
   void entry_scan_remembered_set();
-
-protected:
   void entry_mark();
   void entry_thread_roots();
   void entry_weak_refs();
@@ -99,12 +91,9 @@ protected:
   void entry_class_unloading();
   void entry_strong_roots();
   void entry_cleanup_early();
-
-private:
   void entry_evacuate();
   void entry_update_thread_roots();
   void entry_updaterefs();
-
   void entry_cleanup_complete();
 
   // Called when the collection set is empty, but the generational mode has regions to promote in place
@@ -115,6 +104,7 @@ private:
   void op_init_mark();
   void op_mark_roots();
   void op_mark();
+  virtual void op_final_mark();
   void op_thread_roots();
   void op_weak_refs();
   void op_weak_roots();
@@ -127,11 +117,10 @@ private:
   void op_update_thread_roots();
   void op_final_updaterefs();
   void op_final_roots();
-
   void op_cleanup_complete();
 
-protected:
-  virtual void op_final_mark();
+  // Check GC cancellation and abort concurrent GC
+  bool check_cancellation_and_abort(ShenandoahDegenPoint point);
 
 private:
   void start_mark();
@@ -148,10 +137,6 @@ private:
   const char* conc_weak_refs_event_message() const;
   const char* conc_weak_roots_event_message() const;
   const char* conc_cleanup_event_message() const;
-
-protected:
-  // Check GC cancellation and abort concurrent GC
-  bool check_cancellation_and_abort(ShenandoahDegenPoint point);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTGC_HPP

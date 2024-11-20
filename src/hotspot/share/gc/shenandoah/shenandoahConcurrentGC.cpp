@@ -93,10 +93,10 @@ public:
 
 ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   _mark(generation),
+  _generation(generation),
   _degen_point(ShenandoahDegenPoint::_degenerated_unset),
   _abbreviated(false),
-  _do_old_gc_bootstrap(do_old_gc_bootstrap),
-  _generation(generation) {
+  _do_old_gc_bootstrap(do_old_gc_bootstrap) {
 }
 
 ShenandoahGC::ShenandoahDegenPoint ShenandoahConcurrentGC::degen_point() const {

@@ -46,7 +46,7 @@ ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
     size_t num_regions = heap->num_regions();
     const char* cns = PerfDataManager::name_space("shenandoah", "regions");
     _name_space = NEW_C_HEAP_ARRAY(char, strlen(cns)+1, mtGC);
-    strcpy(_name_space, cns); // copy cns into _name_space
+    strcpy(_name_space, cns);
 
     const char* cname = PerfDataManager::counter_name(_name_space, "timestamp");
     _timestamp = PerfDataManager::create_long_variable(SUN_GC, cname, PerfData::U_None, CHECK);
@@ -54,7 +54,7 @@ ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
     cname = PerfDataManager::counter_name(_name_space, "max_regions");
     PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_None, num_regions, CHECK);
 
-    cname = PerfDataManager::counter_name(_name_space, "protocol_version"); //creating new protocol_version
+    cname = PerfDataManager::counter_name(_name_space, "protocol_version");
     PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_None, VERSION_NUMBER, CHECK);
 
     cname = PerfDataManager::counter_name(_name_space, "region_size");
@@ -72,10 +72,8 @@ ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
       const char* ns = PerfDataManager::ns_to_string(SUN_GC);
       const char* fullname = PerfDataManager::counter_name(ns, data_name);
       assert(!PerfDataManager::exists(fullname), "must not exist");
-      _regions_data[i] = PerfDataManager::create_long_variable(SUN_GC, data_name,
-                                                               PerfData::U_None, CHECK);
+      _regions_data[i] = PerfDataManager::create_long_variable(SUN_GC, data_name, PerfData::U_None, CHECK);
     }
-
   }
 }
 
