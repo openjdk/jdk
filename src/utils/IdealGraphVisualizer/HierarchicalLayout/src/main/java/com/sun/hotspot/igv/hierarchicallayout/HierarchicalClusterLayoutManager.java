@@ -131,7 +131,7 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
                 ClusterOutputSlotNode outputSlotNode;
 
                 outputSlotNode = clusterOutputSlotHash.get(fromCluster).get(fromPort);
-                inputSlotNode = clusterInputSlotHash.get(toCluster).get(fromPort);
+                inputSlotNode = clusterInputSlotHash.get(toCluster).get(toPort); // TODO: fix?
 
                 if (outputSlotNode == null) {
                     outputSlotNode = new ClusterOutputSlotNode(clusterNodes.get(fromCluster), "Out " + fromCluster.toString() + " " + fromPort);
@@ -147,7 +147,10 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
                 }
 
                 if (inputSlotNode == null) {
-                    inputSlotNode = new ClusterInputSlotNode(clusterNodes.get(toCluster), "In " + toCluster.toString() + " " + fromPort);
+                    inputSlotNode = new ClusterInputSlotNode(
+                            clusterNodes.get(toCluster),
+                            "In " + toCluster.toString() + " " + toPort // Use toPort here
+                    );
                     clusterInputSlotSet.get(toCluster).add(inputSlotNode);
                 }
 
