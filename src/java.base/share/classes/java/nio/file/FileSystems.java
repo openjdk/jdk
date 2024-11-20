@@ -179,7 +179,7 @@ public final class FileSystems {
      * @return  the default file system
      */
     public static FileSystem getDefault() {
-        if (VM.isModuleSystemInited()) {
+        if (VM.isModuleSystemInited() && VM.isCustomDefaultFileSystemProviderLoaded()) {
             return DefaultFileSystemHolder.defaultFileSystem;
         } else {
             // always use the platform's default file system during startup

@@ -2429,6 +2429,21 @@ public final class System {
 
         // system is fully initialized
         VM.initLevel(4);
+
+        // if the property java.nio.file.spi.DefaultFileSystemProvider is
+        // set then load the default provider (or a list)
+        String prop = "java.nio.file.spi.DefaultFileSystemProvider";
+        String propValue = System.getProperty(prop);
+        if (propValue != null) {
+            for (String cn: propValue.split(",")) {
+                try {
+                    Class.forName(cn, true, ClassLoader.getSystemClassLoader());
+                } catch (Exception x) {
+                    throw new Error(x);
+                }
+            }
+        }
+        VM.setCustomDefaultFileSystemProviderLoaded();
     }
 
     private static void setJavaLangAccess() {

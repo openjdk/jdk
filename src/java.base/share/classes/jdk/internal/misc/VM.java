@@ -49,6 +49,7 @@ public class VM {
 
     // 0, 1, 2, ...
     private static volatile int initLevel;
+    private static volatile boolean isCustomDefaultFileSystemProviderLoaded = false;
     private static final Object lock = new Object();
 
     /**
@@ -65,6 +66,22 @@ public class VM {
             initLevel = value;
             lock.notifyAll();
         }
+    }
+
+    /**
+     * control the CustomDefaultFileSystemProvider loading status
+     *
+     * @see java.lang.System#initPhase3
+     */
+    public static void setCustomDefaultFileSystemProviderLoaded() {
+        isCustomDefaultFileSystemProviderLoaded = true;
+    }
+
+    /**
+     * Returns the current customDefaultFileSystemProvider loading status
+     */
+    public static boolean isCustomDefaultFileSystemProviderLoaded() {
+        return isCustomDefaultFileSystemProviderLoaded;
     }
 
     /**
