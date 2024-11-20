@@ -81,7 +81,7 @@ public class JPanelCursorTest {
         j.setRightComponent(panel);
         j.setContinuousLayout(true);
         j.setSize(200, 200);
-        
+
         frame.getContentPane().add("North", j);
         pane.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
         frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
