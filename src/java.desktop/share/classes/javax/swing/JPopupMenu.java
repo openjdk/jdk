@@ -119,11 +119,8 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         new StringBuffer("JPopupMenu.defaultLWPopupEnabledKey");
 
     /** Bug#4425878-Property javax.swing.adjustPopupLocationToFit introduced */
-    @SuppressWarnings("removal")
     static boolean popupPositionFixDisabled =
-            java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction(
-                    "javax.swing.adjustPopupLocationToFit","")).equals("false");
+         System.getProperty("javax.swing.adjustPopupLocationToFit","").equals("false");
 
     transient  Component invoker;
     transient  Popup popup;

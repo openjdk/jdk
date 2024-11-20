@@ -140,6 +140,7 @@ public:
 class ClassLoader: AllStatic {
  public:
   enum ClassLoaderType {
+    OTHER = 0,
     BOOT_LOADER = 1,      /* boot loader */
     PLATFORM_LOADER  = 2, /* PlatformClassLoader */
     APP_LOADER  = 3       /* AppClassLoader */
@@ -385,6 +386,7 @@ class ClassLoader: AllStatic {
   static char* uri_to_path(const char* uri);
   static void  record_result(JavaThread* current, InstanceKlass* ik,
                              const ClassFileStream* stream, bool redefined);
+  static void record_hidden_class(InstanceKlass* ik);
 #endif
 
   static char* lookup_vm_options();
