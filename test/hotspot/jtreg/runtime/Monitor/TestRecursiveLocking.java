@@ -227,7 +227,7 @@ public class TestRecursiveLocking {
         synchronized void runInner(int depth, SynchronizedObject outer) {
             counter++;
 
-            // Legacy mode has no lock stack. I.e. there is no limit
+            // Legacy mode has no lock stack, I.e. there is no limit
             // on recursion, so for legacy mode we can't say that
             // "outer" must be inflated here, which we can say for all
             // the other locking modes.
@@ -235,7 +235,7 @@ public class TestRecursiveLocking {
                 outer.assertInflated();
             }
 
-            // We havn't reached the stack lock capasity (recursion
+            // We havn't reached the stack lock capacity (recursion
             // level), so we shouldn't be inflated here. Except for
             // monitor mode, which is always inflated.
             if (flagLockingMode != LM_MONITOR) {
@@ -267,8 +267,8 @@ public class TestRecursiveLocking {
             }
         }
 
-        // This test nests x recurcive locks of INNER, in x recursive
-        // locks of OUTER.  The number x is taken from the max number
+        // This test nests x recursive locks of INNER, in x recursive
+        // locks of OUTER. The number x is taken from the max number
         // of elements in the lock stack.
         public void runOuterInnerTest() {
             final SynchronizedObject OUTER = new SynchronizedObject();
@@ -313,12 +313,12 @@ public class TestRecursiveLocking {
                     assertNotInflated();
                 } else {
                     // Second time we want to lock A, the lock stack
-                    // looks like this [A, B].  Lightweight locking
+                    // looks like this [A, B]. Lightweight locking
                     // doesn't allow interleaving ([A, B, A]), instead
                     // it inflates A and removed it from the lock
-                    // stack. Which leaves us with only [B] on the lock
-                    // stack. After more recursions it will grow to
-                    // [B, B ... B].
+                    // stack. Which leaves us with only [B] on the
+                    // lock stack. After more recursions it will grow
+                    // to [B, B ... B].
                     assertInflated();
                 }
             } else if (flagLockingMode == LM_MONITOR) {
@@ -372,7 +372,7 @@ public class TestRecursiveLocking {
                 A.assertNotInflated();
             }
             // Implied else: for LM_MONITOR or LM_LIGHTWEIGHT it can be
-            // either inflated or not point because A is not locked anymore
+            // either inflated or not because A is not locked anymore
             // and subject to deflation.
 
             if (flagLockingMode != LM_MONITOR) {
@@ -389,17 +389,17 @@ public class TestRecursiveLocking {
         }
     }
 
-    static void usage() {
+    static void usage(int mode, int n_secs) {
         System.err.println();
         System.err.println("Usage: java TestRecursiveLocking [n_secs]");
         System.err.println("       java TestRecursiveLocking n_secs [mode]");
         System.err.println();
         System.err.println("where:");
         System.err.println("    n_secs  ::= > 0");
-        System.err.println("            Default n_secs is 15.");
+        System.err.println("            Default n_secs is " + n_secs + ".");
         System.err.println("    mode    ::= 1 - outer and inner");
         System.err.println("            ::= 2 - alternate A and B");
-        System.err.println("            Default mode is 1.");
+        System.err.println("            Default mode is " + mode + ".");
         System.exit(1);
     }
 
@@ -408,7 +408,7 @@ public class TestRecursiveLocking {
         int n_secs = 30;
 
         if (argv.length != 0 && argv.length != 1 && argv.length != 2) {
-            usage();
+            usage(mode, n_secs);
         } else if (argv.length > 0) {
             try {
                 n_secs = Integer.parseInt(argv[0]);
@@ -421,7 +421,7 @@ public class TestRecursiveLocking {
                 System.err.println(nfe);
                 System.err.println("ERROR: '" + argv[0]
                                    + "': invalid n_secs value.");
-                usage();
+                usage(mode, n_secs);
             }
 
             if (argv.length > 1) {
@@ -436,7 +436,7 @@ public class TestRecursiveLocking {
                     System.err.println(nfe);
                     System.err.println("ERROR: '" + argv[1]
                                        + "': invalid mode value.");
-                    usage();
+                    usage(mode, n_secs);
                 }
             }
         }
@@ -500,6 +500,8 @@ class SyncThread extends Thread {
                 try {
                     waiter.wait();
                 } catch (InterruptedException ie) {
+                    // This should not happen.
+                    ie.printStackTrace();
                 }
                 if (haveWork) {
                     if (verbose) System.out.println("SyncThread: working.");
@@ -538,6 +540,8 @@ class SyncThread extends Thread {
                 try {
                     waiter.wait();
                 } catch (InterruptedException ie) {
+                    // This should not happen.
+                    ie.printStackTrace();
                 }
             }
             if (verbose) System.out.println("main: waited for SyncThread.");
@@ -553,6 +557,8 @@ class SyncThread extends Thread {
             try {
                 waiter.wait();
             } catch (InterruptedException ie) {
+                // This should not happen.
+                ie.printStackTrace();
             }
             if (verbose) System.out.println("main: waited for SyncThread start.");
         }
