@@ -5660,7 +5660,7 @@ instruct countTrailingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
 %}
 
 instruct countTrailingZerosI_nf(rRegI dst, rRegI src) %{
-  predicate(!UseAPX && UseCountTrailingZerosInstruction);
+  predicate(UseAPX && UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosI src));
 
   format %{ "etzcntl    $dst, $src\t# count trailing zeros (int nf)" %}
@@ -9132,7 +9132,7 @@ instruct rolI_immI8_legacy(rRegI dst, immI8 shift, rFlagsReg cr)
 // Rotate left by constant.
 instruct rolI_immI8_ndd(rRegI dst, rRegI src, immI8 shift)
 %{
-  predicate(UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  predicate(UseAPX && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateLeft src shift));
   format %{ "eroll    $dst, $src, $shift\t# rotate left (int ndd)" %}
   ins_encode %{
@@ -9143,7 +9143,7 @@ instruct rolI_immI8_ndd(rRegI dst, rRegI src, immI8 shift)
 
 instruct rolI_immI8(rRegI dst, rRegI src, immI8 shift)
 %{
-  predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  predicate(!UseAPX && VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateLeft src shift));
   format %{ "rolxl   $dst, $src, $shift" %}
   ins_encode %{
@@ -9207,7 +9207,7 @@ instruct rorI_immI8_legacy(rRegI dst, immI8 shift, rFlagsReg cr)
 // Rotate Right by constant.
 instruct rorI_immI8_ndd(rRegI dst, rRegI src, immI8 shift)
 %{
-  predicate(UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  predicate(UseAPX && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateRight src shift));
   format %{ "erorl    $dst, $src, $shift\t# rotate right (int ndd)" %}
   ins_encode %{
@@ -9219,7 +9219,7 @@ instruct rorI_immI8_ndd(rRegI dst, rRegI src, immI8 shift)
 // Rotate Right by constant.
 instruct rorI_immI8(rRegI dst, rRegI src, immI8 shift)
 %{
-  predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  predicate(!UseAPX && VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateRight src shift));
   format %{ "rorxl   $dst, $src, $shift" %}
   ins_encode %{
@@ -9281,7 +9281,7 @@ instruct rolL_immI8_legacy(rRegL dst, immI8 shift, rFlagsReg cr)
 // Rotate Left by constant.
 instruct rolL_immI8_ndd(rRegL dst, rRegL src, immI8 shift)
 %{
-  predicate(UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  predicate(UseAPX && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateLeft src shift));
   format %{ "erolq    $dst, $src, $shift\t# rotate left (long ndd)" %}
   ins_encode %{
@@ -9292,7 +9292,7 @@ instruct rolL_immI8_ndd(rRegL dst, rRegL src, immI8 shift)
 
 instruct rolL_immI8(rRegL dst, rRegL src, immI8 shift)
 %{
-  predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  predicate(!UseAPX && VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateLeft src shift));
   format %{ "rolxq   $dst, $src, $shift" %}
   ins_encode %{
@@ -9356,7 +9356,7 @@ instruct rorL_immI8_legacy(rRegL dst, immI8 shift, rFlagsReg cr)
 // Rotate Right by constant.
 instruct rorL_immI8_ndd(rRegL dst, rRegL src, immI8 shift)
 %{
-  predicate(UseAPX && !VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  predicate(UseAPX && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateRight src shift));
   format %{ "erorq    $dst, $src, $shift\t# rotate right(long ndd)" %}
   ins_encode %{

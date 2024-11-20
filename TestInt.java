@@ -1,0 +1,59 @@
+import java.util.Arrays;
+import java.util.Random;
+import java.lang.reflect.Method;
+import java.util.*;
+
+public class TestInt {
+
+    public static int testKernel(int a, int b) {
+        int ans;
+        int k = Integer.rotateLeft(-a, 5);
+        int l = Integer.rotateRight(-b, 6);
+        int m = Integer.rotateLeft(a, Math.abs(Integer.bitCount(l) % 7));
+        ans = (a ^ b) + Math.max((a >> Math.min(2, k)), ((b >>> Math.min(3, l)) << 2));
+        return ans;
+    }
+
+    public static int testCount(int a, int b) {
+        return Integer.bitCount(a) + Integer.numberOfLeadingZeros(b) + Integer.numberOfTrailingZeros(a-b);
+    }
+
+    public static int testAdd(int a, int b) {
+        return a + b;
+    }
+    public static void main(String[] args) {
+
+        try {
+
+            int iters = Integer.parseInt(args[0]);
+            int factor = 10_000;
+            int size = factor * iters;
+            int[] a = new int[size];
+            int[] b = new int[size];
+            int[] c = new int[size];
+            Random rand = new Random(0);
+            for (int i = 0; i < a.length; i++) {
+                a[i] = rand.nextInt();
+                b[i] = rand.nextInt();
+            }
+
+            Method method = TestInt.class.getMethod("test" + args[1], int.class, int.class);
+
+            // warmup
+            for (int i = 0; i < factor; i++) {
+                //c[i] = testKernel(a[i], b[i]);
+                c[i] = (int) method.invoke(null, a[i], b[i]);
+            }
+            System.out.println("Warmup done>");
+
+            // main iter
+            for (int i = 0; i < factor * iters; i++) {
+                c[i] = (int) method.invoke(null, a[i], b[i]);
+            }
+            System.out.println("------------- MAIN DONE ----------------");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
