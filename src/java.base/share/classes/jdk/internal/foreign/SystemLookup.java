@@ -35,6 +35,7 @@ import java.util.function.Function;
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.RawNativeLibraries;
 import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.StaticProperty;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
@@ -125,7 +126,7 @@ public final class SystemLookup implements SymbolLookup {
      * Returns the path of the given library name from JDK
      */
     private static Path jdkLibraryPath(String name) {
-        Path javahome = Path.of(System.getProperty("java.home"));
+        Path javahome = Path.of(StaticProperty.javaHome());
         String lib = OperatingSystem.isWindows() ? "bin" : "lib";
         String libname = System.mapLibraryName(name);
         return javahome.resolve(lib).resolve(libname);

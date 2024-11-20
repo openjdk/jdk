@@ -34,7 +34,6 @@ import java.lang.classfile.attribute.CharacterRangeTableAttribute;
 
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundCharacterRange;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A pseudo-instruction which models a single entry in the
@@ -42,9 +41,8 @@ import jdk.internal.javac.PreviewFeature;
  * during traversal of the elements of a {@link CodeModel}, according to
  * the setting of the {@link ClassFile.DebugElementsOption} option.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CharacterRange extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundCharacterRange, BoundCharacterRange {
 
