@@ -93,6 +93,7 @@ void AOTArtifactFinder::find_artifacts() {
   }
 
   SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* ik, DumpTimeClassInfo& info) {
+    // FIXME -- split this and add comments
     if (!info.is_excluded() && (!ik->is_hidden() || SystemDictionaryShared::is_registered_lambda_proxy_class(ik))) {
       if (ik->is_hidden() && CDSConfig::is_dumping_invokedynamic()) {
         assert(!SystemDictionaryShared::is_registered_lambda_proxy_class(ik), "only used in legacy lambda proxy support");

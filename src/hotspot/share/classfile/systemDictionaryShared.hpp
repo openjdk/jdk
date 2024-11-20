@@ -187,7 +187,6 @@ private:
   static DumpTimeClassInfo* get_info(InstanceKlass* k);
   static DumpTimeClassInfo* get_info_locked(InstanceKlass* k);
 
-  static void find_all_archivable_classes_impl();
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
@@ -202,7 +201,6 @@ private:
 
 public:
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
-  static bool should_hidden_class_be_archived(InstanceKlass* k);
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static bool has_archived_enum_objs(InstanceKlass* ik);

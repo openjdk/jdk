@@ -618,7 +618,6 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // Block concurrent class unloading from changing the _dumptime_table
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  //SystemDictionaryShared::find_all_archivable_classes();
 
   if (HeapShared::can_write() && _extra_interned_strings != nullptr) {
     for (int i = 0; i < _extra_interned_strings->length(); i ++) {

@@ -315,9 +315,6 @@ bool HeapShared::archive_object(oop obj, KlassSubGraphInfo* subgraph_info) {
     mark_native_pointers(obj);
 
     Klass* k = obj->klass();
-    //if (k->name()->equals("java/lang/invoke/LambdaForm$DMH/0x800000007")) {
-    //  tty->print_cr("xx");
-    //}
     if (k->is_instance_klass()) {
       if (subgraph_info == _dump_time_special_subgraph || InstanceKlass::cast(k)->is_enum_subclass()) {
         AOTArtifactFinder::add_aot_inited_class(InstanceKlass::cast(k));

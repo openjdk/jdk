@@ -335,13 +335,6 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     }
   }
 
-#if 0
-  if (k->is_hidden() && !should_hidden_class_be_archived(k)) { // FIXME -- remove
-    log_info(cds)("Skipping %s: Hidden class", k->name()->as_C_string());
-    return true;
-  }
-#endif
-
   InstanceKlass* super = k->java_super();
   if (super != nullptr && check_for_exclusion(super, nullptr)) {
     ResourceMark rm;
@@ -651,26 +644,6 @@ public:
     }
   }
 };
-
-// FIXME!
-bool SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass* k) {
-  assert(k->is_hidden(), "sanity");
-  if (is_registered_lambda_proxy_class(k)) {
-    return true;
-  }
-
-#if 0
-  if (CDSConfig::is_dumping_invokedynamic()) {
-    DumpTimeClassInfo* info = _dumptime_table->get(k);
-    if (info != nullptr && info->is_required_hidden_class()) {
-      guarantee(HeapShared::is_archivable_hidden_klass(k), "required hidden class must be archivable");
-      return true;
-    }
-  }
-#endif
-
-  return false;
-}
 
 // Returns true if the class should be excluded. This can be called by
 // AOTConstantPoolResolver before or after we enter the CDS safepoint.
