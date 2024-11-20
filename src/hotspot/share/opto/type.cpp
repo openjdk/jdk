@@ -713,67 +713,7 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_VecZ] = TypeVect::VECTZ;
 
   LockNode::lock_type_init();
-  OptoRuntime::new_instance_Type_init();
-  OptoRuntime::new_array_Type_init();
-  OptoRuntime::multianewarray2_Type_init();
-  OptoRuntime::multianewarray3_Type_init();
-  OptoRuntime::multianewarray4_Type_init();
-  OptoRuntime::multianewarray5_Type_init();
-  OptoRuntime::multianewarrayN_Type_init();
-  OptoRuntime::complete_monitor_enter_Type_init();
-  OptoRuntime::complete_monitor_exit_Type_init();
-  OptoRuntime::monitor_notify_Type_init();
-  OptoRuntime::uncommon_trap_Type_init();
-  OptoRuntime::athrow_Type_init();
-  OptoRuntime::rethrow_Type_init();
-  OptoRuntime::Math_D_D_Type_init();
-  OptoRuntime::Math_DD_D_Type_init();
-  OptoRuntime::modf_Type_init();
-  OptoRuntime::l2f_Type_init();
-  OptoRuntime::void_long_Type_init();
-  OptoRuntime::void_void_Type_init();
-  OptoRuntime::jfr_write_checkpoint_Type_init();
-  OptoRuntime::fast_arraycopy_Type_init();
-  OptoRuntime::checkcast_arraycopy_Type_init();
-  OptoRuntime::generic_arraycopy_Type_init();
-  OptoRuntime::slow_arraycopy_Type_init();
-  OptoRuntime::make_setmemory_Type_init();
-  OptoRuntime::array_fill_Type_init();
-  OptoRuntime::array_sort_Type_init();
-  OptoRuntime::array_partition_Type_init();
-  OptoRuntime::aescrypt_block_Type_init();
-  OptoRuntime::cipherBlockChaining_aescrypt_Type_init();
-  OptoRuntime::electronicCodeBook_aescrypt_Type_init();
-  OptoRuntime::counterMode_aescrypt_Type_init();
-  OptoRuntime::galoisCounterMode_aescrypt_Type_init();
-  OptoRuntime::digestBase_implCompress_Type_init();
-  OptoRuntime::digestBase_implCompressMB_Type_init();
-  OptoRuntime::multiplyToLen_Type_init();
-  OptoRuntime::montgomeryMultiply_Type_init();
-  OptoRuntime::montgomerySquare_Type_init();
-  OptoRuntime::squareToLen_Type_init();
-  OptoRuntime::mulAdd_Type_init();
-  OptoRuntime::bigIntegerShift_Type_init();
-  OptoRuntime::vectorizedMismatch_Type_init();
-  OptoRuntime::ghash_processBlocks_Type_init();
-  OptoRuntime::chacha20Block_Type_init();
-  OptoRuntime::base64_encodeBlock_Type_init();
-  OptoRuntime::base64_decodeBlock_Type_init();
-  OptoRuntime::string_IndexOf_Type_init();
-  OptoRuntime::poly1305_processBlocks_Type_init();
-  OptoRuntime::intpoly_montgomeryMult_P256_Type_init();
-  OptoRuntime::intpoly_assign_Type_init();
-  OptoRuntime::updateBytesCRC32_Type_init();
-  OptoRuntime::updateBytesCRC32C_Type_init();
-  OptoRuntime::updateBytesAdler32_Type_init();
-  OptoRuntime::osr_end_Type_init();
-  OptoRuntime::register_finalizer_Type_init();
-  JFR_ONLY(OptoRuntime::class_id_load_barrier_Type_init();)
-#ifdef INCLUDE_JVMTI
-  OptoRuntime::notify_jvmti_vthread_Type_init();
-#endif // INCLUDE_JVMTI
-  OptoRuntime::dtrace_method_entry_exit_Type_init();
-  OptoRuntime::dtrace_object_alloc_Type_init();
+  OptoRuntime::initialize_types();
 
   // Restore working type arena.
   current->set_type_arena(save);

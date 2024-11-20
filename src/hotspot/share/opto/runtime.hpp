@@ -770,6 +770,7 @@ private:
  // dumps all the named counters
  static void          print_named_counters();
 
+ static void          initialize_types();
 };
 
 #endif // SHARE_OPTO_RUNTIME_HPP

@@ -2044,6 +2044,70 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   return c;
 }
 
+void OptoRuntime::initialize_types() {
+  new_instance_Type_init();
+  new_array_Type_init();
+  multianewarray2_Type_init();
+  multianewarray3_Type_init();
+  multianewarray4_Type_init();
+  multianewarray5_Type_init();
+  multianewarrayN_Type_init();
+  complete_monitor_enter_Type_init();
+  complete_monitor_exit_Type_init();
+  monitor_notify_Type_init();
+  uncommon_trap_Type_init();
+  athrow_Type_init();
+  rethrow_Type_init();
+  Math_D_D_Type_init();
+  Math_DD_D_Type_init();
+  modf_Type_init();
+  l2f_Type_init();
+  void_long_Type_init();
+  void_void_Type_init();
+  jfr_write_checkpoint_Type_init();
+  fast_arraycopy_Type_init();
+  checkcast_arraycopy_Type_init();
+  generic_arraycopy_Type_init();
+  slow_arraycopy_Type_init();
+  make_setmemory_Type_init();
+  array_fill_Type_init();
+  array_sort_Type_init();
+  array_partition_Type_init();
+  aescrypt_block_Type_init();
+  cipherBlockChaining_aescrypt_Type_init();
+  electronicCodeBook_aescrypt_Type_init();
+  counterMode_aescrypt_Type_init();
+  galoisCounterMode_aescrypt_Type_init();
+  digestBase_implCompress_Type_init();
+  digestBase_implCompressMB_Type_init();
+  multiplyToLen_Type_init();
+  montgomeryMultiply_Type_init();
+  montgomerySquare_Type_init();
+  squareToLen_Type_init();
+  mulAdd_Type_init();
+  bigIntegerShift_Type_init();
+  vectorizedMismatch_Type_init();
+  ghash_processBlocks_Type_init();
+  chacha20Block_Type_init();
+  base64_encodeBlock_Type_init();
+  base64_decodeBlock_Type_init();
+  string_IndexOf_Type_init();
+  poly1305_processBlocks_Type_init();
+  intpoly_montgomeryMult_P256_Type_init();
+  intpoly_assign_Type_init();
+  updateBytesCRC32_Type_init();
+  updateBytesCRC32C_Type_init();
+  updateBytesAdler32_Type_init();
+  osr_end_Type_init();
+  register_finalizer_Type_init();
+  JFR_ONLY(class_id_load_barrier_Type_init();)
+#ifdef INCLUDE_JVMTI
+  notify_jvmti_vthread_Type_init();
+#endif // INCLUDE_JVMTI
+  dtrace_method_entry_exit_Type_init();
+  dtrace_object_alloc_Type_init();
+}
+
 int trace_exception_counter = 0;
 static void trace_exception(outputStream* st, oop exception_oop, address exception_pc, const char* msg) {
   trace_exception_counter++;
