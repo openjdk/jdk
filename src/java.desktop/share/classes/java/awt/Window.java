@@ -48,7 +48,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EventListener;
@@ -414,13 +413,9 @@ public class Window extends Container implements Accessible {
             initIDs();
         }
 
-        @SuppressWarnings("removal")
-        String s = java.security.AccessController.doPrivileged(
-            new GetPropertyAction("java.awt.syncLWRequests"));
+        String s = System.getProperty("java.awt.syncLWRequests");
         systemSyncLWRequests = "true".equals(s);
-        @SuppressWarnings("removal")
-        String s2 = java.security.AccessController.doPrivileged(
-            new GetPropertyAction("java.awt.Window.locationByPlatform"));
+        String s2 = System.getProperty("java.awt.Window.locationByPlatform");
         locationByPlatformProp = "true".equals(s2);
     }
 
@@ -505,7 +500,6 @@ public class Window extends Container implements Accessible {
         weakThis = new WeakReference<Window>(this);
         addToWindowList();
 
-        setWarningString();
         this.cursor = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
         this.visible = false;
 
@@ -804,7 +798,6 @@ public class Window extends Container implements Accessible {
      * @see Component#isDisplayable
      * @see #setMinimumSize
      */
-    @SuppressWarnings("deprecation")
     public void pack() {
         Container parent = this.parent;
         if (parent != null && parent.peer == null) {
@@ -1374,24 +1367,6 @@ public class Window extends Container implements Accessible {
      */
     public final String getWarningString() {
         return warningString;
-    }
-
-    @SuppressWarnings("removal")
-    private void setWarningString() {
-        warningString = null;
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkPermission(AWTPermissions.TOPLEVEL_WINDOW_PERMISSION);
-            } catch (SecurityException se) {
-                // make sure the privileged action is only
-                // for getting the property! We don't want the
-                // above checkPermission call to always succeed!
-                warningString = AccessController.doPrivileged(
-                      new GetPropertyAction("awt.appletWarning",
-                                            "Java Applet Window"));
-            }
-        }
     }
 
     /**
@@ -2978,7 +2953,6 @@ public class Window extends Container implements Accessible {
     // user's code.
     //
     private void initDeserializedWindow() {
-        setWarningString();
         inputContextLock = new Object();
 
         // Deserialized Windows are not yet visible.
@@ -3629,7 +3603,6 @@ public class Window extends Container implements Accessible {
      *
      * @since 1.7
      */
-    @SuppressWarnings("deprecation")
     public void setOpacity(float opacity) {
         synchronized (getTreeLock()) {
             if (opacity < 0.0f || opacity > 1.0f) {

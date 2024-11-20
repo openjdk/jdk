@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -142,7 +142,6 @@ public final class SampleTree {
 
     /** Constructs a JPanel containing check boxes for the different
      * options that tree supports. */
-    @SuppressWarnings("serial")
     private JPanel constructOptionsPanel() {
         JCheckBox aCheckbox;
         JPanel retPanel = new JPanel(false);
