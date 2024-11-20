@@ -40,7 +40,6 @@ import javax.sound.midi.Soundbank;
 import javax.sound.midi.spi.SoundbankReader;
 
 import sun.reflect.misc.ReflectUtil;
-import sun.security.action.GetBooleanAction;
 
 /**
  * JarSoundbankReader is used to read soundbank object from jar files.

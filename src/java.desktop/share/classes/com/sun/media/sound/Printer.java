@@ -26,8 +26,6 @@
 package com.sun.media.sound;
 
 
-import sun.security.action.GetPropertyAction;
-
 /**
  * Printer allows you to set up global debugging status and print
  * messages accordingly.
