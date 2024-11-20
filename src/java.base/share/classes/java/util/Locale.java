@@ -155,8 +155,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dt><a id="def_variant"><b>variant</b></a></dt>
  *
  *   <dd> Any arbitrary value used to indicate a variation of a
- *   {@code Locale}. When multiple variants exist, they should be ordered with
- *   higher importance values preceding the others.</dd>
+ *   {@code Locale}. When multiple variants exist, they should be separated by
+ *   {@code ('_'|'-')}. Variants of higher importance should precede the others.</dd>
  *   <dd> <em>BCP 47 deviation:</em> BCP 47 subtags are strictly used to indicate
  *   additional variations that define a language or its dialects that
  *   are not covered by any combinations of language, script and
@@ -1253,7 +1253,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * {@return an array of deployed locales}
+     * {@return an array of available locales}
      *
      * The returned array represents the union of locales supported
      * by the Java runtime environment and by deployed
@@ -1267,7 +1267,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * {@return a stream of deployed locales}
+     * {@return a stream of available locales}
      *
      * The returned stream represents the union of locales supported
      * by the Java runtime environment and by deployed
