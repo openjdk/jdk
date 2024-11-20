@@ -4491,7 +4491,11 @@ void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(Id
   const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
   if (predicate_block->has_parse_predicate()) { return; }
 
-  // TODO check for no control flow - only then are we reasonably sure SuperWord will work.
+  // We only use the multiversioning in auto-vectorization for now. And we currently
+  // do not allow any CFG in auto-vectorization. Hence, only multiversion when we have
+  // no CFG in the loop.
+  if (cl->loopexit()->in(0) != cl) { return; }
+
   // TODO node budget
 
   do_multiversioning(lpt, old_new);
