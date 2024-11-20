@@ -265,24 +265,24 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
           PLAB* plab = ShenandoahThreadLocalData::plab(thread);
           if (plab != nullptr) {
             has_plab = true;
-          }
-          copy = allocate_from_plab(thread, size, is_promotion);
-          if ((copy == nullptr) && (size < ShenandoahThreadLocalData::plab_size(thread)) &&
-              ShenandoahThreadLocalData::plab_retries_enabled(thread)) {
-            // PLAB allocation failed because we are bumping up against the limit on old evacuation reserve or because
-            // the requested object does not fit within the current plab but the plab still has an "abundance" of memory,
-            // where abundance is defined as >= ShenGenHeap::plab_min_size().  In the former case, we try shrinking the
-            // desired PLAB size to the minimum and retry PLAB allocation to avoid cascading of shared memory allocations.
-            if (plab->words_remaining() < plab_min_size()) {
-              ShenandoahThreadLocalData::set_plab_size(thread, plab_min_size());
-              copy = allocate_from_plab(thread, size, is_promotion);
-              // If we still get nullptr, we'll try a shared allocation below.
-              if (copy == nullptr) {
-                // If retry fails, don't continue to retry until we have success (probably in next GC pass)
-                ShenandoahThreadLocalData::disable_plab_retries(thread);
+            copy = allocate_from_plab(thread, size, is_promotion);
+            if ((copy == nullptr) && (size < ShenandoahThreadLocalData::plab_size(thread)) &&
+                ShenandoahThreadLocalData::plab_retries_enabled(thread)) {
+              // PLAB allocation failed because we are bumping up against the limit on old evacuation reserve or because
+              // the requested object does not fit within the current plab but the plab still has an "abundance" of memory,
+              // where abundance is defined as >= ShenGenHeap::plab_min_size().  In the former case, we try shrinking the
+              // desired PLAB size to the minimum and retry PLAB allocation to avoid cascading of shared memory allocations.
+              if (plab->words_remaining() < plab_min_size()) {
+                ShenandoahThreadLocalData::set_plab_size(thread, plab_min_size());
+                copy = allocate_from_plab(thread, size, is_promotion);
+                // If we still get nullptr, we'll try a shared allocation below.
+                if (copy == nullptr) {
+                  // If retry fails, don't continue to retry until we have success (probably in next GC pass)
+                  ShenandoahThreadLocalData::disable_plab_retries(thread);
+                }
               }
+              // else, copy still equals nullptr.  this causes shared allocation below, preserving this plab for future needs.
             }
-            // else, copy still equals nullptr.  this causes shared allocation below, preserving this plab for future needs.
           }
           break;
         }
