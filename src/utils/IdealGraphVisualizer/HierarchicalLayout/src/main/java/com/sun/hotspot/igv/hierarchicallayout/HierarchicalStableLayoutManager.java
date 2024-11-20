@@ -152,6 +152,65 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             //insertDummyNodes(edge);
         }
 
+        /**
+         * Calculate which layer the given vertex should be inserted at to minimize
+         * reversed edges and edge lengths
+         * If there are multiple options, choose the bottom-most layer
+         *
+         * @return the optimal layer to insert the given vertex
+         */
+        private static int optimalLayer(LayoutGraph graph, Vertex vertex) {
+            if (vertex.isRoot()) {
+                return 0;
+            } else if (graph.getLayerCount() == 0) {
+                return 0;
+            }
+
+            int reversedEdges = Integer.MAX_VALUE;
+            int totalEdgeLength = Integer.MAX_VALUE;
+            int neighborsOnSameLayer = Integer.MAX_VALUE;
+            int layer = -1;
+            for (int i = 0; i < graph.getLayerCount(); i++) {
+                int curReversedEdges = 0;
+                int curTotalEdgeLength = 0;
+                int curNeighborsOnSameLayer = 0;
+                for (Link link : graph.getAllLinks(vertex)) {
+                    LayoutNode fromNode = graph.getLayoutNode(link.getFrom().getVertex());
+                    LayoutNode toNode = graph.getLayoutNode(link.getTo().getVertex());
+                    if (link.getTo().getVertex().equals(vertex) && fromNode != null) {
+                        if (fromNode.getLayer() > i) {
+                            curReversedEdges += 1;
+                        } else if (fromNode.getLayer() == i) {
+                            curNeighborsOnSameLayer += 1;
+                        }
+                        curTotalEdgeLength += Math.abs(fromNode.getLayer() - i);
+                    }
+                    if (link.getFrom().getVertex().equals(vertex) && toNode != null) {
+                        if (toNode.getLayer() < i) {
+                            curReversedEdges += 1;
+                        } else if (toNode.getLayer() == i) {
+                            curNeighborsOnSameLayer += 1;
+                        }
+                        curTotalEdgeLength += Math.abs(i - toNode.getLayer());
+                    }
+                }
+
+                curReversedEdges *= 10000;
+                curNeighborsOnSameLayer *= 2;
+
+                if (curReversedEdges + curTotalEdgeLength + curNeighborsOnSameLayer <= reversedEdges + totalEdgeLength
+                        + neighborsOnSameLayer) {
+                    totalEdgeLength = curTotalEdgeLength;
+                    reversedEdges = curReversedEdges;
+                    neighborsOnSameLayer = curNeighborsOnSameLayer;
+                    layer = i;
+                }
+            }
+
+            assert layer != -1;
+            return layer;
+        }
+
 
         /**
          * Determines and applies the optimal layer and position for inserting a vertex into the graph layout.
@@ -168,6 +227,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
          */
         private static void applyAddVertexAction(LayoutGraph graph, Vertex vertex) {
            // TODO
+            int optimalLayerNr = optimalLayer(graph, vertex);
         }
 
         private static void applyRemoveVertexAction(LayoutGraph graph, Vertex vertex) {

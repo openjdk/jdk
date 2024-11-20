@@ -447,7 +447,7 @@ public class LayoutGraph {
         return outputLinks;
     }
 
-    private List<Link> getAllLinks(Vertex vertex) {
+    public List<Link> getAllLinks(Vertex vertex) {
         List<Link> allLinks = new ArrayList<>();
 
         for (Port inputPort : inputPorts.getOrDefault(vertex, Collections.emptyList())) {
