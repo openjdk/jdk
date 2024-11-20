@@ -75,13 +75,18 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
         private static void removeSelfEdges(LayoutGraph graph) {
             for (LayoutNode node : graph.getLayoutNodes()) {
-                Iterator<LayoutEdge> edgeIterator = node.getSuccessors().iterator();
-                while (edgeIterator.hasNext()) {
-                    LayoutEdge edge = edgeIterator.next();
+                // Collect self-edges first to avoid concurrent modification
+                List<LayoutEdge> selfEdges = new ArrayList<>();
+                for (LayoutEdge edge : node.getSuccessors()) {
                     if (edge.getTo() == node) {
-                        edgeIterator.remove();
-                        node.getPredecessors().remove(edge);
+                        selfEdges.add(edge);
                     }
+                }
+
+                // Remove each self-edge
+                for (LayoutEdge edge : selfEdges) {
+                    node.removeSuccessor(edge);
+                    node.removePredecessor(edge);
                 }
             }
         }
@@ -109,10 +114,10 @@ public class HierarchicalLayoutManager extends LayoutManager {
             edge.setRelativeFromX(relativeTo);
             edge.setRelativeToX(relativeFrom);
 
-            fromNode.getSuccessors().remove(edge);
-            fromNode.getPredecessors().add(edge);
-            toNode.getPredecessors().remove(edge);
-            toNode.getSuccessors().add(edge);
+            fromNode.removeSuccessor(edge);
+            fromNode.addPredecessor(edge);
+            toNode.removePredecessor(edge);
+            toNode.addSuccessor(edge);
         }
 
         private static void depthFirstSearch(LayoutGraph graph) {

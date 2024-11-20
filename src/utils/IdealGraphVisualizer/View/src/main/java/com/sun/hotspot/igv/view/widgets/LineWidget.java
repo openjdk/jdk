@@ -321,14 +321,6 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         }
     }
 
-    public LineWidget getPredecessor() {
-        return predecessor;
-    }
-
-    public List<LineWidget> getSuccessors() {
-        return successors;
-    }
-
     private void highlightPredecessors(boolean enable) {
         LineWidget predecessorLineWidget = predecessor;
         while (predecessorLineWidget != null) {

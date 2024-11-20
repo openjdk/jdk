@@ -536,10 +536,6 @@ public class LayoutNode {
         return succs.get(i);
     }
 
-    public List<LayoutEdge> getPredecessors() {
-        return preds;
-    }
-
     public boolean hasPredecessors() {
         return !preds.isEmpty();
     }
@@ -547,6 +543,32 @@ public class LayoutNode {
     public boolean hasSuccessors() {
         return !succs.isEmpty();
     }
+
+    public List<LayoutEdge> getSuccessors() {
+        return Collections.unmodifiableList(succs);
+    }
+
+    public List<LayoutEdge> getPredecessors() {
+        return Collections.unmodifiableList(preds);
+    }
+
+    public void addSuccessor(LayoutEdge successor) {
+        succs.add(successor);
+    }
+
+    public void removeSuccessor(LayoutEdge successor) {
+        succs.remove(successor);
+    }
+
+    public void addPredecessor(LayoutEdge predecessor) {
+        preds.add(predecessor);
+    }
+
+    public void removePredecessor(LayoutEdge predecessor) {
+        preds.remove(predecessor);
+    }
+
+
 
     /**
      * Determines if the node has neighbors of the specified type.
@@ -564,10 +586,6 @@ public class LayoutNode {
         } else {
             return false;
         }
-    }
-
-    public List<LayoutEdge> getSuccessors() {
-        return succs;
     }
 
     public HashMap<Link, List<Point>> getReversedLinkStartPoints() {

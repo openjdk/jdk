@@ -248,12 +248,14 @@ public class LayoutGraph {
                 LayoutNode dummyNode = new LayoutNode();
                 dummyNode.setX(fromX + relativeFromX);
                 dummyNode.setLayer(layerNr);
-                dummyNode.getSuccessors().addAll(edges);
+                for (LayoutEdge edge : edges) {
+                    dummyNode.addSuccessor(edge);
+                }
                 LayoutEdge dummyEdge = new LayoutEdge(fromNode, dummyNode, relativeFromX, 0, edges.get(0).getLink());
                 if (edges.get(0).isReversed()) dummyEdge.reverse();
 
-                fromNode.getSuccessors().add(dummyEdge);
-                dummyNode.getPredecessors().add(dummyEdge);
+                fromNode.addSuccessor(dummyEdge);
+                dummyNode.addPredecessor(dummyEdge);
                 for (LayoutEdge edge : edges) {
                     edge.setFrom(dummyNode);
                 }
@@ -373,8 +375,8 @@ public class LayoutGraph {
                 link.getFrom().getRelativePosition().x,
                 link.getTo().getRelativePosition().x,
                 link);
-        edge.getFrom().getSuccessors().add(edge);
-        edge.getTo().getPredecessors().add(edge);
+        edge.getFrom().addSuccessor(edge);
+        edge.getTo().addPredecessor(edge);
         return edge;
     }
 
@@ -488,7 +490,7 @@ public class LayoutGraph {
                 LayoutEdge edgeToRemove;
 
                 if (edge.getLink() != null && edge.getLink().equals(inputLink)) {
-                    toNode.getPredecessors().remove(edge);
+                    toNode.removePredecessor(edge);
                     edgeToRemove = edge;
                 } else {
                     // Wrong edge, look at next
@@ -497,7 +499,7 @@ public class LayoutGraph {
 
                 if (!predNode.isDummy() && predNode.getVertex().equals(from)) {
                     // No dummy nodes inbetween 'from' and 'to' vertex
-                    predNode.getSuccessors().remove(edgeToRemove);
+                    predNode.removeSuccessor(edgeToRemove);
                     break;
                 } else {
                     // Must remove edges between dummy nodes
@@ -515,7 +517,7 @@ public class LayoutGraph {
                         }
 
                         if (predNode.getPredecessors().size() == 1) {
-                            predNode.getSuccessors().remove(edgeToRemove);
+                            predNode.removeSuccessor(edgeToRemove);
                             succNode = predNode;
                             edgeToRemove = predNode.getPredecessors().get(0);
                             predNode = edgeToRemove.getFrom();
@@ -523,8 +525,8 @@ public class LayoutGraph {
                         }
                     }
 
-                    predNode.getSuccessors().remove(edgeToRemove);
-                    succNode.getPredecessors().remove(edgeToRemove);
+                    predNode.removeSuccessor(edgeToRemove);
+                    succNode.removePredecessor(edgeToRemove);
                 }
                 break;
             }
@@ -639,13 +641,13 @@ public class LayoutGraph {
 
             // remove the layoutEdge
             LayoutNode fromNode = layoutEdge.getFrom();
-            fromNode.getSuccessors().remove(layoutEdge);
+            fromNode.removeSuccessor(layoutEdge);
 
             List<LayoutEdge> successorEdges = dummyNode.getSuccessors();
             for (LayoutEdge successorEdge : successorEdges) {
                 successorEdge.setRelativeFromX(layoutEdge.getRelativeFromX());
                 successorEdge.setFrom(fromNode);
-                fromNode.getSuccessors().add(successorEdge);
+                fromNode.addSuccessor(successorEdge);
             }
             dummyNode.getPredecessors().clear();
             dummyNode.getSuccessors().clear();
@@ -916,8 +918,8 @@ public class LayoutGraph {
 
                 predEdge.setFrom(prevDummy);
                 predEdge.setRelativeFromX(prevDummy.getWidth() / 2);
-                fromNode.getSuccessors().remove(predEdge);
-                prevDummy.getSuccessors().add(predEdge);
+                fromNode.removeSuccessor(predEdge);
+                prevDummy.addSuccessor(predEdge);
             }
 
             LayoutNode layoutNode1 = predEdge.getTo();
@@ -925,13 +927,13 @@ public class LayoutGraph {
                 LayoutEdge prevEdge = predEdge;
                 for (int l = layoutNode1.getLayer() - 1; l > prevEdge.getFrom().getLayer(); l--) {
                     LayoutNode dummyNode = new LayoutNode();
-                    dummyNode.getSuccessors().add(prevEdge);
+                    dummyNode.addSuccessor(prevEdge);
                     LayoutEdge result = new LayoutEdge(prevEdge.getFrom(), dummyNode, prevEdge.getRelativeFromX(), 0, prevEdge.getLink());
                     if (prevEdge.isReversed()) result.reverse();
-                    dummyNode.getPredecessors().add(result);
+                    dummyNode.addPredecessor(result);
                     prevEdge.setRelativeFromX(0);
-                    prevEdge.getFrom().getSuccessors().remove(prevEdge);
-                    prevEdge.getFrom().getSuccessors().add(result);
+                    prevEdge.getFrom().removeSuccessor(prevEdge);
+                    prevEdge.getFrom().addSuccessor(result);
                     prevEdge.setFrom(dummyNode);
                     dummyNode.setLayer(l);
                     List<LayoutNode> layerNodes = getLayer(l);
@@ -976,8 +978,8 @@ public class LayoutGraph {
                 // the edge needs to be cut
                 if (maxLayerLength != -1 && toNode.getLayer() - fromNode.getLayer() > maxLayerLength) {
                     // remove the succEdge before replacing it
-                    toNode.getPredecessors().remove(succEdge);
-                    fromNode.getSuccessors().remove(succEdge);
+                    toNode.removePredecessor(succEdge);
+                    fromNode.removeSuccessor(succEdge);
 
                     LayoutNode topCutNode = portToTopNode.get(startPort);
                     if (topCutNode == null) {
@@ -989,8 +991,8 @@ public class LayoutGraph {
                     }
                     LayoutEdge edgeToTopCut = new LayoutEdge(fromNode, topCutNode, succEdge.getRelativeFromX(), topCutNode.getWidth() / 2, succEdge.getLink());
                     if (succEdge.isReversed()) edgeToTopCut.reverse();
-                    fromNode.getSuccessors().add(edgeToTopCut);
-                    topCutNode.getPredecessors().add(edgeToTopCut);
+                    fromNode.addSuccessor(edgeToTopCut);
+                    topCutNode.addPredecessor(edgeToTopCut);
 
                     LinkedHashMap<Integer, LayoutNode> layerToBottomNode = portToBottomNodeMapping.get(startPort);
                     LayoutNode bottomCutNode = layerToBottomNode.get(toNode.getLayer());
@@ -1002,8 +1004,8 @@ public class LayoutGraph {
                     }
                     LayoutEdge bottomEdge = new LayoutEdge(bottomCutNode, toNode, bottomCutNode.getWidth() / 2, succEdge.getRelativeToX(), succEdge.getLink());
                     if (succEdge.isReversed()) bottomEdge.reverse();
-                    toNode.getPredecessors().add(bottomEdge);
-                    bottomCutNode.getSuccessors().add(bottomEdge);
+                    toNode.addPredecessor(bottomEdge);
+                    bottomCutNode.addSuccessor(bottomEdge);
 
                 } else { // the edge is not cut, but needs dummy nodes
                     portsToUnprocessedEdges.putIfAbsent(startPort, new ArrayList<>());
@@ -1026,14 +1028,14 @@ public class LayoutGraph {
                     for (int i = fromNode.getLayer() + 1; i < previousEdge.getTo().getLayer(); i++) {
                         LayoutNode dummyNode = new LayoutNode();
                         dummyNode.setLayer(i);
-                        dummyNode.getPredecessors().add(previousEdge);
+                        dummyNode.addPredecessor(previousEdge);
                         addNodeToLayer(dummyNode, dummyNode.getLayer());
                         LayoutEdge dummyEdge = new LayoutEdge(dummyNode, previousEdge.getTo(), dummyNode.getWidth() / 2, previousEdge.getRelativeToX(), singleEdge.getLink());
                         if (previousEdge.isReversed()) dummyEdge.reverse();
-                        dummyNode.getSuccessors().add(dummyEdge);
+                        dummyNode.addSuccessor(dummyEdge);
                         previousEdge.setRelativeToX(dummyNode.getWidth() / 2);
-                        previousEdge.getTo().getPredecessors().remove(previousEdge);
-                        previousEdge.getTo().getPredecessors().add(dummyEdge);
+                        previousEdge.getTo().removePredecessor(previousEdge);
+                        previousEdge.getTo().addPredecessor(dummyEdge);
                         previousEdge.setTo(dummyNode);
                         previousEdge = dummyEdge;
                     }
@@ -1047,21 +1049,21 @@ public class LayoutGraph {
                 newDummyNodes[0] = new LayoutNode();
                 newDummyNodes[0].setLayer(layoutNode.getLayer() + 1);
                 newDummyEdges[0] = new LayoutEdge(layoutNode, newDummyNodes[0], startPort, newDummyNodes[0].getWidth() / 2, null);
-                newDummyNodes[0].getPredecessors().add(newDummyEdges[0]);
-                layoutNode.getSuccessors().add(newDummyEdges[0]);
+                newDummyNodes[0].addPredecessor(newDummyEdges[0]);
+                layoutNode.addSuccessor(newDummyEdges[0]);
                 for (int j = 1; j < dummyCnt; j++) {
                     newDummyNodes[j] = new LayoutNode();
                     newDummyNodes[j].setLayer(layoutNode.getLayer() + j + 1);
                     newDummyEdges[j] = new LayoutEdge(newDummyNodes[j - 1], newDummyNodes[j], null);
-                    newDummyNodes[j].getPredecessors().add(newDummyEdges[j]);
-                    newDummyNodes[j - 1].getSuccessors().add(newDummyEdges[j]);
+                    newDummyNodes[j].addPredecessor(newDummyEdges[j]);
+                    newDummyNodes[j - 1].addSuccessor(newDummyEdges[j]);
                 }
                 for (LayoutEdge unprocessedEdge : unprocessedEdges) {
                     LayoutNode anchorNode = newDummyNodes[unprocessedEdge.getTo().getLayer() - layoutNode.getLayer() - 2];
-                    anchorNode.getSuccessors().add(unprocessedEdge);
+                    anchorNode.addSuccessor(unprocessedEdge);
                     unprocessedEdge.setFrom(anchorNode);
                     unprocessedEdge.setRelativeFromX(anchorNode.getWidth() / 2);
-                    layoutNode.getSuccessors().remove(unprocessedEdge);
+                    layoutNode.removeSuccessor(unprocessedEdge);
                 }
                 for (LayoutNode dummyNode : newDummyNodes) {
                     addNodeToLayer(dummyNode, dummyNode.getLayer());
