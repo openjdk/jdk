@@ -59,8 +59,8 @@ import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReaderFactory;
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.module.ModuleHashes.HashSupplier;
 import jdk.internal.util.StaticProperty;
+import jdk.internal.module.ModuleHashes.HashSupplier;
 
 /**
  * The factory for SystemModules objects and for creating ModuleFinder objects
