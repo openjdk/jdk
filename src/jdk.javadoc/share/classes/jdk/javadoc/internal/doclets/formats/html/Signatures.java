@@ -48,7 +48,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -532,13 +531,7 @@ public class Signatures {
             // Apply different wrapping strategies for type parameters
             // depending on the combined length of type parameters and return type.
             // Note return type will be null if this is a constructor.
-            int typeParamLength = typeParameters.charCount();
-
-            if (typeParamLength >= TYPE_PARAMS_MAX_INLINE_LENGTH) {
-                target.add(HtmlTree.SPAN(HtmlStyles.typeParametersLong, typeParameters));
-            } else {
-                target.add(HtmlTree.SPAN(HtmlStyles.typeParameters, typeParameters));
-            }
+            target.add(HtmlTree.SPAN(HtmlStyles.typeParameters, typeParameters));
 
             int lineLength = target.charCount() - lastLineSeparator;
             int newLastLineSeparator = lastLineSeparator;

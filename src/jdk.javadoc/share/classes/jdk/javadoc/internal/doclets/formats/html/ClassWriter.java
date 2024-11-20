@@ -57,7 +57,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlAttr;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -459,9 +458,16 @@ public class ClassWriter extends SubWriterHolderWriter {
                     .linkToSelf(false);  // Let's not link to ourselves in the header
             content.add("<");
             var first = true;
+            boolean boundTypeParams = typeParams.stream()
+                    .map(t -> getLink(linkInfo.forType(t.asType())))
+                    .anyMatch(t -> t.charCount() > 8);
             for (TypeParameterElement t : typeParams) {
                 if (!first) {
-                    content.add(",").add(HtmlTree.WBR());
+                    if (boundTypeParams) {
+                        content.add(", ");
+                    } else {
+                        content.add(",").add(HtmlTree.WBR());
+                    }
                 }
                 var typeParamLink = getLink(linkInfo.forType(t.asType()));
                 content.add(needsId

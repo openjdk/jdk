@@ -41,7 +41,6 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -54,7 +53,6 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlId;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -400,18 +398,15 @@ public class HtmlLinkFactory {
             }
             links.add("<");
             boolean many = false;
-            boolean hasUsesOfParameterizedTypes =
-                    vars.stream()
-                            .anyMatch(typeMirror -> typeMirror.getKind() != TypeKind.TYPEVAR);
+            boolean boundTypeParams = vars.stream()
+                    .map(t -> getLink(linkInfo.forType(t)))
+                    .anyMatch(t -> t.charCount() > 8);
             for (TypeMirror t : vars) {
                 if (many) {
-                    if (hasUsesOfParameterizedTypes) {
+                    if (boundTypeParams) {
                         links.add(", ");
                     } else {
                         links.add(",").add(HtmlTree.WBR());
-                    }
-                    if (linkInfo.addLineBreaksInTypeParameters()) {
-                        links.add(Text.NL);
                     }
                 }
                 links.add(getLink(linkInfo.forType(t)));
