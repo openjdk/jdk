@@ -217,6 +217,8 @@ public class TestRecursiveLocking {
     static final int LM_MONITOR = 0;
     static final int LM_LEGACY = 1;
     static final int LM_LIGHTWEIGHT = 2;
+    static final int def_mode = 2;
+    static final int def_n_secs = 30;
     static final SyncThread syncThread = new SyncThread();
 
     // This SynchronizedObject class and the OUTER followed by INNER testing
@@ -227,7 +229,7 @@ public class TestRecursiveLocking {
         synchronized void runInner(int depth, SynchronizedObject outer) {
             counter++;
 
-            // Legacy mode has no lock stack, I.e. there is no limit
+            // Legacy mode has no lock stack, i.e., there is no limit
             // on recursion, so for legacy mode we can't say that
             // "outer" must be inflated here, which we can say for all
             // the other locking modes.
@@ -235,7 +237,7 @@ public class TestRecursiveLocking {
                 outer.assertInflated();
             }
 
-            // We havn't reached the stack lock capacity (recursion
+            // We haven't reached the stack lock capacity (recursion
             // level), so we shouldn't be inflated here. Except for
             // monitor mode, which is always inflated.
             if (flagLockingMode != LM_MONITOR) {
@@ -389,26 +391,26 @@ public class TestRecursiveLocking {
         }
     }
 
-    static void usage(int mode, int n_secs) {
+    static void usage() {
         System.err.println();
         System.err.println("Usage: java TestRecursiveLocking [n_secs]");
         System.err.println("       java TestRecursiveLocking n_secs [mode]");
         System.err.println();
         System.err.println("where:");
         System.err.println("    n_secs  ::= > 0");
-        System.err.println("            Default n_secs is " + n_secs + ".");
+        System.err.println("            Default n_secs is " + def_n_secs + ".");
         System.err.println("    mode    ::= 1 - outer and inner");
         System.err.println("            ::= 2 - alternate A and B");
-        System.err.println("            Default mode is " + mode + ".");
+        System.err.println("            Default mode is " + def_mode + ".");
         System.exit(1);
     }
 
     public static void main(String... argv) throws Exception {
-        int mode = 2;
-        int n_secs = 30;
+        int mode = def_mode;
+        int n_secs = def_n_secs;
 
         if (argv.length != 0 && argv.length != 1 && argv.length != 2) {
-            usage(mode, n_secs);
+            usage();
         } else if (argv.length > 0) {
             try {
                 n_secs = Integer.parseInt(argv[0]);
@@ -421,7 +423,7 @@ public class TestRecursiveLocking {
                 System.err.println(nfe);
                 System.err.println("ERROR: '" + argv[0]
                                    + "': invalid n_secs value.");
-                usage(mode, n_secs);
+                usage();
             }
 
             if (argv.length > 1) {
@@ -436,7 +438,7 @@ public class TestRecursiveLocking {
                     System.err.println(nfe);
                     System.err.println("ERROR: '" + argv[1]
                                        + "': invalid mode value.");
-                    usage(mode, n_secs);
+                    usage();
                 }
             }
         }
