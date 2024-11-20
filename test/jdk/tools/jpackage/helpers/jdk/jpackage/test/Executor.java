@@ -484,7 +484,7 @@ public final class Executor extends CommandArguments<Executor> {
         var cmdline = Stream.of(prefixCommandLineArgs(), List.of(exec), args).flatMap(
                 List::stream).toList();
 
-        return String.format(format, printCommandLine(cmdline), cmdline.size() + 1);
+        return String.format(format, printCommandLine(cmdline), cmdline.size());
     }
 
     private static String printCommandLine(List<String> cmdline) {
