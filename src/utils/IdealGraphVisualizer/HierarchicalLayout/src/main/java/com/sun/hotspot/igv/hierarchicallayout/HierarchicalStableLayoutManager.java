@@ -31,10 +31,6 @@ import java.util.*;
 public class HierarchicalStableLayoutManager extends LayoutManager{
 
     private final HierarchicalLayoutManager manager;
-    private HashMap<Vertex, VertexAction> vertexToAction;
-    private List<VertexAction> vertexActions;
-    private List<LinkAction> linkActions;
-    private boolean shouldRedrawLayout = true;
 
     private LayoutGraph graph;
     private LayoutGraph prevGraph;
@@ -47,146 +43,24 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
     }
 
     @Override
-    public void doLayout(LayoutGraph graph) {
-
-    }
-
-    enum Action {
-        ADD,
-        REMOVE
-    }
-
-    private static class VertexAction {
-        public Vertex vertex;
-        public List<LinkAction> linkActions = new LinkedList<>();
-        public Action action;
-
-        public VertexAction(Vertex vertex, Action action) {
-            this.vertex = vertex;
-            this.action = action;
-        }
-    }
-
-    private static class LinkAction {
-        public Link link;
-        public Action action;
-
-        public LinkAction(Link link, Action action) {
-            this.link = link;
-            this.action = action;
-        }
-    }
+    public void doLayout(LayoutGraph graph) {}
 
     public HierarchicalStableLayoutManager() {
         manager = new HierarchicalLayoutManager();
     }
 
 
-    private static final Comparator<VertexAction> vertexActionComparator = (a1, a2) -> {
-        if (a1.action == Action.REMOVE) {
-            if (a2.action == Action.REMOVE) {
-                return a2.linkActions.size() - a1.linkActions.size();
-            }
-            return -1;
-        }
-        if (a2.action == Action.REMOVE) {
-            return 1;
-        }
-
-        return a1.linkActions.size() - a2.linkActions.size();
-    };
-
-    private void generateActions() {
-        HashSet<Vertex> addedVertices = new HashSet<>(graph.getVertices());
-        addedVertices.removeAll(prevGraph.getVertices());
-
-        HashSet<Vertex> removedVertices = new HashSet<>(prevGraph.getVertices());
-        removedVertices.removeAll(graph.getVertices());
-
-        HashSet<Link> addedLinks = new HashSet<>(graph.getLinks());
-        HashSet<Link> removedLinks = new HashSet<>(prevGraph.getLinks());
-        for (Link currLink : graph.getLinks()) {
-            for (Link prevLink : prevGraph.getLinks()) {
-                if (currLink.equals(prevLink)) {
-                    addedLinks.remove(currLink);
-                    removedLinks.remove(prevLink);
-                    break;
-                }
-            }
-        }
-
-        for (Vertex v : addedVertices) {
-            VertexAction a = new VertexAction(v, Action.ADD);
-            vertexActions.add(a);
-            vertexToAction.put(v, a);
-        }
-
-        for (Vertex v : removedVertices) {
-            VertexAction a = new VertexAction(v, Action.REMOVE);
-            vertexActions.add(a);
-            vertexToAction.put(v, a);
-        }
-
-        for (Link l : addedLinks) {
-            Vertex to = l.getTo().getVertex();
-            Vertex from = l.getFrom().getVertex();
-            LinkAction a = new LinkAction(l, Action.ADD);
-
-            if (addedVertices.contains(to)) {
-                vertexToAction.get(to).linkActions.add(a);
-            }
-            if (addedVertices.contains(from)) {
-                vertexToAction.get(from).linkActions.add(a);
-            }
-            if (!addedVertices.contains(to) && !addedVertices.contains(from)) {
-                linkActions.add(a);
-            }
-        }
-
-        for (Link l : removedLinks) {
-            Vertex to = l.getTo().getVertex();
-            Vertex from = l.getFrom().getVertex();
-            LinkAction a = new LinkAction(l, Action.REMOVE);
-
-            if (removedVertices.contains(to)) {
-                vertexToAction.get(to).linkActions.add(a);
-            }
-            if (removedVertices.contains(from)) {
-                vertexToAction.get(from).linkActions.add(a);
-            }
-            if (!removedVertices.contains(to) && !removedVertices.contains(from)) {
-                linkActions.add(a);
-            }
-        }
-
-        vertexActions.sort(vertexActionComparator);
-    }
-
     public void updateLayout(Set<? extends Vertex> vertices, Set<? extends Link> links) {
         graph = new LayoutGraph(links, vertices);
-        vertexActions = new LinkedList<>();
-        linkActions = new LinkedList<>();
-        vertexToAction = new HashMap<>();
 
-        if (shouldRedrawLayout) {
+        if (prevGraph == null) {
             manager.doLayout(graph);
-            shouldRedrawLayout = false;
         } else {
-            generateActions();
-
             // Reverse edges, handle back-edges
             HierarchicalLayoutManager.ReverseEdges.apply(graph);
 
-            // Only apply updates if there are any
-            if (!linkActions.isEmpty() || !vertexActions.isEmpty()) {
-                new ApplyActionUpdates().run();
-            }
-
-            // HierarchicalLayoutManager.LayerManager.apply(currGraph, maxLayerLength);
-
-            // HierarchicalLayoutManager.CrossingReduction.apply(currGraph);
-
-            // HierarchicalLayoutManager.AssignXCoordinates.apply(currGraph);
+            // Apply updates if there are any
+            ApplyActionUpdates.apply(prevGraph, graph);
 
             //  Assign Y-Coordinates, Write back to interface
             HierarchicalLayoutManager.WriteResult.apply(graph);
@@ -195,7 +69,8 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
         prevGraph = graph;
     }
 
-    private class ApplyActionUpdates {
+    private static class ApplyActionUpdates {
+        /*
         public void moveVertex(LayoutGraph graph, Vertex movedVertex) {
             Point newLoc = movedVertex.getPosition();
             LayoutNode movedNode = graph.getLayoutNode(movedVertex);
@@ -211,65 +86,25 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             graph.addEdges(movedNode, maxLayerLength);
         }
 
-        /**
-         * Adjust the X-coordinates of the nodes in the given layer, as a new node has
-         * been inserted at that layer
          */
-        private void adjustXCoordinates(int layerNr) {
-            // TODO
-            LayoutLayer layer = graph.getLayer(layerNr);
-            for (LayoutNode n : layer) {
-                //int optimal = n.calculateOptimalXFromNeighbors();
-            }
-        }
 
-        private void updateReversedLinkPositions(Link link) {
-            LayoutNode fromNode = graph.getLayoutNode(link.getFrom().getVertex());
-            LayoutNode toNode =  graph.getLayoutNode(link.getTo().getVertex());
-
-            // TODO
-            updateNodeWithReversedEdges(fromNode);
-            updateNodeWithReversedEdges(toNode);
-        }
-
-        private void updateNodeWithReversedEdges(LayoutNode node) {
-           // TODO
-        }
-
-        /**
-         * Find the optimal position within the given layerNr to insert the given node.
-         * The optimum is given by the least amount of edge crossings.
-         */
-        private int optimalPosition(LayoutNode node, int layerNr) {
-            LayoutLayer layoutLayer = graph.getLayer(layerNr);
-            layoutLayer.sortNodesByX();
-
-            int optimalPos = 0;
-            // TODO
-            // Try each possible position in the layerNr
-
-            return optimalPos;
-        }
 
         /**
          * Insert node at the assigned layer, updating the positions of the nodes within
          * the layer
          */
-        private void insertNode(LayoutNode node, int layerNr) {
-            LayoutLayer layoutLayer = graph.getLayer(layerNr);
+        private static void insertNode(LayoutNode node, int layerNr) {
+            //LayoutLayer layoutLayer = graph.getLayer(layerNr);
             // TODO
 
-            adjustXCoordinates(layerNr);
+            //adjustXCoordinates(layerNr);
+            /**
+             * Adjust the X-coordinates of the nodes in the given layer, as a new node has
+             * been inserted at that layer
+             */
         }
 
-
-        private void insertDummyNodes(LayoutEdge edge) {
-            LayoutNode from = edge.getFrom();
-            LayoutNode to = edge.getTo();
-            // TODO
-        }
-
-        private boolean canMoveNodeUp(LayoutNode node) {
+        private static boolean canMoveNodeUp(LayoutNode node) {
             if (node.getLayer() == 0) {
                 return false;
             }
@@ -283,10 +118,9 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             return true;
         }
 
-        private boolean canMoveNodeDown(LayoutNode node) {
-            if (node.getLayer() == graph.getLayerCount() - 1) {
-                return false;
-            }
+        private static boolean canMoveNodeDown(LayoutNode node) {
+            //if (node.getLayer() == graph.getLayerCount() - 1) return false;
+
             int newLayer = node.getLayer() + 1;
             for (LayoutEdge succEdge : node.getSuccessors()) {
                 LayoutNode toNode = succEdge.getTo();
@@ -297,20 +131,20 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             return true;
         }
 
-        private void moveNodeUp(LayoutNode node) {
+        private static void moveNodeUp(LayoutNode node) {
             // TODO
             removeNodeWithoutRemovingLayer(node);
             insertNode(node, node.getLayer() - 1);
 
         }
 
-        private void moveNodeDown(LayoutNode node) {
+        private static void moveNodeDown(LayoutNode node) {
             // TODO
             removeNodeWithoutRemovingLayer(node);
             insertNode(node, node.getLayer() + 1);
         }
 
-        private void handleNeighborNodesOnSameLayer(LayoutNode from, LayoutNode to) {
+        private static void handleNeighborNodesOnSameLayer(LayoutNode from, LayoutNode to) {
             if (canMoveNodeDown(to)) {
                 moveNodeDown(to);
             } else if (canMoveNodeUp(from)) {
@@ -323,7 +157,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             }
         }
 
-        private void applyAddLinkAction(Link l) {
+        private static void applyAddLinkAction(LayoutGraph graph, Link l) {
             Vertex from = l.getFrom().getVertex();
             Vertex to = l.getTo().getVertex();
             LayoutNode fromNode = graph.getLayoutNode(from);
@@ -334,33 +168,34 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
 
             boolean reversedLink = false;
             if (reversedLink) {
-                updateReversedLinkPositions(l);
+                //updateReversedLinkPositions(l);
+                LayoutNode fromNode2 = graph.getLayoutNode(l.getFrom().getVertex());
+                LayoutNode toNode2 =  graph.getLayoutNode(l.getTo().getVertex());
+
+                // TODO
+                //updateNodeWithReversedEdges(fromNode2);
+                //updateNodeWithReversedEdges(toNode2);
             }
 
             // Edge span multiple layers - must insert dummy nodes
             //insertDummyNodes(edge);
         }
 
-        /**
-         * Calculate which layer the given vertex should be inserted at to minimize
-         * reversed edges and edge lengths
-         * If there are multiple options, choose the bottom-most layer
-         *
-         * @return the optimal layer to insert the given vertex
-         */
-        private int optimalLayer(Vertex vertex, List<Link> links) {
-            int optimalLayer = 0;
-            // TODO
-            return optimalLayer;
-        }
 
-        private void applyAddVertexAction(VertexAction action) {
 
-            List<Link> links = new ArrayList<>();
-            for (LinkAction a : action.linkActions) {
-                links.add(a.link);
-            }
-            int layer = optimalLayer(action.vertex, links);
+        private static void applyAddVertexAction(LayoutGraph graph, Vertex vertex) {
+            int optimalLayer = 42;
+            /**
+             * Calculate which layer the given vertex should be inserted at to minimize
+             * reversed edges and edge lengths
+             * If there are multiple options, choose the bottom-most layer
+             *
+             * @return the optimal layer to insert the given vertex
+             *
+             *  * Find the optimal position within the given layerNr to insert the given node.
+             *              * The optimum is given by the least amount of edge crossings.
+             *              *             // Try each possible position in the layerNr
+             */
 
             // Temporarily add the links so that the node insertion accounts for edge
             // crossings
@@ -368,14 +203,9 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             // insertNode(node, layer);
 
             // Add associated edges
-            for (LinkAction a : action.linkActions) {
-                if (a.action == Action.ADD) {
-                    applyAddLinkAction(a.link);
-                }
-            }
         }
 
-        private void applyRemoveLinkAction(Link l) {
+        private static void applyRemoveLinkAction(LayoutGraph graph, Link l) {
 
             Vertex from = l.getFrom().getVertex();
             Vertex to = l.getTo().getVertex();
@@ -389,45 +219,53 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             // TODO
         }
 
-        private void removeNodeWithoutRemovingLayer(LayoutNode node) {
-            removeNode(node, false);
+        private static void applyRemoveVertexAction(LayoutGraph graph, Vertex vertex) {
+            LayoutNode node = graph.getLayoutNode(vertex);
+            graph.removeNodeAndEdges(node);
+            graph.removeEmptyLayers();
         }
 
-        private void removeNode(LayoutNode node, boolean removeEmptyLayers) {
-            if (removeEmptyLayers) {
-                graph.removeEmptyLayers();
-            }
+        private static void removeNodeWithoutRemovingLayer(LayoutNode node) {
+            //graph.removeEmptyLayers();
 
             // Remove node from graph layout
-            graph.removeNode(node);
+            //graph.removeNode(node);
         }
 
 
-        void run() {
-            for (VertexAction action : vertexActions) {
-                if (action.action == Action.REMOVE) {
-                    LayoutNode node = graph.getLayoutNode(action.vertex);
-                    graph.removeNodeAndEdges(node);
-                    graph.removeEmptyLayers();
+        static void apply(LayoutGraph prevGraph, LayoutGraph graph) {
+            HashSet<Vertex> addedVertices = new HashSet<>(graph.getVertices());
+            addedVertices.removeAll(prevGraph.getVertices());
+
+            HashSet<Vertex> removedVertices = new HashSet<>(prevGraph.getVertices());
+            removedVertices.removeAll(graph.getVertices());
+
+            HashSet<Link> addedLinks = new HashSet<>(graph.getLinks());
+            HashSet<Link> removedLinks = new HashSet<>(prevGraph.getLinks());
+            for (Link currLink : graph.getLinks()) {
+                for (Link prevLink : prevGraph.getLinks()) {
+                    if (currLink.equals(prevLink)) {
+                        addedLinks.remove(currLink);
+                        removedLinks.remove(prevLink);
+                        break;
+                    }
                 }
             }
 
-            for (LinkAction action : linkActions) {
-                if (action.action == Action.REMOVE) {
-                    applyRemoveLinkAction(action.link);
-                }
+            for (Vertex vertex : removedVertices) {
+                applyRemoveVertexAction(graph, vertex);
             }
 
-            for (VertexAction action : vertexActions) {
-                if (action.action == Action.ADD) {
-                    applyAddVertexAction(action);
-                }
+            for (Link link : removedLinks) {
+                applyRemoveLinkAction(graph, link);
             }
 
-            for (LinkAction action : linkActions) {
-                if (action.action == Action.ADD) {
-                    applyAddLinkAction(action.link);
-                }
+            for (Vertex vertex : addedVertices) {
+                applyAddVertexAction(graph, vertex);
+            }
+
+            for (Link link : addedLinks) {
+                applyAddLinkAction(graph, link);
             }
         }
     }
