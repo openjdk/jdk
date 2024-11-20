@@ -58,7 +58,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3, jvmArgsAppend = {"--add-opens", "java.base/com.sun.crypto.provider=ALL-UNNAMED"})
 
 public class MLKEMBench {
-        @Param({"kyber512", "kyber768", "kyber1024"} )
+        @Param({"ML-KEM-512", "ML-KEM-768", "ML-KEM-1024"} )
         private static String algorithm;
 
         private static final int TestsPerOp = 100;
@@ -75,9 +75,9 @@ public class MLKEMBench {
         Object[] decapCiphertext768 = new Object[decap768TestCases.length];
         Object[] decapCiphertext1024 = new Object[decap1024TestCases.length];
 
-        Object kyber512;
-        Object kyber768;
-        Object kyber1024;
+        Object ML_KEM_512;
+        Object ML_KEM_768;
+        Object ML_KEM_1024;
 
         MethodHandle generateKemKeyPair, encapsulate, decapsulate;
 
@@ -127,7 +127,7 @@ public class MLKEMBench {
             CTconstructor.setAccessible(true);
 
             Constructor<?> ML_KEMconstructor = ML_KEM.getDeclaredConstructor(
-                    int.class);
+                    String.class);
             ML_KEMconstructor.setAccessible(true);
 
             Method m = ML_KEM.getDeclaredMethod("generateKemKeyPair",
@@ -146,8 +146,8 @@ public class MLKEMBench {
             decapsulate = lookup.unreflect(m);
 
             switch (algorithm) {
-                case "kyber512" -> {
-                    kyber512 = ML_KEMconstructor.newInstance(512);
+                case "ML-KEM-512" -> {
+                    ML_KEM_512 = ML_KEMconstructor.newInstance(algorithm);
                     int i = 0;
                     for (EncapsulateTestCase tc : encap512TestCases) {
                         encapKey512[i] = EKconstructor.newInstance(tc.ek);
@@ -160,8 +160,8 @@ public class MLKEMBench {
                         i++;
                     }
                 }
-                case "kyber768" -> {
-                    kyber768 = ML_KEMconstructor.newInstance(768);
+                case "ML-KEM-768" -> {
+                    ML_KEM_768 = ML_KEMconstructor.newInstance(algorithm);
                     int i = 0;
                     for (EncapsulateTestCase tc : encap768TestCases) {
                         encapKey768[i] = EKconstructor.newInstance(tc.ek);
@@ -174,8 +174,8 @@ public class MLKEMBench {
                         i++;
                     }
                 }
-                case "kyber1024" -> {
-                    kyber1024 = ML_KEMconstructor.newInstance(1024);
+                case "ML-KEM-1024" -> {
+                    ML_KEM_1024 = ML_KEMconstructor.newInstance(algorithm);
                     int i = 0;
                     for (EncapsulateTestCase tc : encap1024TestCases) {
                         encapKey1024[i] = EKconstructor.newInstance(tc.ek);
@@ -195,11 +195,11 @@ public class MLKEMBench {
     @Benchmark
     public void keygen(MyState myState) throws Throwable {
         switch (algorithm) {
-            case "kyber512" -> {
+            case "ML-KEM-512" -> {
                 int count = 0;
                 while (true) {
                     for (KeygenTestCase tc : keygen512TestCases) {
-                        myState.generateKemKeyPair.invoke(myState.kyber512,
+                        myState.generateKemKeyPair.invoke(myState.ML_KEM_512,
                                 tc.d, tc.z);
                         if (count++ >= TestsPerOp) {
                             return;
@@ -207,11 +207,11 @@ public class MLKEMBench {
                     }
                 }
             }
-            case "kyber768" -> {
+            case "ML-KEM-768" -> {
                 int count = 0;
                 while (true) {
                     for (KeygenTestCase tc : keygen768TestCases) {
-                        myState.generateKemKeyPair.invoke(myState.kyber768,
+                        myState.generateKemKeyPair.invoke(myState.ML_KEM_768,
                                 tc.d, tc.z);
                         if (count++ >= TestsPerOp) {
                             return;
@@ -219,11 +219,11 @@ public class MLKEMBench {
                     }
                 }
             }
-            case "kyber1024" -> {
+            case "ML-KEM-1024" -> {
                 int count = 0;
                 while (true) {
                     for (KeygenTestCase tc : keygen1024TestCases) {
-                        myState.generateKemKeyPair.invoke(myState.kyber1024,
+                        myState.generateKemKeyPair.invoke(myState.ML_KEM_1024,
                                 tc.d, tc.z);
                         if (count++ >= TestsPerOp) {
                             return;
@@ -238,12 +238,12 @@ public class MLKEMBench {
     public void encapsulate(MyState myState) throws Throwable {
         int i = 0;
         switch (algorithm) {
-            case "kyber512" -> {
+            case "ML-KEM-512" -> {
                 int count = 0;
                 while (true) {
                     i = 0;
                     for (EncapsulateTestCase tc : encap512TestCases) {
-                        myState.encapsulate.invoke(myState.kyber512,
+                        myState.encapsulate.invoke(myState.ML_KEM_512,
                                 myState.encapKey512[i], tc.m);
                         i++;
                         if (count++ >= TestsPerOp) {
@@ -252,12 +252,12 @@ public class MLKEMBench {
                     }
                 }
             }
-            case "kyber768" -> {
+            case "ML-KEM-768" -> {
                 int count =  0;
                 while (true) {
                     i = 0;
                     for (EncapsulateTestCase tc : encap768TestCases) {
-                        myState.encapsulate.invoke(myState.kyber768,
+                        myState.encapsulate.invoke(myState.ML_KEM_768,
                                 myState.encapKey768[i], tc.m);
                         i++;
                         if (count++ >= TestsPerOp) {
@@ -266,12 +266,12 @@ public class MLKEMBench {
                     }
                 }
             }
-            case "kyber1024" -> {
+            case "ML-KEM-1024" -> {
                 int count = 0;
                 while (true) {
                     i = 0;
                     for (EncapsulateTestCase tc : encap1024TestCases) {
-                        myState.encapsulate.invoke(myState.kyber1024,
+                        myState.encapsulate.invoke(myState.ML_KEM_1024,
                                 myState.encapKey1024[i], tc.m);
                         i++;
                         if (count++ >= TestsPerOp) {
@@ -287,12 +287,12 @@ public class MLKEMBench {
     public void decapsulate(MyState myState) throws Throwable {
         int i = 0;
         switch (algorithm) {
-            case "kyber512" -> {
+            case "ML-KEM-512" -> {
                 int count = 0;
                 while (true) {
                     i = 0;
                     for (DecapsulateTestCase tc : decap512TestCases) {
-                        myState.decapsulate.invoke(myState.kyber512,
+                        myState.decapsulate.invoke(myState.ML_KEM_512,
                                 myState.decapKey512[i],
                                 myState.decapCiphertext512[i]);
                         i++;
@@ -302,12 +302,12 @@ public class MLKEMBench {
                     }
                 }
             }
-            case "kyber768" -> {
+            case "ML-KEM-768" -> {
                 int count = 0;
                 while (true) {
                     i = 0;
                     for (DecapsulateTestCase tc : decap768TestCases) {
-                        myState.decapsulate.invoke(myState.kyber768,
+                        myState.decapsulate.invoke(myState.ML_KEM_768,
                                 myState.decapKey768[i],
                                 myState.decapCiphertext768[i]);
                         i++;
@@ -317,12 +317,12 @@ public class MLKEMBench {
                     }
                 }
             }
-            case "kyber1024" -> {
+            case "ML-KEM-1024" -> {
                 int count = 0;
                 while (true) {
                     i = 0;
                     for (DecapsulateTestCase tc : decap1024TestCases) {
-                        myState.decapsulate.invoke(myState.kyber1024,
+                        myState.decapsulate.invoke(myState.ML_KEM_1024,
                                 myState.decapKey1024[i],
                                 myState.decapCiphertext1024[i]);
                         i++;
