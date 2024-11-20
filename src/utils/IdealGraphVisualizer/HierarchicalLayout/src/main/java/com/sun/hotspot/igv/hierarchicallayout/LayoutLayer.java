@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.hierarchicallayout;
 
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutManager.*;
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODES_OPTIMAL_X;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_X_COMPARATOR;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -318,4 +319,93 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         set(i, get(j));
         set(j, temp);
     }
+
+    /**
+     * Reduces edge crossings in the layer by iteratively swapping adjacent nodes.
+     * <p>
+     * Nodes are swapped if the swap decreases edge crossings based on the given neighbor type.
+     * The process continues until no improvements are found or the iteration limit is reached.
+     *
+     * @param neighborType the type of neighbors (predecessors or successors) to consider
+     */
+    public void reduceCrossings(LayoutNode.NeighborType neighborType) {
+        final int MAX_ITERATIONS = 1000; // Limit for safety
+        boolean improved = true;
+        int iteration = 0;
+
+        while (improved && iteration < MAX_ITERATIONS) {
+            improved = false;
+            iteration++;
+            for (int i = 0; i < size() - 1; i++) {
+                LayoutNode node1 = get(i);
+                LayoutNode node2 = get(i + 1);
+                int crossingsBefore = calculateEdgeCrossings(node1, node2, neighborType);
+                swapNodes(i, i + 1);
+                int crossingsAfter = calculateEdgeCrossings(node1, node2, neighborType);
+                if (crossingsAfter >= crossingsBefore) {
+                    // Swap back if no improvement
+                    swapNodes(i, i + 1);
+                } else {
+                    improved = true;
+                    // Update positions for the swapped nodes
+                    node1.setX(i);
+                    node2.setX(i + 1);
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Counts the number of edge crossings between the neighbors of two nodes.
+     * <p>
+     * This method compares the positions of adjacent nodes for the given neighbor type
+     * (predecessors or successors) to determine the number of crossing edges between them.
+     *
+     * @param node1        the first layout node
+     * @param node2        the second layout node
+     * @param neighborType the type of neighbors to consider (predecessors or successors)
+     * @return the number of crossings between the neighbors of the two nodes
+     */
+    public static int calculateEdgeCrossings(LayoutNode node1, LayoutNode node2, LayoutNode.NeighborType neighborType) {
+        int crossings = 0;
+        for (int neighborX1 : node1.getAdjacentX(neighborType)) {
+            for (int neighborX2 : node2.getAdjacentX(neighborType)) {
+                if (neighborX1 > neighborX2) {
+                    crossings++;
+                }
+            }
+        }
+        return crossings;
+    }
+
+    /**
+     * Orders the nodes in the layer based on barycenters and adjusts their X positions.
+     * <p>
+     * The barycenter is calculated for each node based on the specified neighbor type
+     * (predecessors or successors). If no neighbors of the given type exist, the opposite
+     * type is used as a fallback. After computing barycenters, the nodes are sorted and
+     * their positions adjusted with minimum horizontal spacing.
+     *
+     * @param neighborType the type of neighbors to consider (predecessors or successors)
+     */
+    public void orderByBarycenters(LayoutNode.NeighborType neighborType) {
+        for (LayoutNode node : this) {
+            int barycenter;
+            if (node.hasNeighborsOfType(neighborType)) {
+                barycenter = node.computeBarycenterX(neighborType, false);
+            } else {
+                // Fallback to the opposite neighbor type
+                barycenter = (neighborType == LayoutNode.NeighborType.SUCCESSORS)
+                        ? node.computeBarycenterX(LayoutNode.NeighborType.PREDECESSORS, false)
+                        : node.computeBarycenterX(LayoutNode.NeighborType.SUCCESSORS, false);
+            }
+            node.setOptimalX(barycenter);
+        }
+        // Sort nodes based on optimal X positions
+        sort(NODES_OPTIMAL_X);
+        // Update minimum horizontal spacing, starting from X = 0
+        updateMinXSpacing(true);
+    }
+
 }

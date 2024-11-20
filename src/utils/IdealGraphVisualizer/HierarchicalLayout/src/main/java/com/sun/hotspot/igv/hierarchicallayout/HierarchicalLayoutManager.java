@@ -303,8 +303,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
     public static class CrossingReduction {
 
-        private static final int CROSSING_ITERATIONS = 20;
-
         /**
          * Applies the crossing reduction algorithm to the given graph.
          *
@@ -338,82 +336,24 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 // Process layers from top to bottom
                 for (int i = 1; i < layers.size(); i++) {
                     LayoutLayer layer = layers.get(i);
-                    computeBarycenters(layer, NeighborType.PREDECESSORS);
-                    layer.sort(NODES_OPTIMAL_X);
-                    layer.updateMinXSpacing(true);
-                    transpose(layer, NeighborType.PREDECESSORS);
+                    layer.orderByBarycenters(NeighborType.PREDECESSORS);
+                    layer.reduceCrossings(NeighborType.PREDECESSORS);
                 }
             } else {
                 // Process layers from bottom to top
                 for (int i = layers.size() - 2; i >= 0; i--) {
                     LayoutLayer layer = layers.get(i);
-                    computeBarycenters(layer, NeighborType.SUCCESSORS);
-                    layer.sort(NODES_OPTIMAL_X);
-                    layer.updateMinXSpacing(true);
-                    transpose(layer, NeighborType.SUCCESSORS);
+                    layer.orderByBarycenters(NeighborType.SUCCESSORS);
+                    layer.reduceCrossings(NeighborType.SUCCESSORS);
                 }
             }
             for (LayoutLayer layer : layers) {
                 layer.updateMinXSpacing(false);
             }
         }
-
-        private static void computeBarycenters(LayoutLayer layer, NeighborType neighborType) {
-            for (LayoutNode node : layer) {
-                int barycenter = 0;
-                if (node.hasNeighborsOfType(neighborType)) {
-                    barycenter = node.computeBarycenterX(neighborType, false);
-                } else {
-                    if (neighborType == NeighborType.SUCCESSORS) {
-                        barycenter = node.computeBarycenterX( NeighborType.PREDECESSORS, false);
-                    } else if (neighborType == NeighborType.PREDECESSORS) {
-                        barycenter = node.computeBarycenterX( NeighborType.SUCCESSORS, false);
-                    }
-                }
-                node.setOptimalX(barycenter);
-            }
-        }
-
-
-        private static void transpose(LayoutLayer layer, LayoutNode.NeighborType neighborType) {
-            boolean improved = true;
-            while (improved) {
-                improved = false;
-                for (int i = 0; i < layer.size() - 1; i++) {
-                    LayoutNode node1 = layer.get(i);
-                    LayoutNode node2 = layer.get(i + 1);
-                    int crossingsBefore = countCrossings(node1, node2, neighborType);
-                    layer.swapNodes(i, i + 1);
-                    int crossingsAfter = countCrossings(node1, node2, neighborType);
-                    if (crossingsAfter >= crossingsBefore) {
-                        // Swap back
-                        layer.swapNodes(i, i + 1);
-                    } else {
-                        improved = true;
-                        // Update positions
-                        node1.setX(i);
-                        node2.setX(i + 1);
-                    }
-                }
-            }
-        }
-
-        private static int countCrossings(LayoutNode node1, LayoutNode node2, LayoutNode.NeighborType neighborType) {
-            int crossings = 0;
-            for (int x1 : node1.getAdjacentX(neighborType)) {
-                for (int x2 : node2.getAdjacentX(neighborType)) {
-                    if (x1 > x2) {
-                        crossings++;
-                    }
-                }
-            }
-            return crossings;
-        }
     }
 
     public static class AssignXCoordinates {
-
-        private static final int SWEEP_ITERATIONS = 10; // Example value
 
         static public void apply(LayoutGraph graph) {
 
@@ -427,7 +367,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     processLayerUp(layer);
                 }
                 shiftToZero(graph);
-
 
                 for (int i = 0; i < graph.getLayerCount(); i++) {
                     LayoutLayer layer = graph.getLayer(i);
@@ -451,7 +390,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
 
         static private void optimizeByNeighborhood(LayoutGraph graph) {
-            System.out.println("optimizeByNeighborhood");
             List<LayoutNode> processNodes = new ArrayList<>(graph.getLayoutNodes());
             for (LayoutNode layoutNode : processNodes) {
                 layoutNode.setOptimalX(layoutNode.calculateOptimalXFromNeighbors());

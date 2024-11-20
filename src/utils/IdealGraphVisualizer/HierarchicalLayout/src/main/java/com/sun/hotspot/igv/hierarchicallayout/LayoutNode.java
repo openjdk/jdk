@@ -51,10 +51,6 @@ public class LayoutNode {
     public static final Comparator<LayoutNode> NODES_OPTIMAL_X = Comparator.comparingInt(LayoutNode::getOptimalX);
     public static final Comparator<LayoutNode> NODES_OPTIMAL_DIFFERENCE = Comparator.comparingInt(LayoutNode::getOptimalDifference).reversed();
 
-
-
-
-
     // Default dimensions for dummy nodes
     public static final int DUMMY_HEIGHT = 1;
     public static final int DUMMY_WIDTH = 1;
