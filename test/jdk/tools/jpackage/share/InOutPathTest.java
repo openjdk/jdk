@@ -36,7 +36,7 @@ import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.PackageFile;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageCommand.AppLayoutAssert;
 import jdk.jpackage.test.PackageTest;

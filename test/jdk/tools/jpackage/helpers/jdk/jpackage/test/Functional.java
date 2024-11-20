@@ -31,84 +31,6 @@ import java.util.function.Supplier;
 
 
 public class Functional {
-    @FunctionalInterface
-    public interface ThrowingConsumer<T> {
-        void accept(T t) throws Throwable;
-
-        public static <T> Consumer<T> toConsumer(ThrowingConsumer<T> v) {
-            return o -> {
-                try {
-                    v.accept(o);
-                } catch (Throwable ex) {
-                    rethrowUnchecked(ex);
-                }
-            };
-        }
-    }
-
-    @FunctionalInterface
-    public interface ThrowingBiConsumer<T, U> {
-        void accept(T t, U u) throws Throwable;
-
-        public static <T, U> BiConsumer<T, U> toBiConsumer(ThrowingBiConsumer<T, U> v) {
-            return (t, u) -> {
-                try {
-                    v.accept(t, u);
-                } catch (Throwable ex) {
-                    rethrowUnchecked(ex);
-                }
-            };
-        }
-    }
-
-    @FunctionalInterface
-    public interface ThrowingSupplier<T> {
-        T get() throws Throwable;
-
-        public static <T> Supplier<T> toSupplier(ThrowingSupplier<T> v) {
-            return () -> {
-                try {
-                    return v.get();
-                } catch (Throwable ex) {
-                    rethrowUnchecked(ex);
-                }
-                // Unreachable
-                return null;
-            };
-        }
-    }
-
-    @FunctionalInterface
-    public interface ThrowingFunction<T, R> {
-        R apply(T t) throws Throwable;
-
-        public static <T, R> Function<T, R> toFunction(ThrowingFunction<T, R> v) {
-            return (t) -> {
-                try {
-                    return v.apply(t);
-                } catch (Throwable ex) {
-                    rethrowUnchecked(ex);
-                }
-                // Unreachable
-                return null;
-            };
-        }
-    }
-
-    @FunctionalInterface
-    public interface ThrowingRunnable {
-        void run() throws Throwable;
-
-        public static Runnable toRunnable(ThrowingRunnable v) {
-            return () -> {
-                try {
-                    v.run();
-                } catch (Throwable ex) {
-                    rethrowUnchecked(ex);
-                }
-            };
-        }
-    }
 
     public static <T> Supplier<T> identity(Supplier<T> v) {
         return v;
@@ -140,29 +62,5 @@ public class Functional {
 
     public static <T> Predicate<T> identityPredicate(Predicate<T> v) {
         return v;
-    }
-
-    public static class ExceptionBox extends RuntimeException {
-        public ExceptionBox(Throwable throwable) {
-            super(throwable);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static RuntimeException rethrowUnchecked(Throwable throwable) throws
-            ExceptionBox {
-        if (throwable instanceof RuntimeException err) {
-            throw err;
-        }
-
-        if (throwable instanceof Error err) {
-            throw err;
-        }
-
-        if (throwable instanceof InvocationTargetException err) {
-            throw rethrowUnchecked(err.getCause());
-        }
-
-        throw new ExceptionBox(throwable);
     }
 }

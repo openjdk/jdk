@@ -798,7 +798,6 @@ public class Window extends Container implements Accessible {
      * @see Component#isDisplayable
      * @see #setMinimumSize
      */
-    @SuppressWarnings("deprecation")
     public void pack() {
         Container parent = this.parent;
         if (parent != null && parent.peer == null) {
@@ -3604,7 +3603,6 @@ public class Window extends Container implements Accessible {
      *
      * @since 1.7
      */
-    @SuppressWarnings("deprecation")
     public void setOpacity(float opacity) {
         synchronized (getTreeLock()) {
             if (opacity < 0.0f || opacity > 1.0f) {

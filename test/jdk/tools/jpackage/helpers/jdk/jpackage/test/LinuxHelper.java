@@ -41,8 +41,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.ApplicationLayout;
-import jdk.jpackage.internal.IOUtils;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
@@ -578,7 +578,7 @@ public final class LinuxHelper {
 
     private static void verifyIconInScriptlet(Scriptlet scriptletType,
             List<String> scriptletBody, Path iconPathInPackage) {
-        final String dashMime = IOUtils.replaceSuffix(
+        final String dashMime = PathUtils.replaceSuffix(
                 iconPathInPackage.getFileName(), null).toString();
         final String xdgCmdName = "xdg-icon-resource";
 
