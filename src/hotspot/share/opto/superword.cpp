@@ -1477,8 +1477,6 @@ void SuperWord::filter_packs_for_alignment() {
       return true; // accept all non memops
     }
 
-    // TODO
-
     mem_ops_count++;
     const AlignmentSolution* s = pack_alignment_solution(pack);
     const AlignmentSolution* intersect = current->filter(s);
