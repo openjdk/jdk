@@ -703,7 +703,7 @@ public:
   address  entry_point()       const { return _entry_point; }
   float    cnt()               const { return _cnt; }
   CallGenerator* generator()   const { return _generator; }
-  CallGenerator* failed_generator()   const { return _failed_generator; }
+  CallGenerator* failed_generator() const { return _failed_generator; }
   bool late_inline_added()     const { return _late_inline_added; }
 
   void set_tf(const TypeFunc* tf)       { _tf = tf; }
