@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,9 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
-import java.io.IOException;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Rule;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
@@ -39,11 +36,6 @@ public class DeployParamsTest {
 
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
-
-    @Before
-    public void setUp() throws IOException {
-        testRoot = tempFolder.newFolder().toPath();
-    }
 
     @Test
     public void testValidAppName() throws PackagerException {
@@ -115,7 +107,6 @@ public class DeployParamsTest {
     private void initParamsAppName() {
         params = new DeployParams();
 
-        params.setOutput(testRoot);
         params.addBundleArgument(Arguments.CLIOptions.APPCLASS.getId(),
                 "TestClass");
         params.addBundleArgument(Arguments.CLIOptions.MAIN_JAR.getId(),
@@ -128,6 +119,5 @@ public class DeployParamsTest {
         params.validate();
     }
 
-    private Path testRoot = null;
     private DeployParams params;
 }

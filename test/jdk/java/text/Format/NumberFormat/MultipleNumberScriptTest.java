@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073852 8008577 8174269
+ * @bug 7073852 8008577 8174269 8333582
  * @summary Support multiple scripts for digits and decimal symbols per locale
  * @run main MultipleNumberScriptTest
  */
@@ -52,7 +52,7 @@ public class MultipleNumberScriptTest {
 
     // expected numbering system for each locale
     static String[] expectedNumSystem = {
-        "arab", // ar
+        "latn", // ar - CLDR-17553
         "arab", // ar-EG
         "latn", // ar-DZ
         "arab", // ar-EG-u-nu-arab

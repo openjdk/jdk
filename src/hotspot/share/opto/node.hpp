@@ -169,6 +169,7 @@ class RootNode;
 class SafePointNode;
 class SafePointScalarObjectNode;
 class SafePointScalarMergeNode;
+class SaturatingVectorNode;
 class StartNode;
 class State;
 class StoreNode;
@@ -741,6 +742,7 @@ public:
         DEFINE_CLASS_ID(CompressM, Vector, 6)
         DEFINE_CLASS_ID(Reduction, Vector, 7)
         DEFINE_CLASS_ID(NegV, Vector, 8)
+        DEFINE_CLASS_ID(SaturatingVector, Vector, 9)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
       DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
@@ -1010,6 +1012,7 @@ public:
   DEFINE_CLASS_QUERY(StoreVectorScatter)
   DEFINE_CLASS_QUERY(StoreVectorMasked)
   DEFINE_CLASS_QUERY(StoreVectorScatterMasked)
+  DEFINE_CLASS_QUERY(SaturatingVector)
   DEFINE_CLASS_QUERY(ShiftV)
   DEFINE_CLASS_QUERY(Unlock)
 
@@ -1610,7 +1613,14 @@ protected:
   Node** _nodes;
   ReallocMark _nesting;         // Safety checks for arena reallocation
 
-  void   grow( uint i );        // Grow array node to fit
+  // Grow array to required capacity
+  void maybe_grow(uint i) {
+    if (i >= _max) {
+      grow(i);
+    }
+  }
+  void grow(uint i);
+
 public:
   Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
     _nodes = NEW_ARENA_ARRAY(a, Node*, max);
@@ -1628,7 +1638,7 @@ public:
   Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
   Node** adr() { return _nodes; }
   // Extend the mapping: index i maps to Node *n.
-  void map( uint i, Node *n ) { grow(i); _nodes[i] = n; }
+  void map( uint i, Node *n ) { maybe_grow(i); _nodes[i] = n; }
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
   // Clear all entries in _nodes to null but keep storage

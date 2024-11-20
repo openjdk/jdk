@@ -30,3 +30,7 @@ editProperty(matches("name", "CallLeaf|CallLeafNoFP"), ["dump_spec"], "extra_lab
              function(dump_spec) {return callLeafInfo(dump_spec[0], 1);});
 editProperty(matches("name", "CallLeafDirect|CallLeafDirectVector|CallLeafNoFPDirect"), ["dump_spec"], "extra_label",
              function(dump_spec) {return callLeafInfo(dump_spec[0], 0);});
+
+// Show pre/main/post at CountedLoopNodes.
+editProperty(hasProperty("loop_kind"), ["loop_kind"], "extra_label",
+             function(loop_kind) { return loop_kind[0]; });

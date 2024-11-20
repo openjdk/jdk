@@ -47,7 +47,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 1, jvmArgsAppend = {
+@Fork(value = 1, jvmArgs = {
     "--add-modules=jdk.incubator.vector",
     "--enable-native-access", "ALL-UNNAMED",
     "-Djdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK=1"})

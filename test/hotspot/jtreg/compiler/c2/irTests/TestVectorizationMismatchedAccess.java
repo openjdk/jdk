@@ -50,9 +50,6 @@ public class TestVectorizationMismatchedAccess {
     private final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
-        if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN) {
-            throw new RuntimeException("fix test that was written for a little endian platform");
-        }
         TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
     }
 
@@ -75,6 +72,14 @@ public class TestVectorizationMismatchedAccess {
                 verifyLongArray[i] = verifyLongArray[i] | (((long)verifyByteArray[8 * i + j]) << 8 * j);
             }
         }
+    }
+
+    // Method to adjust the value for the native byte order
+    static private long handleByteOrder(long value) {
+        if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN) {
+            value = Long.reverseBytes(value);
+        }
+        return value;
     }
 
     static private void runAndVerify(Runnable test, int offset) {
@@ -148,46 +153,54 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
     //         might get fixed with JDK-8325155.
     public static void testByteLong1a(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i, src[i]);
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i, handleByteOrder(src[i]));
         }
     }
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
     public static void testByteLong1b(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i, src[i]);
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i, handleByteOrder(src[i]));
         }
     }
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     public static void testByteLong1c(byte[] dest, long[] src) {
         long base = 64; // make sure it is big enough and 8 byte aligned (required for 32-bit)
         for (int i = 0; i < src.length - 8; i++) {
-            UNSAFE.putLongUnaligned(dest, base + 8 * i, src[i]);
+            UNSAFE.putLongUnaligned(dest, base + 8 * i, handleByteOrder(src[i]));
         }
     }
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
     public static void testByteLong1d(byte[] dest, long[] src) {
         long base = 64; // make sure it is big enough and 8 byte aligned (required for 32-bit)
         for (int i = 0; i < src.length - 8; i++) {
-            UNSAFE.putLongUnaligned(dest, base + 8L * i, src[i]);
+            UNSAFE.putLongUnaligned(dest, base + 8L * i, handleByteOrder(src[i]));
         }
     }
 
@@ -207,7 +220,7 @@ public class TestVectorizationMismatchedAccess {
     //         might get fixed with JDK-8325155.
     public static void testByteLong2a(byte[] dest, long[] src) {
         for (int i = 1; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), src[i]);
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), handleByteOrder(src[i]));
         }
     }
 
@@ -218,7 +231,7 @@ public class TestVectorizationMismatchedAccess {
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
     public static void testByteLong2b(byte[] dest, long[] src) {
         for (int i = 1; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i - 1), src[i]);
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i - 1), handleByteOrder(src[i]));
         }
     }
 
@@ -230,24 +243,28 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
     //         might get fixed with JDK-8325155.
     public static void testByteLong3a(byte[] dest, long[] src) {
         for (int i = 0; i < src.length - 1; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + 1), src[i]);
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + 1), handleByteOrder(src[i]));
         }
     }
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
     public static void testByteLong3b(byte[] dest, long[] src) {
         for (int i = 0; i < src.length - 1; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i + 1), src[i]);
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i + 1), handleByteOrder(src[i]));
         }
     }
 
@@ -267,7 +284,7 @@ public class TestVectorizationMismatchedAccess {
     // AlignVector cannot guarantee that invar is aligned.
     public static void testByteLong4a(byte[] dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
-            UNSAFE.putLongUnaligned(dest, 8 * i + baseOffset, src[i]);
+            UNSAFE.putLongUnaligned(dest, 8 * i + baseOffset, handleByteOrder(src[i]));
         }
     }
 
@@ -280,7 +297,7 @@ public class TestVectorizationMismatchedAccess {
     // AlignVector cannot guarantee that invar is aligned.
     public static void testByteLong4b(byte[] dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
-            UNSAFE.putLongUnaligned(dest, 8L * i + baseOffset, src[i]);
+            UNSAFE.putLongUnaligned(dest, 8L * i + baseOffset, handleByteOrder(src[i]));
         }
     }
 
@@ -293,24 +310,28 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
     //         might get fixed with JDK-8325155.
     public static void testByteLong5a(byte[] dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + baseOffset), src[i]);
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + baseOffset), handleByteOrder(src[i]));
         }
     }
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
     public static void testByteLong5b(byte[] dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i + baseOffset), src[i]);
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i + baseOffset), handleByteOrder(src[i]));
         }
     }
 
@@ -323,6 +344,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
@@ -335,6 +358,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
@@ -352,6 +377,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
@@ -364,6 +391,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        // This test fails with compact headers, but only with UseSSE<=3.
+        applyIf = { "UseCompactObjectHeaders", "false" },
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"})
     // 32-bit: address has ConvL2I for cast of long to address, not supported.
@@ -454,7 +483,7 @@ public class TestVectorizationMismatchedAccess {
     // See: JDK-8331576
     public static void testOffHeapLong1a(long dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8 * i, src[i]);
+            UNSAFE.putLongUnaligned(null, dest + 8 * i, handleByteOrder(src[i]));
         }
     }
 
@@ -465,7 +494,7 @@ public class TestVectorizationMismatchedAccess {
     // See: JDK-8331576
     public static void testOffHeapLong1b(long dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8L * i, src[i]);
+            UNSAFE.putLongUnaligned(null, dest + 8L * i, handleByteOrder(src[i]));
         }
     }
 
@@ -482,7 +511,7 @@ public class TestVectorizationMismatchedAccess {
     // See: JDK-8331576
     public static void testOffHeapLong2a(long dest, long[] src) {
         for (int i = 1; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8 * (i - 1), src[i]);
+            UNSAFE.putLongUnaligned(null, dest + 8 * (i - 1), handleByteOrder(src[i]));
         }
     }
 
@@ -493,7 +522,7 @@ public class TestVectorizationMismatchedAccess {
     // See: JDK-8331576
     public static void testOffHeapLong2b(long dest, long[] src) {
         for (int i = 1; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8L * (i - 1), src[i]);
+            UNSAFE.putLongUnaligned(null, dest + 8L * (i - 1), handleByteOrder(src[i]));
         }
     }
 
@@ -510,7 +539,7 @@ public class TestVectorizationMismatchedAccess {
     // See: JDK-8331576
     public static void testOffHeapLong3a(long dest, long[] src) {
         for (int i = 0; i < src.length - 1; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8 * (i + 1), src[i]);
+            UNSAFE.putLongUnaligned(null, dest + 8 * (i + 1), handleByteOrder(src[i]));
         }
     }
 
@@ -521,7 +550,7 @@ public class TestVectorizationMismatchedAccess {
     // See: JDK-8331576
     public static void testOffHeapLong3b(long dest, long[] src) {
         for (int i = 0; i < src.length - 1; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8L * (i + 1), src[i]);
+            UNSAFE.putLongUnaligned(null, dest + 8L * (i + 1), handleByteOrder(src[i]));
         }
     }
 
@@ -540,7 +569,7 @@ public class TestVectorizationMismatchedAccess {
     // AlignVector cannot guarantee that invar is aligned.
     public static void testOffHeapLong4a(long dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8 * i + baseOffset, src[i]);
+            UNSAFE.putLongUnaligned(null, dest + 8 * i + baseOffset, handleByteOrder(src[i]));
         }
     }
 
@@ -553,7 +582,7 @@ public class TestVectorizationMismatchedAccess {
     // AlignVector cannot guarantee that invar is aligned.
     public static void testOffHeapLong4b(long dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8L * i + baseOffset, src[i]);
+            UNSAFE.putLongUnaligned(null, dest + 8L * i + baseOffset, handleByteOrder(src[i]));
         }
     }
 

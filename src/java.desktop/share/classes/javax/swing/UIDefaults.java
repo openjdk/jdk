@@ -51,7 +51,6 @@ import java.awt.Dimension;
 import java.beans.PropertyChangeListener;
 import java.security.AccessController;
 import java.security.AccessControlContext;
-import java.security.PrivilegedAction;
 
 import sun.reflect.misc.MethodUtil;
 import sun.reflect.misc.ReflectUtil;
@@ -341,25 +340,19 @@ public class UIDefaults extends Hashtable<Object,Object>
      * Test if the specified baseName of the ROOT locale is in java.desktop module.
      * JDK always defines the resource bundle of the ROOT locale.
      */
-    @SuppressWarnings("removal")
     private static boolean isDesktopResourceBundle(String baseName) {
         Module thisModule = UIDefaults.class.getModule();
-        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            @Override
-            public Boolean run() {
-                Class<?> c = Class.forName(thisModule, baseName);
-                if (c != null) {
-                    return true;
-                } else {
-                    String resourceName = baseName.replace('.', '/') + ".properties";
-                    try (InputStream in = thisModule.getResourceAsStream(resourceName)) {
-                        return in != null;
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }
+        Class<?> c = Class.forName(thisModule, baseName);
+        if (c != null) {
+            return true;
+        } else {
+            String resourceName = baseName.replace('.', '/') + ".properties";
+            try (InputStream in = thisModule.getResourceAsStream(resourceName)) {
+                return in != null;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-        });
+        }
     }
 
     /**
@@ -1141,52 +1134,41 @@ public class UIDefaults extends Hashtable<Object,Object>
          * @param table  a <code>UIDefaults</code> table
          * @return the created <code>Object</code>
          */
-        @SuppressWarnings("removal")
         public Object createValue(final UIDefaults table) {
-            // In order to pick up the security policy in effect at the
-            // time of creation we use a doPrivileged with the
-            // AccessControlContext that was in place when this was created.
-            if (acc == null && System.getSecurityManager() != null) {
-                throw new SecurityException("null AccessControlContext");
-            }
-            return AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                public Object run() {
-                    try {
-                        Class<?> c;
-                        Object cl;
-                        // See if we should use a separate ClassLoader
-                        if (table == null || !((cl = table.get("ClassLoader"))
-                                               instanceof ClassLoader)) {
-                            cl = Thread.currentThread().
-                                        getContextClassLoader();
-                            if (cl == null) {
-                                // Fallback to the system class loader.
-                                cl = ClassLoader.getSystemClassLoader();
-                            }
-                        }
-                        ReflectUtil.checkPackageAccess(className);
-                        c = Class.forName(className, true, (ClassLoader)cl);
-                        SwingUtilities2.checkAccess(c.getModifiers());
-                        if (methodName != null) {
-                            Class<?>[] types = getClassArray(args);
-                            Method m = c.getMethod(methodName, types);
-                            return MethodUtil.invoke(m, c, args);
-                        } else {
-                            Class<?>[] types = getClassArray(args);
-                            Constructor<?> constructor = c.getConstructor(types);
-                            SwingUtilities2.checkAccess(constructor.getModifiers());
-                            return constructor.newInstance(args);
-                        }
-                    } catch(Exception e) {
-                        // Ideally we would throw an exception, unfortunately
-                        // often times there are errors as an initial look and
-                        // feel is loaded before one can be switched. Perhaps a
-                        // flag should be added for debugging, so that if true
-                        // the exception would be thrown.
+            try {
+                Class<?> c;
+                Object cl;
+                // See if we should use a separate ClassLoader
+                if (table == null || !((cl = table.get("ClassLoader"))
+                                       instanceof ClassLoader)) {
+                    cl = Thread.currentThread().
+                                getContextClassLoader();
+                    if (cl == null) {
+                        // Fallback to the system class loader.
+                        cl = ClassLoader.getSystemClassLoader();
                     }
-                    return null;
                 }
-            }, acc);
+                ReflectUtil.checkPackageAccess(className);
+                c = Class.forName(className, true, (ClassLoader)cl);
+                SwingUtilities2.checkAccess(c.getModifiers());
+                if (methodName != null) {
+                    Class<?>[] types = getClassArray(args);
+                    Method m = c.getMethod(methodName, types);
+                    return MethodUtil.invoke(m, c, args);
+                } else {
+                    Class<?>[] types = getClassArray(args);
+                    Constructor<?> constructor = c.getConstructor(types);
+                    SwingUtilities2.checkAccess(constructor.getModifiers());
+                    return constructor.newInstance(args);
+                }
+            } catch(Exception e) {
+                // Ideally we would throw an exception, unfortunately
+                // often times there are errors as an initial look and
+                // feel is loaded before one can be switched. Perhaps a
+                // flag should be added for debugging, so that if true
+                // the exception would be thrown.
+            }
+            return null;
         }
 
         /*

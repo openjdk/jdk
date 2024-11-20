@@ -3840,8 +3840,9 @@ void TemplateTable::_new() {
       // Init1: Zero out newly allocated memory.
       // Initialize remaining object fields.
       Register Rbase = Rtags;
-      __ addi(Rinstance_size, Rinstance_size, 7 - (int)sizeof(oopDesc));
-      __ addi(Rbase, RallocatedObject, sizeof(oopDesc));
+      int header_size = oopDesc::header_size() * HeapWordSize;
+      __ addi(Rinstance_size, Rinstance_size, 7 - header_size);
+      __ addi(Rbase, RallocatedObject, header_size);
       __ srdi(Rinstance_size, Rinstance_size, 3);
 
       // Clear out object skipping header. Takes also care of the zero length case.
@@ -3851,12 +3852,15 @@ void TemplateTable::_new() {
     // --------------------------------------------------------------------------
     // Init2: Initialize the header: mark, klass
     // Init mark.
-    __ load_const_optimized(Rscratch, markWord::prototype().value(), R0);
-    __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
-
-    // Init klass.
-    __ store_klass_gap(RallocatedObject);
-    __ store_klass(RallocatedObject, RinstanceKlass, Rscratch); // klass (last for cms)
+    if (UseCompactObjectHeaders) {
+      __ ld(Rscratch, in_bytes(Klass::prototype_header_offset()), RinstanceKlass);
+      __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
+    } else {
+      __ load_const_optimized(Rscratch, markWord::prototype().value(), R0);
+      __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
+      __ store_klass_gap(RallocatedObject);
+      __ store_klass(RallocatedObject, RinstanceKlass, Rscratch);
+    }
 
     // Check and trigger dtrace event.
     if (DTraceAllocProbes) {

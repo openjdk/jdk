@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ class OverloadedDynamicMethod extends DynamicMethod {
         // This is typical for very generic signatures at call sites. Typical example: call site specifies
         // (Object, Object), and we have a method whose parameter types are (String, int). None of the JLS applicability
         // rules will trigger, but we must consider the method, as it can be the right match for a concrete invocation.
-        @SuppressWarnings({ "unchecked", "rawtypes" })
+        @SuppressWarnings("unchecked")
         final List<SingleDynamicMethod> invokables = (List)methods.clone();
         invokables.removeAll(subtypingApplicables.getMethods());
         invokables.removeAll(methodInvocationApplicables.getMethods());

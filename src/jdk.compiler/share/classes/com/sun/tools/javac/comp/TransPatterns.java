@@ -199,7 +199,27 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitTypeTest(JCInstanceOf tree) {
-        if (tree.pattern instanceof JCPattern pattern) {
+        // Translates regular instanceof type operation to instanceof pattern operator when
+        // the expression was originally T but was subsequently erased to Object.
+        //
+        // $expr instanceof $primitiveType
+        // =>
+        // $expr instanceof T $temp && $temp instanceof $primitiveType
+        if (tree.erasedExprOriginalType!=null && !types.isSameType(tree.expr.type, tree.erasedExprOriginalType)) {
+            BindingSymbol temp = new BindingSymbol(Flags.FINAL | Flags.SYNTHETIC,
+                    names.fromString("temp" + variableIndex++ + target.syntheticNameChar()),
+                    tree.erasedExprOriginalType,
+                    currentMethodSym);
+
+            JCVariableDecl tempDecl = make.at(tree.pos()).VarDef(temp, null);
+
+            JCTree resultExpr =
+                    makeBinary(Tag.AND,
+                            make.TypeTest(tree.expr, make.BindingPattern(tempDecl).setType(tree.erasedExprOriginalType)).setType(syms.booleanType),
+                            make.TypeTest(make.Ident(tempDecl), tree.pattern).setType(syms.booleanType));
+
+            result = translate(resultExpr);
+        } else if (tree.pattern instanceof JCPattern pattern) {
             //first, resolve any record patterns:
             JCExpression extraConditions = null;
             if (pattern instanceof JCRecordPattern recordPattern) {
@@ -993,7 +1013,7 @@ public class TransPatterns extends TreeTranslator {
                        !currentNullable &&
                        !previousCompletesNormally &&
                        !currentCompletesNormally &&
-                       new TreeDiffer(List.of(commonBinding), List.of(currentBinding))
+                       new TreeDiffer(types, List.of(commonBinding), List.of(currentBinding))
                                .scan(commonNestedExpression, currentNestedExpression)) {
                 accummulator.add(c.head);
             } else {

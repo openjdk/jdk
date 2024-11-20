@@ -52,25 +52,25 @@ public class SimpleRepeatCompilation {
      = "-XX:CompileCommand=option,org/openjdk/bench/vm/compiler/overhead/SimpleRepeatCompilation.mixHashCode,intx,RepeatCompilation,500";
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch", MIXHASH_METHOD})
+    @Fork(jvmArgs={"-Xbatch", MIXHASH_METHOD})
     public int mixHashCode_repeat() {
         return loop_hashCode();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch", "-XX:-TieredCompilation", MIXHASH_METHOD})
+    @Fork(jvmArgs={"-Xbatch", "-XX:-TieredCompilation", MIXHASH_METHOD})
     public int mixHashCode_repeat_c2() {
         return loop_hashCode();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch", "-XX:TieredStopAtLevel=1", MIXHASH_METHOD})
+    @Fork(jvmArgs={"-Xbatch", "-XX:TieredStopAtLevel=1", MIXHASH_METHOD})
     public int mixHashCode_repeat_c1() {
         return loop_hashCode();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch"})
+    @Fork(jvmArgs={"-Xbatch"})
     public int mixHashCode_baseline() {
         return loop_hashCode();
     }
@@ -95,25 +95,25 @@ public class SimpleRepeatCompilation {
      = "-XX:CompileCommand=option,org/openjdk/bench/vm/compiler/overhead/SimpleRepeatCompilation.trivialMath,intx,RepeatCompilation,2000";
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch",TRIVIAL_MATH_METHOD})
+    @Fork(jvmArgs={"-Xbatch",TRIVIAL_MATH_METHOD})
     public int trivialMath_repeat() {
         return loop_trivialMath();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch", "-XX:-TieredCompilation", TRIVIAL_MATH_METHOD})
+    @Fork(jvmArgs={"-Xbatch", "-XX:-TieredCompilation", TRIVIAL_MATH_METHOD})
     public int trivialMath_repeat_c2() {
         return loop_trivialMath();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch", "-XX:TieredStopAtLevel=1", TRIVIAL_MATH_METHOD})
+    @Fork(jvmArgs={"-Xbatch", "-XX:TieredStopAtLevel=1", TRIVIAL_MATH_METHOD})
     public int trivialMath_repeat_c1() {
         return loop_trivialMath();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch"})
+    @Fork(jvmArgs={"-Xbatch"})
     public int trivialMath_baseline() {
         return loop_trivialMath();
     }
@@ -135,25 +135,25 @@ public class SimpleRepeatCompilation {
      = "-XX:CompileCommand=option,org/openjdk/bench/vm/compiler/overhead/SimpleRepeatCompilation.largeMethod,intx,RepeatCompilation,100";
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch",LARGE_METHOD})
+    @Fork(jvmArgs={"-Xbatch",LARGE_METHOD})
     public int largeMethod_repeat() {
         return loop_largeMethod();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch", "-XX:-TieredCompilation", LARGE_METHOD})
+    @Fork(jvmArgs={"-Xbatch", "-XX:-TieredCompilation", LARGE_METHOD})
     public int largeMethod_repeat_c2() {
         return loop_largeMethod();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch", "-XX:TieredStopAtLevel=1", LARGE_METHOD})
+    @Fork(jvmArgs={"-Xbatch", "-XX:TieredStopAtLevel=1", LARGE_METHOD})
     public int largeMethod_repeat_c1() {
         return loop_largeMethod();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-Xbatch"})
+    @Fork(jvmArgs={"-Xbatch"})
     public int largeMethod_baseline() {
         return loop_largeMethod();
     }

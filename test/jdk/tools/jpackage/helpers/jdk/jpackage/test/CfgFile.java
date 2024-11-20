@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,61 +25,108 @@ package jdk.jpackage.test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 
 public final class CfgFile {
-    public String getValue(String section, String key) {
-        Objects.requireNonNull(section);
-        Objects.requireNonNull(key);
+    public String getValue(String sectionName, String key) {
+        var section = getSection(sectionName);
+        TKit.assertTrue(section != null, String.format(
+                "Check section [%s] is found in [%s] cfg file", sectionName, id));
 
-        Map<String, String> entries = data.get(section);
-        TKit.assertTrue(entries != null, String.format(
-                "Check section [%s] is found in [%s] cfg file", section, id));
-
-        String value = entries.get(key);
+        String value = section.getValue(key);
         TKit.assertNotNull(value, String.format(
                 "Check key [%s] is found in [%s] section of [%s] cfg file", key,
-                section, id));
+                sectionName, id));
 
         return value;
     }
 
-    public String getValueUnchecked(String section, String key) {
-        Objects.requireNonNull(section);
-        Objects.requireNonNull(key);
-
-        return Optional.ofNullable(data.get(section)).map(v -> v.get(key)).orElse(
-                null);
+    public String getValueUnchecked(String sectionName, String key) {
+        var section = getSection(sectionName);
+        if (section != null) {
+            return section.getValue(key);
+        } else {
+            return null;
+        }
     }
 
-    private CfgFile(Map<String, Map<String, String>> data, String id) {
+    public void addValue(String sectionName, String key, String value) {
+        var section = getSection(sectionName);
+        if (section == null) {
+            section = new Section(sectionName, new ArrayList<>());
+            data.add(section);
+        }
+        section.data.add(Map.entry(key, value));
+    }
+
+    public CfgFile() {
+        this(new ArrayList<>(), "*");
+    }
+
+    public static CfgFile combine(CfgFile base, CfgFile mods) {
+        var cfgFile = new CfgFile(new ArrayList<>(), "*");
+        for (var src : List.of(base, mods)) {
+            for (var section : src.data) {
+                for (var kvp : section.data) {
+                    cfgFile.addValue(section.name, kvp.getKey(), kvp.getValue());
+                }
+            }
+        }
+        return cfgFile;
+    }
+
+    private CfgFile(List<Section> data, String id) {
         this.data = data;
         this.id = id;
     }
 
-    public static CfgFile readFromFile(Path path) throws IOException {
+    public void save(Path path) {
+        var lines = data.stream().flatMap(section -> {
+            return Stream.concat(
+                    Stream.of(String.format("[%s]", section.name)),
+                    section.data.stream().map(kvp -> {
+                        return String.format("%s=%s", kvp.getKey(), kvp.getValue());
+                    }));
+        });
+        TKit.createTextFile(path, lines);
+    }
+
+    private Section getSection(String name) {
+        Objects.requireNonNull(name);
+        for (var section : data.reversed()) {
+            if (name.equals(section.name)) {
+                return section;
+            }
+        }
+        return null;
+    }
+
+    public static CfgFile load(Path path) throws IOException {
         TKit.trace(String.format("Read [%s] jpackage cfg file", path));
 
         final Pattern sectionBeginRegex = Pattern.compile( "\\s*\\[([^]]*)\\]\\s*");
         final Pattern keyRegex = Pattern.compile( "\\s*([^=]*)=(.*)" );
 
-        Map<String, Map<String, String>> result = new HashMap<>();
+        List<Section> sections = new ArrayList<>();
 
         String currentSectionName = null;
-        Map<String, String> currentSection = new HashMap<>();
+        List<Map.Entry<String, String>> currentSection = new ArrayList<>();
         for (String line : Files.readAllLines(path)) {
             Matcher matcher = sectionBeginRegex.matcher(line);
             if (matcher.find()) {
                 if (currentSectionName != null) {
-                    result.put(currentSectionName, Collections.unmodifiableMap(
-                            new HashMap<>(currentSection)));
+                    sections.add(new Section(currentSectionName,
+                            Collections.unmodifiableList(new ArrayList<>(
+                                    currentSection))));
                 }
                 currentSectionName = matcher.group(1);
                 currentSection.clear();
@@ -88,19 +135,31 @@ public final class CfgFile {
 
             matcher = keyRegex.matcher(line);
             if (matcher.find()) {
-                currentSection.put(matcher.group(1), matcher.group(2));
-                continue;
+                currentSection.add(Map.entry(matcher.group(1), matcher.group(2)));
             }
         }
 
         if (!currentSection.isEmpty()) {
-            result.put(Optional.ofNullable(currentSectionName).orElse(""),
-                    Collections.unmodifiableMap(currentSection));
+            sections.add(new Section(
+                    Optional.ofNullable(currentSectionName).orElse(""),
+                    Collections.unmodifiableList(currentSection)));
         }
 
-        return new CfgFile(Collections.unmodifiableMap(result), path.toString());
+        return new CfgFile(sections, path.toString());
     }
 
-    private final Map<String, Map<String, String>> data;
+    private static record Section(String name, List<Map.Entry<String, String>> data) {
+        String getValue(String key) {
+            Objects.requireNonNull(key);
+            for (var kvp : data.reversed()) {
+                if (key.equals(kvp.getKey())) {
+                    return kvp.getValue();
+                }
+            }
+            return null;
+        }
+    }
+
+    private final List<Section> data;
     private final String id;
 }

@@ -29,6 +29,8 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
 
+class Thread;
+
 // Mutexes used in the VM.
 
 extern Mutex*   NMethodState_lock;               // a lock used to guard a compiled method state

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.Permission;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -341,57 +336,6 @@ public class JAXPTestUtilities {
 
 
     /**
-     * Run the supplier with all permissions. This won't impact global policy.
-     *
-     * @param s
-     *            Supplier to run
-     */
-    public static <T> T runWithAllPerm(Supplier<T> s) {
-        Optional<JAXPPolicyManager> policyManager = Optional.ofNullable(JAXPPolicyManager
-                .getJAXPPolicyManager(false));
-        policyManager.ifPresent(manager -> manager.setAllowAll(true));
-        try {
-            return s.get();
-        } finally {
-            policyManager.ifPresent(manager -> manager.setAllowAll(false));
-        }
-    }
-
-    /**
-     * Run the supplier with all permissions. This won't impact global policy.
-     *
-     * @param s
-     *            Supplier to run
-     */
-    public static <T> T tryRunWithAllPerm(Callable<T> c) throws Exception {
-        Optional<JAXPPolicyManager> policyManager = Optional.ofNullable(JAXPPolicyManager
-                .getJAXPPolicyManager(false));
-        policyManager.ifPresent(manager -> manager.setAllowAll(true));
-        try {
-            return c.call();
-        } finally {
-            policyManager.ifPresent(manager -> manager.setAllowAll(false));
-        }
-    }
-
-    /**
-     * Run the Runnable with all permissions. This won't impact global policy.
-     *
-     * @param s
-     *            Supplier to run
-     */
-    public static void runWithAllPerm(Runnable r) {
-        Optional<JAXPPolicyManager> policyManager = Optional.ofNullable(JAXPPolicyManager
-                .getJAXPPolicyManager(false));
-        policyManager.ifPresent(manager -> manager.setAllowAll(true));
-        try {
-            r.run();
-        } finally {
-            policyManager.ifPresent(manager -> manager.setAllowAll(false));
-        }
-    }
-
-    /**
      * Acquire a system property.
      *
      * @param name
@@ -399,7 +343,7 @@ public class JAXPTestUtilities {
      * @return property value
      */
     public static String getSystemProperty(String name) {
-        return runWithAllPerm(() -> System.getProperty(name));
+        return System.getProperty(name);
     }
 
     /**
@@ -411,7 +355,7 @@ public class JAXPTestUtilities {
      *            System property value to be set.
      */
     public static void setSystemProperty(String name, String value) {
-        runWithAllPerm(() -> System.setProperty(name, value));
+        System.setProperty(name, value);
     }
 
     /**
@@ -421,79 +365,7 @@ public class JAXPTestUtilities {
      *            System property name to be cleared.
      */
     public static void clearSystemProperty(String name) {
-        runWithAllPerm(() -> System.clearProperty(name));
-    }
-
-    /**
-     * Run the runnable with assigning temporary permissions. This won't impact
-     * global policy.
-     *
-     * @param r
-     *            Runnable to run
-     * @param ps
-     *            assigning permissions to add.
-     */
-    public static void runWithTmpPermission(Runnable r, Permission... ps) {
-        JAXPPolicyManager policyManager = JAXPPolicyManager.getJAXPPolicyManager(false);
-        List<Integer> tmpPermissionIndexes = new ArrayList<>();
-        if (policyManager != null) {
-            for (Permission p : ps)
-                tmpPermissionIndexes.add(policyManager.addTmpPermission(p));
-        }
-        try {
-            r.run();
-        } finally {
-            for (int index: tmpPermissionIndexes)
-                policyManager.removeTmpPermission(index);
-        }
-    }
-
-    /**
-     * Run the supplier with assigning temporary permissions. This won't impact
-     * global policy.
-     *
-     * @param s
-     *            Supplier to run
-     * @param ps
-     *            assigning permissions to add.
-     */
-    public static <T> T runWithTmpPermission(Supplier<T> s, Permission... ps) {
-        JAXPPolicyManager policyManager = JAXPPolicyManager.getJAXPPolicyManager(false);
-        List<Integer> tmpPermissionIndexes = new ArrayList<>();
-        if (policyManager != null) {
-            for (Permission p : ps)
-                tmpPermissionIndexes.add(policyManager.addTmpPermission(p));
-        }
-        try {
-            return s.get();
-        } finally {
-            for (int index: tmpPermissionIndexes)
-                policyManager.removeTmpPermission(index);
-        }
-    }
-
-    /**
-     * Run the RunnableWithException with assigning temporary permissions. This
-     * won't impact global policy.
-     *
-     * @param r
-     *            RunnableWithException to execute
-     * @param ps
-     *            assigning permissions to add.
-     */
-    public static void tryRunWithTmpPermission(RunnableWithException r, Permission... ps) throws Exception {
-        JAXPPolicyManager policyManager = JAXPPolicyManager.getJAXPPolicyManager(false);
-        List<Integer> tmpPermissionIndexes = new ArrayList<>();
-        if (policyManager != null) {
-            for (Permission p : ps)
-                tmpPermissionIndexes.add(policyManager.addTmpPermission(p));
-        }
-        try {
-            r.run();
-        } finally {
-            for (int index: tmpPermissionIndexes)
-                policyManager.removeTmpPermission(index);
-        }
+        System.clearProperty(name);
     }
 
     @FunctionalInterface

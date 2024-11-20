@@ -31,7 +31,6 @@ import java.awt.datatransfer.*;
 import java.awt.dnd.DropTarget;
 import java.awt.image.*;
 import java.awt.peer.*;
-import java.security.*;
 import java.util.*;
 
 import sun.awt.*;
@@ -69,27 +68,23 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
      * This method waits for the toolkit to be completely initialized
      * and returns before the message pump is started.
      */
-    @SuppressWarnings("removal")
     protected final void init() {
         AWTAutoShutdown.notifyToolkitThreadBusy();
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            Runnable shutdownRunnable = () -> {
-                shutdown();
-                waitForRunState(STATE_CLEANUP);
-            };
-            Thread shutdown = new Thread(
-                    ThreadGroupUtils.getRootThreadGroup(), shutdownRunnable,
-                    "AWT-Shutdown", 0, false);
-            shutdown.setContextClassLoader(null);
-            Runtime.getRuntime().addShutdownHook(shutdown);
-            String name = "AWT-LW";
-            Thread toolkitThread = new Thread(
-                   ThreadGroupUtils.getRootThreadGroup(), this, name, 0, false);
-            toolkitThread.setDaemon(true);
-            toolkitThread.setPriority(Thread.NORM_PRIORITY + 1);
-            toolkitThread.start();
-            return null;
-        });
+        Runnable shutdownRunnable = () -> {
+            shutdown();
+            waitForRunState(STATE_CLEANUP);
+        };
+        Thread shutdown = new Thread(
+                ThreadGroupUtils.getRootThreadGroup(), shutdownRunnable,
+                "AWT-Shutdown", 0, false);
+        shutdown.setContextClassLoader(null);
+        Runtime.getRuntime().addShutdownHook(shutdown);
+        String name = "AWT-LW";
+        Thread toolkitThread = new Thread(
+               ThreadGroupUtils.getRootThreadGroup(), this, name, 0, false);
+        toolkitThread.setDaemon(true);
+        toolkitThread.setPriority(Thread.NORM_PRIORITY + 1);
+        toolkitThread.start();
         waitForRunState(STATE_MESSAGELOOP);
     }
 

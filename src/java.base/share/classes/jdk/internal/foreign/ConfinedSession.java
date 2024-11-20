@@ -41,8 +41,7 @@ final class ConfinedSession extends MemorySessionImpl {
 
     private int asyncReleaseCount = 0;
 
-    static final VarHandle ASYNC_RELEASE_COUNT= MhUtil.findVarHandle(
-            MethodHandles.lookup(), "asyncReleaseCount", int.class);
+    static final VarHandle ASYNC_RELEASE_COUNT= MhUtil.findVarHandle(MethodHandles.lookup(), "asyncReleaseCount", int.class);
 
     public ConfinedSession(Thread owner) {
         super(owner, new ConfinedResourceList());
@@ -52,17 +51,17 @@ final class ConfinedSession extends MemorySessionImpl {
     @ForceInline
     public void acquire0() {
         checkValidState();
-        if (state == MAX_FORKS) {
+        if (acquireCount == MAX_FORKS) {
             throw tooManyAcquires();
         }
-        state++;
+        acquireCount++;
     }
 
     @Override
     @ForceInline
     public void release0() {
         if (Thread.currentThread() == owner) {
-            state--;
+            acquireCount--;
         } else {
             // It is possible to end up here in two cases: this session was kept alive by some other confined session
             // which is implicitly released (in which case the release call comes from the cleaner thread). Or,
@@ -75,11 +74,11 @@ final class ConfinedSession extends MemorySessionImpl {
     void justClose() {
         checkValidState();
         int asyncCount = (int)ASYNC_RELEASE_COUNT.getVolatile(this);
-        if ((state == 0 && asyncCount == 0)
-                || ((state - asyncCount) == 0)) {
+        int acquire = acquireCount - asyncCount;
+        if (acquire == 0) {
             state = CLOSED;
         } else {
-            throw alreadyAcquired(state - asyncCount);
+            throw alreadyAcquired(acquire);
         }
     }
 

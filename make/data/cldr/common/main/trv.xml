@@ -348,6 +348,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<timeZoneNames>
 			<gmtFormat draft="provisional">JQG{0}</gmtFormat>
 			<regionFormat draft="provisional">Jikan {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity draft="provisional">Jikan alang Honoruru</exemplarCity>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity draft="provisional">Ini klayi ka Jikan hini</exemplarCity>
 			</zone>
@@ -359,9 +362,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Sao_Paulo">
 				<exemplarCity draft="provisional">Jikan alang Snpaurow</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity draft="provisional">Jikan alang Honoruru</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity draft="provisional">Jikan alang Ankriji</exemplarCity>
