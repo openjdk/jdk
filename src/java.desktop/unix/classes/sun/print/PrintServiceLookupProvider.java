@@ -910,8 +910,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                 proc.getOutputStream()
                     .close();
             }
-        } catch (IOException io) {
-            io.printStackTrace();
+        } catch (IOException ignored) {
         }
         if (results == null) {
             return new String[0];
