@@ -116,10 +116,10 @@ public class Robot {
     private int autoDelay = 0;
     private static int LEGAL_BUTTON_MASK = 0;
 
-    private static int DEFAULT_SPEED = 20;       // Speed for mouse glide and click
-    private static int DEFAULT_STEP_LENGTH = 2;  // Step length (in pixels) for mouse glide
-
     private DirectColorModel screenCapCM = null;
+
+    public final static int DEFAULT_STEP_DELAY = 20;       // Speed for mouse glide and click
+    public final static int DEFAULT_STEP_LENGTH = 2;  // Step length (in pixels) for mouse glide
 
     /**
      * Constructs a Robot object in the coordinate system of the primary screen.
@@ -767,9 +767,10 @@ public class Robot {
     }
 
     /**
-     * Clicks mouse button(s) by calling {@link java.awt.Robot#mousePress(int)} and
-     * {@link java.awt.Robot#mouseRelease(int)} methods
-     *
+     * A convenience method that simulates clicking a mouse button by calling mousePress
+     * and mouseRelease. Invokes waitForIdle with a default delay of 20ms after mousePress
+     * and mouseRelease calls. For specifics on valid inputs please see
+     * {@link java.awt.Robot#mousePress(int)}.
      *
      * @param   buttons The button mask; a combination of one or more mouse button masks.
      * @throws  IllegalArgumentException if the {@code buttons} mask contains the mask for
@@ -785,43 +786,36 @@ public class Robot {
      * @see     InputEvent#getMaskForButton(int)
      * @see     Toolkit#areExtraMouseButtonsEnabled()
      * @see     java.awt.event.MouseEvent
-     * @since   24
+     * @since   25
      */
     public void click(int buttons) {
         mousePress(buttons);
-        waitForIdle(DEFAULT_SPEED);
+        waitForIdle(DEFAULT_STEP_DELAY);
         mouseRelease(buttons);
-        waitForIdle();
+        waitForIdle(DEFAULT_STEP_DELAY);
     }
 
     /**
-     * Clicks mouse button 1
-     *
-     * @throws  IllegalArgumentException if the {@code buttons} mask contains the mask for
-     *          extra mouse button and support for extended mouse buttons is
-     *          {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
-     * @throws  IllegalArgumentException if the {@code buttons} mask contains the mask for
-     *          extra mouse button that does not exist on the mouse and support for extended
-     *          mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled}
-     *          by Java
+     * A convenience method that clicks mouse button 1.
      *
      * @see     #click(int)
-     * @since   24
+     * @since   25
      */
     public void click() {
         click(InputEvent.BUTTON1_DOWN_MASK);
     }
 
     /**
-     * Waits until all events currently on the event queue have been processed with given
-     * delay after syncing threads. It uses more advanced method of synchronizing threads
-     * unlike {@link java.awt.Robot#waitForIdle()}
+     * A convenience method that calls waitForIdle then waits an additional specified
+     * {@code delayValue} time in milliseconds.
      *
      * @param   delayValue  Additional delay length in milliseconds to wait until thread
      *                      sync been completed
-     * @throws  sun.awt.SunToolkit.IllegalThreadException if called on the AWT event
+     * @throws  IllegalThreadStateException if called on the AWT event
      *          dispatching thread
-     * @since   24
+     * @throws  IllegalArgumentException if {@code delayValue} is not between {@code 0}
+     *          and {@code 60,000} milliseconds inclusive
+     * @since   25
      */
     public synchronized void waitForIdle(int delayValue) {
         waitForIdle();
@@ -829,14 +823,15 @@ public class Robot {
     }
 
     /**
-     * Move the mouse in multiple steps from where it is
-     * now to the destination coordinates.
+     * A convenience method that moves the mouse in multiple
+     * steps from its current location to the destination coordinates
+     * with a 2 pixel step-length and a 20-millisecond delay.
      *
      * @param   x   Destination point x coordinate
      * @param   y   Destination point y coordinate
      *
      * @see     #glide(int, int, int, int)
-     * @since   24
+     * @since   25
      */
     public void glide(int x, int y) {
         Point p = MouseInfo.getPointerInfo().getLocation();
@@ -844,21 +839,23 @@ public class Robot {
     }
 
     /**
-     * Move the mouse in multiple steps from where it is
-     * now to the destination point.
+     * A convenience method that moves the mouse in multiple steps
+     * from its current location to the destination point with a
+     * 2 pixel step-length and a 20-millisecond delay.
      *
      * @param   dest    Destination point
      *
      * @see     #glide(int, int)
-     * @since   24
+     * @since   25
      */
     public void glide(Point dest) {
         glide(dest.x, dest.y);
     }
 
     /**
-     * Move the mouse in multiple steps from source coordinates
-     * to the destination coordinates.
+     * A convenience method that moves the mouse in multiple steps
+     * from source coordinates to the destination coordinates with
+     * a 2 pixel step-length and a 20-millisecond delay.
      *
      * @param   fromX   Source point x coordinate
      * @param   fromY   Source point y coordinate
@@ -866,42 +863,48 @@ public class Robot {
      * @param   toY     Destination point y coordinate
      *
      * @see     #glide(int, int, int, int, int, int)
-     * @since   24
+     * @since   25
      */
     public void glide(int fromX, int fromY, int toX, int toY) {
-        glide(fromX, fromY, toX, toY, DEFAULT_STEP_LENGTH, DEFAULT_SPEED);
+        glide(fromX, fromY, toX, toY, DEFAULT_STEP_LENGTH, DEFAULT_STEP_DELAY);
     }
 
     /**
-     * Move the mouse in multiple steps from source point to the
-     * destination point with default speed and step length.
+     * A convenience method that moves the mouse in multiple
+     * steps from source point to the destination point with a
+     * 2 pixel step-length and a 20-millisecond delay.
      *
      * @param   src     Source point
      * @param   dest    Destination point
      *
      * @see     #glide(int, int, int, int, int, int)
-     * @since   24
+     * @since   25
      */
     public void glide(Point src, Point dest) {
-        glide(src.x, src.y, dest.x, dest.y, DEFAULT_STEP_LENGTH, DEFAULT_SPEED);
+        glide(src.x, src.y, dest.x, dest.y, DEFAULT_STEP_LENGTH, DEFAULT_STEP_DELAY);
     }
 
     /**
-     * Move the mouse in multiple steps from source point to the
-     * destination point with given speed and step length.
+     * A convenience method that moves the mouse in multiple
+     * steps from source point to the destination point with
+     * given step-length and delay.
      *
-     * @param   srcX        Source point x cordinate
-     * @param   srcY        Source point y cordinate
-     * @param   destX       Destination point x cordinate
-     * @param   destY       Destination point y cordinate
-     * @param   stepLength  Approximate length of one step
-     * @param   speed       Delay between steps.
+     * @param   srcX        Source point x coordinate
+     * @param   srcY        Source point y coordinate
+     * @param   destX       Destination point x coordinate
+     * @param   destY       Destination point y coordinate
+     * @param   stepLength  Preferred length of one step in pixels
+     * @param   stepDelay   Delay between steps in milliseconds
      *
+     * @throws  IllegalArgumentException if {@code stepLength} is a negative value or
+     *          greater than the distance between source and destination points
+     * @throws  IllegalArgumentException if {@code stepDelay} is not between {@code 0}
+     *          and {@code 60,000} milliseconds inclusive
      * @see     #mouseMove(int, int)
      * @see     #delay(int)
-     * @since   24
+     * @since   25
      */
-    public void glide(int srcX, int srcY, int destX, int destY, int stepLength, int speed) {
+    public void glide(int srcX, int srcY, int destX, int destY, int stepLength, int stepDelay) {
         int stepNum;
         double tDx, tDy;
         double dx, dy, ds;
@@ -925,7 +928,7 @@ public class Robot {
             x += tDx;
             y += tDy;
             mouseMove((int)x, (int)y);
-            delay(speed);
+            delay(stepDelay);
         }
 
         // Ensure the mouse moves to the right destination.
@@ -934,50 +937,51 @@ public class Robot {
     }
 
     /**
-     * Successively presses and releases a given key.
+     * A convenience method that simulates typing a key by calling keyPress and keyRelease.
+     * Invokes waitForIdle with a default delay of 20ms after keyPress and keyRelease calls.
      * <p>
      * Key codes that have more than one physical key associated with them
      * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
      * left or right shift key) will map to the left key.
      *
-     * @param   keycode Key to press (e.g. {@code KeyEvent.VK_A})
+     * @param   keycode Key to type (e.g. {@code KeyEvent.VK_A})
      * @throws  IllegalArgumentException if {@code keycode} is not
      *          a valid key
      *
      * @see     java.awt.Robot#keyPress(int)
      * @see     java.awt.Robot#keyRelease(int)
      * @see     java.awt.event.KeyEvent
-     * @since   24
+     * @since   25
      */
-    public void type(int keycode) {
+    public synchronized void type(int keycode) {
         keyPress(keycode);
-        waitForIdle(DEFAULT_SPEED);
+        waitForIdle(DEFAULT_STEP_DELAY);
         keyRelease(keycode);
-        waitForIdle(DEFAULT_SPEED);
+        waitForIdle(DEFAULT_STEP_DELAY);
     }
 
     /**
      * Types given character
      *
-     * @param   c   Character to be typed (e.g. {@code 'a'})
+     * @param   c   Character to type (e.g. {@code 'a'})
      *
      * @see     #type(int)
      * @see     java.awt.event.KeyEvent
-     * @since   24
+     * @since   25
      */
-    public void type(char c) {
+    public synchronized void type(char c) {
         type(KeyEvent.getExtendedKeyCodeForChar(c));
     }
 
     /**
      * Types given array of characters one by one
      *
-     * @param   symbols Array of characters to be typed
+     * @param   symbols Array of characters to type
      *
      * @see     #type(char)
-     * @since   24
+     * @since   25
      */
-    public void type(char[] symbols) {
+    public synchronized void type(char[] symbols) {
         for (int i = 0; i < symbols.length; i++) {
             type(symbols[i]);
         }
@@ -986,12 +990,12 @@ public class Robot {
     /**
      * Types given string
      *
-     * @param   s   String to be typed
+     * @param   s   String to type
      *
      * @see     #type(char[])
-     * @since   24
+     * @since   25
      */
-    public void type(String s) {
+    public synchronized void type(String s) {
         type(s.toCharArray());
     }
 }
