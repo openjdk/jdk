@@ -1289,7 +1289,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     private Object doPrivilegedOperation(final int operation,
                                          final Object[] params,
                                          final Subject delegationSubject)
-        throws PrivilegedActionException, IOException, SecurityException { // XXXX Keep PAE for now as many deletes needed..
+        throws PrivilegedActionException, IOException {
 
         // Subject Delegation is removed: locally this is caught earlier, in getMBeanServerConnection,
         // but remote connections call into RMIConnectionImpl over RMI, so deny them here:
