@@ -653,10 +653,6 @@ public:
           _claimed(0),
           _processed(0),
           _generation(nullptr) {
-    if (_options._verify_marked == ShenandoahVerifier::_verify_marked_complete_satb_empty) {
-      Threads::change_thread_claim_token();
-    }
-
     if (_heap->mode()->is_generational()) {
       _generation = _heap->gc_generation();
       assert(_generation != nullptr, "Expected active generation in this mode.");
@@ -671,7 +667,7 @@ public:
   void work(uint worker_id) override {
     if (_options._verify_marked == ShenandoahVerifier::_verify_marked_complete_satb_empty) {
       ShenandoahVerifyNoIncompleteSatbBuffers verify_satb;
-      Threads::possibly_parallel_threads_do(true, &verify_satb);
+      Threads::threads_do(&verify_satb);
     }
 
     ShenandoahVerifierStack stack;
