@@ -81,8 +81,8 @@ public class ToolValidatorTest {
         }
     }
 
-    private final static String TOOL_JAVA;
-    private final static String TOOL_UNKNOWN = Path.of(System.getProperty(
+    private static final String TOOL_JAVA;
+    private static final String TOOL_UNKNOWN = Path.of(System.getProperty(
             "java.home"), "bin").toString();
 
     static {

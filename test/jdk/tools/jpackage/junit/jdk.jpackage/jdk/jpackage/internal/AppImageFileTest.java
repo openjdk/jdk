@@ -268,7 +268,7 @@ public class AppImageFileTest {
     @TempDir
     private Path tempFolder;
 
-    private final static String JPACKAGE_STATE_OPEN = String.format(
+    private static final String JPACKAGE_STATE_OPEN = String.format(
             "<jpackage-state platform=\"%s\" version=\"%s\">",
             AppImageFile.getPlatform(), AppImageFile.getVersion());
 

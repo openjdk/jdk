@@ -251,8 +251,8 @@ public class PathGroupTest {
         }
     }
 
-    private final static Path PATH_FOO = Path.of("foo");
-    private final static Path PATH_BAR = Path.of("bar");
-    private final static Path PATH_BAZ = Path.of("baz");
-    private final static Path PATH_EMPTY = Path.of("");
+    private static final Path PATH_FOO = Path.of("foo");
+    private static final Path PATH_BAR = Path.of("bar");
+    private static final Path PATH_BAZ = Path.of("baz");
+    private static final Path PATH_EMPTY = Path.of("");
 }

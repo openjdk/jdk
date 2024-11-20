@@ -89,9 +89,9 @@ public class PlatformVersionTest {
         }
     }
 
-    private final static Function<String, DottedVersion> MAC_CFBUNDLE_VERSION_PARSER = findParser(
+    private static final Function<String, DottedVersion> MAC_CFBUNDLE_VERSION_PARSER = findParser(
             "jdk.jpackage.internal.CFBundleVersion");
-    private final static Function<String, DottedVersion> WIN_MSI_PRODUCT_VERSION_PARSER = findParser(
+    private static final Function<String, DottedVersion> WIN_MSI_PRODUCT_VERSION_PARSER = findParser(
             "jdk.jpackage.internal.MsiVersion");
 
     private static Function<String, DottedVersion> findParser(String className) {
