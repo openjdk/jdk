@@ -59,7 +59,6 @@ public class VirtualThreadSchedulerImpls {
 
         @Override
         public final void setParallelism(int size) {
-            Util.checkControlAccess();
             implSetParallelism(size);
         }
 
