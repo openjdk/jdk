@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,6 @@ public class Disposer implements Runnable {
      * so will clutter the records hashmap and no one will be cleaning up
      * the reference queue.
      */
-    @SuppressWarnings("unchecked")
     public static void addReference(Reference<Object> ref, DisposerRecord rec) {
         records.put(ref, rec);
     }
