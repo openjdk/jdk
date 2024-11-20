@@ -259,7 +259,7 @@ public class WindowsHelper {
                 ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).saveOutput().
                 setWinRunWithEnglishOutput(true).executeAndGetOutput();
         if ("No Instance(s) Available.".equals(output.getFirst().trim())) {
-                return new long[0];
+            return new long[0];
         }
 
         String[] headers = Stream.of(output.getFirst().split("\\s+", 2)).map(
