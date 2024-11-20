@@ -21,7 +21,6 @@
  * questions.
  */
 
-import javax.sound.sampled.AudioPermission;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.Line;
@@ -34,18 +33,6 @@ import javax.sound.sampled.SourceDataLine;
  * @summary REGRESSION: IAE for supported line in AudioSystem.getLine()
  */
 public class GetLine {
-
-    static boolean isSoundAccessDenied = false;
-    static {
-        SecurityManager securityManager = System.getSecurityManager();
-        if (securityManager != null) {
-            try {
-                securityManager.checkPermission(new AudioPermission("*"));
-            } catch (SecurityException e) {
-                isSoundAccessDenied = true;
-            }
-        }
-    }
 
     static final int STATUS_PASSED = 0;
     static final int STATUS_FAILED = 2;
