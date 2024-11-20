@@ -1294,13 +1294,6 @@ public final class System {
      */
     @SuppressWarnings("doclint:reference") // cross-module links
     public abstract static class LoggerFinder {
-        /**
-         * The {@code RuntimePermission("loggerFinder")} is
-         * necessary to subclass and instantiate the {@code LoggerFinder} class,
-         * as well as to obtain loggers from an instance of that class.
-         */
-        static final RuntimePermission LOGGERFINDER_PERMISSION =
-                new RuntimePermission("loggerFinder");
 
         /**
          * Creates a new instance of {@code LoggerFinder}.
@@ -1311,15 +1304,6 @@ public final class System {
          *   loading cycles during the instantiation of the service provider.
          */
         protected LoggerFinder() {
-            this(checkPermission());
-        }
-
-        private LoggerFinder(Void unused) {
-            // nothing to do.
-        }
-
-        private static Void checkPermission() {
-            return null;
         }
 
         /**
