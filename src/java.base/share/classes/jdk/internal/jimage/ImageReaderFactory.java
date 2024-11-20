@@ -45,7 +45,7 @@ import java.util.function.Function;
  */
 public class ImageReaderFactory {
     private ImageReaderFactory() {}
-    
+
     private static final String JAVA_HOME = System.getProperty("java.home");
     private static final Path BOOT_MODULES_JIMAGE =
         Paths.get(JAVA_HOME, "lib", "modules");
