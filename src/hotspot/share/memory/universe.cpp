@@ -62,6 +62,7 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -871,6 +872,8 @@ jint universe_init() {
 #ifdef _LP64
   MetaspaceShared::adjust_heap_sizes_for_dumping();
 #endif // _LP64
+
+  ObjLayout::initialize();
 
   GCConfig::arguments()->initialize_heap_sizes();
 

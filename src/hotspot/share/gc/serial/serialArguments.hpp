@@ -31,8 +31,8 @@ class CollectedHeap;
 
 class SerialArguments : public GenArguments {
 private:
-  virtual CollectedHeap* create_heap();
   virtual void initialize();
+  virtual CollectedHeap* create_heap();
 };
 
 #endif // SHARE_GC_SERIAL_SERIALARGUMENTS_HPP

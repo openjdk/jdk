@@ -24,12 +24,12 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
-#include "gc/shared/genArguments.hpp"
+#include "gc/shared/gcArguments.hpp"
 #include "gc/serial/serialArguments.hpp"
 #include "gc/serial/serialHeap.hpp"
 
 void SerialArguments::initialize() {
-  GenArguments::initialize();
+  GCArguments::initialize();
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 
