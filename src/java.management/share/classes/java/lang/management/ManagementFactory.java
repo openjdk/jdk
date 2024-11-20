@@ -25,14 +25,12 @@
 
 package java.lang.management;
 
-import java.io.FilePermission;
 import java.io.IOException;
 import javax.management.DynamicMBean;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerFactory;
-import javax.management.MBeanServerPermission;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationEmitter;
 import javax.management.ObjectName;
@@ -41,7 +39,6 @@ import javax.management.InstanceNotFoundException;
 import javax.management.MalformedObjectNameException;
 import javax.management.StandardEmitterMBean;
 import javax.management.StandardMBean;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

@@ -27,14 +27,12 @@ package com.sun.jmx.mbeanserver;
 
 
 import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.lang.System.Logger.Level;
-import javax.management.MBeanPermission;
 
 import javax.management.ObjectName;
 import javax.management.loading.PrivateClassLoader;

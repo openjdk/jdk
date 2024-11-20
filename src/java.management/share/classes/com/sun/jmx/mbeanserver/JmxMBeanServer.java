@@ -30,8 +30,6 @@ import com.sun.jmx.interceptor.MBeanServerInterceptor;
 import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
 
 import java.io.ObjectInputStream;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Set;
 import java.lang.System.Logger.Level;

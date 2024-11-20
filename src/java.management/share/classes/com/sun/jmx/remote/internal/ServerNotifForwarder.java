@@ -29,8 +29,6 @@ import com.sun.jmx.remote.security.NotificationAccessController;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.io.IOException;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -381,17 +379,6 @@ public class ServerNotifForwarder {
             }
             return false;
         }
-    }
-
-    /**
-     * Iterate until we extract the real exception
-     * from a stack of PrivilegedActionExceptions.
-     */
-    private static Exception extractException(Exception e) {
-        while (e instanceof PrivilegedActionException) {
-            e = ((PrivilegedActionException)e).getException();
-        }
-        return e;
     }
 
     private static class IdAndFilter {
