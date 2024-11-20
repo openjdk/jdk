@@ -60,8 +60,9 @@
  * </ul>
  * <p> Downloading a factory class from a {@linkplain javax.naming.Reference#getFactoryClassLocation()
  * location} specified in the reference can be supported by a custom implementation of {@link
- * javax.naming.spi.ObjectFactoryBuilder}. Unless an {@link javax.naming.spi.ObjectFactoryBuilder
- * ObjectFactoryBuilder} is installed a {@link javax.naming.ConfigurationException} is thrown.
+ * javax.naming.spi.ObjectFactoryBuilder}. If a location is specified, then
+ * unless an {@link javax.naming.spi.ObjectFactoryBuilder} is installed a
+ * {@link javax.naming.ConfigurationException} is thrown.
  * @provides javax.naming.spi.InitialContextFactory
  * @moduleGraph
  * @since 9
