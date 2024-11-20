@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8298935
+ * @bug 8298935 8334431
  * @summary Writing forward on array creates cyclic dependency
  *          which leads to wrong result, when ignored.
  * @library /test/lib /
@@ -55,15 +55,30 @@ public class TestCyclicDependency {
     float[] goldF6a = new float[RANGE];
     int[] goldI6b = new int[RANGE];
     float[] goldF6b = new float[RANGE];
-    int[] goldI7 = new int[RANGE];
-    float[] goldF7 = new float[RANGE];
-    int[] goldI8 = new int[RANGE];
-    float[] goldF8 = new float[RANGE];
+    int[] goldI7a = new int[RANGE];
+    float[] goldF7a = new float[RANGE];
+    int[] goldI7b = new int[RANGE];
+    float[] goldF7b = new float[RANGE];
+    float[] goldF7b_2 = new float[RANGE];
+    int[] goldI7c = new int[RANGE];
+    float[] goldF7c = new float[RANGE];
+    int[] goldI8a = new int[RANGE];
+    float[] goldF8a = new float[RANGE];
+    int[] goldI8b = new int[RANGE];
+    int[] goldI8b_2 = new int[RANGE];
+    float[] goldF8b = new float[RANGE];
+    int[] goldI8c = new int[RANGE];
+    float[] goldF8c = new float[RANGE];
     int[] goldI9 = new int[RANGE];
     float[] goldF9 = new float[RANGE];
 
     public static void main(String args[]) {
-        TestFramework.runWithFlags("-XX:CompileCommand=compileonly,TestCyclicDependency::test*");
+        TestFramework.runWithFlags("-XX:CompileCommand=compileonly,TestCyclicDependency::test*",
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector", "-XX:-VerifyAlignVector");
+        TestFramework.runWithFlags("-XX:CompileCommand=compileonly,TestCyclicDependency::test*",
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector", "-XX:-VerifyAlignVector");
+        TestFramework.runWithFlags("-XX:CompileCommand=compileonly,TestCyclicDependency::test*",
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector", "-XX:+VerifyAlignVector");
     }
 
     TestCyclicDependency() {
@@ -95,12 +110,24 @@ public class TestCyclicDependency {
         // test6b
         init(goldI6b, goldF6b);
         test6b(goldI6b, goldF6b);
-        // test7
-        init(goldI7, goldF7);
-        test7(goldI7, goldF7);
-        // test8
-        init(goldI8, goldF8);
-        test8(goldI8, goldF8);
+        // test7a
+        init(goldI7a, goldF7a);
+        test7a(goldI7a, goldF7a);
+        // test7b
+        init(goldI7b, goldF7b, goldF7b_2);
+        test7b(goldI7b, goldF7b, goldF7b_2);
+        // test7c
+        init(goldI7c, goldF7c);
+        test7c(goldI7c, goldF7c, goldF7c);
+        // test8a
+        init(goldI8a, goldF8a);
+        test8a(goldI8a, goldF8a);
+        // test8b
+        init(goldI8b, goldI8b_2, goldF8b);
+        test8b(goldI8b, goldI8b_2, goldF8b);
+        // test8c
+        init(goldI8c, goldF8c);
+        test8c(goldI8c, goldI8c, goldF8c);
         // test9
         init(goldI9, goldF9);
         test9(goldI9, goldF9);
@@ -205,26 +232,74 @@ public class TestCyclicDependency {
         verifyF("test6b", dataF, goldF6b);
     }
 
-    @Run(test = "test7")
+    @Run(test = "test7a")
     @Warmup(100)
-    public void runTest7() {
+    public void runTest7a() {
         int[] dataI = new int[RANGE];
         float[] dataF = new float[RANGE];
         init(dataI, dataF);
-        test7(dataI, dataF);
-        verifyI("test7", dataI, goldI7);
-        verifyF("test7", dataF, goldF7);
+        test7a(dataI, dataF);
+        verifyI("test7a", dataI, goldI7a);
+        verifyF("test7a", dataF, goldF7a);
     }
 
-    @Run(test = "test8")
+    @Run(test = "test7b")
     @Warmup(100)
-    public void runTest8() {
+    public void runTest7b() {
+        int[] dataI = new int[RANGE];
+        float[] dataF = new float[RANGE];
+        float[] dataF_2 = new float[RANGE];
+        init(dataI, dataF, dataF_2);
+        test7b(dataI, dataF, dataF_2);
+        verifyI("test7b", dataI, goldI7b);
+        verifyF("test7b", dataF, goldF7b);
+        verifyF("test7b", dataF_2, goldF7b_2);
+    }
+
+    @Run(test = "test7c")
+    @Warmup(100)
+    public void runTest7c() {
         int[] dataI = new int[RANGE];
         float[] dataF = new float[RANGE];
         init(dataI, dataF);
-        test8(dataI, dataF);
-        verifyI("test8", dataI, goldI8);
-        verifyF("test8", dataF, goldF8);
+        test7c(dataI, dataF, dataF);
+        verifyI("test7c", dataI, goldI7c);
+        verifyF("test7c", dataF, goldF7c);
+    }
+
+    @Run(test = "test8a")
+    @Warmup(100)
+    public void runTest8a() {
+        int[] dataI = new int[RANGE];
+        float[] dataF = new float[RANGE];
+        init(dataI, dataF);
+        test8a(dataI, dataF);
+        verifyI("test8a", dataI, goldI8a);
+        verifyF("test8a", dataF, goldF8a);
+    }
+
+    @Run(test = "test8b")
+    @Warmup(100)
+    public void runTest8b() {
+        int[] dataI = new int[RANGE];
+        int[] dataI_2 = new int[RANGE];
+        float[] dataF = new float[RANGE];
+        init(dataI, dataI_2, dataF);
+        test8b(dataI, dataI_2, dataF);
+        verifyI("test8b", dataI, goldI8b);
+        verifyI("test8b", dataI_2, goldI8b_2);
+        verifyF("test8b", dataF, goldF8b);
+    }
+
+    @Run(test = "test8c")
+    @Warmup(100)
+    public void runTest8c() {
+        int[] dataI = new int[RANGE];
+        float[] dataF = new float[RANGE];
+        init(dataI, dataF);
+        test8c(dataI, dataI, dataF);
+        verifyI("test8c", dataI, goldI8c);
+        verifyF("test8c", dataF, goldF8c);
     }
 
     @Run(test = "test9")
@@ -328,34 +403,156 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0"},
+    @IR(counts = {IRNode.ADD_VI, "= 0",
+                  IRNode.ADD_VF, "= 0"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.ADD_VI, "> 0",
+                  IRNode.ADD_VF, "= 0"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Some aarch64 machines have AlignVector == true, like ThunderX2
-    static void test7(int[] dataI, float[] dataF) {
+    static void test7a(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE - 32; i++) {
             // write forward 32 -> more than vector size -> can vectorize
-            // write forward 3 -> cannot vectorize
-            // separate types should make decision separately if they vectorize or not
             int v = dataI[i];
             dataI[i + 32] = v + 5;
+            // write forward 3:
+            //   AlignVector=true -> cannot vectorize because load and store cannot be both aligned
+            //   AlignVector=false -> could vectorize, but would get 2-element vectors where
+            //                        store-to-load-forwarding fails, because we have store-load
+            //                        dependencies that have partial overlap.
+            //                        -> all vectorization cancled.
             float f = dataF[i];
             dataF[i + 3] = f + 3.5f;
         }
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0"},
+    @IR(counts = {IRNode.ADD_VI, "> 0",
+                  IRNode.ADD_VF, IRNode.VECTOR_SIZE + "2", "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.ADD_VI, "> 0",
+                  IRNode.ADD_VF, "= 0"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Some aarch64 machines have AlignVector == true, like ThunderX2
-    static void test8(int[] dataI, float[] dataF) {
+    static void test7b(int[] dataI, float[] dataF, float[] dataF_2) {
         for (int i = 0; i < RANGE - 32; i++) {
             // write forward 32 -> more than vector size -> can vectorize
-            // write forward 3 -> cannot vectorize
-            // separate types should make decision separately if they vectorize or not
+            int v = dataI[i];
+            dataI[i + 32] = v + 5;
+            // write forward 3 to different array reference:
+            //   AlignVector=true -> cannot vectorize because load and store cannot be both aligned
+            //   AlignVector=false -> vectorizes because we cannot prove store-to-load forwarding
+            //                        failure. But we can only have 2-element vectors in case
+            //                        the two float-arrays reference the same array.
+            //                        Note: at runtime the float-arrays are always different.
+            float f = dataF[i];
+            dataF_2[i + 3] = f + 3.5f;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, "> 0",
+                  IRNode.ADD_VF, IRNode.VECTOR_SIZE + "2", "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.ADD_VI, "> 0",
+                  IRNode.ADD_VF, "= 0"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Some aarch64 machines have AlignVector == true, like ThunderX2
+    static void test7c(int[] dataI, float[] dataF, float[] dataF_2) {
+        for (int i = 0; i < RANGE - 32; i++) {
+            // write forward 32 -> more than vector size -> can vectorize
+            int v = dataI[i];
+            dataI[i + 32] = v + 5;
+            // write forward 3 to different array reference:
+            //   AlignVector=true -> cannot vectorize because load and store cannot be both aligned
+            //   AlignVector=false -> vectorizes because we cannot prove store-to-load forwarding
+            //                        failure. But we can only have 2-element vectors in case
+            //                        the two float-arrays reference the same array.
+            //                        Note: at runtime the float-arrays are always the same.
+            float f = dataF[i];
+            dataF_2[i + 3] = f + 3.5f;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, "= 0",
+                  IRNode.ADD_VF, "= 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.ADD_VI, "= 0",
+                  IRNode.ADD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Some aarch64 machines have AlignVector == true, like ThunderX2
+    static void test8a(int[] dataI, float[] dataF) {
+        for (int i = 0; i < RANGE - 32; i++) {
+            // write forward 3:
+            //   AlignVector=true -> cannot vectorize because load and store cannot be both aligned
+            //   AlignVector=false -> could vectorize, but would get 2-element vectors where
+            //                        store-to-load-forwarding fails, because we have store-load
+            //                        dependencies that have partial overlap.
+            //                        -> all vectorization cancled.
             int v = dataI[i];
             dataI[i + 3] = v + 5;
+            // write forward 32 -> more than vector size -> can vectorize
+            float f = dataF[i];
+            dataF[i + 32] = f + 3.5f;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE + "2", "> 0",
+                  IRNode.ADD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.ADD_VI, "= 0",
+                  IRNode.ADD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Some aarch64 machines have AlignVector == true, like ThunderX2
+    static void test8b(int[] dataI, int[] dataI_2, float[] dataF) {
+        for (int i = 0; i < RANGE - 32; i++) {
+            // write forward 3 to different array reference:
+            //   AlignVector=true -> cannot vectorize because load and store cannot be both aligned
+            //   AlignVector=false -> vectorizes because we cannot prove store-to-load forwarding
+            //                        failure. But we can only have 2-element vectors in case
+            //                        the two float-arrays reference the same array.
+            //                        Note: at runtime the float-arrays are always different.
+            int v = dataI[i];
+            dataI_2[i + 3] = v + 5;
+            // write forward 32 -> more than vector size -> can vectorize
+            float f = dataF[i];
+            dataF[i + 32] = f + 3.5f;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE + "2", "> 0",
+                  IRNode.ADD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.ADD_VI, "= 0",
+                  IRNode.ADD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Some aarch64 machines have AlignVector == true, like ThunderX2
+    static void test8c(int[] dataI, int[] dataI_2, float[] dataF) {
+        for (int i = 0; i < RANGE - 32; i++) {
+            // write forward 3 to different array reference:
+            //   AlignVector=true -> cannot vectorize because load and store cannot be both aligned
+            //   AlignVector=false -> vectorizes because we cannot prove store-to-load forwarding
+            //                        failure. But we can only have 2-element vectors in case
+            //                        the two float-arrays reference the same array.
+            //                        Note: at runtime the float-arrays are always the same.
+            int v = dataI[i];
+            dataI_2[i + 3] = v + 5;
+            // write forward 32 -> more than vector size -> can vectorize
             float f = dataF[i];
             dataF[i + 32] = f + 3.5f;
         }
@@ -376,6 +573,22 @@ public class TestCyclicDependency {
     public static void init(int[] dataI, float[] dataF) {
         for (int j = 0; j < RANGE; j++) {
             dataI[j] = j;
+            dataF[j] = j * 0.5f;
+        }
+    }
+
+    public static void init(int[] dataI, float[] dataF, float[] dataF_2) {
+        for (int j = 0; j < RANGE; j++) {
+            dataI[j] = j;
+            dataF[j] = j * 0.5f;
+            dataF_2[j] = j * 0.3f;
+        }
+    }
+
+    public static void init(int[] dataI, int[] dataI_2, float[] dataF) {
+        for (int j = 0; j < RANGE; j++) {
+            dataI[j] = j;
+            dataI_2[j] = 3*j - 42;
             dataF[j] = j * 0.5f;
         }
     }

@@ -190,6 +190,9 @@ public class TestAlignVector {
         tests.put("test14aB",    () -> { return test14aB(aB.clone()); });
         tests.put("test14bB",    () -> { return test14bB(aB.clone()); });
         tests.put("test14cB",    () -> { return test14cB(aB.clone()); });
+        tests.put("test14dB",    () -> { return test14dB(aB.clone()); });
+        tests.put("test14eB",    () -> { return test14eB(aB.clone()); });
+        tests.put("test14fB",    () -> { return test14fB(aB.clone()); });
 
         tests.put("test15aB",    () -> { return test15aB(aB.clone()); });
         tests.put("test15bB",    () -> { return test15bB(aB.clone()); });
@@ -263,6 +266,9 @@ public class TestAlignVector {
                  "test14aB",
                  "test14bB",
                  "test14cB",
+                 "test14dB",
+                 "test14eB",
+                 "test14fB",
                  "test15aB",
                  "test15bB",
                  "test15cB",
@@ -1264,9 +1270,9 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.ADD_VB, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"})
@@ -1279,6 +1285,9 @@ public class TestAlignVector {
     static Object[] test14aB(byte[] a) {
         // non-power-of-2 stride
         for (int i = 0; i < RANGE-20; i+=9) {
+            // Since the stride is shorter than the vector length, there will be always
+            // partial overlap of loads with previous stores, this leads to failure in
+            // store-to-load-forwarding -> vectorization not profitable.
             a[i+0]++;
             a[i+1]++;
             a[i+2]++;
@@ -1300,9 +1309,9 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.ADD_VB, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"})
@@ -1315,6 +1324,9 @@ public class TestAlignVector {
     static Object[] test14bB(byte[] a) {
         // non-power-of-2 stride
         for (int i = 0; i < RANGE-20; i+=3) {
+            // Since the stride is shorter than the vector length, there will be always
+            // partial overlap of loads with previous stores, this leads to failure in
+            // store-to-load-forwarding -> vectorization not profitable.
             a[i+0]++;
             a[i+1]++;
             a[i+2]++;
@@ -1336,9 +1348,9 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.ADD_VB, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"})
@@ -1351,6 +1363,9 @@ public class TestAlignVector {
     static Object[] test14cB(byte[] a) {
         // non-power-of-2 stride
         for (int i = 0; i < RANGE-20; i+=5) {
+            // Since the stride is shorter than the vector length, there will be always
+            // partial overlap of loads with previous stores, this leads to failure in
+            // store-to-load-forwarding -> vectorization not profitable.
             a[i+0]++;
             a[i+1]++;
             a[i+2]++;
@@ -1367,6 +1382,90 @@ public class TestAlignVector {
             a[i+13]++;
             a[i+14]++;
             a[i+15]++;
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.STORE_VECTOR,                                           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "true"})
+    static Object[] test14dB(byte[] a) {
+        // non-power-of-2 stride
+        for (int i = 0; i < RANGE-20; i+=9) {
+            a[i+0]++;
+            a[i+1]++;
+            a[i+2]++;
+            a[i+3]++;
+            a[i+4]++;
+            a[i+5]++;
+            a[i+6]++;
+            a[i+7]++;
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.STORE_VECTOR,                                           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "true"})
+    static Object[] test14eB(byte[] a) {
+        // non-power-of-2 stride
+        for (int i = 0; i < RANGE-32; i+=11) {
+            a[i+0]++;
+            a[i+1]++;
+            a[i+2]++;
+            a[i+3]++;
+            a[i+4]++;
+            a[i+5]++;
+            a[i+6]++;
+            a[i+7]++;
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.STORE_VECTOR,                                           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "true"})
+    static Object[] test14fB(byte[] a) {
+        // non-power-of-2 stride
+        for (int i = 0; i < RANGE-40; i+=12) {
+            a[i+0]++;
+            a[i+1]++;
+            a[i+2]++;
+            a[i+3]++;
+            a[i+4]++;
+            a[i+5]++;
+            a[i+6]++;
+            a[i+7]++;
         }
         return new Object[]{ a };
     }

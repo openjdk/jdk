@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package sun.awt;
 
 import java.awt.AWTEvent;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -323,7 +321,6 @@ public final class AWTAutoShutdown implements Runnable {
         }
     }
 
-    @SuppressWarnings("serial")
     static AWTEvent getShutdownEvent() {
         return new AWTEvent(getInstance(), 0) {
         };
@@ -333,17 +330,13 @@ public final class AWTAutoShutdown implements Runnable {
      * Creates and starts a new blocker thread. Doesn't return until
      * the new blocker thread starts.
      */
-    @SuppressWarnings("removal")
     private void activateBlockerThread() {
-        AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-            String name = "AWT-Shutdown";
-            Thread thread = new Thread(
-                   ThreadGroupUtils.getRootThreadGroup(), this, name, 0, false);
-            thread.setContextClassLoader(null);
-            thread.setDaemon(false);
-            blockerThread = thread;
-            return thread;
-        }).start();
+        String name = "AWT-Shutdown";
+        Thread thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), this, name, 0, false);
+        thread.setContextClassLoader(null);
+        thread.setDaemon(false);
+        blockerThread = thread;
+        thread.start();
         try {
             /* Wait for the blocker thread to start. */
             mainLock.wait();
