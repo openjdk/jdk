@@ -61,7 +61,7 @@ import static sun.net.www.protocol.http.HttpURLConnection.HTTP_CONNECT;
  * @author Bill Foote
  */
 
-class DigestAuthentication extends AuthenticationInfo {
+final class DigestAuthentication extends AuthenticationInfo {
 
     private String authMethod;
 

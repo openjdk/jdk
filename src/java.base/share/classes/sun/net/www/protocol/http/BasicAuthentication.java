@@ -46,7 +46,7 @@ import sun.nio.cs.UTF_8;
  */
 
 
-class BasicAuthentication extends AuthenticationInfo {
+final class BasicAuthentication extends AuthenticationInfo {
 
     /** The authentication string for this host, port, and realm.  This is
         a simple BASE64 encoding of "login:password".    */

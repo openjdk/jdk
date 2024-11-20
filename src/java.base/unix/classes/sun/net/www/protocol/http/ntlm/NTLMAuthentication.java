@@ -69,7 +69,7 @@ import sun.security.action.GetPropertyAction;
  *    through a proxy, rather between client and proxy, or between client and server (with no proxy)
  */
 
-public class NTLMAuthentication extends AuthenticationInfo {
+public final class NTLMAuthentication extends AuthenticationInfo {
 
     private static final NTLMAuthenticationCallback NTLMAuthCallback =
         NTLMAuthenticationCallback.getNTLMAuthenticationCallback();

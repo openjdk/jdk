@@ -43,7 +43,7 @@ import sun.net.www.protocol.http.HttpURLConnection;
  * @author Michael McMahon
  */
 
-public class NTLMAuthentication extends AuthenticationInfo {
+public final class NTLMAuthentication extends AuthenticationInfo {
 
     private static final NTLMAuthenticationCallback NTLMAuthCallback =
             NTLMAuthenticationCallback.getNTLMAuthenticationCallback();

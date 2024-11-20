@@ -44,7 +44,7 @@ import static sun.net.www.protocol.http.AuthScheme.KERBEROS;
  * @since 1.6
  */
 
-class NegotiateAuthentication extends AuthenticationInfo {
+final class NegotiateAuthentication extends AuthenticationInfo {
 
     private final HttpCallerInfo hci;
 
