@@ -223,7 +223,6 @@ module java.base {
         jdk.crypto.cryptoki,
         jdk.incubator.vector,
         jdk.jfr,
-        jdk.jlink,
         jdk.jshell,
         jdk.nio.mapmode,
         jdk.unsupported,
