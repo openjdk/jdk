@@ -569,8 +569,9 @@ public class Socket implements java.io.Closeable {
     /**
      * Connects this socket to the server.
      *
-     * <p> If the connection cannot be established, then the socket is closed
-     * and an {@link IOException} is thrown.
+     * <p> If the endpoint is an unresolved {@link InetSocketAddress}, or the
+     * connection cannot be established, then the socket is closed, and an
+     * {@link IOException} is thrown.
      *
      * <p> This method is {@linkplain Thread#interrupt() interruptible} in the
      * following circumstances:
@@ -608,8 +609,9 @@ public class Socket implements java.io.Closeable {
      * A timeout of zero is interpreted as an infinite timeout. The connection
      * will then block until established or an error occurs.
      *
-     * <p> If the connection cannot be established, or the timeout expires before
-     * the connection is established, then the socket is closed and an
+     * <p> If the endpoint is an unresolved {@link InetSocketAddress}, the
+     * connection cannot be established, or the timeout expires before the
+     * connection is established, then the socket is closed, and an
      * {@link IOException} is thrown.
      *
      * <p> This method is {@linkplain Thread#interrupt() interruptible} in the
