@@ -665,7 +665,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         } else if (getModel().getShowSea()) {
             doSeaLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowBlocks()) {
-            doClusteredLayout(visibleConnections);
+            doClusteredLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowCFG()) {
             doCFGLayout(visibleFigures, visibleConnections);
         }
@@ -741,10 +741,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         seaLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
     }
 
-    private void doClusteredLayout(Set<Connection> visibleConnections) {
+    private void doClusteredLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
         HierarchicalClusterLayoutManager clusterLayoutManager = new HierarchicalClusterLayoutManager();
         clusterLayoutManager.setCutEdges(model.getCutEdges());
-        clusterLayoutManager.doLayout(new LayoutGraph(visibleConnections, new HashSet<>()));
+        clusterLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
     }
 
     private void doCFGLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
