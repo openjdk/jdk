@@ -29,7 +29,6 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
-import sun.awt.AWTPermissions;
 
 /**
  * <P>The {@code AWTEventMonitor} implements a suite of listeners that are
@@ -85,17 +84,6 @@ public class AWTEventMonitor {
         return componentWithFocus;
     }
 
-    /*
-     * Check permissions
-     */
-    private static void checkInstallPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
-        }
-    }
-
     /**
      * Adds the specified listener to receive all {@link EventID#COMPONENT COMPONENT}
      * events on each component instance in the Java Virtual Machine as they occur.
@@ -108,7 +96,6 @@ public class AWTEventMonitor {
      */
     public static void addComponentListener(ComponentListener l) {
         if (componentListener == null) {
-            checkInstallPermission();
             awtListener.installListeners(EventID.COMPONENT);
         }
         componentListener = AWTEventMulticaster.add(componentListener, l);
@@ -190,7 +177,6 @@ public class AWTEventMonitor {
      */
     public static void addKeyListener(KeyListener l) {
         if (keyListener == null) {
-            checkInstallPermission();
             awtListener.installListeners(EventID.KEY);
         }
         keyListener = AWTEventMulticaster.add(keyListener, l);
@@ -222,7 +208,6 @@ public class AWTEventMonitor {
      */
     public static void addMouseListener(MouseListener l) {
         if (mouseListener == null) {
-            checkInstallPermission();
             awtListener.installListeners(EventID.MOUSE);
         }
         mouseListener = AWTEventMulticaster.add(mouseListener, l);
@@ -254,7 +239,6 @@ public class AWTEventMonitor {
      */
     public static void addMouseMotionListener(MouseMotionListener l) {
         if (mouseMotionListener == null) {
-            checkInstallPermission();
             awtListener.installListeners(EventID.MOTION);
         }
         mouseMotionListener = AWTEventMulticaster.add(mouseMotionListener, l);
@@ -286,7 +270,6 @@ public class AWTEventMonitor {
      */
     public static void addWindowListener(WindowListener l) {
         if (windowListener == null) {
-            checkInstallPermission();
             awtListener.installListeners(EventID.WINDOW);
         }
         windowListener = AWTEventMulticaster.add(windowListener, l);
@@ -318,7 +301,6 @@ public class AWTEventMonitor {
      */
     public static void addActionListener(ActionListener l) {
         if (actionListener == null) {
-            checkInstallPermission();
             awtListener.installListeners(EventID.ACTION);
         }
         actionListener = AWTEventMulticaster.add(actionListener, l);
@@ -351,7 +333,6 @@ public class AWTEventMonitor {
      */
     public static void addAdjustmentListener(AdjustmentListener l) {
         if (adjustmentListener == null) {
-            checkInstallPermission();
             awtListener.installListeners(EventID.ADJUSTMENT);
         }
         adjustmentListener = AWTEventMulticaster.add(adjustmentListener, l);
@@ -383,7 +364,6 @@ public class AWTEventMonitor {
      */
     public static void addItemListener(ItemListener l) {
         if (itemListener == null) {
-            checkInstallPermission();
             awtListener.installListeners(EventID.ITEM);
         }
         itemListener = AWTEventMulticaster.add(itemListener, l);
@@ -415,7 +395,6 @@ public class AWTEventMonitor {
      */
     public static void addTextListener(TextListener l) {
         if (textListener == null) {
-            checkInstallPermission();
             awtListener.installListeners(EventID.TEXT);
         }
         textListener = AWTEventMulticaster.add(textListener, l);
