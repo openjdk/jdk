@@ -40,8 +40,6 @@ import java.util.stream.Stream;
 
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
-import sun.reflect.misc.ReflectUtil;
-
 
 /**
  * <p>Factory to create JMX API connector clients.  There

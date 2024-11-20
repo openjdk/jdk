@@ -56,7 +56,6 @@ import javax.management.AttributeNotFoundException;
 import javax.management.openmbean.CompositeData;
 
 import sun.reflect.misc.MethodUtil;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * This class contains the methods for performing all the tests needed to verify

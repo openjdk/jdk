@@ -77,7 +77,6 @@ import javax.management.ServiceNotFoundException;
 import javax.management.loading.ClassLoaderRepository;
 
 import sun.reflect.misc.MethodUtil;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * This class is the implementation of a ModelMBean. An appropriate

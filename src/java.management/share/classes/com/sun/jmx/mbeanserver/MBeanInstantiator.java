@@ -47,7 +47,6 @@ import javax.management.RuntimeErrorException;
 import javax.management.RuntimeMBeanException;
 import javax.management.RuntimeOperationsException;
 import sun.reflect.misc.ConstructorUtil;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * Implements the MBeanInstantiator interface. Provides methods for

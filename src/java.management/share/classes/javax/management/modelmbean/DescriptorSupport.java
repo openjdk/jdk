@@ -56,8 +56,6 @@ import javax.management.ImmutableDescriptor;
 import javax.management.MBeanException;
 import javax.management.RuntimeOperationsException;
 
-import sun.reflect.misc.ReflectUtil;
-
 /**
  * This class represents the metadata set for a ModelMBean element.  A
  * descriptor is part of the ModelMBeanInfo,

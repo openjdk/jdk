@@ -31,8 +31,6 @@ import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
 import java.util.ArrayList;
 import java.lang.System.Logger.Level;
 import javax.management.loading.ClassLoaderRepository;
-import sun.reflect.misc.ReflectUtil;
-
 
 /**
  * <p>Provides MBean server references.  There are no instances of
@@ -367,7 +365,7 @@ public class MBeanServerFactory {
         }
 
         // No context class loader? Try with Class.forName()
-        return ReflectUtil.forName(builderClassName);
+        return Class.forName(builderClassName);
     }
 
     /**
