@@ -240,11 +240,11 @@ class OpaqueLoopNodesVerifier : public BFSActions {
 
   void target_node_action(Node* target_node) override {
     if (target_node->is_OpaqueLoopInit()) {
-      assert(!_found_init, "can only found one OpaqueLoopInitNode");
+      assert(!_found_init, "should only find one OpaqueLoopInitNode");
       _found_init = true;
     } else {
       assert(target_node->is_OpaqueLoopStride(), "unexpected Opaque1 node");
-      assert(!_found_stride, "can only found one OpaqueLoopStrideNode");
+      assert(!_found_stride, "should only find one OpaqueLoopStrideNode");
       _found_stride = true;
     }
   }

@@ -2115,15 +2115,15 @@ inline int Op_DivModIL(BasicType bt, bool is_unsigned) {
 // a customized BFS.
 class BFSActions : public StackObj {
  public:
-  // Should a node's inputs further be visit in the BFS traversal? By default, we visit all data inputs. Override this
-  // method to provide a costum filter.
+  // Should a node's inputs further be visited in the BFS traversal? By default, we visit all data inputs. Override this
+  // method to provide a custom filter.
   virtual bool should_visit(Node* node) const {
     // By default, visit all inputs.
     return true;
   };
 
   // Is the visited node a target node that we are looking for in the BFS traversal? We do not visit its inputs further
-  // but the BFS will continue to visited all unvisited nodes in the queue.
+  // but the BFS will continue to visit all unvisited nodes in the queue.
   virtual bool is_target_node(Node* node) const = 0;
 
   // Defines an action that should be taken when we visit a target node in the BFS traversal.
