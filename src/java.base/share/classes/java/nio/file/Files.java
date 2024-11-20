@@ -984,16 +984,14 @@ public final class Files {
      * accessed using {@code link} as the path. On some file systems this is
      * known as creating a "hard link". Whether the file attributes are
      * maintained for the file or for each directory entry is file system
-     * specific and therefore not specified. Typically, a file system requires
+     * specific and therefore not specified. If the {@code existing} parameter
+     * is the path to a symbolic link, then whether the new link is for the
+     * target of the symbolic link or for the symbolic link itself is platform
+     * dependent and therefore not specified. Typically, a file system requires
      * that all links (directory entries) for a file be on the same file system.
      * Furthermore, on some platforms, the Java virtual machine may require to
      * be started with implementation specific privileges to create hard links
      * or to create links to directories.
-     *
-     * @apiNote
-     * If the {@code existing} parameter is the path to a symbolic link, then
-     * whether the new link is for the target of the symbolic link or for the
-     * symbolic link itself is platform dependent and therefore not specified.
      *
      * @param   link
      *          the link (directory entry) to create
