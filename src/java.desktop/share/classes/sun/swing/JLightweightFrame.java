@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,7 +331,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         content.imageUpdated(x, y, width, height);
     }
 
-    @SuppressWarnings({"removal","serial"}) // anonymous class inside
+    @SuppressWarnings("removal")
     private void initInterior() {
         contentPane = new JPanel() {
             @Override

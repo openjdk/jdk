@@ -385,7 +385,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // Some values are actually configure-time constants but some can be set via the jlink tool and
   // so must be read dynamically. We treat them all the same.
   InstanceKlass* ik = SystemDictionary::find_instance_klass(THREAD, vmSymbols::java_lang_VersionProps(),
-                                                            Handle(), Handle());
+                                                            Handle());
   {
     ResourceMark rm(main_thread);
     JDK_Version::set_java_version(get_java_version_info(ik, vmSymbols::java_version_name()));
@@ -496,6 +496,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Timing (must come after argument parsing)
   TraceTime timer("Create VM", TRACETIME_LOG(Info, startuptime));
+
+  // Initialize object layout after parsing the args
+  ObjLayout::initialize();
 
   // Initialize the os module after parsing the args
   jint os_init_2_result = os::init_2();
