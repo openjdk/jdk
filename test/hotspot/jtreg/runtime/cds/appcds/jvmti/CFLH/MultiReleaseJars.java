@@ -61,7 +61,18 @@ public class MultiReleaseJars {
         String[] sts = {
             "class Foo {",
             "    static {",
-            "        System.out.println(\"Hello from Foo\");",
+            "        System.out.println(\"Hello from Foo old version \");",
+            "    }",
+            "}",
+        };
+        return sts;
+    }
+
+    static String[] getFooNewVersion() {
+        String[] sts = {
+            "class Foo {",
+            "    static {",
+            "        System.out.println(\"Hello from Foo new version \");",
             "    }",
             "}",
         };
@@ -101,11 +112,14 @@ public class MultiReleaseJars {
      * META-INF/versions/9/
      * META-INF/versions/9/Bar.class
      * META-INF/versions/9/Foo.class
+     * META-INF/versions/24/
+     * META-INF/versions/24/Foo.class
      */
     static void createClassFilesAndJar() throws Exception {
         String tempDir = CDSTestUtils.getOutputDir();
         File baseDir = new File(tempDir + File.separator + "base");
         File vDir    = new File(tempDir + File.separator + BASE_VERSION_STRING);
+        File vDir2   = new File(tempDir + File.separator + MAJOR_VERSION_STRING);
 
         baseDir.mkdirs();
         vDir.mkdirs();
@@ -113,6 +127,9 @@ public class MultiReleaseJars {
         File fileFoo = TestCommon.getOutputSourceFile("Foo.java");
         writeFile(fileFoo, getFoo());
         JarBuilder.compile(vDir.getAbsolutePath(), fileFoo.getAbsolutePath(), "--release", BASE_VERSION_STRING);
+
+        writeFile(fileFoo, getFooNewVersion());
+        JarBuilder.compile(vDir2.getAbsolutePath(), fileFoo.getAbsolutePath(), "--release", MAJOR_VERSION_STRING);
 
         File fileMain = TestCommon.getOutputSourceFile("Main.java");
         writeFile(fileMain, getMain());
@@ -130,25 +147,18 @@ public class MultiReleaseJars {
         writeFile(metainf, meta);
 
         JarBuilder.build("multi-version", baseDir, metainf.getAbsolutePath(),
-            "--release", BASE_VERSION_STRING, "-C", vDir.getAbsolutePath(), ".");
+            "--release", BASE_VERSION_STRING, "-C", vDir.getAbsolutePath(), ".",
+            "--release", MAJOR_VERSION_STRING, "-C", vDir2.getAbsolutePath(), ".");
 
-    }
-
-    static void checkExecOutput(OutputAnalyzer output, String expectedOutput) throws Exception {
-        try {
-            TestCommon.checkExec(output, expectedOutput);
-        } catch (java.lang.RuntimeException re) {
-            String cause = re.getMessage();
-            if (!expectedOutput.equals(cause)) {
-                throw re;
-            }
-        }
     }
 
     public static void main(String... args) throws Exception {
         // create multi-version.jar which contains Main.class, Foo.class and Bar.class.
-        // Foo.class has only one version: base version 9.
+        // Foo.class has two version: base version 9 and current major JDK version.
         // Bar.class has two versions: base version 9 and default version.
+        // Since there is no default version for Foo, the class loader will get the
+        // highest version (current major JDK version in this case) which is the
+        // same or below the current JDK version.
         createClassFilesAndJar();
 
         String mainClass    = "Main";
@@ -166,8 +176,8 @@ public class MultiReleaseJars {
                                      mainClass);
 
         output.shouldMatch(".*Foo.source:.*multi-version.jar")
-              // Foo is loaded from jar since it was modified by CFLH
-              .shouldContain("HELLO from Foo") // CFLH changed "Hello" to "HELLO"
+              // New version of Foo is loaded from jar since it was modified by CFLH
+              .shouldContain("HELLO from Foo new version") // CFLH changed "Hello" to "HELLO"
               .shouldContain("class Foo") // output from Main
               // Bar is loaded from archive
               .shouldContain("Bar source: shared objects file")
