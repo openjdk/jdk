@@ -199,7 +199,6 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 if (!(member instanceof PaddingLayout pl)) {
                     lastUnpaddedOffset = offset;
                     if (preceedingPadding != null) {
-                        assertIsAlignedBy(sl, preceedingPadding, member);
                         preceedingPadding = null;
                     }
                 } else {
@@ -253,20 +252,9 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
-    private static void assertIsAlignedBy(StructLayout gl, PaddingLayout padding, MemoryLayout element) {
-        if (padding.byteSize() > element.byteAlignment()) {
-            throw new IllegalArgumentException("The padding layout " + padding +
-                    " is not of minimum size to align " + element +
-                    "(with byte alignment " + element.byteAlignment() + ")" + inMessage(gl));
-        }
-    }
-
     private static String inMessage(GroupLayout gl) {
-        return gl != null
-                ? " in " + gl
-                : "";
+        return " in " + gl;
     }
-
 
     // checks both that there is no excess padding between 'memberLayout' and
     // the previous layout

@@ -250,7 +250,7 @@ import java.util.stream.Stream;
  * <ol>
  * <li>{@code L.byteAlignment()} is equal to the sequence layout's <em>natural alignment</em>
  *     , and</li>
- * <li>{@code S.elementLayout()} is a well-defined layout.</li>
+ * <li>{@code S.elementLayout()} is a well-formed layout.</li>
  * </ol>
  * </li>
  * <li>{@code L} is a group layout {@code G} and all the following conditions hold:
@@ -258,7 +258,7 @@ import java.util.stream.Stream;
  * <li>{@code G.byteAlignment()} is equal to the group layout's <em>natural alignment</em></li>
  * <li>{@code G.byteSize()} is a multiple of {@code G.byteAlignment()}</li>
  * <li>Each member layout in {@code G.memberLayouts()} is either a padding layout or a
- *     well-defined layout</li>
+ *     well-formed layout</li>
  * <li>Each non-padding member layout {@code E} in {@code G.memberLayouts()} follows an
  *     optional padding member layout, whose size is the minimum size required to
  *     align {@code E}</li>
@@ -268,27 +268,13 @@ import java.util.stream.Stream;
  * </li>
  * </ul>
  * <p>
- * Well-formed layouts in function descriptions consumed by a native linker constitute
- * a necessary, but not sufficient, requirement for acceptance. For example, some
- * native linkers may reject <em>packed</em> struct layouts. A packed struct is a struct
- * in which there is at least one member layout {@code L} that has an alignment constraint
- * less strict than its natural alignment. This allows padding between member layouts and
- * padding at the end to be avoided in struct layouts.
- * For example:
-  * {@snippet lang = java:
- * // No padding between the 2 element layouts:
- * MemoryLayout noFieldPadding = MemoryLayout.structLayout(
- *         ValueLayout.JAVA_INT,
- *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4));
- *
- * // No padding at the end of the struct:
- * MemoryLayout noTrailingPadding = MemoryLayout.structLayout(
- *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4),
- *         ValueLayout.JAVA_INT);
- * }
- * <p>
- * A native linker only supports function descriptors whose argument/return layouts are
- * layouts supported by that linker and are not sequence layouts.
+ * A function descriptor is well-formed if its argument and return layouts are
+ * well-formed and are not sequence layouts. A native linker is guaranteed to reject
+ * function descriptors that are not well-formed. However, a native linker can still
+ * reject well-formed function descriptors, according to platform-specific rules.
+ * For example, some native linkers may reject <em>packed</em> struct layouts -- struct
+ * layouts whose member layouts feature relaxed alignment constraints, to avoid
+ * the insertion of additional padding.
  *
  * <h3 id="function-pointers">Function pointers</h3>
  *
