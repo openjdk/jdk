@@ -309,9 +309,8 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards, _g1h->young_regions_cardset()->occupied());
   // Base time already includes the whole remembered set related time, so do not add that here
   // again.
-  size_t bytes_to_copy = 0;
   double predicted_eden_time = _policy->predict_young_region_other_time_ms(eden_region_length) +
-                               _policy->predict_eden_copy_time_ms(eden_region_length, &bytes_to_copy);
+                               _policy->predict_eden_copy_time_ms(eden_region_length);
   double remaining_time_ms = MAX2(target_pause_time_ms - (predicted_base_time_ms + predicted_eden_time), 0.0);
 
   log_trace(gc, ergo, cset)("Added young regions to CSet. Eden: %u regions, Survivors: %u regions, "
@@ -331,19 +330,16 @@ static int compare_region_idx(const uint a, const uint b) {
   return static_cast<int>(a-b);
 }
 
-// The current mechanism skips evacuation of pinned old regions like g1 does for
-// young regions:
-// * evacuating pinned marking collection set candidate regions (available during mixed
-//   gc) like young regions would not result in any memory gain but only take additional
-//   time away from processing regions that would actually result in memory being freed.
-//   To advance mixed gc progress (we committed to evacuate all marking collection set
-//   candidate regions within the maximum number of mixed gcs in the phase), move them
-//   to the optional collection set candidates to reclaim them asap as time permits.
-// * evacuating out retained collection set candidates would also just take up time with
-//   no actual space freed in old gen. Better to concentrate on others.
-//   Retained collection set candidates are aged out, ie. made to regular old regions
-//   without remembered sets after a few attempts to save computation costs of keeping
-//   them candidates for very long living pinned regions.
+// The current mechanism for evacuting pinned old regions is a below:
+// * pinned regions in marking collection set candidate (available during mixed gc) are evacuated like
+//   pinned young regions to avoid complexity of dealing with pinned regions that are part of a
+//   collection group sharing a single cardset. These regions will partially evacuated and added to the
+//   retained collection set by the handle evacuation failure mechanism.
+// * evacuating pinned regions out of retained collection set candidates would also just take up time
+//   with no actual space freed in old gen. Better to concentrate on others. So we skipped over pinned
+//   regions in retained collection set candidates Retained collection set candidates are aged out, ie.
+//   made to regular old regions without remembered sets after a few attempts to save computation costs
+//   of keeping them candidates for very long living pinned regions.
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_start_time_sec = os::elapsedTime();
 
@@ -396,15 +392,15 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
   uint min_old_cset_length = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
   uint max_old_cset_length = MAX2(min_old_cset_length, _policy->calc_max_old_cset_length());
-  uint max_optional_regions = max_old_cset_length - min_old_cset_length;
   bool check_time_remaining = _policy->use_adaptive_young_list_length();
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
 
   log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
-                            "Min %u regions, max %u regions, available %u regions"
+                            "Min %u regions, max %u regions, available %u regions (%u groups), "
                             "time remaining %1.2fms, optional threshold %1.2fms",
-                            min_old_cset_length, max_old_cset_length, from_marking_groups->num_regions(), time_remaining_ms, optional_threshold_ms);
+                            min_old_cset_length, max_old_cset_length, from_marking_groups->num_regions(), from_marking_groups->length(),
+                            time_remaining_ms, optional_threshold_ms);
 
   G1CSetCandidateGroupList selected_groups;
 
@@ -477,9 +473,9 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
                               num_expensive_regions);
   }
 
-  log_debug(gc, ergo, cset)("Finish adding marking candidates to collection set. Initial: %u, optional: %u, "
+  log_debug(gc, ergo, cset)("Finish adding marking candidates to collection set. Initial: %u regions (%u groups), optional: %u regions (%u groups), "
                             "predicted initial time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2fms",
-                            num_inital_regions, num_optional_regions,
+                            selected_groups.num_regions(), selected_groups.length(), _optional_groups.num_regions(), _optional_groups.length(),
                             predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms);
 
   assert(selected_groups.num_regions() == num_inital_regions, "must be");
@@ -508,9 +504,10 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
   G1CSetCandidateGroupList* retained_groups = &candidates()->retained_groups();
 
   log_debug(gc, ergo, cset)("Start adding retained candidates to collection set. "
-                            "Min %u regions, available %u, "
+                            "Min %u regions, available %u regions (%u groups), "
                             "time remaining %1.2fms, optional remaining %1.2fms",
-                            min_regions, retained_groups->num_regions(), time_remaining_ms, optional_time_remaining_ms);
+                            min_regions, retained_groups->num_regions(), retained_groups->length(),
+                            time_remaining_ms, optional_time_remaining_ms);
 
   G1CSetCandidateGroupList remove_from_retained;
   G1CSetCandidateGroupList groups_to_abandon;

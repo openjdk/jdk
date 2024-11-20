@@ -1110,6 +1110,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
   // This is needed to be able to use the bitmap for evacuation failure handling.
   class G1ClearBitmapClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
+    G1RemSetScanState* _scan_state;
 
     void assert_bitmap_clear(G1HeapRegion* hr, const G1CMBitMap* bitmap) {
       assert(bitmap->get_next_marked_addr(hr->bottom(), hr->end()) == hr->end(),
@@ -1134,7 +1135,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
 
   public:
-    G1ClearBitmapClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+    G1ClearBitmapClosure(G1CollectedHeap* g1h, G1RemSetScanState* scan_state) :
+      _g1h(g1h),
+      _scan_state(scan_state)
+    { }
 
     bool do_heap_region(G1HeapRegion* hr) {
       assert(_g1h->is_in_cset(hr), "Should only be used iterating the collection set");
@@ -1148,23 +1152,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
       _g1h->concurrent_mark()->clear_statistics(hr);
+      _scan_state->add_all_dirty_region(hr->hrm_index());
       return false;
-    }
-  };
-
-  // Helper to allow two closure to be applied when
-  // iterating through the collection set.
-  class G1CombinedClosure : public G1HeapRegionClosure {
-    G1HeapRegionClosure* _closure1;
-    G1HeapRegionClosure* _closure2;
-  public:
-    G1CombinedClosure(G1HeapRegionClosure* cl1, G1HeapRegionClosure* cl2) :
-      _closure1(cl1),
-      _closure2(cl2) { }
-
-    bool do_heap_region(G1HeapRegion* hr) {
-      return _closure1->do_heap_region(hr) ||
-             _closure2->do_heap_region(hr);
     }
   };
 
@@ -1386,8 +1375,7 @@ public:
       {
         // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
-        G1ClearBitmapClosure clear(g1h);
-        G1CombinedClosure combined(&merge, &clear);
+        G1ClearBitmapClosure clear_bitmap(g1h, _scan_state);
 
         if (_initial_evacuation) {
           G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
@@ -1395,7 +1383,7 @@ public:
 
         g1h->collection_set()->merge_cardsets_for_collection_groups(g1h, merge, worker_id, _num_workers);
 
-        g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
+        g1h->collection_set_iterate_increment_from(&clear_bitmap, nullptr, worker_id);
         G1MergeCardSetStats stats = merge.stats();
 
         for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {

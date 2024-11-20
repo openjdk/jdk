@@ -491,12 +491,13 @@ uint G1Policy::calculate_desired_eden_length_before_mixed(double base_time_ms,
   uint min_marking_candidates = MIN2(calc_min_old_cset_length(candidates()->last_marking_candidates_length()),
                                      candidates()->from_marking_groups().num_regions());
   double predicted_region_evac_time_ms = base_time_ms;
+  uint selected_candidates = 0;
   for (G1CSetCandidateGroup* gr : candidates()->from_marking_groups()) {
-    if (min_marking_candidates == 0) {
+    if (selected_candidates >= min_marking_candidates) {
       break;
     }
     predicted_region_evac_time_ms += gr->predict_group_total_time_ms();
-    min_marking_candidates = min_marking_candidates > gr->length() ? (min_marking_candidates - gr->length()) : 0;
+    selected_candidates += gr->length();
   }
 
   return calculate_desired_eden_length_before_young_only(predicted_region_evac_time_ms,
@@ -1132,7 +1133,6 @@ double G1Policy::predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_on
 }
 
 double G1Policy::predict_region_merge_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const {
-  assert(!hr->is_young(), "Sanity Check!");
   size_t card_rs_length = hr->rem_set()->occupied();
   size_t scan_card_num = _analytics->predict_scan_card_num(card_rs_length, for_young_only_phase);
 

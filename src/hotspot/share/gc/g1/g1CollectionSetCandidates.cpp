@@ -304,8 +304,8 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
 
     if (num_added_to_group == group_limit) {
-      if (group_limit != G1CSetCandidateGroup::GROUP_SIZE) {
-        group_limit = G1CSetCandidateGroup::GROUP_SIZE;
+      if (group_limit != G1OldCSetGroupSize) {
+        group_limit = G1OldCSetGroupSize;
       }
 
       _from_marking_groups.append(current);
