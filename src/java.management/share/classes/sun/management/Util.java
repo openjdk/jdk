@@ -50,19 +50,7 @@ public class Util {
         }
     }
 
-    private static ManagementPermission monitorPermission =
-        new ManagementPermission("monitor");
-    private static ManagementPermission controlPermission =
-        new ManagementPermission("control");
-
-    /**
-     * Check that the current context is trusted to perform monitoring
-     * or management.
-     * <p>
-     * If the check fails we throw a SecurityException, otherwise
-     * we return normally.
-     *
-     */
+    // Methods retained temporarily due to usage by jdk.management.
     static void checkAccess(ManagementPermission p) {
         // no-op
     }
