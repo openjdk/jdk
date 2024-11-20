@@ -28,7 +28,6 @@ package java.net;
 import jdk.internal.event.SocketReadEvent;
 import jdk.internal.event.SocketWriteEvent;
 import jdk.internal.invoke.MhUtil;
-import sun.security.util.SecurityConstants;
 
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -158,15 +157,6 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Creates an unconnected socket with the given {@code SocketImpl}.
-     */
-    private Socket(Void unused, SocketImpl impl) {
-        if (impl != null) {
-            this.impl = impl;
-        }
-    }
-
-    /**
      * Creates an unconnected Socket.
      * <p>
      * If the application has specified a {@linkplain SocketImplFactory client
@@ -212,22 +202,10 @@ public class Socket implements java.io.Closeable {
                                           : sun.net.ApplicationProxy.create(proxy);
         Proxy.Type type = p.type();
         if (type == Proxy.Type.SOCKS || type == Proxy.Type.HTTP) {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
             InetSocketAddress epoint = (InetSocketAddress) p.address();
             if (epoint.getAddress() != null) {
                 checkAddress (epoint.getAddress(), "Socket");
             }
-            if (security != null) {
-                if (epoint.isUnresolved())
-                    epoint = new InetSocketAddress(epoint.getHostName(), epoint.getPort());
-                if (epoint.isUnresolved())
-                    security.checkConnect(epoint.getHostName(), epoint.getPort());
-                else
-                    security.checkConnect(epoint.getAddress().getHostAddress(),
-                                  epoint.getPort());
-            }
-
             // create a SOCKS or HTTP SocketImpl that delegates to a platform SocketImpl
             SocketImpl delegate = SocketImpl.createPlatformSocketImpl(false);
             impl = (type == Proxy.Type.SOCKS) ? new SocksSocketImpl(p, delegate)
@@ -259,18 +237,9 @@ public class Socket implements java.io.Closeable {
      * @since   1.1
      */
     protected Socket(SocketImpl impl) throws SocketException {
-        this(checkPermission(impl), impl);
-    }
-
-    private static Void checkPermission(SocketImpl impl) {
         if (impl != null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(SecurityConstants.SET_SOCKETIMPL_PERMISSION);
-            }
+            this.impl = impl;
         }
-        return null;
     }
 
     /**
@@ -698,15 +667,6 @@ public class Socket implements java.io.Closeable {
         int port = epoint.getPort();
         checkAddress(addr, "connect");
 
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            if (epoint.isUnresolved())
-                security.checkConnect(epoint.getHostName(), port);
-            else
-                security.checkConnect(addr.getHostAddress(), port);
-        }
-
         try {
             getImpl().connect(epoint, timeout);
         } catch (IOException error) {
@@ -751,11 +711,6 @@ public class Socket implements java.io.Closeable {
         InetAddress addr = epoint.getAddress();
         int port = epoint.getPort();
         checkAddress (addr, "bind");
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkListen(port);
-        }
         getImpl().bind(addr, port);
         getAndBitwiseOrState(BOUND);
     }
@@ -803,15 +758,9 @@ public class Socket implements java.io.Closeable {
         InetAddress in = null;
         try {
             in = (InetAddress) getImpl().getOption(SocketOptions.SO_BINDADDR);
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null)
-                sm.checkConnect(in.getHostAddress(), -1);
             if (in.isAnyLocalAddress()) {
                 in = InetAddress.anyLocalAddress();
             }
-        } catch (SecurityException e) {
-            in = InetAddress.getLoopbackAddress();
         } catch (Exception e) {
             in = InetAddress.anyLocalAddress(); // "0.0.0.0"
         }
@@ -1872,11 +1821,6 @@ public class Socket implements java.io.Closeable {
     {
         if (factory != null) {
             throw new SocketException("factory already defined");
-        }
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSetFactory();
         }
         factory = fac;
     }
