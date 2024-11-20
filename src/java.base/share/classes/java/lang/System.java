@@ -42,25 +42,18 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.net.URL;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.security.AccessController;
-import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
@@ -92,7 +85,6 @@ import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
 import sun.nio.cs.UTF_8;
-import sun.security.util.SecurityConstants;
 
 /**
  * The {@code System} class contains several useful class fields
@@ -275,13 +267,6 @@ public final class System {
     private static native void setIn0(InputStream in);
     private static native void setOut0(PrintStream out);
     private static native void setErr0(PrintStream err);
-
-    static URL codeSource(Class<?> clazz) {
-        PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
-        @SuppressWarnings("removal")
-        CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
-        return (cs != null) ? cs.getLocation() : null;
-    }
 
     /**
      * Throws {@code UnsupportedOperationException}. Setting a security manager
@@ -1416,10 +1401,7 @@ public final class System {
             // just fetch it again.
             LoggerFinder finder = service;
             if (finder == null) {
-                PrivilegedAction<LoggerFinder> pa =
-                        () -> LoggerFinderLoader.getLoggerFinder();
-                finder = AccessController.doPrivileged(pa, null,
-                        LOGGERFINDER_PERMISSION);
+                finder = LoggerFinderLoader.getLoggerFinder();
                 if (finder instanceof TemporaryLoggerFinder) return finder;
                 service = finder;
             }
