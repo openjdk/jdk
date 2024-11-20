@@ -147,7 +147,6 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
     }
 
     @Override
-    @SuppressWarnings("removal")
     public void dumpThreads(String outputFile, ThreadDumpFormat format) throws IOException {
         Path file = Path.of(outputFile);
         if (!file.isAbsolute())
