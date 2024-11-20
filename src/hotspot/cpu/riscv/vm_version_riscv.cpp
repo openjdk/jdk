@@ -122,22 +122,6 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
   }
 
-  if (UseZba) {
-    if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
-      FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
-    }
-  } else {
-    if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
-      warning("CRC32 intrinsic requires Zba instructions (not available on this CPU)");
-    }
-    FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
-  }
-
-  if (UseCRC32CIntrinsics) {
-    warning("CRC32C intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
-  }
-
   if (UseVectorizedMismatchIntrinsic) {
     warning("VectorizedMismatch intrinsic is not available on this CPU.");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
@@ -216,6 +200,24 @@ void VM_Version::common_initialize() {
       // read vector length from vector CSR vlenb
       _initial_vector_length = cpu_vector_length();
     }
+  }
+
+  // Misc Intrinsics could depend on RVV
+
+  if (UseZba || UseRVV) {
+    if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
+    }
+  } else {
+    if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+      warning("CRC32 intrinsic requires Zba or RVV instructions (not available on this CPU)");
+    }
+    FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
+  }
+
+  if (UseCRC32CIntrinsics) {
+    warning("CRC32C intrinsics are not available on this CPU.");
+    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 }
 

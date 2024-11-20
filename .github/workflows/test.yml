@@ -37,6 +37,9 @@ on:
       runs-on:
         required: true
         type: string
+      xcode-toolset-version:
+        required: false
+        type: string
 
 env:
   # These are needed to make the MSYS2 bash work properly
@@ -157,7 +160,7 @@ jobs:
         run: |
           # On macOS we need to install some dependencies for testing
           brew install make
-          sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer
+          sudo xcode-select --switch /Applications/Xcode_${{ inputs.xcode-toolset-version }}.app/Contents/Developer
           # This will make GNU make available as 'make' and not only as 'gmake'
           echo '/usr/local/opt/make/libexec/gnubin' >> $GITHUB_PATH
         if: runner.os == 'macOS'

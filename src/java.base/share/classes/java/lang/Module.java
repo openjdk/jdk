@@ -195,15 +195,7 @@ public final class Module implements AnnotatedElement {
     /**
      * Returns the {@code ClassLoader} for this module.
      *
-     * <p> If there is a security manager then its {@code checkPermission}
-     * method if first called with a {@code RuntimePermission("getClassLoader")}
-     * permission to check that the caller is allowed to get access to the
-     * class loader. </p>
-     *
      * @return The class loader for this module
-     *
-     * @throws SecurityException
-     *         If denied by the security manager
      */
     public ClassLoader getClassLoader() {
         @SuppressWarnings("removal")
@@ -1689,9 +1681,8 @@ public final class Module implements AnnotatedElement {
      * with the name "{@code META-INF/MANIFEST.MF}" is never encapsulated
      * because "{@code META-INF}" is not a legal package name. </p>
      *
-     * <p> This method returns {@code null} if the resource is not in this
-     * module, the resource is encapsulated and cannot be located by the caller,
-     * or access to the resource is denied by the security manager. </p>
+     * <p> This method returns {@code null} if the resource is not in this module
+     * or the resource is encapsulated and cannot be located by the caller. </p>
      *
      * @param  name
      *         The resource name

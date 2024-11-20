@@ -115,3 +115,15 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
            percent_of(_num_method_cp_entries_archived, _num_method_cp_entries),
            _num_method_cp_entries_reverted);
 }
+
+#ifdef ASSERT
+void DumpAllocStats::verify(int expected_byte_size, bool read_only) const {
+  int bytes = 0;
+  const int what = (int)(read_only ? RO : RW);
+  for (int type = 0; type < int(_number_of_types); type ++) {
+    bytes += _bytes[what][type];
+  }
+  assert(bytes == expected_byte_size, "counter mismatch (%s: %d vs %d)",
+         (read_only ? "RO" : "RW"), bytes, expected_byte_size);
+}
+#endif // ASSERT

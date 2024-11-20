@@ -359,10 +359,6 @@ public final class ModuleLayer {
      * @throws LayerInstantiationException
      *         If the layer cannot be created for any of the reasons specified
      *         by the static {@code defineModulesWithOneLoader} method
-     * @throws SecurityException
-     *         If {@code RuntimePermission("createClassLoader")} or
-     *         {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
      *
      * @see #findLoader
      */
@@ -401,10 +397,6 @@ public final class ModuleLayer {
      * @throws LayerInstantiationException
      *         If the layer cannot be created for any of the reasons specified
      *         by the static {@code defineModulesWithManyLoaders} method
-     * @throws SecurityException
-     *         If {@code RuntimePermission("createClassLoader")} or
-     *         {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
      *
      * @see #findLoader
      */
@@ -440,9 +432,6 @@ public final class ModuleLayer {
      * @throws LayerInstantiationException
      *         If the layer cannot be created for any of the reasons specified
      *         by the static {@code defineModules} method
-     * @throws SecurityException
-     *         If {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
      */
     public ModuleLayer defineModules(Configuration cf,
                                      Function<String, ClassLoader> clf) {
@@ -490,10 +479,6 @@ public final class ModuleLayer {
      * a module named "{@code java.base}", or a module contains a package named
      * "{@code java}" or a package with a name starting with "{@code java.}". </p>
      *
-     * <p> If there is a security manager then the class loader created by
-     * this method will load classes and resources with privileges that are
-     * restricted by the calling context of this method. </p>
-     *
      * @param  cf
      *         The configuration for the layer
      * @param  parentLayers
@@ -510,10 +495,6 @@ public final class ModuleLayer {
      * @throws LayerInstantiationException
      *         If all modules cannot be defined to the same class loader for any
      *         of the reasons listed above
-     * @throws SecurityException
-     *         If {@code RuntimePermission("createClassLoader")} or
-     *         {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
      *
      * @see #findLoader
      */
@@ -563,10 +544,6 @@ public final class ModuleLayer {
      * methods) in the module defined to the class loader before searching
      * the parent class loader. </p>
      *
-     * <p> If there is a security manager then the class loaders created by
-     * this method will load classes and resources with privileges that are
-     * restricted by the calling context of this method. </p>
-     *
      * @param  cf
      *         The configuration for the layer
      * @param  parentLayers
@@ -585,11 +562,6 @@ public final class ModuleLayer {
      *         a module named "{@code java.base}" or a module contains a package
      *         named "{@code java}" or a package with a name starting with
      *         "{@code java.}"
-     *
-     * @throws SecurityException
-     *         If {@code RuntimePermission("createClassLoader")} or
-     *         {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
      *
      * @see #findLoader
      */
@@ -673,9 +645,6 @@ public final class ModuleLayer {
      *         configuration of the parent layers, including order
      * @throws LayerInstantiationException
      *         If creating the layer fails for any of the reasons listed above
-     * @throws SecurityException
-     *         If {@code RuntimePermission("getClassLoader")} is denied by
-     *         the security manager
      */
     public static Controller defineModules(Configuration cf,
                                            List<ModuleLayer> parentLayers,
@@ -906,11 +875,6 @@ public final class ModuleLayer {
      * parent} layers are searched in the manner specified by {@link
      * #findModule(String) findModule}.
      *
-     * <p> If there is a security manager then its {@code checkPermission}
-     * method is called with a {@code RuntimePermission("getClassLoader")}
-     * permission to check that the caller is allowed to get access to the
-     * class loader. </p>
-     *
      * @apiNote This method does not return an {@code Optional<ClassLoader>}
      * because `null` must be used to represent the bootstrap class loader.
      *
@@ -921,8 +885,6 @@ public final class ModuleLayer {
      *
      * @throws IllegalArgumentException if a module of the given name is not
      *         defined in this layer or any parent of this layer
-     *
-     * @throws SecurityException if denied by the security manager
      */
     public ClassLoader findLoader(String name) {
         Optional<Module> om = findModule(name);

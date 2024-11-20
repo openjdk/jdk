@@ -897,8 +897,9 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand excludeAppLayoutAsserts(AppLayoutAssert... asserts) {
-        return setAppLayoutAsserts(Stream.of(asserts).filter(Predicate.not(
-                appLayoutAsserts::contains)).toArray(AppLayoutAssert[]::new));
+        var asSet = Set.of(asserts);
+        return setAppLayoutAsserts(appLayoutAsserts.stream().filter(Predicate.not(
+                asSet::contains)).toArray(AppLayoutAssert[]::new));
     }
 
     JPackageCommand assertAppLayout() {

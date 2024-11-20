@@ -95,11 +95,6 @@ public class FileInputStream extends InputStream
      * object is created to represent this file
      * connection.
      * <p>
-     * First, if there is a security
-     * manager, its {@code checkRead} method
-     * is called with the {@code name} argument
-     * as its argument.
-     * <p>
      * If the named file does not exist, is a directory rather than a regular
      * file, or for some other reason cannot be opened for reading then a
      * {@code FileNotFoundException} is thrown.
@@ -109,10 +104,6 @@ public class FileInputStream extends InputStream
      *             is a directory rather than a regular file,
      *             or for some other reason cannot be opened for
      *             reading.
-     * @throws     SecurityException      if a security manager exists and its
-     *             {@code checkRead} method denies read access
-     *             to the file.
-     * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      */
     public FileInputStream(String name) throws FileNotFoundException {
         this(name != null ? new File(name) : null);
@@ -126,11 +117,6 @@ public class FileInputStream extends InputStream
      * A new {@code FileDescriptor} object
      * is created to represent this file connection.
      * <p>
-     * First, if there is a security manager,
-     * its {@code checkRead} method  is called
-     * with the path represented by the {@code file}
-     * argument as its argument.
-     * <p>
      * If the named file does not exist, is a directory rather than a regular
      * file, or for some other reason cannot be opened for reading then a
      * {@code FileNotFoundException} is thrown.
@@ -140,10 +126,7 @@ public class FileInputStream extends InputStream
      *             is a directory rather than a regular file,
      *             or for some other reason cannot be opened for
      *             reading.
-     * @throws     SecurityException      if a security manager exists and its
-     *             {@code checkRead} method denies read access to the file.
      * @see        java.io.File#getPath()
-     * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      */
     @SuppressWarnings("this-escape")
     public FileInputStream(File file) throws FileNotFoundException {
@@ -171,11 +154,6 @@ public class FileInputStream extends InputStream
      * {@code fdObj}, which represents an existing connection to an
      * actual file in the file system.
      * <p>
-     * If there is a security manager, its {@code checkRead} method is
-     * called with the file descriptor {@code fdObj} as its argument to
-     * see if it's ok to read the file descriptor. If read access is denied
-     * to the file descriptor a {@code SecurityException} is thrown.
-     * <p>
      * If {@code fdObj} is null then a {@code NullPointerException}
      * is thrown.
      * <p>
@@ -185,10 +163,6 @@ public class FileInputStream extends InputStream
      * I/O on the stream, an {@code IOException} is thrown.
      *
      * @param      fdObj   the file descriptor to be opened for reading.
-     * @throws     SecurityException      if a security manager exists and its
-     *             {@code checkRead} method denies read access to the
-     *             file descriptor.
-     * @see        SecurityManager#checkRead(java.io.FileDescriptor)
      */
     @SuppressWarnings("this-escape")
     public FileInputStream(FileDescriptor fdObj) {

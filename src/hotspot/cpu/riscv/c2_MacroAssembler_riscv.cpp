@@ -45,7 +45,7 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
-                                  Register tmp1Reg, Register tmp2Reg, Register tmp3Reg) {
+                                  Register tmp1Reg, Register tmp2Reg, Register tmp3Reg, Register tmp4Reg) {
   // Use cr register to indicate the fast_lock result: zero for success; non-zero for failure.
   Register flag = t1;
   Register oop = objectReg;
@@ -104,9 +104,9 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
     // markWord of object (disp_hdr) with the stack pointer.
     sub(disp_hdr, disp_hdr, sp);
     mv(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
-    // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto label locked,
-    // hence we can store 0 as the displaced header in the box, which indicates that it is a
-    // recursive lock.
+    // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto label
+    // locked, hence we can store 0 as the displaced header in the box, which indicates that it
+    // is a recursive lock.
     andr(tmp/*==0?*/, disp_hdr, tmp);
     sd(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
     beqz(tmp, locked);
@@ -115,12 +115,12 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
 
   // Handle existing monitor.
   bind(object_has_monitor);
-  // The object's monitor m is unlocked iff m->owner == nullptr,
-  // otherwise m->owner may contain a thread or a stack address.
-  //
-  // Try to CAS m->owner from null to current thread.
+
+  // Try to CAS owner (no owner => current thread's _lock_id).
   add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value));
-  cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/xthread, Assembler::int64,
+  Register tid = tmp4Reg;
+  ld(tid, Address(xthread, JavaThread::lock_id_offset()));
+  cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/tid, Assembler::int64,
           Assembler::aq, Assembler::rl, /*result*/tmp3Reg); // cas succeeds if tmp3Reg == zr(expected)
 
   // Store a non-null value into the box to avoid looking like a re-entrant
@@ -132,14 +132,16 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
 
   beqz(tmp3Reg, locked); // CAS success means locking succeeded
 
-  bne(tmp3Reg, xthread, slow_path); // Check for recursive locking
+  bne(tmp3Reg, tid, slow_path); // Check for recursive locking
 
   // Recursive lock case
   increment(Address(disp_hdr, in_bytes(ObjectMonitor::recursions_offset()) - markWord::monitor_value), 1, tmp2Reg, tmp3Reg);
 
   bind(locked);
   mv(flag, zr);
-  increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, tmp2Reg, tmp3Reg);
+  if (LockingMode == LM_LEGACY) {
+    inc_held_monitor_count(t0);
+  }
 
 #ifdef ASSERT
   // Check that locked label is reached with flag == 0.
@@ -253,7 +255,9 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
 
   bind(unlocked);
   mv(flag, zr);
-  decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, tmp1Reg, tmp2Reg);
+  if (LockingMode == LM_LEGACY) {
+    dec_held_monitor_count(t0);
+  }
 
 #ifdef ASSERT
   // Check that unlocked label is reached with flag == 0.
@@ -273,12 +277,12 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
 }
 
 void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
-                                              Register tmp1, Register tmp2, Register tmp3) {
+                                              Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
   // Flag register, zero for success; non-zero for failure.
   Register flag = t1;
 
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-  assert_different_registers(obj, box, tmp1, tmp2, tmp3, flag, t0);
+  assert_different_registers(obj, box, tmp1, tmp2, tmp3, tmp4, flag, t0);
 
   mv(flag, 1);
 
@@ -349,6 +353,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
     bind(inflated);
 
     const Register tmp1_monitor = tmp1;
+
     if (!UseObjectMonitorTable) {
       assert(tmp1_monitor == tmp1_mark, "should be the same here");
     } else {
@@ -395,13 +400,15 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
     // Compute owner address.
     la(tmp2_owner_addr, owner_address);
 
-    // CAS owner (null => current thread).
-    cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ xthread, Assembler::int64,
+    // Try to CAS owner (no owner => current thread's _lock_id).
+    Register tid = tmp4;
+    ld(tid, Address(xthread, JavaThread::lock_id_offset()));
+    cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
             /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
     beqz(tmp3_owner, monitor_locked);
 
     // Check if recursive.
-    bne(tmp3_owner, xthread, slow_path);
+    bne(tmp3_owner, tid, slow_path);
 
     // Recursive.
     increment(recursions_address, 1, tmp2, tmp3);
@@ -414,7 +421,6 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
 
   bind(locked);
   mv(flag, zr);
-  increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, tmp2, tmp3);
 
 #ifdef ASSERT
   // Check that locked label is reached with flag == 0.
@@ -586,7 +592,6 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
 
   bind(unlocked);
   mv(flag, zr);
-  decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, tmp2, tmp3);
 
 #ifdef ASSERT
   // Check that unlocked label is reached with flag == 0.
@@ -3118,4 +3123,14 @@ void C2_MacroAssembler::extract_fp_v(FloatRegister dst, VectorRegister src, Basi
     vslidedown_vx(tmp, src, t0);
     vfmv_f_s(dst, tmp);
   }
+}
+
+void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Address src) {
+  // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
+  // obj-start, so that we can load from the object's mark-word instead. Usually the address
+  // comes as obj-start in obj and klass_offset_in_bytes in disp.
+  assert(UseCompactObjectHeaders, "must");
+  int offset = oopDesc::mark_offset_in_bytes() - oopDesc::klass_offset_in_bytes();
+  ld(dst, Address(src.base(), src.offset() + offset));
+  srli(dst, dst, markWord::klass_shift);
 }

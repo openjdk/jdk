@@ -944,9 +944,6 @@ public abstract class ResourceBundle {
      * @param module   the module for which the resource bundle is searched
      * @throws NullPointerException
      *         if {@code baseName} or {@code module} is {@code null}
-     * @throws SecurityException
-     *         if a security manager exists and the caller is not the specified
-     *         module and doesn't have {@code RuntimePermission("getClassLoader")}
      * @throws MissingResourceException
      *         if no resource bundle for the specified base name can be found in the
      *         specified module
@@ -997,9 +994,6 @@ public abstract class ResourceBundle {
      * @throws NullPointerException
      *         if {@code baseName}, {@code targetLocale}, or {@code module} is
      *         {@code null}
-     * @throws SecurityException
-     *         if a security manager exists and the caller is not the specified
-     *         module and doesn't have {@code RuntimePermission("getClassLoader")}
      * @throws MissingResourceException
      *         if no resource bundle for the specified base name and locale can
      *         be found in the specified {@code module}
@@ -3134,10 +3128,6 @@ public abstract class ResourceBundle {
          *        reason.
          * @throws    ExceptionInInitializerError
          *        if the initialization provoked by this method fails.
-         * @throws    SecurityException
-         *        If a security manager is present and creation of new
-         *        instances is denied. See {@link Class#newInstance()}
-         *        for details.
          * @throws    IOException
          *        if an error occurred when reading resources using
          *        any I/O operations

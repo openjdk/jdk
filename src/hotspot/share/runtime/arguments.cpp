@@ -1429,13 +1429,6 @@ void Arguments::set_use_compressed_oops() {
 #endif // _LP64
 }
 
-void Arguments::set_use_compressed_klass_ptrs() {
-#ifdef _LP64
-  assert(!UseCompressedClassPointers || CompressedClassSpaceSize <= KlassEncodingMetaspaceMax,
-         "CompressedClassSpaceSize is too large for UseCompressedClassPointers");
-#endif // _LP64
-}
-
 void Arguments::set_conservative_max_heap_alignment() {
   // The conservative maximum required alignment for the heap is the maximum of
   // the alignments imposed by several sources: any requirements from the heap
@@ -1454,7 +1447,6 @@ jint Arguments::set_ergonomics_flags() {
 
 #ifdef _LP64
   set_use_compressed_oops();
-  set_use_compressed_klass_ptrs();
 
   // Also checks that certain machines are slower with compressed oops
   // in vm_version initialization code.
@@ -1822,6 +1814,15 @@ bool Arguments::check_vm_args_consistency() {
   if (StackReservedPages != 0) {
     FLAG_SET_CMDLINE(StackReservedPages, 0);
     warning("Reserved Stack Area not supported on this platform");
+  }
+#endif
+
+#ifndef _LP64
+  if (LockingMode == LM_LEGACY) {
+    FLAG_SET_CMDLINE(LockingMode, LM_LIGHTWEIGHT);
+    // Self-forwarding in bit 3 of the mark-word conflicts
+    // with 4-byte-aligned stack-locks.
+    warning("Legacy locking not supported on this platform");
   }
 #endif
 
@@ -3648,6 +3649,32 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     Arguments::print_on(&st);
   }
 
+#ifdef _LP64
+  if (UseCompactObjectHeaders && FLAG_IS_CMDLINE(UseCompressedClassPointers) && !UseCompressedClassPointers) {
+    warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
+    FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
+  }
+  if (UseCompactObjectHeaders && LockingMode != LM_LIGHTWEIGHT) {
+    FLAG_SET_DEFAULT(LockingMode, LM_LIGHTWEIGHT);
+  }
+  if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
+    // If UseCompactObjectHeaders is on the command line, turn on UseObjectMonitorTable.
+    if (FLAG_IS_CMDLINE(UseCompactObjectHeaders)) {
+      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
+
+    // If UseObjectMonitorTable is on the command line, turn off UseCompactObjectHeaders.
+    } else if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
+      FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
+    // If neither on the command line, the defaults are incompatible, but turn on UseObjectMonitorTable.
+    } else {
+      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
+    }
+  }
+  if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
+    FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
+  }
+#endif
+
   return JNI_OK;
 }
 
@@ -3660,6 +3687,10 @@ jint Arguments::apply_ergo() {
   set_heap_size();
 
   GCConfig::arguments()->initialize();
+
+  if (UseCompressedClassPointers) {
+    CompressedKlassPointers::pre_initialize();
+  }
 
   CDSConfig::initialize();
 

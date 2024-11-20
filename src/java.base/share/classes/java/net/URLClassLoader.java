@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,13 +68,6 @@ import sun.security.util.SecurityConstants;
  * This class loader supports the loading of classes and resources from the
  * contents of a <a href="../util/jar/JarFile.html#multirelease">multi-release</a>
  * JAR file that is referred to by a given URL.
- * <p>
- * The AccessControlContext of the thread that created the instance of
- * URLClassLoader will be used when subsequently loading classes and
- * resources.
- * <p>
- * The classes that are loaded are by default granted permission only to
- * access the URLs specified when the URLClassLoader was created.
  *
  * @author  David Connelly
  * @since   1.2
@@ -96,18 +89,10 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * the URL is assumed to refer to a JAR file which will be downloaded and
      * opened as needed.
      *
-     * <p>If there is a security manager, this method first
-     * calls the security manager's {@code checkCreateClassLoader} method
-     * to ensure creation of a class loader is allowed.
-     *
      * @param      urls the URLs from which to load classes and resources
      * @param      parent the parent class loader for delegation
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkCreateClassLoader} method doesn't allow
-     *             creation of a class loader.
      * @throws     NullPointerException if {@code urls} or any of its
      *             elements is {@code null}.
-     * @see SecurityManager#checkCreateClassLoader
      */
     @SuppressWarnings("removal")
     public URLClassLoader(URL[] urls, ClassLoader parent) {
@@ -132,18 +117,10 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * assumed to refer to a JAR file which will be downloaded and opened
      * as needed.
      *
-     * <p>If there is a security manager, this method first
-     * calls the security manager's {@code checkCreateClassLoader} method
-     * to ensure creation of a class loader is allowed.
-     *
      * @param      urls the URLs from which to load classes and resources
      *
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkCreateClassLoader} method doesn't allow
-     *             creation of a class loader.
      * @throws     NullPointerException if {@code urls} or any of its
      *             elements is {@code null}.
-     * @see SecurityManager#checkCreateClassLoader
      */
     @SuppressWarnings("removal")
     public URLClassLoader(URL[] urls) {
@@ -165,20 +142,12 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * factory argument will be used as the stream handler factory to
      * obtain protocol handlers when creating new jar URLs.
      *
-     * <p>If there is a security manager, this method first
-     * calls the security manager's {@code checkCreateClassLoader} method
-     * to ensure creation of a class loader is allowed.
-     *
      * @param  urls the URLs from which to load classes and resources
      * @param  parent the parent class loader for delegation
      * @param  factory the URLStreamHandlerFactory to use when creating URLs
      *
-     * @throws SecurityException  if a security manager exists and its
-     *         {@code checkCreateClassLoader} method doesn't allow
-     *         creation of a class loader.
      * @throws NullPointerException if {@code urls} or any of its
      *         elements is {@code null}.
-     * @see SecurityManager#checkCreateClassLoader
      */
     @SuppressWarnings("removal")
     public URLClassLoader(URL[] urls, ClassLoader parent,
@@ -204,10 +173,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @throws IllegalArgumentException if the given name is empty.
      * @throws NullPointerException if {@code urls} or any of its
      *         elements is {@code null}.
-     *
-     * @throws SecurityException if a security manager exists and its
-     *         {@link SecurityManager#checkCreateClassLoader()} method doesn't
-     *         allow creation of a class loader.
      *
      * @since 9
      */
@@ -235,10 +200,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @throws IllegalArgumentException if the given name is empty.
      * @throws NullPointerException if {@code urls} or any of its
      *         elements is {@code null}.
-     *
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkCreateClassLoader} method doesn't allow
-     *         creation of a class loader.
      *
      * @since 9
      */
@@ -334,9 +295,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     * If only one is caught, then it is re-thrown. If more than one exception
     * is caught, then the second and following exceptions are added
     * as suppressed exceptions of the first one caught, which is then re-thrown.
-    *
-    * @throws    SecurityException if a security manager is set, and it denies
-    *   {@link RuntimePermission}{@code ("closeClassLoader")}
     *
     * @since 1.7
     */
@@ -689,24 +647,24 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * The implementation of this method first calls super.getPermissions
      * and then adds permissions based on the URL of the codesource.
      * <p>
-     * If the protocol of this URL is "jar", then the permission granted
+     * If the protocol of this URL is "jar", then the permission returned
      * is based on the permission that is required by the URL of the Jar
      * file.
      * <p>
      * If the protocol is "file" and there is an authority component, then
      * permission to connect to and accept connections from that authority
-     * may be granted. If the protocol is "file"
+     * may be returned. If the protocol is "file"
      * and the path specifies a file, then permission to read that
-     * file is granted. If protocol is "file" and the path is
-     * a directory, permission is granted to read all files
+     * file is returned. If protocol is "file" and the path is
+     * a directory, then permission is returned to read all files
      * and (recursively) all files and subdirectories contained in
      * that directory.
      * <p>
      * If the protocol is not "file", then permission
-     * to connect to and accept connections from the URL's host is granted.
+     * to connect to and accept connections from the URL's host is returned.
      * @param codesource the codesource
      * @throws    NullPointerException if {@code codesource} is {@code null}.
-     * @return the permissions granted to the codesource
+     * @return the permissions for the codesource
      */
     @SuppressWarnings("removal")
     protected PermissionCollection getPermissions(CodeSource codesource)
@@ -778,11 +736,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
 
     /**
      * Creates a new instance of URLClassLoader for the specified
-     * URLs and parent class loader. If a security manager is
-     * installed, the {@code loadClass} method of the URLClassLoader
-     * returned by this method will invoke the
-     * {@code SecurityManager.checkPackageAccess} method before
-     * loading the class.
+     * URLs and parent class loader.
      *
      * @param urls the URLs to search for classes and resources
      * @param parent the parent class loader for delegation
@@ -808,11 +762,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
 
     /**
      * Creates a new instance of URLClassLoader for the specified
-     * URLs and default parent class loader. If a security manager is
-     * installed, the {@code loadClass} method of the URLClassLoader
-     * returned by this method will invoke the
-     * {@code SecurityManager.checkPackageAccess} before
-     * loading the class.
+     * URLs and default parent class loader.
      *
      * @param urls the URLs to search for classes and resources
      * @throws     NullPointerException if {@code urls} or any of its

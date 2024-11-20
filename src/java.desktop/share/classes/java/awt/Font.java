@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1235,8 +1235,6 @@ public class Font implements java.io.Serializable
      * @throws IOException if the {@code fontFile} cannot be read.
      * @throws FontFormatException if {@code fontFile} does
      *     not contain the required font tables for the specified format.
-     * @throws SecurityException if the executing code does not have
-     * permission to read from the file.
      * @see GraphicsEnvironment#registerFont(Font)
      * @since 1.5
      */
@@ -1612,8 +1610,7 @@ public class Font implements java.io.Serializable
      * obtained.  The {@code String} value of this property is then
      * interpreted as a {@code Font} object according to the
      * specification of {@code Font.decode(String)}
-     * If the specified property is not found, or the executing code does
-     * not have permission to read the property, null is returned instead.
+     * If the specified property is not found, null is returned instead.
      *
      * @param nm the property name
      * @return a {@code Font} object that the property name
@@ -1781,8 +1778,7 @@ public class Font implements java.io.Serializable
      * <p>
      * The property value should be one of the forms accepted by
      * {@code Font.decode(String)}
-     * If the specified property is not found, or the executing code does not
-     * have permission to read the property, the {@code font}
+     * If the specified property is not found, the {@code font}
      * argument is returned instead.
      * @param nm the case-insensitive property name
      * @param font a default {@code Font} to return if property

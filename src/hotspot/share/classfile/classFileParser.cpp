@@ -5836,6 +5836,15 @@ bool ClassFileParser::is_java_lang_ref_Reference_subclass() const {
   return _super_klass->reference_type() != REF_NONE;
 }
 
+// Returns true if the future Klass will need to be addressable with a narrow Klass ID.
+bool ClassFileParser::klass_needs_narrow_id() const {
+  // Classes that are never instantiated need no narrow Klass Id, since the
+  // only point of having a narrow id is to put it into an object header. Keeping
+  // never instantiated classes out of class space lessens the class space pressure.
+  // For more details, see JDK-8338526.
+  return !is_interface() && !is_abstract();
+}
+
 // ----------------------------------------------------------------------------
 // debugging
 

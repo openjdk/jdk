@@ -239,7 +239,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
   bool alloc_from_lab = true;
   bool has_plab = false;
   HeapWord* copy = nullptr;
-  size_t size = p->size();
+  size_t size = ShenandoahForwarding::size(p);
   bool is_promotion = (target_gen == OLD_GENERATION) && from_region->is_young();
 
 #ifdef ASSERT
