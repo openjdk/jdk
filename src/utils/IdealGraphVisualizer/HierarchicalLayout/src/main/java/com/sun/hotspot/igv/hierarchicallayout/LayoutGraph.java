@@ -461,6 +461,69 @@ public class LayoutGraph {
         return allLinks;
     }
 
+    public void removeLink(Link link) {
+        Vertex from = link.getFrom().getVertex();
+        Vertex to = link.getTo().getVertex();
+        LayoutNode toNode = getLayoutNode(to);
+        LayoutNode fromNode = getLayoutNode(from);
+
+        if (toNode.getLayer() < fromNode.getLayer()) {
+            // Reversed edge
+            toNode = fromNode;
+            toNode.getReversedLinkEndPoints().remove(link);
+            fromNode.getReversedLinkStartPoints().remove(link);
+        }
+
+        // Remove preds-edges bottom up, starting at "to" node
+        // Cannot start from "from" node since there might be joint edges
+        List<LayoutEdge> toNodePredsEdges = List.copyOf(toNode.getPredecessors());
+        for (LayoutEdge edge : toNodePredsEdges) {
+            LayoutNode predNode = edge.getFrom();
+            LayoutEdge edgeToRemove;
+
+            if (edge.getLink() != null && edge.getLink().equals(link)) {
+                toNode.removePredecessor(edge);
+                edgeToRemove = edge;
+            } else {
+                // Wrong edge, look at next
+                continue;
+            }
+
+            if (!predNode.isDummy() && predNode.getVertex().equals(from)) {
+                // No dummy nodes inbetween 'from' and 'to' vertex
+                predNode.removeSuccessor(edgeToRemove);
+                break;
+            } else {
+                // Must remove edges between dummy nodes
+                boolean found = true;
+                LayoutNode succNode = toNode;
+                while (predNode.isDummy() && found) {
+                    found = false;
+
+                    if (predNode.getSuccessors().size() <= 1 && predNode.getPredecessors().size() <= 1) {
+                        // Dummy node used only for this link, remove if not already removed
+                        removeNode(predNode);
+                    } else {
+                        // anchor node, should not be removed
+                        break;
+                    }
+
+                    if (predNode.getPredecessors().size() == 1) {
+                        predNode.removeSuccessor(edgeToRemove);
+                        succNode = predNode;
+                        edgeToRemove = predNode.getPredecessors().get(0);
+                        predNode = edgeToRemove.getFrom();
+                        found = true;
+                    }
+                }
+
+                predNode.removeSuccessor(edgeToRemove);
+                succNode.removePredecessor(edgeToRemove);
+            }
+            break;
+        }
+    }
+
     /**
      * Removes all edges connected to the specified LayoutNode.
      * Handles the removal of associated dummy nodes if they are no longer needed.
@@ -470,66 +533,7 @@ public class LayoutGraph {
      */
     public void removeEdges(LayoutNode movedNode) {
         for (Link inputLink : getAllLinks(movedNode.getVertex())) {
-            Vertex from = inputLink.getFrom().getVertex();
-            Vertex to = inputLink.getTo().getVertex();
-            LayoutNode toNode = getLayoutNode(to);
-            LayoutNode fromNode = getLayoutNode(from);
-
-            if (toNode.getLayer() < fromNode.getLayer()) {
-                // Reversed edge
-                toNode = fromNode;
-                toNode.getReversedLinkEndPoints().remove(inputLink);
-                fromNode.getReversedLinkStartPoints().remove(inputLink);
-            }
-
-            // Remove preds-edges bottom up, starting at "to" node
-            // Cannot start from "from" node since there might be joint edges
-            List<LayoutEdge> toNodePredsEdges = List.copyOf(toNode.getPredecessors());
-            for (LayoutEdge edge : toNodePredsEdges) {
-                LayoutNode predNode = edge.getFrom();
-                LayoutEdge edgeToRemove;
-
-                if (edge.getLink() != null && edge.getLink().equals(inputLink)) {
-                    toNode.removePredecessor(edge);
-                    edgeToRemove = edge;
-                } else {
-                    // Wrong edge, look at next
-                    continue;
-                }
-
-                if (!predNode.isDummy() && predNode.getVertex().equals(from)) {
-                    // No dummy nodes inbetween 'from' and 'to' vertex
-                    predNode.removeSuccessor(edgeToRemove);
-                    break;
-                } else {
-                    // Must remove edges between dummy nodes
-                    boolean found = true;
-                    LayoutNode succNode = toNode;
-                    while (predNode.isDummy() && found) {
-                        found = false;
-
-                        if (predNode.getSuccessors().size() <= 1 && predNode.getPredecessors().size() <= 1) {
-                            // Dummy node used only for this link, remove if not already removed
-                            removeNode(predNode);
-                        } else {
-                            // anchor node, should not be removed
-                            break;
-                        }
-
-                        if (predNode.getPredecessors().size() == 1) {
-                            predNode.removeSuccessor(edgeToRemove);
-                            succNode = predNode;
-                            edgeToRemove = predNode.getPredecessors().get(0);
-                            predNode = edgeToRemove.getFrom();
-                            found = true;
-                        }
-                    }
-
-                    predNode.removeSuccessor(edgeToRemove);
-                    succNode.removePredecessor(edgeToRemove);
-                }
-                break;
-            }
+            removeLink(inputLink);
         }
 
         // remove link connected to movedNode

@@ -70,7 +70,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
     }
 
     private static class ApplyActionUpdates {
-        /*
+
         public void moveVertex(LayoutGraph graph, Vertex movedVertex) {
             Point newLoc = movedVertex.getPosition();
             LayoutNode movedNode = graph.getLayoutNode(movedVertex);
@@ -83,25 +83,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             movedNode.setX(newLoc.x);
             graph.getLayer(layerNr).sortNodesByX();
             graph.removeEmptyLayers();
-            graph.addEdges(movedNode, maxLayerLength);
-        }
-
-         */
-
-
-        /**
-         * Insert node at the assigned layer, updating the positions of the nodes within
-         * the layer
-         */
-        private static void insertNode(LayoutNode node, int layerNr) {
-            //LayoutLayer layoutLayer = graph.getLayer(layerNr);
-            // TODO
-
-            //adjustXCoordinates(layerNr);
-            /**
-             * Adjust the X-coordinates of the nodes in the given layer, as a new node has
-             * been inserted at that layer
-             */
+            graph.addEdges(movedNode, 10);
         }
 
         private static boolean canMoveNodeUp(LayoutNode node) {
@@ -131,24 +113,13 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             return true;
         }
 
-        private static void moveNodeUp(LayoutNode node) {
-            // TODO
-            removeNodeWithoutRemovingLayer(node);
-            insertNode(node, node.getLayer() - 1);
-
-        }
-
-        private static void moveNodeDown(LayoutNode node) {
-            // TODO
-            removeNodeWithoutRemovingLayer(node);
-            insertNode(node, node.getLayer() + 1);
-        }
-
-        private static void handleNeighborNodesOnSameLayer(LayoutNode from, LayoutNode to) {
+        private static void handleNeighborNodesOnSameLayer(LayoutGraph graph, LayoutNode from, LayoutNode to) {
             if (canMoveNodeDown(to)) {
-                moveNodeDown(to);
+                graph.removeNodeAndEdges(to);
+                //insertNode(to, to.getLayer() + 1);
             } else if (canMoveNodeUp(from)) {
-                moveNodeUp(from);
+                graph.removeNodeAndEdges(from);
+                //insertNode(from, from.getLayer() - 1);
             } else {
                 // TODO
                 // expandNewLayerBeneath(to);
@@ -164,7 +135,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             LayoutNode toNode = graph.getLayoutNode(to);
 
             // TODO
-            handleNeighborNodesOnSameLayer(fromNode, toNode);
+            handleNeighborNodesOnSameLayer(graph, fromNode, toNode);
 
             boolean reversedLink = false;
             if (reversedLink) {
@@ -182,41 +153,21 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
         }
 
 
-
+        /**
+         * Determines and applies the optimal layer and position for inserting a vertex into the graph layout.
+         * <p>
+         * The optimal layer minimizes reversed edges and edge lengths. If multiple layers yield the
+         * same result, the bottom-most layer is chosen.
+         * <p>
+         * Within the selected layer, the vertex is inserted at the position that minimizes
+         * edge crossings. This is determined by temporarily linking the vertex with its associated
+         * edges and evaluating each possible position in the layer.
+         *
+         * @param graph the layout graph where the vertex will be inserted
+         * @param vertex the vertex to be inserted
+         */
         private static void applyAddVertexAction(LayoutGraph graph, Vertex vertex) {
-            int optimalLayer = 42;
-            /**
-             * Calculate which layer the given vertex should be inserted at to minimize
-             * reversed edges and edge lengths
-             * If there are multiple options, choose the bottom-most layer
-             *
-             * @return the optimal layer to insert the given vertex
-             *
-             *  * Find the optimal position within the given layerNr to insert the given node.
-             *              * The optimum is given by the least amount of edge crossings.
-             *              *             // Try each possible position in the layerNr
-             */
-
-            // Temporarily add the links so that the node insertion accounts for edge
-            // crossings
-
-            // insertNode(node, layer);
-
-            // Add associated edges
-        }
-
-        private static void applyRemoveLinkAction(LayoutGraph graph, Link l) {
-
-            Vertex from = l.getFrom().getVertex();
-            Vertex to = l.getTo().getVertex();
-            LayoutNode toNode = graph.getLayoutNode(to);
-            LayoutNode fromNode = graph.getLayoutNode(from);
-
-            // if reversed edge
-
-            // Remove preds-edges bottom up, starting at "to" node
-            // Cannot start from "from" node since there might be joint edges
-            // TODO
+           // TODO
         }
 
         private static void applyRemoveVertexAction(LayoutGraph graph, Vertex vertex) {
@@ -224,14 +175,6 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             graph.removeNodeAndEdges(node);
             graph.removeEmptyLayers();
         }
-
-        private static void removeNodeWithoutRemovingLayer(LayoutNode node) {
-            //graph.removeEmptyLayers();
-
-            // Remove node from graph layout
-            //graph.removeNode(node);
-        }
-
 
         static void apply(LayoutGraph prevGraph, LayoutGraph graph) {
             HashSet<Vertex> addedVertices = new HashSet<>(graph.getVertices());
@@ -257,7 +200,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             }
 
             for (Link link : removedLinks) {
-                applyRemoveLinkAction(graph, link);
+                graph.removeLink(link);
             }
 
             for (Vertex vertex : addedVertices) {
