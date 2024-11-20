@@ -315,7 +315,7 @@ public class TestRecursiveLocking {
                     // Second time we want to lock A, the lock stack
                     // looks like this [A, B]. Lightweight locking
                     // doesn't allow interleaving ([A, B, A]), instead
-                    // it inflates A and removed it from the lock
+                    // it inflates A and removes it from the lock
                     // stack. Which leaves us with only [B] on the
                     // lock stack. After more recursions it will grow
                     // to [B, B ... B].
