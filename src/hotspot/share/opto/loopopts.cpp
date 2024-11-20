@@ -4496,7 +4496,9 @@ void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(Id
   // no CFG in the loop.
   if (cl->loopexit()->in(0) != cl) { return; }
 
-  // TODO node budget
+  // Check node budget.
+  uint estimate = lpt->est_loop_clone_sz(2);
+  if (!may_require_nodes(estimate)) { return; }
 
   do_multiversioning(lpt, old_new);
 }
