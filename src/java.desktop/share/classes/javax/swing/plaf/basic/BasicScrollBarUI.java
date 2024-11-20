@@ -1237,10 +1237,10 @@ public class BasicScrollBarUI
                     scrollTimer.stop();
                     buttonListener.handledEvent = false;
                     scrollbar.setValueIsAdjusting(false);
-                    if (incrButton.isFocusPainted()) {
-                        incrButton.doClick();
-                    } else if (decrButton.isFocusPainted()) {
-                        decrButton.doClick();
+                    if (incrButton.getModel().isPressed()) {
+                        incrButton.getModel().setPressed(false);
+                    } else if (decrButton.getModel().isPressed()) {
+                        decrButton.getModel().setPressed(false);
                     }
                 }
             }
