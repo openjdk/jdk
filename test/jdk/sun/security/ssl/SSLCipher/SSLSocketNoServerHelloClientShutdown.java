@@ -58,6 +58,7 @@ public class SSLSocketNoServerHelloClientShutdown
 
     private volatile Exception clientException;
     private volatile Exception serverException;
+    private final int serverReadTimeout;
 
     public static void main(String[] args) throws Exception {
         new SSLSocketNoServerHelloClientShutdown().runTest();
@@ -65,6 +66,9 @@ public class SSLSocketNoServerHelloClientShutdown
 
     public SSLSocketNoServerHelloClientShutdown() throws Exception {
         super();
+        float timeoutFactor = Float.parseFloat(
+                System.getProperty("test.timeout.factor", "1.0"));
+        serverReadTimeout = (int) (5000 * timeoutFactor);
     }
 
     private void runTest() throws Exception {
@@ -84,7 +88,7 @@ public class SSLSocketNoServerHelloClientShutdown
             try {
                 // Server-side SSL socket that will read.
                 SSLSocket socket = (SSLSocket) serverSocket.accept();
-                socket.setSoTimeout(2000);
+                socket.setSoTimeout(serverReadTimeout);
                 InputStream is = socket.getInputStream();
                 byte[] inbound = new byte[512];
 
@@ -125,7 +129,6 @@ public class SSLSocketNoServerHelloClientShutdown
                         new InetSocketAddress("localhost", port))) {
 
                     SSLEngineResult clientResult;
-                    clientSocketChannel.socket().setSoTimeout(500);
 
                     log("=================");
 
@@ -164,7 +167,7 @@ public class SSLSocketNoServerHelloClientShutdown
 
                     // Give server a chance to read before we shutdown via
                     // the try-with-resources block.
-                    Thread.sleep(2000);
+                    Thread.sleep(serverReadTimeout);
                 } catch (Exception e) {
                     clientException = e;
                 }
