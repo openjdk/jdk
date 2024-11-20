@@ -38,11 +38,12 @@ import jdk.internal.classfile.impl.LabelImpl;
  * <h2 id="reading">Reading Labels</h2>
  * Labels read from {@code class} files represent positions in the {@code code}
  * array of a {@link CodeAttribute Code} attribute.  It is associated with a
- * <dfn>{@index bci}</dfn>, also known as <dfn>{@index pc}</dfn>, the index into
- * the {@code code} array; the actual cursor position is immediately before the
- * given index, so a label at the beginning of the instructions has bci {@code 0},
- * and a label at the end of the instructions has bci {@link CodeAttribute#codeLength
- * codeLength() + 1}.  The bci can be inspected through {@link CodeAttribute#labelToBci
+ * <dfn>{@index bci}</dfn> (bytecode index), also known as <dfn>{@index pc}</dfn>
+ * (program counter), the index into the {@code code} array; the actual cursor
+ * position is immediately before the given index, so a label at the beginning
+ * of the instructions has bci {@code 0}, and a label at the end of the
+ * instructions has bci {@link CodeAttribute#codeLength codeLength() + 1}.  The
+ * bci can be inspected through {@link CodeAttribute#labelToBci
  * CodeAttribute::labelToBci}.
  * <p>
  * In generic {@link CodeModel}s, a label may not have a bci value; the position
@@ -50,7 +51,7 @@ import jdk.internal.classfile.impl.LabelImpl;
  * within that model.
  *
  * <h2 id="writing">Writing Labels</h2>
- * Many models in {@code java.lang.classfile} refer to labels.  To write a
+ * Many models in {@link java.lang.classfile} refer to labels.  To write a
  * label, a label must be obtained, it must be bound to a {@link CodeBuilder}.
  * <p>
  * To obtain a label:

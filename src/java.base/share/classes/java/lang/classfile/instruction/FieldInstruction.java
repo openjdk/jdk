@@ -30,12 +30,10 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.FieldRefEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -47,25 +45,16 @@ import jdk.internal.classfile.impl.Util;
  * of {@link Opcode.Kind#FIELD_ACCESS}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually, a field access instruction is a record:
+ * A field access instruction can be viewed as a record:
  * {@snippet lang=text :
- * // @link region substring="FieldInstruction" target="#of(Opcode, FieldRefEntry)"
- * // @link substring="Opcode" target="#opcode()" :
- * FieldInstruction(Opcode, FieldRefEntry) // @link substring="FieldRefEntry" target="#field()"
- * // @end
- * // @link region=1 substring="FieldRefEntry" target="ConstantPoolBuilder#fieldRefEntry(ClassDesc, String, ClassDesc)"
- * // @link region=2 substring="ClassDesc owner" target="#owner()"
- * // @link substring="String name" target="#name()" :
- * FieldRefEntry(ClassDesc owner, String name, ClassDesc type) // @link substring="ClassDesc type" target="#typeSymbol()"
- * // @end region=1
- * // @end region=2
+ * // @link substring="FieldInstruction" target="#of(Opcode, FieldRefEntry)" :
+ * FieldInstruction(
+ *     Opcode opcode, // @link substring="opcode" target="#opcode()"
+ *     FieldRefEntry field, // @link substring="field" target="#field()"
+ * )
  * }
- * where the {@code opcode} is of the field access kind, the {@code owner} is a
- * class or interface, the {@code name} is a simple name, and the {@code type}
- * is not {@link ConstantDescs#CD_void void}.
- * <p>
- * Physically, a field access instruction has the same structure.
  *
+ * @see Opcode.Kind#FIELD_ACCESS
  * @see CodeBuilder#fieldAccess CodeBuilder::fieldAccess
  * @since 24
  */
@@ -78,10 +67,6 @@ public sealed interface FieldInstruction extends Instruction
 
     /**
      * {@return the class holding the field}
-     *
-     * @apiNote
-     * A symbolic descriptor for the owner is available through {@link
-     * ClassEntry#asSymbol() owner().asSymbol()}.
      */
     default ClassEntry owner() {
         return field().owner();
@@ -89,10 +74,6 @@ public sealed interface FieldInstruction extends Instruction
 
     /**
      * {@return the name of the field}
-     *
-     * @apiNote
-     * A string value for the name is available through {@link
-     * Utf8Entry#stringValue() name().stringValue()}.
      */
     default Utf8Entry name() {
         return field().nameAndType().name();
@@ -138,6 +119,8 @@ public sealed interface FieldInstruction extends Instruction
      * @param owner the class holding the field
      * @param name the name of the field
      * @param type the field descriptor
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#FIELD_ACCESS}.
      */
     static FieldInstruction of(Opcode op,
                                ClassEntry owner,
@@ -153,6 +136,8 @@ public sealed interface FieldInstruction extends Instruction
      *           which must be of kind {@link Opcode.Kind#FIELD_ACCESS}
      * @param owner the class holding the field
      * @param nameAndType the name and field descriptor of the field
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#FIELD_ACCESS}.
      */
     static FieldInstruction of(Opcode op,
                                ClassEntry owner,

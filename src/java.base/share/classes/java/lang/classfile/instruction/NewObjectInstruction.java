@@ -38,19 +38,14 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * attribute.  Delivered as a {@link CodeElement} when traversing the elements
  * of a {@link CodeModel}.
  * <p>
- * Conceptually, a {@code new} instruction is a record:
+ * A new object instruction can be viewed as a record:
  * {@snippet lang=text :
- * // @link substring="NewObjectInstruction" target="CodeBuilder#new_(ClassDesc)" :
- * NewObjectInstruction(ClassDesc) // @link substring="ClassDesc" target="#className"
+ * // @link substring="NewObjectInstruction" target="#of" :
+ * NewObjectInstruction(ClassEntry className) // @link substring="className" target="#className"
  * }
- * where the {@code ClassDesc} is a non-abstract class.
- * <p>
- * Physically, a {@code new} instruction is a record:
- * {@snippet lang=text :
- * // @link substring="NewObjectInstruction" target="#of(ClassEntry)" :
- * NewObjectInstruction(Opcode.NEW, ClassEntry) // @link substring="ClassEntry" target="#className"
- * }
+ * where the {@code className} is a non-abstract class.
  *
+ * @see Opcode.Kind#NEW_OBJECT
  * @see CodeBuilder#new_ CodeBuilder::new_
  * @jvms 6.5.new <em>new</em>
  * @since 24
@@ -60,10 +55,6 @@ public sealed interface NewObjectInstruction extends Instruction
 
     /**
      * {@return the type of object to create}
-     *
-     * @apiNote
-     * A symbolic descriptor for the type of the object is available through
-     * {@link ClassEntry#asSymbol() className().asSymbol()}.
      */
     ClassEntry className();
 

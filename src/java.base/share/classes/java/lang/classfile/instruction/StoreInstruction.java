@@ -41,37 +41,22 @@ import jdk.internal.classfile.impl.Util;
  * {@link Opcode.Kind#STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually, a local variable store instruction is a record:
+ * A local variable store instruction can be viewed as a record:
  * {@snippet lang=text :
- * // @link region substring="StoreInstruction" target="#of(TypeKind, int)"
- * // @link substring="TypeKind" target="#typeKind" :
- * StoreInstruction(TypeKind, int slot) // @link substring="int slot" target="#slot"
- * // @end
+ * // @link substring="StoreInstruction" target="#of(TypeKind, int)" :
+ * StoreInstruction(
+ *     TypeKind typeKind, // @link substring="typeKind" target="#typeKind"
+ *     int slot // @link substring="slot" target="#slot"
+ * )
  * }
- * where the {@code TypeKind} is {@linkplain TypeKind##computational-type
- * computational}.  Multiple instructions, such as {@code astore_0}, {@code
- * astore 0}, and {@code wide astore 0}, may match such a record, but they
- * are functionally equivalent.
- * <p>
- * Physically, store variable instructions are polymorphic, discriminated by
- * their opcode:
- * {@snippet lang=text :
- * StoreInstruction(Opcode) // @link substring="Opcode" target="#opcode"
- * // @link region substring="StoreInstruction" target="#of(Opcode, int)"
- * // @link substring="Opcode" target="#opcode" :
- * StoreInstruction(Opcode, int slot) // @link substring="int slot" target="#slot"
- * // @end
- * }
- * the first form requires the {@code slot} to be intrinsic to the {@code Opcode};
- * such opcodes have an {@linkplain Opcode#sizeIfFixed() instruction size} of {@code 1}.
- * Otherwise, the {@code slot} must be compatible with the {@code Opcode}, such
- * that if the opcode is not {@linkplain Opcode#isWide() wide}, the {@code slot}
- * must be no greater than {@code 255}.
+ * where {@code TypeKind} is {@linkplain TypeKind##computational-type
+ * computational}, and {@code slot} is within {@code [0, 65535]}.
  * <p>
  * {@code astore} series of instructions can operate on the {@code returnAddress}
  * type from {@linkplain DiscontinuedInstruction.JsrInstruction jump subroutine
  * instructions}.
  *
+ * @see Opcode.Kind#STORE
  * @see CodeBuilder#storeLocal CodeBuilder::storeLocal
  * @since 24
  */
@@ -80,6 +65,7 @@ public sealed interface StoreInstruction extends Instruction
 
     /**
      * {@return the local variable slot to store to}
+     * The value is within {@code [0, 65535]}.
      */
     int slot();
 
@@ -93,6 +79,9 @@ public sealed interface StoreInstruction extends Instruction
 
     /**
      * {@return a local variable store instruction}
+     * {@code kind} is {@linkplain TypeKind#asLoadable() converted} to its
+     * computational type.
+     * {@code slot} must be within {@code [0, 65535]}.
      *
      * @param kind the type of the value to be stored
      * @param slot the local variable slot to store to
@@ -106,6 +95,15 @@ public sealed interface StoreInstruction extends Instruction
 
     /**
      * {@return a local variable store instruction}
+     * <p>
+     * The range of {@code slot} is restricted by the {@code op} and its
+     * {@linkplain Opcode#sizeIfFixed() size}:
+     * <ul>
+     * <li>If {@code op} has size 1, {@code slot} must be exactly the slot value
+     * implied by the opcode.
+     * <li>If {@code op} has size 2, {@code slot} must be within {@code [0, 255]}.
+     * <li>If {@code op} has size 4, {@code slot} must be within {@code [0, 65535]}.
+     * </ul>
      *
      * @apiNote
      * The explicit {@code op} argument allows creating {@code wide} or

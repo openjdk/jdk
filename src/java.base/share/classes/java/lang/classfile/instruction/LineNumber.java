@@ -29,25 +29,30 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.LineNumberInfo;
 import java.lang.classfile.attribute.LineNumberTableAttribute;
 
 import jdk.internal.classfile.impl.LineNumberImpl;
 
 /**
- * A pseudo-instruction which models a single entry in the
- * {@link LineNumberTableAttribute}.  Delivered as a {@link CodeElement}
- * during traversal of the elements of a {@link CodeModel}, according to
- * the setting of the {@link ClassFile.LineNumbersOption} option.
+ * A pseudo-instruction which indicates the code for a given line number starts
+ * after the current position in a {@link CodeAttribute Code} attribute.  This
+ * models a single entry in the {@link LineNumberTableAttribute LineNumberTable}
+ * attribute.  Delivered as a {@link CodeElement} during traversal of the
+ * elements of a {@link CodeModel}, according to the setting of the {@link
+ * ClassFile.LineNumbersOption} option.
  * <p>
- * Conceptually, a line number entry is a record:
+ * A line number entry can be viewed as a record:
  * {@snippet lang=text :
  * // @link substring="LineNumber" target="#of" :
  * LineNumber(int line) // @link substring="int line" target="#line"
  * }
  * <p>
- * Physically, a line number entry is a different record of {@code (Label, int line)};
- * it is modeled by a {@link LineNumberInfo}.
+ * Another model, {@link LineNumberInfo}, also models a line number entry; it
+ * has no dependency on a {@code CodeModel} and represents of bci values as
+ * {@code int}s instead of order of pseudo-instructions in the elements of a
+ * {@code CodeModel}, and is used as components of a {@link LineNumberTableAttribute}.
  *
  * @apiNote
  * Line numbers are represented with custom pseudo-instructions to avoid using
@@ -55,6 +60,7 @@ import jdk.internal.classfile.impl.LineNumberImpl;
  *
  * @see LineNumberInfo
  * @see CodeBuilder#lineNumber CodeBuilder::lineNumber
+ * @see ClassFile.LineNumbersOption
  * @since 24
  */
 public sealed interface LineNumber extends PseudoInstruction

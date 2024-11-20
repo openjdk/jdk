@@ -39,28 +39,19 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * code} array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually, a {@code lookupswitch} instruction is a record:
+ * A lookup switch instruction can be viewed as a record:
  * {@snippet lang=text :
- * // @link region substring="LookupSwitchInstruction" target="#of"
- * // @link substring="Label defaultTarget" target="#defaultTarget" :
- * LookupSwitchInstruction(Label defaultTarget, List<SwitchCase> cases) // @link substring="List<SwitchCase> cases" target="#cases()"
- * // @end
+ * // @link substring="LookupSwitchInstruction" target="#of" :
+ * LookupSwitchInstruction(
+ *     Label defaultTarget, // @link substring="defaultTarget" target="#defaultTarget"
+ *     List<SwitchCase> cases // @link substring="cases" target="#cases()"
+ * )
  * }
- * If elements in {@code cases} are not sorted ascending by their {@linkplain
- * SwitchCase#caseValue value}, a sorted version of the {@code cases} list
+ * If elements in {@code cases} are not sorted ascending by their {@link
+ * SwitchCase#caseValue caseValue}, a sorted version of the {@code cases} list
  * will be written instead.
- * <p>
- * Physically, a {@code lookupswitch} instruction is a record:
- * {@snippet lang=text :
- * // @link region substring="LookupSwitchInstruction" target="#of"
- * // @link substring="Label defaultTarget" target="#defaultTarget" :
- * LookupSwitchInstruction(Opcode.LOOKUPSWITCH, padding, Label defaultTarget, List<SwitchCase> cases) // @link substring="List<SwitchCase> cases" target="#cases()"
- * // @end
- * }
- * The {@code padding} is 0 to 3 bytes of any value, making the default target
- * 4-byte aligned to the beginning of the {@code code} array.  It also requires
- * the elements in {@code cases} to be sorted ascending by their value.
  *
+ * @see Opcode.Kind#LOOKUP_SWITCH
  * @see CodeBuilder#lookupswitch CodeBuilder::lookupswitch
  * @jvms 6.5.lookupswitch <em>lookupswitch</em>
  * @since 24

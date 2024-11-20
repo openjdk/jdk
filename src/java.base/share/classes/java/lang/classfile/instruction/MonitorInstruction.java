@@ -40,10 +40,10 @@ import jdk.internal.classfile.impl.Util;
  * Opcode.Kind#MONITOR}.  Delivered as a {@link CodeElement} when traversing the
  * elements of a {@link CodeModel}.
  * <p>
- * Conceptually and physically, a monitor instruction is a record:
+ * A monitor instruction can be viewed record:
  * {@snippet lang=text :
  * // @link substring="MonitorInstruction" target="#of(Opcode)" :
- * MonitorInstruction(Opcode) // @link substring="Opcode" target="#opcode"
+ * MonitorInstruction(Opcode opcode) // @link substring="opcode" target="#opcode"
  * }
  *
  * @since 24

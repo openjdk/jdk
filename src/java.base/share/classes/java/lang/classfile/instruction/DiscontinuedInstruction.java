@@ -55,35 +55,21 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * Delivered as a {@link CodeElement} when traversing the elements of a
      * {@link CodeModel}.
      * <p>
-     * Conceptually, a jump subroutine instruction is a record:
+     * A jump subroutine instruction can be viewed as a record:
      * {@snippet lang=text :
      * // @link substring="JsrInstruction" target="#of(Label)" :
-     * JsrInstruction(Label) // @link substring="Label" target="#target()"
+     * JsrInstruction(Label target) // @link substring="target" target="#target()"
      * }
      * <p>
-     * Physically, a jump subroutine instruction is a record:
-     * {@snippet lang=text :
-     * // @link region substring="JsrInstruction" target="#of(Opcode, Label)"
-     * // @link substring="Opcode" target="#opcode()" :
-     * JsrInstruction(Opcode, Label) // @link substring="Label" target="#target()"
-     * // @end
-     * }
-     * where the {@code Opcode} must be {@link Opcode#JSR jsr} or {@link
-     * Opcode#JSR_W jsr_w}.  However, {@code jsr} only uses a {@code s2} to
-     * encode its target, which is insufficient to encode targets with bci
-     * offsets less than {@code -32768} or greater than {@code 32767}.
-     * <p>
-     * In such cases, if the {@link ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS
-     * FIX_SHORT_JUMPS} option is set, a {@link CodeBuilder} will convert a
-     * {@code jsr} instruction to a {@code jsr_w} instruction to achieve the
-     * same effect.  Otherwise, {@link ClassFile.ShortJumpsOption#FAIL_ON_SHORT_JUMPS
-     * FAIL_ON_SHORT_JUMPS} option can ensure the physical accuracy of the
-     * generated {@code class} file and fail if an exact representation is not
-     * possible.
+     * Due to physical restrictions, {@link Opcode#JSR jsr} instructions cannot
+     * encode labels too far away in the list of code elements.  In such cases,
+     * the {@link ClassFile.ShortJumpsOption} controls how an invalid {@code jsr}
+     * instruction model is written by a {@link CodeBuilder}.
      * <p>
      * {@link StoreInstruction astore} series of instructions can operate on the
      * {@code returnAddress} type from jump subroutine instructions.
      *
+     * @see Opcode.Kind#DISCONTINUED_JSR
      * @since 24
      */
     sealed interface JsrInstruction extends DiscontinuedInstruction
@@ -99,8 +85,8 @@ public sealed interface DiscontinuedInstruction extends Instruction {
          * {@return a jump subroutine instruction}
          *
          * @apiNote
-         * The explicit {@code op} argument allows creating {@code jsr_w}
-         * instructions to avoid {@code target} overflow.
+         * The explicit {@code op} argument allows creating {@link Opcode#JSR_W
+         * jsr_w} instructions to avoid short jumps.
          *
          * @param op the opcode for the specific type of jump subroutine instruction,
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_JSR}
@@ -131,26 +117,14 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * {@link Opcode.Kind#DISCONTINUED_RET}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
      * <p>
-     * Conceptually, a return from subroutine instruction is a record:
+     * A return from subroutine instruction can be viewed as a record:
      * {@snippet lang=text :
      * // @link substring="RetInstruction" target="#of(int)" :
-     * RetInstruction(int slot) // @link substring="int slot" target="#slot()"
+     * RetInstruction(int slot) // @link substring="slot" target="#slot()"
      * }
-     * where the {@code slot}, a local variable slot, has a {@code returnAddress}
-     * computational type previously stored by an {@link StoreInstruction astore}
-     * instruction.
-     * <p>
-     * Physically, a return from subroutine instruction is a record:
-     * {@snippet lang=text :
-     * // @link region substring="RetInstruction" target="#of(Opcode, int)"
-     * // @link substring="Opcode" target="#opcode()" :
-     * RetInstruction(Opcode, int slot) // @link substring="int slot" target="#slot()"
-     * // @end
-     * }
-     * where the {@code Opcode} must be {@link Opcode#RET ret} or {@link
-     * Opcode#RET_W wide ret}.  In addition, if {@code slot} is greater than 255,
-     * {@code Opcode} must be {@code wide ret}.
+     * where {@code slot} must be within {@code [0, 65535]}.
      *
+     * @see Opcode.Kind#DISCONTINUED_RET
      * @since 24
      */
     sealed interface RetInstruction extends DiscontinuedInstruction
@@ -159,11 +133,16 @@ public sealed interface DiscontinuedInstruction extends Instruction {
 
         /**
          * {@return the local variable slot with return address}
+         * The value is within {@code [0, 65535]}.
          */
         int slot();
 
         /**
          * {@return a return from subroutine instruction}
+         * <p>
+         * {@code slot} must be in the closed range of {@code [0, 255]} for
+         * {@link Opcode#RET ret}, or within {@code [0, 65535]} for {@link
+         * Opcode#RET_W wide ret}.
          *
          * @apiNote
          * The explicit {@code op} argument allows creating {@code wide ret}
@@ -183,6 +162,8 @@ public sealed interface DiscontinuedInstruction extends Instruction {
 
         /**
          * {@return a return from subroutine instruction}
+         * <p>
+         * {@code slot} must be within {@code [0, 65535]}.
          *
          * @param slot the local variable slot to load return address from
          * @throws IllegalArgumentException if {@code slot} is out of range

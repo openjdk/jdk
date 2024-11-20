@@ -40,23 +40,15 @@ import jdk.internal.classfile.impl.Util;
  * of {@link Opcode.Kind#ARRAY_STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually, an array store instruction is a record:
+ * An array store instruction can be viewed as a record:
  * {@snippet lang=text :
  * // @link substring="ArrayStoreInstruction" target="CodeBuilder#arrayStore(TypeKind)" :
- * ArrayStoreInstruction(TypeKind) // @link substring="TypeKind" target="#typeKind()"
+ * ArrayStoreInstruction(TypeKind typeKind) // @link substring="typeKind" target="#typeKind"
  * }
- * where the {@code TypeKind} is not {@link TypeKind#BOOLEAN boolean} or
- * {@link TypeKind#VOID void}.  Boolean arrays use the {@link TypeKind#BYTE
- * byte} kind instruction.
- * <p>
- * Physically, an array store instruction is a record:
- * {@snippet lang=text :
- * // @link substring="ArrayStoreInstruction" target="#of(Opcode)" :
- * ArrayStoreInstruction(Opcode) // @link substring="Opcode" target="#opcode()"
- * }
- * where the {@code Opcode} is of the array store kind.  The component type of
- * the array is intrinsic to the opcode.
+ * where {@code typeKind} is not {@link TypeKind#VOID void}, and {@link
+ * TypeKind#BOOLEAN boolean} is converted to {@link TypeKind#BYTE byte}.
  *
+ * @see Opcode.Kind#ARRAY_STORE
  * @see CodeBuilder#arrayStore CodeBuilder::arrayStore
  * @since 24
  */

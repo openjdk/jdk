@@ -30,7 +30,6 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
-import java.lang.classfile.constantpool.ClassEntry;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 
@@ -39,20 +38,14 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually, a {@code newarray} instruction is a record:
+ * A new primitive array instruction can be viewed as a record:
  * {@snippet lang=text :
  * // @link substring="NewPrimitiveArrayInstruction" target="#of" :
- * NewPrimitiveArrayInstruction(TypeKind) // @link substring="TypeKind" target="#typeKind"
+ * NewPrimitiveArrayInstruction(TypeKind typeKind) // @link substring="typeKind" target="#typeKind"
  * }
- * where the {@code TypeKind} is primitive and not {@code void}.
- * <p>
- * Physically, a {@code newarray} instruction is a record:
- * {@snippet lang=text :
- * // @link substring="NewPrimitiveArrayInstruction" target="#of" :
- * NewPrimitiveArrayInstruction(Opcode.NEWARRAY, int code) // @link substring="int code" target="TypeKind#newarrayCode()"
- * }
- * where the code is a valid new array code.
+ * where {@code typeKind} is primitive and not {@code void}.
  *
+ * @see Opcode.Kind#NEW_PRIMITIVE_ARRAY
  * @see CodeBuilder#newarray CodeBuilder::newarray
  * @jvms 6.5.newarray <em>newarray</em>
  * @since 24
@@ -73,8 +66,9 @@ public sealed interface NewPrimitiveArrayInstruction extends Instruction
      * {@return a new primitive array instruction}
      *
      * @param typeKind the component type of the array
-     * @throws IllegalArgumentException when the {@code typeKind} is not a legal
-     *                                  primitive array component type
+     * @throws IllegalArgumentException when {@code typeKind} is not primitive
+     *         or is {@code void}
+     * @see TypeKind#fromNewarrayCode(int) TypeKind::fromNewarrayCode
      */
     static NewPrimitiveArrayInstruction of(TypeKind typeKind) {
         // Implicit null-check:

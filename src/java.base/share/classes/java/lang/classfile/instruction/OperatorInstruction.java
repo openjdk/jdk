@@ -39,19 +39,20 @@ import jdk.internal.classfile.impl.Util;
  * {@link Opcode.Kind#OPERATOR}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually and physically, an operator instruction is a record:
+ * An operator instruction can be viewed as a record:
  * {@snippet lang=text :
  * // @link substring="OperatorInstruction" target="#of" :
- * OperatorInstruction(Opcode) // @link substring="Opcode" target="#opcode()"
+ * OperatorInstruction(Opcode opcode) // @link substring="opcode" target="#opcode()"
  * }
- * The {@link #typeKind() typeKind()} attribute is intrinsic to the opcode.
  *
+ * @see Opcode.Kind#OPERATOR
  * @since 24
  */
 public sealed interface OperatorInstruction extends Instruction
         permits AbstractInstruction.UnboundOperatorInstruction {
     /**
      * {@return the operand type of the instruction}
+     * This is derived from the {@link #opcode opcode}.
      */
     TypeKind typeKind();
 

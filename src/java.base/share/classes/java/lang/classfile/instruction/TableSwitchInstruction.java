@@ -39,43 +39,28 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
  * the elements of a {@link CodeModel}.
  * <p>
- * Conceptually, a {@code tableswitch} instruction is a record:
+ * A table switch instruction can be viewed a record:
  * {@snippet lang=text :
- * // @link region=0 substring="TableSwitchInstruction" target="CodeBuilder#tableswitch(Label, List)"
- * // @link substring="Label defaultTarget" target="#defaultTarget" :
- * TableSwitchInstruction(Label defaultTarget, List<SwitchCase> cases) // @link substring="List<SwitchCase> cases" target="#cases()"
- * // @end region=0
+ * // @link substring="TableSwitchInstruction" target="#of" :
+ * TableSwitchInstruction(
+ *     int lowValue, // @link substring="int lowValue" target="#lowValue"
+ *     int highValue, // @link substring="int highValue" target="#highValue"
+ *     Label defaultTarget, // @link substring="defaultTarget" target="#defaultTarget"
+ *     List<SwitchCase> cases // @link substring="cases" target="#cases()"
+ * )
  * }
- * Where the {@link #lowValue lowValue} and {@link #highValue highValue} are
- * derived from the list of cases.
  * <p>
- * Physically, a {@code tableswich} instruction is a record:
- * {@snippet lang=text :
- * // @link region=0 substring="TableSwitchInstruction" target="#of"
- * // @link region=1 substring="int lowValue" target="#lowValue"
- * // @link region=2 substring="int highValue" target="#highValue"
- * // @link substring="Label defaultTarget" target="#defaultTarget" :
- * TableSwitchInstruction(Opcode.TABLESWITCH, padding, Label defaultTarget, int lowValue, int highValue, List<Label> cases) // @link substring="List<Label> cases" target="#cases()"
- * // @end region=0
- * // @end region=1
- * // @end region=2
- * }
- * The {@code padding} is 0 to 3 bytes of any value, making the default target
- * 4-byte aligned to the beginning of the {@code code} array.  The {@code cases}
- * list has an implicit length equal to {@code highValue - lowValue + 1}, and
- * the case at {@code index} has value {@code lowValue + index}.
+ * When read from {@code class} files, the {@code cases} may omit cases that
+ * duplicate the default target.  The list is sorted ascending by the {@link
+ * SwitchCase#caseValue() caseValue}.
  * <p>
- * When read from {@code class} files, the {@code List<SwitchCase> cases}
- * may omit cases that duplicate the default target.  The list is sorted
- * ascending by the values.
- * <p>
- * When writing, the order in the {@code List<SwitchCase> cases} list does not
- * matter, as there is only one valid order in the physical representation of
- * table switch entries.  Treatment of elements in {@code List<SwitchCase> cases}
- * whose {@linkplain SwitchCase#caseValue value} is less than {@code lowValue}
- * or greater than {@code highValue}, and elements whose value duplicates that
- * of another, is not specified.
+ * When writing to {@code class} file, the order in the {@code cases} list does
+ * not matter, as there is only one valid order in the physical representation
+ * of table switch entries.  Treatment of elements in {@code cases} whose value
+ * is less than {@code lowValue} or greater than {@code highValue}, and elements
+ * whose value duplicates that of another, is not specified.
  *
+ * @see Opcode.Kind#TABLE_SWITCH
  * @see CodeBuilder#tableswitch CodeBuilder::tableswitch
  * @jvms 6.5.tableswitch <em>tableswitch</em>
  * @since 24

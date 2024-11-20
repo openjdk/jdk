@@ -38,19 +38,13 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually, an {@code anewarray} instruction is a record:
- * {@snippet lang=text :
- * // @link substring="NewReferenceArrayInstruction" target="CodeBuilder#anewarray(ClassDesc)" :
- * NewReferenceArrayInstruction(ClassDesc) // @link substring="ClassDesc" target="#componentType"
- * }
- * where the {@code ClassDesc} is not primitive.
- * <p>
- * Physically, an {@code anewarray} instruction is a record:
+ * A new reference array instruction can be viewed as a record:
  * {@snippet lang=text :
  * // @link substring="NewReferenceArrayInstruction" target="#of" :
- * NewReferenceArrayInstruction(Opcode.ANEWARRAY, ClassEntry) // @link substring="ClassEntry" target="#componentType"
+ * NewReferenceArrayInstruction(ClassEntry componentType) // @link substring="componentType" target="#componentType"
  * }
  *
+ * @see Opcode.Kind#NEW_REF_ARRAY
  * @see CodeBuilder#newarray CodeBuilder::anewarray
  * @jvms 6.5.anewarray <em>anewarray</em>
  * @since 24
@@ -59,10 +53,6 @@ public sealed interface NewReferenceArrayInstruction extends Instruction
         permits AbstractInstruction.BoundNewReferenceArrayInstruction, AbstractInstruction.UnboundNewReferenceArrayInstruction {
     /**
      * {@return the component type of the array}
-     *
-     * @apiNote
-     * A symbolic descriptor for the component type of the array is available
-     * through {@link ClassEntry#asSymbol() componentType().asSymbol()}.
      */
     ClassEntry componentType();
 

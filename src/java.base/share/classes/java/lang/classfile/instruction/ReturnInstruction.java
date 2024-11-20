@@ -41,22 +41,15 @@ import jdk.internal.classfile.impl.Util;
  * {@link Opcode.Kind#RETURN}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually, a return-from-method instruction is a record:
+ * A return-from-method instruction can be viewed a record:
  * {@snippet lang=text :
  * // @link substring="ReturnInstruction" target="#of(TypeKind)" :
- * ReturnInstruction(TypeKind) // @link substring="TypeKind" target="#typeKind()"
+ * ReturnInstruction(TypeKind typeKind) // @link substring="typeKind" target="#typeKind()"
  * }
- * where the {@code TypeKind} is {@linkplain TypeKind##computational-type
+ * where {@code typeKind} is {@linkplain TypeKind##computational-type
  * computational} or {@link TypeKind#VOID void}.
- * <p>
- * Physically, an return-from-method instruction is a record:
- * {@snippet lang=text :
- * // @link substring="ReturnInstruction" target="#of(Opcode)" :
- * ReturnInstruction(Opcode) // @link substring="Opcode" target="#opcode()"
- * }
- * where the {@code Opcode} is of the return kind.  The computational type
- * type of the instruction is intrinsic to the opcode.
  *
+ * @see Opcode.Kind#RETURN
  * @see CodeBuilder#return_(TypeKind) CodeBuilder::return_
  * @since 24
  */
@@ -71,6 +64,8 @@ public sealed interface ReturnInstruction extends Instruction
 
     /**
      * {@return a return instruction}
+     * {@code typeKind} is {@linkplain TypeKind#asLoadable() converted} to its
+     * computational type.
      *
      * @param typeKind the type of the return instruction
      */

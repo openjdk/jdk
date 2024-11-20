@@ -37,10 +37,10 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually and physically, a no-op instruction is a record:
+ * A no-op instruction can be viewed as a record:
  * {@snippet lang=text :
  * // @link substring="NopInstruction" target="#of" :
- * NopInstruction(Opcode.NOP)
+ * NopInstruction()
  * }
  *
  * @see CodeBuilder#nop CodeBuilder::nop

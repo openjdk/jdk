@@ -41,67 +41,50 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * A pseudo-instruction which models a single entry in the
- * {@link LocalVariableTableAttribute}.  Delivered as a {@link CodeElement}
- * during traversal of the elements of a {@link CodeModel}, according to
- * the setting of the {@link ClassFile.DebugElementsOption} option.
+ * A pseudo-instruction which models a single entry in the {@link
+ * LocalVariableTableAttribute LocalVariableTable} attribute.  Delivered as a
+ * {@link CodeElement} during traversal of the elements of a {@link CodeModel},
+ * according to the setting of the {@link ClassFile.DebugElementsOption} option.
  * <p>
- * Conceptually, a local variable table entry is a record:
+ * A local variable entry can be viewed a record:
  * {@snippet lang=text :
- * // @link region=0 substring="LocalVariable" target="#of(int, String, ClassDesc, Label, Label)"
- * // @link region=1 substring="int slot" target="#slot"
- * // @link region=2 substring="String name" target="#name"
- * // @link region=3 substring="ClassDesc type" target="#typeSymbol"
- * // @link substring="Label startScope" target="#startScope" :
- * LocalVariable(int slot, String name, ClassDesc type, Label startScope, Label endScope) // @link substring="Label endScope" target="#endScope"
- * // @end region=0
- * // @end region=1
- * // @end region=2
- * // @end region=3
+ * // @link substring="LocalVariable" target="#of(int, String, ClassDesc, Label, Label)" :
+ * LocalVariable(
+ *     int slot, // @link substring="slot" target="#slot"
+ *     String name, // @link substring="name" target="#name"
+ *     ClassDesc type, // @link substring="type" target="#type"
+ *     Label startScope, // @link substring="startScope" target="#startScope"
+ *     Label endScope // @link substring="endScope" target="#endScope"
+ * )
  * }
- * Where {@code type} must be non-{@code void}.
+ * Where {@code slot} is within {@code [0, 65535]}.
  * <p>
- * Physically, a local variable table entry modeled by a {@link LocalVariableInfo}.
- * It is a record:
- * {@snippet lang=text :
- * // @link region=0 substring="LocalVariable" target="#of(int, Utf8Entry, Utf8Entry, Label, Label)"
- * // @link region=1 substring="int slot" target="#slot"
- * // @link region=2 substring="Utf8Entry name" target="#name"
- * // @link region=3 substring="Utf8Entry type" target="#type"
- * // @link substring="Label startScope" target="#startScope" :
- * LocalVariable(Label startScope, Label endScope, Utf8Entry name, Utf8Entry type, int slot) // @link substring="Label endScope" target="#endScope"
- * // @end region=0
- * // @end region=1
- * // @end region=2
- * // @end region=3
- * }
- * Where the {@code endScope} is encoded as a nonnegative bci offset to
- * {@code startScope}, a bci value.
+ * Another model, {@link LocalVariableInfo}, also models a local variable
+ * entry; it has no dependency on a {@code CodeModel} and represents of bci
+ * values as {@code int}s instead of {@code Label}s, and is used as components
+ * of a {@link LocalVariableTableAttribute}.
  *
  * @apiNote
- * Local variable table entries are used for all local variables in Java source
- * code.  If a local variable has a parameterized type, a type argument, or an
- * array type of one of the previous types, a local variable type table entry is
+ * {@code LocalVariable} is used for all local variables in Java source code.
+ * If a local variable has a parameterized type, a type argument, or an array
+ * type of one of the previous types, a {@link LocalVariableType} should be
  * created for that local variable as well.
  *
- * @see LocalVariableTableAttribute
  * @see LocalVariableInfo
  * @see CodeBuilder#localVariable CodeBuilder::localVariable
+ * @see ClassFile.DebugElementsOption
  * @since 24
  */
 public sealed interface LocalVariable extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariable, BoundLocalVariable {
     /**
      * {@return the local variable slot}
+     * The value is within {@code [0, 65535]}.
      */
     int slot();
 
     /**
      * {@return the local variable name}
-     *
-     * @apiNote
-     * A string value for the name is available through {@link
-     * Utf8Entry#stringValue() name().stringValue()}.
      */
     Utf8Entry name();
 
@@ -133,6 +116,7 @@ public sealed interface LocalVariable extends PseudoInstruction
 
     /**
      * {@return a local variable pseudo-instruction}
+     * {@code slot} must be within {@code [0, 65535]}.
      *
      * @param slot the local variable slot
      * @param nameEntry the local variable name
@@ -148,6 +132,7 @@ public sealed interface LocalVariable extends PseudoInstruction
 
     /**
      * {@return a local variable pseudo-instruction}
+     * {@code slot} must be within {@code [0, 65535]}.
      *
      * @param slot the local variable slot
      * @param name the local variable name

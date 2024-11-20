@@ -29,6 +29,7 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Label;
 import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.util.Optional;
 
@@ -36,26 +37,21 @@ import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 
 /**
  * A pseudo-instruction modeling an entry in the {@code exception_table} array
- * of a {@code Code} attribute.  Catch (JVMS {@jvms 3.12}) and finally (JVMS
- * {@jvms 3.14}) blocks in Java source code compile to exception table entries.
- * Delivered as a {@link CodeElement} when traversing the contents of a {@link
- * CodeModel}.
+ * of a {@link CodeAttribute Code} attribute.  Catch (JVMS {@jvms 3.12}) and
+ * finally (JVMS {@jvms 3.14}) blocks in Java source code compile to exception
+ * table entries.  Delivered as a {@link CodeElement} when traversing the
+ * contents of a {@link CodeModel}.
  * <p>
- * Conceptually, an exception table entry is a record:
+ * An exception table entry can be viewed as a record:
  * {@snippet lang=text :
- * // @link region=0 substring="ExceptionCatch" target="#of(Label, Label, Label, Optional)" :
- * // @link region=1 substring="Label handler" target="#handler" :
- * // @link region=2 substring="Label tryStart" target="#tryStart" :
- * // @link substring="Label tryEnd" target="#tryEnd" :
- * ExceptionCatch(Label handler, Label tryStart, Label tryEnd, Optional<ClassEntry> catchType) // @link substring="Optional<ClassEntry> catchType" target="#catchType"
- * // @end region=0
- * // @end region=1
- * // @end region=2
+ * // @link substring="ExceptionCatch" target="#of(Label, Label, Label, Optional)" :
+ * ExceptionCatch(
+ *     Label handler, // @link substring="handler" target="#handler"
+ *     Label tryStart, // @link substring="tryStart" target="#tryStart"
+ *     Label tryEnd, // @link substring="tryEnd" target="#tryEnd"
+ *     Optional<ClassEntry> catchType // @link substring="catchType" target="#catchType"
+ * )
  * }
- * <p>
- * Physically, an exception table entry has the same structure.  The labels are
- * encoded as {@code u2} bci, and the {@code catchType} is a union of the
- * class entry index or zero for catching all types of throwable.
  *
  * @see CodeBuilder#exceptionCatch CodeBuilder::exceptionCatch
  * @jvms 4.7.3 The {@code Code} Attribute
@@ -79,8 +75,8 @@ public sealed interface ExceptionCatch extends PseudoInstruction
     Label tryEnd();
 
     /**
-     * {@return the type of the exception to catch, or empty if this handler is
-     * unconditional}
+     * {@return the type of the exception to catch, or empty if this handler
+     * catches everything}
      */
     Optional<ClassEntry> catchType();
 
@@ -98,7 +94,7 @@ public sealed interface ExceptionCatch extends PseudoInstruction
     }
 
     /**
-     * {@return an exception table pseudo-instruction for an unconditional handler}
+     * {@return an exception table pseudo-instruction to catch everything}
      * @param handler the handler for the exception
      * @param tryStart the beginning of the instruction range for the guarded instructions
      * @param tryEnd the end of the instruction range for the guarded instructions

@@ -43,10 +43,11 @@ import jdk.internal.classfile.impl.Util;
  * <p>
  * Conceptually, a primitive conversion instruction is a record:
  * {@snippet lang=text :
- * // @link region substring="ConvertInstruction" target="#of(TypeKind, TypeKind)" :
- * // @link substring="TypeKind fromType" target="#fromType" :
- * ConvertInstruction(TypeKind fromType, TypeKind toType) // @link substring="TypeKind toType" target="#toType"
- * // @end
+ * // @link substring="ConvertInstruction" target="#of(TypeKind, TypeKind)" :
+ * ConvertInstruction(
+ *     TypeKind fromType, // @link substring="fromType" target="#fromType"
+ *     TypeKind toType // @link substring="toType" target="#toType"
+ * )
  * }
  * where these conversions are valid:
  * <ul>
@@ -54,15 +55,8 @@ import jdk.internal.classfile.impl.Util;
  * {@code fromType != toType};
  * <li>From {@code int} to {@code byte}, {@code char}, and {@code short}.
  * </ul>
- * <p>
- * Physically, a primitive conversion instruction is a record:
- * {@snippet lang=text :
- * // @link substring="ConvertInstruction" target="#of(Opcode)" :
- * ConvertInstruction(Opcode opcode) // @link substring="Opcode" target="#opcode"
- * }
- * where the {@code Opcode} is of the convert kind.  The {@code fromType} and
- * {@code toType} are intrinsic to the {@code Opcode}.
  *
+ * @see Opcode.Kind#CONVERT
  * @see CodeBuilder#conversion CodeBuilder::conversion
  * @since 24
  */

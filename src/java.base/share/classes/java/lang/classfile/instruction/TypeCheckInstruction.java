@@ -45,21 +45,13 @@ import jdk.internal.classfile.impl.Util;
  * A {@code checkcast} checks the type and throws a {@link ClassCastException} if
  * the check fails.
  * <p>
- * Conceptually, a type check instruction is a record:
+ * A type check instruction can be viewed as a record:
  * {@snippet lang=text :
- * // @link region substring="TypeCheckInstruction" target="#of(Opcode, ClassDesc)"
- * // @link substring="Opcode" target="#opcode" :
- * TypeCheckInstruction(Opcode, ClassDesc) // @link substring="ClassDesc" target="#type"
- * // @end
- * }
- * where the {@code ClassDesc} is not primitive.
- * <p>
- * Physically, a type check instruction is a record:
- * {@snippet lang=text :
- * // @link region substring="TypeCheckInstruction" target="#of(Opcode, ClassEntry)"
- * // @link substring="Opcode" target="#opcode" :
- * TypeCheckInstruction(Opcode, ClassEntry) // @link substring="ClassEntry" target="#type"
- * // @end
+ * // @link substring="TypeCheckInstruction" target="#of(Opcode, ClassEntry)" :
+ * TypeCheckInstruction(
+ *     Opcode opcode, // @link substring="opcode" target="#opcode"
+ *     ClassEntry type // @link substring="type" target="#type"
+ * )
  * }
  *
  * @since 24
@@ -70,10 +62,6 @@ public sealed interface TypeCheckInstruction extends Instruction
 
     /**
      * {@return the type against which the instruction checks}
-     *
-     * @apiNote
-     * A symbolic descriptor for the type checked is available through {@link
-     * ClassEntry#asSymbol() type().asSymbol()}.
      */
     ClassEntry type();
 
@@ -84,7 +72,7 @@ public sealed interface TypeCheckInstruction extends Instruction
      *           which must be of kind {@link Opcode.Kind#TYPE_CHECK}
      * @param type the type against which to check or cast
      * @throws IllegalArgumentException if the opcode kind is not
-     *         {@link Opcode.Kind#TYPE_CHECK}.
+     *         {@link Opcode.Kind#TYPE_CHECK}
      */
     static TypeCheckInstruction of(Opcode op, ClassEntry type) {
         Util.checkKind(op, Opcode.Kind.TYPE_CHECK);
@@ -97,6 +85,8 @@ public sealed interface TypeCheckInstruction extends Instruction
      * @param op the opcode for the specific type of type check instruction,
      *           which must be of kind {@link Opcode.Kind#TYPE_CHECK}
      * @param type the type against which to check or cast
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#TYPE_CHECK}, or if {@code type} is primitive
      */
     static TypeCheckInstruction of(Opcode op, ClassDesc type) {
         return of(op, TemporaryConstantPool.INSTANCE.classEntry(type));

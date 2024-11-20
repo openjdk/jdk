@@ -1644,7 +1644,8 @@ public enum Opcode {
     IINC_W((RawBytecodeHelper.WIDE << 8) | RawBytecodeHelper.IINC, 6, Kind.INCREMENT);
 
     /**
-     * Kinds of opcodes.
+     * Kinds of opcodes.  Each kind of opcode has its own modeling interface
+     * for its instructions.
      *
      * @since 24
      */

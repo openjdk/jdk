@@ -35,36 +35,30 @@ import jdk.internal.classfile.impl.Util;
  * {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#BRANCH}.  Delivered as
  * a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually, a branch instruction is a record:
+ * A branch instruction can be viewed as a record:
  * {@snippet lang=text :
- * // @link region substring="BranchInstruction" target="#of"
- * // @link substring="Opcode" target="#opcode()" :
- * BranchInstruction(Opcode, Label) // @link substring="Label" target="#target()"
- * // @end
+ * // @link substring="BranchInstruction" target="#of":
+ * BranchInstruction(
+ *     Opcode opcode, // @link substring="Opcode" target="#opcode()"
+ *     Label target // @link substring="Label" target="#target()"
+ * )
  * }
- * where the {@code Opcode} is of the branch kind.
  * <p>
- * Physically, a branch instruction has the same structure; however, some types
- * of instructions use a {@code s2} to encode the target, which is insufficient
- * to encode targets with bci offsets less than {@code -32768} or greater than
- * {@code 32767}.  Such instructions have a {@linkplain Opcode#sizeIfFixed()
- * size} of {@code 3} bytes.
- * <p>
- * In such cases, if the {@link ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS
- * FIX_SHORT_JUMPS} option is set, a {@link CodeBuilder} will convert this
- * instruction to other instructions to achieve the same effect.  Otherwise,
- * {@link ClassFile.ShortJumpsOption#FAIL_ON_SHORT_JUMPS FAIL_ON_SHORT_JUMPS}
- * option can ensure the physical accuracy of the generated {@code class} file
- * and fail if an exact representation is not possible.
+ * Due to physical restrictions, some types of instructions cannot encode labels
+ * too far away in the list of code elements.  In such cases, the {@link
+ * ClassFile.ShortJumpsOption} controls how an invalid branch instruction model
+ * is written by a {@link CodeBuilder}.
  *
+ * @see Opcode.Kind#BRANCH
  * @see CodeBuilder#branch CodeBuilder::branch
+ * @see ClassFile.ShortJumpsOption
  * @since 24
  */
 public sealed interface BranchInstruction extends Instruction
         permits AbstractInstruction.BoundBranchInstruction,
                 AbstractInstruction.UnboundBranchInstruction {
     /**
-     * {@return the target of the branch}
+     * {@return the branch target of this instruction}
      */
     Label target();
 
