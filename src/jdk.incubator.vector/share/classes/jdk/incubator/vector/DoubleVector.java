@@ -677,11 +677,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         if (opKind(op, VO_SPECIAL)) {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
-            } else {
-                int opc = opCode(op);
-                if (opc >= VECTOR_OP_TAN && opc <= VECTOR_OP_EXPM1) {
-                    return UN_IMPL.find(op, opc, DoubleVector::unaryOperations).apply(this, null);
-                }
+            } else if (opKind(op, VO_MATHLIB)) {
+                return unaryMathOp(op, null, null);
             }
         }
         int opc = opCode(op);
@@ -707,11 +704,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         if (opKind(op, VO_SPECIAL)) {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
-            } else {
-                int opc = opCode(op);
-                if (opc >= VECTOR_OP_TAN && opc <= VECTOR_OP_EXPM1) {
-                    return UN_IMPL.find(op, opc, DoubleVector::unaryOperations).apply(this, m);
-                }
+            } else if (opKind(op, VO_MATHLIB)) {
+                return unaryMathOp(op, maskClass, m);
             }
         }
         int opc = opCode(op);
@@ -719,6 +713,21 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             opc, getClass(), maskClass, double.class, length(),
             this, m,
             UN_IMPL.find(op, opc, DoubleVector::unaryOperations));
+    }
+
+
+    @ForceInline
+    final
+    DoubleVector unaryMathOp(VectorOperators.Unary op,
+                            Class<? extends VectorMask<Double>> maskClass,
+                            VectorMask<Double> m) {
+        int opc = opCode(op);
+        MemorySegment addr = VectorMathLibrary.lookup(op, opc, species());
+
+        return VectorSupport.libraryUnaryOp(
+                addr.address(), getClass(), maskClass, double.class, length(), // constants
+                this, m,
+                UN_IMPL.find(op, opc, DoubleVector::unaryOperations));
     }
 
     private static final
@@ -790,9 +799,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                 VectorMask<Long> mask
                     = this.viewAsIntegralLanes().compare(EQ, (long) 0);
                 return this.blend(that, mask.cast(vspecies()));
-            } else if (op == ATAN2 || op == POW || op == HYPOT) {
-                int opc = opCode(op);
-                return BIN_IMPL.find(op, opc, DoubleVector::binaryOperations).apply(this, that, null);
+            } else if (opKind(op, VO_MATHLIB)) {
+                return binaryMathOp(op, null, that, null);
             }
         }
 
@@ -827,9 +835,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                 VectorMask<Long> mask
                     = bits.compare(EQ, (long) 0, m.cast(bits.vspecies()));
                 return this.blend(that, mask.cast(vspecies()));
-            } else if (op == ATAN2 || op == POW || op == HYPOT) {
-                int opc = opCode(op);
-                return BIN_IMPL.find(op, opc, DoubleVector::binaryOperations).apply(this, that, m);
+            } else if (opKind(op, VO_MATHLIB)) {
+                return binaryMathOp(op, maskClass, that, m);
             }
         }
 
@@ -838,6 +845,20 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             opc, getClass(), maskClass, double.class, length(),
             this, that, m,
             BIN_IMPL.find(op, opc, DoubleVector::binaryOperations));
+    }
+
+    @ForceInline
+    final
+    DoubleVector binaryMathOp(VectorOperators.Binary op,
+                              Class<? extends VectorMask<Double>> maskClass,
+                              DoubleVector that, VectorMask<Double> m) {
+        int opc = opCode(op);
+        MemorySegment addr = VectorMathLibrary.lookup(op, opc, species());
+
+        return VectorSupport.libraryBinaryOp(
+                addr.address(), getClass(), maskClass, double.class, length(),
+                this, that, m,
+                BIN_IMPL.find(op, opc, DoubleVector::binaryOperations));
     }
 
     private static final
