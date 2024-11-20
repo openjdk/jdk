@@ -461,7 +461,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
            "Cannot transfer (" SIZE_FORMAT ", " SIZE_FORMAT ") more than excess old (" SIZE_FORMAT ")",
            regions_to_xfer, region_size_bytes, excess_old);
     excess_old -= regions_to_xfer * region_size_bytes;
-    log_info(gc, ergo)("%s transferred " SIZE_FORMAT " excess regions to young before start of evacuation",
+    log_debug(gc, ergo)("%s transferred " SIZE_FORMAT " excess regions to young before start of evacuation",
                        result? "Successfully": "Unsuccessfully", regions_to_xfer);
   }
 
@@ -635,7 +635,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // We keep going even if one region is excluded from selection because we need to accumulate all eligible
       // regions that are not preselected into promo_potential
     }
-    log_info(gc)("Preselected " SIZE_FORMAT " regions containing " SIZE_FORMAT " live bytes,"
+    log_debug(gc)("Preselected " SIZE_FORMAT " regions containing " SIZE_FORMAT " live bytes,"
                  " consuming: " SIZE_FORMAT " of budgeted: " SIZE_FORMAT,
                  selected_regions, selected_live, old_consumed, old_available);
   }

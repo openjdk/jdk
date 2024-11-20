@@ -39,7 +39,7 @@ public:
   ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 
   const char* name() const override {
-    return "YOUNG";
+    return "Young";
   }
 
   ShenandoahYoungHeuristics* heuristics() const override {

@@ -86,7 +86,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     // We have unprocessed old collection candidates, but the heuristic has given up on evacuating them.
     // This is most likely because they were _all_ pinned at the time of the last mixed evacuation (and
     // this in turn is most likely because there are just one or two candidate regions remaining).
-    log_debug(gc)("Remaining " UINT32_FORMAT " old regions are being coalesced and filled", unprocessed_old_collection_candidates());
+    log_info(gc, ergo)("Remaining " UINT32_FORMAT " old regions are being coalesced and filled", unprocessed_old_collection_candidates());
     return false;
   }
 
@@ -122,9 +122,9 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   }
 
   size_t remaining_old_evacuation_budget = old_evacuation_budget;
-  log_info(gc)("Choose old regions for mixed collection: old evacuation budget: " SIZE_FORMAT "%s, candidates: %u",
-               byte_size_in_proper_unit(old_evacuation_budget), proper_unit_for_byte_size(old_evacuation_budget),
-               unprocessed_old_collection_candidates());
+  log_debug(gc)("Choose old regions for mixed collection: old evacuation budget: " SIZE_FORMAT "%s, candidates: %u",
+                byte_size_in_proper_unit(old_evacuation_budget), proper_unit_for_byte_size(old_evacuation_budget),
+                unprocessed_old_collection_candidates());
 
   size_t lost_evacuation_capacity = 0;
 
@@ -209,10 +209,8 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   }
   decrease_unprocessed_old_collection_candidates_live_memory(evacuated_old_bytes);
   if (included_old_regions > 0) {
-    log_info(gc)("Old-gen piggyback evac (" UINT32_FORMAT " regions, evacuating " SIZE_FORMAT "%s, reclaiming: " SIZE_FORMAT "%s)",
-                 included_old_regions,
-                 byte_size_in_proper_unit(evacuated_old_bytes), proper_unit_for_byte_size(evacuated_old_bytes),
-                 byte_size_in_proper_unit(collected_old_bytes), proper_unit_for_byte_size(collected_old_bytes));
+    log_info(gc, ergo)("Old-gen piggyback evac (" UINT32_FORMAT " regions, evacuating " PROPERFMT ", reclaiming: " PROPERFMT ")",
+                  included_old_regions, PROPERFMTARGS(evacuated_old_bytes), PROPERFMTARGS(collected_old_bytes));
   }
 
   if (unprocessed_old_collection_candidates() == 0) {
@@ -228,17 +226,17 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     // if they are all pinned we transition to a state that will allow us to make these uncollected
     // (pinned) regions parsable.
     if (all_candidates_are_pinned()) {
-      log_info(gc)("All candidate regions " UINT32_FORMAT " are pinned", unprocessed_old_collection_candidates());
+      log_info(gc, ergo)("All candidate regions " UINT32_FORMAT " are pinned", unprocessed_old_collection_candidates());
       _old_generation->abandon_mixed_evacuations();
     } else {
-      log_info(gc)("No regions selected for mixed collection. "
-                   "Old evacuation budget: " PROPERFMT ", Remaining evacuation budget: " PROPERFMT
-                   ", Lost capacity: " PROPERFMT
-                   ", Next candidate: " UINT32_FORMAT ", Last candidate: " UINT32_FORMAT,
-                   PROPERFMTARGS(old_evacuation_reserve),
-                   PROPERFMTARGS(remaining_old_evacuation_budget),
-                   PROPERFMTARGS(lost_evacuation_capacity),
-                   _next_old_collection_candidate, _last_old_collection_candidate);
+      log_info(gc, ergo)("No regions selected for mixed collection. "
+                         "Old evacuation budget: " PROPERFMT ", Remaining evacuation budget: " PROPERFMT
+                         ", Lost capacity: " PROPERFMT
+                         ", Next candidate: " UINT32_FORMAT ", Last candidate: " UINT32_FORMAT,
+                         PROPERFMTARGS(old_evacuation_reserve),
+                         PROPERFMTARGS(remaining_old_evacuation_budget),
+                         PROPERFMTARGS(lost_evacuation_capacity),
+                         _next_old_collection_candidate, _last_old_collection_candidate);
     }
   }
 
@@ -468,12 +466,12 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   const size_t mixed_evac_live = old_candidates * region_size_bytes - (candidates_garbage + unfragmented);
   set_unprocessed_old_collection_candidates_live_memory(mixed_evac_live);
 
-  log_info(gc)("Old-Gen Collectable Garbage: " PROPERFMT " consolidated with free: " PROPERFMT ", over " SIZE_FORMAT " regions",
-               PROPERFMTARGS(collectable_garbage), PROPERFMTARGS(unfragmented), old_candidates);
-  log_info(gc)("Old-Gen Immediate Garbage: " PROPERFMT " over " SIZE_FORMAT " regions",
-              PROPERFMTARGS(immediate_garbage), immediate_regions);
-  log_info(gc)("Old regions selected for defragmentation: " SIZE_FORMAT, defrag_count);
-  log_info(gc)("Old regions not selected: " SIZE_FORMAT, total_uncollected_old_regions);
+  log_info(gc, ergo)("Old-Gen Collectable Garbage: " PROPERFMT " consolidated with free: " PROPERFMT ", over " SIZE_FORMAT " regions",
+                     PROPERFMTARGS(collectable_garbage), PROPERFMTARGS(unfragmented), old_candidates);
+  log_info(gc, ergo)("Old-Gen Immediate Garbage: " PROPERFMT " over " SIZE_FORMAT " regions",
+                     PROPERFMTARGS(immediate_garbage), immediate_regions);
+  log_info(gc, ergo)("Old regions selected for defragmentation: " SIZE_FORMAT, defrag_count);
+  log_info(gc, ergo)("Old regions not selected: " SIZE_FORMAT, total_uncollected_old_regions);
 
   if (unprocessed_old_collection_candidates() > 0) {
     _old_generation->transition_to(ShenandoahOldGeneration::EVACUATING);
@@ -637,7 +635,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     const size_t old_gen_capacity = _old_generation->max_capacity();
     const size_t heap_capacity = heap->capacity();
     const double percent = percent_of(old_gen_capacity, heap_capacity);
-    log_info(gc)("Trigger (OLD): Expansion failure, current size: " SIZE_FORMAT "%s which is %.1f%% of total heap size",
+    log_trigger("Expansion failure, current size: " SIZE_FORMAT "%s which is %.1f%% of total heap size",
                  byte_size_in_proper_unit(old_gen_capacity), proper_unit_for_byte_size(old_gen_capacity), percent);
     return true;
   }
@@ -656,11 +654,11 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     const size_t span_of_old_regions = (last_old_region >= first_old_region)? last_old_region + 1 - first_old_region: 0;
     const size_t fragmented_free = used_regions_size - used;
 
-    log_info(gc)("Trigger (OLD): Old has become fragmented: "
-                 SIZE_FORMAT "%s available bytes spread between range spanned from "
-                 SIZE_FORMAT " to " SIZE_FORMAT " (" SIZE_FORMAT "), density: %.1f%%",
-                 byte_size_in_proper_unit(fragmented_free), proper_unit_for_byte_size(fragmented_free),
-                 first_old_region, last_old_region, span_of_old_regions, density * 100);
+    log_trigger("Old has become fragmented: "
+                SIZE_FORMAT "%s available bytes spread between range spanned from "
+                SIZE_FORMAT " to " SIZE_FORMAT " (" SIZE_FORMAT "), density: %.1f%%",
+                byte_size_in_proper_unit(fragmented_free), proper_unit_for_byte_size(fragmented_free),
+                first_old_region, last_old_region, span_of_old_regions, density * 100);
     return true;
   }
 
@@ -675,7 +673,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     if ((current_usage < ignore_threshold) &&
         ((consecutive_young_cycles = heap->shenandoah_policy()->consecutive_young_gc_count())
          < ShenandoahDoNotIgnoreGrowthAfterYoungCycles)) {
-      log_debug(gc)("Ignoring Trigger (OLD): Old has overgrown: usage (" SIZE_FORMAT "%s) is below threshold ("
+      log_debug(gc)("Ignoring Trigger: Old has overgrown: usage (" SIZE_FORMAT "%s) is below threshold ("
                     SIZE_FORMAT "%s) after " SIZE_FORMAT " consecutive completed young GCs",
                     byte_size_in_proper_unit(current_usage), proper_unit_for_byte_size(current_usage),
                     byte_size_in_proper_unit(ignore_threshold), proper_unit_for_byte_size(ignore_threshold),
@@ -684,10 +682,10 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     } else if (current_usage > trigger_threshold) {
       const size_t live_at_previous_old = _old_generation->get_live_bytes_after_last_mark();
       const double percent_growth = percent_of(current_usage - live_at_previous_old, live_at_previous_old);
-      log_info(gc)("Trigger (OLD): Old has overgrown, live at end of previous OLD marking: "
-                   SIZE_FORMAT "%s, current usage: " SIZE_FORMAT "%s, percent growth: %.1f%%",
-                   byte_size_in_proper_unit(live_at_previous_old), proper_unit_for_byte_size(live_at_previous_old),
-                   byte_size_in_proper_unit(current_usage), proper_unit_for_byte_size(current_usage), percent_growth);
+      log_trigger("Old has overgrown, live at end of previous OLD marking: "
+                  SIZE_FORMAT "%s, current usage: " SIZE_FORMAT "%s, percent growth: %.1f%%",
+                  byte_size_in_proper_unit(live_at_previous_old), proper_unit_for_byte_size(live_at_previous_old),
+                  byte_size_in_proper_unit(current_usage), proper_unit_for_byte_size(current_usage), percent_growth);
       return true;
     } else {
       // Mixed evacuations have decreased current_usage such that old-growth trigger is no longer relevant.

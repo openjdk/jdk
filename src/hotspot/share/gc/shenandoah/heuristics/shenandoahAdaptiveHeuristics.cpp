@@ -142,8 +142,7 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   if (available_sd > 0) {
     double available_avg = _available.avg();
     z_score = (double(available) - available_avg) / available_sd;
-    log_debug(gc, ergo)("%s Available: " SIZE_FORMAT " %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
-                        _space_info->name(),
+    log_debug(gc, ergo)("Available: " SIZE_FORMAT " %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
                         byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                         z_score,
                         byte_size_in_proper_unit(available_avg), proper_unit_for_byte_size(available_avg),
@@ -238,9 +237,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t available = _space_info->soft_available();
   size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
-  log_debug(gc)("should_start_gc (%s)? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT
-                ", allocated: " SIZE_FORMAT,
-                _space_info->name(), available, capacity, allocated);
+  log_debug(gc)("should_start_gc? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT
+                ", allocated: " SIZE_FORMAT, available, capacity, allocated);
 
   // Track allocation rate even if we decide to start a cycle for other reasons.
   double rate = _allocation_rate.sample(allocated);
@@ -248,7 +246,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   size_t min_threshold = min_free_threshold();
   if (available < min_threshold) {
-    log_info(gc)("Trigger (%s): Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)", _space_info->name(),
+    log_trigger("Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
                  byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
     return true;
@@ -259,8 +257,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   if (_gc_times_learned < max_learn) {
     size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;
     if (available < init_threshold) {
-      log_info(gc)("Trigger (%s): Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
-                   _space_info->name(), _gc_times_learned + 1, max_learn,
+      log_trigger("Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
+                   _gc_times_learned + 1, max_learn,
                    byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                    byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
       return true;
@@ -280,13 +278,12 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
   double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
 
-  log_debug(gc)("%s: average GC time: %.2f ms, allocation rate: %.0f %s/s",
-                _space_info->name(),
+  log_debug(gc)("average GC time: %.2f ms, allocation rate: %.0f %s/s",
           avg_cycle_time * 1000, byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
   if (avg_cycle_time * avg_alloc_rate > allocation_headroom) {
-    log_info(gc)("Trigger (%s): Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
+    log_trigger("Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
                  " to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
-                 _space_info->name(), avg_cycle_time * 1000,
+                 avg_cycle_time * 1000,
                  byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _margin_of_error_sd);
@@ -301,8 +298,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   bool is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
   if (is_spiking && avg_cycle_time > allocation_headroom / rate) {
-    log_info(gc)("Trigger (%s): Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
-                 _space_info->name(), avg_cycle_time * 1000,
+    log_trigger("Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
+                 avg_cycle_time * 1000,
                  byte_size_in_proper_unit(rate), proper_unit_for_byte_size(rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _spike_threshold_sd);

@@ -360,7 +360,7 @@ void ShenandoahConcurrentGC::entry_reset() {
   }
 
   if (_do_old_gc_bootstrap) {
-    static const char* msg = "Concurrent reset (OLD)";
+    static const char* msg = "Concurrent reset (Old)";
     ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset_old);
     ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
                                 ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),

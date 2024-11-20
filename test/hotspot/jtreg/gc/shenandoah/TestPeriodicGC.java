@@ -47,10 +47,10 @@ public class TestPeriodicGC {
 
         output.shouldHaveExitValue(0);
         if (periodic) {
-            output.shouldContain("Trigger (GLOBAL): Time since last GC");
+            output.shouldContain("Trigger: Time since last GC");
         }
         if (!periodic) {
-            output.shouldNotContain("Trigger (GLOBAL): Time since last GC");
+            output.shouldNotContain("Trigger: Time since last GC");
         }
     }
 
@@ -63,11 +63,11 @@ public class TestPeriodicGC {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         if (periodic) {
-            output.shouldContain("Trigger (YOUNG): Time since last GC");
-            output.shouldContain("Trigger (OLD): Time since last GC");
+            output.shouldContain("Trigger (Young): Time since last GC");
+            output.shouldContain("Trigger (Old): Time since last GC");
         } else {
-            output.shouldNotContain("Trigger (YOUNG): Time since last GC");
-            output.shouldNotContain("Trigger (OLD): Time since last GC");
+            output.shouldNotContain("Trigger (Young): Time since last GC");
+            output.shouldNotContain("Trigger (Old): Time since last GC");
         }
     }
 

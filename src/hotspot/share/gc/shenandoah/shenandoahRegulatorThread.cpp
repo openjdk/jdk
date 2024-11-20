@@ -55,7 +55,7 @@ void ShenandoahRegulatorThread::run_service() {
     regulate_young_and_global_cycles();
   }
 
-  log_info(gc)("%s: Done.", name());
+  log_debug(gc)("%s: Done.", name());
 }
 
 void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
@@ -64,22 +64,22 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
     if (mode == ShenandoahGenerationalControlThread::none) {
       if (should_start_metaspace_gc()) {
         if (request_concurrent_gc(GLOBAL)) {
-          log_info(gc)("Heuristics request for global (unload classes) accepted.");
+          log_debug(gc)("Heuristics request for global (unload classes) accepted.");
         }
       } else {
         if (_young_heuristics->should_start_gc()) {
           // Give the old generation a chance to run. The old generation cycle
           // begins with a 'bootstrap' cycle that will also collect young.
           if (start_old_cycle()) {
-            log_info(gc)("Heuristics request for old collection accepted");
+            log_debug(gc)("Heuristics request for old collection accepted");
           } else if (request_concurrent_gc(YOUNG)) {
-            log_info(gc)("Heuristics request for young collection accepted");
+            log_debug(gc)("Heuristics request for young collection accepted");
           }
         }
       }
     } else if (mode == ShenandoahGenerationalControlThread::servicing_old) {
       if (start_young_cycle()) {
-        log_info(gc)("Heuristics request to interrupt old for young collection accepted");
+        log_debug(gc)("Heuristics request to interrupt old for young collection accepted");
       }
     }
 
@@ -92,9 +92,9 @@ void ShenandoahRegulatorThread::regulate_young_and_global_cycles() {
   while (!should_terminate()) {
     if (_control_thread->gc_mode() == ShenandoahGenerationalControlThread::none) {
       if (start_global_cycle()) {
-        log_info(gc)("Heuristics request for global collection accepted.");
+        log_debug(gc)("Heuristics request for global collection accepted.");
       } else if (start_young_cycle()) {
-        log_info(gc)("Heuristics request for young collection accepted.");
+        log_debug(gc)("Heuristics request for young collection accepted.");
       }
     }
 
@@ -150,7 +150,7 @@ bool ShenandoahRegulatorThread::request_concurrent_gc(ShenandoahGenerationType g
 }
 
 void ShenandoahRegulatorThread::stop_service() {
-  log_info(gc)("%s: Stop requested.", name());
+  log_debug(gc)("%s: Stop requested.", name());
 }
 
 bool ShenandoahRegulatorThread::should_start_metaspace_gc() {
@@ -162,4 +162,3 @@ bool ShenandoahRegulatorThread::should_start_metaspace_gc() {
       && _global_heuristics->can_unload_classes()
       && _global_heuristics->has_metaspace_oom();
 }
-
