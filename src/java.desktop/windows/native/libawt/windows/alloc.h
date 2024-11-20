@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ void handle_bad_alloc(void);
     void *safe_Malloc_outofmem(size_t size, const char *, int);
     void *safe_Calloc_outofmem(size_t num, size_t size, const char *, int);
     void *safe_Realloc_outofmem(void *memblock, size_t size, const char *, int);
-    void * CDECL operator new(size_t size, const char *, int);
+    void * operator new(size_t size, const char *, int);
 
     #define safe_Malloc(size) \
         safe_Malloc_outofmem(size, __FILE__, __LINE__)

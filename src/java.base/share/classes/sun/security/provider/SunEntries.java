@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,6 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  * - PKIX is the certification path validation algorithm described
  *   in RFC 5280. The ValidationAlgorithm attribute notes the
  *   specification that this provider implements.
- *
- * - JavaPolicy is the default file-based Policy type.
  *
  * - JavaLoginConfig is the default file-based LoginModule Configuration type.
  */
@@ -280,11 +278,6 @@ public final class SunEntries {
         add(p, "CertStore", "com.sun.security.IndexedCollection",
                 "sun.security.provider.certpath.IndexedCollectionCertStore",
                 attrs);
-
-        /*
-         * Policy
-         */
-        add(p, "Policy", "JavaPolicy", "sun.security.provider.PolicySpiFile");
 
         /*
          * Configuration

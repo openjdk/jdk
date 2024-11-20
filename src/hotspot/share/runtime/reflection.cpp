@@ -448,12 +448,6 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
       is_same_class_package(current_class, new_class)) {
     return ACCESS_OK;
   }
-  // Allow all accesses from jdk/internal/reflect/SerializationConstructorAccessorImpl subclasses to
-  // succeed trivially.
-  if (vmClasses::reflect_SerializationConstructorAccessorImpl_klass_is_loaded() &&
-      current_class->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
-    return ACCESS_OK;
-  }
 
   // module boundaries
   if (new_class->is_public()) {
@@ -656,12 +650,6 @@ bool Reflection::verify_member_access(const Klass* current_class,
         return true;
       }
     }
-  }
-
-  // Allow all accesses from jdk/internal/reflect/SerializationConstructorAccessorImpl subclasses to
-  // succeed trivially.
-  if (current_class->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
-    return true;
   }
 
   // Check for special relaxations

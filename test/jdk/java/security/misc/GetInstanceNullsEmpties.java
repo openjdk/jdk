@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,8 @@ import java.util.Arrays;
  */
 public class GetInstanceNullsEmpties {
 
-    private static final Provider SUN = Security.getProvider("SUN");
+    private static final String providerName = System.getProperty("test.provider.name", "SUN");
+    private static final Provider provider = Security.getProvider(providerName);
 
     /*
      * See if there are more than "expected" number of getInstance() methods,
@@ -168,14 +169,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -190,14 +191,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -212,14 +213,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -234,14 +235,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -257,14 +258,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "", csp);
 
         m = getInstance(clazz, STRING, CertStoreParameters.class, STRING);
-        run(m, NullPointerException.class, null, csp, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", csp, "SUN");
+        run(m, NullPointerException.class, null, csp, providerName);
+        run(m, NoSuchAlgorithmException.class, "", csp, providerName);
         run(m, IllegalArgumentException.class, "FOO", csp, null);
         run(m, IllegalArgumentException.class, "FOO", csp, "");
 
         m = getInstance(clazz, STRING, CertStoreParameters.class, PROVIDER);
-        run(m, NullPointerException.class, null, csp, SUN);
-        run(m, NoSuchAlgorithmException.class, "", csp, SUN);
+        run(m, NullPointerException.class, null, csp, provider);
+        run(m, NoSuchAlgorithmException.class, "", csp, provider);
         run(m, IllegalArgumentException.class, "FOO", csp, null);
     }
 
@@ -279,14 +280,14 @@ public class GetInstanceNullsEmpties {
         run(m, CertificateException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, CertificateException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, CertificateException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, CertificateException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, CertificateException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -305,14 +306,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NoSuchAlgorithmException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NoSuchAlgorithmException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NoSuchAlgorithmException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NoSuchAlgorithmException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -329,15 +330,15 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "", cp);
 
         m = getInstance(clazz, STRING, Configuration.Parameters.class, STRING);
-        run(m, NullPointerException.class, null, cp, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", cp, "SUN");
+        run(m, NullPointerException.class, null, cp, providerName);
+        run(m, NoSuchAlgorithmException.class, "", cp, providerName);
         run(m, IllegalArgumentException.class, "FOO", cp, null);
         run(m, IllegalArgumentException.class, "FOO", cp, "");
 
         m = getInstance(clazz, STRING, Configuration.Parameters.class,
                 PROVIDER);
-        run(m, NullPointerException.class, null, cp, SUN);
-        run(m, NoSuchAlgorithmException.class, "", cp, SUN);
+        run(m, NullPointerException.class, null, cp, provider);
+        run(m, NoSuchAlgorithmException.class, "", cp, provider);
         run(m, IllegalArgumentException.class, "FOO", cp, null);
     }
 
@@ -352,14 +353,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -374,14 +375,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -396,14 +397,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -418,14 +419,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -440,14 +441,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -462,14 +463,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -488,14 +489,14 @@ public class GetInstanceNullsEmpties {
         run(m, KeyStoreException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, KeyStoreException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, KeyStoreException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, KeyStoreException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, KeyStoreException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -510,14 +511,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -532,14 +533,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -556,14 +557,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "", pp);
 
         m = getInstance(clazz, STRING, Policy.Parameters.class, STRING);
-        run(m, NullPointerException.class, null, pp, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", pp, "SUN");
+        run(m, NullPointerException.class, null, pp, providerName);
+        run(m, NoSuchAlgorithmException.class, "", pp, providerName);
         run(m, IllegalArgumentException.class, "FOO", pp, null);
         run(m, IllegalArgumentException.class, "FOO", pp, "");
 
         m = getInstance(clazz, STRING, Policy.Parameters.class, PROVIDER);
-        run(m, NullPointerException.class, null, pp, SUN);
-        run(m, NoSuchAlgorithmException.class, "", pp, SUN);
+        run(m, NullPointerException.class, null, pp, provider);
+        run(m, NoSuchAlgorithmException.class, "", pp, provider);
         run(m, IllegalArgumentException.class, "FOO", pp, null);
     }
 
@@ -578,14 +579,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -600,14 +601,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -624,14 +625,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
 
         m = getInstance(clazz, STRING, SecureRandomParameters.class);
@@ -639,14 +640,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "", srp);
 
         m = getInstance(clazz, STRING, SecureRandomParameters.class, STRING);
-        run(m, NullPointerException.class, null, srp, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", srp, "SUN");
+        run(m, NullPointerException.class, null, srp, providerName);
+        run(m, NoSuchAlgorithmException.class, "", srp, providerName);
         run(m, IllegalArgumentException.class, "FOO", srp, null);
         run(m, IllegalArgumentException.class, "FOO", srp, "");
 
         m = getInstance(clazz, STRING, SecureRandomParameters.class, PROVIDER);
-        run(m, NullPointerException.class, null, srp, SUN);
-        run(m, NoSuchAlgorithmException.class, "", srp, SUN);
+        run(m, NullPointerException.class, null, srp, provider);
+        run(m, NoSuchAlgorithmException.class, "", srp, provider);
         run(m, IllegalArgumentException.class, "FOO", srp, null);
     }
 
@@ -661,14 +662,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 
@@ -683,14 +684,14 @@ public class GetInstanceNullsEmpties {
         run(m, NoSuchAlgorithmException.class, "");
 
         m = getInstance(clazz, STRING, STRING);
-        run(m, NullPointerException.class, null, "SUN");
-        run(m, NoSuchAlgorithmException.class, "", "SUN");
+        run(m, NullPointerException.class, null, providerName);
+        run(m, NoSuchAlgorithmException.class, "", providerName);
         run(m, IllegalArgumentException.class, "FOO", null);
         run(m, IllegalArgumentException.class, "FOO", "");
 
         m = getInstance(clazz, STRING, PROVIDER);
-        run(m, NullPointerException.class, null, SUN);
-        run(m, NoSuchAlgorithmException.class, "", SUN);
+        run(m, NullPointerException.class, null, provider);
+        run(m, NoSuchAlgorithmException.class, "", provider);
         run(m, IllegalArgumentException.class, "FOO", null);
     }
 }

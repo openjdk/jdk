@@ -166,7 +166,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
   iterate(fingerprint);
 
   // return result handler
-  __ la(x10, ExternalAddress(Interpreter::result_handler(method()->result_type())));
+  __ movptr(x10, ExternalAddress(Interpreter::result_handler(method()->result_type())));
   __ ret();
 
   __ flush();

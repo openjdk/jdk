@@ -78,6 +78,13 @@ public class NotifyFramePopStressTest {
         log("control has started");
         while (!done) {
             suspend(thread);
+            if (done) {
+                // Double check after suspending the thread. We don't want to do the notify
+                // if the main thread thinks it is done. An untimely notify during the
+                // join() call will result in a deadlock.
+                resume(thread);
+                break;
+            }
             if (notifyFramePop(thread)) {
                 notifyCount++;
                 log("control incremented notifyCount to " + notifyCount);

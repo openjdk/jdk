@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.ExceptionsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -42,8 +43,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeName;
@@ -65,8 +67,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 /*non-public*/
 abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesData> {
 
-    private static final ClassDesc CD_LambdaForm = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
-    private static final ClassDesc CD_BoundMethodHandle = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/BoundMethodHandle;");
+    private static final ClassDesc CD_LambdaForm = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
+    private static final ClassDesc CD_BoundMethodHandle = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/BoundMethodHandle;");
+    private static final RuntimeVisibleAnnotationsAttribute STABLE_ANNOTATION = RuntimeVisibleAnnotationsAttribute.of(
+            Annotation.of(ConstantUtils.referenceClassDesc(Stable.class))
+    );
 
     private final Class<T> topClass;
     private final Class<K> keyType;
@@ -614,7 +619,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         byte[] generateConcreteSpeciesCodeFile(String className0, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
             final ClassDesc classDesc = ClassDesc.of(className0);
             final ClassDesc superClassDesc = classDesc(speciesData.deriveSuperClass());
-            return ClassFile.of().build(classDesc, new Consumer<ClassBuilder>() {
+            return ClassFile.of().build(classDesc, new Consumer<>() {
                 @Override
                 public void accept(ClassBuilder clb) {
                     clb.withFlags(ACC_FINAL | ACC_SUPER)
@@ -622,7 +627,13 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                        .with(SourceFileAttribute.of(classDesc.displayName()))
 
                     // emit static types and BMH_SPECIES fields
-                       .withField(sdFieldName, CD_SPECIES_DATA, ACC_STATIC);
+                       .withField(sdFieldName, CD_SPECIES_DATA, new Consumer<>() {
+                           @Override
+                           public void accept(FieldBuilder fb) {
+                               fb.withFlags(ACC_STATIC)
+                                 .with(STABLE_ANNOTATION);
+                           }
+                       });
 
                     // handy holder for dealing with groups of typed values (ctor arguments and fields)
                     class Var {
@@ -974,7 +985,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
              : cls == MethodType.class ? CD_MethodType
              : cls == LambdaForm.class ? CD_LambdaForm
              : cls == BoundMethodHandle.class ? CD_BoundMethodHandle
-             : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
+             : ConstantUtils.referenceClassDesc(cls.descriptorString());
     }
 
     static MethodTypeDesc methodDesc(MethodType mt) {

@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
-@Fork(value = 2, jvmArgsAppend = "--add-opens=java.base/java.net=ALL-UNNAMED")
+@Fork(value = 2, jvmArgs = "--add-opens=java.base/java.net=ALL-UNNAMED")
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 public class NetworkInterfaceLookup {

@@ -758,15 +758,14 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
     __ la(c_rarg0, stub->ref_addr());
 
     if (stub->is_native()) {
-      __ la(t1, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr()));
+      __ rt_call(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr());
     } else if (stub->is_atomic()) {
-      __ la(t1, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr()));
+      __ rt_call(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr());
     } else if (stub->is_nokeepalive()) {
-      __ la(t1, RuntimeAddress(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr()));
+      __ rt_call(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr());
     } else {
-      __ la(t1, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr()));
+      __ rt_call(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
     }
-    __ jalr(t1);
   }
 
   // Stub exit

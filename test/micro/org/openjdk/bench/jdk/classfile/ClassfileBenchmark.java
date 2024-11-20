@@ -50,7 +50,7 @@ import org.openjdk.jmh.infra.Blackhole;
  */
 @Warmup(iterations = 3)
 @Measurement(iterations = 5)
-@Fork(value = 1, jvmArgsAppend = {
+@Fork(value = 1, jvmArgs = {
         "--enable-preview"})
 
 @State(Scope.Benchmark)

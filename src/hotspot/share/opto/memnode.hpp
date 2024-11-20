@@ -541,6 +541,12 @@ public:
 
 //------------------------------LoadNKlassNode---------------------------------
 // Load a narrow Klass from an object.
+// With compact headers, the input address (adr) does not point at the exact
+// header position where the (narrow) class pointer is located, but into the
+// middle of the mark word (see oopDesc::klass_offset_in_bytes()). This node
+// implicitly shifts the loaded value (markWord::klass_shift_at_offset bits) to
+// extract the actual class pointer. C2's type system is agnostic on whether the
+// input address directly points into the class pointer.
 class LoadNKlassNode : public LoadNNode {
 public:
   LoadNKlassNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeNarrowKlass *tk, MemOrd mo)

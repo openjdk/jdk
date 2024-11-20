@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ public class InheritDocTaglet extends BaseTaglet {
                     d = docFinder.search(src, m -> extractMainDescription(m, isFirstSentence, utils));
                 }
                 if (d instanceof Result.Conclude<Documentation> doc) {
-                    replacement = writer.commentTagsToOutput(doc.value().method, null,
+                    replacement = writer.commentTagsToOutput(doc.value().method, inheritDoc,
                             doc.value().mainDescription, isFirstSentence);
                 }
             } catch (DocFinder.NoOverriddenMethodFound e) {

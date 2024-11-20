@@ -482,7 +482,6 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                 if (nl >= 0) {
                     // break up newlines
                     if (nl == 0) {
-                        @SuppressWarnings("serial") // anonymous class
                                 JPanel breakPanel = new JPanel() {
                             public Dimension getPreferredSize() {
                                 Font f = getFont();

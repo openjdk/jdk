@@ -32,17 +32,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This class is used to protect Kerberos services and the
- * credentials necessary to access those services. There is a one to
- * one mapping of a service principal and the credentials necessary
- * to access the service. Therefore, granting access to a service
- * principal implicitly grants access to the credential necessary to
- * establish a security context with the service principal. This
- * applies regardless of whether the credentials are in a cache
- * or acquired via an exchange with the KDC. The credential can
- * be either a ticket granting ticket, a service ticket or a secret
- * key from a key table.
- * <p>
  * A ServicePermission contains a service principal name and
  * a list of actions which specify the context the credential can be
  * used within.
@@ -52,16 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * the KerberosPrincipal represents a Kerberos service
  * principal. This name is treated in a case sensitive manner.
  * An asterisk may appear by itself, to signify any service principal.
- * <p>
- * Granting this permission implies that the caller can use a cached
- * credential (TGT, service ticket or secret key) within the context
- * designated by the action. In the case of the TGT, granting this
- * permission also implies that the TGT can be obtained by an
- * Authentication Service exchange.
- * <p>
- * Granting this permission also implies creating {@link KerberosPrincipal}
- * or {@link org.ietf.jgss.GSSName GSSName} without providing a Kerberos
- * realm, as long as the permission's service principal is in this realm.
  * <p>
  * The possible actions are:
  *
@@ -75,26 +54,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *                            principal.
  * </pre>
  *
- * For example, to specify the permission to access to the TGT to
- * initiate a security context the permission is constructed as follows:
- *
- * <pre>
- *     ServicePermission("krbtgt/EXAMPLE.COM@EXAMPLE.COM", "initiate");
- * </pre>
- * <p>
- * To obtain a service ticket to initiate a context with the "host"
- * service the permission is constructed as follows:
- * <pre>
- *     ServicePermission("host/foo.example.com@EXAMPLE.COM", "initiate");
- * </pre>
- * <p>
- * For a Kerberized server the action is "accept". For example, the permission
- * necessary to access and use the secret key of the  Kerberized "host"
- * service (telnet and the likes)  would be constructed as follows:
- *
- * <pre>
- *     ServicePermission("host/foo.example.com@EXAMPLE.COM", "accept");
- * </pre>
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @since 1.4
  */

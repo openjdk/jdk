@@ -50,12 +50,12 @@ static void asm_check(const uint8_t *insns, const uint8_t *insns1, const unsigne
     if (std::memcmp(&insns[cur_idx], &insns1[cur_idx], insn_len) != 0) {
       stringStream ss;
       ss.print("%s\n", insn);
-      ss.print("Ours:   ");
+      ss.print("OpenJDK:       ");
       for (size_t j = 0; j < insn_len; j++) {
         ss.print("%02x ", (uint8_t)insns[cur_idx + j]);
       }
       ss.print_cr("");
-      ss.print("Theirs: ");
+      ss.print("GNU Assembler: ");
       for (size_t j = 0; j < insn_len; j++) {
         ss.print("%02x ", (uint8_t)insns1[cur_idx + j]);
       }
@@ -66,7 +66,11 @@ static void asm_check(const uint8_t *insns, const uint8_t *insns1, const unsigne
 }
 
 TEST_VM(AssemblerX86, validate) {
+  UseAVX = 3;
   FlagSetting flag_change_apx(UseAPX, true);
+  VM_Version::set_bmi_cpuFeatures();
+  VM_Version::set_evex_cpuFeatures();
+  VM_Version::set_avx_cpuFeatures();
   VM_Version::set_apx_cpuFeatures();
   BufferBlob* b = BufferBlob::create("x64Test", 500000);
   CodeBuffer code(b);
@@ -74,7 +78,8 @@ TEST_VM(AssemblerX86, validate) {
   address entry = __ pc();
 
   // To build asmtest.out.h, ensure you have binutils version 2.34 or higher, then run:
-  // python3 x86-asmtest.py | expand > asmtest.out.h
+  // python3 x86-asmtest.py | expand > asmtest.out.h to generate tests with random inputs
+  // python3 x86-asmtest.py --full | expand > asmtest.out.h to generate tests with all possible inputs
 #include "asmtest.out.h"
 
   asm_check((const uint8_t *)entry, (const uint8_t *)insns, insns_lens, insns_strs, sizeof(insns_lens) / sizeof(insns_lens[0]));

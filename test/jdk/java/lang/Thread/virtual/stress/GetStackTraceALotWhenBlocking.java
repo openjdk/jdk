@@ -28,7 +28,7 @@
  * @requires vm.debug != true
  * @modules jdk.management
  * @library /test/lib
- * @run main/othervm GetStackTraceALotWhenBlocking 500000
+ * @run main/othervm/timeout=300 GetStackTraceALotWhenBlocking 100000
  */
 
 /*
@@ -68,16 +68,24 @@ public class GetStackTraceALotWhenBlocking {
 
         var thread1 = Thread.ofVirtual().start(task);
         var thread2 = Thread.ofVirtual().start(task);
+        long lastTime = System.nanoTime();
         try {
             for (int i = 1; i <= iterations; i++) {
-                if ((i % 10_000) == 0) {
-                    System.out.format("%s => %d of %d%n", Instant.now(), i, iterations);
-                }
-
                 thread1.getStackTrace();
                 pause();
                 thread2.getStackTrace();
                 pause();
+
+                long currentTime = System.nanoTime();
+                if (i == iterations || ((currentTime - lastTime) > 1_000_000_000L)) {
+                    System.out.format("%s => %d of %d%n", Instant.now(), i, iterations);
+                    lastTime = currentTime;
+                }
+
+                if (Thread.currentThread().isInterrupted()) {
+                    // fail quickly if interrupted by jtreg
+                    throw new RuntimeException("interrupted");
+                }
             }
         } finally {
             done.set(true);

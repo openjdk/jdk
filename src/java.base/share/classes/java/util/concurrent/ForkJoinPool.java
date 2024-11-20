@@ -51,6 +51,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaUtilConcurrentFJPAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
@@ -158,10 +159,6 @@ import jdk.internal.vm.SharedThreadContainer;
  * If no thread factory is supplied via a system property, then the
  * common pool uses a factory that uses the system class loader as the
  * {@linkplain Thread#getContextClassLoader() thread context class loader}.
- * In addition, if a {@link SecurityManager} is present, then
- * the common pool uses a factory supplying threads that have no
- * {@link Permissions} enabled, and are not guaranteed to preserve
- * the values of {@link java.lang.ThreadLocal} variables across tasks.
  *
  * Upon any error in establishing these settings, default parameters
  * are used. It is possible to disable or limit the use of threads in
@@ -2632,7 +2629,7 @@ public class ForkJoinPool extends AbstractExecutorService {
 
     private void poolSubmit(boolean signalIfEmpty, ForkJoinTask<?> task) {
         Thread t; ForkJoinWorkerThread wt; WorkQueue q; boolean internal;
-        if (((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) &&
+        if (((t = JLA.currentCarrierThread()) instanceof ForkJoinWorkerThread) &&
             (wt = (ForkJoinWorkerThread)t).pool == this) {
             internal = true;
             q = wt.workQueue;
@@ -2643,6 +2640,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
         q.push(task, signalIfEmpty ? this : null, internal);
     }
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * Returns queue for an external submission, bypassing call to
@@ -2847,11 +2845,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * other parameters (see {@link #ForkJoinPool(int,
      * ForkJoinWorkerThreadFactory, UncaughtExceptionHandler, boolean,
      * int, int, int, Predicate, long, TimeUnit)}).
-     *
-     * @throws SecurityException if a security manager exists and
-     *         the caller is not permitted to modify threads
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")}
      */
     public ForkJoinPool() {
         this(Math.min(MAX_CAP, Runtime.getRuntime().availableProcessors()),
@@ -2869,10 +2862,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param parallelism the parallelism level
      * @throws IllegalArgumentException if parallelism less than or
      *         equal to zero, or greater than implementation limit
-     * @throws SecurityException if a security manager exists and
-     *         the caller is not permitted to modify threads
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")}
      */
     public ForkJoinPool(int parallelism) {
         this(parallelism, defaultForkJoinWorkerThreadFactory, null, false,
@@ -2901,10 +2890,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @throws IllegalArgumentException if parallelism less than or
      *         equal to zero, or greater than implementation limit
      * @throws NullPointerException if the factory is null
-     * @throws SecurityException if a security manager exists and
-     *         the caller is not permitted to modify threads
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")}
      */
     public ForkJoinPool(int parallelism,
                         ForkJoinWorkerThreadFactory factory,
@@ -2986,10 +2971,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      *         or if maximumPoolSize is less than parallelism,
      *         of if the keepAliveTime is less than or equal to zero.
      * @throws NullPointerException if the factory is null
-     * @throws SecurityException if a security manager exists and
-     *         the caller is not permitted to modify threads
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")}
      * @since 9
      */
     public ForkJoinPool(int parallelism,
@@ -3283,10 +3264,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      *         #commonPool()} and parallelism level was set by System
      *         property {@systemProperty
      *         java.util.concurrent.ForkJoinPool.common.parallelism}.
-     * @throws SecurityException if a security manager exists and
-     *         the caller is not permitted to modify threads
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")}
      * @since 19
      */
     public int setParallelism(int size) {
@@ -3690,11 +3667,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * already shut down.  Tasks that are in the process of being
      * submitted concurrently during the course of this method may or
      * may not be rejected.
-     *
-     * @throws SecurityException if a security manager exists and
-     *         the caller is not permitted to modify threads
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")}
      */
     public void shutdown() {
         checkPermission();
@@ -3715,10 +3687,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * (unlike the case for some other Executors).
      *
      * @return an empty list
-     * @throws SecurityException if a security manager exists and
-     *         the caller is not permitted to modify threads
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")}
      */
     public List<Runnable> shutdownNow() {
         checkPermission();
@@ -3823,13 +3791,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * execution are not executed. The interrupt status will be
      * re-asserted before this method returns.
      *
-     * @throws SecurityException if a security manager exists and
-     *         shutting down this ExecutorService may manipulate
-     *         threads that the caller is not permitted to modify
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")},
-     *         or the security manager's {@code checkAccess} method
-     *         denies access.
      * @since 19
      */
     @Override

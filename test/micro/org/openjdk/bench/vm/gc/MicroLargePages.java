@@ -29,7 +29,7 @@ import org.openjdk.jmh.annotations.*;
 
 @OutputTimeUnit(TimeUnit.MINUTES)
 @State(Scope.Thread)
-@Fork(jvmArgsAppend = {"-Xmx256m", "-XX:+UseLargePages", "-XX:LargePageSizeInBytes=1g", "-Xlog:pagesize"}, value = 5)
+@Fork(jvmArgs = {"-Xmx256m", "-XX:+UseLargePages", "-XX:LargePageSizeInBytes=1g", "-Xlog:pagesize"}, value = 5)
 
 public class MicroLargePages {
 
