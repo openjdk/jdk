@@ -32,8 +32,9 @@
     --block-text-color: #282828;
     /* Background colors for various structural elements */
     --body-background-color: #ffffff;
-    --section-background-color: #f8f8f8;
+    --section-background-color: var(--body-background-color);
     --detail-background-color: #ffffff;
+    --detail-block-color: #f4f4f4;
     /* Colors for navigation bar and table captions */
     --navbar-background-color: #4D7A97;
     --navbar-text-color: #ffffff;
@@ -52,14 +53,14 @@
     --link-color: #437291;
     --link-color-active: #bb7a2a;
     /* Table of contents */
-    --toc-background-color: var(--section-background-color);
+    --toc-background-color: #f8f8f8;
     --toc-link-color: #4a698a;
     /* Snippet colors */
     --snippet-background-color: #ebecee;
     --snippet-text-color: var(--block-text-color);
     --snippet-highlight-color: #f7c590;
     /* Border colors for structural elements and user defined tables */
-    --border-color: #ededed;
+    --border-color: #e0e0e0;
     --table-border-color: #000000;
     /* Search input colors */
     --search-input-background-color: #ffffff;
@@ -77,6 +78,8 @@
     --top-nav-height: 44px;
     --sub-nav-height: 34px;
     --nav-height: calc(var(--top-nav-height) + var(--sub-nav-height));
+    --content-max-width: 1600px;
+    --content-margin: 0 auto;
     scroll-behavior: smooth;
 }
 /*
@@ -99,7 +102,8 @@ main [id] {
     scroll-margin-top: calc(var(--nav-height) + 6px);
 }
 div.main-grid {
-    max-width: 2100px;
+    max-width: var(--content-max-width);
+    margin: var(--content-margin);
 }
 a:link, a:visited {
     text-decoration:none;
@@ -206,6 +210,8 @@ hr {
     align-items: center;
     width: 100%;
     height: 100%;
+    max-width: var(--content-max-width);
+    margin: var(--content-margin);
 }
 .top-nav {
     background-color:var(--navbar-background-color);
@@ -274,7 +280,7 @@ ol.sub-nav-list a {
     padding: 3px;
 }
 ol.sub-nav-list a.current-selection {
-    background-color: var(--section-background-color);
+    background-color: var(--toc-background-color);
     border-radius: 4px;
 }
 .sub-nav .nav-list-search {
@@ -407,7 +413,6 @@ dl.name-value > dd {
  */
 .main-grid nav.toc {
     background-color: var(--toc-background-color);
-    border-right: 1px solid var(--border-color);
     position: sticky;
     top: calc(var(--nav-height));
     max-height: calc(100vh - var(--nav-height));
@@ -429,7 +434,7 @@ dl.name-value > dd {
     position: absolute;
     bottom: 16px;
     z-index: 3;
-    background-color: var(--section-background-color);
+    background-color: var(--toc-background-color);
     color: #666666;
     font-size: 0.76rem;
     border: none;
@@ -464,7 +469,8 @@ dl.name-value > dd {
 }
 .main-grid nav.toc.hide-sidebar {
     min-width: revert;
-    max-width: 28px;
+    background-color: var(--body-background-color);
+    max-width: 20px;
 }
 .main-grid nav.toc.hide-sidebar div.toc-header,
 .main-grid nav.toc.hide-sidebar ol.toc-list,
@@ -1065,6 +1071,8 @@ span#page-search-link {
 }
 .inherited-list {
     margin: 10px 0;
+    padding: 0 0 5px 8px;
+    background-color:var(--detail-background-color);
 }
 .horizontal-scroll {
     overflow: auto hidden;
@@ -1072,16 +1080,21 @@ span#page-search-link {
 section.class-description {
     line-height: 1.4;
 }
-.summary section[class$="-summary"], .details section[class$="-details"],
-.class-uses .detail, .serialized-class-details {
-    padding: 0 20px 5px 10px;
-    border: 1px solid var(--border-color);
+.summary section[class$="-summary"], .details section[class$="-details"] {
+    margin-bottom: 20px;
     background-color: var(--section-background-color);
 }
-.inherited-list, section[class$="-details"] .detail {
-    padding:0 0 5px 8px;
+.class-uses section.detail, section.serialized-class-details {
+    padding: 0 20px 5px 10px;
+    border: 1px solid var(--border-color);
+    background-color: var(--detail-block-color);
+}
+section.serialized-class-details .detail {
+    overflow:auto;
+}
+section[class$="-details"] .detail {
+    padding-left:8px;
     background-color:var(--detail-background-color);
-    border:none;
 }
 .vertical-separator {
     padding: 0 5px;
@@ -1316,16 +1329,10 @@ table.striped > tbody > tr > th {
 /**
  * Tweak style for small screens.
  */
-@media screen and (max-width: 1050px) {
-    .summary section[class$="-summary"], .details section[class$="-details"],
-    .class-uses .detail, .serialized-class-details {
-        padding: 0 10px 5px 8px;
-    }
+@media screen and (max-width: 1000px) {
     input#search-input {
         width: 22vw;
     }
-}
-@media screen and (max-width: 920px) {
     .main-grid nav.toc {
         display: none;
     }
@@ -1336,13 +1343,13 @@ table.striped > tbody > tr > th {
         left: 40vw;
         width: 60vw;
         z-index: 7;
-        background-color: var(--section-background-color);
+        background-color: var(--toc-background-color);
         box-sizing: border-box;
     }
     .top-nav nav.toc div.toc-header {
         padding: 6px 15px;
         font-size: 0.94em;
-        background-color: var(--section-background-color);
+        background-color: var(--toc-background-color);
         top: calc(var(--top-nav-height) + 10px);
     }
     .top-nav nav.toc ol.toc-list li {
