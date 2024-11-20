@@ -526,6 +526,7 @@ final class WPathGraphics extends PathGraphics {
 
         float awScale = getAwScale(scaleFactorX, scaleFactorY);
         int iangle = getAngle(ptx);
+        double devangle = Math.atan2(deviceTransform.getShearY(), deviceTransform.getScaleY());
 
         ptx = new Point2D.Double(1.0, 0.0);
         deviceTransform.deltaTransform(ptx, ptx);
@@ -537,7 +538,7 @@ final class WPathGraphics extends PathGraphics {
         Font2D font2D = FontUtilities.getFont2D(font);
         if (font2D instanceof TrueTypeFont) {
             textOut(str, font, (TrueTypeFont)font2D, frc,
-                    scaledFontSizeY, iangle, awScale,
+                    scaledFontSizeY, iangle, devangle, awScale,
                     advanceScaleX, advanceScaleY,
                     x, y, devpos.x, devpos.y, targetW);
         } else if (font2D instanceof CompositeFont) {
@@ -568,7 +569,7 @@ final class WPathGraphics extends PathGraphics {
                 String substr = new String(chars, startChar,endChar-startChar);
                 PhysicalFont slotFont = compFont.getSlotFont(slot);
                 textOut(substr, font, slotFont, frc,
-                        scaledFontSizeY, iangle, awScale,
+                        scaledFontSizeY, iangle, devangle, awScale,
                         advanceScaleX, advanceScaleY,
                         userx, usery, devx, devy, 0f);
                 Rectangle2D bds = font.getStringBounds(substr, frc);
@@ -680,6 +681,7 @@ final class WPathGraphics extends PathGraphics {
 
         float awScale = getAwScale(scaleFactorX, scaleFactorY);
         int iangle = getAngle(ptx);
+        double devangle = Math.atan2(deviceTransform.getShearY(), deviceTransform.getScaleY());
 
         ptx = new Point2D.Double(1.0, 0.0);
         deviceTransform.deltaTransform(ptx, ptx);
@@ -746,7 +748,8 @@ final class WPathGraphics extends PathGraphics {
          */
         AffineTransform advanceTransform =
            AffineTransform.getScaleInstance(advanceScaleX, advanceScaleY);
-        advanceTransform.rotate(iangle * Math.PI / 1800.0);
+        advanceTransform.rotate(devangle); // radians
+        advanceTransform.rotate(iangle * Math.PI / 1800.0); // 1/10 degrees -> radians
         float[] glyphAdvPos = new float[glyphPos.length];
 
         advanceTransform.transform(glyphPos, 0,         //source
@@ -823,7 +826,8 @@ final class WPathGraphics extends PathGraphics {
     private void textOut(String str,
                           Font font, PhysicalFont font2D,
                           FontRenderContext frc,
-                          float deviceSize, int rotation, float awScale,
+                          float deviceSize, int iangle, double devangle,
+                          float awScale,
                           double scaleFactorX, double scaleFactorY,
                           float userx, float usery,
                           float devx, float devy, float targetW) {
@@ -831,8 +835,7 @@ final class WPathGraphics extends PathGraphics {
          String family = font2D.getFamilyName(null);
          int style = font.getStyle() | font2D.getStyle();
          WPrinterJob wPrinterJob = (WPrinterJob)getPrinterJob();
-         boolean setFont = wPrinterJob.setFont(family, deviceSize, style,
-                                               rotation, awScale);
+         boolean setFont = wPrinterJob.setFont(family, deviceSize, style, iangle, awScale);
          if (!setFont) {
              super.drawString(str, userx, usery, font, frc, targetW);
              return;
@@ -866,7 +869,8 @@ final class WPathGraphics extends PathGraphics {
               */
              AffineTransform advanceTransform =
                 AffineTransform.getScaleInstance(scaleFactorX, scaleFactorY);
-             advanceTransform.rotate(rotation * Math.PI / 1800.0);
+             advanceTransform.rotate(devangle); // radians
+             advanceTransform.rotate(iangle * Math.PI / 1800.0); // 1/10 degrees -> radians
              float[] glyphAdvPos = new float[glyphPos.length];
 
              advanceTransform.transform(glyphPos, 0,         //source
