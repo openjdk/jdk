@@ -1014,8 +1014,17 @@ public class JavaTokenizer extends UnicodeReader {
                 case '\"': // (Spec. 3.10)
                     scanString(pos);
                     break loop;
+
                 default:
-                    if (isSpecial(get())) {
+                    // James contribution
+                    if (accept("***")) {
+                        put("***");
+                        tk = TokenKind.TRIPLESTAR;
+                        break;
+                    }
+
+                    // Original logic
+                    else if (isSpecial(get())) {
                         scanOperator();
                     } else {
                         boolean isJavaIdentifierStart;
