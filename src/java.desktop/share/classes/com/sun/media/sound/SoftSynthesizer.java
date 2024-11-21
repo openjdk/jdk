@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,9 @@ import sun.awt.OSInfo;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -779,35 +777,28 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                 /*
                  * Save generated soundbank to disk for faster future use.
                  */
-                OutputStream out =
-                        ((RunnableAction<OutputStream>) () -> {
-                            try {
-                                File userhome = new File(System
-                                        .getProperty("user.home"), ".gervill");
-                                if (!userhome.isDirectory()) {
-                                    if (!userhome.mkdirs()) {
-                                        return null;
-                                    }
-                                }
-                                File emg_soundbank_file = new File(
-                                        userhome, "soundbank-emg.sf2");
-                                if (emg_soundbank_file.isFile()) {
-                                    return null;
-                                }
-                                return new FileOutputStream(emg_soundbank_file);
-                            } catch (final FileNotFoundException ignored) {
-                            }
-                            return null;
-                        }).run();
-                if (out != null) {
-                    try (out) {
-                        ((SF2Soundbank) defaultSoundBank).save(out);
-                    } catch (final IOException ignored) {
-                    }
+                try {
+                    saveDefaultSoundBank();
+                } catch (IOException ignored) {
                 }
             }
         }
         return defaultSoundBank;
+    }
+
+    private static void saveDefaultSoundBank() throws IOException {
+        File userhome = new File(System.getProperty("user.home"), ".gervill");
+        if (!userhome.isDirectory()) {
+            if (!userhome.mkdirs()) {
+                return;
+            }
+        }
+        File emgSoundbankFile = new File(userhome, "soundbank-emg.sf2");
+        if (emgSoundbankFile.isFile()) {
+            return;
+        }
+        FileOutputStream out = new FileOutputStream(emgSoundbankFile);
+        ((SF2Soundbank) defaultSoundBank).save(out);
     }
 
     @Override
