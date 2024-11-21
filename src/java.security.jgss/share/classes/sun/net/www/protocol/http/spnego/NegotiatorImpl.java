@@ -35,7 +35,6 @@ import org.ietf.jgss.Oid;
 
 import sun.net.www.protocol.http.HttpCallerInfo;
 import sun.net.www.protocol.http.Negotiator;
-import sun.security.action.GetPropertyAction;
 import sun.security.jgss.GSSManagerImpl;
 import sun.security.jgss.GSSContextImpl;
 import sun.security.jgss.GSSUtil;
@@ -74,8 +73,7 @@ public class NegotiatorImpl extends Negotiator {
             // we can only use Kerberos mech when the scheme is kerberos
             oid = GSSUtil.GSS_KRB5_MECH_OID;
         } else {
-            String pref = GetPropertyAction
-                    .privilegedGetProperty("http.auth.preference", "spnego");
+            String pref = System.getProperty("http.auth.preference", "spnego");
             if (pref.equalsIgnoreCase("kerberos")) {
                 oid = GSSUtil.GSS_KRB5_MECH_OID;
             } else {

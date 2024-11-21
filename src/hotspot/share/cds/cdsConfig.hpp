@@ -29,6 +29,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
+class JavaThread;
+
 class CDSConfig : public AllStatic {
 #if INCLUDE_CDS
   static bool _is_dumping_static_archive;
@@ -36,16 +38,25 @@ class CDSConfig : public AllStatic {
   static bool _is_using_optimized_module_handling;
   static bool _is_dumping_full_module_graph;
   static bool _is_using_full_module_graph;
+  static bool _has_aot_linked_classes;
+  static bool _has_archived_invokedynamic;
 
   static char* _default_archive_path;
   static char* _static_archive_path;
   static char* _dynamic_archive_path;
+
+  static bool  _old_cds_flags_used;
+
+  static JavaThread* _dumper_thread;
 #endif
 
   static void extract_shared_archive_paths(const char* archive_path,
                                            char** base_archive_path,
                                            char** top_archive_path);
   static void init_shared_archive_paths();
+
+  static void check_flag_alias(bool alias_is_default, const char* alias_name);
+  static void check_flag_aliases();
 
 public:
   // Used by jdk.internal.misc.CDS.getCDSConfigStatus();
@@ -57,6 +68,8 @@ public:
 
   // Initialization and command-line checking
   static void initialize() NOT_CDS_RETURN;
+  static void set_old_cds_flags_used()                       { CDS_ONLY(_old_cds_flags_used = true); }
+  static bool old_cds_flags_used()                           { return CDS_ONLY(_old_cds_flags_used) NOT_CDS(false); }
   static void check_internal_module_property(const char* key, const char* value) NOT_CDS_RETURN;
   static void check_incompatible_property(const char* key, const char* value) NOT_CDS_RETURN;
   static void check_unsupported_dumping_module_options() NOT_CDS_RETURN;
@@ -79,11 +92,18 @@ public:
   static void enable_dumping_dynamic_archive()               { CDS_ONLY(_is_dumping_dynamic_archive = true); }
   static void disable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_dynamic_archive = false); }
 
+  // Misc CDS features
+  static bool allow_only_single_java_thread()                NOT_CDS_RETURN_(false);
+
   // optimized_module_handling -- can we skip some expensive operations related to modules?
   static bool is_using_optimized_module_handling()           { return CDS_ONLY(_is_using_optimized_module_handling) NOT_CDS(false); }
   static void stop_using_optimized_module_handling()         NOT_CDS_RETURN;
 
   static bool is_logging_lambda_form_invokers()              NOT_CDS_RETURN_(false);
+
+  static bool is_dumping_aot_linked_classes()                NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static bool is_using_aot_linked_classes()                  NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static void set_has_aot_linked_classes(bool has_aot_linked_classes) NOT_CDS_JAVA_HEAP_RETURN;
 
   // archive_path
 
@@ -96,13 +116,34 @@ public:
 
   // --- Archived java objects
 
-  static bool   is_dumping_heap()                            NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static bool is_dumping_heap()                              NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static bool is_loading_heap()                              NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static bool is_initing_classes_at_dump_time()              NOT_CDS_JAVA_HEAP_RETURN_(false);
+
+  static bool is_dumping_invokedynamic()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static bool is_loading_invokedynamic()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static void set_has_archived_invokedynamic()               { CDS_JAVA_HEAP_ONLY(_has_archived_invokedynamic = true); }
 
   // full_module_graph (requires optimized_module_handling)
   static bool is_dumping_full_module_graph()                 { return CDS_ONLY(_is_dumping_full_module_graph) NOT_CDS(false); }
   static bool is_using_full_module_graph()                   NOT_CDS_JAVA_HEAP_RETURN_(false);
   static void stop_dumping_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
   static void stop_using_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
+
+
+  // Some CDS functions assume that they are called only within a single-threaded context. I.e.,
+  // they are called from:
+  //    - The VM thread (e.g., inside VM_PopulateDumpSharedSpace)
+  //    - The thread that performs prepatory steps before switching to the VM thread
+  // Since these two threads never execute concurrently, we can avoid using locks in these CDS
+  // function. For safety, these functions should assert with CDSConfig::current_thread_is_vm_or_dumper().
+  class DumperThreadMark {
+  public:
+    DumperThreadMark(JavaThread* current);
+    ~DumperThreadMark();
+  };
+
+  static bool current_thread_is_vm_or_dumper() NOT_CDS_RETURN_(false);
 };
 
 #endif // SHARE_CDS_CDSCONFIG_HPP

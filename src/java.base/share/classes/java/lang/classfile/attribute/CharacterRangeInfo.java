@@ -27,14 +27,12 @@ package java.lang.classfile.attribute;
 import java.lang.classfile.instruction.CharacterRange;
 
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a single character range in the {@link CharacterRangeTableAttribute}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CharacterRangeInfo
         permits UnboundAttribute.UnboundCharacterRangeInfo {
 

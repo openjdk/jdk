@@ -27,8 +27,6 @@ package sun.font;
 
 import java.io.File;
 import java.io.OutputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
@@ -112,25 +110,21 @@ public class CreatedFontTracker {
         private static HashMap<File, OutputStream> files = new HashMap<>();
 
         private static Thread t = null;
-        @SuppressWarnings("removal")
         static void init() {
             if (t == null) {
                 // Add a shutdown hook to remove the temp file.
-                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                    /* The thread must be a member of a thread group
-                     * which will not get GCed before VM exit.
-                     * Make its parent the top-level thread group.
-                     */
-                    ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                    t = new Thread(rootTG, TempFileDeletionHook::runHooks,
-                                   "TempFontFileDeleter", 0, false);
-                    /* Set context class loader to null in order to avoid
-                     * keeping a strong reference to an application classloader.
-                     */
-                    t.setContextClassLoader(null);
-                    Runtime.getRuntime().addShutdownHook(t);
-                    return null;
-                });
+                /* The thread must be a member of a thread group
+                 * which will not get GCed before VM exit.
+                 * Make its parent the top-level thread group.
+                 */
+                ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                t = new Thread(rootTG, TempFileDeletionHook::runHooks,
+                               "TempFontFileDeleter", 0, false);
+                /* Set context class loader to null in order to avoid
+                 * keeping a strong reference to an application classloader.
+                 */
+                t.setContextClassLoader(null);
+                Runtime.getRuntime().addShutdownHook(t);
             }
         }
 
