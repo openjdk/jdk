@@ -174,7 +174,6 @@ public:
 private:
 #if INCLUDE_CDS_JAVA_HEAP
   static bool _disable_writing;
-  static bool _ignore_oops_for_heap_verification;
   static DumpedInternedStrings *_dumped_interned_strings;
 
   // statistics
@@ -207,25 +206,18 @@ public:
 
     // One or more fields in this object are pointing to MetaspaceObj
     bool _has_native_pointers;
-
-    // Some objects should not be scanned by CDSHeapVerifier. For example,
-    // the oopArrays used by the string table.
-    bool _ignored_for_heap_verification;
   public:
     CachedOopInfo(oop orig_referrer, bool has_oop_pointers)
       : _orig_referrer(orig_referrer),
         _buffer_offset(0),
         _has_oop_pointers(has_oop_pointers),
-        _has_native_pointers(false),
-        _ignored_for_heap_verification(false) {}
+        _has_native_pointers(false) {}
     oop orig_referrer()             const { return _orig_referrer;   }
     void set_buffer_offset(size_t offset) { _buffer_offset = offset; }
     size_t buffer_offset()          const { return _buffer_offset;   }
     bool has_oop_pointers()         const { return _has_oop_pointers; }
     bool has_native_pointers()      const { return _has_native_pointers; }
     void set_has_native_pointers()        { _has_native_pointers = true; }
-    bool ignored_for_heap_verification() const { return _ignored_for_heap_verification; }
-    void set_ignored_for_heap_verification()   { _ignored_for_heap_verification = true; }
   };
 
 private:
@@ -345,7 +337,6 @@ private:
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
   static bool archive_object(oop obj, KlassSubGraphInfo* subgraph_info);
-  static void copy_interned_strings();
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
   static void resolve_classes_for_subgraph_of(JavaThread* current, Klass* k);
@@ -369,6 +360,7 @@ private:
   static bool has_been_archived(oop orig_obj);
   static void prepare_resolved_references();
   static void archive_strings();
+  static void archive_subgraphs();
 
  public:
   static void reset_archived_object_states(TRAPS);
@@ -386,7 +378,6 @@ private:
 
   static int archive_exception_instance(oop exception);
   static void write_heap(ArchiveHeapInfo* heap_info);
-  static void copy_objects();
 
   static bool archive_reachable_objects_from(int level,
                                              KlassSubGraphInfo* subgraph_info,

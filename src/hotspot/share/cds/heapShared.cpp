@@ -88,7 +88,6 @@ struct ArchivableStaticFieldInfo {
 };
 
 bool HeapShared::_disable_writing = false;
-bool HeapShared::_ignore_oops_for_heap_verification = false;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = nullptr;
 
 size_t HeapShared::_alloc_count[HeapShared::ALLOC_STAT_SLOTS];
@@ -311,23 +310,36 @@ bool HeapShared::archive_object(oop obj, KlassSubGraphInfo* subgraph_info) {
     count_allocation(obj->size());
     ArchiveHeapWriter::add_source_obj(obj);
     CachedOopInfo info = make_cached_oop_info(obj);
-    if (_ignore_oops_for_heap_verification) {
-      info.set_ignored_for_heap_verification();
-    }
-
     archived_object_cache()->put_when_absent(obj, info);
     archived_object_cache()->maybe_grow();
     mark_native_pointers(obj);
 
     Klass* k = obj->klass();
     if (k->is_instance_klass()) {
-      if (subgraph_info == _dump_time_special_subgraph || InstanceKlass::cast(k)->is_enum_subclass()) {
+      // Whenever we see a non-array Java object of type X, we mark X to be aot-initialized.
+      // This ensures that during the production run, whenever Java code seens a cached object
+      // of type X, we know that X is already initialized. (see TODO comment below ...)
+
+      if (InstanceKlass::cast(k)->is_enum_subclass()) {
+        // We can't rerun <clinit> of enum classes (see cdsEnumKlass.cpp) so
+        // we must store them as AOT-initialized.
+        AOTArtifactFinder::add_aot_inited_class(InstanceKlass::cast(k));
+      } else if (subgraph_info == _dump_time_special_subgraph) {
+        // TODO: we do this only for the special subgraph for now. Extending this to
+        // other subgraphs would require more refactoring of the core library (such as
+        // move some initialization logic into runtimeSetup()).
+        //
+        // For the other subgraphs, we have a weaker mechanism to ensure that
+        // all classes in a subgraph are initialized before the subgraph is programmatically
+        // returned from jdk.internal.misc.CDS::initializeFromArchive().
+        // See HeapShared::initialize_from_archived_subgraph().
         AOTArtifactFinder::add_aot_inited_class(InstanceKlass::cast(k));
       }
+
       if (java_lang_Class::is_instance(obj)) {
         Klass* mirror_k = java_lang_Class::as_Klass(obj);
-        if (mirror_k != nullptr && mirror_k->is_instance_klass()) {
-          AOTArtifactFinder::add_class(InstanceKlass::cast(mirror_k)); // FIXME -- changd add_class to accept all Klass
+        if (mirror_k != nullptr) {
+          AOTArtifactFinder::add_cached_class(mirror_k);
         }
       }
     }
@@ -593,10 +605,6 @@ static objArrayOop get_archived_resolved_references(InstanceKlass* src_ik) {
 }
 
 void HeapShared::archive_strings() {
-  copy_interned_strings(); // FIXME - rename
-
-  _ignore_oops_for_heap_verification = true;
-
   oop shared_strings_array = StringTable::init_shared_strings_array(_dumped_interned_strings);
   bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, shared_strings_array);
   // We must succeed because:
@@ -604,8 +612,6 @@ void HeapShared::archive_strings() {
   // - StringTable::init_shared_table() doesn't create any large arrays.
   assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
   StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
-
-  _ignore_oops_for_heap_verification = false;
 }
 
 int HeapShared::archive_exception_instance(oop exception) {
@@ -636,6 +642,8 @@ void HeapShared::set_has_native_pointers(oop src_obj) {
   info->set_has_native_pointers();
 }
 
+// Between start_scanning_for_oops() and end_scanning_for_oops(), we discover all Java heap objects that
+// should be stored in the AOT cache. The scanning is coordinated by AOTArtifactFinder.
 void HeapShared::start_scanning_for_oops() {
   {
     NoSafepointVerifier nsv;
@@ -654,10 +662,12 @@ void HeapShared::start_scanning_for_oops() {
                     UseCompressedOops ? p2i(CompressedOops::end()) :
                                         p2i((address)G1CollectedHeap::heap()->reserved().end()));
     }
-    copy_objects();
+
+    archive_subgraphs();
   }
 
   init_seen_objects_table();
+  Universe::archive_exception_instances();
 }
 
 void HeapShared::end_scanning_for_oops() {
@@ -693,51 +703,21 @@ void HeapShared::scan_java_class(Klass* orig_k) {
 
   if (orig_k->is_instance_klass()) {
     InstanceKlass* orig_ik = InstanceKlass::cast(orig_k);
+    orig_ik->constants()->prepare_resolved_references_for_archiving();
     objArrayOop rr = get_archived_resolved_references(orig_ik);
     if (rr != nullptr) {
-      // Archive the array first while it's empty, so none of the entries are archived yet
       bool success = HeapShared::archive_reachable_objects_from(1, _dump_time_special_subgraph, rr);
       assert(success, "must be");
+    }
 
-      // Fill up the array with references that can be archived.
-      orig_ik->constants()->prepare_resolved_references_for_archiving();
-
-      int rr_len = rr->length();
-      for (int i = 0; i < rr_len; i++) {
-        oop p = rr->obj_at(i);
-        if (p != nullptr) {
-          if (java_lang_String::is_instance(p)) {
-            assert(!ArchiveHeapWriter::is_string_too_large_to_archive(p), "must be");
-            HeapShared::add_to_dumped_interned_strings(p);
-          } else {
-            bool success = HeapShared::archive_reachable_objects_from(1, _dump_time_special_subgraph, p);
-            assert(success, "must be");
-          }
-        }
-      }
+    if (orig_ik->is_linked()) {
+      orig_ik->constants()->add_dumped_interned_strings();
     }
   }
 }
 
-void HeapShared::copy_interned_strings() {
-  auto copier = [&] (oop s, bool value_ignored) {
-    assert(s != nullptr, "sanity");
-    assert(!ArchiveHeapWriter::is_string_too_large_to_archive(s), "large strings must have been filtered");
-    bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, s);
-    assert(success, "must be");
-    // Prevent string deduplication from changing the value field to
-    // something not in the archive.
-    java_lang_String::set_deduplication_forbidden(s);
-  };
-  _dumped_interned_strings->iterate_all(copier);
-}
-
-void HeapShared::copy_objects() {
+void HeapShared::archive_subgraphs() {
   assert(HeapShared::can_write(), "must be");
-
-  init_seen_objects_table();
-  Universe::archive_exception_instances();
-  delete_seen_objects_table();
 
   archive_object_subgraphs(archive_subgraph_entry_fields,
                            false /* is_full_module_graph */);
@@ -1726,7 +1706,7 @@ void HeapShared::check_special_subgraph_classes() {
     int num = klasses->length();
     for (int i = 0; i < num; i++) {
       Klass* subgraph_k = klasses->at(i);
-      Symbol* name = ArchiveBuilder::current()->get_source_addr(subgraph_k->name());
+      Symbol* name = subgraph_k->name();
       if (subgraph_k->is_instance_klass() &&
           name != vmSymbols::java_lang_Class() &&
           name != vmSymbols::java_lang_String() &&
@@ -2052,6 +2032,9 @@ void HeapShared::add_to_dumped_interned_strings(oop string) {
   bool created;
   _dumped_interned_strings->put_if_absent(string, true, &created);
   if (created) {
+    // Prevent string deduplication from changing the value field to
+    // something not in the archive.
+    java_lang_String::set_deduplication_forbidden(string);
     _dumped_interned_strings->maybe_grow();
   }
 }

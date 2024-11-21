@@ -27,28 +27,64 @@
 
 #include "memory/allStatic.hpp"
 #include "utilities/exceptions.hpp"
-#include "utilities/growableArray.hpp"
 
+class ArrayKlass;
 class InstanceKlass;
 class MetaspaceClosure;
+class TypeArrayKlass;
+
+// AOTArtifactFinder finds (the roots of) all artifacts that should be included in the AOT cache. These include:
+//   [1] C++ Klasses
+//   [2] Java heap objects
+// It also decides what Klasses must be cached in aot-initialized state.
+//
+// ArchiveBuilder uses [1] as roots to scan for all MetaspaceObjs that need to be cached.
+// ArchiveHeapWriter uses [2] to create an image of the archived heap.
+//
+// [1] is stored in _all_cached_classes in aotArtifactFinder.cpp.
+// [2] is stored in HeapShared::archived_object_cache().
+//
+// Although many Klasses and heap objects are created in the assembly phase, we only store a subset of them into
+// the AOT cache. For example:
+//     - Klasses that fail verification are excluded
+//     - Many Klasses are stored in non-initialized state, so any initialized static fields in their
+//       java mirrors must be cleared.
+//     - To conserve space, we exclude any hidden classes that are not referenced.
+//
+// The discovery of [1] and [2] is interdependent, and is done inside AOTArtifactFinder::find()
+//     - We first add a set of roots that must be included in the AOT cache
+//       - mirrors of primitive classes (e.g., int.class in Java source code).
+//       - primitive array classes
+//       - non hidden classes
+//       - registered lambda proxy classes
+//    - Whenever a class is added, we scan its constant pool. This will discover references
+//      to hidden classes. All such hidden classes are added.
+//    - As classes and heap objects are discovered, we find out what classes must be AOT-initialized
+//       - If we discover at least one instance of class X, then class X is AOT-initialized (** Note1).
+//       - If AOTClassInitializer::can_archive_initialized_mirror(X) is true, then X is AOT-initialized.
+//    - For each AOT-initialized class, we scan all the static fields in its java mirror. This will in
+//      turn discover more Klasses and java heap objects.
+//    - The scanning continues until we reach a steady state.
+//
+// Note1: See TODO comments in HeapShared::archive_object() for exceptions to this rule.
+//
+// Note2: The scanning of Java objects is done in heapShared.cpp. Please see calls into the HeapShared class
+//        from AOTArtifactFinder.
 
 class AOTArtifactFinder : AllStatic {
-  // All the classes that should be included in the AOT cache (in at least the "allocated" state)
-  static GrowableArrayCHeap<InstanceKlass*, mtClassShared>* _classes;
-
-  static GrowableArrayCHeap<InstanceKlass*, mtClassShared>* _pending_aot_inited_classes;
-
   static void start_scanning_for_oops();
   static void end_scanning_for_oops();
   static void scan_oops_in_instance_class(InstanceKlass* ik);
   static void scan_oops_in_array_class(ArrayKlass* ak);
   static bool is_lambda_proxy_class(InstanceKlass* ik);
+  static void add_cached_type_array_class(TypeArrayKlass* tak);
+  static void add_cached_instance_class(InstanceKlass* ik);
 public:
   static void initialize();
   static void find_artifacts();
-  static void classes_do(MetaspaceClosure* it);
+  static void add_cached_class(Klass* k);
   static void add_aot_inited_class(InstanceKlass* ik);
-  static void add_class(InstanceKlass* ik);
+  static void all_cached_classes_do(MetaspaceClosure* it);
   static void dispose();
 };
 
