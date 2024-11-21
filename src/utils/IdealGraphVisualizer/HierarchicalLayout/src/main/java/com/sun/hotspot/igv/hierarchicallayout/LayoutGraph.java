@@ -127,7 +127,7 @@ public class LayoutGraph {
     }
 
     /**
-     * Adds a new link to the graph between existing vertices.
+     * Adds a new link to the graph between EXISTING vertices.
      *
      * @param link The Link to be added.
      */
@@ -140,7 +140,7 @@ public class LayoutGraph {
         Vertex toVertex = toPort.getVertex();
 
         // Ensure vertices exist
-        assert vertices.contains(fromVertex) && !vertices.contains(toVertex) : "Both vertices must exist in the graph to add a link.";
+        assert vertices.contains(fromVertex) && vertices.contains(toVertex) : "Both vertices must exist in the graph to add a link.";
 
         // Add to links set
         links.add(link);
@@ -160,7 +160,9 @@ public class LayoutGraph {
      * @param link The Link to be removed.
      */
     public void removeLink(Link link) {
-        assert  links.contains(link) : "Link does not exist in the graph";
+        if (!links.contains(link)) {
+            return;
+        }
 
         Port fromPort = link.getFrom();
         Port toPort = link.getTo();
@@ -236,7 +238,7 @@ public class LayoutGraph {
         // Remove all associated links
         List<Link> associatedLinks = getAllLinks(vertex);
         for (Link link : associatedLinks) {
-            removeEdge(link);
+            removeLink(link);
         }
 
         // Remove from vertices set
@@ -505,7 +507,7 @@ public class LayoutGraph {
      *
      * @return A set containing all links in the graph.
      */
-    public Set<? extends Link> getLinks() {
+    public Set<Link> getLinks() {
         return links;
     }
 
@@ -1117,7 +1119,6 @@ public class LayoutGraph {
         LinkedHashMap<Integer, LayoutNode> portToTopNode = new LinkedHashMap<>();
         LinkedHashMap<Integer, LinkedHashMap<Integer, LayoutNode>> portToBottomNodeMapping = new LinkedHashMap<>();
         for (LayoutEdge succEdge : succs) {
-            //System.out.print(succEdge + " ");
             int startPort = succEdge.getRelativeFromX();
             LayoutNode fromNode = succEdge.getFrom();
             LayoutNode toNode = succEdge.getTo();

@@ -890,7 +890,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     private void doStableSeaLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
         hierarchicalStableLayoutManager.setCutEdges(model.getCutEdges());
-        hierarchicalStableLayoutManager.updateLayout(visibleFigures, visibleConnections);
+        hierarchicalStableLayoutManager.updateLayout(new LayoutGraph(visibleConnections, visibleFigures));
     }
 
     private void doSeaLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {

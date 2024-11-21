@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.hierarchicallayout;
 
 import com.sun.hotspot.igv.layout.Link;
+import com.sun.hotspot.igv.layout.Port;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.util.HashSet;
 import java.util.Set;
@@ -47,16 +48,16 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
     public void doLayout(LayoutGraph graph) {
     }
 
-    public void updateLayout(Set<? extends Vertex> vertices, Set<? extends Link> links) {
+    public void updateLayout(LayoutGraph newGraph) {
         if (graph == null) {
-            graph = new LayoutGraph(links, vertices);
+            graph = newGraph;
             manager.doLayout(graph);
         } else {
             // Reverse edges, handle back-edges
-            HierarchicalLayoutManager.ReverseEdges.apply(graph);
+            //HierarchicalLayoutManager.ReverseEdges.apply(newGraph);
 
             // Apply updates if there are any
-            ApplyActionUpdates.apply(graph, vertices, links);
+            ApplyActionUpdates.apply(graph, newGraph);
 
             //  Assign Y-Coordinates, Write back to interface
             HierarchicalLayoutManager.WriteResult.apply(graph);
@@ -208,6 +209,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
         private static void applyAddVertexAction(LayoutGraph graph, Vertex vertex) {
             int layerNr = optimalLayer(graph, vertex);
             LayoutNode node = graph.getLayoutNode(vertex);
+            assert node != null;
             layerNr = graph.insertNewLayerIfNeeded(node, layerNr);
             graph.addNodeToLayer(node, layerNr);
             int x = node.computeBarycenterX(LayoutNode.NeighborType.BOTH, false);
@@ -215,41 +217,52 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
             //        The optimum is given by the least amount of edge crossings.
             node.setX(x);
             graph.getLayer(layerNr).sortNodesByX();
-            graph.addEdges(node, 10);
+            //graph.addEdges(node, 10); // TODO with applyAddLinkAction
         }
 
-        private static void applyRemoveVertexAction(LayoutGraph graph, Vertex vertex) {
-            LayoutNode node = graph.getLayoutNode(vertex);
-            graph.removeNodeAndEdges(node);
-            graph.removeEmptyLayers();
-        }
+        static void apply(LayoutGraph graph, LayoutGraph newGraph) {
+            HashSet<Vertex> newVertices = new HashSet<>(newGraph.getVertices());
+            HashSet<Link> newLinks = new HashSet<>(newGraph.getLinks());
 
-        static void apply(LayoutGraph graph, Set<? extends Vertex> vertices, Set<? extends Link> links) {
-            HashSet<Vertex> addedVertices = new HashSet<>(vertices);
-            addedVertices.removeAll(graph.getVertices());
+            HashSet<Vertex> vertices = new HashSet<>(graph.getVertices());
+            HashSet<Link> links = new HashSet<>(graph.getLinks());
 
-            HashSet<Vertex> removedVertices = new HashSet<>(graph.getVertices());
-            removedVertices.removeAll(vertices);
+            HashSet<Vertex> addedVertices = new HashSet<>(newVertices);
+            addedVertices.removeAll(vertices);
 
-            HashSet<Link> addedLinks = new HashSet<>(links);
-            HashSet<Link> removedLinks = new HashSet<>(graph.getLinks());
-            for (Link currLink : links) {
-                for (Link prevLink : graph.getLinks()) {
-                    if (currLink.equals(prevLink)) {
-                        addedLinks.remove(currLink);
-                        removedLinks.remove(prevLink);
-                        break;
-                    }
-                }
-            }
+            HashSet<Vertex> removedVertices = new HashSet<>(vertices);
+            removedVertices.removeAll(newVertices);
 
+            HashSet<Link> addedLinks = new HashSet<>(newLinks);
+            addedLinks.removeAll(links);
+
+            HashSet<Link> removedLinks = new HashSet<>(links);
+            removedLinks.removeAll(newLinks);
+
+            int expectedNewVerticesSize = vertices.size() + addedVertices.size() - removedVertices.size();
+            assert expectedNewVerticesSize == newVertices.size() :
+                    "Vertex size mismatch: expected " + expectedNewVerticesSize + " but got " + newVertices.size();
+
+            //
             for (Vertex vertex : removedVertices) {
-                applyRemoveVertexAction(graph, vertex);
+                graph.removeVertex(vertex);
             }
 
             for (Link link : removedLinks) {
-                graph.removeEdge(link);
+                graph.removeLink(link);
             }
+
+            for (Vertex vertex : addedVertices) {
+                graph.addVertex(vertex);
+                graph.createLayoutNode(vertex);
+            }
+
+            for (Link link : addedLinks) {
+                graph.addLink(link);
+                graph.createLayoutEdge(link);
+            }
+
+            // graph.removeEmptyLayers();
 
             for (Vertex vertex : addedVertices) {
                 applyAddVertexAction(graph, vertex);
