@@ -26,6 +26,7 @@
 package sun.nio.ch;
 
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
@@ -55,7 +56,7 @@ class EPollSelectorImpl extends SelectorImpl {
     private final int epfd;
 
     // address of poll array when polling with epoll_wait
-    private final long pollArrayAddress;
+    private final MemorySegment pollArray;
 
     // eventfd object used for interrupt
     private final EventFD eventfd;
@@ -75,13 +76,13 @@ class EPollSelectorImpl extends SelectorImpl {
         super(sp);
 
         this.epfd = EPoll.create();
-        this.pollArrayAddress = EPoll.allocatePollArray(NUM_EPOLLEVENTS);
+        this.pollArray = EPoll.allocatePollArray(NUM_EPOLLEVENTS);
 
         try {
             this.eventfd = new EventFD();
             IOUtil.configureBlocking(IOUtil.newFD(eventfd.efd()), false);
         } catch (IOException ioe) {
-            EPoll.freePollArray(pollArrayAddress);
+            EPoll.freePollArray(pollArray);
             FileDispatcherImpl.closeIntFD(epfd);
             throw ioe;
         }
@@ -114,7 +115,7 @@ class EPollSelectorImpl extends SelectorImpl {
                 begin(blocking);
                 do {
                     long startTime = timedPoll ? System.nanoTime() : 0;
-                    numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, to);
+                    numEntries = EPoll.wait(epfd, pollArray, NUM_EPOLLEVENTS, to);
                     if (numEntries == IOStatus.INTERRUPTED && timedPoll) {
                         // timed poll interrupted so need to adjust timeout
                         long adjust = System.nanoTime() - startTime;
@@ -140,11 +141,11 @@ class EPollSelectorImpl extends SelectorImpl {
      * or the thread is interrupted.
      */
     private int untimedPoll(boolean block) throws IOException {
-        int numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, 0);
+        int numEntries = EPoll.wait(epfd, pollArray, NUM_EPOLLEVENTS, 0);
         if (block) {
             while (numEntries == 0 && !Thread.currentThread().isInterrupted()) {
                 Poller.pollSelector(epfd, 0);
-                numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, 0);
+                numEntries = EPoll.wait(epfd, pollArray, NUM_EPOLLEVENTS, 0);
             }
         }
         return numEntries;
@@ -156,7 +157,7 @@ class EPollSelectorImpl extends SelectorImpl {
      */
     private int timedPoll(long nanos) throws IOException {
         long startNanos = System.nanoTime();
-        int numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, 0);
+        int numEntries = EPoll.wait(epfd, pollArray, NUM_EPOLLEVENTS, 0);
         while (numEntries == 0 && !Thread.currentThread().isInterrupted()) {
             long remainingNanos = nanos - (System.nanoTime() - startNanos);
             if (remainingNanos <= 0) {
@@ -164,7 +165,7 @@ class EPollSelectorImpl extends SelectorImpl {
                 break;
             }
             Poller.pollSelector(epfd, remainingNanos);
-            numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, 0);
+            numEntries = EPoll.wait(epfd, pollArray, NUM_EPOLLEVENTS, 0);
         }
         return numEntries;
     }
@@ -218,14 +219,14 @@ class EPollSelectorImpl extends SelectorImpl {
         boolean interrupted = false;
         int numKeysUpdated = 0;
         for (int i=0; i<numEntries; i++) {
-            long event = EPoll.getEvent(pollArrayAddress, i);
-            int fd = EPoll.getDescriptor(event);
+            MemorySegment eventMS = EPoll.getEvent(pollArray, i);
+            int fd = EPoll.getDescriptor(eventMS);
             if (fd == eventfd.efd()) {
                 interrupted = true;
             } else {
                 SelectionKeyImpl ski = fdToKey.get(fd);
                 if (ski != null) {
-                    int rOps = EPoll.getEvents(event);
+                    int rOps = EPoll.getEvents(eventMS);
                     numKeysUpdated += processReadyEvents(rOps, ski, action);
                 }
             }
@@ -248,7 +249,7 @@ class EPollSelectorImpl extends SelectorImpl {
         }
 
         FileDispatcherImpl.closeIntFD(epfd);
-        EPoll.freePollArray(pollArrayAddress);
+        EPoll.freePollArray(pollArray);
 
         eventfd.close();
     }
