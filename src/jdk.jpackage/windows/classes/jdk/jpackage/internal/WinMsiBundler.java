@@ -344,11 +344,17 @@ public class WinMsiBundler  extends AbstractBundler {
 
         Log.verbose(I18N.format("message.preparing-msi-config", msiOut.toAbsolutePath()));
 
-        WixPipeline wixPipeline = new WixPipeline()
-                .setToolset(wixToolset)
-                .setWixObjDir(env.buildRoot().resolve("wixobj"))
-                .setWorkDir(env.appImageDir())
-                .addSource(env.configDir().resolve("main.wxs"), wixVars);
+        Log.verbose(MessageFormat.format(I18N.getString(
+                "message.preparing-msi-config"), msiOut.toAbsolutePath()
+                        .toString()));
+
+        var wixObjDir = TEMP_ROOT.fetchFrom(params).resolve("wixobj");
+
+        var wixPipeline = WixPipeline.build()
+                .setWixObjDir(wixObjDir)
+                .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
+                .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"),
+                        wixVars);
 
         for (var wixFragment : wixFragments) {
             wixFragment.configureWixPipeline(wixPipeline);
@@ -420,13 +426,13 @@ public class WinMsiBundler  extends AbstractBundler {
         // Cultures from custom files and a single primary Culture are
         // included into "-cultures" list
         for (var wxl : primaryWxlFiles) {
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+            wixPipeline.addLightOptions("-loc", wxl.toString());
         }
 
         List<String> cultures = new ArrayList<>();
         for (var wxl : customWxlFiles) {
             wxl = configDir.resolve(wxl.getFileName());
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+            wixPipeline.addLightOptions("-loc", wxl.toString());
             cultures.add(getCultureFromWxlFile(wxl));
         }
 
@@ -453,7 +459,8 @@ public class WinMsiBundler  extends AbstractBundler {
             }
         }
 
-        wixPipeline.buildMsi(msiOut.toAbsolutePath());
+        Files.createDirectories(wixObjDir);
+        wixPipeline.create(wixToolset).buildMsi(msiOut.toAbsolutePath());
 
         return msiOut;
     }
@@ -488,16 +495,16 @@ public class WinMsiBundler  extends AbstractBundler {
             NodeList nodes = (NodeList) xPath.evaluate(
                     "//WixLocalization/@Culture", doc, XPathConstants.NODESET);
             if (nodes.getLength() != 1) {
-                throw new IOException(I18N.format(
-                        "error.extract-culture-from-wix-l10n-file",
-                        wxlPath.toAbsolutePath()));
+                throw new IOException(MessageFormat.format(I18N.getString(
+                        "error.extract-culture-from-wix-l10n-file"),
+                        wxlPath.toAbsolutePath().normalize()));
             }
 
             return nodes.item(0).getNodeValue();
         } catch (XPathExpressionException | ParserConfigurationException
                 | SAXException ex) {
-            throw new IOException(I18N.format("error.read-wix-l10n-file",
-                    wxlPath.toAbsolutePath()), ex);
+            throw new IOException(MessageFormat.format(I18N.getString(
+                    "error.read-wix-l10n-file"), wxlPath.toAbsolutePath().normalize()), ex);
         }
     }
 
