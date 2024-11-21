@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.jfr.event.io;
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 import jdk.jfr.event.io.IOEvent.EventType;
 
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 
 
@@ -130,4 +132,10 @@ public class IOHelper {
         }
     }
 
+    public static void checkConnectionEventException(RecordedEvent event, IOException ioe) {
+        Asserts.assertEquals(event.getEventType().getName(),IOEvent.EVENT_SOCKET_CONNECT);
+        Asserts.assertNotNull(ioe);
+        String eventMessage = event.getString("exceptionMessage");
+        Asserts.assertEquals(eventMessage, ioe.getMessage());
+    }
 }

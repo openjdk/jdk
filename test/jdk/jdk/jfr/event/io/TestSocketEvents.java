@@ -32,12 +32,14 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.thread.TestThread;
 import jdk.test.lib.thread.XRun;
@@ -63,6 +65,7 @@ public class TestSocketEvents {
 
     public static void main(String[] args) throws Throwable {
         new TestSocketEvents().test();
+        testConnectException();
     }
 
     private void test() throws Throwable {
@@ -120,6 +123,33 @@ public class TestSocketEvents {
                 recording.stop();
                 List<RecordedEvent> events = Events.fromRecording(recording);
                 IOHelper.verifyEquals(events, expectedEvents);
+            }
+        }
+    }
+
+    private static void testConnectException() throws Throwable {
+        try (Recording recording = new Recording()) {
+            try (ServerSocket ss = new ServerSocket()) {
+                recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
+                recording.start();
+
+                InetAddress lb = InetAddress.getLoopbackAddress();
+                ss.bind(new InetSocketAddress(lb, 0));
+                SocketAddress addr = ss.getLocalSocketAddress();
+                ss.close();
+
+                IOException connectException = null;
+                try (Socket s = new Socket()) {
+                    s.connect(addr);
+                } catch (IOException ioe) {
+                    // we expect this
+                    connectException = ioe;
+                }
+
+                recording.stop();
+                List<RecordedEvent> events = Events.fromRecording(recording);
+                Asserts.assertEquals(events.size(), 1);
+                IOHelper.checkConnectionEventException(events.get(0), connectException);
             }
         }
     }

@@ -28,6 +28,7 @@ import static jdk.test.lib.Asserts.assertEquals;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -37,6 +38,7 @@ import java.util.List;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.thread.TestThread;
 import jdk.test.lib.thread.XRun;
@@ -61,9 +63,12 @@ public class TestSocketChannelEvents {
 
     public static void main(String[] args) throws Throwable {
         new TestSocketChannelEvents().test();
+        new TestSocketChannelEvents().testNonBlockingConnect();
+        testConnectException();
+        testNonBlockingConnectException();
     }
 
-    public void test() throws Throwable {
+    private void test() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
                 recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
@@ -129,6 +134,92 @@ public class TestSocketChannelEvents {
                 recording.stop();
                 List<RecordedEvent> events = Events.fromRecording(recording);
                 IOHelper.verifyEquals(events, expectedEvents);
+            }
+        }
+    }
+
+    private void testNonBlockingConnect() throws Throwable {
+        try (Recording recording = new Recording()) {
+            try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
+                recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
+                recording.start();
+
+                InetAddress lb = InetAddress.getLoopbackAddress();
+                ssc.bind(new InetSocketAddress(lb, 0));
+                SocketAddress addr = ssc.getLocalAddress();
+
+                try (SocketChannel sc = SocketChannel.open()) {
+                    sc.configureBlocking(false);
+                    sc.connect(addr);
+                    try (SocketChannel serverSide = ssc.accept()) {
+                        while (! sc.finishConnect()) {
+                            Thread.sleep(1);
+                        }
+                    }
+                    addExpectedEvent(IOEvent.createSocketConnectEvent(sc.socket()));
+                }
+
+                recording.stop();
+                List<RecordedEvent> events = Events.fromRecording(recording);
+                IOHelper.verifyEquals(events, expectedEvents);
+            }
+        }
+    }
+
+    private static void testConnectException() throws Throwable {
+        try (Recording recording = new Recording()) {
+            try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
+                recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
+                recording.start();
+
+                InetAddress lb = InetAddress.getLoopbackAddress();
+                ssc.bind(new InetSocketAddress(lb, 0));
+                SocketAddress addr = ssc.getLocalAddress();
+                ssc.close();
+
+                // try to connect, but the server will not accept
+                IOException connectException = null;
+                try (SocketChannel sc = SocketChannel.open(addr)) {
+                } catch (IOException ioe) {
+                    // we expect this
+                    connectException = ioe;
+                }
+
+                recording.stop();
+                List<RecordedEvent> events = Events.fromRecording(recording);
+                Asserts.assertEquals(events.size(), 1);
+                IOHelper.checkConnectionEventException(events.get(0), connectException);
+            }
+        }
+    }
+
+    private static void testNonBlockingConnectException() throws Throwable {
+        try (Recording recording = new Recording()) {
+            try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
+                recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
+                recording.start();
+
+                InetAddress lb = InetAddress.getLoopbackAddress();
+                ssc.bind(new InetSocketAddress(lb, 0));
+                SocketAddress addr = ssc.getLocalAddress();
+                ssc.close();
+
+                IOException connectException = null;
+                try (SocketChannel sc = SocketChannel.open()) {
+                    sc.configureBlocking(false);
+                    sc.connect(addr);
+                    while (! sc.finishConnect()) {
+                        Thread.sleep(1);
+                    }
+                } catch (IOException ioe) {
+                    // we expect this
+                    connectException = ioe;
+                }
+
+                recording.stop();
+                List<RecordedEvent> events = Events.fromRecording(recording);
+                Asserts.assertEquals(events.size(), 1);
+                IOHelper.checkConnectionEventException(events.get(0), connectException);
             }
         }
     }
