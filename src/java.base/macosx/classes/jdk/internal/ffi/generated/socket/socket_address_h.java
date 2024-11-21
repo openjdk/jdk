@@ -39,7 +39,7 @@ import static java.lang.foreign.MemoryLayout.PathElement.*;
 
 public final class socket_address_h {
 
-    private ssocket_address_h() {
+    private socket_address_h() {
         // Should not be called directly
     }
 
