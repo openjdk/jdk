@@ -387,12 +387,8 @@ public class DatagramSocket implements java.io.Closeable {
      * this socket is unknown - it may or may not be connected to the address
      * that it was previously connected to.
      *
-     * <p> Care should be taken to ensure that a connected datagram socket
-     * is not shared with untrusted code. When a socket is connected,
-     * {@link #receive receive} and {@link #send send} <b>will not perform
-     * any security checks</b> on incoming and outgoing packets, other than
-     * matching the packet's and the socket's address and port. On a send
-     * operation, if the packet's address is set and the packet's address
+     * <p> When a socket is connected, additional checks are performed
+     * on a send operation: if the packet's address is set and the packet's address
      * and the socket's address do not match, an {@code IllegalArgumentException}
      * will be thrown. A socket connected to a multicast address may only
      * be used to send packets. Datagrams in the socket's {@linkplain
@@ -1086,11 +1082,6 @@ public class DatagramSocket implements java.io.Closeable {
     {
         if (factory != null) {
             throw new SocketException("factory already defined");
-        }
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSetFactory();
         }
         factory = fac;
     }
