@@ -1603,9 +1603,7 @@ public class Socket implements java.io.Closeable {
         try {
             close();
         } catch (IOException exception) {
-            if (exception != parentException) {
-                parentException.addSuppressed(exception);
-            }
+            parentException.addSuppressed(exception);
         }
     }
 
