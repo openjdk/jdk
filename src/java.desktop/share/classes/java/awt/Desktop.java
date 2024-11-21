@@ -827,7 +827,6 @@ public class Desktop {
      *
      * @since 9
      */
-    @SuppressWarnings("removal")
     public boolean moveToTrash(File file) {
         file = new File(file.getPath());
         checkActionSupport(Action.MOVE_TO_TRASH);
