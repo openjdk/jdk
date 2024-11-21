@@ -3657,7 +3657,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   return JNI_OK;
 }
 
-void Arguments::setup_compact_headers() {
+void Arguments::set_compact_headers() {
 #ifdef _LP64
   if (UseCompactObjectHeaders && FLAG_IS_CMDLINE(UseCompressedClassPointers) && !UseCompressedClassPointers) {
     warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
@@ -3695,7 +3695,7 @@ jint Arguments::apply_ergo() {
 
   GCConfig::arguments()->initialize();
 
-  setup_compact_headers();
+  set_compact_headers();
 
   if (UseCompressedClassPointers) {
     CompressedKlassPointers::pre_initialize();
