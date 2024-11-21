@@ -1023,7 +1023,7 @@
   nonstatic_field(InvocationCounter,           _counter,                                      unsigned int)                          \
                                                                                                                                      \
   nonstatic_field(UpcallStub::FrameData,       jfa,                                           JavaFrameAnchor)                       \
-
+                                                                                                                                     \
   nonstatic_field(Mutex,                       _name,                                         const char*)                           \
   static_field(Mutex,                          _mutex_array,                                  Mutex**)                               \
   static_field(Mutex,                          _num_mutex,                                    int)                                   \
