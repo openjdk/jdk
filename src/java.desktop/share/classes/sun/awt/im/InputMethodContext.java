@@ -43,7 +43,6 @@ import java.text.AttributedString;
 import java.text.CharacterIterator;
 import javax.swing.JFrame;
 import sun.awt.InputMethodSupport;
-import sun.security.action.GetPropertyAction;
 
 /**
  * The InputMethodContext class provides methods that input methods
