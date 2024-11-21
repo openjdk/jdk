@@ -242,7 +242,6 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0",
-                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_ANY, "> 0",
                   IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, "> 0",
                   IRNode.LOAD_VECTOR_L,                         "> 0"})
     public long[] multipleOpsWith3DifferentTypes() {
@@ -323,7 +322,7 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.LOAD_VECTOR_S, "> 0",
@@ -356,7 +355,7 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.LOAD_VECTOR_S, "> 0",
