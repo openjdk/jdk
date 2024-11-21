@@ -1221,7 +1221,7 @@ public class BasicScrollBarUI
     /**
      * A listener to listen for keyboard focus changes.
      */
-    protected class KeyboardFocusListener extends MouseAdapter implements PropertyChangeListener {
+    protected class KeyboardFocusListener implements PropertyChangeListener {
         /**
          * Constructs a {@code KeyboardFocusListener}.
          */

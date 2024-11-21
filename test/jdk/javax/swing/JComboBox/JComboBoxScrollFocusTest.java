@@ -30,6 +30,7 @@ import javax.swing.JFrame;
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests JComboBox scrollbar behavior when alt-tabbing
+ * @requires os.family != "mac"
  * @run main/manual JComboBoxScrollFocusTest
  */
 
@@ -40,9 +41,10 @@ public class JComboBoxScrollFocusTest {
              Then, press and hold the left click button on the down arrow button
              in the popup list. While holding the left click button, the list
              should be scrolling down. Press ALT + TAB while holding down the
-             left click to switch focus to a different window. Focus the test
-             frame again and click the dropdown button for the JComboBox again.
-             The list should not be automatically scrolling.
+             left click to switch focus to a different window. Then release the
+             left click button. Focus the test frame again and click the
+             dropdown button for the JComboBox again. The list should be
+             stationary and not be automatically scrolling.
 
              If you are able to execute all steps successfully then the test
              passes, otherwise it fails.
@@ -53,7 +55,6 @@ public class JComboBoxScrollFocusTest {
                 .builder()
                 .title("JComboBoxScrollFocusTest Test Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
                 .testUI(JComboBoxScrollFocusTest::createAndShowGUI)
                 .build()
@@ -62,8 +63,8 @@ public class JComboBoxScrollFocusTest {
 
     private static JFrame createAndShowGUI() {
         JFrame frame = new JFrame("JComboBoxScrollFocusTest Test Frame");
-        JComboBox combobox = new JComboBox();
-        for (int i = 0; i < 100; i ++) {
+        JComboBox<String> combobox = new JComboBox<>();
+        for (int i = 0; i < 100; i++) {
             combobox.addItem(String.valueOf(i));
         }
         frame.add(combobox);
