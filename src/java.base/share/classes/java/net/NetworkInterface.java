@@ -120,13 +120,6 @@ public final class NetworkInterface {
     /**
      * Get an Enumeration with all, or a subset, of the InetAddresses bound to
      * this network interface.
-     * <p>
-     * If there is a security manager, its {@code checkConnect}
-     * method is called for each InetAddress. Only InetAddresses where
-     * the {@code checkConnect} doesn't throw a SecurityException
-     * will be returned in the Enumeration. However, if the caller has the
-     * {@link NetPermission}("getNetworkInformation") permission, then all
-     * InetAddresses are returned.
      *
      * @implNote
      * The returned enumeration contains all, or a subset, of the InetAddresses that were
@@ -144,13 +137,6 @@ public final class NetworkInterface {
     /**
      * Get a Stream of all, or a subset, of the InetAddresses bound to this
      * network interface.
-     * <p>
-     * If there is a security manager, its {@code checkConnect}
-     * method is called for each InetAddress. Only InetAddresses where
-     * the {@code checkConnect} doesn't throw a SecurityException will be
-     * returned in the Stream. However, if the caller has the
-     * {@link NetPermission}("getNetworkInformation") permission, then all
-     * InetAddresses are returned.
      *
      * @implNote
      * The stream contains all, or a subset, of the InetAddresses that were
@@ -193,11 +179,6 @@ public final class NetworkInterface {
     /**
      * Get a List of all, or a subset, of the {@code InterfaceAddresses}
      * of this network interface.
-     * <p>
-     * If there is a security manager, its {@code checkConnect}
-     * method is called with the InetAddress for each InterfaceAddress.
-     * Only InterfaceAddresses where the {@code checkConnect} doesn't throw
-     * a SecurityException will be returned in the List.
      *
      * @return a {@code List} object with all, or a subset, of the
      *         InterfaceAddress of this network interface
@@ -567,13 +548,9 @@ public final class NetworkInterface {
     /**
      * Returns the hardware address (usually MAC) of the interface if it
      * has one and if it can be accessed given the current privileges.
-     * If a security manager is set, then the caller must have
-     * the permission {@link NetPermission}("getNetworkInformation").
      *
      * @return  a byte array containing the address, or {@code null} if
-     *          the address doesn't exist, is not accessible or a security
-     *          manager is set and the caller does not have the permission
-     *          NetPermission("getNetworkInformation")
+     *          the address doesn't exist or is not accessible
      *
      * @throws          SocketException if an I/O error occurs.
      * @since 1.6

@@ -87,7 +87,7 @@ public class TestOldGrowthTriggers {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmds);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-        output.shouldContain("Trigger (OLD): Old has overgrown");
+        output.shouldContain("Trigger (Old): Old has overgrown");
     }
 
     public static void main(String[] args) throws Exception {

@@ -90,11 +90,13 @@ protected:
 #endif
     public:
 
-#ifdef ASSERT
     inline void clear() {
+      _region = nullptr;
+      _region_union._garbage = 0;
+#ifdef ASSERT
       _union_tag = is_uninitialized;
-    }
 #endif
+    }
 
     inline void set_region_and_garbage(ShenandoahHeapRegion* region, size_t garbage) {
       _region = region;
@@ -113,23 +115,17 @@ protected:
     }
 
     inline ShenandoahHeapRegion* get_region() const {
-#ifdef ASSERT
-      assert(_union_tag != is_uninitialized, "Cannot fetch region from uninialized RegionData");
-#endif
+      assert(_union_tag != is_uninitialized, "Cannot fetch region from uninitialized RegionData");
       return _region;
     }
 
     inline size_t get_garbage() const {
-#ifdef ASSERT
       assert(_union_tag == is_garbage, "Invalid union fetch");
-#endif
       return _region_union._garbage;
     }
 
     inline size_t get_livedata() const {
-#ifdef ASSERT
       assert(_union_tag == is_live_data, "Invalid union fetch");
-#endif
       return _region_union._live_data;
     }
   };
@@ -215,6 +211,9 @@ public:
   virtual void initialize();
 
   double elapsed_cycle_time() const;
+
+  // Format prefix and emit log message indicating a GC cycle hs been triggered
+  void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP

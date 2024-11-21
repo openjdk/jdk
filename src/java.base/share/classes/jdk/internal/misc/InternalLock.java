@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,10 @@ public class InternalLock {
     private static final boolean CAN_USE_INTERNAL_LOCK;
     static {
         String s = System.getProperty("jdk.io.useMonitors");
-        if (s != null && (s.isEmpty() || s.equals("true"))) {
-            CAN_USE_INTERNAL_LOCK = false;
-        } else {
+        if (s != null && s.equals("false")) {
             CAN_USE_INTERNAL_LOCK = true;
+        } else {
+            CAN_USE_INTERNAL_LOCK = false;
         }
     }
 

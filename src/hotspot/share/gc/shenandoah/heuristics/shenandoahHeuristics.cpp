@@ -60,11 +60,9 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   assert(num_regions > 0, "Sanity");
 
   _region_data = NEW_C_HEAP_ARRAY(RegionData, num_regions, mtGC);
-#ifdef ASSERT
   for (size_t i = 0; i < num_regions; i++) {
     _region_data[i].clear();
   }
-#endif
 }
 
 ShenandoahHeuristics::~ShenandoahHeuristics() {
@@ -189,15 +187,15 @@ bool ShenandoahHeuristics::should_start_gc() {
   // Perform GC to cleanup metaspace
   if (has_metaspace_oom()) {
     // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
-    log_info(gc)("Trigger: %s", GCCause::to_string(GCCause::_metadata_GC_threshold));
+    log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
     return true;
   }
 
   if (_guaranteed_gc_interval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
     if (last_time_ms > _guaranteed_gc_interval) {
-      log_info(gc)("Trigger (%s): Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
-                   _space_info->name(), last_time_ms, _guaranteed_gc_interval);
+      log_trigger("Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
+                   last_time_ms, _guaranteed_gc_interval);
       return true;
     }
   }
@@ -224,6 +222,24 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
 
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
          "In range after adjustment: " INTX_FORMAT, _gc_time_penalties);
+}
+
+void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
+  LogTarget(Info, gc) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    ls.print_raw("Trigger", 7);
+    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+      ls.print(" (%s)", _space_info->name());
+    }
+    ls.print_raw(": ", 2);
+    va_list va;
+    va_start(va, fmt);
+    ls.vprint(fmt, va);
+    va_end(va);
+    ls.cr();
+  }
 }
 
 void ShenandoahHeuristics::record_success_concurrent() {

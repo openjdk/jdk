@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,45 +33,13 @@ import java.security.BasicPermission;
  * system resources. An {@code AudioPermission} contains a target name but no
  * actions list; you either have the named permission or you don't.
  * <p>
- * The target name is the name of the audio permission (see the table below).
+ * The target name is the name of the audio permission.
  * The names follow the hierarchical property-naming convention. Also, an
  * asterisk can be used to represent all the audio permissions.
- * <p>
- * The following table lists the possible {@code AudioPermission} target names.
- * For each name, the table provides a description of exactly what that
- * permission allows, as well as a discussion of the risks of granting code the
- * permission.
  *
- * <table class="striped">
- * <caption>Permission target name, what the permission allows, and associated
- * risks</caption>
- * <thead>
- *   <tr>
- *     <th scope="col">Permission Target Name
- *     <th scope="col">What the Permission Allows
- *     <th scope="col">Risks of Allowing this Permission
- * </thead>
- * <tbody>
- *   <tr>
- *     <th scope="row">play
- *     <td>Audio playback through the audio device or devices on the system.
- *     Allows the application to obtain and manipulate lines and mixers for
- *     audio playback (rendering).
- *     <td>In some cases use of this permission may affect other
- *     applications because the audio from one line may be mixed with other
- *     audio being played on the system, or because manipulation of a mixer
- *     affects the audio for all lines using that mixer.
- *   <tr>
- *     <th scope="row">record
- *     <td>Audio recording through the audio device or devices on the system.
- *     Allows the application to obtain and manipulate lines and mixers for
- *     audio recording (capture).
- *     <td>In some cases use of this permission may affect other applications
- *     because manipulation of a mixer affects the audio for all lines using
- *     that mixer. This permission can enable an applet or application to
- *     eavesdrop on a user.
- * </tbody>
- * </table>
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @author Kara Kytle
  * @since 1.3

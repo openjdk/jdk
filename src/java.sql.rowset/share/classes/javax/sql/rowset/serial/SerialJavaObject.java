@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,13 +123,6 @@ public class SerialJavaObject implements Serializable, Cloneable {
      * @return an array of <code>Field</code> objects
      * @throws SerialException if an error is encountered accessing
      * the serialized object
-     * @throws  SecurityException  If a security manager, <i>s</i>, is present
-     * and the caller's class loader is not the same as or an
-     * ancestor of the class loader for the class of the
-     * {@linkplain #getObject object} being serialized
-     * and invocation of {@link SecurityManager#checkPackageAccess
-     * s.checkPackageAccess()} denies access to the package
-     * of that class.
      * @see Class#getFields
      */
     @CallerSensitive

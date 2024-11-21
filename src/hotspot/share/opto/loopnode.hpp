@@ -1196,7 +1196,7 @@ public:
   static void verify(PhaseIterGVN& igvn) {
 #ifdef ASSERT
     ResourceMark rm;
-    Compile::TracePhase tp("idealLoopVerify", &timers[_t_idealLoopVerify]);
+    Compile::TracePhase tp(_t_idealLoopVerify);
     PhaseIdealLoop v(igvn);
 #endif
   }
@@ -1352,8 +1352,8 @@ public:
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
   IfTrueNode* create_new_if_for_predicate(
       ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason, int opcode,
-      bool rewire_uncommon_proj_phi_inputs = false
-      NOT_PRODUCT (COMMA AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None));
+      bool rewire_uncommon_proj_phi_inputs = false,
+      AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None);
 
  private:
   // Helper functions for create_new_if_for_predicate()

@@ -104,8 +104,6 @@ void ShenandoahGenerationalControlThread::run_service() {
 
     if (alloc_failure_pending) {
       // Allocation failure takes precedence: we have to deal with it first thing
-      log_info(gc)("Trigger: Handle Allocation Failure");
-
       cause = GCCause::_allocation_failure;
 
       // Consume the degen point, and seed it with default value
@@ -122,6 +120,8 @@ void ShenandoahGenerationalControlThread::run_service() {
       generation = _degen_generation->type();
       bool old_gen_evacuation_failed = heap->old_generation()->clear_failed_evacuation();
 
+      heuristics->log_trigger("Handle Allocation Failure");
+
       // Do not bother with degenerated cycle if old generation evacuation failed or if humongous allocation failed
       if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle() &&
           !old_gen_evacuation_failed && !humongous_alloc_failure_pending) {
@@ -136,7 +136,7 @@ void ShenandoahGenerationalControlThread::run_service() {
       }
     } else if (is_gc_requested) {
       generation = GLOBAL;
-      log_info(gc)("Trigger: GC request (%s)", GCCause::to_string(cause));
+      global_heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
       global_heuristics->record_requested_gc();
 
       if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
@@ -403,17 +403,17 @@ void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(Shenan
       // in this case. Promoted objects should be above the TAMS in the old regions
       // they end up in, but we have to be sure we don't promote into any regions
       // that are in the cset.
-      log_info(gc, ergo)("Start GC cycle (YOUNG)");
+      log_info(gc, ergo)("Start GC cycle (Young)");
       service_concurrent_cycle(heap->young_generation(), cause, false);
       break;
     }
     case OLD: {
-      log_info(gc, ergo)("Start GC cycle (OLD)");
+      log_info(gc, ergo)("Start GC cycle (Old)");
       service_concurrent_old_cycle(heap, cause);
       break;
     }
     case GLOBAL: {
-      log_info(gc, ergo)("Start GC cycle (GLOBAL)");
+      log_info(gc, ergo)("Start GC cycle (Global)");
       service_concurrent_cycle(heap->global_generation(), cause, false);
       break;
     }
@@ -833,7 +833,7 @@ const char* ShenandoahGenerationalControlThread::gc_mode_name(ShenandoahGenerati
 
 void ShenandoahGenerationalControlThread::set_gc_mode(ShenandoahGenerationalControlThread::GCMode new_mode) {
   if (_mode != new_mode) {
-    log_info(gc)("Transition from: %s to: %s", gc_mode_name(_mode), gc_mode_name(new_mode));
+    log_debug(gc)("Transition from: %s to: %s", gc_mode_name(_mode), gc_mode_name(new_mode));
     MonitorLocker ml(&_regulator_lock, Mutex::_no_safepoint_check_flag);
     _mode = new_mode;
     ml.notify_all();

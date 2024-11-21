@@ -140,10 +140,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
   if (promo_potential > promo_expedite_threshold) {
     // Detect unsigned arithmetic underflow
     assert(promo_potential < heap->capacity(), "Sanity");
-    log_info(gc)("Trigger (%s): expedite promotion of " SIZE_FORMAT "%s",
-                 _space_info->name(),
-                 byte_size_in_proper_unit(promo_potential),
-                 proper_unit_for_byte_size(promo_potential));
+    log_trigger("Expedite promotion of " PROPERFMT, PROPERFMTARGS(promo_potential));
     return true;
   }
 
@@ -153,8 +150,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     // If concurrent weak root processing is in progress, it means the old cycle has chosen mixed collection
     // candidates, but has not completed. There is no point in trying to start the young cycle before the old
     // cycle completes.
-    log_info(gc)("Trigger (%s): expedite mixed evacuation of " SIZE_FORMAT " regions",
-                 _space_info->name(), mixed_candidates);
+    log_trigger("Expedite mixed evacuation of " SIZE_FORMAT " regions", mixed_candidates);
     return true;
   }
 

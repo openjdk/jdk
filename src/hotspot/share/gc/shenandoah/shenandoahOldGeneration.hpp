@@ -90,10 +90,10 @@ private:
 public:
   ShenandoahOldGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity);
 
-  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
+  ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 
   const char* name() const override {
-    return "OLD";
+    return "Old";
   }
 
   ShenandoahOldHeuristics* heuristics() const override {
@@ -193,7 +193,7 @@ public:
 
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 
-  void parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) override;
+  void parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) override;
 
   void heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 

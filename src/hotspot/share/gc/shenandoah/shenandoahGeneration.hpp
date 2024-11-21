@@ -188,7 +188,7 @@ private:
   virtual void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) = 0;
 
   // Apply closure to all regions affiliated with this generation (include free regions);
-  virtual void parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl);
+  virtual void parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl);
 
   // Apply closure to all regions affiliated with this generation (single threaded).
   virtual void heap_region_iterate(ShenandoahHeapRegionClosure* cl) = 0;

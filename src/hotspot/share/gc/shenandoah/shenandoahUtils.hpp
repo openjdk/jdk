@@ -47,16 +47,16 @@ class ShenandoahGeneration;
 #define SHENANDOAH_RETURN_EVENT_MESSAGE(generation_type, prefix, postfix) \
   switch (generation_type) {                                              \
     case NON_GEN:                                                         \
-      return prefix " (NON-GENERATIONAL)" postfix;                        \
+      return prefix postfix;                                              \
     case GLOBAL:                                                          \
-      return prefix " (GLOBAL)" postfix;                                  \
+      return prefix " (Global)" postfix;                                  \
     case YOUNG:                                                           \
-      return prefix " (YOUNG)" postfix;                                   \
+      return prefix " (Young)" postfix;                                   \
     case OLD:                                                             \
-      return prefix " (OLD)" postfix;                                     \
+      return prefix " (Old)" postfix;                                     \
     default:                                                              \
       ShouldNotReachHere();                                               \
-      return prefix " (UNKNOWN)" postfix;                                 \
+      return prefix " (Unknown)" postfix;                                 \
   }                                                                       \
 
 class ShenandoahGCSession : public StackObj {

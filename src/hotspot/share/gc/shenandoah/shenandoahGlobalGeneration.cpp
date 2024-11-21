@@ -34,7 +34,7 @@
 
 
 const char* ShenandoahGlobalGeneration::name() const {
-  return "GLOBAL";
+  return type() == NON_GEN ? "" : "Global";
 }
 
 size_t ShenandoahGlobalGeneration::max_capacity() const {

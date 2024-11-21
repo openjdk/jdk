@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,16 +322,8 @@ public abstract class URLConnection {
 
     /**
      * Sets the FileNameMap.
-     * <p>
-     * If there is a security manager, this method first calls
-     * the security manager's {@code checkSetFactory} method
-     * to ensure the operation is allowed.
-     * This could result in a SecurityException.
      *
      * @param map the FileNameMap to be set
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkSetFactory} method doesn't allow the operation.
-     * @see        SecurityManager#checkSetFactory
      * @see #getFileNameMap()
      * @since 1.2
      */
@@ -1283,19 +1275,11 @@ public abstract class URLConnection {
      * <p>
      * The {@code ContentHandlerFactory} instance is used to
      * construct a content handler from a content type.
-     * <p>
-     * If there is a security manager, this method first calls
-     * the security manager's {@code checkSetFactory} method
-     * to ensure the operation is allowed.
-     * This could result in a SecurityException.
      *
      * @param      fac   the desired factory.
      * @throws     Error  if the factory has already been defined.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkSetFactory} method doesn't allow the operation.
      * @see        java.net.ContentHandlerFactory
      * @see        java.net.URLConnection#getContent()
-     * @see        SecurityManager#checkSetFactory
      */
     public static synchronized void setContentHandlerFactory(ContentHandlerFactory fac) {
         if (factory != null) {

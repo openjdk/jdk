@@ -67,7 +67,8 @@ void ShenandoahYoungGeneration::heap_region_iterate(ShenandoahHeapRegionClosure*
   ShenandoahHeap::heap()->heap_region_iterate(&young_regions_cl);
 }
 
-void ShenandoahYoungGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
+void ShenandoahYoungGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
+  // Iterate over everything that is not old.
   ShenandoahExcludeRegionClosure<OLD_GENERATION> exclude_cl(cl);
   ShenandoahHeap::heap()->parallel_heap_region_iterate(&exclude_cl);
 }

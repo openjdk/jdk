@@ -1108,7 +1108,7 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
   // Enable this functionality target by target as needed
   if (SuperWordLoopUnrollAnalysis) {
     if (!cl->was_slp_analyzed()) {
-      Compile::TracePhase tp("autoVectorize", &Phase::timers[Phase::_t_autoVectorize]);
+      Compile::TracePhase tp(Phase::_t_autoVectorize);
 
       VLoop vloop(this, true);
       if (vloop.check_preconditions()) {
@@ -2759,8 +2759,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
             // cannot remove an empty loop with a constant limit when init is not a constant as well. We will use
             // a LoopLimitCheck node that can only be folded if the zero grip guard is also foldable.
             loop_entry = initialized_assertion_predicate_creator.create(final_iv_placeholder, loop_entry, stride_con,
-                                                                        scale_con, int_offset, int_limit NOT_PRODUCT(
-                                                                        COMMA AssertionPredicateType::FinalIv));
+                                                                        scale_con, int_offset, int_limit,
+                                                                        AssertionPredicateType::FinalIv);
             assert(!assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
           }
 
@@ -2773,8 +2773,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 
           // Initialized Assertion Predicate for the value of the initial main-loop.
           loop_entry = initialized_assertion_predicate_creator.create(init, loop_entry, stride_con, scale_con,
-                                                                      int_offset, int_limit NOT_PRODUCT(COMMA
-                                                                      AssertionPredicateType::InitValue));
+                                                                      int_offset, int_limit,
+                                                                      AssertionPredicateType::InitValue);
           assert(!assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
 
         } else {

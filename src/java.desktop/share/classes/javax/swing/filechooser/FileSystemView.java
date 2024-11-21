@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -675,8 +675,6 @@ public abstract class FileSystemView {
      * @param file a file
      * @return whether this is a link
      * @throws NullPointerException if {@code file} equals {@code null}
-     * @throws SecurityException if the caller does not have necessary
-     *                           permissions
      * @see #getLinkLocation(File)
      * @since 9
      */
@@ -701,8 +699,6 @@ public abstract class FileSystemView {
      * @return the linked file or {@code null}.
      * @throws FileNotFoundException if the linked file does not exist
      * @throws NullPointerException if {@code file} equals {@code null}
-     * @throws SecurityException if the caller does not have necessary
-     *                           permissions
      * @since 9
      */
     public File getLinkLocation(File file) throws FileNotFoundException {

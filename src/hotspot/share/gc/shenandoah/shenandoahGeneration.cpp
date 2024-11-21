@@ -234,10 +234,10 @@ void ShenandoahGeneration::prepare_gc() {
 
   // Capture Top At Mark Start for this generation (typically young) and reset mark bitmap.
   ShenandoahResetUpdateRegionStateClosure cl;
-  parallel_region_iterate_free(&cl);
+  parallel_heap_region_iterate_free(&cl);
 }
 
-void ShenandoahGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
+void ShenandoahGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
   ShenandoahHeap::heap()->parallel_heap_region_iterate(cl);
 }
 
@@ -377,7 +377,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   ShenandoahYoungGeneration* const young_generation = heap->young_generation();
 
   size_t old_evacuated = collection_set->get_old_bytes_reserved_for_evacuation();
-  size_t old_evacuated_committed = (size_t) (ShenandoahOldEvacWaste * old_evacuated);
+  size_t old_evacuated_committed = (size_t) (ShenandoahOldEvacWaste * double(old_evacuated));
   size_t old_evacuation_reserve = old_generation->get_evacuation_reserve();
 
   if (old_evacuated_committed > old_evacuation_reserve) {
@@ -394,10 +394,10 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   }
 
   size_t young_advance_promoted = collection_set->get_young_bytes_to_be_promoted();
-  size_t young_advance_promoted_reserve_used = (size_t) (ShenandoahPromoEvacWaste * young_advance_promoted);
+  size_t young_advance_promoted_reserve_used = (size_t) (ShenandoahPromoEvacWaste * double(young_advance_promoted));
 
   size_t young_evacuated = collection_set->get_young_bytes_reserved_for_evacuation();
-  size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * young_evacuated);
+  size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * double(young_evacuated));
 
   size_t total_young_available = young_generation->available_with_reserve();
   assert(young_evacuated_reserve_used <= total_young_available, "Cannot evacuate more than is available in young");
@@ -452,14 +452,16 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   } else if (unaffiliated_old_regions > 0) {
     // excess_old < unaffiliated old: we can give back MIN(excess_old/region_size_bytes, unaffiliated_old_regions)
     size_t excess_regions = excess_old / region_size_bytes;
-    size_t regions_to_xfer = MIN2(excess_regions, unaffiliated_old_regions);
+    regions_to_xfer = MIN2(excess_regions, unaffiliated_old_regions);
   }
 
   if (regions_to_xfer > 0) {
     bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
-    assert(excess_old > regions_to_xfer * region_size_bytes, "Cannot xfer more than excess old");
+    assert(excess_old >= regions_to_xfer * region_size_bytes,
+           "Cannot transfer (" SIZE_FORMAT ", " SIZE_FORMAT ") more than excess old (" SIZE_FORMAT ")",
+           regions_to_xfer, region_size_bytes, excess_old);
     excess_old -= regions_to_xfer * region_size_bytes;
-    log_info(gc, ergo)("%s transferred " SIZE_FORMAT " excess regions to young before start of evacuation",
+    log_debug(gc, ergo)("%s transferred " SIZE_FORMAT " excess regions to young before start of evacuation",
                        result? "Successfully": "Unsuccessfully", regions_to_xfer);
   }
 
@@ -633,7 +635,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // We keep going even if one region is excluded from selection because we need to accumulate all eligible
       // regions that are not preselected into promo_potential
     }
-    log_info(gc)("Preselected " SIZE_FORMAT " regions containing " SIZE_FORMAT " live bytes,"
+    log_debug(gc)("Preselected " SIZE_FORMAT " regions containing " SIZE_FORMAT " live bytes,"
                  " consuming: " SIZE_FORMAT " of budgeted: " SIZE_FORMAT,
                  selected_regions, selected_live, old_consumed, old_available);
   }

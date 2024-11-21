@@ -33,7 +33,8 @@
 ShenandoahEvacuationStats::ShenandoahEvacuationStats()
   : _evacuations_completed(0), _bytes_completed(0),
     _evacuations_attempted(0), _bytes_attempted(0),
-    _use_age_table(ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
+    _use_age_table(ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring),
+    _age_table(nullptr) {
   if (_use_age_table) {
     _age_table = new AgeTable(false);
   }

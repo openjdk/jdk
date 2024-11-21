@@ -357,8 +357,8 @@ private:
   // ObjectStartsInCardRegion bit is set within a crossing_info.offsets.start iff at least one object starts within
   // a particular card region.  We pack this bit into start byte under assumption that start byte is accessed less
   // frequently than last byte.  This is true when number of clean cards is greater than number of dirty cards.
-  static const uint16_t ObjectStartsInCardRegion = 0x80;
-  static const uint16_t FirstStartBits           = 0x7f;
+  static const uint8_t ObjectStartsInCardRegion = 0x80;
+  static const uint8_t FirstStartBits           = 0x7f;
 
   // Check that we have enough bits to store the largest possible offset into a card for an object start.
   // The value for maximum card size is based on the constraints for GCCardSizeInBytes in gc_globals.hpp.

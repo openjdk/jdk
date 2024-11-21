@@ -1600,6 +1600,7 @@ void InstanceKlass::call_class_initializer(TRAPS) {
                 THREAD->name());
   }
   if (h_method() != nullptr) {
+    ThreadInClassInitializer ticl(THREAD, this); // Track class being initialized
     JavaCallArguments args; // No arguments
     JavaValue result(T_VOID);
     JavaCalls::call(&result, h_method, &args, CHECK); // Static call (no args)

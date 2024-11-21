@@ -38,7 +38,7 @@ class ShenandoahFullGC;
 //   - VM_ShenandoahFinalMarkStartEvac: finish up concurrent marking, and start evacuation
 //   - VM_ShenandoahInitUpdateRefs: initiate update references
 //   - VM_ShenandoahFinalUpdateRefs: finish up update references
-//   - VM_ShenandoahFinalRoots
+//   - VM_ShenandoahFinalRoots: finish up roots on a non-evacuating cycle
 //   - VM_ShenandoahReferenceOperation:
 //       - VM_ShenandoahFullGC: do full GC
 //       - VM_ShenandoahDegeneratedGC: do STW degenerated GC

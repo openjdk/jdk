@@ -265,24 +265,24 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
           PLAB* plab = ShenandoahThreadLocalData::plab(thread);
           if (plab != nullptr) {
             has_plab = true;
-          }
-          copy = allocate_from_plab(thread, size, is_promotion);
-          if ((copy == nullptr) && (size < ShenandoahThreadLocalData::plab_size(thread)) &&
-              ShenandoahThreadLocalData::plab_retries_enabled(thread)) {
-            // PLAB allocation failed because we are bumping up against the limit on old evacuation reserve or because
-            // the requested object does not fit within the current plab but the plab still has an "abundance" of memory,
-            // where abundance is defined as >= ShenGenHeap::plab_min_size().  In the former case, we try shrinking the
-            // desired PLAB size to the minimum and retry PLAB allocation to avoid cascading of shared memory allocations.
-            if (plab->words_remaining() < plab_min_size()) {
-              ShenandoahThreadLocalData::set_plab_size(thread, plab_min_size());
-              copy = allocate_from_plab(thread, size, is_promotion);
-              // If we still get nullptr, we'll try a shared allocation below.
-              if (copy == nullptr) {
-                // If retry fails, don't continue to retry until we have success (probably in next GC pass)
-                ShenandoahThreadLocalData::disable_plab_retries(thread);
+            copy = allocate_from_plab(thread, size, is_promotion);
+            if ((copy == nullptr) && (size < ShenandoahThreadLocalData::plab_size(thread)) &&
+                ShenandoahThreadLocalData::plab_retries_enabled(thread)) {
+              // PLAB allocation failed because we are bumping up against the limit on old evacuation reserve or because
+              // the requested object does not fit within the current plab but the plab still has an "abundance" of memory,
+              // where abundance is defined as >= ShenGenHeap::plab_min_size().  In the former case, we try shrinking the
+              // desired PLAB size to the minimum and retry PLAB allocation to avoid cascading of shared memory allocations.
+              if (plab->words_remaining() < plab_min_size()) {
+                ShenandoahThreadLocalData::set_plab_size(thread, plab_min_size());
+                copy = allocate_from_plab(thread, size, is_promotion);
+                // If we still get nullptr, we'll try a shared allocation below.
+                if (copy == nullptr) {
+                  // If retry fails, don't continue to retry until we have success (probably in next GC pass)
+                  ShenandoahThreadLocalData::disable_plab_retries(thread);
+                }
               }
+              // else, copy still equals nullptr.  this causes shared allocation below, preserving this plab for future needs.
             }
-            // else, copy still equals nullptr.  this causes shared allocation below, preserving this plab for future needs.
           }
           break;
         }
@@ -640,24 +640,22 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
 
   // In the case that ShenandoahOldEvacRatioPercent equals 100, max_old_reserve is limited only by xfer_limit.
 
-  const size_t bound_on_old_reserve = old_available + old_xfer_limit + young_reserve;
-  const size_t max_old_reserve = (ShenandoahOldEvacRatioPercent == 100)?
-                                 bound_on_old_reserve: MIN2((young_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent),
+  const double bound_on_old_reserve = old_available + old_xfer_limit + young_reserve;
+  const double max_old_reserve = (ShenandoahOldEvacRatioPercent == 100)?
+                                 bound_on_old_reserve: MIN2(double(young_reserve * ShenandoahOldEvacRatioPercent) / double(100 - ShenandoahOldEvacRatioPercent),
                                                             bound_on_old_reserve);
 
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   // Decide how much old space we should reserve for a mixed collection
-  size_t reserve_for_mixed = 0;
+  double reserve_for_mixed = 0;
   if (old_generation()->has_unprocessed_collection_candidates()) {
     // We want this much memory to be unfragmented in order to reliably evacuate old.  This is conservative because we
     // may not evacuate the entirety of unprocessed candidates in a single mixed evacuation.
-    const size_t max_evac_need = (size_t)
-            (old_generation()->unprocessed_collection_candidates_live_memory() * ShenandoahOldEvacWaste);
+    const double max_evac_need = (double(old_generation()->unprocessed_collection_candidates_live_memory()) * ShenandoahOldEvacWaste);
     assert(old_available >= old_generation()->free_unaffiliated_regions() * region_size_bytes,
            "Unaffiliated available must be less than total available");
-    const size_t old_fragmented_available =
-            old_available - old_generation()->free_unaffiliated_regions() * region_size_bytes;
+    const double old_fragmented_available = double(old_available - old_generation()->free_unaffiliated_regions() * region_size_bytes);
     reserve_for_mixed = max_evac_need + old_fragmented_available;
     if (reserve_for_mixed > max_old_reserve) {
       reserve_for_mixed = max_old_reserve;
@@ -1000,7 +998,7 @@ void ShenandoahGenerationalHeap::update_heap_references(bool concurrent) {
   }
 }
 
-namespace ShenandoahCompositeRegionClosure {
+struct ShenandoahCompositeRegionClosure {
   template<typename C1, typename C2>
   class Closure : public ShenandoahHeapRegionClosure {
   private:
@@ -1020,12 +1018,11 @@ namespace ShenandoahCompositeRegionClosure {
     }
   };
 
-
   template<typename C1, typename C2>
-  Closure<C1, C2> of(C1 &c1, C2 &c2) {
+  static Closure<C1, C2> of(C1 &c1, C2 &c2) {
     return Closure<C1, C2>(c1, c2);
   }
-}
+};
 
 class ShenandoahUpdateRegionAges : public ShenandoahHeapRegionClosure {
 private:

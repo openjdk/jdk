@@ -1168,10 +1168,6 @@ public final class Locale implements Cloneable, Serializable {
      * this instance of the Java Virtual Machine. This does not affect the
      * host locale.
      * <p>
-     * If there is a security manager, its {@code checkPermission}
-     * method is called with a {@code PropertyPermission("user.language", "write")}
-     * permission before the default locale is changed.
-     * <p>
      * The Java Virtual Machine sets the default locale during startup
      * based on the host environment. It is used by many locale-sensitive
      * methods if no locale is explicitly specified.
@@ -1184,13 +1180,8 @@ public final class Locale implements Cloneable, Serializable {
      * By setting the default locale with this method, all of the default
      * locales for each Category are also set to the specified default locale.
      *
-     * @throws SecurityException
-     *        if a security manager exists and its
-     *        {@code checkPermission} method doesn't allow the operation.
      * @throws NullPointerException if {@code newLocale} is null
      * @param newLocale the new default locale
-     * @see SecurityManager#checkPermission
-     * @see java.util.PropertyPermission
      */
     public static synchronized void setDefault(Locale newLocale) {
         setDefault(Category.DISPLAY, newLocale);
@@ -1203,10 +1194,6 @@ public final class Locale implements Cloneable, Serializable {
      * Category for this instance of the Java Virtual Machine. This does
      * not affect the host locale.
      * <p>
-     * If there is a security manager, its checkPermission method is called
-     * with a PropertyPermission("user.language", "write") permission before
-     * the default locale is changed.
-     * <p>
      * The Java Virtual Machine sets the default locale during startup based
      * on the host environment. It is used by many locale-sensitive methods
      * if no locale is explicitly specified.
@@ -1218,11 +1205,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @param category the specified category to set the default locale
      * @param newLocale the new default locale
-     * @throws SecurityException if a security manager exists and its
-     *     checkPermission method doesn't allow the operation.
      * @throws NullPointerException if category and/or newLocale is null
-     * @see SecurityManager#checkPermission(java.security.Permission)
-     * @see PropertyPermission
      * @see #getDefault(Locale.Category)
      * @since 1.7
      */

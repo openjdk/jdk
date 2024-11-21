@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,9 +316,6 @@ public final class LambdaMetafactory {
      *         handle referencing a method or constructor, or if the linkage
      *         invariants are violated, as defined {@link LambdaMetafactory above}.
      * @throws NullPointerException If any argument is {@code null}.
-     * @throws SecurityException If a security manager is present, and it
-     *         <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
-     *         from {@code caller} to the package of {@code implementation}.
      */
     public static CallSite metafactory(MethodHandles.Lookup caller,
                                        String interfaceMethodName,
@@ -467,9 +464,6 @@ public final class LambdaMetafactory {
      *         of {@code args} do not follow the above rules, or if
      *         {@code altInterfaceCount} or {@code altMethodCount} are negative
      *         integers.
-     * @throws SecurityException If a security manager is present, and it
-     *         <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
-     *         from {@code caller} to the package of {@code implementation}.
      */
     public static CallSite altMetafactory(MethodHandles.Lookup caller,
                                           String interfaceMethodName,

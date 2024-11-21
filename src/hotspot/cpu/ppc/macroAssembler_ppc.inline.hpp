@@ -191,8 +191,18 @@ inline void MacroAssembler::set_oop(AddressLiteral obj_addr, Register d) {
 }
 
 inline void MacroAssembler::pd_patch_instruction(address branch, address target, const char* file, int line) {
-  jint& stub_inst = *(jint*) branch;
-  stub_inst = patched_branch(target - branch, stub_inst, 0);
+  if (is_branch(branch)) {
+    jint& stub_inst = *(jint*) branch;
+    stub_inst = patched_branch(target - branch, stub_inst, 0);
+  } else if (is_calculate_address_from_global_toc_at(branch + BytesPerInstWord, branch)) {
+    const address inst1_addr = branch;
+    const address inst2_addr = branch + BytesPerInstWord;
+    patch_calculate_address_from_global_toc_at(inst2_addr, inst1_addr, target);
+  } else if (is_load_const_at(branch)) {
+    patch_const(branch, (long)target);
+  } else {
+    assert(false, "instruction at " PTR_FORMAT " not recognized", p2i(branch));
+  }
 }
 
 // Relocation of conditional far branches.

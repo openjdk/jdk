@@ -1607,12 +1607,12 @@ void ShenandoahFreeSet::establish_generation_sizes(size_t young_region_count, si
 
     if (new_old_capacity > original_old_capacity) {
       size_t region_count = (new_old_capacity - original_old_capacity) / region_size_bytes;
-      log_info(gc)("Transfer " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " PROPERFMT,
-                   region_count, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_old_capacity));
+      log_info(gc, ergo)("Transfer " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " PROPERFMT,
+                         region_count, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_old_capacity));
     } else if (new_old_capacity < original_old_capacity) {
       size_t region_count = (original_old_capacity - new_old_capacity) / region_size_bytes;
-      log_info(gc)("Transfer " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " PROPERFMT,
-                   region_count, old_gen->name(), young_gen->name(), PROPERFMTARGS(new_young_capacity));
+      log_info(gc, ergo)("Transfer " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " PROPERFMT,
+                         region_count, old_gen->name(), young_gen->name(), PROPERFMTARGS(new_young_capacity));
     }
     // This balances generations, so clear any pending request to balance.
     old_gen->set_region_balance(0);
@@ -1843,21 +1843,6 @@ void ShenandoahFreeSet::log_status() {
   // Dump of the FreeSet details is only enabled if assertions are enabled
   if (LogTarget(Debug, gc, free)::is_enabled()) {
 #define BUFFER_SIZE 80
-    size_t retired_old = 0;
-    size_t retired_old_humongous = 0;
-    size_t retired_young = 0;
-    size_t retired_young_humongous = 0;
-    size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-    size_t retired_young_waste = 0;
-    size_t retired_old_waste = 0;
-    size_t consumed_collector = 0;
-    size_t consumed_old_collector = 0;
-    size_t consumed_mutator = 0;
-    size_t available_old = 0;
-    size_t available_young = 0;
-    size_t available_mutator = 0;
-    size_t available_collector = 0;
-    size_t available_old_collector = 0;
 
     char buffer[BUFFER_SIZE];
     for (uint i = 0; i < BUFFER_SIZE; i++) {
@@ -1888,37 +1873,25 @@ void ShenandoahFreeSet::log_status() {
       if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, i)) {
         size_t capacity = alloc_capacity(r);
         assert(!r->is_old() || r->is_trash(), "Old regions except trash regions should not be in mutator_free set");
-        available_mutator += capacity;
-        consumed_mutator += region_size_bytes - capacity;
-        buffer[idx] = (capacity == region_size_bytes)? 'M': 'm';
+        buffer[idx] = (capacity == ShenandoahHeapRegion::region_size_bytes()) ? 'M' : 'm';
       } else if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Collector, i)) {
         size_t capacity = alloc_capacity(r);
         assert(!r->is_old() || r->is_trash(), "Old regions except trash regions should not be in collector_free set");
-        available_collector += capacity;
-        consumed_collector += region_size_bytes - capacity;
-        buffer[idx] = (capacity == region_size_bytes)? 'C': 'c';
+        buffer[idx] = (capacity == ShenandoahHeapRegion::region_size_bytes()) ? 'C' : 'c';
       } else if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::OldCollector, i)) {
         size_t capacity = alloc_capacity(r);
-        available_old_collector += capacity;
-        consumed_old_collector += region_size_bytes - capacity;
-        buffer[idx] = (capacity == region_size_bytes)? 'O': 'o';
+        buffer[idx] = (capacity == ShenandoahHeapRegion::region_size_bytes()) ? 'O' : 'o';
       } else if (r->is_humongous()) {
         if (r->is_old()) {
           buffer[idx] = 'H';
-          retired_old_humongous += region_size_bytes;
         } else {
           buffer[idx] = 'h';
-          retired_young_humongous += region_size_bytes;
         }
       } else {
         if (r->is_old()) {
           buffer[idx] = '~';
-          retired_old_waste += alloc_capacity(r);
-          retired_old += region_size_bytes;
         } else {
           buffer[idx] = '_';
-          retired_young_waste += alloc_capacity(r);
-          retired_young += region_size_bytes;
         }
       }
     }

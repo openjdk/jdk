@@ -100,8 +100,8 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred, 
 // is an IfTrue projection. This code is also used to clone predicates to cloned loops.
 IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_success_proj,
                                                         Node* new_entry, const Deoptimization::DeoptReason reason,
-                                                        const int opcode, const bool rewire_uncommon_proj_phi_inputs
-                                                        NOT_PRODUCT (COMMA AssertionPredicateType assertion_predicate_type)) {
+                                                        const int opcode, const bool rewire_uncommon_proj_phi_inputs,
+                                                        AssertionPredicateType assertion_predicate_type) {
   assert(parse_predicate_success_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");
   ParsePredicateNode* parse_predicate = parse_predicate_success_proj->in(0)->as_ParsePredicate();
   ParsePredicateUncommonProj* uncommon_proj = parse_predicate->uncommon_proj();

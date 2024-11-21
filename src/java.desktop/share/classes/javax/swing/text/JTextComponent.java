@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2124,8 +2124,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @return {@code true}, unless printing is canceled by the user
      * @throws PrinterException if an error in the print system causes the job
      *         to be aborted
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      *
      * @see #print(MessageFormat, MessageFormat, boolean, PrintService, PrintRequestAttributeSet, boolean)
      *
@@ -2154,8 +2152,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @return {@code true}, unless printing is canceled by the user
      * @throws PrinterException if an error in the print system causes the job
      *         to be aborted
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      *
      * @see #print(MessageFormat, MessageFormat, boolean, PrintService, PrintRequestAttributeSet, boolean)
      * @see java.text.MessageFormat
@@ -2266,8 +2262,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @return {@code true}, unless printing is canceled by the user
      * @throws PrinterException if an error in the print system causes the job
      *         to be aborted
-     * @throws SecurityException if this thread is not allowed to
-     *                           initiate a print job request
      *
      * @see #getPrintable
      * @see java.text.MessageFormat

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -558,11 +558,6 @@ public class Window extends Container implements Accessible {
      * Constructs a new, initially invisible window with the specified
      * {@code Frame} as its owner. The window will not be focusable
      * unless its owner is showing on the screen.
-     * <p>
-     * If there is a security manager set, it is invoked to check
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}.
-     * If that check fails with a {@code SecurityException} then a warning
-     * banner is created.
      *
      * @param owner the {@code Frame} to act as owner or {@code null}
      *    if this window has no owner
@@ -585,11 +580,6 @@ public class Window extends Container implements Accessible {
      * {@code Window} as its owner. This window will not be focusable
      * unless its nearest owning {@code Frame} or {@code Dialog}
      * is showing on the screen.
-     * <p>
-     * If there is a security manager set, it is invoked to check
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}.
-     * If that check fails with a {@code SecurityException} then a
-     * warning banner is created.
      *
      * @param owner the {@code Window} to act as owner or
      *     {@code null} if this window has no owner
@@ -616,11 +606,6 @@ public class Window extends Container implements Accessible {
      * of a screen device. The Window will not be focusable unless
      * its nearest owning {@code Frame} or {@code Dialog}
      * is showing on the screen.
-     * <p>
-     * If there is a security manager set, it is invoked to check
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}. If that
-     * check fails with a {@code SecurityException} then a warning banner
-     * is created.
      *
      * @param owner the window to act as owner or {@code null}
      *     if this window has no owner
@@ -1382,18 +1367,10 @@ public class Window extends Container implements Accessible {
 
     /**
      * Gets the warning string that is displayed with this window.
-     * If this window is insecure, the warning string is displayed
-     * somewhere in the visible area of the window. A window is
-     * insecure if there is a security manager and the security
-     * manager denies
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}.
      * <p>
-     * If the window is secure, then {@code getWarningString}
-     * returns {@code null}. If the window is insecure, this
-     * method checks for the system property
-     * {@code awt.appletWarning}
-     * and returns the string value of that property.
-     * @return    the warning string for this window.
+     * Warning strings are no longer applicable,
+     * so this method always returns {@code null}.
+     * @return    null
      */
     public final String getWarningString() {
         return warningString;
@@ -1684,9 +1661,6 @@ public class Window extends Container implements Accessible {
      * @param exclusionType the modal exclusion type for this window; a {@code null}
      *     value is equivalent to {@link Dialog.ModalExclusionType#NO_EXCLUDE
      *     NO_EXCLUDE}
-     * @throws SecurityException if the calling thread does not have permission
-     *     to set the modal exclusion property to the window with the given
-     *     {@code exclusionType}
      * @see java.awt.Dialog.ModalExclusionType
      * @see java.awt.Window#getModalExclusionType
      * @see java.awt.Toolkit#isModalExclusionTypeSupported
@@ -2232,29 +2206,19 @@ public class Window extends Container implements Accessible {
      * {@link Window#isAlwaysOnTopSupported()}.  If always-on-top mode
      * isn't supported for this window or this window's toolkit does not
      * support always-on-top windows, calling this method has no effect.
-     * <p>
-     * If a SecurityManager is installed, the calling thread must be
-     * granted the AWTPermission "setWindowAlwaysOnTop" in
-     * order to set the value of this property. If this
-     * permission is not granted, this method will throw a
-     * SecurityException, and the current value of the property will
-     * be left unchanged.
      *
      * @param alwaysOnTop true if the window should always be above other
      *        windows
-     * @throws SecurityException if the calling thread does not have
-     *         permission to set the value of always-on-top property
      *
      * @see #isAlwaysOnTop
      * @see #toFront
      * @see #toBack
-     * @see AWTPermission
      * @see #isAlwaysOnTopSupported
      * @see #getToolkit
      * @see Toolkit#isAlwaysOnTopSupported
      * @since 1.5
      */
-    public final void setAlwaysOnTop(boolean alwaysOnTop) throws SecurityException {
+    public final void setAlwaysOnTop(boolean alwaysOnTop) {
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {

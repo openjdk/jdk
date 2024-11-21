@@ -93,10 +93,10 @@ public:
 
 ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   _mark(generation),
+  _generation(generation),
   _degen_point(ShenandoahDegenPoint::_degenerated_unset),
   _abbreviated(false),
-  _do_old_gc_bootstrap(do_old_gc_bootstrap),
-  _generation(generation) {
+  _do_old_gc_bootstrap(do_old_gc_bootstrap) {
 }
 
 ShenandoahGC::ShenandoahDegenPoint ShenandoahConcurrentGC::degen_point() const {
@@ -360,7 +360,7 @@ void ShenandoahConcurrentGC::entry_reset() {
   }
 
   if (_do_old_gc_bootstrap) {
-    static const char* msg = "Concurrent reset (OLD)";
+    static const char* msg = "Concurrent reset (Old)";
     ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset_old);
     ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
                                 ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),

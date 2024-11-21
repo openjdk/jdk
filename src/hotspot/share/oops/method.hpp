@@ -586,6 +586,9 @@ public:
   // returns true if the method name is <init>
   bool is_object_initializer() const;
 
+  // returns true if the method name is wait0
+  bool is_object_wait0() const;
+
   // compiled code support
   // NOTE: code() is inherently racy as deopt can be clearing code
   // simultaneously. Use with caution.

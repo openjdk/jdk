@@ -109,7 +109,7 @@ public:
 
   ~ShenandoahPurgeSATBTask() {
     if (_trashed_oops > 0) {
-      log_info(gc)("Purged " SIZE_FORMAT " oops from old generation SATB buffers", _trashed_oops);
+      log_debug(gc)("Purged " SIZE_FORMAT " oops from old generation SATB buffers", _trashed_oops);
     }
   }
 
@@ -342,7 +342,7 @@ bool ShenandoahOldGeneration::is_concurrent_mark_in_progress() {
 
 void ShenandoahOldGeneration::cancel_marking() {
   if (is_concurrent_mark_in_progress()) {
-    log_info(gc)("Abandon SATB buffers");
+    log_debug(gc)("Abandon SATB buffers");
     ShenandoahBarrierSet::satb_mark_queue_set().abandon_partial_marking();
   }
 
@@ -378,7 +378,7 @@ void ShenandoahOldGeneration::prepare_gc() {
 bool ShenandoahOldGeneration::entry_coalesce_and_fill() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
-  static const char* msg = "Coalescing and filling (OLD)";
+  static const char* msg = "Coalescing and filling (Old)";
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
@@ -411,7 +411,7 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   uint nworkers = workers->active_workers();
   ShenandoahConcurrentCoalesceAndFillTask task(nworkers, _coalesce_and_fill_region_array, coalesce_and_fill_regions_count);
 
-  log_info(gc)("Starting (or resuming) coalesce-and-fill of " UINT32_FORMAT " old heap regions", coalesce_and_fill_regions_count);
+  log_debug(gc)("Starting (or resuming) coalesce-and-fill of " UINT32_FORMAT " old heap regions", coalesce_and_fill_regions_count);
   workers->run_task(&task);
   if (task.is_completed()) {
     // We no longer need to track regions that need to be coalesced and filled.
@@ -430,7 +430,7 @@ void ShenandoahOldGeneration::transfer_pointers_from_satb() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   shenandoah_assert_safepoint();
   assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
-  log_info(gc)("Transfer SATB buffers");
+  log_debug(gc)("Transfer SATB buffers");
   uint nworkers = heap->workers()->active_workers();
   StrongRootsScope scope(nworkers);
 
@@ -498,7 +498,7 @@ const char* ShenandoahOldGeneration::state_name(State state) {
 
 void ShenandoahOldGeneration::transition_to(State new_state) {
   if (_state != new_state) {
-    log_info(gc)("Old generation transition from %s to %s", state_name(_state), state_name(new_state));
+    log_debug(gc)("Old generation transition from %s to %s", state_name(_state), state_name(new_state));
     EventMark event("Old was %s, now is %s", state_name(_state), state_name(new_state));
     validate_transition(new_state);
     _state = new_state;
@@ -627,7 +627,7 @@ void ShenandoahOldGeneration::record_success_concurrent(bool abbreviated) {
 
 void ShenandoahOldGeneration::handle_failed_evacuation() {
   if (_failed_evacuation.try_set()) {
-    log_info(gc)("Old gen evac failure.");
+    log_debug(gc)("Old gen evac failure.");
   }
 }
 
@@ -662,7 +662,7 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
                        max_capacity(), used(), free_unaffiliated_regions());
 
     if ((gc_id == last_report_epoch) && (epoch_report_count >= MaxReportsPerEpoch)) {
-      log_info(gc, ergo)("Squelching additional promotion failure reports for current epoch");
+      log_debug(gc, ergo)("Squelching additional promotion failure reports for current epoch");
     } else if (gc_id != last_report_epoch) {
       last_report_epoch = gc_id;
       epoch_report_count = 1;
@@ -701,15 +701,15 @@ void ShenandoahOldGeneration::abandon_collection_candidates() {
 void ShenandoahOldGeneration::prepare_for_mixed_collections_after_global_gc() {
   assert(is_mark_complete(), "Expected old generation mark to be complete after global cycle.");
   _old_heuristics->prepare_for_old_collections();
-  log_info(gc)("After choosing global collection set, mixed candidates: " UINT32_FORMAT ", coalescing candidates: " SIZE_FORMAT,
+  log_info(gc, ergo)("After choosing global collection set, mixed candidates: " UINT32_FORMAT ", coalescing candidates: " SIZE_FORMAT,
                _old_heuristics->unprocessed_old_collection_candidates(),
                _old_heuristics->coalesce_and_fill_candidates_count());
 }
 
-void ShenandoahOldGeneration::parallel_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
+void ShenandoahOldGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
   // Iterate over old and free regions (exclude young).
   ShenandoahExcludeRegionClosure<YOUNG_GENERATION> exclude_cl(cl);
-  ShenandoahGeneration::parallel_region_iterate_free(&exclude_cl);
+  ShenandoahGeneration::parallel_heap_region_iterate_free(&exclude_cl);
 }
 
 void ShenandoahOldGeneration::set_parsable(bool parsable) {

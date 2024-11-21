@@ -735,7 +735,7 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, B
   assert(Universe::heap()->is_in_or_null(elem->obj()),
          "must be null or an object");
 #ifdef ASSERT
-  current->last_frame().interpreter_frame_verify_monitor(elem);
+  if (!current->preempting()) current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
 JRT_END
 

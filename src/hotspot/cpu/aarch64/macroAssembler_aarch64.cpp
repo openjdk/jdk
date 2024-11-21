@@ -39,6 +39,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -775,6 +776,10 @@ static void pass_arg3(MacroAssembler* masm, Register arg) {
   }
 }
 
+static bool is_preemptable(address entry_point) {
+  return entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter);
+}
+
 void MacroAssembler::call_VM_base(Register oop_result,
                                   Register java_thread,
                                   Register last_java_sp,
@@ -810,7 +815,12 @@ void MacroAssembler::call_VM_base(Register oop_result,
   assert(last_java_sp != rfp, "can't use rfp");
 
   Label l;
-  set_last_Java_frame(last_java_sp, rfp, l, rscratch1);
+  if (is_preemptable(entry_point)) {
+    // skip setting last_pc since we already set it to desired value.
+    set_last_Java_frame(last_java_sp, rfp, noreg, rscratch1);
+  } else {
+    set_last_Java_frame(last_java_sp, rfp, l, rscratch1);
+  }
 
   // do the call, remove parameters
   MacroAssembler::call_VM_leaf_base(entry_point, number_of_arguments, &l);
@@ -5534,6 +5544,38 @@ void MacroAssembler::tlab_allocate(Register obj,
                                    Label& slow_case) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
+}
+
+void MacroAssembler::inc_held_monitor_count(Register tmp) {
+  Address dst(rthread, JavaThread::held_monitor_count_offset());
+#ifdef ASSERT
+  ldr(tmp, dst);
+  increment(tmp);
+  str(tmp, dst);
+  Label ok;
+  tbz(tmp, 63, ok);
+  STOP("assert(held monitor count underflow)");
+  should_not_reach_here();
+  bind(ok);
+#else
+  increment(dst);
+#endif
+}
+
+void MacroAssembler::dec_held_monitor_count(Register tmp) {
+  Address dst(rthread, JavaThread::held_monitor_count_offset());
+#ifdef ASSERT
+  ldr(tmp, dst);
+  decrement(tmp);
+  str(tmp, dst);
+  Label ok;
+  tbz(tmp, 63, ok);
+  STOP("assert(held monitor count underflow)");
+  should_not_reach_here();
+  bind(ok);
+#else
+  decrement(dst);
+#endif
 }
 
 void MacroAssembler::verify_tlab() {
