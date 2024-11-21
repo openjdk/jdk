@@ -5295,7 +5295,7 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
   if (operand_valid_for_logical_immediate(
         /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
     const size_t range = CompressedKlassPointers::klass_range_end() - CompressedKlassPointers::base();
-    const uint64_t range_mask = (1ULL << log2i(range)) - 1;
+    const uint64_t range_mask = right_n_bits(ceil_log2(range));
     if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
       return (_klass_decode_mode = KlassDecodeXor);
     }
@@ -5313,7 +5313,7 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
 bool MacroAssembler::check_klass_decode_mode(address base, int shift, const size_t range) {
   assert(UseCompressedClassPointers, "not using compressed class pointers");
   const uint64_t base_address = (uint64_t)base;
-  const uint64_t range_mask = (1ULL << log2i(range)) - 1;
+  const uint64_t range_mask = right_n_bits(ceil_log2(range));
   const uint64_t shifted_base = base_address >> shift;
 
   return (base == nullptr ||
