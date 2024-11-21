@@ -1485,10 +1485,13 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             } finally {
                 setCcl(old);
             }
-        } catch (ClassNotFoundException ex) {
-            logger.warning("unwrap", "Failed to unmarshall object: " + ex);
-            logger.debug("unwrap", ex);
-            throw new UnmarshalException(ex.toString(), ex);
+        } catch (Exception e) {
+            if (e instanceof IOException) {
+                throw (IOException) e;
+            }
+            logger.warning("unwrap", "Failed to unmarshall object: " + e);
+            logger.debug("unwrap", e);
+            throw new UnmarshalException(e.toString(), e);
         }
     }
 
