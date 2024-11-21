@@ -86,17 +86,43 @@ public class LayoutGraph {
         // cleanup
         layoutNodes = new LinkedHashMap<>();
         dummyNodes = new ArrayList<>();
+        layers = new ArrayList<>();
 
-        // Set up nodes
+        initializeLayout();
+    }
+
+    /**
+     * Initializes or resets the layout structures by clearing existing nodes, dummy nodes, and layers.
+     * It then sets up the layout nodes for each vertex and creates layout edges based on the sorted links.
+     */
+    public void initializeLayout() {
+        // Reset layout structures
+        layoutNodes.clear();
+        dummyNodes.clear();
+        layers.clear();
+
+        // Set up layout nodes for each vertex
         for (Vertex vertex : getVertices()) {
-            createLayoutNode(vertex); // TODO: move out
+            createLayoutNode(vertex);
         }
 
-        // Set up edges
+        // Set up layout edges in a sorted order for reproducibility
         List<Link> sortedLinks = new ArrayList<>(links);
-        sortedLinks.sort(LINK_COMPARATOR); // needed for reproducibility
+        sortedLinks.sort(LINK_COMPARATOR);
         for (Link link : sortedLinks) {
-            createLayoutEdge(link); // // TODO: move out
+            createLayoutEdge(link);
+        }
+    }
+
+    /**
+     * Initializes the layers of the graph with the specified number of empty layers.
+     *
+     * @param layerCount The number of layers to initialize.
+     */
+    public void initLayers(int layerCount) {
+        layers.clear();
+        for (int i = 0; i < layerCount; i++) {
+            layers.add(new LayoutLayer());
         }
     }
 
@@ -227,20 +253,6 @@ public class LayoutGraph {
         }
 
         updatePositions();
-    }
-
-
-
-    /**
-     * Initializes the layers of the graph with the specified number of empty layers.
-     *
-     * @param layerCount The number of layers to initialize.
-     */
-    public void initLayers(int layerCount) {
-        layers = new ArrayList<>(layerCount);
-        for (int i = 0; i < layerCount; i++) {
-            layers.add(new LayoutLayer());
-        }
     }
 
     /**
